@@ -43,11 +43,48 @@ export const getAndSetMenu = async () => {
   return menu;
 };
 
-export const generatePasskeyName = (email: string) => {
-  const nouns = ['Phoenix', 'Dragon', 'Griffin', 'Unicorn', 'Wizard', 'Elf', 'Sorcerer', 'Knight', 'Titan', 'Valkyrie'];
-  const adjectives = ['Mighty', 'Brave', 'Swift', 'Golden', 'Silent', 'Fiery', 'Lucky', 'Clever', 'Shadow', 'Bright'];
+export const generatePasskeyName = () => {
+  const nouns = [
+    'Phoenix',
+    'Dragon',
+    'Griffin',
+    'Unicorn',
+    'Wizard',
+    'Elf',
+    'Sorcerer',
+    'Knight',
+    'Titan',
+    'Valkyrie',
+    'Fenix',
+    'Samurai',
+    'Ninja',
+    'Guardian',
+    'Sentinel',
+  ];
+  const adjectives = [
+    'Mighty',
+    'Brave',
+    'Swift',
+    'Golden',
+    'Silent',
+    'Fiery',
+    'Lucky',
+    'Clever',
+    'Shadow',
+    'Bright',
+    'Fierce',
+    'Noble',
+    'Wise',
+    'Bold',
+    'Gallant',
+    'Valiant',
+    'Radiant',
+    'Stellar',
+    'Luminous',
+    'Ethereal',
+  ];
 
   const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
-  return `${email} ${adjective}${noun}`;
+  return `${adjective}${noun}`;
 };

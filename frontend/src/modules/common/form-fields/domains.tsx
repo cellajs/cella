@@ -1,21 +1,18 @@
 import { useEffect, useState } from 'react';
-import { type Control, useFormContext } from 'react-hook-form';
+import { type FieldValues, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { TagInput } from '~/modules/ui/tag-input';
 
-type Props = {
-  control: Control;
-  label: string;
+type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   description?: string;
-  required?: boolean;
 };
-
-const DomainsFormField = ({ control, label, description, required }: Props) => {
+const DomainsFormField = <TFieldValues extends FieldValues>({ control, name, label, description, required }: DomainsFieldProps<TFieldValues>) => {
   const { t } = useTranslation();
 
   const { getValues } = useFormContext();
-  const formValue = getValues('emailDomains');
+  const formValue = getValues(name);
 
   const [fieldActive, setFieldActive] = useState(false);
   const [domains, setDomains] = useState<string[]>(formValue.map((dom: string) => dom));
@@ -35,7 +32,7 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
   return (
     <FormField
       control={control}
-      name="emailDomains"
+      name={name}
       render={({ field: { onChange } }) => {
         return (
           <FormItem>

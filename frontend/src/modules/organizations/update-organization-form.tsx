@@ -10,10 +10,10 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import DomainsFormField from '~/modules/common/form-fields/domains';
 import InputFormField from '~/modules/common/form-fields/input';
-import SelectCountry from '~/modules/common/form-fields/select-country';
+import SelectCountry from '~/modules/common/form-fields/select-combobox/country';
+import SelectTimezone from '~/modules/common/form-fields/select-combobox/timezone';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
-import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
@@ -91,7 +91,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}
         />
-        <DomainsFormField control={form.control} label={t('common:email_domains')} description={t('common:email_domains.text')} />
+        <DomainsFormField control={form.control} name="emailDomains" label={t('common:email_domains')} description={t('common:email_domains.text')} />
         <InputFormField
           control={form.control}
           type="email"
@@ -143,32 +143,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
             );
           }}
         />
-        <FormField
-          control={form.control}
-          name="country"
-          render={({ field: { onChange } }) => (
-            <FormItem name="country">
-              <FormLabel>{t('common:country')}</FormLabel>
-              <FormControl>
-                <SelectCountry onChange={onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="timezone"
-          render={({ field: { onChange } }) => (
-            <FormItem name="timezone">
-              <FormLabel>{t('common:timezone')}</FormLabel>
-              <FormControl>
-                <SelectTimezone onChange={onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+        <SelectCountry control={form.control} name="country" label={t('common:country')} />
+        <SelectTimezone control={form.control} name="timezone" label={t('common:timezone')} />
 
         {/* NOT IN USE ATM <Collapsible>
           <CollapsibleTrigger asChild>

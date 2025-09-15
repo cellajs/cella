@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -23,16 +16,16 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
+import { consumemMfaToken, initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/providers';
 import { type OAuthCookiePayload, storeOAuthContext } from '#/modules/auth/helpers/oauth/session';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -52,6 +45,13 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -657,7 +657,6 @@ const authRouteHandlers = app
       });
     }
   })
-
   /*
    * Microsoft authentication callback handler
    */
@@ -710,8 +709,6 @@ const authRouteHandlers = app
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
     const { email, type } = ctx.req.valid('query');
 
-    let userEmail: string | null = null;
-
     // Generate a 32-byte random challenge and encode it as Base64
     const challenge = getRandomValues(new Uint8Array(32));
     const challengeBase64 = encodeBase64(challenge);
@@ -719,42 +716,46 @@ const authRouteHandlers = app
     // Save the challenge in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
 
-    // Normalize email if provided
-    if (email) {
-      userEmail = email.toLowerCase().trim();
-    }
+    let user: UserModel | null = null;
 
+    // Find user by email if provided
+    if (email && type === 'authentication') {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const [tableUser] = await usersBaseQuery()
+        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+        .where(eq(emailsTable.email, normalizedEmail))
+        .limit(1);
+
+      user = tableUser;
+    }
     // If this is a multifactor request, retrieve user from pending MFA token
     if (type === 'mfa') {
-      const { email: tokenEmail } = await validateConfirmMfaToken(ctx, false);
-      userEmail = tokenEmail;
+      const userFromToken = await validateConfirmMfaToken(ctx);
+      user = userFromToken;
     }
 
     // If we still have no email, return challenge with empty credential list
-    if (!userEmail) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+    if (!user) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
 
     // Fetch all passkey credentials for this user
-    const credentials = await db
-      .select({ credentialId: passkeysTable.credentialId })
-      .from(passkeysTable)
-      .where(eq(passkeysTable.userEmail, userEmail));
+    const credentials = await db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
     const credentialIds = credentials.map((c) => c.credentialId);
 
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /*
-   * Verify passkey
+   * Signin using passkey
    */
   .openapi(authRoutes.signInWithPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
-    const strategy = 'passkey';
+    // Define strategy and session type for metadata/logging purposes
+    const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
-    if (type === 'authentication' && !enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+    if (type === 'authentication' && !enabledStrategies.includes(meta.strategy)) {
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta });
     }
-    // Determine session type: regular authentication or MFA
-    const sessionType = type === 'mfa' ? 'mfa' : 'regular';
 
     let user: UserModel | null = null;
 
@@ -776,8 +777,6 @@ const authRouteHandlers = app
       user = userFromToken;
     }
 
-    const meta = { strategy, sessionType };
-
     // Fail early if user not found
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
 
@@ -789,7 +788,7 @@ const authRouteHandlers = app
     const [passkeyRecord] = await db
       .select()
       .from(passkeysTable)
-      .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+      .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
       .limit(1);
 
     if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn', meta });
@@ -798,13 +797,21 @@ const authRouteHandlers = app
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', meta, originalError: error });
-      }
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'passkey_verification_failed',
+        severity: 'error',
+        meta,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
+    // Consume the MFA token now that TOTP verification succeeded
+    await consumemMfaToken(ctx);
     // Set user session after successful verification
-    await setUserSession(ctx, user, strategy, sessionType);
+    await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
     return ctx.json(true, 200);
   })
@@ -814,10 +821,10 @@ const authRouteHandlers = app
   .openapi(authRoutes.verifyTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
 
-    const strategy = 'totp';
-    const sessionType = 'mfa';
+    // Define strategy and session type for metadata/logging purposes
+    const meta = { strategy: 'totp', sessionType: 'mfa' } as const;
 
-    const meta = { strategy, sessionType };
+    // Validate MFA token and retrieve user
     const user = await validateConfirmMfaToken(ctx);
 
     // Get totp credentials
@@ -825,16 +832,26 @@ const authRouteHandlers = app
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
-      const isValid = verifyTotp(code, credentials.encoderSecretKey);
+      // Verify TOTP code using stored secret
+      const isValid = await verifyTotp(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', meta, originalError: error });
-      }
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'totp_verification_failed',
+        severity: 'error',
+        meta,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
+    // Consume the MFA token now that TOTP verification succeeded
+    await consumemMfaToken(ctx);
+
     // Set user session after successful verification
-    await setUserSession(ctx, user, strategy, sessionType);
+    await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
     return ctx.json(true, 200);
   });

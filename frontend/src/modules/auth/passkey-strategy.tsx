@@ -44,7 +44,7 @@ const PasskeyStrategy = ({
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5 truncate">
+      <Button type="button" onClick={() => passkeyAuth(email)} className="w-full gap-1.5 truncate">
         <Fingerprint size={16} />
         <span className="truncate">
           {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}

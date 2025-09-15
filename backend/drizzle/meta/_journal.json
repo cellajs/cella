@@ -19,8 +19,15 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1757491284628,
-      "tag": "0002_stormy_juggernaut",
+      "when": 1757659972233,
+      "tag": "0002_nosy_white_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1757668232647,
+      "tag": "0003_salty_raider",
       "breakpoints": true
     }
   ]

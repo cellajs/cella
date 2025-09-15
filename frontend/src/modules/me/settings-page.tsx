@@ -137,9 +137,15 @@ const UserSettingsPage = () => {
               <HelpText content={t('common:mfa.text')}>
                 <div className="flex">
                   <p className="font-semibold">{t('common:mfa')}</p>
-                  <Badge size="sm" variant="outline" className="ml-2 uppercase text-[10px] py-0 font-normal text-green-600 border-green-600">
-                    {t('common:recommended')}
-                  </Badge>
+                  {!user.mfaRequired && (
+                    <Badge
+                      size="xs"
+                      variant="outline"
+                      className="max-sm:hidden ml-2 uppercase text-[10px] font-normal text-green-600 border-green-600"
+                    >
+                      {t('common:recommended')}
+                    </Badge>
+                  )}
                 </div>
               </HelpText>
               <MfaSwitch />

@@ -7,7 +7,7 @@ const redactedFields = [
   'unsubscribeTokensTable.token',
   'session.token',
   'token.token',
-  'totps.encoderSecretKey',
+  'totps.secret',
   'passkeys.credentialId',
 ];
 

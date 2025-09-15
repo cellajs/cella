@@ -6,12 +6,11 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-export const TotpStrategy = () => {
+export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; setIsActive: (active: boolean) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -28,25 +27,18 @@ export const TotpStrategy = () => {
     onError: () => toaster(t('error:totp_verification_failed'), 'error'),
   });
 
-  const openTotpVerify = () => {
-    useDialoger.getState().create(<TotpConfirmationForm onSubmit={totpSignIn} />, {
-      id: 'mfa-confirmation',
-      triggerRef,
-      className: 'sm:max-w-md p-6',
-      title: t('common:totp_verify'),
-      drawerOnMobile: false,
-      hideClose: false,
-    });
-  };
-
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button ref={triggerRef} type="button" onClick={openTotpVerify} variant="plain" className="w-full gap-1.5 truncate">
-        <Smartphone size={16} />
-        <span className="truncate">
-          {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
-        </span>
-      </Button>
+      {!isActive && (
+        <Button ref={triggerRef} type="button" onClick={() => setIsActive(true)} variant="plain" className="w-full gap-1.5 truncate">
+          <Smartphone size={16} />
+          <span className="truncate">
+            {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
+          </span>
+        </Button>
+      )}
+
+      {isActive && <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => setIsActive(false)} label={t('common:totp_verify')} />}
     </div>
   );
 };

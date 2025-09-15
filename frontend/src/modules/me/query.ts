@@ -20,6 +20,9 @@ export const meKeys = {
   menu: () => [...meKeys.all, 'menu'] as const,
   auth: () => [...meKeys.all, 'auth'] as const,
   invites: () => [...meKeys.all, 'invites'] as const,
+  registrate: {
+    passkey: () => [...meKeys.all, 'registrate', 'passkey'] as const,
+  } as const,
   update: {
     info: () => [...meKeys.all, 'update', 'info'] as const,
     flags: () => [...meKeys.all, 'update', 'flags'] as const,
@@ -83,7 +86,7 @@ export const useToggleMfaMutation = () => {
     mutationFn: (body) => toggleMfa({ body }),
     onSuccess: (updatedUser) => {
       updateOnSuccesses(updatedUser);
-      toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'info');
+      toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'success');
     },
     gcTime: 1000 * 10,
   });
@@ -110,7 +113,7 @@ export const useUpdateSelfFlagsMutation = () => {
  */
 export const useCreatePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
-    mutationKey: meKeys.delete.passkey(),
+    mutationKey: meKeys.registrate.passkey(),
     mutationFn: async () => {
       const credentialData = await getPasskeyRegistrationCredential();
       return await createPasskey({ body: credentialData });
@@ -143,8 +146,10 @@ export const useDeletePasskeyMutation = () => {
   return useMutation<boolean, ApiError, string>({
     mutationKey: meKeys.delete.passkey(),
     mutationFn: (id: string) => deletePasskey({ path: { id } }),
-    onSuccess: (stillHasPasskey, id) => {
+    onSuccess: (_data, id) => {
+      console.log('Passkey removed successfully', id);
       queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
+        console.log('Old data before passkey removal:', oldData);
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -152,7 +157,6 @@ export const useDeletePasskeyMutation = () => {
         };
       });
       toaster(t('common:success.passkey_unlinked'), 'success');
-      useUserStore.getState().setMeAuthData({ hasPasskey: stillHasPasskey });
     },
     onError(error) {
       console.error('Error removing passkey:', error);

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { Info, Send } from 'lucide-react';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -12,17 +12,15 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { ApiError } from '~/lib/api';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
+import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
-
-const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
 const formSchema = zSendNewsletterData.shape.body;
 
@@ -101,21 +99,19 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
           required
         />
 
-        <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-          <BlockNoteContent
-            control={form.control}
-            name="content"
-            required
-            label={t('common:message')}
-            BaseBlockNoteProps={{
-              id: 'blocknote-newsletter',
-              trailingBlock: false,
-              className:
-                'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-              baseFilePanelProps: { organizationId: 'adminPreview' },
-            }}
-          />
-        </Suspense>
+        <BlockNoteContent
+          control={form.control}
+          name="content"
+          label={t('common:message')}
+          required
+          baseBlockNoteProps={{
+            id: 'blocknote-newsletter',
+            trailingBlock: false,
+            className:
+              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            baseFilePanelProps: { organizationId: 'adminPreview' },
+          }}
+        />
 
         <FormField
           control={form.control}

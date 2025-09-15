@@ -1,6 +1,6 @@
 {
-  "id": "8d539283-e38e-4a7f-bea3-4841aa6d3584",
-  "prevId": "97546b98-2c9e-4494-bd18-66fc4bb43284",
+  "id": "33efb0b2-266f-4d73-b64c-b01c6d5ab71b",
+  "prevId": "8d539283-e38e-4a7f-bea3-4841aa6d3584",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1268,8 +1268,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "encoder_secret_key": {
-          "name": "encoder_secret_key",
+        "secret": {
+          "name": "secret",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true

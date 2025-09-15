@@ -1,10 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -39,6 +32,13 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { encodeBase32UpperCase } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -73,6 +73,7 @@ const meRouteHandlers = app
     const now = Date.now();
     const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
+    // If disabling mfaRequired, ensure user has recently authenticated (within the last hour)
     if (!mfaRequired && now - createdAt > oneHour && !passkeyData && !totpCode) {
       throw new AppError({ status: 403, type: 'mfa_disable_verification', severity: 'warn' });
     }
@@ -88,7 +89,7 @@ const meRouteHandlers = app
         const [passkeyRecord] = await db
           .select()
           .from(passkeysTable)
-          .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+          .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
           .limit(1);
 
         if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
@@ -101,14 +102,18 @@ const meRouteHandlers = app
         const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
         if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
-        const isValid = verifyTotp(totpCode, credentials.encoderSecretKey);
+        const isValid = verifyTotp(totpCode, credentials.secret);
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'invalid_credentials', severity: 'error', originalError: error });
-      }
-      throw error;
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'invalid_credentials',
+        severity: 'error',
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
     const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
@@ -124,7 +129,7 @@ const meRouteHandlers = app
     // Queries for user authentication factors
     // Select passkey fields except for sensitive credential data
     const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
-    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
     const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, user.id)).limit(1);
 
@@ -351,7 +356,7 @@ const meRouteHandlers = app
 
     const device = deviceInfo(ctx);
     const passkeyValue = {
-      userEmail: user.email,
+      userId: user.id,
       credentialId,
       publicKey,
       nameOnDevice,
@@ -376,11 +381,11 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.id, id)));
+    await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
 
     // Check if the user still has any passkeys or TOTP entries registered
     const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)),
+      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
       db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
     ]);
 
@@ -389,32 +394,25 @@ const meRouteHandlers = app
       await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
     }
 
-    // TODO this is weird, the delete is sucessful so we should return true, not whether passkeys remain, thats up for frontend itself?
-    return ctx.json(!!userPasskeys.length, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Register TOTP
    */
   .openapi(meRoutes.registerTotp, async (ctx) => {
-    // Generate a 20-byte random secret and encode it as Base32
-    const secret = crypto.getRandomValues(new Uint8Array(20));
-    const manualKey = encodeBase32(secret);
-
     const user = getContextUser();
+
+    // Generate a 20-byte random secret and encode it as Base32
+    const secretBytes = crypto.getRandomValues(new Uint8Array(20));
+
+    // Base32 → for authenticator app (manual entry or QR code)
+    const manualKey = encodeBase32UpperCase(secretBytes);
 
     // Save the secret in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
 
-    const normalizedAppName = appConfig.slug;
-    const normalizedUserName = user.email;
     // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(
-      normalizedAppName,
-      normalizedUserName,
-      secret,
-      appConfig.totpConfig.intervalInSeconds,
-      appConfig.totpConfig.digits,
-    );
+    const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
 
     return ctx.json({ totpUri, manualKey }, 200);
   })
@@ -426,22 +424,26 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Retrieve the encoded totp secret from cookie
-    const encoderSecretKey = await getAuthCookie(ctx, 'totp-key');
-    if (!encoderSecretKey) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
+    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
 
     // Verify TOTP code
-    // TODO how to prevent throwing two errors here? IF invalid_token is thrown, the try catch below will throw another 500 error?
     try {
-      const isValid = verifyTotp(code, encoderSecretKey);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+      const isValid = verifyTotp(code, encodedSecret);
+      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', originalError: error });
-      }
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'invalid_credentials',
+        severity: 'error',
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
-    // Save 32encoded secret key in database
-    await db.insert(totpsTable).values({ userId: user.id, encoderSecretKey });
+    // Save encoded secret key in database
+    await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
 
     return ctx.json(true, 200);
   })
@@ -456,7 +458,7 @@ const meRouteHandlers = app
 
     // Check if the user still has any passkeys or TOTP entries registered
     const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)),
+      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
       db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
     ]);
 
@@ -486,7 +488,14 @@ const meRouteHandlers = app
 
       return ctx.json(token, 200);
     } catch (error) {
-      throw new AppError({ status: 500, type: 'missing_auth_key', severity: 'error' });
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'missing_auth_key',
+        severity: 'error',
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
   })
   /*

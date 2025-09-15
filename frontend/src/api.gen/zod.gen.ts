@@ -653,7 +653,7 @@ export const zGetMyAuthResponse = z.object({
   passkeys: z.array(
     z.object({
       id: z.string(),
-      userEmail: z.string(),
+      userId: z.string(),
       deviceName: z.union([z.string(), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.union([z.string(), z.null()]),
@@ -745,7 +745,7 @@ export const zCreatePasskeyData = z.object({
  */
 export const zCreatePasskeyResponse = z.object({
   id: z.string(),
-  userEmail: z.string(),
+  userId: z.string(),
   deviceName: z.union([z.string(), z.null()]),
   deviceType: z.enum(['desktop', 'mobile']),
   deviceOs: z.union([z.string(), z.null()]),
@@ -1424,14 +1424,6 @@ export const zUpdateAttachmentData = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = zAttachment;
-
-export const zGetAttachmentCoverData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
 
 export const zRedirectToAttachmentData = z.object({
   body: z.optional(z.never()),

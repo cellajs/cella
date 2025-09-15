@@ -11,27 +11,28 @@ interface PasskeyTileProps {
   passkey: Passkey;
   handleUnlinkPasskey: (id: string) => void;
   isPending: boolean;
+  onlyPasskeyLeft: boolean;
 }
 
-export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: PasskeyTileProps) => {
+export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) => {
   const { t } = useTranslation();
 
   const user = useUserStore((state) => state.user);
 
   return (
-    <Card className="w-full first:mt-4">
+    <Card className="w-full">
       <CardContent className="flex !p-3 items-center gap-3">
         {passkey.deviceType === 'desktop' ? <Monitor size={32} strokeWidth={1.25} /> : <Smartphone size={32} strokeWidth={1.25} />}
 
         <div className="flex flex-col gap-1 overflow-hidden">
           <div className="flex gap-2 items-center">
             <div className="font-semibold">{passkey.deviceName || t('common:unknown_device')}</div>
-            <Badge size="sm" variant="outline" className="normal-case">
+            <Badge size="xs" variant="outline">
               {passkey.nameOnDevice}
             </Badge>
           </div>
 
-          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm opacity-50">
+          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm text-muted-foreground">
             <p className="truncate" aria-describedby={t('common:created_at')}>
               {dateShort(passkey.createdAt)}
             </p>
@@ -49,7 +50,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: Passkey
           size="sm"
           className="text-sm ml-auto"
           loading={isPending}
-          disabled={user.mfaRequired}
+          disabled={user.mfaRequired && onlyPasskeyLeft}
           onClick={() => handleUnlinkPasskey(passkey.id)}
         >
           <Unlink size={16} />
