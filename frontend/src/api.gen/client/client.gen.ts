@@ -3,21 +3,8 @@
 import { createSseClient } from '../core/serverSentEvents.gen';
 import type { HttpMethod } from '../core/types.gen';
 import { getValidRequestBody } from '../core/utils.gen';
-import type {
-  Client,
-  Config,
-  RequestOptions,
-  ResolvedRequestOptions,
-} from './types.gen';
-import {
-  buildUrl,
-  createConfig,
-  createInterceptors,
-  getParseAs,
-  mergeConfigs,
-  mergeHeaders,
-  setAuthParams,
-} from './utils.gen';
+import type { Client, Config, RequestOptions, ResolvedRequestOptions } from './types.gen';
+import { buildUrl, createConfig, createInterceptors, getParseAs, mergeConfigs, mergeHeaders, setAuthParams } from './utils.gen';
 
 type ReqInit = Omit<RequestInit, 'body' | 'headers'> & {
   body?: any;
@@ -34,12 +21,7 @@ export const createClient = (config: Config = {}): Client => {
     return getConfig();
   };
 
-  const interceptors = createInterceptors<
-    Request,
-    Response,
-    unknown,
-    ResolvedRequestOptions
-  >();
+  const interceptors = createInterceptors<Request, Response, unknown, ResolvedRequestOptions>();
 
   const beforeRequest = async (options: RequestOptions) => {
     const opts = {
@@ -109,15 +91,9 @@ export const createClient = (config: Config = {}): Client => {
     };
 
     if (response.ok) {
-      const parseAs =
-        (opts.parseAs === 'auto'
-          ? getParseAs(response.headers.get('Content-Type'))
-          : opts.parseAs) ?? 'json';
+      const parseAs = (opts.parseAs === 'auto' ? getParseAs(response.headers.get('Content-Type')) : opts.parseAs) ?? 'json';
 
-      if (
-        response.status === 204 ||
-        response.headers.get('Content-Length') === '0'
-      ) {
+      if (response.status === 204 || response.headers.get('Content-Length') === '0') {
         let emptyData: any;
         switch (parseAs) {
           case 'arrayBuffer':
@@ -213,30 +189,27 @@ export const createClient = (config: Config = {}): Client => {
         };
   };
 
-  const makeMethodFn =
-    (method: Uppercase<HttpMethod>) => (options: RequestOptions) =>
-      request({ ...options, method });
+  const makeMethodFn = (method: Uppercase<HttpMethod>) => (options: RequestOptions) => request({ ...options, method });
 
-  const makeSseFn =
-    (method: Uppercase<HttpMethod>) => async (options: RequestOptions) => {
-      const { opts, url } = await beforeRequest(options);
-      return createSseClient({
-        ...opts,
-        body: opts.body as BodyInit | null | undefined,
-        headers: opts.headers as unknown as Record<string, string>,
-        method,
-        onRequest: async (url, init) => {
-          let request = new Request(url, init);
-          for (const fn of interceptors.request._fns) {
-            if (fn) {
-              request = await fn(request, opts);
-            }
+  const makeSseFn = (method: Uppercase<HttpMethod>) => async (options: RequestOptions) => {
+    const { opts, url } = await beforeRequest(options);
+    return createSseClient({
+      ...opts,
+      body: opts.body as BodyInit | null | undefined,
+      headers: opts.headers as unknown as Record<string, string>,
+      method,
+      onRequest: async (url, init) => {
+        let request = new Request(url, init);
+        for (const fn of interceptors.request._fns) {
+          if (fn) {
+            request = await fn(request, opts);
           }
-          return request;
-        },
-        url,
-      });
-    };
+        }
+        return request;
+      },
+      url,
+    });
+  };
 
   return {
     buildUrl,

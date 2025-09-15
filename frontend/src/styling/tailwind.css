@@ -1,8 +1,8 @@
+@import "tailwindcss";
+
 /* Custom gradients that are not easy to build using tailwind */
 @import "./gradients.css" layer(base);
 @import "../modules/common/blocknote/styles.css" layer(base);
-
-@import "tailwindcss";
 
 @config '../../tailwind.config.ts';
 
@@ -107,7 +107,7 @@
 
 @layer base {
   html {
-    @apply font-sans;
+    @apply font-sans overscroll-x-none;
   }
 
   * {
@@ -115,7 +115,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-none;
+    @apply bg-background text-foreground min-h-full overscroll-x-none;
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */

@@ -63,6 +63,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
 
   const onSubmit = async (data: FormValues) => {
     // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
+    // TODO content sends on BE with not resolved urls
     const body = {
       ...data,
       organizationIds,
@@ -109,7 +110,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             trailingBlock: false,
             className:
               'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-            baseFilePanelProps: { organizationId: 'adminPreview' },
+            baseFilePanelProps: { isPublic: true, organizationId: 'adminPreview' },
           }}
         />
 

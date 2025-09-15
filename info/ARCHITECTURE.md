@@ -70,14 +70,17 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
 │   ├── public                
+│   ├── vite                  Vite-related plugins & scripts
 │   ├── src                   
-│   │   ├── api.gen           Generated API client using openapi.json from backend
+│   │   ├── api.gen           Generated sdk client using openapi.json from backend
 │   │   ├── hooks             Generic react hooks
 │   │   ├── json              Static JSON
 │   │   ├── lib               Library code and core helper functions
 │   │   ├── modules           Modular distribution of components
+│   │   ├── query             Tanstack query client
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
+│   │   ├── styling           Tailwind styling
 │   │   ├── utils             Reusable functions
 ├── info                      Information about cella
 └── locales                   Translations

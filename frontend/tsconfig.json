@@ -13,6 +13,6 @@
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../json/*", "../locales/*", "openapi-ts.config.ts", "script", "./vite-plugins/**/*"],
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../json/*", "../locales/*", "openapi-ts.config.ts", "script", "vite/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

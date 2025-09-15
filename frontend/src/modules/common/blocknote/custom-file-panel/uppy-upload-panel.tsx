@@ -52,7 +52,7 @@ const basicBlockTypes = {
   },
 };
 
-const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyFilePanelProps & FilePanelProps) => {
+const UppyFilePanel = ({ onComplete, onError, organizationId, block, isPublic = false }: BaseUppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { isOnline } = useOnlineManager();
@@ -88,7 +88,7 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: false, templateId: 'attachment', organizationId });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: isPublic, templateId: 'attachment', organizationId });
 
         localUppy
           .on('error', (error) => {

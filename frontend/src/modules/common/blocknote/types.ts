@@ -55,6 +55,7 @@ export type IconType = (
 
 export type BaseUppyFilePanelProps = {
   organizationId: string;
+  isPublic?: boolean;
   onComplete?: (result: UploadedUppyFile<'attachment'>) => void;
   onError?: (error: Error) => void;
 };

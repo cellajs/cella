@@ -84,6 +84,8 @@ export const zAttachment = z.object({
   id: z.string(),
   name: z.string(),
   entityType: z.enum(['attachment']),
+  public: z.boolean(),
+  bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
   filename: z.string(),
   contentType: z.string(),
@@ -1163,6 +1165,7 @@ export const zGetPresignedUrlData = z.object({
   path: z.optional(z.never()),
   query: z.object({
     key: z.string(),
+    isPublic: z.optional(z.union([z.boolean(), z.string()])),
   }),
 });
 
@@ -1368,6 +1371,8 @@ export const zCreateAttachmentData = z.object({
     .array(
       z.object({
         id: z.optional(z.string()),
+        public: z.optional(z.boolean()),
+        bucketName: z.string(),
         groupId: z.optional(z.union([z.string(), z.null()])),
         filename: z.string(),
         contentType: z.string(),

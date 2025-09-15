@@ -4,5 +4,5 @@ pre-commit:
       run: pnpm --filter backend generate-openapi && pnpm --filter frontend generate-client && pnpm ts
     biome:
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: pnpm dlx @biomejs/biome format --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+      run: pnpm dlx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
   parallel: false
