@@ -20,15 +20,7 @@ export type CommitSummary = {
   historyCoverage: 'complete' | 'partial' | 'unknown';
 };
 
-export type MergeRisk = {
-  likelihood: 'low' | 'medium' | 'high';
-  reason: 'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown';
-  safeByGit: boolean;
-  check: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck' | 'verifyHead';
+export type FileMergeStrategy = {
+  strategy: 'keep-fork' | 'keep-boilerplate' | 'remove-from-fork' | 'remove-from-boilerplate' | 'manual' | 'unknown';
+  reason: string;
 };
-
-export type MergeCheck = {
-  couldRun: boolean;
-  reason: 'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unknown';
-  automergeable: boolean;
-}
