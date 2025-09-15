@@ -9,13 +9,14 @@ export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>,
 
   // Process original files
   const originalFiles = result[':original'] || [];
-  for (const { size, url, mime, ext, type, original_name, original_id } of originalFiles) {
+  for (const { size, url, mime, ext, type, original_name, original_id, user_meta } of originalFiles) {
     uploadedAttachments.push({
       id: original_id || nanoid(),
       originalKey: url,
       size: String(size || 0),
       contentType: mime,
-      filename: original_name || 'unknown',
+      filename: original_name || user_meta.name,
+      bucketName: user_meta.bucketName,
       organizationId,
       type: type ?? ext,
     });

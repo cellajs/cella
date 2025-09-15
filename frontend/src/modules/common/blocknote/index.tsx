@@ -101,7 +101,7 @@ const BlockNote = ({
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
 
-      const isPublic = baseFilePanelProps?.isPublic || false;
+      const isPublic = String(baseFilePanelProps?.isPublic || false);
       return getPresignedUrl({ query: { key, isPublic } });
     },
   });

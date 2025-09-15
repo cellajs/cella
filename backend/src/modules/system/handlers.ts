@@ -1,4 +1,10 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
+import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -13,18 +19,15 @@ import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
+import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
-import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
+import { getParsedSessionCookie, validateSession } from '../auth/helpers/session';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -123,9 +126,38 @@ const systemRouteHandlers = app
    * Get presigned URL
    */
   .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
-    const { key, isPublic } = ctx.req.valid('query');
+    const { key, isPublic: queryPublic } = ctx.req.valid('query');
 
-    const url = await getSignedUrlFromKey(key, { isPublic });
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(or(eq(attachmentsTable.originalKey, key), eq(attachmentsTable.thumbnailKey, key), eq(attachmentsTable.convertedKey, key)))
+      .limit(1);
+
+    const { bucketName, public: isPublic } = attachment ?? {
+      public: queryPublic,
+      bucketName: queryPublic ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
+    };
+
+    if (!isPublic) {
+      // Get session id from cookie
+      const { sessionToken } = await getParsedSessionCookie(ctx);
+      const { user } = await validateSession(sessionToken);
+
+      if (attachment) {
+        const memberships = await db
+          .select()
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+
+        const isSystemAdmin = user.role === 'admin';
+        const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
+
+        if (!isSystemAdmin || !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
+      }
+    }
+
+    const url = await getSignedUrlFromKey(key, { bucketName, isPublic });
 
     return ctx.json(url, 200);
   })

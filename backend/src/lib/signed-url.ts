@@ -1,7 +1,7 @@
-import { env } from '#/env';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
 import { appConfig } from 'config';
+import { env } from '#/env';
 
 const s3Client = new S3Client({
   region: appConfig.s3Region,
@@ -13,7 +13,8 @@ const s3Client = new S3Client({
 });
 
 interface GetUrlOptions {
-  isPublic?: boolean;
+  isPublic: boolean;
+  bucketName: string;
   expiresIn?: number;
 }
 
@@ -25,17 +26,18 @@ interface GetUrlOptions {
  *
  * @param Key - The object key or blob URL.
  * @param options - Optional settings:
- *   - isPublic: boolean flag (default: false)
+ *   - isPublic: whether the object is public
+ *   - bucketName: name of the S3 bucket
  *   - expiresIn: seconds until the presigned URL expires (only used if private, default: 86400)
  * @returns A promise resolving to the URL string.
  */
-export async function getSignedUrlFromKey(Key: string, { isPublic = false, expiresIn = 86400 }: GetUrlOptions = {}): Promise<string> {
+export async function getSignedUrlFromKey(Key: string, { isPublic, bucketName, expiresIn = 86400 }: GetUrlOptions): Promise<string> {
   // Already a local blob URL (e.g. from File API)
   if (Key.startsWith('blob:http')) return Key;
 
   // Public,  constract URL
-  if (isPublic) return `${appConfig.publicCDNUrl}/${Key}`;
+  if (isPublic) return `https://${bucketName}.s3.nl-ams.scw.cloud/${Key}`;
 
   // Private, sign URL
-  return s3SignedUrl(s3Client, new GetObjectCommand({ Bucket: appConfig.s3PrivateBucket, Key }), { expiresIn });
+  return s3SignedUrl(s3Client, new GetObjectCommand({ Bucket: bucketName, Key }), { expiresIn });
 }

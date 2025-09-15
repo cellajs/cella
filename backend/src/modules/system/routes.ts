@@ -1,10 +1,10 @@
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -69,13 +69,7 @@ const systemRoutes = {
     operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
-    guard: async (ctx, next) => {
-      const isPublicParam = ctx.req.query('isPublic');
-      const isPublic = isPublicParam === 'true'; // convert string to boolean
-
-      if (!isPublic) await isAuthenticated(ctx, next);
-      else await isPublicAccess(ctx, next);
-    },
+    guard: [isPublicAccess],
     tags: ['system'],
     summary: 'Get presigned URL',
     description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',

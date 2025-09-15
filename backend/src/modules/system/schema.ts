@@ -6,7 +6,14 @@ export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(50),
 });
 
-export const preasignedURLQuerySchema = z.object({ key: z.string(), isPublic: z.coerce.boolean().optional().default(false) });
+export const preasignedURLQuerySchema = z.object({
+  key: z.string(),
+  isPublic: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((v) => v === true || v === 'true')
+    .default(false),
+});
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),

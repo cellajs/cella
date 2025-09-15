@@ -1,1 +1,0 @@
-ALTER TABLE "attachments" ADD COLUMN "public" boolean DEFAULT false NOT NULL;

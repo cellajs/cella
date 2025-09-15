@@ -1,5 +1,5 @@
 {
-  "id": "b69bdb6c-a6ca-4cef-a021-3864036b6e3d",
+  "id": "30390beb-040f-4aa6-94d4-9bc369a9ad6f",
   "prevId": "33efb0b2-266f-4d73-b64c-b01c6d5ab71b",
   "version": "7",
   "dialect": "postgresql",
@@ -41,6 +41,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "bucket_name": {
+          "name": "bucket_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         },
         "group_id": {
           "name": "group_id",
