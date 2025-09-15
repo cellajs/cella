@@ -1,5 +1,5 @@
-import type { Plugin, HmrContext, ModuleNode } from 'vite';
 import path from 'node:path';
+import type { HmrContext, ModuleNode, Plugin } from 'vite';
 
 const CUSTOM_EVENT = 'i18next-hmr:update' as const;
 
@@ -31,6 +31,8 @@ export function swallowLocaleHMR(): Plugin {
           event: CUSTOM_EVENT,
           data: { file: ctx.file },
         });
+
+        console.log('HMR: Locale file changed, prevent reloading', ctx.file);
 
         // Returning an empty list claims the update and prevents full reload.
         // This matches the expected handleHotUpdate return type.
