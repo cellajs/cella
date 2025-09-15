@@ -9,8 +9,8 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const commitState = getCommitState(analyzedFile);
   const commitSha = getCommitSha(analyzedFile);
   const lastSyncedAt = getLastSyncedAt(analyzedFile);
-  const conflictTag = getConflictTag(analyzedFile);
-  const conflictResolution = getConfictResolution(analyzedFile);
+  const strategyFlag = getStrategyFlag(analyzedFile);
+  const strategyReason = getStrategyReason(analyzedFile);
 
   const parts: string[] = [
     status,
@@ -19,8 +19,8 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
     commitState,
     commitSha,
     lastSyncedAt,
-    conflictTag,
-    conflictResolution,
+    strategyFlag,
+    strategyReason,
   ].filter(Boolean);
 
   return parts.join(' ').trim();
@@ -28,26 +28,20 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
 
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
   const logModulesConfigured = 'modules' in logConfig;
-  const mergeRiskSafeByGitConfigured = 'mergeRiskSafeByGit' in logConfig.analyzedFile;
   const commitSummaryStateConfigured = 'commitSummaryState' in logConfig.analyzedFile;
   const filePathConfigured = 'filePath' in logConfig.analyzedFile;
-  const mergeRiskCheckConfigured = 'mergeRiskCheck' in logConfig.analyzedFile;
-  const mergeCheckAutomergeableConfigured = 'mergeCheckAutomergeable' in logConfig.analyzedFile;
+  const mergeStrategyConfigured = 'mergeStrategyStrategy' in logConfig.analyzedFile;
 
   const includesModule = logConfig.modules?.includes('analyzedFile');
-  const mergeRiskSafeByGitEqual = logConfig.analyzedFile.mergeRiskSafeByGit === analyzedFile.mergeRisk?.safeByGit;
   const commitSummaryStateEqual = logConfig.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
   const filePathEqual = logConfig.analyzedFile.filePath?.includes(analyzedFile.filePath);
-  const mergeRiskCheckEqual = logConfig.analyzedFile.mergeRiskCheck?.includes(analyzedFile.mergeRisk?.check || '');
-  const mergeCheckAutomergeableEqual = logConfig.analyzedFile.mergeCheckAutomergeable === analyzedFile.mergeCheck?.automergeable;
+  const mergeStrategyEqual = logConfig.analyzedFile.mergeStrategyStrategy?.includes(analyzedFile.mergeStrategy?.strategy || 'unknown');
 
   const shouldLog = [
     !logModulesConfigured || includesModule,
-    !mergeRiskSafeByGitConfigured || mergeRiskSafeByGitEqual,
     !commitSummaryStateConfigured || commitSummaryStateEqual,
     !filePathConfigured || filePathEqual,
-    !mergeRiskCheckConfigured || mergeRiskCheckEqual,
-    !mergeCheckAutomergeableConfigured || mergeCheckAutomergeableEqual,
+    !mergeStrategyConfigured || mergeStrategyEqual,
   ].every(Boolean);
 
   if (shouldLog) console.log(line);
@@ -115,26 +109,30 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
   return pc.dim(`Last in sync: ${date.toLocaleDateString()}`);
 }
 
-function getConflictTag(analyzedFile: FileAnalysis): string {
-  const mergeRisk = analyzedFile.mergeRisk;
+function getStrategyFlag(analyzedFile: FileAnalysis): string {
+  const mergeStrategy = analyzedFile.mergeStrategy;
 
-  if (!mergeRisk) return '';
-  if (mergeRisk.safeByGit) return '';
-
-  if (mergeRisk?.likelihood === 'medium') {
-    return pc.bgYellow(pc.black(' Conflict '))
+  if (!mergeStrategy) {
+    return pc.bgRed(pc.black(' No Strategy '));
   }
 
-  return pc.bgRed(pc.black(' Conflict '));
+  if (mergeStrategy.strategy === 'unknown') {
+    return pc.bgRed(pc.black(`${mergeStrategy.strategy} `));
+  }
+
+  if (mergeStrategy.strategy === 'manual') {
+    return pc.bgYellow(pc.black(` ${mergeStrategy.strategy} `));
+  }
+
+  return pc.green(pc.black(` ${mergeStrategy.strategy} `));
 }
 
-function getConfictResolution(analyzedFile: FileAnalysis): string {
-  const mergeRisk = analyzedFile.mergeRisk;
+function getStrategyReason(analyzedFile: FileAnalysis): string {
+  const mergeStrategy = analyzedFile.mergeStrategy;
 
-  if (!mergeRisk) return '';
-  if (mergeRisk.likelihood === 'low') return '';
-  if (mergeRisk.safeByGit) return pc.green(`→ Safe by ${pc.bold('Git')} (${mergeRisk.reason})`);
+  if (!mergeStrategy) return '';
 
-  if (mergeRisk.check) return pc.dim(`→ ${mergeRisk.check} (${mergeRisk.reason})`);
-  return '';
+  if (mergeStrategy.strategy === 'unknown') return pc.red(`→ ${mergeStrategy.reason}`);
+  if (mergeStrategy.strategy === 'manual') return pc.yellow(`→ ${mergeStrategy.reason}`);
+  return pc.green(`→ ${mergeStrategy.reason}`);
 }

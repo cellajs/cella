@@ -1,4 +1,4 @@
-import { CommitSummary, FileEntry, MergeCheck, MergeRisk } from './git';
+import { CommitSummary, FileEntry, FileMergeStrategy, MergeResult } from './git';
 import { ZwizzleAnalysis } from './zwizzle';
 
 export * from './git';
@@ -10,9 +10,8 @@ export type FileAnalysis = {
   forkFile?: FileEntry;
   commitSummary?: CommitSummary;
   blobStatus?: 'identical' | 'different' | 'missing';
-  mergeRisk?: MergeRisk;
-  mergeCheck?: MergeCheck;
   zwizzle?: ZwizzleAnalysis;
+  mergeStrategy?: FileMergeStrategy;
 }
 
 export interface MergeResult {

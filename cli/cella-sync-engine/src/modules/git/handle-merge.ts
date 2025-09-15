@@ -49,6 +49,6 @@ async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: File
     console.log(file?.filePath)
     console.log(file?.commitSummary)
     console.log(file?.zwizzle)
-    console.log(file?.mergeRisk)
+    console.log(file?.mergeStrategy)
   }
 }
