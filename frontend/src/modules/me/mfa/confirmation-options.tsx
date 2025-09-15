@@ -8,7 +8,7 @@ import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-export const ConfirmDisableMfaOptions = () => {
+export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { remove: removeDialog } = useDialoger();
@@ -21,12 +21,12 @@ export const ConfirmDisableMfaOptions = () => {
 
   const onPasskyConfirm = async () => {
     const passkeyData = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
-    toggleMfa({ mfaRequired: false, passkeyData });
+    toggleMfa({ mfaRequired, passkeyData });
     removeDialog();
   };
 
   const onTotpConfirm = async ({ code: totpCode }: { code: string }) => {
-    await toggleMfa({ mfaRequired: false, totpCode });
+    await toggleMfa({ mfaRequired, totpCode });
     removeDialog();
   };
 
