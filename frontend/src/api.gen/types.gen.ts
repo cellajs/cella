@@ -79,6 +79,7 @@ export type Attachment = {
   id: string;
   name: string;
   entityType: 'attachment';
+  public: boolean;
   groupId: string | null;
   filename: string;
   contentType: string;
@@ -3061,6 +3062,7 @@ export type GetPresignedUrlData = {
   path?: never;
   query: {
     key: string;
+    isPublic?: boolean | null;
   };
   url: '/system/presigned-url';
 };
@@ -3691,6 +3693,7 @@ export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachment
 export type CreateAttachmentData = {
   body: Array<{
     id?: string;
+    public?: boolean;
     groupId?: string | null;
     filename: string;
     contentType: string;

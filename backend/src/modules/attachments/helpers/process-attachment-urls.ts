@@ -1,7 +1,7 @@
-import type { z } from '@hono/zod-openapi';
 import type { attachmentsTable } from '#/db/schema/attachments';
-import { getSignedUrl } from '#/lib/signed-url';
+import { getSignedUrlFromKey } from '#/lib/signed-url';
 import type { attachmentSchema } from '#/modules/attachments/schema';
+import type { z } from '@hono/zod-openapi';
 
 type AttachmentSelect = typeof attachmentsTable.$inferSelect;
 type Attachment = z.infer<typeof attachmentSchema>;
@@ -13,10 +13,11 @@ export const processAttachmentUrlsBatch = async (attachments: AttachmentSelect[]
 export const processAttachmentUrls = async (attachment: AttachmentSelect): Promise<Attachment> => processAttachment(attachment);
 
 const processAttachment = async ({ convertedKey, thumbnailKey, originalKey, ...attachment }: AttachmentSelect): Promise<Attachment> => {
+  const urlOptions = { isPublic: attachment.public };
   return {
     ...attachment,
-    url: await getSignedUrl(originalKey),
-    thumbnailUrl: thumbnailKey ? await getSignedUrl(thumbnailKey) : null,
-    convertedUrl: convertedKey ? await getSignedUrl(convertedKey) : null,
+    url: await getSignedUrlFromKey(originalKey, urlOptions),
+    thumbnailUrl: thumbnailKey ? await getSignedUrlFromKey(thumbnailKey, urlOptions) : null,
+    convertedUrl: convertedKey ? await getSignedUrlFromKey(convertedKey, urlOptions) : null,
   };
 };

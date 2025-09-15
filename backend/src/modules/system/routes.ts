@@ -1,10 +1,10 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
+import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -32,6 +32,7 @@ const systemRoutes = {
       ...errorResponses,
     },
   }),
+
   sendNewsletter: createCustomRoute({
     operationId: 'sendNewsletter',
     method: 'post',
@@ -63,15 +64,22 @@ const systemRoutes = {
       ...errorResponses,
     },
   }),
+
   getPresignedUrl: createCustomRoute({
     operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
-    guard: [isAuthenticated],
+    guard: async (ctx, next) => {
+      const isPublicParam = ctx.req.query('isPublic');
+      const isPublic = isPublicParam === 'true'; // convert string to boolean
+
+      if (!isPublic) await isAuthenticated(ctx, next);
+      else await isPublicAccess(ctx, next);
+    },
     tags: ['system'],
     summary: 'Get presigned URL',
     description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',
-    request: { query: z.object({ key: z.string() }) },
+    request: { query: preasignedURLQuerySchema },
     responses: {
       200: {
         description: 'Presigned URL',
@@ -80,6 +88,7 @@ const systemRoutes = {
       ...errorResponses,
     },
   }),
+
   paddleWebhook: createCustomRoute({
     operationId: 'paddleWebhook',
     method: 'post',

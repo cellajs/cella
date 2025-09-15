@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,7 +10,7 @@ import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { getSignedUrl } from '#/lib/signed-url';
+import { getSignedUrlFromKey } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -23,6 +18,11 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
+import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -123,9 +123,9 @@ const systemRouteHandlers = app
    * Get presigned URL
    */
   .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
-    const { key } = ctx.req.valid('query');
+    const { key, isPublic } = ctx.req.valid('query');
 
-    const url = await getSignedUrl(key);
+    const url = await getSignedUrlFromKey(key, { isPublic });
 
     return ctx.json(url, 200);
   })

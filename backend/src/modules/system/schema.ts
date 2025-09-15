@@ -1,10 +1,12 @@
+import { userSchema } from '#/modules/users/schema';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { userSchema } from '#/modules/users/schema';
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(50),
 });
+
+export const preasignedURLQuerySchema = z.object({ key: z.string(), isPublic: z.coerce.boolean().optional().default(false) });
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),
