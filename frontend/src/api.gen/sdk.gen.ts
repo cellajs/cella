@@ -1611,7 +1611,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
 
 /**
  * Get presigned URL
- * 🛡️ Requires authentication
+ * 🌐 Public access
  *
  * Generates and returns a presigned URL for uploading files to an S3 bucket.
  *
@@ -1619,6 +1619,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
  *
  * @param {getPresignedUrlData} options
  * @param {string} options.query.key - `string`
+ * @param {boolean | string=} options.query.ispublic - `boolean | string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
