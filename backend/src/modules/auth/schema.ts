@@ -55,6 +55,7 @@ export const totpVerificationBodySchema = z.object({
 export const oauthQuerySchema = z
   .object({
     type: z.enum(['auth', 'connect', 'invite', 'verify']),
+    authFlow: z.enum(['signin', 'signup']).optional(),
     redirect: z.string().optional(),
     connect: z.string().optional(),
     token: z.string().optional(),

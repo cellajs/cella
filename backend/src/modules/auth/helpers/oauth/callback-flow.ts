@@ -31,6 +31,7 @@ import { getValidToken } from '#/utils/validate-token';
  *
  * @returns A redirect response.
  */
+//TODO improve Error type(to make it more user understandable)
 export const handleOAuthFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
@@ -47,43 +48,63 @@ export const handleOAuthFlow = async (
   if (inviteTokenId) return await inviteFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
   if (verifyTokenId) return await verifyFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
 
-  // User already has a verified OAuth account → log them in
-  if (oauthAccount?.verified) {
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
-    return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
+  return await authFlow(ctx, providerUser, provider, oauthAccount);
+};
+
+/**
+ * Handles OAuth authentication for sign-in or sign-up.
+ *
+ * - **Sign-in (`authFlow=signin`)**: uses existing account; triggers verified or unverified flow.
+ * - **Sign-up (`authFlow=signup`)**: creates new user if registration is enabled; errors on conflict.
+ * - **Fallback**: handles existing account or creates new one; errors on multiple users or if registration is disabled.
+ *
+ * @param ctx - The request context.
+ * @param providerUser - The transformed user data from the OAuth provider.
+ * @param provider - The OAuth provider (e.g., 'google', 'github', 'microsoft').
+ * @param oauthAccount - The existing OAuth account, if one exists.
+ * @returns Response after handling OAuth flow.
+ * @throws AppError on conflicts or restricted registration.
+ */
+const authFlow = async (
+  ctx: Context,
+  providerUser: TransformedUser,
+  provider: EnabledOAuthProvider,
+  oauthAccount: OAuthAccountModel | null = null,
+): Promise<Response> => {
+  const authFlowType = ctx.req.query('authFlow');
+
+  // --- Sign In Flow ---
+  if (authFlowType === 'signin') {
+    if (!oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+    return handleExistingOAuthAccount(ctx, oauthAccount, 'signin');
   }
 
-  // User has an unverified OAuth account → prompt email verification
-  if (oauthAccount) {
-    return await handleUnverifiedOAuthAccount(ctx, oauthAccount, 'signin');
+  // --- Sign Up Flow ---
+  if (authFlowType === 'signup') {
+    if (!appConfig.has.registrationEnabled) throw new AppError({ status: 403, type: 'sign_up_restricted', isRedirect: true });
+
+    if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+
+    const user = await handleCreateUser({ newUser: providerUser, membershipInviteTokenId: null, emailVerified: false });
+
+    const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
+    return handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'signup');
   }
 
-  // No linked OAuth account and more than one user with same email
+  // --- Handle when authFlow is not specified ---
+
+  if (oauthAccount) return handleExistingOAuthAccount(ctx, oauthAccount, 'signin');
+
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+
   if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
 
-  // One user match → link to new OAuth account and prompt email verification
-  if (users.length === 1) {
-    const newOAuthAccount = await createOAuthAccount(users[0].id, providerUser.id, provider, providerUser.email);
+  if (!appConfig.has.registrationEnabled) throw new AppError({ status: 403, type: 'sign_up_restricted', isRedirect: true });
 
-    return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'signin');
-  }
+  const newUser = await handleCreateUser({ newUser: providerUser, membershipInviteTokenId: null, emailVerified: false });
+  const newAccount = await createOAuthAccount(newUser.id, providerUser.id, provider, providerUser.email);
 
-  // No user found and registration is disabled
-  if (!appConfig.has.registrationEnabled) {
-    throw new AppError({ status: 403, type: 'sign_up_restricted', isRedirect: true });
-  }
-
-  // No user match → create a new user and OAuth account
-  const user = await handleCreateUser({
-    newUser: providerUser,
-    membershipInviteTokenId: null,
-    emailVerified: false,
-  });
-
-  const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
-
-  return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'signup');
+  return handleUnverifiedOAuthAccount(ctx, newAccount, 'signup');
 };
 
 /**
@@ -91,7 +112,7 @@ export const handleOAuthFlow = async (
  *
  * @param ctx - The request context.
  * @param providerUser - The transformed user data from the OAuth provider.
- * @param provider - The OAuth provider (e.g., 'google', 'github').
+ * @param provider - The OAuth provider (e.g., 'google', 'github', 'microsoft').
  * @param connectUserId - The ID of the user who is attempting to connect an OAuth account.
  * @param oauthAccount - The existing OAuth account, if one exists.
  * @returns A redirect response.
@@ -136,7 +157,7 @@ const connectFlow = async (
  *
  * @param ctx - The request context.
  * @param providerUser - The transformed user data from the OAuth provider.
- * @param provider - The OAuth provider (e.g., 'google', 'github').
+ * @param provider - The OAuth provider (e.g., 'google', 'github', 'microsoft').
  * @param inviteTokenId - The ID of the invitation token.
  * @param oauthAccount - The linked OAuth account, if one exists.
  * @returns A redirect response.
@@ -167,8 +188,6 @@ const inviteFlow = async (
   // No linked OAuth account and email already in use by an existing user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.length) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
-
-  // User already signed up meanwhile
 
   // No user match → create a new user
   const user = await handleCreateUser({
@@ -302,6 +321,25 @@ const createOAuthAccount = async (
     .returning();
 
   return oauthAccount;
+};
+
+/**
+ * Processes an existing OAuth account during sign-in or sign-up.
+ *
+ * - If account is verified, triggers verified account flow
+ * - If account is unverified, triggers unverified account flow
+ *
+ * @param ctx - The request context.
+ * @param account - The OAuth account to handle.
+ * @param flow - The authentication flow type: 'signin' or 'signup'.
+ * @returns A Response after processing the account.
+ */
+const handleExistingOAuthAccount = async (ctx: Context, account: OAuthAccountModel, flow: 'signin' | 'signup') => {
+  if (account.verified) {
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, account.userId));
+    return handleVerifiedOAuthAccount(ctx, user, account);
+  }
+  return handleUnverifiedOAuthAccount(ctx, account, flow);
 };
 
 /**
