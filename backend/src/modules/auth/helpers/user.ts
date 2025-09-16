@@ -30,6 +30,7 @@ interface HandleCreateUserProps {
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
+// TODO add throw redirect on error
 export const handleCreateUser = async ({ newUser, membershipInviteTokenId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
   // If signing up without token while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
   const [inviteToken] = await db

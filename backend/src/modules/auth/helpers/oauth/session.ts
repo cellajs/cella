@@ -13,6 +13,7 @@ export interface OAuthCookiePayload {
   inviteTokenId: string | null;
   connectUserId: string | null;
   verifyTokenId: string | null;
+  authFlow?: 'signin' | 'signup';
   codeVerifier?: string;
 }
 
@@ -31,10 +32,10 @@ export interface OAuthCookiePayload {
  * @returns redirect response
  */
 export const storeOAuthContext = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
-  const { type } = ctx.req.query();
+  const { type, authFlow } = ctx.req.query();
 
   const payload = await getOAuthPayload(ctx);
-  const cookieValue = JSON.stringify({ ...payload, codeVerifier });
+  const cookieValue = JSON.stringify({ ...payload, authFlow, codeVerifier });
 
   await setAuthCookie(ctx, `oauth-${state}`, cookieValue, new TimeSpan(5, 'm'));
 

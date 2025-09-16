@@ -41,7 +41,11 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
       if (token) {
         params.set('token', token);
         params.set('type', 'invite');
-      } else params.set('type', 'auth');
+      } else {
+        params.set('type', 'auth');
+        if (authStep === 'signIn') params.set('authFlow', 'signin');
+        if (authStep === 'signUp') params.set('authFlow', 'signup');
+      }
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);

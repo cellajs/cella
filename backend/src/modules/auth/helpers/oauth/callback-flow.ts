@@ -1,6 +1,3 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -19,6 +16,9 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { getValidToken } from '#/utils/validate-token';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Handles the default OAuth authentication/signup flow.
@@ -48,7 +48,7 @@ export const handleOAuthFlow = async (
   if (inviteTokenId) return await inviteFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
   if (verifyTokenId) return await verifyFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
 
-  return await authFlow(ctx, providerUser, provider, oauthAccount);
+  return await authFlow(ctx, providerUser, provider, cookiePayload.authFlow, oauthAccount);
 };
 
 /**
@@ -69,10 +69,9 @@ const authFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
+  authFlowType: OAuthCookiePayload['authFlow'],
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
-  const authFlowType = ctx.req.query('authFlow');
-
   // --- Sign In Flow ---
   if (authFlowType === 'signin') {
     if (!oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
