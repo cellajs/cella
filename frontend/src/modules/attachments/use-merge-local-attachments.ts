@@ -35,6 +35,8 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         contentType: type,
         convertedContentType: null,
         name: meta.name,
+        public: meta.public,
+        bucketName: meta.bucketName,
         entityType: 'attachment',
         createdAt: new Date().toISOString(),
         createdBy: null,

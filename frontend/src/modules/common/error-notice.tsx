@@ -55,13 +55,13 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
   const defaultMessage = error?.message || i18n.t('error:reported_try_or_contact');
 
   // Title translation
-  const title = i18n.t(`error.${localeKey}`, { ...translationOptions, defaultValue: defaultTitle });
+  const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });
 
   // Message translation with severity check (type-safe)
   const message =
     error && 'severity' in error && error.severity === 'info'
       ? error.message
-      : i18n.t(`error.${localeKey}`, { ...translationOptions, defaultValue: defaultMessage });
+      : i18n.t(localeKey, { ...translationOptions, defaultValue: defaultMessage });
 
   return { title, message };
 };

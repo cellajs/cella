@@ -14,8 +14,8 @@ import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { heyApiPlugin } from '@hey-api/vite-plugin';
 import { openApiConfig } from './openapi-ts.config';
-import { watchBackendOpenApi } from './vite-plugins/openapi-watch-mode';
-import { swallowLocaleHMR } from './vite-plugins/swallow-locale-hmr';
+import { watchBackendOpenApi } from './vite/openapi-watch-mode';
+import { swallowLocaleHMR } from './vite/swallow-locale-hmr';
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 
 const ReactCompilerConfig = {

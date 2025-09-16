@@ -1,6 +1,6 @@
 import type { UserConfig } from '@hey-api/openapi-ts';
 import { defineConfig } from '@hey-api/openapi-ts';
-import { defineConfig as TsdocEnhancer } from './vite-plugins/hey-api-tsdoc-enhancer';
+import { defineConfig as TsdocEnhancer } from './vite/hey-api-tsdoc-enhancer';
 
 export const openApiConfig: UserConfig = {
   input: {
@@ -9,8 +9,8 @@ export const openApiConfig: UserConfig = {
   },
   output: {
     path: './src/api.gen',
-    lint: 'biome',
-    format: 'biome',
+    lint: false,
+    format: false,
   },
   parser: {
     transforms: {

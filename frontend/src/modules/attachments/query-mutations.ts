@@ -62,6 +62,7 @@ export const useAttachmentCreateMutation = () =>
           thumbnailUrl: thumbnailKey ?? null,
           convertedUrl: convertedKey ?? null,
           convertedContentType: attachment.convertedContentType ?? null,
+          public: attachment.public ?? false,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entityType: 'attachment',

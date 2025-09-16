@@ -79,6 +79,8 @@ export type Attachment = {
   id: string;
   name: string;
   entityType: 'attachment';
+  public: boolean;
+  bucketName: string;
   groupId: string | null;
   filename: string;
   contentType: string;
@@ -653,7 +655,7 @@ export type ValidateTokenResponses = {
    */
   200: {
     email: string;
-    role: ('member' | 'admin') | null;
+    role: 'member' | 'admin' | null;
     userId?: string;
     organizationName?: string;
     organizationSlug?: string;
@@ -3061,6 +3063,7 @@ export type GetPresignedUrlData = {
   path?: never;
   query: {
     key: string;
+    isPublic?: boolean | string;
   };
   url: '/system/presigned-url';
 };
@@ -3691,6 +3694,8 @@ export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachment
 export type CreateAttachmentData = {
   body: Array<{
     id?: string;
+    public?: boolean;
+    bucketName: string;
     groupId?: string | null;
     filename: string;
     contentType: string;

@@ -169,7 +169,7 @@ You can integrate file uploads into your BlockNote editor either by using the de
 
 ### Using the Default UppyFilePanel
 
-Our default `UppyFilePanel` is a fully featured upload panel combining Uppy with Transloadit for powerful file handling. It supports multiple file types, image editing, screen capture, webcam, audio, and URL uploads — all configurable based on the type of block you are working with.
+Our default `UppyFilePanel` is a fully featured upload panel combining Uppy with Transloadit for powerful file handling. It supports publicity, multiple file types, image editing, screen capture, webcam, audio, and URL uploads — all configurable based on the type of block you are working with.
 
 To enable and use the default `UppyFilePanel`, you need to:
 
@@ -181,7 +181,7 @@ To enable and use the default `UppyFilePanel`, you need to:
   ```
 
 - **Pass baseFilePanelProps:**
-  Provide necessary props like organizationId and block data as BaseUppyFilePanelProps to the file panel.
+  Provide necessary props like organizationId and block data as BaseUppyFilePanelProps to the file panel. You can also include isPublic; by default, isPublic = false to keep uploads private.
 - **Use CustomFilePanel component:**
   This component conditionally renders the UppyFilePanel when uploads are enabled, or you can override it by passing your own custom filePanel prop.
 
@@ -190,6 +190,7 @@ Example Usage:
 ```tsx
 const baseFilePanelProps: BaseUppyFilePanelProps = {
   organizationId: "org_12345",
+  isPublic: true,
   onComplete: (result) => console.info("Upload complete", result),
   onError: (error) => console.error("Upload error", error)
 };

@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
+import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
@@ -32,6 +32,7 @@ const systemRoutes = {
       ...errorResponses,
     },
   }),
+
   sendNewsletter: createCustomRoute({
     operationId: 'sendNewsletter',
     method: 'post',
@@ -63,15 +64,16 @@ const systemRoutes = {
       ...errorResponses,
     },
   }),
+
   getPresignedUrl: createCustomRoute({
     operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
-    guard: [isAuthenticated],
+    guard: [isPublicAccess],
     tags: ['system'],
     summary: 'Get presigned URL',
     description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',
-    request: { query: z.object({ key: z.string() }) },
+    request: { query: preasignedURLQuerySchema },
     responses: {
       200: {
         description: 'Presigned URL',
@@ -80,6 +82,7 @@ const systemRoutes = {
       ...errorResponses,
     },
   }),
+
   paddleWebhook: createCustomRoute({
     operationId: 'paddleWebhook',
     method: 'post',

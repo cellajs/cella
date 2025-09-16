@@ -8,7 +8,7 @@ const stopVite = () => {
     console.info(' ');
     console.info('✔ Vite stopped');
     console.info(' ');
-  }
+  };
   const logError = (message: string) => console.error(`✖ Failed to stop Vite: ${message}`);
 
   if (isWindows) {
