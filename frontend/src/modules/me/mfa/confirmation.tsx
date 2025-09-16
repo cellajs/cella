@@ -1,14 +1,39 @@
-import { Fingerprint, Smartphone } from 'lucide-react';
+import { Fingerprint, ShieldMinus, Smartphone } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useToggleMfaMutation } from '~/modules/me/query';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-export const ConfirmDisableMfaOptions = () => {
+export const ConfirmDisableMfa = () => {
+  const { t } = useTranslation();
+  const { remove: removeDialog } = useDialoger();
+
+  const [openConfirmation, setOpenConfirmation] = useState(false);
+
+  return (
+    <>
+      {!openConfirmation && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <SubmitButton variant="destructive" onClick={() => setOpenConfirmation(true)} aria-label={'disable'}>
+            {<ShieldMinus size={16} className="mr-2" />}
+            {t(`common:disable`)}
+          </SubmitButton>
+
+          <Button type="reset" variant="secondary" aria-label="Cancel" onClick={() => removeDialog()}>
+            {t('common:cancel')}
+          </Button>
+        </div>
+      )}
+      {openConfirmation && <ConfirmMfaOptions mfaRequired={false} />}
+    </>
+  );
+};
+
+export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { remove: removeDialog } = useDialoger();
@@ -21,12 +46,12 @@ export const ConfirmDisableMfaOptions = () => {
 
   const onPasskyConfirm = async () => {
     const passkeyData = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
-    toggleMfa({ mfaRequired: false, passkeyData });
+    toggleMfa({ mfaRequired, passkeyData });
     removeDialog();
   };
 
   const onTotpConfirm = async ({ code: totpCode }: { code: string }) => {
-    await toggleMfa({ mfaRequired: false, totpCode });
+    await toggleMfa({ mfaRequired, totpCode });
     removeDialog();
   };
 

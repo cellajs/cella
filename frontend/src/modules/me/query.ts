@@ -81,11 +81,12 @@ export const useUpdateSelfMutation = () => {
  * @returns The mutation hook for updating the user MFA requirment state.
  */
 export const useToggleMfaMutation = () => {
-  return useMutation<User, ApiError, ToggleMfaData['body']>({
+  return useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
     mutationKey: meKeys.update.info(),
     mutationFn: (body) => toggleMfa({ body }),
-    onSuccess: (updatedUser) => {
+    onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
       updateOnSuccesses(updatedUser);
+      if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth() });
       toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'success');
     },
     gcTime: 1000 * 10,

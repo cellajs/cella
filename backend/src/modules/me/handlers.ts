@@ -10,7 +10,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { passwordsTable } from '#/db/schema/passwords';
-import { sessionsTable } from '#/db/schema/sessions';
+import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
@@ -25,7 +25,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { verifyTotp } from '#/modules/auth/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
@@ -63,29 +63,22 @@ const meRouteHandlers = app
    * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
-    const user = getContextUser();
-    const { sessionToken } = await getParsedSessionCookie(ctx);
-    const { session } = await validateSession(sessionToken);
-
     const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
+    const user = getContextUser();
 
-    const createdAt = new Date(session.createdAt).getTime();
-    const now = Date.now();
-    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
-
-    // If disabling mfaRequired, ensure user has recently authenticated (within the last hour)
-    if (!mfaRequired && now - createdAt > oneHour && !passkeyData && !totpCode) {
-      throw new AppError({ status: 403, type: 'mfa_disable_verification', severity: 'warn' });
-    }
+    // Determine which MFA strategy user is using
+    const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
     try {
+      // --- Passkey verification ---
       if (passkeyData) {
         const { credentialId, signature, authenticatorData, clientDataJSON } = passkeyData;
-        // Retrieve the passkey challenge from cookie
+
+        // Retrieve the passkey challenge stored in a secure cookie
         const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
         if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
 
-        // Get passkey credentials
+        // Fetch passkey record for this user and credential ID
         const [passkeyRecord] = await db
           .select()
           .from(passkeysTable)
@@ -94,20 +87,26 @@ const meRouteHandlers = app
 
         if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
 
+        // Verify signature against public key and challenge
         const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
+
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
+
+      // --- TOTP verification ---
       if (totpCode) {
-        // Get passkey credentials
+        // Fetch  TOTP secret for this user
         const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
         if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
+        // Verify  provided TOTP code
         const isValid = verifyTotp(totpCode, credentials.secret);
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
     } catch (error) {
       if (error instanceof AppError) throw error;
 
+      // Wrap unexpected errors in AppError for consistent error handling
       throw new AppError({
         status: 500,
         type: 'invalid_credentials',
@@ -117,6 +116,17 @@ const meRouteHandlers = app
     }
 
     const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
+
+    if (mfaRequired) {
+      // Invalidate all existing regular sessions
+      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, user.id), eq(sessionsTable.type, 'regular')));
+
+      // Clear session cookie to enforce fresh login
+      deleteAuthCookie(ctx, 'session');
+
+      // Establish a new session after MFA verification
+      await setUserSession(ctx, user, strategy, 'mfa');
+    }
 
     return ctx.json(updatedUser, 200);
   })
