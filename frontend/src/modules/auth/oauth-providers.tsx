@@ -1,11 +1,12 @@
 import { useSearch } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
+import { useDialoger } from '../common/dialoger/use-dialoger';
 
 export const mapOAuthProviders = [
   { id: 'github', name: 'Github' },
@@ -24,11 +25,28 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { create: createDialog } = useDialoger();
+
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
   const actionText = authStep === 'signIn' ? t('common:sign_in') : authStep === 'signUp' ? t('common:sign_up') : t('common:continue');
+
+  const handleProviderClick = (provider: EnabledOAuthProvider) => {
+    if (authStep === 'signIn') {
+      createDialog(<OAuthSignInOptions provider={provider} />, {
+        id: 'mfa-confirmation',
+        triggerRef,
+        className: 'max-w-xl',
+        title: t('common:auth_by_oauth', { provider }),
+        description: t('common:auth_by_oauth.text', { provider }),
+      });
+      return;
+    }
+    authenticateWithProvider(provider);
+  };
 
   const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
     try {
@@ -67,12 +85,13 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
 
         return (
           <Button
+            ref={triggerRef}
             loading={loadingProvider === provider}
             key={provider}
             type="button"
             variant="outline"
             className="gap-1"
-            onClick={() => authenticateWithProvider(providerData.id)}
+            onClick={() => handleProviderClick(providerData.id)}
           >
             <img
               data-provider={provider}
@@ -92,3 +111,38 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
 };
 
 export default OAuthProviders;
+
+const OAuthSignInOptions = ({ provider }: { provider: EnabledOAuthProvider }) => {
+  const { t } = useTranslation();
+  const { redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+
+  const handleAction = async (provider: EnabledOAuthProvider, action: 'signin' | 'signup') => {
+    try {
+      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
+      const params = new URLSearchParams();
+
+      params.set('redirect', encodeURIComponent(redirectPath));
+      params.set('type', 'auth');
+      params.set('authFlow', action);
+
+      const providerUrl = `${baseUrl}?${params.toString()}`;
+      window.location.assign(providerUrl);
+    } catch (error) {
+      toaster(t('common:url_malformed'), 'error');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Button type="button" onClick={() => handleAction(provider, 'signup')} variant="plain" className="w-full gap-1.5 truncate">
+        <span className="truncate">
+          {t('common:create')} {appConfig.name} {t('common:account').toLowerCase()}
+        </span>
+      </Button>
+      <Button type="button" onClick={() => handleAction(provider, 'signin')} variant="plain" className="w-full gap-1.5 truncate">
+        <span className="truncate">{t('common:sign_in')}</span>
+      </Button>
+    </div>
+  );
+};

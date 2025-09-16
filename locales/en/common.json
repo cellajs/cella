@@ -482,5 +482,8 @@
   "write": "Write",
   "year": "year",
   "your_role": "Your role",
-  "mfa_enabled.text": "While MFA is enabled, unlinking TOTP is disabled and a passkey is required."
+  "mfa_enabled.text": "While MFA is enabled, unlinking TOTP is disabled and a passkey is required.",
+  "auth_by_oauth": "Authenticate with {{provider}}",
+  "auth_by_oauth.text": "If your account is not linked with this provider yet, you can link it in settings. Otherwise, sign in or create a new account using {{provider}}"
+
 }
