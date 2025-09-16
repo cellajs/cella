@@ -655,7 +655,7 @@ export type ValidateTokenResponses = {
    */
   200: {
     email: string;
-    role: ('member' | 'admin') | null;
+    role: 'member' | 'admin' | null;
     userId?: string;
     organizationName?: string;
     organizationSlug?: string;
