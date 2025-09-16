@@ -203,6 +203,7 @@
   "mfa_disabled": "Multifactor authentication disabled.",
   "mfa_disabled.text": "MFA requires at least one passkey and a time-based password.",
   "mfa_enabled": "Multifactor authentication enabled.",
+  "mfa_enabled.text": "While MFA is enabled, unlinking TOTP is disabled and a passkey is required.",
   "mfa_header": "Multifactor authentication",
   "mfa_short": "MFA",
   "mfa_subheader.text": "Confirm your identity with a second authentication method.",
@@ -482,7 +483,8 @@
   "write": "Write",
   "year": "year",
   "your_role": "Your role",
-  "mfa_enabled.text": "While MFA is enabled, unlinking TOTP is disabled and a passkey is required.",
   "require_mfa": "Secure Account with MFA",
-  "require_mfa.text": "Your account does not have MFA enabled. Enabling MFA helps secure your account."
+  "require_mfa.text": "Your account does not have MFA enabled. Enabling MFA helps secure your account.",
+  "enable_resource": "Enable {{resource}}",
+  "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account."
 }
