@@ -890,6 +890,7 @@ export type GithubData = {
   path?: never;
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
+    authFlow?: 'signin' | 'signup';
     redirect?: string;
     connect?: string;
     token?: string;
@@ -937,6 +938,7 @@ export type GoogleData = {
   path?: never;
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
+    authFlow?: 'signin' | 'signup';
     redirect?: string;
     connect?: string;
     token?: string;
@@ -984,6 +986,7 @@ export type MicrosoftData = {
   path?: never;
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
+    authFlow?: 'signin' | 'signup';
     redirect?: string;
     connect?: string;
     token?: string;

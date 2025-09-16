@@ -546,6 +546,7 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  *
  * @param {githubData} options
  * @param {enum} options.query.type - `enum`
+ * @param {enum=} options.query.authflow - `enum` (optional)
  * @param {string=} options.query.redirect - `string` (optional)
  * @param {string=} options.query.connect - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
@@ -569,6 +570,7 @@ export const github = <ThrowOnError extends boolean = true>(options: Options<Git
  *
  * @param {googleData} options
  * @param {enum} options.query.type - `enum`
+ * @param {enum=} options.query.authflow - `enum` (optional)
  * @param {string=} options.query.redirect - `string` (optional)
  * @param {string=} options.query.connect - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
@@ -592,6 +594,7 @@ export const google = <ThrowOnError extends boolean = true>(options: Options<Goo
  *
  * @param {microsoftData} options
  * @param {enum} options.query.type - `enum`
+ * @param {enum=} options.query.authflow - `enum` (optional)
  * @param {string=} options.query.redirect - `string` (optional)
  * @param {string=} options.query.connect - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
