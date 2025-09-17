@@ -147,7 +147,7 @@ enabledOAuthProviders: ['github'] as const,
 
   // Default user flags
   defaultUserFlags: { 
-    finishedOnboarding: false
+    finishedOnboarding: false 
   },
 
   /**

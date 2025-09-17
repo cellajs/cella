@@ -37,6 +37,6 @@ type UserMeta = Stringified<UppyMeta> & {
   type: string;
 };
 
-type UploadedFile<T = Record<string, unknown>> = AssemblyResult & {
+export type UploadedFile<T = Record<string, string>> = AssemblyResult & {
   user_meta: T;
 };
