@@ -498,53 +498,53 @@ importers:
         specifier: 1.131.42
         version: 1.131.42(@tanstack/react-router@1.131.41(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/router-core@1.131.41)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(tiny-invariant@1.3.3)
       '@uppy/audio':
-        specifier: ^2.2.2
-        version: 2.2.2(@uppy/core@4.5.3)
+        specifier: ^3.0.1
+        version: 3.0.1(@uppy/core@5.0.2)
       '@uppy/core':
-        specifier: ^4.5.3
-        version: 4.5.3
+        specifier: ^5.0.2
+        version: 5.0.2
       '@uppy/dashboard':
-        specifier: ^4.4.3
-        version: 4.4.3(@uppy/core@4.5.3)
+        specifier: ^5.0.2
+        version: 5.0.2(@uppy/core@5.0.2)
       '@uppy/drag-drop':
-        specifier: ^4.2.2
-        version: 4.2.2(@uppy/core@4.5.3)
+        specifier: ^5.0.2
+        version: 5.0.2(@uppy/core@5.0.2)
       '@uppy/file-input':
         specifier: ^4.2.2
-        version: 4.2.2(@uppy/core@4.5.3)
+        version: 4.2.2(@uppy/core@5.0.2)
       '@uppy/image-editor':
-        specifier: ^3.4.2
-        version: 3.4.2(@uppy/core@4.5.3)
+        specifier: ^4.0.1
+        version: 4.0.1(@uppy/core@5.0.2)
       '@uppy/progress-bar':
         specifier: ^4.3.2
-        version: 4.3.2(@uppy/core@4.5.3)
+        version: 4.3.2(@uppy/core@5.0.2)
       '@uppy/provider-views':
-        specifier: ^4.5.3
-        version: 4.5.3(@uppy/core@4.5.3)
+        specifier: ^5.0.2
+        version: 5.0.2(@uppy/core@5.0.2)
       '@uppy/react':
-        specifier: ^4.5.2
-        version: 4.5.2(@uppy/core@4.5.3)(@uppy/dashboard@4.4.3(@uppy/core@4.5.3))(@uppy/drag-drop@4.2.2(@uppy/core@4.5.3))(@uppy/file-input@4.2.2(@uppy/core@4.5.3))(@uppy/progress-bar@4.3.2(@uppy/core@4.5.3))(@uppy/screen-capture@4.4.2(@uppy/core@4.5.3))(@uppy/status-bar@4.2.3(@uppy/core@4.5.3))(@uppy/webcam@4.3.2(@uppy/core@4.5.3))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^5.0.3
+        version: 5.0.3(@uppy/core@5.0.2)(@uppy/dashboard@5.0.2(@uppy/core@5.0.2))(@uppy/screen-capture@5.0.1(@uppy/core@5.0.2))(@uppy/webcam@5.0.1(@uppy/core@5.0.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@uppy/remote-sources':
-        specifier: ^2.4.2
-        version: 2.4.2(@uppy/core@4.5.3)
+        specifier: ^3.0.1
+        version: 3.0.1(@uppy/core@5.0.2)
       '@uppy/screen-capture':
-        specifier: ^4.4.2
-        version: 4.4.2(@uppy/core@4.5.3)
+        specifier: ^5.0.1
+        version: 5.0.1(@uppy/core@5.0.2)
       '@uppy/status-bar':
-        specifier: ^4.2.3
-        version: 4.2.3(@uppy/core@4.5.3)
+        specifier: ^5.0.1
+        version: 5.0.1(@uppy/core@5.0.2)
       '@uppy/transloadit':
-        specifier: ^4.3.3
-        version: 4.3.3(@uppy/core@4.5.3)
+        specifier: 5.0.1
+        version: 5.0.1(@uppy/core@5.0.2)
       '@uppy/tus':
-        specifier: ^4.3.2
-        version: 4.3.2(@uppy/core@4.5.3)
+        specifier: ^5.0.1
+        version: 5.0.1(@uppy/core@5.0.2)
       '@uppy/url':
-        specifier: ^4.3.2
-        version: 4.3.2(@uppy/core@4.5.3)
+        specifier: ^5.0.1
+        version: 5.0.1(@uppy/core@5.0.2)
       '@uppy/webcam':
-        specifier: ^4.3.2
-        version: 4.3.2(@uppy/core@4.5.3)
+        specifier: ^5.0.1
+        version: 5.0.1(@uppy/core@5.0.2)
       '@vis.gl/react-google-maps':
         specifier: ^1.5.5
         version: 1.5.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -6561,171 +6561,157 @@ packages:
   '@unocss/transformer-variant-group@0.65.4':
     resolution: {integrity: sha512-ggO6xMGeOeoD5GHS2xXBJrYFuzqyiZ25tM0zHAMJn9QU9GIu1NwWvcXluvLCF/MRIygBJGPpAE98aEICI6ifEA==}
 
-  '@uppy/audio@2.2.2':
-    resolution: {integrity: sha512-63pwCo+JbJyxB1V/YK59cMSMFi8+g9Mfew6awfJFeu4tAK0HHfZtUk5+fUdZJRdCf4eIwBAiwixBL8Q4BOes+Q==}
+  '@uppy/audio@3.0.1':
+    resolution: {integrity: sha512-SVqE7vbYrG6lo+Z/NGDxZPFLcoXG9nRg9pCY/oZ6HAJv3nAft0QR1CaUoNfiMVXZo178AYg/x96SEpp34Xp1BA==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/box@3.3.2':
-    resolution: {integrity: sha512-4hRXPWy48Gpgyegd7lBPMYQTplfFEq1uaHe9ZltHu53LBeXasuGeZuprMbhIQ/7Sl/7UQwiAU0te9uv/ypoXGg==}
+  '@uppy/box@4.0.1':
+    resolution: {integrity: sha512-uFs3BRySCRb4crefJFdRBpkoRi0scefnXbu2xCJ4swH2lWJ+CT7ggoKs9Q9TdJCbekEH7U6BIgMLg8RX3eGCyQ==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/companion-client@4.5.2':
-    resolution: {integrity: sha512-hfUsReHM5COhn+5d7CdZgZaG8BtDvtwj7vjXzg8qmgKI901mYUm/Zh420iOKT7eHiofKVTNoa7oijeGrqUEnyg==}
+  '@uppy/companion-client@5.0.1':
+    resolution: {integrity: sha512-Gy4NCoj5JXQqm6Gr0T6VTeKVhrf8OvnFP1Ddz35dHUsy4GkXuvcc1FMzzKpxKWONtXWz6iQZocnhslgVIZvZwQ==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/components@0.3.2':
-    resolution: {integrity: sha512-RHEV2Ru/SU1J8EoLabUX8GXQ59Q5+/FhSL5vIpicaVj++Neei58WYKj4iNWsigE4xE45jtHfYTV9IlXc+fJXaQ==}
+  '@uppy/components@1.0.2':
+    resolution: {integrity: sha512-IQNABdixuTQv1wLW4ekIqqmHqzZslreutb2Zh+lF/EZaMgO+LRlztMQvCXhgi5NRP+iL7urnssZGvh0SAn76lQ==}
 
-  '@uppy/core@4.5.3':
-    resolution: {integrity: sha512-52VLeBUY/j904h48lpPGykuWikkOOS4Lz/qkmalDiBQfNALb6iB1MOZs079IM3o/uMLYxzZRL80C3sKpkBUYcw==}
+  '@uppy/core@5.0.2':
+    resolution: {integrity: sha512-HY1IIr5Xff6P67MMSlG8JIgK099zFGksTnS8oBdFOGt+42ge7b6RXPH1zMerpteTLGqVfVT1kOrJLoJyTvT+NA==}
 
-  '@uppy/dashboard@4.4.3':
-    resolution: {integrity: sha512-IwgDDTbk9p4OoAJvvvx6sQSemKTIJq9IDSryNVgbbC6NiR9HSyRcu0+WdOZLiR9DOhDg2oYcoNgv7DMlrktI6g==}
+  '@uppy/dashboard@5.0.2':
+    resolution: {integrity: sha512-mW/bl4w1W3AUFpNHup0jJG+rAdavROyvVdLjXIr3az1Q2Hzu2IN0HgCpeVD4YEUhdLB6ToRYY4z91gyoRSZdQg==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/drag-drop@4.2.2':
-    resolution: {integrity: sha512-SlVl+lHC8TvCKW4B9L4pdb0n8mEVgACHjKXGWcy7EUsTrRphv3ugmkbIFL57XpmFR+AFMuPblOsKq/9nkPkHOQ==}
+  '@uppy/drag-drop@5.0.2':
+    resolution: {integrity: sha512-ZuupN+zOVDlAKMpEsTKxPilzxb/RlQyKx95WPlxgBraGO6zkKHt4B/KlGfxQ6d6Fi6gAvwKzZzxPZXerbw0rNA==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/dropbox@4.3.2':
-    resolution: {integrity: sha512-Kj/QX8KFomlbf5mUpoCwxZ8dGH9XiN3RMKqT6zJgUk2bW7JfV2eMV6F9XvrVhz1TCtHZNl81Cv5rhu9io3UQ0w==}
+  '@uppy/dropbox@5.0.1':
+    resolution: {integrity: sha512-TDF+K5APDorO67tr3u/y8rQxHIM66cIXy+1Uk4PfVPlFf5YSVdwYsKn9DEqDQZWsm3YmMdFI3iVJKOGsUlvD9Q==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/facebook@4.3.2':
-    resolution: {integrity: sha512-fHwFN8ZlRuNyxmuL7zwMLIegU+ARxegIlM3yJdY7RbRWgod/lUi5ouzTHjFgvLaFbuDtYWWRbZgF3GxCsXbmhA==}
+  '@uppy/facebook@5.0.1':
+    resolution: {integrity: sha512-8wToHgxjoRBA4wf4PVyvzyS4PBbotdn4Gv5QjSAiLZllmQsZPHXUhdHYSlc5JANJHE6cJgNar4/1xy0goAmgpg==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
   '@uppy/file-input@4.2.2':
     resolution: {integrity: sha512-tQklK5C1slZWQlMQYQPBJuhfs0e5w1sRb0VwYMt8P297rB1BUcyOjkVH79DAYHkkgXo9aQKUiZSuVoN89tlLjQ==}
     peerDependencies:
       '@uppy/core': ^4.5.2
 
-  '@uppy/google-drive@4.4.2':
-    resolution: {integrity: sha512-hIxnWZ7WMW1jrRecL+VnMVt9TwY+V3uEpy7KmNxASraQFwS2oYgYUfO5R8MVcmL654wymQgEsRY7Kzp9NQvZGw==}
+  '@uppy/google-drive@5.0.1':
+    resolution: {integrity: sha512-UkX322Z6V8P2/F+NH+v2APzEAtJJNH5bMBgTzk4v2oyAMFTL1wxkOm+/K8HGhwEOLiU3ta5JvXwuvVlC2uU49A==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/image-editor@3.4.2':
-    resolution: {integrity: sha512-cQD/oDa/0xCuZAtdi4P2uLIxgrG/YR24KgKAxQYPzQHQtNB8KzCdl3TPV5ZWF9kjT4mSlUsoB4RfPQl34GbFhA==}
+  '@uppy/image-editor@4.0.1':
+    resolution: {integrity: sha512-FcC433I584CuuqCQH0kJHKl/qDQ1SCSUqAuZ34sKGoN1RPKsCRGeZrFjWQEtKd+C5q7cAz6Icp6AaVVP8ZKh2w==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/informer@4.3.2':
-    resolution: {integrity: sha512-7A9X8BfxR/GPtG0MGbQlmj1+G1o9fqeF3qtRh37ZvmZpapnEGtbstQ6Ao2vFm0uxYxOolLOMzFs/xCD27NKAvg==}
+  '@uppy/instagram@5.0.1':
+    resolution: {integrity: sha512-Y3UD9e5UUgQ/EOimpAbwKvPYGwGBDyeaxIZyTIRrd6lODfCsVr4qOjWxH/2yJ/Eo+LSrh4IcWI71sb2T6LN0iA==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/instagram@4.3.2':
-    resolution: {integrity: sha512-LHGroKn8uRcRs94v6DM8SPXIMWubZb/aZr5B4FP7TvTzf3vnGaKE63oOen1yAoCEYbsJfSdo2p974qHbSdPEbw==}
+  '@uppy/onedrive@5.0.1':
+    resolution: {integrity: sha512-jvTy7CE+M2SMRDH/b8RYB4vQb+BMloIdC1vEw3tNh9UyKpPWJjKCwSUk2sqCu1cT9Qv5bNgvU0/GOKxsZkv2tA==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
-
-  '@uppy/onedrive@4.3.2':
-    resolution: {integrity: sha512-dfJAl9qsoQsL1LdIrDPKEKmAj82VNA63BInsJ80nF8bx3tf67AvlMz4O1I9fDW2zctfgOiFlGz47kamz01eSPQ==}
-    peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
   '@uppy/progress-bar@4.3.2':
     resolution: {integrity: sha512-5BOhq49xPpBTlEVsEIRLkV+Hgb0qTuey8XKyrmrSetcgtolKLwtlDjrOWmUcxGYI3bkMbdeJulF9aiR8sSqQ6A==}
     peerDependencies:
       '@uppy/core': ^4.5.2
 
-  '@uppy/provider-views@4.5.3':
-    resolution: {integrity: sha512-zExJSlkqRPl65KKG+SMTdP0OCawYMpo/FaKE8xjqHhx/rkACe6QNExCahpEGGjLo7Rr2j7FooAuA3UWmYiyWCg==}
+  '@uppy/provider-views@5.0.2':
+    resolution: {integrity: sha512-RaO/Gfq8kLA95s9n2kxAthiBcmLXocR+YiOhQ8H8DG1rA4aM2GllK7+b4KL1OLlg2tMHohs++qzaInCtb7br9g==}
     peerDependencies:
-      '@uppy/core': ^4.5.3
+      '@uppy/core': ^5.0.2
 
-  '@uppy/react@4.5.2':
-    resolution: {integrity: sha512-M2RTC8APz0pbzvAwyBIQEw9pwxlR9gFXII4dU7yUJ/Jb0iLkGuvYrltb9ai4GyPsxOGfdWiFX8e5s8f6Z+Ao1g==}
+  '@uppy/react@5.0.3':
+    resolution: {integrity: sha512-I7/CQyp2e9HcBzcvVmZJU9Q6t8BrDvohnR7pa1RxVFTvgryPNBT0mg3Vo7OqHjRq9uQ6J9N+luKo9KuK3lBG9A==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
-      '@uppy/dashboard': ^4.4.2
-      '@uppy/drag-drop': ^4.2.2
-      '@uppy/file-input': ^4.2.2
-      '@uppy/progress-bar': ^4.3.2
-      '@uppy/screen-capture': ^4.4.2
-      '@uppy/status-bar': ^4.2.2
-      '@uppy/webcam': ^4.3.2
+      '@uppy/core': ^5.0.2
+      '@uppy/dashboard': ^5.0.2
+      '@uppy/screen-capture': ^5.0.1
+      '@uppy/webcam': ^5.0.1
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
       '@uppy/dashboard':
         optional: true
-      '@uppy/drag-drop':
-        optional: true
-      '@uppy/file-input':
-        optional: true
-      '@uppy/progress-bar':
-        optional: true
       '@uppy/screen-capture':
-        optional: true
-      '@uppy/status-bar':
         optional: true
       '@uppy/webcam':
         optional: true
 
-  '@uppy/remote-sources@2.4.2':
-    resolution: {integrity: sha512-b8VVlriQWi/xU/LBuoLaQ3y2yMMLqXXJQpkG43tzBQG2R/sYz2qOm593BX9R4HjPQ891Vt4INjzfDTFziaA/4w==}
+  '@uppy/remote-sources@3.0.1':
+    resolution: {integrity: sha512-t9eBx7bRLVvb/lLmXhvDCr9AHZ0LicatdVEePjlRXtTfXWVX9pQ6Qh3j+Cnjg/Po0BDvfO1X5ZYETgwYSzRKeA==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/screen-capture@4.4.2':
-    resolution: {integrity: sha512-z2+Y34V8hs1lCeMB+culySW9WMBIL/19Z8OEkc0u6aHj3i6iCu0lwelPEaiUMdKHOXMyQTgn6Ubv+C3/OZlOpw==}
+  '@uppy/screen-capture@5.0.1':
+    resolution: {integrity: sha512-GBAOhku+6XILdgCW3KcWpvXFlX0o8yAZhe8mhN8AFEbQBUtxLZi63fcqfBRjKE0oHrV+4vuND1M5d1/P5UMYXg==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/status-bar@4.2.3':
-    resolution: {integrity: sha512-0AtKdvNm3HHobuE4N0V8SrC3uWB9MQnjqMEL/gachW/1mi7iZ22V4veHd6Wub/tCBQAQbEklvz7d0hxcz/Fh9g==}
+  '@uppy/status-bar@5.0.1':
+    resolution: {integrity: sha512-NMc7sP9KG2WFtvQyXw4ZqGWpuDcRB6t6gQdv/mcxcb0Umy3jg85cKyAelAywmKnVuW3c63IqTq5b7V2lnWRv8w==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/store-default@4.3.2':
-    resolution: {integrity: sha512-dnY9R2o8fwmO1bF89D0b5jijD7DGED2qVST5hI/j18JreLWzLKH7u6HuNmOvzok8msrQ/qWzQd5Gx4LDQKhBbw==}
+  '@uppy/store-default@5.0.0':
+    resolution: {integrity: sha512-hQtCSQ1yGiaval/wVYUWquYGDJ+bpQ7e4FhUUAsRQz1x1K+o7NBtjfp63O9I4Ks1WRoKunpkarZ+as09l02cPw==}
 
-  '@uppy/thumbnail-generator@4.2.3':
-    resolution: {integrity: sha512-qOfJzlHhaD8DmOH/50DMLNN5/E2qCYCJnikFgTZZbuPx6sUOtPGRrHBE8q/ELxVMB5gD3zGi/Fh2SwKGrGoxGA==}
+  '@uppy/thumbnail-generator@5.0.1':
+    resolution: {integrity: sha512-kmRpZKGS+xCdXU66weLHZ30F8UYEW3U5amtZE8l/ZoDJf/mVevae0RBE8qQsEPXjs6IFH3MCgb4fZ/s/itc3QA==}
     peerDependencies:
-      '@uppy/core': ^4.5.3
+      '@uppy/core': ^5.0.2
 
-  '@uppy/transloadit@4.3.3':
-    resolution: {integrity: sha512-ydaMCEEsUuMbGysJBwyvHF8I0SDXcHqnIxx3eGFBTMh5MXN63OUSC6tmChcAORiSUrsWR0E2guDwWBpTCjn78A==}
+  '@uppy/transloadit@5.0.1':
+    resolution: {integrity: sha512-5PkAtgmLri35wTTP/WMLGXMRFz64C46OfqjLH70aCu8icI0dDBqmvON39iUi1si480ggdUq7mlYg4lkeRwrklQ==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/tus@4.3.2':
-    resolution: {integrity: sha512-W9pXC/Xew6mM+XKbGafJI9flO3oQTFHxpd281SIy+hDFVTniAqW4VoNhcT15rDqlofQB+PufCXG1EJlX9pCIAw==}
+  '@uppy/tus@5.0.1':
+    resolution: {integrity: sha512-4BQA2UFjznXrJhmjsgT/m8WDThoSX2vxKZJH/aF1Xj4GmB46+a5kas6ttCsMDcPq918/sdRJsqCMGj1r4oXKLQ==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/unsplash@4.4.2':
-    resolution: {integrity: sha512-1hO7ND/ROrRgZ8urCX38Q/o5rYs2uFGS7djxlNj/cz9xvRdkBagAzj3qp5FUsnPnJzJrRpifXcelvn3tICQjZg==}
+  '@uppy/unsplash@5.0.1':
+    resolution: {integrity: sha512-Iiy8904TQbM9FN0Sx1B8mXAP0iTS7464MxoJUJuMaHNQzPs6IlOs5In/6T0VX36OJ8hFmOG2hM3Q3xB2fGU0yQ==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
-  '@uppy/url@4.3.2':
-    resolution: {integrity: sha512-SREfvV9IJxOg2MuzSVQBr2e9LTle8N0dsyUpsHddaSbbPku9KhkoilOiKuDMhPmvw9pnkYWBZhbw9+4UWnrQtQ==}
+  '@uppy/url@5.0.1':
+    resolution: {integrity: sha512-hc7Sv/3p1aZIS0SebA10HO5T9022MWjr14NkNpdb1EfoeUzjjmr2xwQpnQNU1mo3UJFP4ULYWTlF3SH4cE8Deg==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
 
   '@uppy/utils@6.2.2':
     resolution: {integrity: sha512-9mYJtbcngv2HOJIECkyfmdXTI5dW/ObCyvWP1Iti3E5bKtsa4sMmbx5Yh/tGCj8k/lBNhfvWyZuYnvnjmzNLSQ==}
 
-  '@uppy/webcam@4.3.2':
-    resolution: {integrity: sha512-x0qhTWb7AjkfS9Q12J2xhnTdccZ6sMuBh14LpXtXjaFe4Q1Uf191YmFwT7SCKn7lcasZYw3Tug0G5yQkqvg9uQ==}
-    peerDependencies:
-      '@uppy/core': ^4.5.2
+  '@uppy/utils@7.0.2':
+    resolution: {integrity: sha512-2fdtgwNTkLgh7yMmHN3ZztHaP/o/iXDSt5VAbvGG4tFFkRxaaDmSKAljglEle1+m1OamKQLjm8fIxfOqu/szng==}
 
-  '@uppy/zoom@3.3.2':
-    resolution: {integrity: sha512-e/yP3itmWh2U/A8SBLymVngDSIzmbq08eX0QzBrI5wIA1r38lD5tGlO2V9D70ujY8hNX7HQUqF+nK4OEgdUxJA==}
+  '@uppy/webcam@5.0.1':
+    resolution: {integrity: sha512-zjt3g5E6g5NbufEtYBnK6IS5uBABQnuVixAiwfTYe9of1GkZJpOAe6qeg+zoRad0K/twt2YGqkGyhwzVL9ipuQ==}
     peerDependencies:
-      '@uppy/core': ^4.5.2
+      '@uppy/core': ^5.0.2
+
+  '@uppy/zoom@4.0.1':
+    resolution: {integrity: sha512-O6zseYdZ4KP29n2o6htXth3P7tChyoNVaH43yeT1l9o3+ODTqcUJRdcYxi4vqs6jBUiCGAFhCVk0mETf0VkaLg==}
+    peerDependencies:
+      '@uppy/core': ^5.0.2
 
   '@vis.gl/react-google-maps@1.5.5':
     resolution: {integrity: sha512-LgHtK1AtE2/BN4dPoK05oWu0jWmeDdyX0Ffqi+mZc+M4apaHn2sUxxKXAxhPF90O9vcsiou/ntm6/XBWX+gpqw==}
@@ -9081,8 +9067,8 @@ packages:
     resolution: {integrity: sha512-5KoIu2Ngpyek75jXodFvnafB6DJgr3u8uuK0LEZJjrU19DrMD3EVERaR8sjz8CCGgpZvxPl9SuE1GMVPFHx1mw==}
     engines: {node: '>= 0.4'}
 
-  is-network-error@1.1.0:
-    resolution: {integrity: sha512-tUdRRAnhT+OtCZR/LxZelH/C7QtjtFrTu5tXCA8pl55eTUElUHT+GPYV8MBMBvea/j+NxQqVt3LbWMRir7Gx9g==}
+  is-network-error@1.2.0:
+    resolution: {integrity: sha512-32jdpRpJo8SeL7zOuBJbMLz/VTw9mDpTvcKzzR8DkXWsJbbE60gdiX8YOd0UAV6b8Skt+CMytzfgVVIRFidn0Q==}
     engines: {node: '>=16'}
 
   is-number-object@1.1.1:
@@ -19558,229 +19544,217 @@ snapshots:
     dependencies:
       '@unocss/core': 0.65.4
 
-  '@uppy/audio@2.2.2(@uppy/core@4.5.3)':
+  '@uppy/audio@3.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
 
-  '@uppy/box@3.3.2(@uppy/core@4.5.3)':
+  '@uppy/box@4.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
 
-  '@uppy/companion-client@4.5.2(@uppy/core@4.5.3)':
+  '@uppy/companion-client@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       namespace-emitter: 2.0.1
       p-retry: 6.2.1
 
-  '@uppy/components@0.3.2':
+  '@uppy/components@1.0.2':
     dependencies:
-      '@uppy/audio': 2.2.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/image-editor': 3.4.2(@uppy/core@4.5.3)
-      '@uppy/remote-sources': 2.4.2(@uppy/core@4.5.3)
-      '@uppy/screen-capture': 4.4.2(@uppy/core@4.5.3)
-      '@uppy/webcam': 4.3.2(@uppy/core@4.5.3)
+      '@uppy/audio': 3.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/image-editor': 4.0.1(@uppy/core@5.0.2)
+      '@uppy/remote-sources': 3.0.1(@uppy/core@5.0.2)
+      '@uppy/screen-capture': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/webcam': 5.0.1(@uppy/core@5.0.2)
       clsx: 2.1.1
       dequal: 2.0.3
       preact: 10.27.2
       pretty-bytes: 6.1.1
 
-  '@uppy/core@4.5.3':
+  '@uppy/core@5.0.2':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
-      '@uppy/store-default': 4.3.2
-      '@uppy/utils': 6.2.2
+      '@uppy/store-default': 5.0.0
+      '@uppy/utils': 7.0.2
       lodash: 4.17.21
       mime-match: 1.0.2
       namespace-emitter: 2.0.1
       nanoid: 5.1.5
       preact: 10.27.2
 
-  '@uppy/dashboard@4.4.3(@uppy/core@4.5.3)':
+  '@uppy/dashboard@5.0.2(@uppy/core@5.0.2)':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
-      '@uppy/core': 4.5.3
-      '@uppy/informer': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/status-bar': 4.2.3(@uppy/core@4.5.3)
-      '@uppy/thumbnail-generator': 4.2.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/thumbnail-generator': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
       classnames: 2.5.1
       lodash: 4.17.21
       nanoid: 5.1.5
       preact: 10.27.2
       shallow-equal: 3.1.0
 
-  '@uppy/drag-drop@4.2.2(@uppy/core@4.5.3)':
+  '@uppy/drag-drop@5.0.2(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/core': 4.5.3
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
+      preact: 10.27.2
+
+  '@uppy/dropbox@5.0.1(@uppy/core@5.0.2)':
+    dependencies:
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
+      preact: 10.27.2
+
+  '@uppy/facebook@5.0.1(@uppy/core@5.0.2)':
+    dependencies:
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
+      preact: 10.27.2
+
+  '@uppy/file-input@4.2.2(@uppy/core@5.0.2)':
+    dependencies:
+      '@uppy/core': 5.0.2
       '@uppy/utils': 6.2.2
       preact: 10.27.2
 
-  '@uppy/dropbox@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/google-drive@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
 
-  '@uppy/facebook@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/image-editor@4.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
-      preact: 10.27.2
-
-  '@uppy/file-input@4.2.2(@uppy/core@4.5.3)':
-    dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
-      preact: 10.27.2
-
-  '@uppy/google-drive@4.4.2(@uppy/core@4.5.3)':
-    dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
-      preact: 10.27.2
-
-  '@uppy/image-editor@3.4.2(@uppy/core@4.5.3)':
-    dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       cropperjs: 1.6.2
       preact: 10.27.2
 
-  '@uppy/informer@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/instagram@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/core': 4.5.3
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
+      preact: 10.27.2
+
+  '@uppy/onedrive@5.0.1(@uppy/core@5.0.2)':
+    dependencies:
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
+      preact: 10.27.2
+
+  '@uppy/progress-bar@4.3.2(@uppy/core@5.0.2)':
+    dependencies:
+      '@uppy/core': 5.0.2
       '@uppy/utils': 6.2.2
       preact: 10.27.2
 
-  '@uppy/instagram@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/provider-views@5.0.2(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
-      preact: 10.27.2
-
-  '@uppy/onedrive@4.3.2(@uppy/core@4.5.3)':
-    dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
-      preact: 10.27.2
-
-  '@uppy/progress-bar@4.3.2(@uppy/core@4.5.3)':
-    dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
-      preact: 10.27.2
-
-  '@uppy/provider-views@4.5.3(@uppy/core@4.5.3)':
-    dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       classnames: 2.5.1
       nanoid: 5.1.5
       p-queue: 8.1.1
       preact: 10.27.2
 
-  '@uppy/react@4.5.2(@uppy/core@4.5.3)(@uppy/dashboard@4.4.3(@uppy/core@4.5.3))(@uppy/drag-drop@4.2.2(@uppy/core@4.5.3))(@uppy/file-input@4.2.2(@uppy/core@4.5.3))(@uppy/progress-bar@4.3.2(@uppy/core@4.5.3))(@uppy/screen-capture@4.4.2(@uppy/core@4.5.3))(@uppy/status-bar@4.2.3(@uppy/core@4.5.3))(@uppy/webcam@4.3.2(@uppy/core@4.5.3))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@uppy/react@5.0.3(@uppy/core@5.0.2)(@uppy/dashboard@5.0.2(@uppy/core@5.0.2))(@uppy/screen-capture@5.0.1(@uppy/core@5.0.2))(@uppy/webcam@5.0.1(@uppy/core@5.0.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
-      '@uppy/components': 0.3.2
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/components': 1.0.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       use-sync-external-store: 1.5.0(react@19.1.1)
     optionalDependencies:
-      '@uppy/dashboard': 4.4.3(@uppy/core@4.5.3)
-      '@uppy/drag-drop': 4.2.2(@uppy/core@4.5.3)
-      '@uppy/file-input': 4.2.2(@uppy/core@4.5.3)
-      '@uppy/progress-bar': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/screen-capture': 4.4.2(@uppy/core@4.5.3)
-      '@uppy/status-bar': 4.2.3(@uppy/core@4.5.3)
-      '@uppy/webcam': 4.3.2(@uppy/core@4.5.3)
+      '@uppy/dashboard': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/screen-capture': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/webcam': 5.0.1(@uppy/core@5.0.2)
 
-  '@uppy/remote-sources@2.4.2(@uppy/core@4.5.3)':
+  '@uppy/remote-sources@3.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/box': 3.3.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/dashboard': 4.4.3(@uppy/core@4.5.3)
-      '@uppy/dropbox': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/facebook': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/google-drive': 4.4.2(@uppy/core@4.5.3)
-      '@uppy/instagram': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/onedrive': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/unsplash': 4.4.2(@uppy/core@4.5.3)
-      '@uppy/url': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/zoom': 3.3.2(@uppy/core@4.5.3)
+      '@uppy/box': 4.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/dashboard': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/dropbox': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/facebook': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/google-drive': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/instagram': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/onedrive': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/unsplash': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/url': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/zoom': 4.0.1(@uppy/core@5.0.2)
 
-  '@uppy/screen-capture@4.4.2(@uppy/core@4.5.3)':
+  '@uppy/screen-capture@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
 
-  '@uppy/status-bar@4.2.3(@uppy/core@4.5.3)':
+  '@uppy/status-bar@5.0.1(@uppy/core@5.0.2)':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       classnames: 2.5.1
       preact: 10.27.2
 
-  '@uppy/store-default@4.3.2': {}
+  '@uppy/store-default@5.0.0': {}
 
-  '@uppy/thumbnail-generator@4.2.3(@uppy/core@4.5.3)':
+  '@uppy/thumbnail-generator@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       exifr: 7.1.3
 
-  '@uppy/transloadit@4.3.3(@uppy/core@4.5.3)':
+  '@uppy/transloadit@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/tus': 4.3.2(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/tus': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
       component-emitter: 2.0.0
 
-  '@uppy/tus@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/tus@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       tus-js-client: 4.3.1
 
-  '@uppy/unsplash@4.4.2(@uppy/core@4.5.3)':
+  '@uppy/unsplash@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
 
-  '@uppy/url@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/url@5.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       nanoid: 5.1.5
       preact: 10.27.2
 
@@ -19789,19 +19763,24 @@ snapshots:
       lodash: 4.17.21
       preact: 10.27.2
 
-  '@uppy/webcam@4.3.2(@uppy/core@4.5.3)':
+  '@uppy/utils@7.0.2':
     dependencies:
-      '@uppy/core': 4.5.3
-      '@uppy/utils': 6.2.2
+      lodash: 4.17.21
+      preact: 10.27.2
+
+  '@uppy/webcam@5.0.1(@uppy/core@5.0.2)':
+    dependencies:
+      '@uppy/core': 5.0.2
+      '@uppy/utils': 7.0.2
       is-mobile: 4.0.0
       preact: 10.27.2
 
-  '@uppy/zoom@3.3.2(@uppy/core@4.5.3)':
+  '@uppy/zoom@4.0.1(@uppy/core@5.0.2)':
     dependencies:
-      '@uppy/companion-client': 4.5.2(@uppy/core@4.5.3)
-      '@uppy/core': 4.5.3
-      '@uppy/provider-views': 4.5.3(@uppy/core@4.5.3)
-      '@uppy/utils': 6.2.2
+      '@uppy/companion-client': 5.0.1(@uppy/core@5.0.2)
+      '@uppy/core': 5.0.2
+      '@uppy/provider-views': 5.0.2(@uppy/core@5.0.2)
+      '@uppy/utils': 7.0.2
       preact: 10.27.2
 
   '@vis.gl/react-google-maps@1.5.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
@@ -22667,7 +22646,7 @@ snapshots:
 
   is-negative-zero@2.0.3: {}
 
-  is-network-error@1.1.0: {}
+  is-network-error@1.2.0: {}
 
   is-number-object@1.1.1:
     dependencies:
@@ -24097,7 +24076,7 @@ snapshots:
   p-retry@6.2.1:
     dependencies:
       '@types/retry': 0.12.2
-      is-network-error: 1.1.0
+      is-network-error: 1.2.0
       retry: 0.13.1
 
   p-timeout@6.1.4: {}
