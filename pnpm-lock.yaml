@@ -383,9 +383,6 @@ importers:
       '@github/mini-throttle':
         specifier: ^2.1.1
         version: 2.1.1
-      '@hey-api/vite-plugin':
-        specifier: ^0.2.0
-        version: 0.2.0(@hey-api/openapi-ts@0.83.1(magicast@0.3.5)(typescript@5.9.2))
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.62.0(react@19.1.1))
@@ -3164,11 +3161,6 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: '>=5.5.3'
-
-  '@hey-api/vite-plugin@0.2.0':
-    resolution: {integrity: sha512-3QsCX2jOfuCrMyBgDTJ4rAjoIejo/Lp3FKceDJqlZnoswsezRzuEPzIHfLjLxz2T6/8ZQOysCAZ/qiI0926czg==}
-    peerDependencies:
-      '@hey-api/openapi-ts': 0.64.13
 
   '@hocuspocus/common@2.15.3':
     resolution: {integrity: sha512-Rzh1HF0a2o/tf90A3w2XNdXd9Ym3aQzMDfD3lAUONCX9B9QOdqdyiORrj6M25QEaJrEIbXFy8LtAFcL0wRdWzA==}
@@ -15781,10 +15773,6 @@ snapshots:
       typescript: 5.9.2
     transitivePeerDependencies:
       - magicast
-
-  '@hey-api/vite-plugin@0.2.0(@hey-api/openapi-ts@0.83.1(magicast@0.3.5)(typescript@5.9.2))':
-    dependencies:
-      '@hey-api/openapi-ts': 0.83.1(magicast@0.3.5)(typescript@5.9.2)
 
   '@hocuspocus/common@2.15.3':
     dependencies:

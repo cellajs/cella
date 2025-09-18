@@ -7,7 +7,7 @@
   },
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
-    "dev": "wait-on http://localhost:4000/ping && pnpm concurrently \"pnpm dev:run\" \"pnpm storybook\"",
+    "dev": "wait-on http://localhost:4000/ping && pnpm generate-client && pnpm concurrently \"pnpm dev:run\" \"pnpm storybook\"",
     "dev:run": "cross-env NODE_ENV=development vite --mode development",
     "tunnel": "wait-on http://localhost:4000/ping && cross-env NODE_ENV=tunnel vite --mode tunnel",
     "start": "cross-env NODE_ENV=production pnpm preview",
@@ -38,7 +38,6 @@
     "@floating-ui/dom": "^1.7.4",
     "@floating-ui/react": "^0.27.16",
     "@github/mini-throttle": "^2.1.1",
-    "@hey-api/vite-plugin": "^0.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@oslojs/encoding": "^1.1.0",
     "@paddle/paddle-js": "^1.4.2",
