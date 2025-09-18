@@ -12,8 +12,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
-import { heyApiPlugin } from '@hey-api/vite-plugin';
-import { openApiConfig } from './openapi-ts.config';
 import { watchBackendOpenApi } from './vite/openapi-watch-mode';
 import { swallowLocaleHMR } from './vite/swallow-locale-hmr';
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
@@ -172,7 +170,6 @@ if (appConfig.mode === 'development' && !isStorybook)
 i18nextHMRPlugin({ localesDir: '../locales' }),
 swallowLocaleHMR(),
     watchBackendOpenApi(),
-    heyApiPlugin({ config: openApiConfig }),
     reactScan({
       enable: false,
       scanOptions: {

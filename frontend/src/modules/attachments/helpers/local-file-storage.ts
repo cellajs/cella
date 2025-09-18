@@ -59,8 +59,10 @@ export const LocalFileStorage = {
       if (!storageKeys.length) return undefined;
       for (const groupKey of storageKeys) {
         const group = await get<StoredOfflineData>(groupKey);
-        if (!group) return undefined;
-        return group.files[fileId];
+        if (!group || !('files' in group)) continue;
+
+        const file = group.files[fileId];
+        if (file) return file;
       }
       return undefined;
     } catch (error) {

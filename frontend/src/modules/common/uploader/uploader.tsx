@@ -6,12 +6,12 @@ import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
 
-import '@uppy/audio/dist/style.css';
-import '@uppy/dashboard/dist/style.min.css';
-import '@uppy/image-editor/dist/style.css';
-import '@uppy/screen-capture/dist/style.css';
-import '@uppy/url/dist/style.css';
-import '@uppy/webcam/dist/style.css';
+import '@uppy/audio/css/style.css';
+import '@uppy/dashboard/css/style.min.css';
+import '@uppy/image-editor/css/style.css';
+import '@uppy/screen-capture/css/style.css';
+import '@uppy/url/css/style.css';
+import '@uppy/webcam/css/style.css';
 import '~/modules/common/uploader/uppy.css';
 
 export const Uploader = () => {

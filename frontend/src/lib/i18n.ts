@@ -13,7 +13,7 @@ import locales from '~/lib/i18n-locales';
 const initOptions: InitOptions = {
   resources: locales, // Preload default ('en') translations
   debug: env.VITE_DEBUG_I18N,
-  ns: ['common', 'app', 'about', 'error'],
+  ns: ['common', 'app', 'about', 'error', 'appError'],
   partialBundledLanguages: true,
   supportedLngs: appConfig.languages,
   load: 'languageOnly',

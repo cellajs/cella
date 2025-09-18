@@ -238,10 +238,34 @@ const systemRouteHandlers = app
         },
       ];
 
+    // Regex to match src="..." or src='...'
+    // Captures quote type in g 1 and actual URL in g 2
+    const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
+
+    const srcs = [...content.matchAll(srcRegex)].map(([_, src]) => src);
+
+    // Map to hold original -> signed URL replacements
+    const replacements = new Map<string, string>();
+
+    // For each unique src, fetch its signed URL
+    await Promise.all(
+      srcs.map(async (src) => {
+        try {
+          const signed = await getSignedUrlFromKey(src, { isPublic: true, bucketName: appConfig.s3PublicBucket });
+          replacements.set(src, signed);
+        } catch (e) {
+          replacements.set(src, src);
+        }
+      }),
+    );
+
+    // Replace all src attributes in content
+    const newContent = content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
+
     type Recipient = (typeof recipients)[number];
 
     // Prepare emails and send them
-    const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
+    const staticProps = { content: newContent, subject, testEmail: toSelf, lng: user.language };
     await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });

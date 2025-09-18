@@ -148,9 +148,7 @@ export const useDeletePasskeyMutation = () => {
     mutationKey: meKeys.delete.passkey(),
     mutationFn: (id: string) => deletePasskey({ path: { id } }),
     onSuccess: (_data, id) => {
-      console.log('Passkey removed successfully', id);
       queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
-        console.log('Old data before passkey removal:', oldData);
         if (!oldData) return oldData;
         return {
           ...oldData,

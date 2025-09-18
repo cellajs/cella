@@ -23,7 +23,6 @@ export interface CustomFormatToolBarConfig {
   blockNestingSelect?: boolean;
   fileCaption?: boolean;
   openPreview?: boolean;
-  replaceFile?: boolean;
   createLink?: boolean;
 }
 

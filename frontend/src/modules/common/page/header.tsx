@@ -75,7 +75,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                   <>
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
-                        <Link to={baseEntityRoutes[parentData.entityType].to} params={{ idOrSlug: parentData.slug }}>
+                        <Link to={baseEntityRoutes[parentData.entityType]} params={{ idOrSlug: parentData.slug }}>
                           <span className="truncate max-sm:max-w-24">{parentData.name}</span>
                         </Link>
                       </BreadcrumbLink>

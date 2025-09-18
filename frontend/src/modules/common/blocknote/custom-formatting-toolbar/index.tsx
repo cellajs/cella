@@ -3,7 +3,6 @@ import {
   CreateLinkButton,
   FileCaptionButton,
   FileDownloadButton,
-  FileReplaceButton,
   FormattingToolbar,
   FormattingToolbarController,
   NestBlockButton,
@@ -37,7 +36,6 @@ export const CustomFormattingToolbar = ({ headingLevels }: { headingLevels: Cust
           {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 
           {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
-          {customFormattingToolBarConfig.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
           {customFormattingToolBarConfig.openPreview && <FileOpenPreviewButton key={'openPreviewButton'} />}
 
           <FileDownloadButton key={'downloadButton'} />

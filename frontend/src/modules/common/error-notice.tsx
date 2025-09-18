@@ -61,7 +61,7 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
   const message =
     error && 'severity' in error && error.severity === 'info'
       ? error.message
-      : i18n.t(localeKey, { ...translationOptions, defaultValue: defaultMessage });
+      : i18n.t(`${localeKey}.text`, { ...translationOptions, defaultValue: defaultMessage });
 
   return { title, message };
 };

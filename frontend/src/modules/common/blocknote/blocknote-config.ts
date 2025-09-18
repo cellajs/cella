@@ -180,7 +180,6 @@ export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   blockNestingSelect: false,
   fileCaption: true,
   openPreview: true,
-  replaceFile: true,
   createLink: true,
 };
 

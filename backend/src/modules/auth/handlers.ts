@@ -302,7 +302,10 @@ const authRouteHandlers = app
 
     // update user password and set email verified
     await Promise.all([
-      db.update(passwordsTable).set({ hashedPassword }).where(eq(passwordsTable.userId, user.id)),
+      db.insert(passwordsTable).values({ userId: user.id, hashedPassword }).onConflictDoUpdate({
+        target: passwordsTable.userId,
+        set: { hashedPassword },
+      }),
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 

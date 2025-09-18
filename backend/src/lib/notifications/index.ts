@@ -1,5 +1,5 @@
 import { Novu } from '@novu/api';
-import { UpdateSubscriberChannelRequestDtoProviderId as ProviderEnum } from '@novu/api/models/components';
+import { ChatOrPushProviderEnum } from '@novu/api/models/components';
 import { appConfig } from 'config';
 import { novuConfig } from '#/lib/notifications/novu-config';
 import { logError, logEvent } from '#/utils/logger';
@@ -23,7 +23,10 @@ export const sendSlackMessage = async (prefix: string, email: string) => {
     });
 
     // Set Slack webhook credentials for subscriber
-    await novu.subscribers.credentials.update({ providerId: ProviderEnum.Slack, credentials: { webhookUrl: slackWebhookUrl } }, subscriberId);
+    await novu.subscribers.credentials.update(
+      { providerId: ChatOrPushProviderEnum.Slack, credentials: { webhookUrl: slackWebhookUrl } },
+      subscriberId,
+    );
 
     // Trigger Slack notification workflow
     await novu.trigger({ workflowId, to: { subscriberId }, payload: { prefix, email } });
