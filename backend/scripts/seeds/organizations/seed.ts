@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import chalk from 'chalk';
 import { eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
@@ -96,7 +95,7 @@ export const organizationsSeed = async () => {
       .onConflictDoNothing();
   }
 
-  console.info(` \n${chalk.greenBright.bold('✔')} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each\n `);
+  console.info(` \n✅ Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each\n `);
 };
 
 /**

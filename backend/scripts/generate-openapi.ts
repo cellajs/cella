@@ -1,5 +1,4 @@
-import app from '#/routes';
-import docs from '#/lib/docs';
+process.env.SKIP_DB = '1';
 
 /** * Generate OpenAPI documentation and save it to a file.
  *
@@ -9,11 +8,17 @@ import docs from '#/lib/docs';
  */
 (async () => {
   try {
+    const [{ default: app }, { default: docs }] = await Promise.all([
+      import('#/routes'),
+      import('#/lib/docs'),
+    ]);
+
     await docs(app, true);
     process.exit(0);
   } catch (err) {
-    console.error('❌ Failed to generate OpenAPI cache');
-    console.error(err);
+    console.error('❌ Failed to generate fresh OpenAPI cache');
+    if (err instanceof Error) console.error(err.message.includes('SKIP_DB') ? '✅ Continuing without DB access' : err.stack || err.message);
+    else console.error(err);
     process.exit(1);
   }
 })();

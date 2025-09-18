@@ -22,7 +22,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface WaitlistFormProps {
   email?: string;
+  inputClassName?: string;
   buttonContent?: string | React.ReactNode;
+  buttonClassName?: string;
   dialog?: boolean;
   callback?: () => void;
   className?: string;
@@ -31,7 +33,7 @@ interface WaitlistFormProps {
 /**
  * Waitlist form to request access to application. Can be used in dialog or embedded in an (auth) page layout.
  */
-export const WaitlistForm = ({ email, buttonContent, dialog: isDialog, callback, className }: WaitlistFormProps) => {
+export const WaitlistForm = ({ email, inputClassName, buttonContent, buttonClassName, dialog: isDialog, callback, className }: WaitlistFormProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -72,7 +74,7 @@ export const WaitlistForm = ({ email, buttonContent, dialog: isDialog, callback,
               <FormControl>
                 <Input
                   {...field}
-                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-hidden focus-visible:ring-primary/20"
+                  className={cn('block', inputClassName)}
                   type="email"
                   autoFocus={!isMobile}
                   disabled={!!email}
@@ -84,17 +86,12 @@ export const WaitlistForm = ({ email, buttonContent, dialog: isDialog, callback,
             </FormItem>
           )}
         />
-        <SubmitButton
-          size={buttonContent ? 'default' : 'xl'}
-          loading={isPending}
-          className={cn('w-full px-6', {
-            'h-14 rounded-full ring-4 sm:max-w-40 ring-primary/10': !!email,
-          })}
-        >
+        <SubmitButton loading={isPending} className={cn('w-full px-6', buttonClassName)}>
           {buttonContent ? (
             buttonContent
           ) : (
             <>
+              h-14 rounded-full ring-4 sm:max-w-40 ring-primary/10
               {t('common:join')}
               <ArrowRight size={16} className="ml-2" />
             </>

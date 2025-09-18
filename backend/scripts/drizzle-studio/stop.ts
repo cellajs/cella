@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { exec } from 'node:child_process';
 import { STUDIO_PORT } from './port';
 
@@ -18,7 +17,7 @@ const stopDrizzleStudio = () => {
       }
     });
       console.info(' ');
-      console.info(`${chalk.greenBright.bold('✔')} Drizzle Studio stopped (PID: ${pid})`);
+      console.info(`✅ Drizzle Studio stopped (PID: ${pid})`);
       console.info(' ');
   });
 };

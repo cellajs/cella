@@ -24,8 +24,19 @@ export const connection = env.PGLITE
     };
 
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-export const db: PgDatabase<any> & {
+type DB = PgDatabase<any> & {
   $client: PGlite | NodePgClient;
-} = env.PGLITE ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig });
+};
+export let db: DB;
+
+if (process.env.SKIP_DB === '1') {
+  db = new Proxy({} as DB, {
+    get() {
+      throw new Error('SKIP_DB');
+    },
+  });
+} else {
+  db = (env.PGLITE ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig })) as DB;
+}
 
 export const coalesce = <T>(column: T, value: number) => sql`COALESCE(${column}, ${value})`.mapWith(Number);
