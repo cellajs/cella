@@ -487,7 +487,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = [appConfig.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
+    const sub = [appConfig.s3BucketPrefix, organizationId, user.id].filter((part): part is string => typeof part === 'string').join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);
