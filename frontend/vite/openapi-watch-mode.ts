@@ -77,7 +77,7 @@ export const watchBackendOpenApi = (): Plugin => {
                 previousHash = newHash;
 
                 // Run regeneration command
-                exec('pnpm openapi-ts', (err, stdout, stderr) => {
+                exec('pnpm generate-client', (err, stdout, stderr) => {
                   if (err) console.error('[openapi-ts] Error:', err);
                   else console.info('[openapi-ts] Regenerated typings:\n', stdout || stderr);
                 });

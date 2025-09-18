@@ -91,7 +91,6 @@ export const WaitlistForm = ({ email, inputClassName, buttonContent, buttonClass
             buttonContent
           ) : (
             <>
-              h-14 rounded-full ring-4 sm:max-w-40 ring-primary/10
               {t('common:join')}
               <ArrowRight size={16} className="ml-2" />
             </>
