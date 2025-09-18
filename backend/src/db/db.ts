@@ -24,17 +24,12 @@ export const connection = env.PGLITE
     };
 
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-type DB = PgDatabase<any> & {
-  $client: PGlite | NodePgClient;
-};
+type DB = PgDatabase<any> & { $client: PGlite | NodePgClient };
+
 export let db: DB;
 
 if (process.env.SKIP_DB === '1') {
-  db = new Proxy({} as DB, {
-    get() {
-      throw new Error('SKIP_DB');
-    },
-  });
+  db = {} as DB;
 } else {
   db = (env.PGLITE ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig })) as DB;
 }
