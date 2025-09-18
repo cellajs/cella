@@ -13,7 +13,7 @@ import { baseEntityRoutes } from './routes-config';
 export const getEntityRoute = (item: UserMenuItem | EntityPage | UserBaseSchema): EntityRoute => {
   const { entityType, id, slug } = item;
 
-  const to = baseEntityRoutes[entityType].to;
+  const to = baseEntityRoutes[entityType];
   const params = { idOrSlug: slug || id };
 
   return { to, params, search: {} };

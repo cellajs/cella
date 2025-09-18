@@ -66,7 +66,7 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
             loading={loadingProvider === provider}
             key={provider}
             type="button"
-            variant="ghost"
+            variant="plain"
             className="gap-1"
             onClick={() => authenticateWithProvider(providerData.id)}
           >

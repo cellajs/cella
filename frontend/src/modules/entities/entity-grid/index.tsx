@@ -1,9 +1,7 @@
 import type { ContextEntityType } from 'config';
-import { Suspense } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGridBar } from '~/modules/entities/entity-grid/bar';
 import { BaseEntityGrid, type EntitySearch } from '~/modules/entities/entity-grid/grid';
-import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
 export interface EntityGridWrapperProps {
@@ -24,9 +22,7 @@ const EntityGrid = ({ entityType, label, userId, focusView = true, saveDataInSea
     <div className="flex flex-col gap-4 h-full">
       <EntityGridBar queryKey={queryOptions.queryKey} searchVars={search} label={label} setSearch={setSearch} focusView={focusView} />
 
-      <Suspense fallback={<GridSkeleton />}>
-        <BaseEntityGrid queryOptions={queryOptions} entityType={entityType} label={label} searchVars={search} tileComponent={tileComponent} />
-      </Suspense>
+      <BaseEntityGrid queryOptions={queryOptions} entityType={entityType} label={label} searchVars={search} tileComponent={tileComponent} />
     </div>
   );
 };
