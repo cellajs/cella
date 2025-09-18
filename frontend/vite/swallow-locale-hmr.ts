@@ -19,11 +19,6 @@ export function swallowLocaleHMR(): Plugin {
     apply: 'serve',
     enforce: 'post',
     handleHotUpdate(ctx: HmrContext): ModuleNode[] | void | Promise<ModuleNode[] | void> {
-      // Log for visibility (kept as a dev aid)
-      // You can narrow/format this further if you like
-      // eslint-disable-next-line no-console
-      console.log('HMR: File changed:', ctx.file);
-
       if (isLocaleAsset(ctx.file)) {
         // Tell the client (i18next-hmr) about the file that changed
         ctx.server.ws.send({
@@ -32,7 +27,7 @@ export function swallowLocaleHMR(): Plugin {
           data: { file: ctx.file },
         });
 
-        console.log('HMR: Locale file changed, prevent reloading', ctx.file);
+        console.info('HMR: Locale file changed, prevent reloading', ctx.file);
 
         // Returning an empty list claims the update and prevents full reload.
         // This matches the expected handleHotUpdate return type.

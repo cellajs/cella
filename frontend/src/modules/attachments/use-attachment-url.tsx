@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import DOMPurify from 'dompurify';
+import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { useBlobStore } from '~/store/blob'; // Import Zustand store
@@ -50,9 +51,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
       try {
         const file = await LocalFileStorage.getFile(id);
         if (!file) {
-          setError(
-            'File not found. The file is stored locally in the browser where it was originally loaded and might not be accessible in other browsers or devices.',
-          );
+          setError(i18n.t('error:local_file_not_found'));
           return;
         }
         if (isMounted.current) {
