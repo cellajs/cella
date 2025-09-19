@@ -12,11 +12,6 @@ import { mergeDeep } from './utils';
 export type EntityType = (typeof appConfig.entityTypes)[number];
 
 /**
- * Page entities (entities with memberships + users)
- */
-export type PageEntityType = (typeof appConfig.pageEntityTypes)[number];
-
-/**
  * Context entities (entities with memberships only)
  */
 export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];

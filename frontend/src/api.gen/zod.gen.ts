@@ -500,7 +500,7 @@ export const zMicrosoftCallbackData = z.object({
   }),
 });
 
-export const zGetPasskeyChallengeData = z.object({
+export const zCreatePasskeyChallengeData = z.object({
   body: z.optional(
     z.object({
       type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
@@ -514,7 +514,7 @@ export const zGetPasskeyChallengeData = z.object({
 /**
  * Challenge created
  */
-export const zGetPasskeyChallengeResponse = z.object({
+export const zCreatePasskeyChallengeResponse = z.object({
   challengeBase64: z.string(),
   credentialIds: z.array(z.string()),
 });

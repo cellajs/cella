@@ -545,7 +545,7 @@ const authRouteHandlers = app
   })
 
   /*
-   * GitHub authentication callback handler
+   * GitHub callback
    */
   .openapi(authRoutes.githubCallback, async (ctx) => {
     const { code, state, error } = ctx.req.valid('query');
@@ -615,7 +615,7 @@ const authRouteHandlers = app
   })
 
   /*
-   * Google authentication callback handler
+   * Google callback
    */
   .openapi(authRoutes.googleCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
@@ -661,7 +661,7 @@ const authRouteHandlers = app
     }
   })
   /*
-   * Microsoft authentication callback handler
+   * Microsoft callback
    */
   .openapi(authRoutes.microsoftCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
@@ -709,7 +709,7 @@ const authRouteHandlers = app
   /*
    * Passkey challenge
    */
-  .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
+  .openapi(authRoutes.createPasskeyChallenge, async (ctx) => {
     const { email, type } = ctx.req.valid('json');
 
     // Generate a 32-byte random challenge and encode it as Base64

@@ -21,6 +21,9 @@ import type {
   CreateOrganizationData,
   CreateOrganizationErrors,
   CreateOrganizationResponses,
+  CreatePasskeyChallengeData,
+  CreatePasskeyChallengeErrors,
+  CreatePasskeyChallengeResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -96,9 +99,6 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
-  GetPasskeyChallengeData,
-  GetPasskeyChallengeErrors,
-  GetPasskeyChallengeResponses,
   GetPendingInvitationsData,
   GetPendingInvitationsErrors,
   GetPendingInvitationsResponses,
@@ -675,21 +675,21 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
 };
 
 /**
- * Get passkey challenge
+ * Create passkey challenge
  * 🌐 Public access
  * ⏳ Spam (10/h)
  *
- * Initiates the passkey registration or authentication flow by generating a device bound challenge.
+ * Initiates the passkey registration or authentication flow by creating a device bound challenge.
  *
- * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
+ * **POST /auth/passkey-challenge** ·· [createPasskeyChallenge](http://localhost:4000/docs#tag/auth/post/auth/passkey-challenge) ·· _auth_
  *
- * @param {getPasskeyChallengeData} options
+ * @param {createPasskeyChallengeData} options
  * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const createPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreatePasskeyChallengeData, ThrowOnError>) => {
+  return (options?.client ?? client).post<CreatePasskeyChallengeResponses, CreatePasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-challenge',
     ...options,

@@ -87,7 +87,6 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 ## Data modeling
 Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in four categories:
 * All entities (`user`, `organization`, `attachments`)
-* `PageEntityType`: 'Pages' that can be searched for (`user`, `organization`)
 * `ContextEntityType`: Has memberships (`organization`)
 * `ProductEntityType`: Content related, no membership (`attachment`)
 

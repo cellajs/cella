@@ -1,4 +1,4 @@
-import { appConfig, type PageEntityType } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityBaseSchema, UserBaseSchema } from '~/api.gen';
@@ -11,7 +11,7 @@ type SearchBlockResult = ContextEntityBaseSchema | UserBaseSchema;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];
-  entityType: PageEntityType;
+  entityType: ContextEntityType | 'user';
   onSelect: (item: SearchBlockResult) => void;
 };
 

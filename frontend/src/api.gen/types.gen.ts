@@ -1164,7 +1164,7 @@ export type MicrosoftCallbackErrors = {
 
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
 
-export type GetPasskeyChallengeData = {
+export type CreatePasskeyChallengeData = {
   body?: {
     type: 'authentication' | 'mfa' | 'registration';
     email?: string;
@@ -1174,7 +1174,7 @@ export type GetPasskeyChallengeData = {
   url: '/auth/passkey-challenge';
 };
 
-export type GetPasskeyChallengeErrors = {
+export type CreatePasskeyChallengeErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1207,9 +1207,9 @@ export type GetPasskeyChallengeErrors = {
   };
 };
 
-export type GetPasskeyChallengeError = GetPasskeyChallengeErrors[keyof GetPasskeyChallengeErrors];
+export type CreatePasskeyChallengeError = CreatePasskeyChallengeErrors[keyof CreatePasskeyChallengeErrors];
 
-export type GetPasskeyChallengeResponses = {
+export type CreatePasskeyChallengeResponses = {
   /**
    * Challenge created
    */
@@ -1219,7 +1219,7 @@ export type GetPasskeyChallengeResponses = {
   };
 };
 
-export type GetPasskeyChallengeResponse = GetPasskeyChallengeResponses[keyof GetPasskeyChallengeResponses];
+export type CreatePasskeyChallengeResponse = CreatePasskeyChallengeResponses[keyof CreatePasskeyChallengeResponses];
 
 export type SignInWithPasskeyData = {
   body?: {
