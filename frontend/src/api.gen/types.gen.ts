@@ -1165,12 +1165,12 @@ export type MicrosoftCallbackErrors = {
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
 
 export type GetPasskeyChallengeData = {
-  body?: never;
-  path?: never;
-  query: {
+  body?: {
     type: 'authentication' | 'mfa' | 'registration';
     email?: string;
   };
+  path?: never;
+  query?: never;
   url: '/auth/passkey-challenge';
 };
 

@@ -16,21 +16,21 @@ import { useUserStore } from '~/store/user';
  * For managing query caching and invalidation.
  */
 export const meKeys = {
-  all: ['me'] as const,
-  menu: () => [...meKeys.all, 'menu'] as const,
-  auth: () => [...meKeys.all, 'auth'] as const,
-  invites: () => [...meKeys.all, 'invites'] as const,
-  registrate: {
-    passkey: () => [...meKeys.all, 'registrate', 'passkey'] as const,
-  } as const,
+  all: ['me'],
+  menu: ['me', 'menu'],
+  auth: ['me', 'auth'],
+  invites: ['me', 'invites'],
+  register: {
+    passkey: ['me', 'register', 'passkey'],
+  },
   update: {
-    info: () => [...meKeys.all, 'update', 'info'] as const,
-    flags: () => [...meKeys.all, 'update', 'flags'] as const,
-  } as const,
+    info: ['me', 'update', 'info'],
+    flags: ['me', 'update', 'flags'],
+  },
   delete: {
-    passkey: () => [...meKeys.all, 'delete', 'passkey'] as const,
-    totp: () => [...meKeys.all, 'delete', 'totp'] as const,
-  } as const,
+    passkey: ['me', 'delete', 'passkey'],
+    totp: ['me', 'delete', 'totp'],
+  },
 };
 
 /**
@@ -45,21 +45,21 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
  *
  * @returns Query options.
  */
-export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), queryFn: getAndSetMeAuthData });
+export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
 /**
  * Query options for fetching the current authenticated user's menu.
  *
  * @returns Query options.
  */
-export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), queryFn: getAndSetMenu });
+export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, queryFn: getAndSetMenu });
 
 /**
  * Query options for fetching the current authenticated user's invites.
  *
  * @returns Query options.
  */
-export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites(), queryFn: () => getMyInvitations() });
+export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
 /**
  * Mutation hook for updating current user (self) info
@@ -68,7 +68,7 @@ export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invit
  */
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
-    mutationKey: meKeys.update.info(),
+    mutationKey: meKeys.update.info,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
     gcTime: 1000 * 10,
@@ -82,11 +82,11 @@ export const useUpdateSelfMutation = () => {
  */
 export const useToggleMfaMutation = () => {
   return useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
-    mutationKey: meKeys.update.info(),
+    mutationKey: meKeys.update.info,
     mutationFn: (body) => toggleMfa({ body }),
     onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
       updateOnSuccesses(updatedUser);
-      if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth() });
+      if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
       toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'success');
     },
     gcTime: 1000 * 10,
@@ -100,7 +100,7 @@ export const useToggleMfaMutation = () => {
  */
 export const useUpdateSelfFlagsMutation = () => {
   return useMutation<User, ApiError, Pick<NonNullable<UpdateMeData['body']>, 'userFlags'>>({
-    mutationKey: meKeys.update.flags(),
+    mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
     gcTime: 1000 * 10,
@@ -114,13 +114,13 @@ export const useUpdateSelfFlagsMutation = () => {
  */
 export const useCreatePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
-    mutationKey: meKeys.registrate.passkey(),
+    mutationKey: meKeys.register.passkey,
     mutationFn: async () => {
       const credentialData = await getPasskeyRegistrationCredential();
       return await createPasskey({ body: credentialData });
     },
     onSuccess: (newPasskey) => {
-      queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
+      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -145,10 +145,10 @@ export const useCreatePasskeyMutation = () => {
  */
 export const useDeletePasskeyMutation = () => {
   return useMutation<boolean, ApiError, string>({
-    mutationKey: meKeys.delete.passkey(),
+    mutationKey: meKeys.delete.passkey,
     mutationFn: (id: string) => deletePasskey({ path: { id } }),
     onSuccess: (_data, id) => {
-      queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
+      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -171,7 +171,7 @@ export const useDeletePasskeyMutation = () => {
  */
 export const useDeleteTotpMutation = () => {
   return useMutation<boolean, ApiError, void>({
-    mutationKey: meKeys.delete.totp(),
+    mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {
       toaster(t('common:success.totp_removed'), 'success');

@@ -710,7 +710,7 @@ const authRouteHandlers = app
    * Passkey challenge
    */
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
-    const { email, type } = ctx.req.valid('query');
+    const { email, type } = ctx.req.valid('json');
 
     // Generate a 32-byte random challenge and encode it as Base64
     const challenge = getRandomValues(new Uint8Array(32));

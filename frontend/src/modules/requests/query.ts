@@ -23,12 +23,12 @@ import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } fro
 export const requestsKeys = {
   all: ['requests'] as const,
   table: {
-    base: () => [...requestsKeys.all, 'table'] as const,
+    base: () => ['requests', 'table'] as const,
     entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) => [...requestsKeys.table.base(), filters] as const,
   },
-  approve: () => [...requestsKeys.all, 'approve'],
-  create: () => [...requestsKeys.all, 'create'],
-  delete: () => [...requestsKeys.all, 'delete'],
+  approve: () => ['requests', 'approve'],
+  create: () => ['requests', 'create'],
+  delete: () => ['requests', 'delete'],
 };
 
 /**

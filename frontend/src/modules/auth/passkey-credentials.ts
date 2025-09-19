@@ -91,9 +91,9 @@ const validateCredentials = (credential: Credential | null) => {
   return credential;
 };
 
-const getChallenge = async (query: PasskeyCredentialProps) => {
+const getChallenge = async (body: PasskeyCredentialProps) => {
   //  Fetch a challenge from BE
-  const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query });
+  const { challengeBase64, credentialIds } = await getPasskeyChallenge({ body });
 
   // Decode  challenge and wrap it in a Uint8Array (required format)
   const raw = decodeBase64(challengeBase64);

@@ -254,7 +254,7 @@ const authRoutes = {
     summary: 'Get passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
-    request: { query: passkeyChallengeQuerySchema },
+    request: { body: { content: { 'application/json': { schema: passkeyChallengeQuerySchema } } } },
     responses: {
       200: {
         description: 'Challenge created',

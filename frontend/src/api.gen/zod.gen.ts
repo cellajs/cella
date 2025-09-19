@@ -501,12 +501,14 @@ export const zMicrosoftCallbackData = z.object({
 });
 
 export const zGetPasskeyChallengeData = z.object({
-  body: z.optional(z.never()),
+  body: z.optional(
+    z.object({
+      type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
+      email: z.optional(z.string()),
+    }),
+  ),
   path: z.optional(z.never()),
-  query: z.object({
-    type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
-    email: z.optional(z.string()),
-  }),
+  query: z.optional(z.never()),
 });
 
 /**

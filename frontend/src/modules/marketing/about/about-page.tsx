@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import CallToAction from '~/modules/marketing/about/call-to-action';
+import AboutCards from '~/modules/marketing/about/cards';
 // import Counters from '~/modules/marketing/about/counters';
 // import FAQ from '~/modules/marketing/about/faq';
 import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
-import Integrations from '~/modules/marketing/about/integrations';
 import Showcase from '~/modules/marketing/about/showcase';
 // import Pricing from '~/modules/marketing/about/pricing';
 import '~/modules/marketing/about/glow-button.css';
@@ -82,42 +82,42 @@ const AboutPage = () => {
 
         <div className="my-12">
           {/* Why this product */}
-          <AboutSection key={'why'} section="why" title="about:title_2" text="about:text_2">
+          <AboutSection key={'why'} sectionId="why" title="about:title_2" text="about:text_2">
             <Why />
           </AboutSection>
 
           {/* Features */}
-          <AboutSection key={'features'} section="features" title="about:title_3" text="about:text_3" alternate={true}>
+          <AboutSection key={'features'} sectionId="features" title="about:title_3" text="about:text_3" alternate={true}>
             <Features />
           </AboutSection>
 
           {/* Integrations */}
-          <AboutSection key={'integrations'} section="integrations" title="about:title_4" text="about:text_4">
-            <Integrations />
+          <AboutSection key={'integrations'} sectionId="integrations" title="about:title_4" text="about:text_4">
+            <AboutCards />
           </AboutSection>
 
           {/* Showcase */}
-          <AboutSection key={'showcase'} section="showcase" title="about:showcase" text="about:showcase.text">
+          <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase" text="about:showcase.text">
             <Showcase />
           </AboutSection>
 
           {/* Call to Action */}
-          <AboutSection key={'call-to-action'} section="call-to-action" alternate={true}>
+          <AboutSection key={'call-to-action'} sectionId="call-to-action" alternate={true}>
             <CallToAction />
           </AboutSection>
 
           {/* Public counters */}
-          {/* <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5" alternate={true}>
+          {/* <AboutSection key={'counters'} sectionId="counters" title="about:title_5" text="about:text_5" alternate={true}>
             <Counters />
           </AboutSection> */}
 
           {/* Pricing */}
-          {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
+          {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:title_6" text="about:text_6">
             <Pricing />
           </AboutSection> */}
 
           {/* FAQs */}
-          {/* <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>
+          {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:title_7" text="about:text_7" alternate={true}>
             <FAQ />
           </AboutSection> */}
         </div>

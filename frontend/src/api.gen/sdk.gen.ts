@@ -684,15 +684,19 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
  * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
  *
  * @param {getPasskeyChallengeData} options
- * @param {enum | enum | enum} options.query.type - `enum | enum | enum`
- * @param {string=} options.query.email - `string` (optional)
+ * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options: Options<GetPasskeyChallengeData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
+  return (options?.client ?? client).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-challenge',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };
 

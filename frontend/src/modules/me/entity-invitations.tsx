@@ -27,7 +27,7 @@ export const EntityInvites = () => {
     mutationFn: (token) => acceptEntityInvite({ path: { token } }),
     onSuccess: async (acceptedEntity) => {
       await getAndSetMenu();
-      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites(), (oldData) => {
+      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
         return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
       });
@@ -35,7 +35,7 @@ export const EntityInvites = () => {
     },
   });
 
-  const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites() });
+  const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites });
 
   if (!invites?.length) return null;
 
