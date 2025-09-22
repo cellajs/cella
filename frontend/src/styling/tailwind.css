@@ -14,6 +14,54 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Light"),
+      local("OpenSans-Light"),
+      url(/static/fonts/OpenSans-Light.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Light.woff) format("woff");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans"),
+      local("OpenSans"),
+      url(/static/fonts/OpenSans-Regular.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Regular.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Semibold"),
+      local("OpenSans-Semibold"),
+      url(/static/fonts/OpenSans-SemiBold.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-SemiBold.woff) format("woff");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Bold"),
+      local("OpenSans-Bold"),
+      url(/static/fonts/OpenSans-Bold.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Bold.woff) format("woff");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
 }
 
 @utility submenu-section {
