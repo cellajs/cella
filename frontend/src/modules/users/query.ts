@@ -10,19 +10,21 @@ import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } fro
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
  */
-export const usersKeys = {
-  all: ['users'] as const,
+const keys = {
+  all: ['users'],
   table: {
-    base: () => [...usersKeys.all, 'table'] as const,
-    entries: (filters?: Omit<GetUsersData['query'], 'limit' | 'offset'>) => [...usersKeys.table.base(), filters] as const,
+    base: ['users', 'table'],
+    entries: (filters?: Omit<GetUsersData['query'], 'limit' | 'offset'>) => [...keys.table.base, filters],
   },
   single: {
-    base: ['user'] as const,
-    byIdOrSlug: (idOrSlug: string) => [...usersKeys.single.base, idOrSlug] as const,
+    base: ['user'],
+    byIdOrSlug: (idOrSlug: string) => [...keys.single.base, idOrSlug],
   },
-  update: () => [...usersKeys.all, 'update'] as const,
-  delete: () => [...usersKeys.all, 'delete'] as const,
+  update: ['users', 'update'],
+  delete: ['users', 'delete'],
 };
+
+export const usersKeys = keys;
 
 /**
  * Query options for fetching a user by ID or slug.
@@ -39,7 +41,7 @@ export const userQueryOptions = (idOrSlug: string) =>
 export const searchUsersQueryOptions = (query: Pick<NonNullable<GetUsersData['query']>, 'q' | 'targetEntityId' | 'targetEntityType'>) => {
   const searchQuery = query.q ?? '';
 
-  const queryKey = [...usersKeys.all, 'search', searchQuery];
+  const queryKey = ['users', 'search', searchQuery];
 
   return queryOptions({
     queryKey,
@@ -97,10 +99,10 @@ export const usersQueryOptions = ({
  */
 export const useUpdateUserMutation = () => {
   return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
-    mutationKey: usersKeys.update(),
+    mutationKey: usersKeys.update,
     mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body }),
     onSuccess: (updatedUser) => {
-      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['update']);
+      const mutateCache = useMutateQueryData(usersKeys.table.base, () => usersKeys.single.base, ['update']);
 
       mutateCache.update([updatedUser]);
     },
@@ -116,13 +118,13 @@ export const useUpdateUserMutation = () => {
  */
 export const useUserDeleteMutation = () => {
   return useMutation<void, ApiError, User[]>({
-    mutationKey: usersKeys.delete(),
+    mutationKey: usersKeys.delete,
     mutationFn: async (users) => {
       const ids = users.map(({ id }) => id);
       await deleteUsers({ body: { ids } });
     },
     onSuccess: (_, users) => {
-      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['remove']);
+      const mutateCache = useMutateQueryData(usersKeys.table.base, () => usersKeys.single.base, ['remove']);
 
       mutateCache.remove(users);
     },

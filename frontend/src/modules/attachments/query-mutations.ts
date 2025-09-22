@@ -33,7 +33,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
 
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.create(),
+    mutationKey: attachmentsKeys.create,
     mutationFn: async ({ localCreation, attachments, orgIdOrSlug }) => {
       if (localCreation) {
         console.info('Attachments uploaded locally:', attachments);
@@ -156,7 +156,7 @@ export const useAttachmentCreateMutation = () =>
 
 export const useAttachmentUpdateMutation = () =>
   useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.update(),
+    mutationKey: attachmentsKeys.update,
     mutationFn: async ({ id, orgIdOrSlug, ...body }) => {
       return await updateAttachment({ body, path: { id, orgIdOrSlug } });
     },
@@ -219,7 +219,7 @@ export const useAttachmentUpdateMutation = () =>
 
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.delete(),
+    mutationKey: attachmentsKeys.delete,
     mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
       const localResult = true;
       let serverResult = true;

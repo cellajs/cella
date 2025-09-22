@@ -210,7 +210,7 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
               </HelpText>
               <div className="mb-6">
-                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
+                <Button className="w-full sm:w-auto" variant="plain" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>

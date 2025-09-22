@@ -17,17 +17,19 @@ Key factories are an effective way to standardize and manage query keys, especia
 **Example**: It would look something like this:
 
 ```ts
-export const attachmentsKeys = {
-  all: ["attachments"] as const,
+const keys = {
+  all: ['attachments'] as const,
   list: {
-    base: () => [...attachmentsKeys.all, "list"] as const,
-    table: (filters: GetAttachmentsParams) => [...attachmentsKeys.list.base(), "table", filters] as const,
-    similarTable: (filters: Pick<GetAttachmentsParams, "orgIdOrSlug">) => [...attachmentsKeys.list.base(), "table", filters] as const
+    base: () => ['attachments', 'list'] as const,
+    table: (filters: GetAttachmentsParams) => [...keys.list.base(), 'table', filters] as const,
+    similarTable: (filters: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...keys.list.base(), 'table', filters] as const
   },
-  create: () => [...attachmentsKeys.all, "create"] as const,
-  update: () => [...attachmentsKeys.all, "update"] as const,
-  delete: () => [...attachmentsKeys.all, "delete"] as const
+  create: () => ['attachments', 'create'] as const,
+  update: () => ['attachments', 'update'] as const,
+  delete: () => ['attachments', 'delete'] as const
 };
+
+export const attachmentKey = keys
 ```
 
 ## 2. Query Options
@@ -63,14 +65,14 @@ Optimistic updates are a technique that immediately updates the UI, assuming a c
 const { mutate } = useMutation(markTodoCompleted, {
   onMutate: async (variables) => {
     // Optimistically update the UI
-    await queryClient.cancelQueries(["todos"]);
-    queryClient.setQueryData(["todos"], (oldData) => {
+    await queryClient.cancelQueries(['todos']);
+    queryClient.setQueryData(['todos'], (oldData) => {
       return oldData.map((todo) => (todo.id === variables.id ? { ...todo, completed: true } : todo));
     });
   },
   onError: (err, variables, context) => {
     // Roll back to previous state in case of error
-    queryClient.setQueryData(["todos"], context.previousTodos);
+    queryClient.setQueryData(['todos'], context.previousTodos);
   }
 });
 ```

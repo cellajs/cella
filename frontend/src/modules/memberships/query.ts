@@ -10,19 +10,21 @@ type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetM
  * Keys for members related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
  */
-export const membersKeys = {
-  all: ['members'] as const,
+
+const keys = {
+  all: ['members'],
   table: {
-    base: () => [...membersKeys.all, 'table'] as const,
-    members: (filters: GetMembersParams) => [...membersKeys.table.base(), filters] as const,
-    similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.table.base(), filters] as const,
-    pending: (filters: GetPendingInvitationsParams) => ['invites', ...membersKeys.table.base(), filters] as const,
-    similarPending: (filters: Pick<GetPendingInvitationsParams, 'idOrSlug' | 'entityType'>) =>
-      ['invites', ...membersKeys.table.base(), filters] as const,
+    base: ['members', 'table'],
+    members: (filters: GetMembersParams) => [...keys.table.base, filters],
+    similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...keys.table.base, filters],
+    pending: (filters: GetPendingInvitationsParams) => ['invites', ...keys.table.base, filters],
+    similarPending: (filters: Pick<GetPendingInvitationsParams, 'idOrSlug' | 'entityType'>) => ['invites', ...keys.table.base, filters],
   },
-  update: () => [...membersKeys.all, 'update'] as const,
-  delete: () => [...membersKeys.all, 'delete'] as const,
+  update: () => ['members', 'update'],
+  delete: () => ['members', 'delete'],
 };
+
+export const membersKeys = keys;
 
 /**
  * Infinite query options to fetch a paginated list of members.

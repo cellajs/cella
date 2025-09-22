@@ -1,6 +1,6 @@
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { appConfig } from 'config';
-import { getPasskeyChallenge } from '~/api.gen';
+import { createPasskeyChallenge } from '~/api.gen';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';
 import { useUserStore } from '~/store/user';
@@ -91,9 +91,9 @@ const validateCredentials = (credential: Credential | null) => {
   return credential;
 };
 
-const getChallenge = async (query: PasskeyCredentialProps) => {
+const getChallenge = async (body: PasskeyCredentialProps) => {
   //  Fetch a challenge from BE
-  const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query });
+  const { challengeBase64, credentialIds } = await createPasskeyChallenge({ body });
 
   // Decode  challenge and wrap it in a Uint8Array (required format)
   const raw = decodeBase64(challengeBase64);

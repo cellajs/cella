@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { appConfig, type PageEntityType } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
 import type { UserBaseSchema } from '~/api.gen';
@@ -15,7 +15,7 @@ import { baseEntityRoutes } from '~/routes-config';
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: EntityPage | UserBaseSchema;
   panel?: React.ReactNode;
-  parent?: { idOrSlug: string; entityType: PageEntityType };
+  parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
 };
 

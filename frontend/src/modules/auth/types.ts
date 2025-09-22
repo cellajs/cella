@@ -1,10 +1,10 @@
-import type { GetPasskeyChallengeData, ValidateTokenResponse } from '~/api.gen';
+import type { CreatePasskeyChallengeData, ValidateTokenResponse } from '~/api.gen';
 
-type PasskeyChallabgeType = GetPasskeyChallengeData['query']['type'];
+type PasskeyChallengeType = NonNullable<CreatePasskeyChallengeData['body']>['type'];
 
 export interface PasskeyCredentialProps {
   email?: string;
-  type: PasskeyChallabgeType;
+  type: PasskeyChallengeType;
 }
 
 export type TokenData = ValidateTokenResponse;

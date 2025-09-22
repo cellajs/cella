@@ -26,7 +26,7 @@ export const tokenWithDataSchema = z.object({
 const passkeyTypeSchema = z.union([z.literal('authentication'), z.literal('mfa')]);
 const challengeTypeSchema = z.union([...passkeyTypeSchema.options, z.literal('registration')]);
 
-export const passkeyChallengeQuerySchema = z
+export const passkeyChallengeBodySchema = z
   .object({
     type: challengeTypeSchema,
     email: z.string().optional(),

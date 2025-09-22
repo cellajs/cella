@@ -97,7 +97,7 @@ const BlockNote = ({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
+    // TODO(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
 
@@ -186,7 +186,7 @@ const BlockNote = ({
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
 
-  // TODO(BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
+  // TODO Autofocus issue (BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
     if (!editable || !editor) return;
 

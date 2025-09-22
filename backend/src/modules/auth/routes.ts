@@ -9,7 +9,7 @@ import {
   emailPasswordBodySchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
-  passkeyChallengeQuerySchema,
+  passkeyChallengeBodySchema,
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
@@ -243,18 +243,18 @@ const authRoutes = {
     },
   }),
 
-  getPasskeyChallenge: createCustomRoute({
-    operationId: 'getPasskeyChallenge',
-    method: 'get',
+  createPasskeyChallenge: createCustomRoute({
+    operationId: 'createPasskeyChallenge',
+    method: 'post',
     path: '/passkey-challenge',
     guard: isPublicAccess,
     // TODO look into rate limit customized for passkeys
     middleware: [spamLimiter],
     tags: ['auth'],
-    summary: 'Get passkey challenge',
-    description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
+    summary: 'Create passkey challenge',
+    description: 'Initiates the passkey registration or authentication flow by creating a device bound challenge.',
     security: [],
-    request: { query: passkeyChallengeQuerySchema },
+    request: { body: { content: { 'application/json': { schema: passkeyChallengeBodySchema } } } },
     responses: {
       200: {
         description: 'Challenge created',

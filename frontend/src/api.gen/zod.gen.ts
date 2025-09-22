@@ -500,19 +500,21 @@ export const zMicrosoftCallbackData = z.object({
   }),
 });
 
-export const zGetPasskeyChallengeData = z.object({
-  body: z.optional(z.never()),
+export const zCreatePasskeyChallengeData = z.object({
+  body: z.optional(
+    z.object({
+      type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
+      email: z.optional(z.string()),
+    }),
+  ),
   path: z.optional(z.never()),
-  query: z.object({
-    type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
-    email: z.optional(z.string()),
-  }),
+  query: z.optional(z.never()),
 });
 
 /**
  * Challenge created
  */
-export const zGetPasskeyChallengeResponse = z.object({
+export const zCreatePasskeyChallengeResponse = z.object({
   challengeBase64: z.string(),
   credentialIds: z.array(z.string()),
 });

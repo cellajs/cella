@@ -3,24 +3,22 @@ import { ArrowUpRight } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
-import { nanoid } from '~/utils/nanoid';
+import { showcaseItems } from '../marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 
-const showcaseItems = [{ id: 'raak', url: 'https://raak.dev' }];
-
-// Slides for light and dark themes
-const lightItems = [
-  { id: nanoid(), url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
-];
-const darkItems = [
-  { id: nanoid(), url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
-];
+export type ShowcaseItem = {
+  id: string;
+  url: string;
+  lightItems: { id: string; url: string; contentType: string }[];
+  darkItems: { id: string; url: string; contentType: string }[];
+};
 
 const Showcase = () => {
   const { t } = useTranslation();
+
+  const lightItems = showcaseItems.flatMap((item) => item.lightItems);
+  const darkItems = showcaseItems.flatMap((item) => item.darkItems);
 
   return (
     <div className="mx-auto mb-12 mt-20 flex max-sm:flex-col gap-8 max-w-3xl items-center lg:mb-16 relative">
