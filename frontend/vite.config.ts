@@ -12,13 +12,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { watchBackendOpenApi } from './vite/openapi-watch-mode';
 import { swallowLocaleHMR } from './vite/swallow-locale-hmr';
-import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 
 const ReactCompilerConfig = {
   /* ... */
 };
+
+console.log(process.env.VITE_STATISTIC_DEBUG_DOMAIN)
+console.log(process.env.NODE_ENV)
+
 
 const isStorybook = process.env.STORYBOOK === 'true';
 
@@ -80,6 +84,7 @@ const viteConfig = {
       template: './index.html',
       inject: {
         data: {
+          DEBUG_DOMAIN: process.env.NODE_ENV === 'development' ? process.env.VITE_STATISTIC_DEBUG_DOMAIN : null,
           title: appConfig.name,
           description: appConfig.description,
           keywords: appConfig.keywords,
