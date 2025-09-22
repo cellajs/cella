@@ -82,6 +82,7 @@ export const cards: AboutCard[] = [
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
   { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
+  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'one-dollar-stats' },
   // { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
 ];
 
