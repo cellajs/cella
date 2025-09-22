@@ -37,7 +37,7 @@ services:
       - error-tracker
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
-      SECRET_KEY: 7cRK28NBY5qZ9CDB8ICLMkp3hpfxSs9HrWYwZnv1rm5LHJgWHi
+      SECRET_KEY: bugsink_secret_key
       CREATE_SUPERUSER: admin:admin
       PORT: 8000
     ports:
