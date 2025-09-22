@@ -1,8 +1,8 @@
 import { db, migrateConfig } from '#/db/db';
 import docs from '#/lib/docs';
+import { AppError } from '#/lib/errors';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
-import { ApiError } from '@paddle/paddle-node-sdk';
 import * as ErrorTracker from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import chalk from 'chalk';
@@ -14,8 +14,6 @@ import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
-// import { sdk } from './tracing';
-
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
@@ -25,8 +23,26 @@ docs(app);
 
 // Init monitoring instance
 ErrorTracker.init({
-  enabled: !!appConfig.sentryDsn,
-  dsn: appConfig.sentryDsn,
+  enabled: !!appConfig.errorTrackerDsn,
+  dsn: appConfig.errorTrackerDsn,
+  beforeSend: (event, hint) => {
+    const error = hint?.originalException;
+
+    if (error) {
+      if (error instanceof AppError) {
+        // Handle AppError first, because it likely extends Error
+        event.fingerprint = [error.name, error.message, error.status.toString()];
+      } else if (error instanceof Error) {
+        // Generic Error
+        event.fingerprint = [error.name, error.message];
+      } else {
+        // Fallback for non-Error exceptions (strings, objects, etc.)
+        event.fingerprint = [String(error)];
+      }
+    }
+
+    return event;
+  },
   environment: appConfig.mode,
   integrations: [nodeProfilingIntegration()],
   // Tracing to capture 100% of transactions

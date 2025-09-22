@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import { del, get, keys, set } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
@@ -39,7 +39,7 @@ export const LocalFileStorage = {
       const mergedFiles = { ...(existing?.files ?? {}), ...files };
       await set(key, { files: mergedFiles, tokenQuery, syncStatus: 'idle' });
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error('Failed to save data:', error);
     }
   },
@@ -48,7 +48,7 @@ export const LocalFileStorage = {
     try {
       return await get<StoredOfflineData>(organizationId);
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error('Failed to retrieve data:', error);
     }
   },
@@ -66,7 +66,7 @@ export const LocalFileStorage = {
       }
       return undefined;
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error(`Failed to retrieve file (${fileId}):`, error);
       return undefined;
     }
@@ -78,7 +78,7 @@ export const LocalFileStorage = {
       if (!data) return;
       await set(orgId, { ...data, syncStatus });
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error(`Failed to set new sync status for ${orgId}:`, error);
       return undefined;
     }
@@ -125,7 +125,7 @@ export const LocalFileStorage = {
           }),
       );
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error('Failed to remove files:', error);
     }
 

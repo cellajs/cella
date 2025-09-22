@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
@@ -59,7 +59,7 @@ export const PublicRoute = createRoute({
       await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
     } catch (error) {
       if (error instanceof Error) {
-        Sentry.captureException(error);
+        ErrorTracker.captureException(error);
         onError(error);
       }
     }
@@ -92,7 +92,7 @@ export const AppRoute = createRoute({
       await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
     } catch (error) {
       if (error instanceof Error) {
-        Sentry.captureException(error);
+        ErrorTracker.captureException(error);
         onError(error);
       }
 
@@ -118,7 +118,7 @@ export const AppRoute = createRoute({
       return await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true }));
     } catch (error) {
       if (error instanceof Error) {
-        Sentry.captureException(error);
+        ErrorTracker.captureException(error);
         onError(error);
       }
     }

@@ -102,7 +102,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
 
   const detailsRequired = ['warn', 'error', 'fatal'].includes(severity);
 
-  // Send to Sentry
+  // Send to error tracker
   if (detailsRequired) {
     const level = severity === 'warn' ? 'warning' : 'error';
     ErrorTracker.captureException(detailedError, { level });

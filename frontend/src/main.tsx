@@ -13,7 +13,7 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
 import { appConfig, type ConfigMode } from 'config';
-import { initSentry } from '~/lib/sentry';
+import { initErrorTracker } from '~/lib/error-tracker';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
 import { addBadgeToFavicon } from '~/utils/add-badge-to-favicon';
@@ -25,8 +25,8 @@ renderAscii();
 // Add badge to favicon based on config mode
 addBadgeToFavicon(appConfig.mode as ConfigMode);
 
-// Initialize Sentry if online
-if (navigator.onLine) initSentry();
+// Initialize Error tracker if online
+if (navigator.onLine) initErrorTracker();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
