@@ -9,7 +9,9 @@
 
     "paths": {
       "~/*": ["./src/*"],
-      "#json/*": ["../json/*"]
+      "#json/*": ["../json/*"],
+      "config": ["../config/index"],
+      "config/*": ["../config/*"],
     }
   },
 

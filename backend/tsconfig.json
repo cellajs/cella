@@ -18,6 +18,8 @@
     "paths": {
       "#/*": ["./src/*"],
       "#json/*": ["../json/*"],
+      "config": ["../config/index"],
+      "config/*": ["../config/*"],
     },
   },
   "include": ["src/**/*", "drizzle.config.ts", "emails", "../config/*", "../json/*", "../locales/*", "mocks",  "tests", "scripts", "trigger.config.ts", "../config/*"],
