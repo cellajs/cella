@@ -152,7 +152,7 @@ viteConfig.plugins?.push(
       ],
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
+      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
       globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
