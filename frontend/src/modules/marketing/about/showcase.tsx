@@ -7,6 +7,13 @@ import { showcaseItems } from '../marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 
+export type ShowcaseItem = {
+  id: string;
+  url: string;
+  lightItems: { id: string; url: string; contentType: string }[];
+  darkItems: { id: string; url: string; contentType: string }[];
+};
+
 const Showcase = () => {
   const { t } = useTranslation();
 

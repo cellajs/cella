@@ -3,6 +3,7 @@ import { Building2, Cloud, Github, type LucideIcon, Users } from 'lucide-react';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { nanoid } from '~/utils/nanoid';
+import { ShowcaseItem } from './about/showcase';
 
 /*************************************************************************************************
  * Nav
@@ -136,7 +137,7 @@ export const whyDarkSlides = [
  * About - Showcase
  ************************************************************************************************/
 
-export const showcaseItems = [
+export const showcaseItems: ShowcaseItem[] = [
   {
     id: 'raak',
     url: 'https://raak.dev',
