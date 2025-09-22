@@ -20,12 +20,7 @@ const ReactCompilerConfig = {
   /* ... */
 };
 
-console.log(process.env.VITE_STATISTIC_DEBUG_DOMAIN)
-console.log(process.env.NODE_ENV)
-
-
 const isStorybook = process.env.STORYBOOK === 'true';
-
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
@@ -66,11 +61,11 @@ const viteConfig = {
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? sentryVitePlugin({
-        disable: appConfig.mode === 'development',
-        org: appConfig.slug,
-        project: appConfig.slug,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-      })
+          disable: appConfig.mode === 'development',
+          org: appConfig.slug,
+          project: appConfig.slug,
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        })
       : undefined,
     viteStaticCopy({
       targets: [
@@ -84,7 +79,7 @@ const viteConfig = {
       template: './index.html',
       inject: {
         data: {
-          DEBUG_DOMAIN: process.env.NODE_ENV === 'development' ? process.env.VITE_STATISTIC_DEBUG_DOMAIN : null,
+          debugDomain: process.env.NODE_ENV === 'development' && appConfig.debug ? appConfig.domain : null,
           title: appConfig.name,
           description: appConfig.description,
           keywords: appConfig.keywords,
@@ -142,7 +137,7 @@ viteConfig.plugins?.push(
           type: 'image/png',
           purpose: 'any',
         },
-          {
+        {
           src: '/static/icons/icon-512x512.svg',
           sizes: '512x512',
           type: 'image/svg+xml',
@@ -163,25 +158,28 @@ viteConfig.plugins?.push(
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
-  }),
+  })
 );
 
 // Enable HTTPS in development if the frontend URL uses it
-if (appConfig.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
+if (appConfig.frontendUrl.includes('https')) {
+  viteConfig.plugins?.push(basicSsl());
+}
 
 // Enable additional plugins only in development mode
-if (appConfig.mode === 'development' && !isStorybook)
-  viteConfig.plugins?.push([
-i18nextHMRPlugin({ localesDir: '../locales' }),
-swallowLocaleHMR(),
+if (appConfig.mode === 'development' && !isStorybook) {
+  viteConfig.plugins?.push(
+    i18nextHMRPlugin({ localesDir: '../locales' }),
+    swallowLocaleHMR(),
     watchBackendOpenApi(),
     reactScan({
       enable: false,
       scanOptions: {
         showToolbar: false,
       },
-    }),
-  ]);
+    })
+  );
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(viteConfig);
