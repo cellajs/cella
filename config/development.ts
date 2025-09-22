@@ -6,7 +6,7 @@ export default {
   slug: 'cella-development',
   debug: false,
 
-  domain: 'cella.com',
+  domain: '',
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
   backendAuthUrl: 'http://localhost:4000/auth',
