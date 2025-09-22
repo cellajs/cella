@@ -2,7 +2,8 @@ import { db, migrateConfig } from '#/db/db';
 import docs from '#/lib/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
-import * as Sentry from '@sentry/node';
+import { ApiError } from '@paddle/paddle-node-sdk';
+import * as ErrorTracker from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import chalk from 'chalk';
 import { appConfig } from 'config';
@@ -23,7 +24,7 @@ const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
 docs(app);
 
 // Init monitoring instance
-Sentry.init({
+ErrorTracker.init({
   enabled: !!appConfig.sentryDsn,
   dsn: appConfig.sentryDsn,
   environment: appConfig.mode,

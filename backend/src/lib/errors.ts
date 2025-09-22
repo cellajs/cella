@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import * as Sentry from '@sentry/node';
+import * as ErrorTracker from '@sentry/node';
 import { appConfig } from 'config';
 import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
@@ -105,7 +105,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   // Send to Sentry
   if (detailsRequired) {
     const level = severity === 'warn' ? 'warning' : 'error';
-    Sentry.captureException(detailedError, { level });
+    ErrorTracker.captureException(detailedError, { level });
   }
 
   // Log the error

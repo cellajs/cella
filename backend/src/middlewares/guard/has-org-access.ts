@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+import * as ErrorTracker from '@sentry/node';
 import { eq, or } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -40,8 +40,8 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
 
   // Set organization with membership (can be null for system admins!) in context
   ctx.set('organization', orgWithMembership);
-  Sentry.setTag('organization_id', orgWithMembership.id);
-  Sentry.setTag('organization_slug', orgWithMembership.slug);
+  ErrorTracker.setTag('organization_id', orgWithMembership.id);
+  ErrorTracker.setTag('organization_slug', orgWithMembership.slug);
 
   await next();
 });

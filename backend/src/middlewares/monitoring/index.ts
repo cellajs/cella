@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+import * as ErrorTracker from '@sentry/node';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
@@ -15,10 +15,10 @@ import { AppError } from '#/lib/errors';
  */
 export const monitoringMiddleware: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   // Attach SDK to context
-  ctx.set('sentry', Sentry);
+  ctx.set('errorTracker', ErrorTracker);
 
   // Set request context
-  Sentry.setContext('request', {
+  ErrorTracker.setContext('request', {
     method: ctx.req.method,
     url: ctx.req.url,
     headers: Object.fromEntries(ctx.req.raw.headers.entries()),
@@ -26,13 +26,13 @@ export const monitoringMiddleware: MiddlewareHandler<Env> = createMiddleware<Env
   });
 
   // Add tracing span
-  await Sentry.startSpan({ name: `${ctx.req.method} ${ctx.req.path}` }, async (span) => {
-    ctx.set('sentrySpan', span);
+  await ErrorTracker.startSpan({ name: `${ctx.req.method} ${ctx.req.path}` }, async (span) => {
+    ctx.set('errorTrackerSpan', span);
 
     try {
       await next();
     } catch (err) {
-      Sentry.captureException(err);
+      ErrorTracker.captureException(err);
       throw err;
     } finally {
       span?.end();
@@ -41,6 +41,6 @@ export const monitoringMiddleware: MiddlewareHandler<Env> = createMiddleware<Env
 
   // In case ctx.error is set but not thrown
   if (ctx.error && !(ctx.error instanceof AppError)) {
-    Sentry.captureException(ctx.error);
+    ErrorTracker.captureException(ctx.error);
   }
 });
