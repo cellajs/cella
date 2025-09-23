@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import OAuthProviders from '~/modules/auth/oauth-providers';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
 import { CheckEmailStep } from '~/modules/auth/steps/check-email';
-import { AuthErrorStep } from '~/modules/auth/steps/error-notice';
+import { AuthErrorStep } from '~/modules/auth/steps/error';
 import { InviteOnlyStep } from '~/modules/auth/steps/invite-only';
 import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { SignInStep } from '~/modules/auth/steps/sign-in';

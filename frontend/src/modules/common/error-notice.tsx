@@ -48,7 +48,9 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
 
   const translationOptions = {
     ns: ['appError', 'error'],
-    ...(error instanceof ApiError && error.entityType ? { resource: i18n.t(error.entityType) } : {}),
+    ...(error instanceof ApiError && error.entityType
+      ? { resource: i18n.t(error.entityType), resourceLowerCase: i18n.t(error.entityType).toLowerCase() }
+      : {}),
   };
 
   const defaultTitle = error?.name || i18n.t('error:error');
