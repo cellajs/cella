@@ -72,7 +72,7 @@ export const validateConfirmMfaToken = async (ctx: Context): Promise<UserModel> 
  * Consumes the MFA token stored in the 'confirm-mfa' cookie.
  * Marks it as used in the database and deletes the cookie.
  */
-export const consumemMfaToken = async (ctx: Context): Promise<void> => {
+export const consumeMfaToken = async (ctx: Context): Promise<void> => {
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenIdFromCookie) return;
 

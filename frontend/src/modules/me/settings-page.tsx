@@ -32,6 +32,8 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
+const enabledStrategies = appConfig.enabledAuthStrategies;
+
 const UserSettingsPage = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
@@ -133,89 +135,118 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:authentication.text')}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
-              {/* MFA */}
-              <HelpText content={t('common:mfa.text')}>
-                <div className="flex">
-                  <p className="font-semibold">{t('common:mfa')}</p>
-                  {!user.mfaRequired && (
-                    <Badge
-                      size="xs"
-                      variant="outline"
-                      className="max-sm:hidden ml-2 uppercase text-[10px] font-normal text-green-600 border-green-600"
-                    >
-                      {t('common:recommended')}
-                    </Badge>
-                  )}
-                </div>
-              </HelpText>
-              <MfaSwitch />
-
-              {/* Passkeys */}
-              <HelpText content={t('common:passkey.text')}>
-                <p className="font-semibold">{t('common:passkeys')}</p>
-              </HelpText>
-              <PasskeysList />
-
-              {/* TOTP */}
-              <HelpText content={t('common:totp.text')}>
-                <p className="font-semibold">{t('common:totp')}</p>
-              </HelpText>
-              <Totp />
-
-              {/* OAuth */}
-              <HelpText content={t('common:oauth.text')}>
-                <p className="font-semibold">{t('common:oauth')}</p>
-              </HelpText>
-
-              <div className="flex flex-col sm:items-start gap-3 mb-6">
-                {appConfig.enabledOAuthProviders.map((id) => {
-                  const provider = mapOAuthProviders.find((provider) => provider.id === id);
-                  if (!provider) return null;
-                  if (enabledOAuth.includes(id)) {
-                    return (
-                      <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
-                        <img
-                          src={`/static/images/${provider.id}-icon.svg`}
-                          alt={provider.id}
-                          className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
-                          loading="lazy"
-                        />
-                        <Check size={18} strokeWidth={3} className="text-success" />
-                        {`${t('common:already_connected_to')} ${provider.name}`}
+              {
+                /* MFA */
+                enabledStrategies.includes('passkey') && enabledStrategies.includes('totp') && (
+                  <>
+                    <HelpText content={t('common:mfa.text')}>
+                      <div className="flex">
+                        <p className="font-semibold">{t('common:mfa')}</p>
+                        {!user.mfaRequired && (
+                          <Badge
+                            size="xs"
+                            variant="outline"
+                            className="max-sm:hidden ml-2 uppercase text-[10px] font-normal text-green-600 border-green-600"
+                          >
+                            {t('common:recommended')}
+                          </Badge>
+                        )}
                       </div>
-                    );
-                  }
-                  return (
-                    // Assert is necessary because apps might not have all providers enabled
-                    <Button
-                      key={provider.id}
-                      type="button"
-                      variant="plain"
-                      onClick={() => authenticateWithProvider(provider.id as EnabledOAuthProvider)}
-                    >
-                      <img
-                        src={`/static/images/${provider.id}-icon.svg`}
-                        alt={provider.id}
-                        className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
-                        loading="lazy"
-                      />
-                      {`${t('common:add')} ${provider.name} ${t('common:account').toLowerCase()}`}
-                    </Button>
-                  );
-                })}
-              </div>
+                    </HelpText>
+                    <MfaSwitch />
+                  </>
+                )
+              }
+              {
+                /* Passkeys */
+                enabledStrategies.includes('passkey') && (
+                  <>
+                    <HelpText content={t('common:passkey.text')}>
+                      <p className="font-semibold">{t('common:passkeys')}</p>
+                    </HelpText>
+                    <PasskeysList />
+                  </>
+                )
+              }
 
-              {/* Password reset */}
-              <HelpText content={t('common:request_password.text')}>
-                <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
-              </HelpText>
-              <div className="mb-6">
-                <Button className="w-full sm:w-auto" variant="plain" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
-                  <Send size={16} className="mr-2" />
-                  {t('common:send_reset_link')}
-                </Button>
-                {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
-              </div>
+              {
+                /* TOTP */
+                enabledStrategies.includes('totp') && (
+                  <>
+                    <HelpText content={t('common:totp.text')}>
+                      <p className="font-semibold">{t('common:totp')}</p>
+                    </HelpText>
+                    <Totp />
+                  </>
+                )
+              }
+
+              {
+                /* OAuth */
+                enabledStrategies.includes('oauth') && (
+                  <>
+                    <HelpText content={t('common:oauth.text')}>
+                      <p className="font-semibold">{t('common:oauth')}</p>
+                    </HelpText>
+
+                    <div className="flex flex-col sm:items-start gap-3 mb-6">
+                      {appConfig.enabledOAuthProviders.map((id) => {
+                        const provider = mapOAuthProviders.find((provider) => provider.id === id);
+                        if (!provider) return null;
+                        if (enabledOAuth.includes(id)) {
+                          return (
+                            <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
+                              <img
+                                src={`/static/images/${provider.id}-icon.svg`}
+                                alt={provider.id}
+                                className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
+                                loading="lazy"
+                              />
+                              <Check size={18} strokeWidth={3} className="text-success" />
+                              {`${t('common:already_connected_to')} ${provider.name}`}
+                            </div>
+                          );
+                        }
+                        return (
+                          // Assert is necessary because apps might not have all providers enabled
+                          <Button
+                            key={provider.id}
+                            type="button"
+                            variant="plain"
+                            onClick={() => authenticateWithProvider(provider.id as EnabledOAuthProvider)}
+                          >
+                            <img
+                              src={`/static/images/${provider.id}-icon.svg`}
+                              alt={provider.id}
+                              className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
+                              loading="lazy"
+                            />
+                            {`${t('common:add')} ${provider.name} ${t('common:account').toLowerCase()}`}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )
+              }
+
+              {
+                /* Password reset */
+                enabledStrategies.includes('password') && (
+                  <>
+                    <HelpText content={t('common:request_password.text')}>
+                      <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
+                    </HelpText>
+                    <div className="mb-6">
+                      <Button className="w-full sm:w-auto" variant="plain" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
+                        <Send size={16} className="mr-2" />
+                        {t('common:send_reset_link')}
+                      </Button>
+                      {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
+                    </div>
+                  </>
+                )
+              }
             </CardContent>
           </Card>
         </AsideAnchor>

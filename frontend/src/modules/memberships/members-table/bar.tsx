@@ -43,6 +43,7 @@ export const MembersTableBar = ({
 
   const deleteButtonRef = useRef(null);
   const inviteButtonRef = useRef(null);
+  const inviteContainerRef = useRef(null);
 
   const { q, role, order, sort } = searchVars;
 
@@ -103,7 +104,7 @@ export const MembersTableBar = ({
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      container: { id: 'invite-members-container', overlay: !isSheet },
+      container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_members.text')}`,
@@ -179,7 +180,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div id="invite-members-container" className="empty:hidden" />
+      <div ref={inviteContainerRef} className="empty:hidden" />
     </div>
   );
 };

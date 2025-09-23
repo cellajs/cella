@@ -31,7 +31,7 @@ interface SheetStoreState {
   create(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
   remove(id?: string, opts?: { isCleanup?: boolean }): void;
-  removeOnRouteChange: () => void;
+  removeOnRouteChange: (opts?: { isCleanup?: boolean }) => void;
   get(id: string): InternalSheet | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -82,12 +82,12 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     });
   },
 
-  removeOnRouteChange: () => {
+  removeOnRouteChange: (opts) => {
     set((state) => {
       const removeSheets = state.sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
       if (!removeSheets.length) return { sheets: state.sheets };
 
-      for (const sheet of removeSheets) sheet.onClose?.();
+      for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
 
       // Filter them out
       const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));

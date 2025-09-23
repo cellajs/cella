@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { isCDNUrl } from '../is-cdn-url';
 
 /*************************************************************************************************
  * Entity schemas
@@ -157,7 +158,10 @@ export const validSlugSchema = z
   .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), t('invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
-export const validImageKeySchema = z.string();
+export const validCDNUrlSchema = z
+  .string()
+  .refine((url: string) => isCDNUrl(url), t('invalid_cdn_url'))
+  .transform((str) => str.trim());
 
 /** Schema for an array of valid domains */
 export const validDomainsSchema = z

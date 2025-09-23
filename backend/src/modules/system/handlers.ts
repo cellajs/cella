@@ -195,7 +195,6 @@ const systemRouteHandlers = app
     const user = getContextUser();
 
     // Get members from organizations
-    // TODO(REFACTOR) using emails table
     const recipientsRecords = await db
       .selectDistinct({
         email: usersTable.email,
