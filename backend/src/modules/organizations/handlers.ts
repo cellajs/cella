@@ -173,6 +173,8 @@ const organizationRouteHandlers = app
       if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
     }
 
+    // TODO sanitize blocknote blocks for welcomeText? How to only allow  image urls from our own cdn plus a list from allowed domains?
+
     const [updatedOrganization] = await db
       .update(organizationsTable)
       .set({

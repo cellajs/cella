@@ -7,8 +7,8 @@ import { membershipBaseSchema } from '#/modules/memberships/schema';
 import {
   languageSchema,
   paginationQuerySchema,
+  validCDNUrlSchema,
   validDomainsSchema,
-  validImageKeySchema,
   validNameSchema,
   validSlugSchema,
   validUrlSchema,
@@ -64,9 +64,9 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.enum(authStrategiesEnum)).optional(),
   websiteUrl: validUrlSchema.nullable(),
-  thumbnailUrl: validImageKeySchema.nullable(),
-  bannerUrl: validImageKeySchema.nullable(),
-  logoUrl: validImageKeySchema.nullable(),
+  thumbnailUrl: validCDNUrlSchema.nullable(),
+  bannerUrl: validCDNUrlSchema.nullable(),
+  logoUrl: validCDNUrlSchema.nullable(),
 })
   .pick({
     slug: true,

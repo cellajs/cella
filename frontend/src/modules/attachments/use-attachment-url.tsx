@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/react';
-import DOMPurify from 'dompurify';
 import i18n from 'i18next';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { useBlobStore } from '~/store/blob'; // Import Zustand store
 import { isCDNUrl } from '~/utils/is-cdn-url';
+import { sanitizeUrl } from '~/utils/sanitize-url';
 
 /**
  * Custom hook for usable attachment URL, handling both remote and locally stored files.
@@ -21,9 +21,7 @@ import { isCDNUrl } from '~/utils/is-cdn-url';
  * @returns `{ url: string | null, error: string | null}`
  */
 export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
-  const { getBlobUrl, setBlobUrl } = useBlobStore();
-
-  const sanitizedUrl = useMemo(() => DOMPurify.sanitize(baseUrl), [baseUrl]);
+  const sanitizedUrl = sanitizeUrl(baseUrl).trim();
 
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +38,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
     }
 
     // If URL is already cached in Blob store, we can use it directly
-    const cachedUrl = getBlobUrl(id);
+    const cachedUrl = useBlobStore.getState().getBlobUrl(id);
     if (cachedUrl) {
       setUrl(cachedUrl);
       return;
@@ -57,7 +55,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
         if (isMounted.current) {
           const blob = new Blob([file.data], { type: type || 'application/octet-stream' });
           const objectUrl = URL.createObjectURL(blob);
-          setBlobUrl(id, objectUrl);
+          useBlobStore.getState().setBlobUrl(id, objectUrl);
           setUrl(objectUrl);
         }
       } catch (e) {

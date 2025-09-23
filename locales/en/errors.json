@@ -87,6 +87,7 @@
   "invalid_name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
   "invalid_slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",
   "invalid_url": "URL must start with https://",
+  "invalid_cdn_url": "URL must start with the configured CDN URL",
   "load_more_failed": "Could not load more data. Try reloading or come back later.",
   "maybe_bot": "Suspicious activity.",
   "invitation_not_for_you": "The user currently signed in doesn't match with the invitation. Please sign out and click the link in your email again or contact support.",
