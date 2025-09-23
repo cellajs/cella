@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
@@ -61,7 +61,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
     return uppy;
   } catch (err) {
     if (err instanceof Error && err.message.includes('Failed to fetch') && !onlineManager.isOnline()) return uppy;
-    Sentry.captureException(err);
+    ErrorTracker.captureException(err);
     throw new Error('Failed to get upload token');
   }
 };

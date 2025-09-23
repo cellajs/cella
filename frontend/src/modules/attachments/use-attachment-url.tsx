@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import DOMPurify from 'dompurify';
 import i18n from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -63,7 +63,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
       } catch (e) {
         console.error(e);
         if (e instanceof Error) {
-          Sentry.captureException(e);
+          ErrorTracker.captureException(e);
           setError(`Failed to load file: ${e.message}`);
         }
       }

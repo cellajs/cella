@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+import * as ErrorTracker from '@sentry/node';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -38,7 +38,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
 
     // Set user in context and add to monitoring
     ctx.set('user', user);
-    Sentry.setUser({
+    ErrorTracker.setUser({
       id: user.id,
       email: user.email,
       username: user.slug,

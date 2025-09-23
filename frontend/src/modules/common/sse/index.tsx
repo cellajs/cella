@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import { useSSE } from '~/modules/common/sse/use-sse';
 import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
@@ -13,7 +13,7 @@ const SSE = () => {
       // Add new menu item under correct section and parent(if exist)
       addMenuItem(newItem as UserMenuItem, sectionName, parentSlug);
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error('Error parsing add menu item event', error);
     }
   };
@@ -25,7 +25,7 @@ const SSE = () => {
 
       updateMenuItem(updatedItem as UserMenuItem);
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error('Error parsing update event', error);
     }
   };
@@ -38,7 +38,7 @@ const SSE = () => {
       // Remove item by ID
       deleteMenuItem(deleteResponse.id);
     } catch (error) {
-      Sentry.captureException(error);
+      ErrorTracker.captureException(error);
       console.error('Error parsing remove event', error);
     }
   };
