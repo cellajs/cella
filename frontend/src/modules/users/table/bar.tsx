@@ -29,6 +29,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
 
   const inviteButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
+  const inviteContainerRef = useRef(null);
 
   const { q, role } = searchVars;
 
@@ -50,14 +51,13 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
     clearSelection();
   };
 
-  // TODO: use a ref for container?
   const openInviteDialog = () => {
     createDialog(<InviteUsers mode={'email'} dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      container: { id: 'invite-users-container', overlay: true },
+      container: { ref: inviteContainerRef, overlay: true },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
@@ -130,7 +130,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
       </TableBarContainer>
 
       {/* Container for embedded dialog */}
-      <div id="invite-users-container" className="empty:hidden" />
+      <div ref={inviteContainerRef} className="empty:hidden" />
     </>
   );
 };

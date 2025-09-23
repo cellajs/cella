@@ -23,7 +23,7 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { consumemMfaToken, initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
+import { consumeMfaToken, initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
   type GithubUserEmailProps,
@@ -812,7 +812,7 @@ const authRouteHandlers = app
     }
 
     // Consume the MFA token now that TOTP verification succeeded
-    await consumemMfaToken(ctx);
+    await consumeMfaToken(ctx);
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
@@ -824,8 +824,15 @@ const authRouteHandlers = app
   .openapi(authRoutes.verifyTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
 
+    const strategy = 'totp';
+
+    // Verify if strategy allowed
+    if (!enabledStrategies.includes(strategy)) {
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+    }
+
     // Define strategy and session type for metadata/logging purposes
-    const meta = { strategy: 'totp', sessionType: 'mfa' } as const;
+    const meta = { strategy, sessionType: 'mfa' } as const;
 
     // Validate MFA token and retrieve user
     const user = await validateConfirmMfaToken(ctx);
@@ -851,7 +858,7 @@ const authRouteHandlers = app
     }
 
     // Consume the MFA token now that TOTP verification succeeded
-    await consumemMfaToken(ctx);
+    await consumeMfaToken(ctx);
 
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);

@@ -4,4 +4,4 @@ import type { organizationsRouteSearchParamsSchema } from '~/routes/search-param
 
 export type OrganizationsRouteSearchParams = z.infer<typeof organizationsRouteSearchParamsSchema>;
 
-export type OrganizationWithMembership = Organization & { membership: MembershipBaseSchema };
+export type OrganizationWithMembership = Organization & { membership: NonNullable<MembershipBaseSchema> };

@@ -113,10 +113,9 @@ The documentation is generated from source code using \`zod\` schemas, converted
 
 /**
  * Enabled authentication strategies.
- * Currently available: 'password', 'passkey' and 'oauth'.
- * TODO: Should we add 'totp' here? Only when both totp and passkey are enabled, should we show in UI the totp and mfa options. Otherwise its not possible to benefit from mfa or totp.
+ * Currently available: 'password', 'passkey', 'oauth' and 'totp.
  */
-enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
+enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 
 /**
  * Enabled OAuth providers.
