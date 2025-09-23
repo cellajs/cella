@@ -61,7 +61,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with s3 on Scaleway
-  s3BucketPrefix: 'cella' satisfies BaseConfigType['s3BucketPrefix'], // Prefix to namespace files when sharing a bucket across apps or envs
+  s3BucketPrefix: 'cella' satisfies BaseConfigType['s3BucketPrefix'] as BaseConfigType['s3BucketPrefix'], // Prefix to namespace files when sharing a bucket across apps or envs
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
