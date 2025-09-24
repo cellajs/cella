@@ -1,5 +1,8 @@
+import { onlineManager } from '@tanstack/react-query';
+import { WifiOff } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { EntityPage } from '~/modules/entities/types';
 import type { PendingInvitationsTableProps } from '~/modules/memberships/pending-table';
@@ -13,11 +16,14 @@ export const PendingInvitations = ({ entity }: PendingInvitationsTableProps) => 
   const createSheet = useSheeter((state) => state.create);
 
   const openSheet = () => {
-    const SheetComponent = ({ entity }: { entity: EntityPage }) => (
-      <Suspense>
-        <PendingTable entity={entity} />
-      </Suspense>
-    );
+    const SheetComponent = ({ entity }: { entity: EntityPage }) =>
+      onlineManager.isOnline() ? (
+        <Suspense>
+          <PendingTable entity={entity} />
+        </Suspense>
+      ) : (
+        <ContentPlaceholder icon={WifiOff} title={t(`${'common:offline.text'}`)} />
+      );
 
     createSheet(<SheetComponent entity={entity} />, {
       id: 'pending-invites',
