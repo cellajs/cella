@@ -9,13 +9,13 @@ import {
   RequestPasswordRoute,
   SignOutRoute,
   UnsubscribedRoute,
-} from '~/routes/auth';
-import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/base';
-import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
-import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
-import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
-import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
-import { UserInOrganizationProfileRoute, UserProfileRoute, UserSettingsRoute } from '~/routes/users';
+} from '~/routes/auth-routes';
+import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/base-routes';
+import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
+import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing-routes';
+import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organization-routes';
+import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system-routes';
+import { UserInOrganizationProfileRoute, UserProfileRoute, UserSettingsRoute } from '~/routes/user-routes';
 
 //App-specific route imports here
 //...

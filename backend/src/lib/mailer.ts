@@ -34,7 +34,7 @@ type Mailer = {
 
 export const mailer: Mailer = {
   /**
-   * Prepare and send emails to multiple recipients using a provided template.
+   * Prepare to send emails to multiple recipients using a provided template.
    * It will render the template for each recipient and send the email.
    *
    * @param template - React component template that will be used to render the email content.
@@ -63,7 +63,7 @@ export const mailer: Mailer = {
   },
 
   /**
-   * Send an email using the Brevo service.
+   * Send an email using the email service.
    *
    * @param to - Recipient email address.
    * @param subject - Subject of the email.

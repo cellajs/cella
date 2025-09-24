@@ -3,7 +3,7 @@ import AboutPage from '~/modules/marketing/about/about-page';
 import AccessibilityPage from '~/modules/marketing/accessibility-page';
 import ContactPage from '~/modules/marketing/contact-page';
 import { LegalPage } from '~/modules/marketing/legal-page';
-import { PublicRoute, rootRoute } from '~/routes/base';
+import { PublicRoute, rootRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 
 export const AboutRoute = createRoute({

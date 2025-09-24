@@ -11,27 +11,29 @@ import { Footer } from './components/footer';
 
 const appName = appConfig.name;
 
-export interface EmailVerificationEmailProps extends BasicTemplateType {
+export interface OAuthVerificationEmailProps extends BasicTemplateType {
   name: string;
   verificationLink: string;
   email: string;
+  providerEmail: string;
+  providerName: string;
 }
 
-export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: EmailVerificationEmailProps) => {
+export const OAuthVerificationEmail = ({ lng, verificationLink, email, name, providerEmail, providerName }: OAuthVerificationEmailProps) => {
   return (
-    <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
-      <EmailHeader headerText={i18n.t('backend:email.email_verification.preview', { appName, lng })} />
+    <EmailContainer previewText={i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName })}>
+      <EmailHeader headerText={i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName })} />
       <EmailBody>
         <Text>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }),
+              __html: i18n.t('backend:email.oauth_verification.text', { lng, appName, email, providerEmail, providerName, name }),
             }}
           />
         </Text>
 
-        <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
+        <EmailButton ButtonText={i18n.t('backend:email.oauth_verification.verify', { lng, providerName })} href={verificationLink} />
       </EmailBody>
       <AppLogo />
       <Footer />
@@ -40,4 +42,4 @@ export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: E
 };
 
 // Template export
-export const Template = EmailVerificationEmail;
+export const Template = OAuthVerificationEmail;

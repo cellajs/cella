@@ -326,10 +326,10 @@ export const zSignInResponse = z.object({
   redirectPath: z.optional(z.string()),
 });
 
-export const zValidateTokenData = z.object({
+export const zCheckTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    token: z.string(),
+    tokenId: z.string(),
   }),
   query: z.object({
     type: z.enum(['email_verification', 'password_reset', 'invitation', 'confirm_mfa']),
@@ -339,7 +339,7 @@ export const zValidateTokenData = z.object({
 /**
  * Token is valid
  */
-export const zValidateTokenResponse = z.object({
+export const zCheckTokenResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
@@ -407,8 +407,9 @@ export const zGithubData = z.object({
   query: z.object({
     type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
-    connect: z.optional(z.string()),
+    connectUserId: z.optional(z.string()),
     token: z.optional(z.string()),
+    tokenId: z.optional(z.string()),
   }),
 });
 
@@ -418,8 +419,9 @@ export const zGoogleData = z.object({
   query: z.object({
     type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
-    connect: z.optional(z.string()),
+    connectUserId: z.optional(z.string()),
     token: z.optional(z.string()),
+    tokenId: z.optional(z.string()),
   }),
 });
 
@@ -429,8 +431,9 @@ export const zMicrosoftData = z.object({
   query: z.object({
     type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
-    connect: z.optional(z.string()),
+    connectUserId: z.optional(z.string()),
     token: z.optional(z.string()),
+    tokenId: z.optional(z.string()),
   }),
 });
 

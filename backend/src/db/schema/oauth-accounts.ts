@@ -10,6 +10,7 @@ export const oauthAccountsTable = pgTable(
   {
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
+    // TODO rename to 'provider'
     providerId: varchar({ enum: supportedOAuthProviders }).notNull(),
     providerUserId: varchar().notNull(),
     email: varchar().notNull(),
@@ -20,10 +21,7 @@ export const oauthAccountsTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
   },
-  (table) => ({
-    // Composite unique constraint on (providerId, providerUserId, email)
-    uniqueProviderUserCombo: unique().on(table.providerId, table.providerUserId, table.email),
-  }),
+  (table) => [unique().on(table.providerId, table.providerUserId, table.email)],
 );
 
 export type OAuthAccountModel = typeof oauthAccountsTable.$inferInsert;

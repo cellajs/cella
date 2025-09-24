@@ -5,7 +5,7 @@ import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
-import { AppRoute } from '~/routes/base';
+import { AppRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';

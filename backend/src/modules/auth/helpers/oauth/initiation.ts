@@ -30,7 +30,7 @@ export interface OAuthCookiePayload {
  * @param codeVerifier - PKCE code verifier (optional)
  * @returns redirect response
  */
-export const storeOAuthContext = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
+export const handleOAuthInitiation = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
   const { type } = ctx.req.query();
 
   const payload = await getOAuthPayload(ctx);
@@ -44,12 +44,13 @@ export const storeOAuthContext = async (ctx: Context, provider: string, url: URL
 };
 
 /**
- * Stores OAuth context (invite/connect/verify) so that the callback
+ * Stores OAuth context (invite/connect/verify/auth) so that the callback
  * can resume the correct flow. Called at the start of an OAuth process.
  *
  * - invite → validates invitation token, sets invite cookie, stores redirect
  * - connect → validates connecting user, sets connection cookie
- * - verify → validates verification token, sets verify cookie, stores redirect
+ * - verify → validates email verification token, sets verify cookie, stores redirect
+ * - auth (default) → sets default redirect
  *
  * Always returns a normalized payload describing the flow.
  *
@@ -67,33 +68,22 @@ const getOAuthPayload = async (ctx: Context) => {
 
   switch (type) {
     case 'invite': {
-      const { tokenId, redirectPath: inviteRedirect } = await handleOAuthInvitation(ctx);
-      inviteTokenId = tokenId;
-      redirectPath = inviteRedirect;
+      ({ inviteTokenId, redirectPath } = await prepareOAuthAcceptInvite(ctx));
       break;
     }
     case 'connect': {
-      const userId = await handleOAuthConnection(ctx);
-      connectUserId = userId;
+      ({ connectUserId, redirectPath } = await prepareOAuthConnect(ctx));
       break;
     }
     case 'verify': {
-      const { tokenId, redirectPath: verifyRedirect } = await handleOAuthVerify(ctx);
-      verifyTokenId = tokenId;
-      redirectPath = verifyRedirect;
+      ({ verifyTokenId, redirectPath } = await prepareOAuthVerify(ctx));
       break;
     }
     default:
-      // no special flow, just redirect
       break;
   }
 
-  return {
-    redirectPath,
-    inviteTokenId,
-    connectUserId,
-    verifyTokenId,
-  };
+  return { redirectPath, inviteTokenId, connectUserId, verifyTokenId };
 };
 /**
  * Resolves and validates the redirect path used after OAuth.
@@ -123,40 +113,46 @@ const resolveOAuthRedirect = (redirect?: string): string => {
  * @returns tokenId + redirectPath
  * @throws AppError if token is missing or invalid
  */
-const handleOAuthInvitation = async (ctx: Context) => {
-  const token = ctx.req.query('token');
-  if (!token) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn', isRedirect: true });
+const prepareOAuthAcceptInvite = async (ctx: Context) => {
+  const { tokenId, token } = ctx.req.query();
 
-  const tokenRecord = await getValidToken({ requiredType: 'invitation', token, consumeToken: false });
+  // Must provide a token and tokenId
+  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', isRedirect: true });
+
+  const tokenRecord = await getValidToken({ requiredType: 'invitation', tokenId, consumeToken: false });
+  if (!tokenRecord) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn', isRedirect: true });
 
   const redirectPath = tokenRecord.entityType ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
-  return { tokenId: tokenRecord.id, redirectPath };
+  return { inviteTokenId: tokenRecord.id, redirectPath };
 };
 
 /**
- * Validates and extracts connection context for an OAuth flow.
+ * Validates and extracts connection context for an OAuth flow. Operates in authenticated context.
  *
  * - Ensures `connect` param exists
  * - Validates logged-in user matches `connect` param
  *
  * @param ctx - Hono context
- * @returns tokenId (the user id)
+ * @returns connectUserId and redirectPath
  * @throws AppError if missing param or user mismatch
  */
-const handleOAuthConnection = async (ctx: Context) => {
-  const connectingUserId = ctx.req.query('connect');
+const prepareOAuthConnect = async (ctx: Context) => {
+  const connectUserId = ctx.req.query('connectUserId');
 
-  if (!connectingUserId) {
-    throw new AppError({ status: 404, type: 'oauth_connection_not_found', severity: 'error', isRedirect: true });
+  if (!connectUserId) {
+    throw new AppError({ status: 400, type: 'connect_user_not_found', severity: 'error', isRedirect: true });
   }
 
   const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: true });
   const { user } = await validateSession(sessionToken);
 
-  if (user.id !== connectingUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'warn', isRedirect: true });
+  if (user.id !== connectUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
 
-  return connectingUserId;
+  const redirectPath = '/settings#authentication';
+
+  return { connectUserId, redirectPath };
 };
 /**
  * Validates and extracts verification context for an OAuth flow.
@@ -169,13 +165,16 @@ const handleOAuthConnection = async (ctx: Context) => {
  * @returns tokenId + redirectPath
  * @throws AppError if missing or invalid token
  */
-const handleOAuthVerify = async (ctx: Context) => {
-  const token = ctx.req.query('token');
-  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
+const prepareOAuthVerify = async (ctx: Context) => {
+  const { tokenId, token } = ctx.req.query();
 
-  const tokenRecord = await getValidToken({ requiredType: 'email_verification', token, consumeToken: false });
+  // Must provide a token and tokenId
+  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', isRedirect: true });
 
+  const tokenRecord = await getValidToken({ requiredType: 'email_verification', tokenId, consumeToken: false, isRedirect: true });
+
+  // If entityType exists, proceed to invitation flow
   const redirectPath = tokenRecord.entityType ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
-  return { tokenId: tokenRecord.id, redirectPath };
+  return { verifyTokenId: tokenRecord.id, redirectPath };
 };

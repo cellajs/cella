@@ -13,6 +13,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
+import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../emails/oauth-verification';
 
 interface Props {
   userId: string;
@@ -21,7 +22,9 @@ interface Props {
 }
 
 /**
- * Send a verification email to user.
+ * Send a verification email to user. There are two scenarios:
+ * 1. Regular email verification (no oauthAccountId): user verifies their email address
+ * 2. OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
  */
 export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
   const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
@@ -59,6 +62,7 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const token = nanoid(40);
   const email = oauthAccount?.email ?? user.email;
 
+  // Create new token
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
@@ -90,24 +94,31 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   // Send email
   const lng = user.language;
 
-  // Create verification link
+  // Create verification link: go to
   const verifyPath = !oauthAccount ? `/auth/verify-email/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
   const verificationURL = new URL(verifyPath, appConfig.backendAuthUrl);
 
+  // Add query params to pass through OAuth verification
   if (oauthAccount) {
+    verificationURL.searchParams.set('tokenId', tokenRecord.id);
     verificationURL.searchParams.set('token', tokenRecord.token);
     verificationURL.searchParams.set('type', 'verify');
   }
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
 
   // Prepare & send email
-  const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });
-  const staticProps = { verificationLink: verificationURL.toString(), subject, lng };
+  const subjectText = oauthAccount ? 'backend:email.oauth_verification.subject' : 'backend:email.email_verification.subject';
+  const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
+  const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
   const recipients = [{ email }];
-
   type Recipient = { email: string };
 
-  mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
+  if (oauthAccount) {
+    const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.providerId };
+    mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
+  } else {
+    mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
+  }
 
   logEvent('info', 'Verification email sent', { userId: user.id });
 };

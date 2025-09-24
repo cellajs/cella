@@ -5,7 +5,7 @@ import Spinner from '~/modules/common/spinner';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { userQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
-import { AppRoute } from '~/routes/base';
+import { AppRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));

@@ -15,6 +15,9 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
+  CheckTokenData,
+  CheckTokenErrors,
+  CheckTokenResponses,
   CreateAttachmentData,
   CreateAttachmentErrors,
   CreateAttachmentResponses,
@@ -203,9 +206,6 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
-  ValidateTokenData,
-  ValidateTokenErrors,
-  ValidateTokenResponses,
   VerifyEmailData,
   VerifyEmailErrors,
 } from './types.gen';
@@ -278,7 +278,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 /**
  * Sign up to accept invite
  * 🌐 Public access
- * ⏳ Spam (10/h), Email (5/h)
+ * ⏳ token_signup_invitation (5/h), Email (5/h)
  *
  * Registers a user using an email and password in response to a system or organization invitation.
  *
@@ -402,20 +402,20 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
 };
 
 /**
- * Validate token
+ * Check token
  * 🌐 Public access
  *
- * Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.
+ * Checks by token id - NOT token itself - if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.
  *
- * **POST /auth/validate-token/{token}** ·· [validateToken](http://localhost:4000/docs#tag/auth/post/auth/validate-token/{token}) ·· _auth_
+ * **POST /auth/check-token/{tokenId}** ·· [checkToken](http://localhost:4000/docs#tag/auth/post/auth/check-token/{tokenId}) ·· _auth_
  *
- * @param {validateTokenData} options
- * @param {string} options.path.token - `string`
+ * @param {checkTokenData} options
+ * @param {string} options.path.tokenid - `string`
  * @param {enum} options.query.type - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const validateToken = <ThrowOnError extends boolean = true>(options: Options<ValidateTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<ValidateTokenResponses, ValidateTokenErrors, ThrowOnError, 'data'>({
+export const checkToken = <ThrowOnError extends boolean = true>(options: Options<CheckTokenData, ThrowOnError>) => {
+  return (options.client ?? client).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -424,7 +424,7 @@ export const validateToken = <ThrowOnError extends boolean = true>(options: Opti
         type: 'apiKey',
       },
     ],
-    url: '/auth/validate-token/{token}',
+    url: '/auth/check-token/{tokenId}',
     ...options,
   });
 };
@@ -486,7 +486,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Stop impersonating
- * 🌐 Public access
+ * 🛡️ Requires authentication
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
@@ -540,15 +540,16 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  * Authenticate with GitHub
  * 🌐 Public access
  *
- * Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
  * **GET /auth/github** ·· [github](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
  *
  * @param {githubData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connect - `string` (optional)
+ * @param {string=} options.query.connectuserid - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
+ * @param {string=} options.query.tokenid - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const github = <ThrowOnError extends boolean = true>(options: Options<GithubData, ThrowOnError>) => {
@@ -563,15 +564,16 @@ export const github = <ThrowOnError extends boolean = true>(options: Options<Git
  * Authenticate with Google
  * 🌐 Public access
  *
- * Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
  * **GET /auth/google** ·· [google](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
  *
  * @param {googleData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connect - `string` (optional)
+ * @param {string=} options.query.connectuserid - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
+ * @param {string=} options.query.tokenid - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const google = <ThrowOnError extends boolean = true>(options: Options<GoogleData, ThrowOnError>) => {
@@ -586,15 +588,16 @@ export const google = <ThrowOnError extends boolean = true>(options: Options<Goo
  * Authenticate with Microsoft
  * 🌐 Public access
  *
- * Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
  * **GET /auth/microsoft** ·· [microsoft](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
  *
  * @param {microsoftData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connect - `string` (optional)
+ * @param {string=} options.query.connectuserid - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
+ * @param {string=} options.query.tokenid - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const microsoft = <ThrowOnError extends boolean = true>(options: Options<MicrosoftData, ThrowOnError>) => {
@@ -2053,6 +2056,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 /**
  * Redirect to attachment
  * 🌐 Public access
+ * ⏳ token_attachment_redirect (5/h)
  *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *

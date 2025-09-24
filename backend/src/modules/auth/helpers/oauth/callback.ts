@@ -9,8 +9,8 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { initiateMfa } from '#/modules/auth/helpers/mfa';
+import type { OAuthCookiePayload } from '#/modules/auth/helpers/oauth/initiation';
 import type { Provider } from '#/modules/auth/helpers/oauth/providers';
-import type { OAuthCookiePayload } from '#/modules/auth/helpers/oauth/session';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/helpers/session';
@@ -31,7 +31,7 @@ import { getValidToken } from '#/utils/validate-token';
  *
  * @returns A redirect response.
  */
-export const handleOAuthFlow = async (
+export const handleOAuthCallback = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
@@ -42,32 +42,37 @@ export const handleOAuthFlow = async (
 
   const { connectUserId, inviteTokenId, verifyTokenId } = cookiePayload;
 
-  // Handle different OAuth flows based on context
+  // Handle OAuth callback flows based on cookie
   if (connectUserId) return await connectFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
   if (inviteTokenId) return await inviteFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
   if (verifyTokenId) return await verifyFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
 
-  // User already has a verified OAuth account → log them in
+  // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
     const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
     return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
   }
 
-  // User has an unverified OAuth account → prompt email verification
+  // User has an unverified OAuth account → prompt oauth (re-)verification
   if (oauthAccount) {
-    return await handleUnverifiedOAuthAccount(ctx, oauthAccount, 'signin');
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
+    const type = user.lastSignInAt ? 'connect' : 'signup';
+    return await handleUnverifiedOAuthAccount(ctx, oauthAccount, type);
   }
 
-  // No linked OAuth account and more than one user with same email
-  const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
-  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+  // Get users with the same email
+  const users = await db
+    .select({ userId: usersTable.id })
+    .from(emailsTable)
+    .innerJoin(usersTable, eq(usersTable.id, emailsTable.userId))
+    .where(eq(emailsTable.email, providerUser.email))
+    .limit(2);
 
-  // One user match → link to new OAuth account and prompt email verification
-  if (users.length === 1) {
-    const newOAuthAccount = await createOAuthAccount(users[0].id, providerUser.id, provider, providerUser.email);
+  // Multiple users with the same email → conflict
+  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
 
-    return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'signin');
-  }
+  // Existing user (by email) found -> suggest sign in and connect
+  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn', isRedirect: true });
 
   // No user found and registration is disabled
   if (!appConfig.has.registrationEnabled) {
@@ -106,7 +111,7 @@ const connectFlow = async (
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
     }
 
     // Already linked + verified → log in the user
@@ -122,7 +127,7 @@ const connectFlow = async (
   // New OAuth account connection → validate email isn't used by another user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
   }
 
   // Safe to connect → create and link OAuth account to current user
@@ -153,7 +158,7 @@ const inviteFlow = async (
   const invitationToken = await getValidToken({
     requiredType: 'invitation',
     tokenId: inviteTokenId,
-    missedTokenError: { status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true },
+    isRedirect: true,
   });
 
   // Email in token doesn't match provider email
@@ -162,13 +167,13 @@ const inviteFlow = async (
   }
 
   // OAuth account already linked
-  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
 
   // No linked OAuth account and email already in use by an existing user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', isRedirect: true });
 
-  // User already signed up meanwhile
+  // TODO User already signed up meanwhile?
 
   // No user match → create a new user
   const user = await handleCreateUser({
@@ -193,11 +198,11 @@ const verifyFlow = async (
   const verifyToken = await getValidToken({
     requiredType: 'email_verification',
     tokenId: verifyTokenId,
-    missedTokenError: { status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true },
+    isRedirect: true,
   });
 
   // No OauthAccount → invalid verification
-  if (!oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', isRedirect: true });
 
   // Invalid token settings → invalid verification
   if (
@@ -206,7 +211,7 @@ const verifyFlow = async (
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.providerId !== provider
   ) {
-    throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', isRedirect: true });
   }
 
   const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
@@ -343,7 +348,7 @@ const handleUnverifiedOAuthAccount = async (
 
   sendVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath });
 
-  const redirectUrl = new URL(`/auth/email-verification/${reason}`, appConfig.frontendUrl);
+  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${oauthAccount.providerId}`, appConfig.frontendUrl);
 
   return ctx.redirect(redirectUrl, 302);
 };

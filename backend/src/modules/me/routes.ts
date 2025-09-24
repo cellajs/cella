@@ -35,23 +35,6 @@ const meRoutes = {
     },
   }),
 
-  getMyAuth: createCustomRoute({
-    operationId: 'getMyAuth',
-    method: 'get',
-    path: '/auth',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get auth data',
-    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
-    responses: {
-      200: {
-        description: 'User sign-up info',
-        content: { 'application/json': { schema: meAuthDataSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
   getMyMenu: createCustomRoute({
     operationId: 'getMyMenu',
     method: 'get',
@@ -111,27 +94,6 @@ const meRoutes = {
     },
   }),
 
-  toggleMfa: createCustomRoute({
-    operationId: 'toggleMfa',
-    method: 'put',
-    path: '/mfa',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Toggle MFA',
-    description:
-      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.',
-    request: {
-      body: { content: { 'application/json': { schema: toggleMfaStateBody } } },
-    },
-    responses: {
-      200: {
-        description: 'User',
-        content: { 'application/json': { schema: userSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
   deleteMe: createCustomRoute({
     operationId: 'deleteMe',
     method: 'delete',
@@ -145,6 +107,23 @@ const meRoutes = {
       200: {
         description: 'User deleted',
         content: { 'application/json': { schema: successWithoutDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  getMyAuth: createCustomRoute({
+    operationId: 'getMyAuth',
+    method: 'get',
+    path: '/auth',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get auth data',
+    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
+    responses: {
+      200: {
+        description: 'User sign-up info',
+        content: { 'application/json': { schema: meAuthDataSchema } },
       },
       ...errorResponses,
     },
@@ -235,6 +214,27 @@ const meRoutes = {
     },
   }),
 
+  toggleMfa: createCustomRoute({
+    operationId: 'toggleMfa',
+    method: 'put',
+    path: '/mfa',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Toggle MFA',
+    description:
+      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.',
+    request: {
+      body: { content: { 'application/json': { schema: toggleMfaStateBody } } },
+    },
+    responses: {
+      200: {
+        description: 'User',
+        content: { 'application/json': { schema: userSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
   createPasskey: createCustomRoute({
     operationId: 'createPasskey',
     method: 'post',
@@ -286,7 +286,6 @@ const meRoutes = {
     method: 'post',
     path: '/totp/register',
     guard: isAuthenticated,
-    // TODO look into rate limit customized for totp
     tags: ['me'],
     summary: 'Register TOTP',
     description: 'Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.',

@@ -24,7 +24,8 @@ import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { consumeMfaToken, initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
-import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
+import { handleOAuthCallback } from '#/modules/auth/helpers/oauth/callback';
+import { handleOAuthInitiation, type OAuthCookiePayload } from '#/modules/auth/helpers/oauth/initiation';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -34,7 +35,6 @@ import {
   type MicrosoftUserProps,
   microsoftAuth,
 } from '#/modules/auth/helpers/oauth/providers';
-import { type OAuthCookiePayload, storeOAuthContext } from '#/modules/auth/helpers/oauth/session';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
@@ -362,15 +362,15 @@ const authRouteHandlers = app
     return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
-   * Check token (token validation)
+   * Check token by id (without consuming it)
    */
-  .openapi(authRoutes.validateToken, async (ctx) => {
+  .openapi(authRoutes.checkToken, async (ctx) => {
     // Find token in request
-    const { token } = ctx.req.valid('param');
+    const { tokenId } = ctx.req.valid('param');
     const { type: requiredType } = ctx.req.valid('query');
 
     // Check if token exists
-    const tokenRecord = await getValidToken({ requiredType, token, consumeToken: false });
+    const tokenRecord = await getValidToken({ requiredType, tokenId, consumeToken: false });
 
     const baseData = {
       email: tokenRecord.email,
@@ -463,21 +463,22 @@ const authRouteHandlers = app
     const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
     const { session } = await validateSession(sessionToken);
 
-    if (adminUserId) {
-      const [adminsLastSession] = await db
-        .select()
-        .from(sessionsTable)
-        .where(eq(sessionsTable.userId, adminUserId))
-        .orderBy(desc(sessionsTable.expiresAt))
-        .limit(1);
+    // Only continue if session is impersonation
+    if (!adminUserId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-      if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    const [adminsLastSession] = await db
+      .select()
+      .from(sessionsTable)
+      .where(eq(sessionsTable.userId, adminUserId))
+      .orderBy(desc(sessionsTable.expiresAt))
+      .limit(1);
 
-      const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
-      const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
+    if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
-      await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
-    }
+    const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
+    const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
+
+    await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
 
     logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
 
@@ -517,7 +518,7 @@ const authRouteHandlers = app
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
     // Start the OAuth session & flow (Persist `state`)
-    return await storeOAuthContext(ctx, 'github', url, state);
+    return await handleOAuthInitiation(ctx, 'github', url, state);
   })
   /*
    * Initiates Google OAuth authentication flow
@@ -529,7 +530,7 @@ const authRouteHandlers = app
     const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await storeOAuthContext(ctx, 'google', url, state, codeVerifier);
+    return await handleOAuthInitiation(ctx, 'google', url, state, codeVerifier);
   })
   /*
    * Initiates Microsoft OAuth authentication flow
@@ -541,7 +542,7 @@ const authRouteHandlers = app
     const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await storeOAuthContext(ctx, 'microsoft', url, state, codeVerifier);
+    return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier);
   })
 
   /*
@@ -597,7 +598,8 @@ const authRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
+      // TODO is it a good idea to have this inside the try catch too?
+      return await handleOAuthCallback(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -644,7 +646,7 @@ const authRouteHandlers = app
       const googleUser = (await response.json()) as GoogleUserProps;
       const providerUser = transformSocialUserData(googleUser);
 
-      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
+      return await handleOAuthCallback(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -690,7 +692,7 @@ const authRouteHandlers = app
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const providerUser = transformSocialUserData(microsoftUser);
 
-      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
+      return await handleOAuthCallback(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 

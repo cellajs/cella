@@ -13,14 +13,19 @@ import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
-import { PublicRoute } from '~/routes/base';
+import { PublicRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
 const authenticateRouteSearch = z.object({
-  redirect: z.string().optional(),
+  tokenId: z.string().optional(),
   token: z.string().optional(),
+  redirect: z.string().optional(),
   fromRoot: z.boolean().optional(),
+});
+
+const invitationRouteSearch = authenticateRouteSearch.extend({
+  tokenId: z.string(),
 });
 
 export const AuthLayoutRoute = createRoute({
@@ -79,6 +84,7 @@ export const CreatePasswordWithTokenRoute = createRoute({
 
 export const EmailVerificationRoute = createRoute({
   path: '/auth/email-verification/$reason',
+  validateSearch: z.object({ provider: z.string().optional() }),
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Email verification') }] }),
   getParentRoute: () => AuthLayoutRoute,
@@ -87,16 +93,18 @@ export const EmailVerificationRoute = createRoute({
 
 export const AcceptEntityInviteRoute = createRoute({
   path: '/invitation/$token',
+  validateSearch: invitationRouteSearch,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Join') }] }),
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ params, search }) => {
     try {
       const queryOptions = meQueryOptions();
       const options = { ...queryOptions, revalidateIfStale: true };
       await queryClient.ensureQueryData(options);
     } catch {
+      // When user is new, authentication will process the user first, then redirect back here
       console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/authenticate', search: { token: params.token } });
+      throw redirect({ to: '/auth/authenticate', search: { tokenId: search.tokenId, token: params.token } });
     }
   },
   getParentRoute: () => AuthLayoutRoute,

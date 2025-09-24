@@ -70,6 +70,7 @@ const systemRoutes = {
     method: 'get',
     path: '/presigned-url',
     guard: [isPublicAccess],
+    // TODO rate limiting this endpoint, try first authenticated users by id, fallback to ip address
     tags: ['system'],
     summary: 'Get presigned URL',
     description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',

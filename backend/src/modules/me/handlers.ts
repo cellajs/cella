@@ -145,7 +145,11 @@ const meRouteHandlers = app
 
     const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
+    // Query to get verified OAuth accounts
+    const getOAuth = db
+      .select({ providerId: oauthAccountsTable.providerId })
+      .from(oauthAccountsTable)
+      .where(and(eq(oauthAccountsTable.userId, user.id), eq(oauthAccountsTable.verified, true)));
 
     // Run all queries + fetch user sessions in parallel
     const [passkeys, password, totps, oauthAccounts, sessions] = await Promise.all([

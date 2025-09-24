@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -20,10 +20,11 @@ const AcceptEntityInvite = () => {
   const navigate = useNavigate();
 
   const { token } = useParams({ from: '/publicLayout/authLayout/invitation/$token' });
+  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/invitation/$token' });
 
   const { user: currentUser } = useUserStore();
 
-  const { data, isLoading, error } = useCheckToken('invitation', token);
+  const { data, isLoading, error } = useCheckToken('invitation', tokenId);
 
   const {
     mutate: _acceptEntityInvite,

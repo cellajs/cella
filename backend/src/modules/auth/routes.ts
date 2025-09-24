@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
+import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   emailBodySchema,
@@ -49,7 +50,7 @@ const authRoutes = {
     operationId: 'stopImpersonation',
     method: 'get',
     path: '/impersonation/stop',
-    guard: isPublicAccess,
+    guard: isAuthenticated,
     tags: ['auth'],
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
@@ -71,7 +72,7 @@ const authRoutes = {
     method: 'post',
     path: '/check-email',
     guard: isPublicAccess,
-    middleware: [emailEnumLimiter],
+    middleware: [isNoBot, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
     description: 'Checks if a user with the specified email address exists in the system.',
@@ -103,7 +104,7 @@ const authRoutes = {
     method: 'post',
     path: '/sign-up',
     guard: isPublicAccess,
-    middleware: [spamLimiter, emailEnumLimiter],
+    middleware: [isNoBot, spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Sign up with password',
     description: 'Registers a new user using an email and password. Sends a verification email upon successful sign up.',
@@ -132,7 +133,7 @@ const authRoutes = {
     method: 'post',
     path: '/sign-up/{token}',
     guard: isPublicAccess,
-    middleware: [spamLimiter, emailEnumLimiter, hasValidToken('invitation')],
+    middleware: [tokenLimiter('signup_invitation'), emailEnumLimiter, hasValidToken('invitation')],
     tags: ['auth'],
     summary: 'Sign up to accept invite',
     description: 'Registers a user using an email and password in response to a system or organization invitation.',
@@ -309,16 +310,18 @@ const authRoutes = {
     },
   }),
 
-  validateToken: createCustomRoute({
-    operationId: 'validateToken',
+  checkToken: createCustomRoute({
+    operationId: 'checkToken',
     method: 'post',
-    path: '/validate-token/{token}',
+    path: '/check-token/{tokenId}',
     guard: isPublicAccess,
+    middleware: isNoBot,
     tags: ['auth'],
-    summary: 'Validate token',
-    description: 'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.',
+    summary: 'Check token',
+    description:
+      'Checks by token id - NOT token itself - if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.',
     request: {
-      params: tokenParamSchema,
+      params: z.object({ tokenId: z.string() }),
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),
     },
     responses: {
@@ -361,7 +364,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description:
-      'Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
+      'Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
@@ -407,7 +410,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description:
-      'Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
+      'Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
@@ -447,7 +450,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description:
-      'Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
+      'Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {

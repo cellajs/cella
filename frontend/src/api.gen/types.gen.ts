@@ -584,18 +584,18 @@ export type SignInResponses = {
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
 
-export type ValidateTokenData = {
+export type CheckTokenData = {
   body?: never;
   path: {
-    token: string;
+    tokenId: string;
   };
   query: {
     type: 'email_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
   };
-  url: '/auth/validate-token/{token}';
+  url: '/auth/check-token/{tokenId}';
 };
 
-export type ValidateTokenErrors = {
+export type CheckTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -628,9 +628,9 @@ export type ValidateTokenErrors = {
   };
 };
 
-export type ValidateTokenError = ValidateTokenErrors[keyof ValidateTokenErrors];
+export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
 
-export type ValidateTokenResponses = {
+export type CheckTokenResponses = {
   /**
    * Token is valid
    */
@@ -644,7 +644,7 @@ export type ValidateTokenResponses = {
   };
 };
 
-export type ValidateTokenResponse = ValidateTokenResponses[keyof ValidateTokenResponses];
+export type CheckTokenResponse = CheckTokenResponses[keyof CheckTokenResponses];
 
 export type AcceptEntityInviteData = {
   body?: never;
@@ -865,8 +865,9 @@ export type GithubData = {
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
-    connect?: string;
+    connectUserId?: string;
     token?: string;
+    tokenId?: string;
   };
   url: '/auth/github';
 };
@@ -912,8 +913,9 @@ export type GoogleData = {
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
-    connect?: string;
+    connectUserId?: string;
     token?: string;
+    tokenId?: string;
   };
   url: '/auth/google';
 };
@@ -959,8 +961,9 @@ export type MicrosoftData = {
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
-    connect?: string;
+    connectUserId?: string;
     token?: string;
+    tokenId?: string;
   };
   url: '/auth/microsoft';
 };
