@@ -31,9 +31,10 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
   useEffect(() => {
     isMounted.current = true;
 
-    // Use direct URL for static images either for remote URL
+    // Use direct URL for static images or remote CDN URL
     if (sanitizedUrl.startsWith('/static/') || isCDNUrl(sanitizedUrl)) {
       setUrl(sanitizedUrl);
+      setError(null); // Clear any previous error
       return;
     }
 
@@ -41,28 +42,32 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
     const cachedUrl = useBlobStore.getState().getBlobUrl(id);
     if (cachedUrl) {
       setUrl(cachedUrl);
+      setError(null); // Clear any previous error
       return;
     }
 
-    // If  URL is not a remote static path, we assume it's a local file
     const fetchLocal = async () => {
       try {
         const file = await LocalFileStorage.getFile(id);
         if (!file) {
           setError(i18n.t('error:local_file_not_found'));
+          setUrl(null); // Make sure URL is null if file not found
           return;
         }
+
         if (isMounted.current) {
           const blob = new Blob([file.data], { type: type || 'application/octet-stream' });
           const objectUrl = URL.createObjectURL(blob);
           useBlobStore.getState().setBlobUrl(id, objectUrl);
           setUrl(objectUrl);
+          setError(null); // Clear error on success
         }
       } catch (e) {
         console.error(e);
         if (e instanceof Error) {
           Sentry.captureException(e);
           setError(`Failed to load file: ${e.message}`);
+          setUrl(null); // Ensure URL is null on error
         }
       }
     };
