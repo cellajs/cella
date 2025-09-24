@@ -9,6 +9,7 @@ import { formatUpdatedCacheData, getQueryItems } from '~/query/utils/mutate-quer
 import { nanoid } from '~/utils/nanoid';
 
 const limit = appConfig.requestLimits.attachments;
+
 export const useMergeLocalAttachments = (organizationId: string, { q, sort, order }: AttachmentsRouteSearchParams) => {
   const { getData: fetchStoredFiles } = LocalFileStorage;
 
@@ -26,15 +27,16 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
 
       const groupId = files.length > 1 ? nanoid() : null;
 
-      const localAttachments: Attachment[] = files.map(({ size, preview, id, type, data, meta }) => ({
+      // TODO(IMPROVE)local file info(add createdAt/By, groupId into the file?)
+      const localAttachments: Attachment[] = files.map(({ size, preview, id, type, data, name, meta }) => ({
         id,
-        size: size ? String(size) : String(data.size),
+        size: String(size || data.size),
         url: preview || '',
         thumbnailUrl: null,
         convertedUrl: null,
         contentType: type,
         convertedContentType: null,
-        name: meta.name,
+        name: name || meta.name, // to handle offline name update, not updating orig fileName from meta
         public: meta.public,
         bucketName: meta.bucketName,
         entityType: 'attachment',
@@ -43,7 +45,7 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         modifiedAt: null,
         modifiedBy: null,
         groupId,
-        filename: meta?.name || 'Unnamed file',
+        filename: meta.name || 'Unnamed file',
         organizationId,
       }));
 
