@@ -25,8 +25,8 @@ renderAscii();
 // Add badge to favicon based on config mode
 addBadgeToFavicon(appConfig.mode as ConfigMode);
 
-// Initialize Sentry if online
-if (navigator.onLine) initSentry();
+// Initialize Sentry
+initSentry();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
