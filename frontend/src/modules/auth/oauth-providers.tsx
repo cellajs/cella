@@ -23,7 +23,7 @@ type OAuthProvider = (typeof mapOAuthProviders)[number];
 const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
-  const { token, redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { token, tokenId, redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
@@ -38,8 +38,9 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
       const params = new URLSearchParams();
 
       params.set('redirect', encodeURIComponent(redirectPath));
-      if (token) {
+      if (token && tokenId) {
         params.set('token', token);
+        params.set('tokenId', tokenId);
         params.set('type', 'invite');
       } else params.set('type', 'auth');
 

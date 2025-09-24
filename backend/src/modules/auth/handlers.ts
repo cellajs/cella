@@ -261,7 +261,7 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.token}`;
+    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
@@ -428,6 +428,7 @@ const authRouteHandlers = app
       .returning();
 
     const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (!targetMembership) throw new AppError({ status: 500, type: 'membership_not_found', severity: 'error', entityType: token.entityType });
 
     const entityIdField = appConfig.entityIdFields[token.entityType];
     if (!targetMembership[entityIdField]) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });

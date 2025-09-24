@@ -24,10 +24,6 @@ const authenticateRouteSearch = z.object({
   fromRoot: z.boolean().optional(),
 });
 
-const invitationRouteSearch = authenticateRouteSearch.extend({
-  tokenId: z.string(),
-});
-
 export const AuthLayoutRoute = createRoute({
   id: 'authLayout',
   staticData: { isAuth: false },
@@ -76,6 +72,7 @@ export const RequestPasswordRoute = createRoute({
 
 export const CreatePasswordWithTokenRoute = createRoute({
   path: '/auth/create-password/$token',
+  validateSearch: z.object({ tokenId: z.string() }),
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Create password') }] }),
   getParentRoute: () => AuthLayoutRoute,
@@ -93,7 +90,7 @@ export const EmailVerificationRoute = createRoute({
 
 export const AcceptEntityInviteRoute = createRoute({
   path: '/invitation/$token',
-  validateSearch: invitationRouteSearch,
+  validateSearch: z.object({ tokenId: z.string() }),
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Join') }] }),
   beforeLoad: async ({ params, search }) => {

@@ -35,7 +35,7 @@ export const SignInStep = () => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { redirect: encodedRedirect, token } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { redirect: encodedRedirect, token, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;
@@ -55,12 +55,13 @@ export const SignInStep = () => {
         return;
       }
 
+      // Go to invitation if token is provided, otherwise use provided redirect or default path
       const redirectPath = token ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,
         replace: true,
-        ...(token && { params: { token } }),
+        ...(token && { params: { token }, search: { tokenId } }),
       });
     },
     onError: (error: ApiError) => {
@@ -135,6 +136,7 @@ export const SignInStep = () => {
                 {t('common:sign_in')}
                 <ArrowRight size={16} className="ml-2" />
               </SubmitButton>
+              {/* TODO: add callback to reset auth steps forgot email is different from current email state */}
               <RequestPasswordDialog email={email}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
                   {t('common:forgot_password')}

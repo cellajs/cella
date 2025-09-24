@@ -18,8 +18,6 @@ export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandl
     // For email verification, redirect to frontend
     const isRedirect = requiredType === 'email_verification';
 
-    console.log('Validating token of type', requiredType, isRedirect);
-
     // Find token in request
     const token = ctx.req.param('token');
     if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect });

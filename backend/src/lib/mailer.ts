@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { render } from 'jsx-email';
 import type { ReactElement } from 'react';
 import { env } from '#/env';
+import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 
@@ -77,8 +78,9 @@ export const mailer: Mailer = {
     }
 
     const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sanitizedSubject = sanitizeEmailSubject(subject || `${appConfig.name} message`);
 
-    sendSmtpEmail.subject = subject || `${appConfig.name} message`;
+    sendSmtpEmail.subject = sanitizedSubject;
     sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
     sendSmtpEmail.replyTo = { email: replyTo || appConfig.supportEmail };

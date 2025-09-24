@@ -66,6 +66,8 @@ export const oauthQuerySchema = z
       if (data.type === 'invite') return !!data.tokenId && !!data.token;
       return true; // No extra requirements for signIn & signUp
     },
+    // TODO message is deprecated in favor of 'error'? replace everywhere
+    // TODO2 this doesnt work well when we need a redirect error, what to do?
     { message: "Missing required field based on 'type'" },
   );
 

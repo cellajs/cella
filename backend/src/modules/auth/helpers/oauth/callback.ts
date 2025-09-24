@@ -163,7 +163,7 @@ const inviteFlow = async (
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
-    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'warn', isRedirect: true });
+    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error', isRedirect: true });
   }
 
   // OAuth account already linked

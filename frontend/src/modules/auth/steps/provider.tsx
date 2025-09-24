@@ -6,22 +6,23 @@ import { useCheckToken } from '~/modules/auth/use-token-check';
 import { useUserStore } from '~/store/user';
 import { AuthContext } from './provider-context';
 
+// TODO refactor to store?
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const matchRoute = useMatchRoute();
   const { lastUser } = useUserStore();
-  const { token } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa-confirmation' });
 
   // Initialize email and step
-  const initEmail = (!token && lastUser?.email) || '';
-  const initStep: AuthStep = !token && lastUser?.email ? 'signIn' : 'checkEmail';
+  const initEmail = (!tokenId && lastUser?.email) || '';
+  const initStep: AuthStep = !tokenId && lastUser?.email ? 'signIn' : 'checkEmail';
 
   const [email, setEmail] = useState(initEmail);
   const [step, setStepState] = useState<AuthStep>(initStep);
   const [authError, setAuthError] = useState<ApiError | null>(null);
 
-  const { data: tokenData } = useCheckToken('invitation', token, !!token);
+  const { data: tokenData } = useCheckToken('invitation', tokenId, !!tokenId);
 
   const setStep = (newStep: AuthStep, newEmail: string, error?: ApiError) => {
     setStepState(newStep);
@@ -41,7 +42,7 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
 
   // If token is provided, directly set email and step based on token data
   useEffect(() => {
-    if (!token || !tokenData?.email) return;
+    if (!tokenId || !tokenData?.email) return;
 
     setEmail(tokenData.email);
     setStepState(tokenData.userId ? 'signIn' : 'signUp');

@@ -208,7 +208,7 @@ const membershipRouteHandlers = app
     const insertedTokens = await db
       .insert(tokensTable)
       .values(tokens)
-      .returning({ userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
+      .returning({ userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token, id: tokensTable.id });
 
     // Generate inactive memberships after tokens are inserted
     await Promise.all(
@@ -216,10 +216,10 @@ const membershipRouteHandlers = app
     );
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map(({ email, token }) => ({
+    const recipients = insertedTokens.map(({ email, token, id }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${id}`,
     }));
 
     const emailProps = {
@@ -526,7 +526,7 @@ const membershipRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${newToken}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${newToken}?tokenId=${newTokenId}`,
     };
 
     const emailProps = {

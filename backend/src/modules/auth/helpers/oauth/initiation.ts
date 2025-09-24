@@ -34,11 +34,11 @@ export const handleOAuthInitiation = async (ctx: Context, provider: string, url:
   const { type } = ctx.req.query();
 
   const payload = await getOAuthPayload(ctx);
-  const cookieValue = JSON.stringify({ ...payload, codeVerifier });
+  const cookieContent = JSON.stringify({ ...payload, codeVerifier });
 
-  await setAuthCookie(ctx, `oauth-${state}`, cookieValue, new TimeSpan(5, 'm'));
+  await setAuthCookie(ctx, `oauth-${state}`, cookieContent, new TimeSpan(5, 'm'));
 
-  logEvent('info', 'User redirected to provider', { strategy: 'oauth', provider, type });
+  logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 
   return ctx.redirect(url.toString(), 302);
 };
@@ -57,6 +57,7 @@ export const handleOAuthInitiation = async (ctx: Context, provider: string, url:
  * @param ctx - Hono request/response context.
  *
  */
+// TODO this doesnt look very clean in the cookie, maybe hash it or encode it?
 const getOAuthPayload = async (ctx: Context) => {
   const { type, redirect } = ctx.req.query();
 
@@ -117,10 +118,9 @@ const prepareOAuthAcceptInvite = async (ctx: Context) => {
   const { tokenId, token } = ctx.req.query();
 
   // Must provide a token and tokenId
-  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', isRedirect: true });
+  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
   const tokenRecord = await getValidToken({ requiredType: 'invitation', tokenId, consumeToken: false });
-  if (!tokenRecord) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn', isRedirect: true });
 
   const redirectPath = tokenRecord.entityType ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
@@ -147,8 +147,8 @@ const prepareOAuthConnect = async (ctx: Context) => {
   const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: true });
   const { user } = await validateSession(sessionToken);
 
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'warn', isRedirect: true });
-  if (user.id !== connectUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', isRedirect: true });
+  if (user.id !== connectUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'error', isRedirect: true });
 
   const redirectPath = '/settings#authentication';
 
@@ -169,7 +169,7 @@ const prepareOAuthVerify = async (ctx: Context) => {
   const { tokenId, token } = ctx.req.query();
 
   // Must provide a token and tokenId
-  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', isRedirect: true });
+  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
   const tokenRecord = await getValidToken({ requiredType: 'email_verification', tokenId, consumeToken: false, isRedirect: true });
 
