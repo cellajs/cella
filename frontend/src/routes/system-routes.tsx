@@ -2,7 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
-import { AppRoute } from '~/routes/base-routes';
+import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { organizationsRouteSearchParamsSchema, requestsRouteSearchParamsSchema, usersRouteSearchParamsSchema } from './search-params-schemas';
@@ -19,7 +19,7 @@ export const SystemRoute = createRoute({
   beforeLoad: () => {
     noDirectAccess(SystemRoute.to, UsersTableRoute.to);
   },
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   component: () => <SystemPage />,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
 });

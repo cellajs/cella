@@ -24,7 +24,7 @@ const errorSearchSchema = z.object({
   severity: zApiError.shape.severity.optional(),
 });
 
-export const rootRoute = createRootRouteWithContext()({
+export const RootRoute = createRootRouteWithContext()({
   staticData: { isAuth: false },
   component: () => <Root />,
   errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
@@ -44,10 +44,10 @@ export const rootRoute = createRootRouteWithContext()({
   },
 });
 
-export const PublicRoute = createRoute({
+export const PublicLayoutRoute = createRoute({
   id: 'publicLayout',
   staticData: { isAuth: false },
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => RootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
@@ -66,10 +66,10 @@ export const PublicRoute = createRoute({
   },
 });
 
-export const AppRoute = createRoute({
+export const AppLayoutRoute = createRoute({
   id: 'appLayout',
   staticData: { isAuth: false },
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => RootRoute,
   component: () => (
     <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
       <AppLayout />
@@ -130,6 +130,6 @@ export const ErrorNoticeRoute = createRoute({
   validateSearch: errorSearchSchema,
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Error') }] }),
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <ErrorNotice level="public" />,
 });

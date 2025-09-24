@@ -3,14 +3,14 @@ import AboutPage from '~/modules/marketing/about/about-page';
 import AccessibilityPage from '~/modules/marketing/accessibility-page';
 import ContactPage from '~/modules/marketing/contact-page';
 import { LegalPage } from '~/modules/marketing/legal-page';
-import { PublicRoute, rootRoute } from '~/routes/base-routes';
+import { PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 
 export const AboutRoute = createRoute({
   path: '/about',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('About') }] }),
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <AboutPage />,
 });
 
@@ -18,7 +18,7 @@ export const ContactRoute = createRoute({
   path: '/contact',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Contact') }] }),
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => RootRoute,
   component: () => <ContactPage />,
 });
 
@@ -26,7 +26,7 @@ export const LegalRoute = createRoute({
   path: '/legal',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Legal') }] }),
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => RootRoute,
   component: () => <LegalPage />,
 });
 
@@ -34,6 +34,6 @@ export const AccessibilityRoute = createRoute({
   path: '/accessibility',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Accessibility') }] }),
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => RootRoute,
   component: () => <AccessibilityPage />,
 });

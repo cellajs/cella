@@ -1,7 +1,7 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import Home from '~/modules/home';
-import { AppRoute } from '~/routes/base-routes';
+import { AppLayoutRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
@@ -10,7 +10,7 @@ const Welcome = lazy(() => import('~/modules/home/welcome-page'));
 export const HomeRoute = createRoute({
   path: '/',
   staticData: { isAuth: true },
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   component: () => (
     <Suspense>
       <Home />
@@ -23,7 +23,7 @@ export const HomeAliasRoute = createRoute({
   path: '/home',
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   beforeLoad: () => {
     const { user } = useUserStore.getState();
     if (!user.userFlags.finishedOnboarding) throw redirect({ to: '/welcome' });
@@ -39,7 +39,7 @@ export const WelcomeRoute = createRoute({
   path: '/welcome',
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Welcome') }] }),
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   beforeLoad: () => {
     const { user } = useUserStore.getState();
     if (user.userFlags.finishedOnboarding) throw redirect({ to: '/home' });

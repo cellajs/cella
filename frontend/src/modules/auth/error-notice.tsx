@@ -12,9 +12,11 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modu
  * @param error - ErrorNoticeError
  * @param children - React.ReactNode (optional)
  */
+// TODO consider reducing duplication with common error notice
 const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; children?: React.ReactNode }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
+
   const contactButtonRef = useRef(null);
 
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
@@ -24,16 +26,18 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
   const { title, message } = getErrorInfo(error, errorFromQuery);
 
   return (
-    <Card className="bg-transparent border-0 md:-mx-10 lg:-mx-32">
+    <Card className="bg-transparent border-0 md:-mx-16 lg:-mx-40">
       <CardHeader className="text-center p-0">
         <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
         <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
           <span className="block">{message}</span>
-          <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
-          <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+          <p className="mt-2 font-light">
+            <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
+            <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+          </p>
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-4 justify-center">
+      <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 justify-center">
         {children}
         <Link to="/auth/authenticate" reloadDocument className={buttonVariants({ size: 'lg', variant: 'plain' })}>
           {t('common:sign_in')}

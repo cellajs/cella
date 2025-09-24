@@ -13,7 +13,7 @@ import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
-import { PublicRoute } from '~/routes/base-routes';
+import { PublicLayoutRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
@@ -27,7 +27,7 @@ const authenticateRouteSearch = z.object({
 export const AuthLayoutRoute = createRoute({
   id: 'authLayout',
   staticData: { isAuth: false },
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <AuthPage />,
 });
 
@@ -100,7 +100,7 @@ export const AcceptEntityInviteRoute = createRoute({
       await queryClient.ensureQueryData(options);
     } catch {
       // When user is new, authentication will process the user first, then redirect back here
-      console.info('Not authenticated (silent check) -> redirect to sign in');
+      console.info('Not authenticated while trying to handle invitation (silent check) -> redirect to sign in with invite data');
       throw redirect({ to: '/auth/authenticate', search: { tokenId: search.tokenId, token: params.token } });
     }
   },
@@ -121,6 +121,6 @@ export const SignOutRoute = createRoute({
   validateSearch: z.object({ force: z.boolean().optional() }),
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Sign out') }] }),
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => PublicLayoutRoute,
   component: () => <SignOut />,
 });

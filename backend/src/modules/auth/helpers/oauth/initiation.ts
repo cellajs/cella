@@ -57,7 +57,7 @@ export const handleOAuthInitiation = async (ctx: Context, provider: string, url:
  * @param ctx - Hono request/response context.
  *
  */
-// TODO this doesnt look very clean in the cookie, maybe hash it or encode it?
+// TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
 const getOAuthPayload = async (ctx: Context) => {
   const { type, redirect } = ctx.req.query();
 

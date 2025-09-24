@@ -302,7 +302,7 @@
   "request_password.text": "Reset your password by sending a reset link to your email address.",
   "request_type": "Request type",
   "request_verification.connect": "to connect your {{providerName}} account",
-  "request_verification.invite": "to verify your {{providerName}} account, after which you can proceed with the invitation",
+  "request_verification.invite": "to verify ownership of the {{providerName}} account, after which you can proceed with the invitation",
   "request_verification.legal_notice": "By verifying your email, you agree to the",
   "request_verification.signin": "to sign in",
   "request_verification.signup": "to complete your sign up",

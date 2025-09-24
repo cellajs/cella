@@ -16,7 +16,10 @@ import { getEntityRoute } from '~/routes-resolver';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-export const EntityInvites = () => {
+/**
+ * Component to show a list of pending entity invitations for the current user
+ */
+export const EntityInvitations = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 

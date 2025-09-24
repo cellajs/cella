@@ -10,7 +10,7 @@ import {
   SignOutRoute,
   UnsubscribedRoute,
 } from '~/routes/auth-routes';
-import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/base-routes';
+import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing-routes';
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organization-routes';
@@ -23,15 +23,14 @@ import { UserInOrganizationProfileRoute, UserProfileRoute, UserSettingsRoute } f
 /**
  * The route tree for the entire app
  */
-export const routeTree = rootRoute.addChildren([
-  PublicRoute.addChildren([
+export const routeTree = RootRoute.addChildren([
+  PublicLayoutRoute.addChildren([
     AboutRoute,
     ContactRoute,
     LegalRoute,
     AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
-    AcceptEntityInviteRoute,
     AuthLayoutRoute.addChildren([
       AuthenticateRoute.addChildren([MfaRoute]),
       RequestPasswordRoute,
@@ -40,9 +39,10 @@ export const routeTree = rootRoute.addChildren([
       UnsubscribedRoute,
     ]),
   ]),
-  AppRoute.addChildren([
+  AppLayoutRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
+    AcceptEntityInviteRoute,
     WelcomeRoute,
     SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,

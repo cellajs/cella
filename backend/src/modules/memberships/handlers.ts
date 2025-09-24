@@ -212,7 +212,9 @@ const membershipRouteHandlers = app
 
     // Generate inactive memberships after tokens are inserted
     await Promise.all(
-      insertedTokens.filter(({ userId }) => userId !== null).map(({ userId }) => insertMembership({ userId: userId as string, role, entity })),
+      insertedTokens
+        .filter(({ userId }) => userId !== null)
+        .map(({ userId, id }) => insertMembership({ userId: userId as string, role, entity, tokenId: id })),
     );
 
     // Prepare and send invitation emails

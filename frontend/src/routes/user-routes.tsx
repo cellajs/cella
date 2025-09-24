@@ -5,7 +5,7 @@ import Spinner from '~/modules/common/spinner';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { userQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
-import { AppRoute } from '~/routes/base-routes';
+import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
@@ -14,7 +14,7 @@ const UserSettingsPage = lazy(() => import('~/modules/me/settings-page'));
 export const UserProfileRoute = createRoute({
   path: '/users/$idOrSlug',
   staticData: { isAuth: true },
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const userOptions = userQueryOptions(idOrSlug);
     const options = { ...userOptions, revalidateIfStale: true };
@@ -38,7 +38,7 @@ export const UserProfileRoute = createRoute({
 export const UserInOrganizationProfileRoute = createRoute({
   path: '/$orgIdOrSlug/users/$idOrSlug',
   staticData: { isAuth: true },
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const userOptions = userQueryOptions(idOrSlug);
     const options = { ...userOptions, revalidateIfStale: true };
@@ -63,7 +63,7 @@ export const UserSettingsRoute = createRoute({
   path: '/settings',
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Settings') }] }),
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppLayoutRoute,
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();
     const options = { ...userAuthOptions, revalidateIfStale: true };

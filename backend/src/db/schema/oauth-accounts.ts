@@ -16,6 +16,7 @@ export const oauthAccountsTable = pgTable(
     email: varchar().notNull(),
     verified: boolean().notNull().default(false),
     verifiedAt: timestamp({ mode: 'string' }),
+    // TODO remove, not used
     tenantId: varchar(),
     userId: varchar()
       .notNull()

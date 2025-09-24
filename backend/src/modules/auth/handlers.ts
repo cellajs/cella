@@ -176,7 +176,7 @@ const authRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user, strategy);
 
-    const redirectPath = membershipInvite ? `/invitation/${validToken.token}` : appConfig.defaultRedirectPath;
+    const redirectPath = membershipInvite ? `/invitation/${validToken.token}?tokenId=${validToken.id}` : appConfig.defaultRedirectPath;
     return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })
   /*
