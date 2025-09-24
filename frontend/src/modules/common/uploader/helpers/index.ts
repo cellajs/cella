@@ -69,9 +69,5 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 const onBeforeFileAdded = (file: CustomUppyFile) => {
   // Simplify file ID and add content type to meta
   file.id = nanoid();
-
-  // Generate preview for all file types using blob URL
-  if (!file.preview && file.data instanceof Blob) file.preview = URL.createObjectURL(file.data);
-
   return file;
 };
