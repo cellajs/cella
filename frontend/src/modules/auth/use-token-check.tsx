@@ -1,10 +1,8 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
-import type { appConfig } from 'config';
+import type { TokenType } from 'config';
 import { checkToken } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
-
-type TokenType = (typeof appConfig.tokenTypes)[number];
 
 /**
  *  Get token data by ID.

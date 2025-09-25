@@ -1,7 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { z } from 'zod';
-import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
 import AuthPage from '~/modules/auth/layout';
@@ -11,8 +10,6 @@ import AuthSteps from '~/modules/auth/steps';
 import { MfaStep } from '~/modules/auth/steps/mfa';
 import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
-import { meQueryOptions } from '~/modules/me/query';
-import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
@@ -71,8 +68,7 @@ export const RequestPasswordRoute = createRoute({
 });
 
 export const CreatePasswordWithTokenRoute = createRoute({
-  path: '/auth/create-password/$token',
-  validateSearch: z.object({ tokenId: z.string() }),
+  path: '/auth/create-password/$tokenId',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Create password') }] }),
   getParentRoute: () => AuthLayoutRoute,
@@ -86,26 +82,6 @@ export const EmailVerificationRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Email verification') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <EmailVerification />,
-});
-
-export const AcceptEntityInviteRoute = createRoute({
-  path: '/invitation/$token',
-  validateSearch: z.object({ tokenId: z.string() }),
-  staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: appTitle('Join') }] }),
-  beforeLoad: async ({ params, search }) => {
-    try {
-      const queryOptions = meQueryOptions();
-      const options = { ...queryOptions, revalidateIfStale: true };
-      await queryClient.ensureQueryData(options);
-    } catch {
-      // When user is new, authentication will process the user first, then redirect back here
-      console.info('Not authenticated while trying to handle invitation (silent check) -> redirect to sign in with invite data');
-      throw redirect({ to: '/auth/authenticate', search: { tokenId: search.tokenId, token: params.token } });
-    }
-  },
-  getParentRoute: () => AuthLayoutRoute,
-  component: () => <AcceptEntityInvite />,
 });
 
 export const UnsubscribedRoute = createRoute({

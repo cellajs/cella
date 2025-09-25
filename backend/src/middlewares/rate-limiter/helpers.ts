@@ -26,6 +26,7 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
 /**
  * Rate limit Error response
  */
+// TODO should we do Context<Env> everywhere?
 export const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: string) => {
   ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
   throw new AppError({ status: 429, type: 'too_many_requests', severity: 'warn', meta: { rateLimitKey } });

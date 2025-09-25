@@ -15,6 +15,7 @@ type ResendButtonPrpos = {
   callback?: () => void;
 };
 
+// TODO refactor to resend token or refresh token with token refresh functionality that is upcoming
 export const ResendMembershipInviteButton = ({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) => {
   const { t } = useTranslation();
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);

@@ -31,10 +31,10 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
         <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
         <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
           <span className="block">{message}</span>
-          <p className="mt-2 font-light">
+          <span className="block mt-2 font-light">
             <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
             <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
-          </p>
+          </span>
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 justify-center">

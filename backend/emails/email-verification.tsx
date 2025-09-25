@@ -31,6 +31,7 @@ export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: E
           />
         </Text>
 
+{/* TODO add you can only use the link ONCE */}
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
       </EmailBody>
       <AppLogo />

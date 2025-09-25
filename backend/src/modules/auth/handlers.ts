@@ -17,9 +17,7 @@ import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
@@ -40,10 +38,11 @@ import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { verifyTotp } from '#/modules/auth/helpers/totps';
-import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
+import { handleCreateUser } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
@@ -51,8 +50,8 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { getValidToken } from '#/utils/validate-token';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
+import { membershipBaseSelect } from '../memberships/helpers/select';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -176,7 +175,16 @@ const authRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user, strategy);
 
-    const redirectPath = membershipInvite ? `/invitation/${validToken.token}?tokenId=${validToken.id}` : appConfig.defaultRedirectPath;
+    const [invitationMembership] = await db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
+      .where(eq(membershipsTable.tokenId, validToken.id))
+      .limit(1);
+    if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
+
+    const redirectPath = membershipInvite
+      ? `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`
+      : appConfig.defaultRedirectPath;
     return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })
   /*
@@ -247,6 +255,7 @@ const authRouteHandlers = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
+    // TODO hash token
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
@@ -261,7 +270,7 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+    const createPasswordLink = `${appConfig.backendAuthUrl}/tokens/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
@@ -275,7 +284,7 @@ const authRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Create password with token
+   * Create password with single use session token in cookie
    */
   .openapi(authRoutes.createPasswordWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
@@ -362,15 +371,47 @@ const authRouteHandlers = app
     return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
+   * Consume token and redirect with single use session token in cookie
+   */
+  .openapi(authRoutes.consumeToken, async (ctx) => {
+    const { token } = ctx.req.valid('param');
+    // TODO how to provide additional security against CSRF?
+
+    // Check if token exists and create a new refresh token
+    const tokenRecord = await getValidToken({ token, consumeToken: true });
+    if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', isRedirect: true });
+
+    // Set cookie with single use token for 10 minutes
+    // TODO can we make it one time use somehow from initiation?
+    await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(10, 'm'));
+
+    let redirectPath = appConfig.defaultRedirectPath;
+
+    if (tokenRecord.type === 'invitation') redirectPath = `/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
+    if (tokenRecord.type === 'email_verification') redirectPath = '/auth/authenticate';
+    if (tokenRecord.type === 'password_reset') redirectPath = `/auth/create-password/${tokenRecord.id}`;
+
+    const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+    logEvent('info', 'Token consumed, redirecting with single use session token', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
+
+    return ctx.redirect(redirectUrl, 302);
+  })
+  /*
    * Check token by id (without consuming it)
    */
+  // TODO simplify?
   .openapi(authRoutes.checkToken, async (ctx) => {
     // Find token in request
     const { tokenId } = ctx.req.valid('param');
-    const { type: requiredType } = ctx.req.valid('query');
+    const { type: tokenType } = ctx.req.valid('query');
 
-    // Check if token exists
-    const tokenRecord = await getValidToken({ requiredType, tokenId, consumeToken: false });
+    // Get token
+    const [tokenRecord] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.id, tokenId), eq(tokensTable.type, tokenType)));
+    if (!tokenRecord) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
 
     const baseData = {
       email: tokenRecord.email,
@@ -400,45 +441,6 @@ const authRouteHandlers = app
     };
 
     return ctx.json(dataWithOrg, 200);
-  })
-  /*
-   * Accept org invite token for signed in users
-   */
-  .openapi(authRoutes.acceptEntityInvite, async (ctx) => {
-    const user = getContextUser();
-    const token = getContextToken();
-
-    // Make sure its an organization invitation
-    if (!token.entityType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
-
-    const [emailData] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
-    // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
-    if (user.id !== token.userId && (!emailData || emailData.userId !== user.id)) {
-      throw new AppError({ status: 401, type: 'user_mismatch', severity: 'warn' });
-    }
-
-    // If userId is not yet set on token, handle membership token update
-    if (emailData.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
-
-    // Activate memberships
-    const activatedMemberships = await db
-      .update(membershipsTable)
-      .set({ tokenId: null, activatedAt: getIsoDate() })
-      .where(and(eq(membershipsTable.tokenId, token.id)))
-      .returning();
-
-    const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    if (!targetMembership) throw new AppError({ status: 500, type: 'membership_not_found', severity: 'error', entityType: token.entityType });
-
-    const entityIdField = appConfig.entityIdFields[token.entityType];
-    if (!targetMembership[entityIdField]) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
-
-    const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
-
-    eventManager.emit('acceptedMembership', targetMembership);
-
-    return ctx.json({ ...entity, membership: targetMembership }, 200);
   })
   /*
    * Start impersonation
@@ -489,11 +491,11 @@ const authRouteHandlers = app
    * Sign out
    */
   .openapi(authRoutes.signOut, async (ctx) => {
-    const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
+    const confirmMfa = await getAuthCookie(ctx, 'confirm_mfa');
 
     if (confirmMfa) {
       // Delete mfa cookie
-      deleteAuthCookie(ctx, 'confirm-mfa');
+      deleteAuthCookie(ctx, 'confirm_mfa');
 
       logEvent('info', 'User mfa canceled');
 

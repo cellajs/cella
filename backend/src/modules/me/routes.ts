@@ -60,10 +60,10 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get invitations',
-    description: 'Returns a list of pending entity invitations which *current user* received.',
+    description: 'Returns a list of entities with pending memberships - meaning activatedAt is still null.',
     responses: {
       200: {
-        description: 'Invitations pending',
+        description: 'Entity memberships pending',
         content: { 'application/json': { schema: meInvitationsSchema } },
       },
       ...errorResponses,

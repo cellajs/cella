@@ -218,10 +218,10 @@ const membershipRouteHandlers = app
     );
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map(({ email, token, id }) => ({
+    const recipients = insertedTokens.map(({ email, token }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${id}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/tokens/${token}`,
     }));
 
     const emailProps = {
@@ -365,6 +365,53 @@ const membershipRouteHandlers = app
     logEvent('info', 'Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
     return ctx.json(updatedMembership, 200);
+  })
+  /*
+   * Accept - or reject - organization membership invitation
+   */
+  .openapi(membershipRoutes.acceptMembership, async (ctx) => {
+    const { id: membershipId, acceptOrReject } = ctx.req.valid('param');
+
+    const user = getContextUser();
+
+    console.log('TODO, reject not handled', acceptOrReject);
+
+    // TODO use get membership util
+    const [membership] = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.tokenId)))
+      .limit(1);
+    if (!membership) throw new AppError({ status: 404, type: 'membership_not_found', severity: 'error', meta: { membershipId } });
+
+    // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
+    if (user.id !== membership.userId) throw new AppError({ status: 401, type: 'user_mismatch', severity: 'error' });
+
+    // Can't accept already active membership
+    if (membership.activatedAt) throw new AppError({ status: 400, type: 'membership_already_active', severity: 'error', meta: { membershipId } });
+
+    // Can't accept membership without token
+    if (!membership.tokenId) throw new AppError({ status: 400, type: 'membership_without_token', severity: 'error', meta: { membershipId } });
+
+    // Make sure its an organization membership
+    if (membership.contextType !== 'organization') throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+
+    // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
+    // TODO test this in raak for projects and edge cases
+    const activatedMemberships = await db
+      .update(membershipsTable)
+      .set({ tokenId: null, activatedAt: getIsoDate() })
+      .where(and(eq(membershipsTable.tokenId, membership.tokenId)))
+      .returning();
+
+    const entity = await resolveEntity('organization', membership.organizationId);
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
+
+    eventManager.emit('acceptedMembership', membership);
+
+    logEvent('info', 'Accepted memberships', { ids: activatedMemberships.map((m) => m.id) });
+
+    return ctx.json({ ...entity, membership }, 200);
   })
   /*
    * Get members by entity id/slug and type
@@ -528,7 +575,7 @@ const membershipRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${newToken}?tokenId=${newTokenId}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/tokens/${newToken}`,
     };
 
     const emailProps = {

@@ -474,10 +474,10 @@ export type CreatePasswordData = {
     password: string;
   };
   path: {
-    token: string;
+    tokenId: string;
   };
   query?: never;
-  url: '/auth/create-password/{token}';
+  url: '/auth/create-password/{tokenId}';
 };
 
 export type CreatePasswordErrors = {
@@ -584,6 +584,50 @@ export type SignInResponses = {
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
 
+export type ConsumeTokenData = {
+  body?: never;
+  path: {
+    token: string;
+  };
+  query?: never;
+  url: '/auth/tokens/{token}';
+};
+
+export type ConsumeTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type ConsumeTokenError = ConsumeTokenErrors[keyof ConsumeTokenErrors];
+
 export type CheckTokenData = {
   body?: never;
   path: {
@@ -645,64 +689,6 @@ export type CheckTokenResponses = {
 };
 
 export type CheckTokenResponse = CheckTokenResponses[keyof CheckTokenResponses];
-
-export type AcceptEntityInviteData = {
-  body?: never;
-  path: {
-    token: string;
-  };
-  query?: never;
-  url: '/auth/accept-invite/{token}';
-};
-
-export type AcceptEntityInviteErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type AcceptEntityInviteError = AcceptEntityInviteErrors[keyof AcceptEntityInviteErrors];
-
-export type AcceptEntityInviteResponses = {
-  /**
-   * Invitation was accepted
-   */
-  200: ContextEntityBaseSchema & {
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
-    };
-    createdAt: string;
-  };
-};
-
-export type AcceptEntityInviteResponse = AcceptEntityInviteResponses[keyof AcceptEntityInviteResponses];
 
 export type StartImpersonationData = {
   body?: never;
@@ -1706,19 +1692,19 @@ export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitation
 
 export type GetMyInvitationsResponses = {
   /**
-   * Invitations pending
+   * Entity memberships pending
    */
   200: Array<{
     entity: ContextEntityBaseSchema & {
       organizationId?: string;
     };
-    expiresAt: string;
     invitedBy: UserBaseSchema &
       ({
         [key: string]: unknown;
       } | null);
-    token: string;
-    tokenId: string;
+    membership: MembershipBaseSchema & {
+      [key: string]: unknown;
+    };
   }>;
 };
 
@@ -4070,6 +4056,65 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type AcceptMembershipData = {
+  body?: never;
+  path: {
+    id: string;
+    acceptOrReject: 'accept' | 'reject';
+  };
+  query?: never;
+  url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
+};
+
+export type AcceptMembershipErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type AcceptMembershipError = AcceptMembershipErrors[keyof AcceptMembershipErrors];
+
+export type AcceptMembershipResponses = {
+  /**
+   * Invitation was accepted
+   */
+  200: ContextEntityBaseSchema & {
+    membership: MembershipBaseSchema & {
+      [key: string]: unknown;
+    };
+    createdAt: string;
+  };
+};
+
+export type AcceptMembershipResponse = AcceptMembershipResponses[keyof AcceptMembershipResponses];
 
 export type GetMembersData = {
   body?: never;

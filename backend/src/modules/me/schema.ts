@@ -7,7 +7,7 @@ import { totpVerificationBodySchema, webAuthnAssertionSchema } from '#/modules/a
 import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
-import { booleanQuerySchema } from '#/utils/schema/common';
+import { booleanTransformSchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
@@ -68,7 +68,7 @@ export const uploadTokenSchema = z.object({
 });
 
 export const uploadTokenQuerySchema = z.object({
-  public: booleanQuerySchema,
+  public: booleanTransformSchema,
   organizationId: z.string().optional(),
   templateId: z.enum(appConfig.uploadTemplateIds),
 });
@@ -82,9 +82,7 @@ export const toggleMfaStateBody = z.object({
 export const meInvitationsSchema = z.array(
   z.object({
     entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
-    expiresAt: z.date(),
     invitedBy: userBaseSchema.nullable(),
-    token: z.string(),
-    tokenId: z.string(),
+    membership: membershipBaseSchema,
   }),
 );

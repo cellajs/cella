@@ -11,7 +11,6 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { passwordsTable } from '#/db/schema/passwords';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
@@ -217,7 +216,7 @@ const meRouteHandlers = app
     return ctx.json(menu, 200);
   })
   /*
-   * Get my invites data
+   * Get my invitations - a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
     const user = getContextUser();
@@ -226,6 +225,7 @@ const meRouteHandlers = app
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
         const entityIdField = appConfig.entityIdFields[entityType];
+        // TODO cant we use an existing select for this? or resolveEntity util?
         const entitySelect = {
           id: entityTable.id,
           entityType: entityTable.entityType,
@@ -239,20 +239,17 @@ const meRouteHandlers = app
           .select({
             entity: entitySelect,
             invitedBy: userBaseSelect,
-            expiresAt: tokensTable.expiresAt,
-            token: tokensTable.token,
-            tokenId: tokensTable.id,
+            membership: membershipsTable,
           })
-          .from(tokensTable)
-          .leftJoin(usersTable, eq(usersTable.id, tokensTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, tokensTable[entityIdField]))
+          .from(membershipsTable)
+          .leftJoin(usersTable, eq(usersTable.id, membershipsTable.createdBy))
+          .innerJoin(entityTable, eq(entityTable.id, membershipsTable[entityIdField]))
           .where(
             and(
-              eq(tokensTable.type, 'invitation'),
-              eq(tokensTable.entityType, entityType),
-              eq(tokensTable.userId, user.id),
-              isNotNull(tokensTable.role),
-              isNull(tokensTable.consumedAt),
+              eq(membershipsTable.contextType, entityType),
+              eq(membershipsTable.userId, user.id),
+              isNotNull(membershipsTable.tokenId),
+              isNull(membershipsTable.activatedAt),
             ),
           );
       }),

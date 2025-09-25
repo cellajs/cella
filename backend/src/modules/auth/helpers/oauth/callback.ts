@@ -16,9 +16,9 @@ import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-
 import { setUserSession } from '#/modules/auth/helpers/session';
 import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
-import { getValidToken } from '#/utils/validate-token';
 
 /**
  * Handles the default OAuth authentication/signup flow.
@@ -43,9 +43,9 @@ export const handleOAuthCallback = async (
   const { connectUserId, inviteTokenId, verifyTokenId } = cookiePayload;
 
   // Handle OAuth callback flows based on cookie
-  if (connectUserId) return await connectFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
-  if (inviteTokenId) return await inviteFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
-  if (verifyTokenId) return await verifyFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
+  if (connectUserId) return await connectCallbackFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
+  if (inviteTokenId) return await inviteCallbackFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
+  if (verifyTokenId) return await verifyCallbackFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
 
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
@@ -101,7 +101,7 @@ export const handleOAuthCallback = async (
  * @param oauthAccount - The existing OAuth account, if one exists.
  * @returns A redirect response.
  */
-const connectFlow = async (
+const connectCallbackFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
@@ -142,22 +142,21 @@ const connectFlow = async (
  * @param ctx - The request context.
  * @param providerUser - The transformed user data from the OAuth provider.
  * @param provider - The OAuth provider (e.g., 'google', 'github').
- * @param inviteTokenId - The ID of the invitation token.
+ * @param token - The invitation token.
  * @param oauthAccount - The linked OAuth account, if one exists.
  * @returns A redirect response.
  */
-const inviteFlow = async (
+const inviteCallbackFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
-  inviteTokenId: TokenModel['id'],
+  token: TokenModel['token'],
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
-  // Token not found → invalid invitation
-
   const invitationToken = await getValidToken({
-    requiredType: 'invitation',
-    tokenId: inviteTokenId,
+    token,
+    consumeToken: false,
+    tokenType: 'invitation',
     isRedirect: true,
   });
 
@@ -187,17 +186,17 @@ const inviteFlow = async (
   return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'invite');
 };
 
-const verifyFlow = async (
+const verifyCallbackFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
-  verifyTokenId: TokenModel['id'],
+  token: TokenModel['token'],
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
-  // Token not found → invalid verification
   const verifyToken = await getValidToken({
-    requiredType: 'email_verification',
-    tokenId: verifyTokenId,
+    token,
+    consumeToken: false,
+    tokenType: 'email_verification',
     isRedirect: true,
   });
 

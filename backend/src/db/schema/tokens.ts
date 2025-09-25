@@ -15,6 +15,7 @@ const baseColumns = {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   token: varchar().notNull(),
+  singleUseToken: varchar(),
   type: varchar({ enum: tokenTypeEnum }).notNull(),
   email: varchar().notNull(),
   entityType: varchar({ enum: appConfig.contextEntityTypes }),

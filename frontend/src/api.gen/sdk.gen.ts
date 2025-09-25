@@ -3,9 +3,9 @@
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
-  AcceptEntityInviteData,
-  AcceptEntityInviteErrors,
-  AcceptEntityInviteResponses,
+  AcceptMembershipData,
+  AcceptMembershipErrors,
+  AcceptMembershipResponses,
   ActivateTotpData,
   ActivateTotpErrors,
   ActivateTotpResponses,
@@ -18,6 +18,8 @@ import type {
   CheckTokenData,
   CheckTokenErrors,
   CheckTokenResponses,
+  ConsumeTokenData,
+  ConsumeTokenErrors,
   CreateAttachmentData,
   CreateAttachmentErrors,
   CreateAttachmentResponses,
@@ -350,23 +352,23 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
 };
 
 /**
- * Create password by token
+ * Create password
  * 🌐 Public access
  * ⏳ token_password_reset (5/h)
  *
- * Sets a new password using a token and grants a session immediately upon success.
+ * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
- * **POST /auth/create-password/{token}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{token}) ·· _auth_
+ * **POST /auth/create-password/{tokenId}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{tokenId}) ·· _auth_
  *
  * @param {createPasswordData} options
- * @param {string} options.path.token - `string`
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
   return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/create-password/{token}',
+    url: '/auth/create-password/{tokenId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -402,6 +404,33 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
 };
 
 /**
+ * Refresh token
+ * 🌐 Public access
+ *
+ * Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.
+ *
+ * **GET /auth/tokens/{token}** ·· [consumeToken](http://localhost:4000/docs#tag/auth/get/auth/tokens/{token}) ·· _auth_
+ *
+ * @param {consumeTokenData} options
+ * @param {string} options.path.token - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const consumeToken = <ThrowOnError extends boolean = true>(options: Options<ConsumeTokenData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, ConsumeTokenErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/tokens/{token}',
+    ...options,
+  });
+};
+
+/**
  * Check token
  * 🌐 Public access
  *
@@ -425,34 +454,6 @@ export const checkToken = <ThrowOnError extends boolean = true>(options: Options
       },
     ],
     url: '/auth/check-token/{tokenId}',
-    ...options,
-  });
-};
-
-/**
- * Accept invitation
- * 🛡️ Requires authentication
- * ⏳ token_invitation (5/h)
- *
- * Accepts an invitation token and activates the associated membership or system access.
- *
- * **POST /auth/accept-invite/{token}** ·· [acceptEntityInvite](http://localhost:4000/docs#tag/auth/post/auth/accept-invite/{token}) ·· _auth_
- *
- * @param {acceptEntityInviteData} options
- * @param {string} options.path.token - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/accept-invite/{token}',
     ...options,
   });
 };
@@ -944,7 +945,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  * Get invitations
  * 🛡️ Requires authentication
  *
- * Returns a list of pending entity invitations which *current user* received.
+ * Returns a list of entities with pending memberships - meaning activatedAt is still null.
  *
  * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
  *
@@ -2183,6 +2184,34 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Accept invitation
+ * 🛡️ Requires authentication
+ *
+ * Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.
+ *
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [acceptMembership](http://localhost:4000/docs#tag/auth/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _auth_
+ *
+ * @param {acceptMembershipData} options
+ * @param {string} options.path.id - `string`
+ * @param {enum} options.path.acceptorreject - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const acceptMembership = <ThrowOnError extends boolean = true>(options: Options<AcceptMembershipData, ThrowOnError>) => {
+  return (options.client ?? client).post<AcceptMembershipResponses, AcceptMembershipErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
+    ...options,
   });
 };
 

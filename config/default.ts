@@ -226,6 +226,7 @@ enabledOAuthProviders: ['github'] as const,
   /**
    * Roles on system and entity level
    */
+  // TODO just roles?
   rolesByType: {
     systemRoles: ['user', 'admin'] as const,
     entityRoles: ['member', 'admin'] as const,

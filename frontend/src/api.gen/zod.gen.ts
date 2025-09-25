@@ -294,7 +294,7 @@ export const zCreatePasswordData = z.object({
     }),
   ),
   path: z.object({
-    token: z.string(),
+    tokenId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -326,6 +326,14 @@ export const zSignInResponse = z.object({
   redirectPath: z.optional(z.string()),
 });
 
+export const zConsumeTokenData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    token: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
 export const zCheckTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
@@ -347,24 +355,6 @@ export const zCheckTokenResponse = z.object({
   organizationSlug: z.optional(z.string()),
   organizationId: z.optional(z.string()),
 });
-
-export const zAcceptEntityInviteData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    token: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Invitation was accepted
- */
-export const zAcceptEntityInviteResponse = zContextEntityBaseSchema.and(
-  z.object({
-    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
-    createdAt: z.string(),
-  }),
-);
 
 export const zStartImpersonationData = z.object({
   body: z.optional(z.never()),
@@ -653,7 +643,7 @@ export const zGetMyInvitationsData = z.object({
 });
 
 /**
- * Invitations pending
+ * Entity memberships pending
  */
 export const zGetMyInvitationsResponse = z.array(
   z.object({
@@ -662,10 +652,8 @@ export const zGetMyInvitationsResponse = z.array(
         organizationId: z.optional(z.string()),
       }),
     ),
-    expiresAt: z.iso.date(),
     invitedBy: zUserBaseSchema.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
-    token: z.string(),
-    tokenId: z.string(),
+    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
   }),
 );
 
@@ -1454,6 +1442,25 @@ export const zUpdateMembershipResponse = z.object({
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
 });
+
+export const zAcceptMembershipData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+    acceptOrReject: z.enum(['accept', 'reject']),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invitation was accepted
+ */
+export const zAcceptMembershipResponse = zContextEntityBaseSchema.and(
+  z.object({
+    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+    createdAt: z.string(),
+  }),
+);
 
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),

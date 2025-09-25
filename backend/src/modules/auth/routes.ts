@@ -16,7 +16,6 @@ import {
   tokenWithDataSchema,
   totpVerificationBodySchema,
 } from '#/modules/auth/schema';
-import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
@@ -152,6 +151,7 @@ const authRoutes = {
     },
   }),
 
+  // TODO merge this into consumeToken
   verifyEmail: createCustomRoute({
     operationId: 'verifyEmail',
     method: 'get',
@@ -200,15 +200,15 @@ const authRoutes = {
   createPasswordWithToken: createCustomRoute({
     operationId: 'createPassword',
     method: 'post',
-    path: '/create-password/{token}',
+    path: '/create-password/{tokenId}',
     guard: isPublicAccess,
     middleware: [tokenLimiter('password_reset'), hasValidToken('password_reset')],
     tags: ['auth'],
-    summary: 'Create password by token',
-    description: 'Sets a new password using a token and grants a session immediately upon success.',
+    summary: 'Create password',
+    description: 'Sets a new password using a single-use session token in cookie and grants a session immediately upon success.',
     security: [],
     request: {
-      params: tokenParamSchema,
+      params: z.object({ tokenId: z.string() }),
       body: { content: { 'application/json': { schema: z.object({ password: passwordSchema }) } } },
     },
     responses: {
@@ -310,6 +310,30 @@ const authRoutes = {
     },
   }),
 
+  // TODO we can allow a second time using short code from email that has to be manually entered
+  consumeToken: createCustomRoute({
+    operationId: 'consumeToken',
+    method: 'get',
+    path: '/tokens/{token}',
+    guard: isPublicAccess,
+    middleware: isNoBot,
+    tags: ['auth'],
+    summary: 'Refresh token',
+    description:
+      'Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.',
+    request: {
+      params: z.object({ token: z.string() }),
+    },
+    responses: {
+      302: {
+        description: 'Redirect with refreshed token in cookie',
+        headers: locationSchema,
+      },
+      ...errorResponses,
+    },
+  }),
+
+  // TODO remove
   checkToken: createCustomRoute({
     operationId: 'checkToken',
     method: 'post',
@@ -328,29 +352,6 @@ const authRoutes = {
       200: {
         description: 'Token is valid',
         content: { 'application/json': { schema: tokenWithDataSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  acceptEntityInvite: createCustomRoute({
-    operationId: 'acceptEntityInvite',
-    method: 'post',
-    path: '/accept-invite/{token}',
-    guard: [isAuthenticated],
-    middleware: [tokenLimiter('invitation'), hasValidToken('invitation')],
-    tags: ['auth'],
-    summary: 'Accept invitation',
-    description: 'Accepts an invitation token and activates the associated membership or system access.',
-    request: { params: tokenParamSchema },
-    responses: {
-      200: {
-        description: 'Invitation was accepted',
-        content: {
-          'application/json': {
-            schema: contextEntityWithMembershipSchema.extend({ createdAt: z.string() }),
-          },
-        },
       },
       ...errorResponses,
     },

@@ -29,7 +29,7 @@ Built using [node-rate-limiter-flexible](https://github.com/animir/node-rate-lim
 
 ### Token validation
 
-You can use the middleware `hasValidToken` to validate a token. If its valid (it exists, it is not expired), then it will be added to `getContext`.
+You can use the middleware `hasValidToken` to validate a refresh token in a cookie. If its valid (it exists, it is not expired), then it will be added to `getContext`.
 
 ### Monitoring
 

@@ -109,7 +109,8 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}`,
+      // TODO is there a way to import the url from the hono route files?
+      systemInviteLink: `${appConfig.backendAuthUrl}/tokens/${tokenRecord.token}`,
     }));
 
     type Recipient = (typeof recipients)[number];

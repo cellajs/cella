@@ -3,7 +3,7 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
-import { booleanQuerySchema } from '#/utils/schema/common';
+import { booleanTransformSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const systemRoutes = {
@@ -42,7 +42,7 @@ const systemRoutes = {
     summary: 'Newsletter to members',
     description: 'Sends a newsletter to members of one or more specified organizations.',
     request: {
-      query: z.object({ toSelf: booleanQuerySchema }),
+      query: z.object({ toSelf: booleanTransformSchema }),
       body: {
         required: true,
         content: {
