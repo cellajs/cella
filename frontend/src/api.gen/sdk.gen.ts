@@ -15,9 +15,6 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
-  CheckTokenData,
-  CheckTokenErrors,
-  CheckTokenResponses,
   ConsumeTokenData,
   ConsumeTokenErrors,
   CreateAttachmentData,
@@ -116,6 +113,9 @@ import type {
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
+  GetTokenDataData,
+  GetTokenDataErrors,
+  GetTokenDataResponses,
   GetUploadTokenData,
   GetUploadTokenErrors,
   GetUploadTokenResponses,
@@ -280,14 +280,14 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 /**
  * Sign up to accept invite
  * 🌐 Public access
- * ⏳ token_signup_invitation (5/h), Email (5/h)
+ * ⏳ token_signup_invitation (10/h), Email (5/h)
  *
  * Registers a user using an email and password in response to a system or organization invitation.
  *
- * **POST /auth/sign-up/{token}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{token}) ·· _auth_
+ * **POST /auth/sign-up/{tokenId}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{tokenId}) ·· _auth_
  *
  * @param {signUpWithTokenData} options
- * @param {string} options.path.token - `string`
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -295,7 +295,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/sign-up/{token}',
+    url: '/auth/sign-up/{tokenId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -307,21 +307,21 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Verify email by token
  * 🌐 Public access
- * ⏳ token_email_verification (5/h)
+ * ⏳ token_email_verification (10/h)
  *
- * Verifies a user's email using a token from their verification email. Grants a session upon success.
+ * Verifies a user's email using a single-use session token in cookie. Grants a session upon success.
  *
- * **GET /auth/verify-email/{token}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{token}) ·· _auth_
+ * **GET /auth/verify-email/{tokenId}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{tokenId}) ·· _auth_
  *
  * @param {verifyEmailData} options
- * @param {string} options.path.token - `string`
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.query.redirect - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
   return (options.client ?? client).get<unknown, VerifyEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/verify-email/{token}',
+    url: '/auth/verify-email/{tokenId}',
     ...options,
   });
 };
@@ -354,7 +354,7 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
 /**
  * Create password
  * 🌐 Public access
- * ⏳ token_password_reset (5/h)
+ * ⏳ token_password_reset (10/h)
  *
  * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
@@ -409,7 +409,7 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
  *
  * Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.
  *
- * **GET /auth/tokens/{token}** ·· [consumeToken](http://localhost:4000/docs#tag/auth/get/auth/tokens/{token}) ·· _auth_
+ * **GET /auth/consume-token/{token}** ·· [consumeToken](http://localhost:4000/docs#tag/auth/get/auth/consume-token/{token}) ·· _auth_
  *
  * @param {consumeTokenData} options
  * @param {string} options.path.token - `string`
@@ -425,26 +425,26 @@ export const consumeToken = <ThrowOnError extends boolean = true>(options: Optio
         type: 'apiKey',
       },
     ],
-    url: '/auth/tokens/{token}',
+    url: '/auth/consume-token/{token}',
     ...options,
   });
 };
 
 /**
- * Check token
+ * Get token data
  * 🌐 Public access
  *
- * Checks by token id - NOT token itself - if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.
+ * Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.
  *
- * **POST /auth/check-token/{tokenId}** ·· [checkToken](http://localhost:4000/docs#tag/auth/post/auth/check-token/{tokenId}) ·· _auth_
+ * **GET /auth/token/{tokenId}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{tokenId}) ·· _auth_
  *
- * @param {checkTokenData} options
+ * @param {getTokenDataData} options
  * @param {string} options.path.tokenid - `string`
  * @param {enum} options.query.type - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const checkToken = <ThrowOnError extends boolean = true>(options: Options<CheckTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
+export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
+  return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -453,7 +453,7 @@ export const checkToken = <ThrowOnError extends boolean = true>(options: Options
         type: 'apiKey',
       },
     ],
-    url: '/auth/check-token/{tokenId}',
+    url: '/auth/token/{tokenId}',
     ...options,
   });
 };
@@ -612,7 +612,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(options: Options<
 /**
  * Callback for GitHub
  * 🌐 Public access
- * ⏳ token_github (5/h)
+ * ⏳ token_github (10/h)
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -637,7 +637,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Callback for Google
  * 🌐 Public access
- * ⏳ token_google (5/h)
+ * ⏳ token_google (10/h)
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -659,7 +659,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Callback for Microsoft
  * 🌐 Public access
- * ⏳ token_microsoft (5/h)
+ * ⏳ token_microsoft (10/h)
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -707,7 +707,7 @@ export const createPasskeyChallenge = <ThrowOnError extends boolean = true>(opti
 /**
  * Verify passkey
  * 🌐 Public access
- * ⏳ token_passkey (5/h)
+ * ⏳ token_passkey (10/h)
  *
  * Validates the signed challenge and completes passkey based authentication.
  *
@@ -1159,7 +1159,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Unsubscribe
  * 🌐 Public access
- * ⏳ token_unsubscribe (5/h)
+ * ⏳ token_unsubscribe (10/h)
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
@@ -1648,7 +1648,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Paddle webhook (WIP)
  * 🌐 Public access
- * ⏳ token_paddle (5/h)
+ * ⏳ token_paddle (10/h)
  *
  * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  *
@@ -2057,7 +2057,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 /**
  * Redirect to attachment
  * 🌐 Public access
- * ⏳ token_attachment_redirect (5/h)
+ * ⏳ token_attachment_redirect (10/h)
  *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *

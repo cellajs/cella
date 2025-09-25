@@ -21,6 +21,7 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { handleEmailVerification } from '#/modules/auth/helpers/handle-email-verification';
 import { consumeMfaToken, initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { handleOAuthCallback } from '#/modules/auth/helpers/oauth/callback';
 import { handleOAuthInitiation, type OAuthCookiePayload } from '#/modules/auth/helpers/oauth/initiation';
@@ -44,7 +45,6 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -144,6 +144,7 @@ const authRouteHandlers = app
   })
   /*
    * Sign up with email & password to accept (system or membership) invitations.
+   * Token is in single use session cookie.
    * Only for organization membership invitations, user will proceed to accept after signing up.
    */
   .openapi(authRoutes.signUpWithToken, async (ctx) => {
@@ -152,7 +153,8 @@ const authRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const membershipInvite = !!validToken.entityType;
+    const membershipInvite = validToken.type === 'invitation';
+
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -182,6 +184,7 @@ const authRouteHandlers = app
       .limit(1);
     if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
 
+    // Redirect to accept invitation if membership invite
     const redirectPath = membershipInvite
       ? `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`
       : appConfig.defaultRedirectPath;
@@ -191,52 +194,9 @@ const authRouteHandlers = app
    * Verify email
    */
   .openapi(authRoutes.verifyEmail, async (ctx) => {
-    const { redirect } = ctx.req.valid('query');
-
-    // No token in context
     const token = getContextToken();
-    if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    // Only allow verify emails for "password" strategy (Oauth verification is handled by Oauth callback handlers)
-    if (token.oauthAccountId) {
-      throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
-    }
-
-    // Get user
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
-
-    // User not found
-    if (!user) {
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
-    }
-
-    // Set email verified if it exists
-    await db
-      .update(emailsTable)
-      .set({ verified: true, verifiedAt: getIsoDate() })
-      .where(
-        and(
-          eq(emailsTable.tokenId, token.id),
-          eq(emailsTable.userId, token.userId),
-          eq(emailsTable.email, token.email),
-          eq(emailsTable.verified, false),
-        ),
-      );
-
-    // Start MFA challenge if the user has MFA enabled
-    const mfaRedirectPath = await initiateMfa(ctx, user);
-
-    // Determine redirect url
-    const decodedRedirect = decodeURIComponent(redirect || '');
-    const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
-
-    const redirectPath = mfaRedirectPath || baseRedirectPath;
-    const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
-
-    // If MFA is not required, set  user session immediately
-    if (!mfaRedirectPath) await setUserSession(ctx, user, 'email');
-
-    return ctx.redirect(redirectUrl, 302);
+    return handleEmailVerification(ctx, token);
   })
   /*
    * Request reset password email
@@ -270,7 +230,7 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.backendAuthUrl}/tokens/${tokenRecord.token}`;
+    const createPasswordLink = `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
@@ -375,23 +335,21 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.consumeToken, async (ctx) => {
     const { token } = ctx.req.valid('param');
-    // TODO how to provide additional security against CSRF?
 
     // Check if token exists and create a new refresh token
     const tokenRecord = await getValidToken({ token, consumeToken: true });
     if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', isRedirect: true });
 
-    // Set cookie with single use token for 10 minutes
-    // TODO can we make it one time use somehow from initiation?
+    // Set cookie using token type as name. Content is single use token. Expires in 10 minutes or until used.
     await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(10, 'm'));
 
-    let redirectPath = appConfig.defaultRedirectPath;
+    // If verification email, we process it immediately and redirect to frontend accordingly
+    if (tokenRecord.type === 'email_verification') return handleEmailVerification(ctx, tokenRecord);
 
-    if (tokenRecord.type === 'invitation') redirectPath = `/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
-    if (tokenRecord.type === 'email_verification') redirectPath = '/auth/authenticate';
-    if (tokenRecord.type === 'password_reset') redirectPath = `/auth/create-password/${tokenRecord.id}`;
+    let redirectUrl = appConfig.defaultRedirectPath;
 
-    const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+    if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
+    if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
     logEvent('info', 'Token consumed, redirecting with single use session token', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
 
@@ -401,7 +359,7 @@ const authRouteHandlers = app
    * Check token by id (without consuming it)
    */
   // TODO simplify?
-  .openapi(authRoutes.checkToken, async (ctx) => {
+  .openapi(authRoutes.getTokenData, async (ctx) => {
     // Find token in request
     const { tokenId } = ctx.req.valid('param');
     const { type: tokenType } = ctx.req.valid('query');

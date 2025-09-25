@@ -20,7 +20,7 @@ export interface EmailVerificationEmailProps extends BasicTemplateType {
 export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: EmailVerificationEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
-      <EmailHeader headerText={i18n.t('backend:email.email_verification.preview', { appName, lng })} />
+      <EmailHeader headerText={i18n.t('backend:email.email_verification.title', { appName, lng })} />
       <EmailBody>
         <Text>
           <span

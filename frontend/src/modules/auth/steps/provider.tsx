@@ -2,7 +2,7 @@ import { useMatchRoute, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useState } from 'react';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep } from '~/modules/auth/types';
-import { useCheckToken } from '~/modules/auth/use-token-check';
+import { useGetTokenData } from '~/modules/auth/use-token-check';
 import { useUserStore } from '~/store/user';
 import { AuthContext } from './provider-context';
 
@@ -22,7 +22,7 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const [step, setStepState] = useState<AuthStep>(initStep);
   const [authError, setAuthError] = useState<ApiError | null>(null);
 
-  const { data: tokenData } = useCheckToken('invitation', tokenId, !!tokenId);
+  const { data: tokenData } = useGetTokenData('invitation', tokenId, !!tokenId);
 
   const setStep = (newStep: AuthStep, newEmail: string, error?: ApiError) => {
     setStepState(newStep);

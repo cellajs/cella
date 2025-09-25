@@ -58,9 +58,6 @@ export const languageSchema = z.enum(appConfig.languages);
  * Common param schemas
  ************************************************************************************************/
 
-/** Schema for authentication token parameter (token string) */
-export const tokenParamSchema = z.object({ token: z.string() });
-
 /** Schema for entity identifier idOrSlug */
 export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
 

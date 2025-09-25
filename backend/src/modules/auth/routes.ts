@@ -16,7 +16,7 @@ import {
   tokenWithDataSchema,
   totpVerificationBodySchema,
 } from '#/modules/auth/schema';
-import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const authRoutes = {
@@ -130,7 +130,7 @@ const authRoutes = {
   signUpWithToken: createCustomRoute({
     operationId: 'signUpWithToken',
     method: 'post',
-    path: '/sign-up/{token}',
+    path: '/sign-up/{tokenId}',
     guard: isPublicAccess,
     middleware: [tokenLimiter('signup_invitation'), emailEnumLimiter, hasValidToken('invitation')],
     tags: ['auth'],
@@ -138,7 +138,7 @@ const authRoutes = {
     description: 'Registers a user using an email and password in response to a system or organization invitation.',
     security: [],
     request: {
-      params: tokenParamSchema,
+      params: z.object({ tokenId: z.string() }),
       body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
     },
     responses: {
@@ -151,19 +151,18 @@ const authRoutes = {
     },
   }),
 
-  // TODO merge this into consumeToken
   verifyEmail: createCustomRoute({
     operationId: 'verifyEmail',
     method: 'get',
-    path: '/verify-email/{token}',
+    path: '/verify-email/{tokenId}',
     guard: isPublicAccess,
     middleware: [tokenLimiter('email_verification'), hasValidToken('email_verification')],
     tags: ['auth'],
     summary: 'Verify email by token',
-    description: "Verifies a user's email using a token from their verification email. Grants a session upon success.",
+    description: "Verifies a user's email using a single-use session token in cookie. Grants a session upon success.",
     security: [],
     request: {
-      params: tokenParamSchema,
+      params: z.object({ tokenId: z.string() }),
       query: z.object({ redirect: z.string().optional() }),
     },
     responses: {
@@ -314,7 +313,7 @@ const authRoutes = {
   consumeToken: createCustomRoute({
     operationId: 'consumeToken',
     method: 'get',
-    path: '/tokens/{token}',
+    path: '/consume-token/{token}',
     guard: isPublicAccess,
     middleware: isNoBot,
     tags: ['auth'],
@@ -334,16 +333,16 @@ const authRoutes = {
   }),
 
   // TODO remove
-  checkToken: createCustomRoute({
-    operationId: 'checkToken',
-    method: 'post',
-    path: '/check-token/{tokenId}',
+  getTokenData: createCustomRoute({
+    operationId: 'getTokenData',
+    method: 'get',
+    path: '/token/{tokenId}',
     guard: isPublicAccess,
     middleware: isNoBot,
     tags: ['auth'],
-    summary: 'Check token',
+    summary: 'Get token data',
     description:
-      'Checks by token id - NOT token itself - if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.',
+      'Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.',
     request: {
       params: z.object({ tokenId: z.string() }),
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),

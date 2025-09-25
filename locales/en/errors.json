@@ -72,6 +72,8 @@
   "invalid_session": "Not authenticated",
   "invalid_session.text": "Your session has expired or is invalid. Please sign in again.",
   "invalid_state": "Invalid state",
+  "insecure_request": "Insecure request",
+  "insecure_request.text": "To protect your data, we can't process this request.",
   "invalid_state.text": "Could not complete the authentication process.",
   "invalid_token": "Invalid token",
   "invitation_expired": "Invitation has expired",

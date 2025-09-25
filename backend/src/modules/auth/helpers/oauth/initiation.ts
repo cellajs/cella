@@ -120,7 +120,7 @@ const prepareOAuthAcceptInvite = async (ctx: Context) => {
 
   const tokenRecord = await getValidToken({ token, consumeToken: false, tokenType: 'invitation' });
 
-  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/tokens/${tokenRecord.token}` : appConfig.defaultRedirectPath;
+  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
   return { redirectPath };
 };
@@ -174,7 +174,7 @@ const prepareOAuthVerify = async (ctx: Context) => {
   const tokenRecord = await getValidToken({ token, consumeToken: false, isRedirect: true, tokenType: 'email_verification' });
 
   // If entityType exists, proceed to invitation flow
-  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/tokens/${tokenRecord.token}` : appConfig.defaultRedirectPath;
+  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
   return { verifyTokenId: tokenRecord.id, redirectPath };
 };

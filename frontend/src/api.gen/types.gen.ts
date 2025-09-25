@@ -317,10 +317,10 @@ export type SignUpWithTokenData = {
     password: string;
   };
   path: {
-    token: string;
+    tokenId: string;
   };
   query?: never;
-  url: '/auth/sign-up/{token}';
+  url: '/auth/sign-up/{tokenId}';
 };
 
 export type SignUpWithTokenErrors = {
@@ -373,12 +373,12 @@ export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithT
 export type VerifyEmailData = {
   body?: never;
   path: {
-    token: string;
+    tokenId: string;
   };
   query?: {
     redirect?: string;
   };
-  url: '/auth/verify-email/{token}';
+  url: '/auth/verify-email/{tokenId}';
 };
 
 export type VerifyEmailErrors = {
@@ -590,7 +590,7 @@ export type ConsumeTokenData = {
     token: string;
   };
   query?: never;
-  url: '/auth/tokens/{token}';
+  url: '/auth/consume-token/{token}';
 };
 
 export type ConsumeTokenErrors = {
@@ -628,7 +628,7 @@ export type ConsumeTokenErrors = {
 
 export type ConsumeTokenError = ConsumeTokenErrors[keyof ConsumeTokenErrors];
 
-export type CheckTokenData = {
+export type GetTokenDataData = {
   body?: never;
   path: {
     tokenId: string;
@@ -636,10 +636,10 @@ export type CheckTokenData = {
   query: {
     type: 'email_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
   };
-  url: '/auth/check-token/{tokenId}';
+  url: '/auth/token/{tokenId}';
 };
 
-export type CheckTokenErrors = {
+export type GetTokenDataErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -672,9 +672,9 @@ export type CheckTokenErrors = {
   };
 };
 
-export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
+export type GetTokenDataError = GetTokenDataErrors[keyof GetTokenDataErrors];
 
-export type CheckTokenResponses = {
+export type GetTokenDataResponses = {
   /**
    * Token is valid
    */
@@ -688,7 +688,7 @@ export type CheckTokenResponses = {
   };
 };
 
-export type CheckTokenResponse = CheckTokenResponses[keyof CheckTokenResponses];
+export type GetTokenDataResponse = GetTokenDataResponses[keyof GetTokenDataResponses];
 
 export type StartImpersonationData = {
   body?: never;

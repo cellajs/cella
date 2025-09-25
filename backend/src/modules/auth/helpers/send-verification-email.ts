@@ -95,8 +95,8 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = !oauthAccount ? `/auth/verify-email/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
-  const verificationURL = new URL(verifyPath, appConfig.backendAuthUrl);
+  const verifyPath = !oauthAccount ? `/auth/consume-token/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
+  const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
   // Add query params to pass through OAuth verification
   if (oauthAccount) {

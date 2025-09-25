@@ -16,7 +16,7 @@ type BaseProps = {
  * @param ctx - Hono context
  * @param tokenType (optional) The required type of the token (e.g., 'password_reset', 'email_verification').
  * @returns The valid single use token record from the database.
- * @throws AppError if the token is not found, expired, or of an invalid type.
+ * @throws AppError if the token is not found or of an invalid type.
  */
 export const getValidSingleUseToken = async ({ ctx, tokenType }: BaseProps): Promise<TokenModel> => {
   // Find single use token in cookie

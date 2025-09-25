@@ -11,7 +11,7 @@ import { type CreatePasswordData, type CreatePasswordResponse, createPassword } 
 import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useCheckToken } from '~/modules/auth/use-token-check';
+import { useGetTokenData } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -32,7 +32,7 @@ const CreatePasswordForm = () => {
 
   const { tokenId } = useParams({ from: '/publicLayout/authLayout/auth/create-password/$tokenId' });
 
-  const { data, isLoading, error } = useCheckToken('password_reset', tokenId);
+  const { data, isLoading, error } = useGetTokenData('password_reset', tokenId);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in

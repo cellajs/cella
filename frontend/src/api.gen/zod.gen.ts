@@ -247,7 +247,7 @@ export const zSignUpWithTokenData = z.object({
     }),
   ),
   path: z.object({
-    token: z.string(),
+    tokenId: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -263,7 +263,7 @@ export const zSignUpWithTokenResponse = z.object({
 export const zVerifyEmailData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    token: z.string(),
+    tokenId: z.string(),
   }),
   query: z.optional(
     z.object({
@@ -334,7 +334,7 @@ export const zConsumeTokenData = z.object({
   query: z.optional(z.never()),
 });
 
-export const zCheckTokenData = z.object({
+export const zGetTokenDataData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     tokenId: z.string(),
@@ -347,7 +347,7 @@ export const zCheckTokenData = z.object({
 /**
  * Token is valid
  */
-export const zCheckTokenResponse = z.object({
+export const zGetTokenDataResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
