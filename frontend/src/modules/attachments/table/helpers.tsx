@@ -15,7 +15,10 @@ export const useAttachmentsUploadDialog = () => {
   const open = (organizationId: string) => {
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
-      createAttachments({ localCreation: !onlineManager.isOnline(), attachments, orgIdOrSlug: organizationId });
+
+      const localCreation = !(appConfig.has.uploadEnabled && onlineManager.isOnline());
+
+      createAttachments({ attachments, orgIdOrSlug: organizationId, localCreation });
       useUploader.getState().remove();
     };
 

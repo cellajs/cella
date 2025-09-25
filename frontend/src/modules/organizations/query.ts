@@ -21,20 +21,22 @@ import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } fro
  * Keys for organizations related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
  */
-export const organizationsKeys = {
-  all: ['organizations'] as const,
+export const keys = {
+  all: ['organizations'],
   table: {
-    base: () => [...organizationsKeys.all, 'table'] as const,
-    entries: (filters: Omit<GetOrganizationsData['query'], 'limit' | 'offset'>) => [...organizationsKeys.table.base(), filters] as const,
+    base: ['organizations', 'table'],
+    entries: (filters: Omit<GetOrganizationsData['query'], 'limit' | 'offset'>) => [...keys.table.base, filters],
   },
   single: {
-    base: ['organization'] as const,
-    byIdOrSlug: (idOrSlug: string) => [...organizationsKeys.single.base, idOrSlug] as const,
+    base: ['organization'],
+    byIdOrSlug: (idOrSlug: string) => [...keys.single.base, idOrSlug],
   },
-  create: () => [...organizationsKeys.all, 'create'] as const,
-  update: () => [...organizationsKeys.all, 'update'] as const,
-  delete: () => [...organizationsKeys.all, 'delete'] as const,
+  create: ['organizations', 'create'],
+  update: ['organizations', 'update'],
+  delete: ['organizations', 'delete'],
 };
+
+export const organizationsKeys = keys;
 
 /**
  * Query options for a single organization by id or slug.
@@ -97,10 +99,10 @@ export const organizationsQueryOptions = ({
  */
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
-    mutationKey: organizationsKeys.create(),
+    mutationKey: organizationsKeys.create,
     mutationFn: (body) => createOrganization({ body }),
     onSuccess: (createdOrganization) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base());
+      const mutateCache = useMutateQueryData(organizationsKeys.table.base);
 
       mutateCache.create([createdOrganization]);
       addMenuItem(createdOrganization, 'organization');
@@ -117,13 +119,13 @@ export const useOrganizationCreateMutation = () => {
  */
 export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
-    mutationKey: organizationsKeys.update(),
+    mutationKey: organizationsKeys.update,
     mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
     onSuccess: (updatedOrganization) => {
       // Update menuItem in store, only if it has membership is not null
       if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });
 
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['update']);
+      const mutateCache = useMutateQueryData(organizationsKeys.table.base, () => organizationsKeys.single.base, ['update']);
 
       mutateCache.update([updatedOrganization]);
     },
@@ -138,13 +140,13 @@ export const useOrganizationUpdateMutation = () => {
  */
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({
-    mutationKey: organizationsKeys.delete(),
+    mutationKey: organizationsKeys.delete,
     mutationFn: async (organizations) => {
       const ids = organizations.map(({ id }) => id);
       await deleteOrganizations({ body: { ids } });
     },
     onSuccess: (_, organizations) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['remove']);
+      const mutateCache = useMutateQueryData(organizationsKeys.table.base, () => organizationsKeys.single.base, ['remove']);
 
       mutateCache.remove(organizations);
       for (const { id } of organizations) deleteMenuItem(id);

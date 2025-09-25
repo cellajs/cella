@@ -3,7 +3,6 @@ import { appConfig } from 'config';
 import { Bird } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -11,16 +10,13 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import { RequestsTableBar } from '~/modules/requests/table/bar';
 import { useColumns } from '~/modules/requests/table/columns';
-import type { Request } from '~/modules/requests/types';
-import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
+import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
 
 const LIMIT = appConfig.requestLimits.requests;
 
-export type RequestsSearch = z.infer<typeof requestSearchSchema>;
-
 const RequestsTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<RequestsSearch>({ from: RequestsTableRoute.id });
+  const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/appLayout/system/requests' });
 
   // Table state
   const { q, sort, order } = search;

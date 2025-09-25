@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
-import { contextEntityTypeSchema, paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import { contextEntityTypeSchema, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
@@ -20,12 +20,7 @@ export const userFlagsSchema = z.object(
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
   userFlags: userFlagsSchema,
-})
-  .omit({
-    hashedPassword: true,
-    unsubscribeToken: true,
-  })
-  .openapi('User');
+}).openapi('User');
 
 export const memberSchema = z
   .object({
@@ -38,8 +33,8 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),
   lastName: validNameSchema.nullable(),
   slug: validSlugSchema,
-  thumbnailUrl: validImageKeySchema.nullable(),
-  bannerUrl: validImageKeySchema.nullable(),
+  thumbnailUrl: validCDNUrlSchema.nullable(),
+  bannerUrl: validCDNUrlSchema.nullable(),
 })
   .pick({
     bannerUrl: true,

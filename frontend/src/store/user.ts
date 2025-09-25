@@ -8,11 +8,12 @@ import type { MeAuthData, MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
-  passkey: MeAuthData['passkey']; // Current user's passkey
-  oauth: MeAuthData['oauth']; // Current user's oauth options
+  hasPasskey: boolean; // Current user's passkey
+  hasTotp: MeAuthData['hasTotp']; // Current user's passkey
+  enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
-  setMeAuthData: (data: Partial<MeAuthData>) => void; // Sets current user auth info
+  setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasTotp' | 'enabledOAuth'> & { hasPasskey: boolean }>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
   clearUserStore: () => void; // Resets the store.
 }
@@ -23,8 +24,9 @@ export const useUserStore = create<UserStoreState>()(
       immer((set) => ({
         // Hackish solution to avoid type issues for user being undefined. Router should prevent user ever being undefined in the app layout routes.
         user: null as unknown as MeUser,
-        oauth: [] as MeAuthData['oauth'],
-        passkey: false,
+        enabledOAuth: [] as MeAuthData['enabledOAuth'],
+        hasPasskey: false,
+        hasTotp: false,
         lastUser: null,
         updateUser: (user) => {
           set((state) => ({
@@ -53,6 +55,7 @@ export const useUserStore = create<UserStoreState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
+              mfaRequired: user.mfaRequired,
             };
           });
 
@@ -60,26 +63,28 @@ export const useUserStore = create<UserStoreState>()(
         },
         setMeAuthData: (data) => {
           set((state) => {
-            state.passkey = data.passkey ?? state.passkey;
-            state.oauth = data.oauth ?? state.oauth;
+            state.hasPasskey = data.hasPasskey ?? state.hasPasskey;
+            state.hasTotp = data.hasTotp ?? state.hasTotp;
+            state.enabledOAuth = data.enabledOAuth ?? state.enabledOAuth;
           });
         },
         clearUserStore: () => {
           set((state) => {
             state.user = null as unknown as MeUser;
             state.lastUser = null;
-            state.oauth = [];
-            state.passkey = false;
+            state.enabledOAuth = [];
+            state.hasPasskey = false;
           });
         },
       })),
       {
-        version: 2,
+        version: 4,
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,
-          oauth: state.oauth,
-          passkey: state.passkey,
+          oauth: state.enabledOAuth,
+          passkey: state.hasPasskey,
+          totp: state.hasTotp,
           lastUser: state.lastUser,
         }),
         storage: createJSONStorage(() => localStorage),

@@ -109,7 +109,7 @@ export const useColumns = () => {
         visible: !isMobile,
         width: 100,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <div>{t(`common:${row.role}`)}</div>,
+        renderCell: ({ row }) => <div>{t(row.role, { ns: ['app', 'common'] })}</div>,
       },
       {
         key: 'createdAt',

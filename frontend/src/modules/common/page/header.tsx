@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { appConfig, type PageEntityType } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { UserBaseSchema } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -10,16 +11,18 @@ import type { EntityPage } from '~/modules/entities/types';
 import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
 import { Badge } from '~/modules/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
-import { baseEntityRoutes } from '~/nav-config';
+import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: EntityPage | UserBaseSchema;
   panel?: React.ReactNode;
-  parent?: { idOrSlug: string; entityType: PageEntityType };
+  parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
 };
 
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
+  const { t } = useTranslation();
+
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   const parentData = parent ? useGetEntityBaseData(parent) : null;
@@ -37,7 +40,9 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user' ? 'h-26 w-26 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2 h-12 w-12'
+            entity.entityType === 'user'
+              ? 'h-26 w-26 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full'
+              : 'm-2 text-xl h-12 w-12'
           }
         />
 
@@ -50,7 +55,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             {'membership' in entity && entity.membership && (
               <>
                 <Badge className="opacity-70" variant="plain">
-                  {entity.membership.role}
+                  {t(entity.membership.role, { ns: ['app', 'common'] })}
                 </Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>
@@ -73,7 +78,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                   <>
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
-                        <Link to={baseEntityRoutes[parentData.entityType].to} params={{ idOrSlug: parentData.slug }}>
+                        <Link to={baseEntityRoutes[parentData.entityType]} params={{ idOrSlug: parentData.slug }}>
                           <span className="truncate max-sm:max-w-24">{parentData.name}</span>
                         </Link>
                       </BreadcrumbLink>

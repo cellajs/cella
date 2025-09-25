@@ -3,17 +3,15 @@
     "includes": [
       "backend/src/**",
       "frontend/src/**",
+      "frontend/storybook/**",
+      "frontend/vite/**",
       "src/**",
       "locales",
-      "frontend/openapi-ts.config.ts",
-      "!frontend/src/api.gen/client/*",
-      "!frontend/src/api.gen/core/*",
-      "!frontend/src/api.gen/client.gen.ts",
-      "!frontend/src/api.gen/index.ts",
-      "!frontend/src/api.gen/sdk.gen.ts"
+      "frontend/openapi-ts.config.ts"
     ]
   },
   "linter": {
+    "includes": ["!frontend/src/api.gen/**"],
     "enabled": true,
     "rules": {
       "recommended": true,

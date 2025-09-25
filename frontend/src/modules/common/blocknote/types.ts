@@ -23,7 +23,6 @@ export interface CustomFormatToolBarConfig {
   blockNestingSelect?: boolean;
   fileCaption?: boolean;
   openPreview?: boolean;
-  replaceFile?: boolean;
   createLink?: boolean;
 }
 
@@ -55,6 +54,7 @@ export type IconType = (
 
 export type BaseUppyFilePanelProps = {
   organizationId: string;
+  isPublic?: boolean;
   onComplete?: (result: UploadedUppyFile<'attachment'>) => void;
   onError?: (error: Error) => void;
 };

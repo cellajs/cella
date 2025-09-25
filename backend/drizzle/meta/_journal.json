@@ -15,6 +15,27 @@
       "when": 1755512487230,
       "tag": "0001_illegal_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757659972233,
+      "tag": "0002_nosy_white_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1757668232647,
+      "tag": "0003_salty_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1757935286009,
+      "tag": "0004_flaky_charles_xavier",
+      "breakpoints": true
     }
   ]
 }

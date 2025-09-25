@@ -8,6 +8,7 @@ import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import type { contextEntitiesQueryOptions } from '~/modules/entities/query';
+import { GridSkeleton } from './skeleton';
 
 export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 'sort' | 'q' | 'role'>;
 
@@ -36,6 +37,9 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
   }, [hasNextPage, isLoading, isFetching]);
+
+  // Render skeleton only on initial load
+  if (isLoading || !entities) return <GridSkeleton />;
 
   if (!isFetching && !error && !entities.length) {
     return isFiltered ? (

@@ -16,11 +16,10 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
-import type { UsersSearch } from '~/modules/users/table';
-import type { UserWithMemberships } from '~/modules/users/types';
+import type { UsersRouteSearchParams, UserWithMemberships } from '~/modules/users/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type UsersTableBarProps = BaseTableBarProps<UserWithMemberships, UsersSearch>;
+type UsersTableBarProps = BaseTableBarProps<UserWithMemberships, UsersRouteSearchParams>;
 
 export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
@@ -30,6 +29,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
 
   const inviteButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
+  const inviteContainerRef = useRef(null);
 
   const { q, role } = searchVars;
 
@@ -43,7 +43,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as UsersSearch['role']) });
+    setSearch({ role: role === 'all' ? undefined : (role as UsersRouteSearchParams['role']) });
   };
 
   const onResetFilters = () => {
@@ -51,14 +51,13 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
     clearSelection();
   };
 
-  // TODO: use a ref for container?
   const openInviteDialog = () => {
     createDialog(<InviteUsers mode={'email'} dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      container: { id: 'invite-users-container', overlay: true },
+      container: { ref: inviteContainerRef, overlay: true },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
@@ -131,7 +130,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
       </TableBarContainer>
 
       {/* Container for embedded dialog */}
-      <div id="invite-users-container" className="empty:hidden" />
+      <div ref={inviteContainerRef} className="empty:hidden" />
     </>
   );
 };

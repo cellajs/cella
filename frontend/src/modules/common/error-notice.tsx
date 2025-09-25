@@ -48,20 +48,22 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
 
   const translationOptions = {
     ns: ['appError', 'error'],
-    ...(error instanceof ApiError && error.entityType ? { resource: i18n.t(error.entityType) } : {}),
+    ...(error instanceof ApiError && error.entityType
+      ? { resource: i18n.t(error.entityType), resourceLowerCase: i18n.t(error.entityType).toLowerCase() }
+      : {}),
   };
 
   const defaultTitle = error?.name || i18n.t('error:error');
   const defaultMessage = error?.message || i18n.t('error:reported_try_or_contact');
 
   // Title translation
-  const title = i18n.t(`error.${localeKey}`, { ...translationOptions, defaultValue: defaultTitle });
+  const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });
 
   // Message translation with severity check (type-safe)
   const message =
     error && 'severity' in error && error.severity === 'info'
       ? error.message
-      : i18n.t(`error.${localeKey}`, { ...translationOptions, defaultValue: defaultMessage });
+      : i18n.t(`${localeKey}.text`, { ...translationOptions, defaultValue: defaultMessage });
 
   return { title, message };
 };
@@ -106,8 +108,10 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
               <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
               <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
                 <span className="block">{message}</span>
-                <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
-                <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+                <p className="mt-2 font-light">
+                  <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
+                  <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+                </p>
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
@@ -158,7 +162,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-4 justify-center">
+            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 justify-center">
               <Button onClick={handleGoToHome} variant="secondary">
                 <Home size={16} className="mr-2" />
                 {t('common:home')}

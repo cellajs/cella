@@ -59,8 +59,10 @@ export const LocalFileStorage = {
       if (!storageKeys.length) return undefined;
       for (const groupKey of storageKeys) {
         const group = await get<StoredOfflineData>(groupKey);
-        if (!group) return undefined;
-        return group.files[fileId];
+        if (!group || !('files' in group)) continue;
+
+        const file = group.files[fileId];
+        if (file) return file;
       }
       return undefined;
     } catch (error) {
@@ -78,6 +80,36 @@ export const LocalFileStorage = {
     } catch (error) {
       Sentry.captureException(error);
       console.error(`Failed to set new sync status for ${orgId}:`, error);
+      return undefined;
+    }
+  },
+
+  async updateFileName(fileId: string, newName: string): Promise<CustomUppyFile | undefined> {
+    try {
+      const storageKeys = await keys();
+      if (!storageKeys.length) return undefined;
+
+      for (const groupKey of storageKeys) {
+        const group = await get<StoredOfflineData>(groupKey);
+        if (!group || !group.files) continue;
+
+        const file = group.files[fileId];
+        if (file) {
+          // Update the name
+          const updatedFile = { ...file, name: newName };
+          group.files[fileId] = updatedFile;
+
+          // Save back to IndexedDB
+          await set(groupKey, group);
+
+          return updatedFile;
+        }
+      }
+
+      return undefined; // file not found
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to update file name (${fileId}):`, error);
       return undefined;
     }
   },

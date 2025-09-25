@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import dotenv from 'dotenv';
 import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
@@ -19,7 +18,7 @@ const startDrizzleStudio = () => {
   const studioProcess = spawn(cmd, { cwd: parentDir, stdio: 'inherit', shell: true });
 
   console.info(' ');
-  console.info(`${chalk.greenBright.bold('✔')} Drizzle Studio started`);
+  console.info(`✅ Drizzle Studio started`);
   console.info(' ');
 
   const cleanup = (code: number | null) => {

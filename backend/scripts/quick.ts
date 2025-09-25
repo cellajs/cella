@@ -1,5 +1,4 @@
 import { execSync } from 'node:child_process';
-import chalk from 'chalk';
 import { appConfig } from 'config';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -12,7 +11,7 @@ const res = await db.execute(sql`SELECT * FROM users`);
 
 if (res.rows.length > 0) {
   console.info(' ');
-  console.info(`${chalk.greenBright.bold('✔')} Database is already seeded`);
+  console.info(`✅ Database is already seeded`);
   console.info(' ');
   process.exit(0);
 }

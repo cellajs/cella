@@ -1,11 +1,10 @@
 import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
 import type { AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'config';
-
 import type { uploadTemplates } from 'config/templates';
 
 type UppyBody = Record<string, unknown>;
-type UppyMeta = { public: boolean; offlineUploaded: boolean };
+type UppyMeta = { public: boolean; bucketName: string; offlineUploaded: boolean };
 
 type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
 
@@ -27,15 +26,17 @@ export type UploadedUppyFile<T extends UploadTemplateId, K = UserMeta> = {
   [key in TemplateStepKeys<T>]: UploadedFile<K>[];
 };
 
-type UserMeta = {
+type Stringified<T> = {
+  [K in keyof T]: string;
+};
+
+type UserMeta = Stringified<UppyMeta> & {
   filetype: string;
   name: string;
-  offlineUploaded: string; // boolean converted to string
-  public: string; // boolean converted to string
   relativePath: string; // Can be null as string
   type: string;
 };
 
-type UploadedFile<T = Record<string, unknown>> = AssemblyResult & {
+export type UploadedFile<T = Record<string, string>> = AssemblyResult & {
   user_meta: T;
 };

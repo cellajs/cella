@@ -9,10 +9,10 @@
 
     "paths": {
       "~/*": ["./src/*"],
-      "#json/*": ["../json/*"]
+      "#json/*": ["../json/*"],
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../json/*", "../locales/*", "src/api-config.ts", "openapi-ts.config.ts", "script"],
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../json/*", "../locales/*", "openapi-ts.config.ts", "script", "vite/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

@@ -2,30 +2,37 @@ import { useMutation } from '@tanstack/react-query';
 import { appConfig, type EntityType } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { type Control, useFormContext, useWatch } from 'react-hook-form';
+import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/api.gen';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
-interface SlugFieldProps {
-  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-  control: Control<any>;
-  label: string;
+type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   nameValue?: string;
   description?: string;
   previousSlug?: string;
   entityType: EntityType;
-}
+};
 
-export const SlugFormField = ({ control, label, previousSlug, description, nameValue, entityType }: SlugFieldProps) => {
+export const SlugFormField = <TFieldValues extends FieldValues>({
+  control,
+  label,
+  previousSlug,
+  description,
+  nameValue,
+  entityType,
+}: SlugFieldProps<TFieldValues>) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
+
+  const name = 'slug';
 
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
@@ -43,19 +50,19 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const revertMeasure = useMeasure<HTMLDivElement>();
 
   // Watch to check if slug availability
-  const slug = useWatch({ control: form.control, name: 'slug' });
+  const slug = useWatch({ control: form.control, name: name });
 
   // Check if slug is available
   const { mutate: checkAvailability } = useMutation<boolean, ApiError, NonNullable<CheckSlugData['body']>>({
-    mutationKey: ['slug'],
+    mutationKey: [name],
     mutationFn: async (body) => {
       return await checkSlugAvailable({ body });
     },
     onSuccess: (isAvailable) => {
-      if (isValidSlug(slug)) form.clearErrors('slug');
+      if (isValidSlug(slug)) form.clearErrors(name);
       if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
       // Slug is not available
-      form.setError('slug', { type: 'manual', message: t('error:slug_exists') });
+      form.setError(name, { type: 'manual', message: t('error:slug_exists') });
       setSlugAvailable('notAvailable');
     },
   });
@@ -80,16 +87,16 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // In create forms, auto-generate slug from name
   useEffect(() => {
     if (previousSlug || isDeviating) return;
-    form.setValue('slug', slugify(nameValue || '', { lower: true, strict: true }));
+    form.setValue(name, slugify(nameValue || '', { lower: true, strict: true }));
   }, [nameValue]);
 
   // Revert to previous slug
   const revertSlug = () => {
-    form.resetField('slug');
+    form.resetField(name);
   };
 
   const prefixClick = () => {
-    setFocus('slug');
+    setFocus(name);
   };
 
   const getStyle = () => ({
@@ -100,9 +107,9 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   return (
     <FormField
       control={control}
-      name="slug"
+      name={name as Path<TFieldValues>}
       render={({ field: { value: formFieldValue, ...rest } }) => (
-        <FormItem name="slug">
+        <FormItem name={name}>
           <FormLabel>
             {label}
             <span className="ml-1 opacity-50">*</span>

@@ -1,4 +1,4 @@
-import _default from './default';
+import _default, { Config } from './default';
 import development from './development';
 import production from './production';
 import staging from './staging';
@@ -10,11 +10,6 @@ import { mergeDeep } from './utils';
  * All entities in this app
  */
 export type EntityType = (typeof appConfig.entityTypes)[number];
-
-/**
- * Page entities (entities with memberships + users)
- */
-export type PageEntityType = (typeof appConfig.pageEntityTypes)[number];
 
 /**
  * Context entities (entities with memberships only)
@@ -63,15 +58,16 @@ export type Theme = keyof typeof appConfig.theme.colors | 'none';
  */
 export type Severity = keyof typeof appConfig.severityLevels
 
-export const configModes = {
+const configModes = {
   development,
   tunnel,
   staging,
   production,
   test,
-} as const;
+} satisfies Record<Config['mode'], unknown>
 
-export type ConfigMode = keyof typeof configModes;
+export type ConfigMode = Config['mode']
 
-const mode = (process.env.NODE_ENV || 'development') as ConfigMode;
+
+const mode  = (process.env.NODE_ENV || 'development') as Config['mode'];
 export const appConfig = mergeDeep(_default, configModes[mode]);

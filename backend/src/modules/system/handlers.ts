@@ -1,22 +1,25 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
+import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
+import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { getSignedUrl } from '#/lib/signed-url';
+import { getSignedUrlFromKey } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
-import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
+import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -24,6 +27,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
+import { getParsedSessionCookie, validateSession } from '../auth/helpers/session';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -57,13 +61,13 @@ const systemRouteHandlers = app
           // Make sure its a system invitation
           isNull(tokensTable.entityType),
           lt(tokensTable.expiresAt, new Date()),
+          isNull(tokensTable.consumedAt),
         ),
       );
 
-    const [existingUsers, existingInvites] = await Promise.all([
-      getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]),
-      existingInvitesQuery,
-    ]);
+    const existingUsersQuery = await usersBaseQuery().where(inArray(emailsTable.email, normalizedEmails));
+
+    const [existingUsers, existingInvites] = await Promise.all([existingUsersQuery, existingInvitesQuery]);
 
     // Create a set of emails from both existing users and invitations
     const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
@@ -105,7 +109,7 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}`,
     }));
 
     type Recipient = (typeof recipients)[number];
@@ -122,9 +126,38 @@ const systemRouteHandlers = app
    * Get presigned URL
    */
   .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
-    const { key } = ctx.req.valid('query');
+    const { key, isPublic: queryPublic } = ctx.req.valid('query');
 
-    const url = await getSignedUrl(key);
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(or(eq(attachmentsTable.originalKey, key), eq(attachmentsTable.thumbnailKey, key), eq(attachmentsTable.convertedKey, key)))
+      .limit(1);
+
+    const { bucketName, public: isPublic } = attachment ?? {
+      public: queryPublic,
+      bucketName: queryPublic ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
+    };
+
+    if (!isPublic) {
+      // Get session id from cookie
+      const { sessionToken } = await getParsedSessionCookie(ctx);
+      const { user } = await validateSession(sessionToken);
+
+      if (attachment) {
+        const memberships = await db
+          .select()
+          .from(membershipsTable)
+          .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+
+        const isSystemAdmin = user.role === 'admin';
+        const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
+
+        if (!isSystemAdmin || !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
+      }
+    }
+
+    const url = await getSignedUrlFromKey(key, { bucketName, isPublic });
 
     return ctx.json(url, 200);
   })
@@ -162,17 +195,17 @@ const systemRouteHandlers = app
     const user = getContextUser();
 
     // Get members from organizations
-    // TODO(REFACTOR) using emails table
     const recipientsRecords = await db
       .selectDistinct({
         email: usersTable.email,
         name: usersTable.name,
-        unsubscribeToken: usersTable.unsubscribeToken,
+        unsubscribeToken: unsubscribeTokensTable.token,
         newsletter: usersTable.newsletter,
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
       .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
+      .innerJoin(unsubscribeTokensTable, and(eq(usersTable.id, unsubscribeTokensTable.userId)))
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
@@ -204,10 +237,34 @@ const systemRouteHandlers = app
         },
       ];
 
+    // Regex to match src="..." or src='...'
+    // Captures quote type in g 1 and actual URL in g 2
+    const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
+
+    const srcs = [...content.matchAll(srcRegex)].map(([_, src]) => src);
+
+    // Map to hold original -> signed URL replacements
+    const replacements = new Map<string, string>();
+
+    // For each unique src, fetch its signed URL
+    await Promise.all(
+      srcs.map(async (src) => {
+        try {
+          const signed = await getSignedUrlFromKey(src, { isPublic: true, bucketName: appConfig.s3PublicBucket });
+          replacements.set(src, signed);
+        } catch (e) {
+          replacements.set(src, src);
+        }
+      }),
+    );
+
+    // Replace all src attributes in content
+    const newContent = content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
+
     type Recipient = (typeof recipients)[number];
 
     // Prepare emails and send them
-    const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
+    const staticProps = { content: newContent, subject, testEmail: toSelf, lng: user.language };
     await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });

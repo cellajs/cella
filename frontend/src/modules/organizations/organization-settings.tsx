@@ -16,7 +16,6 @@ import UpdateOrganizationDetailsForm from '~/modules/organizations/update-organi
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import { OrganizationSettingsRoute } from '~/routes/organizations';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -28,7 +27,7 @@ const tabs = [
 const OrganizationSettings = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
+  const { idOrSlug } = useParams({ from: '/appLayout/organizations/$idOrSlug/settings' });
 
   const deleteButtonRef = useRef(null);
 

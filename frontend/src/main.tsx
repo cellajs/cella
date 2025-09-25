@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
 
 // Import tailwind css
-import '~/styling/tailwind.css';
+import './styling/tailwind.css';
 
 // Boot with i18n & dayjs
 import '~/lib/dayjs';
@@ -25,8 +25,8 @@ renderAscii();
 // Add badge to favicon based on config mode
 addBadgeToFavicon(appConfig.mode as ConfigMode);
 
-// Initialize Sentry if online
-if (navigator.onLine) initSentry();
+// Initialize Sentry
+initSentry();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>

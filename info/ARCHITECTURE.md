@@ -2,11 +2,9 @@
 This document describes the high-level architecture of Cella.
 
 ### Target product
-Cella in general is targeted towards being a template for SaaS development. But that is a large segment. So when to use / not use cella? Here are some thoughts on that. Use cella if the below matches your product/development requirements:
-
 * frequent-use or heavy use web applications
 * focused on user generated content that requires some form of authentication/authorization. So either semi-public or private access.
-* Requires a great UX on different device, but native apps are not a direct priority
+* Requires a great UX on different devices, but native apps are not a direct priority
 * Development budget and time is limited
 * Fullstack development is seen as beneficial to work effectively and to provide engineering stability. 
 
@@ -17,7 +15,7 @@ Cella in general is targeted towards being a template for SaaS development. But 
  * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
  * Modularity. As Cella will grow, we need to make sure you can scaffold only the modules that you need.
  * Open standards. Our long term vision is that each Cella - as in each cell - can speak fluently with other cells.
- * Focused on client-side rendering (CSR) and - once it becomes relevant - static site generation (SSG). This seems to align best with our hybrid idiom to support offline and sync capabilities and reduce 'server dependency'. 
+ * Focused on client-side rendering (CSR) and static site generation (SSG). These best support the hybrid idiom to support offline and sync capabilities to reduce 'server dependency'. 
 
 ### Backend
 - [nodejs](https://nodejs.org)
@@ -70,14 +68,17 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
 │   ├── public                
+│   ├── vite                  Vite-related plugins & scripts
 │   ├── src                   
-│   │   ├── api.gen           Generated API client using openapi.json from backend
+│   │   ├── api.gen           Generated sdk client using openapi.json from backend
 │   │   ├── hooks             Generic react hooks
 │   │   ├── json              Static JSON
 │   │   ├── lib               Library code and core helper functions
 │   │   ├── modules           Modular distribution of components
+│   │   ├── query             Tanstack query client
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
+│   │   ├── styling           Tailwind styling
 │   │   ├── utils             Reusable functions
 ├── info                      Information about cella
 └── locales                   Translations
@@ -86,7 +87,6 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 ## Data modeling
 Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in four categories:
 * All entities (`user`, `organization`, `attachments`)
-* `PageEntityType`: 'Pages' that can be searched for (`user`, `organization`)
 * `ContextEntityType`: Has memberships (`organization`)
 * `ProductEntityType`: Content related, no membership (`attachment`)
 

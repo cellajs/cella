@@ -1,4 +1,4 @@
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { attachmentRelations } from '#/attachment-config';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -13,7 +13,8 @@ export const attachmentsTable = pgTable(
     entityType: varchar({ enum: ['attachment'] })
       .notNull()
       .default('attachment'),
-
+    public: boolean().notNull().default(false),
+    bucketName: varchar().notNull(),
     groupId: varchar(),
     filename: varchar().notNull(),
     contentType: varchar().notNull(),
@@ -33,6 +34,3 @@ export const attachmentsTable = pgTable(
   },
   (table) => [...attachmentRelations.indexes(table)],
 );
-
-export type AttachmentModel = typeof attachmentsTable.$inferSelect;
-export type InsertAttachmentModel = typeof attachmentsTable.$inferInsert;

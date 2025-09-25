@@ -66,6 +66,7 @@ const membershipRouteHandlers = app
           inArray(tokensTable.email, normalizedEmails),
           isNotNull(tokensTable.entityType),
           gt(tokensTable.expiresAt, new Date()),
+          isNull(tokensTable.consumedAt),
         ),
       );
 
@@ -207,20 +208,20 @@ const membershipRouteHandlers = app
     const insertedTokens = await db
       .insert(tokensTable)
       .values(tokens)
-      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
+      .returning({ userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token, id: tokensTable.id });
 
     // Generate inactive memberships after tokens are inserted
     await Promise.all(
       insertedTokens
         .filter(({ userId }) => userId !== null)
-        .map(({ tokenId, userId }) => insertMembership({ userId: userId as string, role, entity, tokenId })),
+        .map(({ userId, id }) => insertMembership({ userId: userId as string, role, entity, tokenId: id })),
     );
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map(({ email, tokenId, token }) => ({
+    const recipients = insertedTokens.map(({ email, token, id }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${id}`,
     }));
 
     const emailProps = {
@@ -455,6 +456,7 @@ const membershipRouteHandlers = app
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
           isNotNull(tokensTable.role),
+          isNull(tokensTable.consumedAt),
         ),
       )
       .orderBy(orderColumn);
@@ -477,6 +479,7 @@ const membershipRouteHandlers = app
       eq(tokensTable.email, normalizedEmail),
       isNotNull(tokensTable.entityType),
       isNotNull(tokensTable.role),
+      isNull(tokensTable.consumedAt),
     ];
     if (tokenId) filters.push(eq(tokensTable.id, tokenId));
 

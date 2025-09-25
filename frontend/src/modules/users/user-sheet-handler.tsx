@@ -30,8 +30,11 @@ const UserSheetHandler = memo(() => {
         className: 'max-w-full lg:max-w-4xl p-0',
 
         onClose: (isCleanup) => {
+          // If sheet is being cleaned up, do nothing
+          if (isCleanup) return;
+
           // If trigger, simply do history back
-          if (!isCleanup && sheetTrigger) return history.back();
+          if (sheetTrigger) return history.back();
 
           navigate({
             to: '.',

@@ -12,16 +12,15 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
-import { heyApiPlugin } from '@hey-api/vite-plugin';
-import { openApiConfig } from './openapi-ts.config';
-import { watchBackendOpenApi } from './src/openapi-watch-mode';
+import { i18nextHMRPlugin } from 'i18next-hmr/vite';
+import { watchBackendOpenApi } from './vite/openapi-watch-mode';
+import { swallowLocaleHMR } from './vite/swallow-locale-hmr';
 
 const ReactCompilerConfig = {
   /* ... */
 };
 
 const isStorybook = process.env.STORYBOOK === 'true';
-
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
@@ -62,11 +61,11 @@ const viteConfig = {
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? sentryVitePlugin({
-        disable: appConfig.mode === 'development',
-        org: appConfig.slug,
-        project: appConfig.slug,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-      })
+          disable: appConfig.mode === 'development',
+          org: appConfig.slug,
+          project: appConfig.slug,
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        })
       : undefined,
     viteStaticCopy({
       targets: [
@@ -80,6 +79,7 @@ const viteConfig = {
       template: './index.html',
       inject: {
         data: {
+          debugDomain: process.env.NODE_ENV === 'development' && appConfig.debug ? appConfig.domain : null,
           title: appConfig.name,
           description: appConfig.description,
           keywords: appConfig.keywords,
@@ -111,6 +111,7 @@ const viteConfig = {
   },
 } satisfies UserConfig;
 
+// Setup PWA
 viteConfig.plugins?.push(
   VitePWA({
     disable: !appConfig.has.pwa,
@@ -136,7 +137,7 @@ viteConfig.plugins?.push(
           type: 'image/png',
           purpose: 'any',
         },
-          {
+        {
           src: '/static/icons/icon-512x512.svg',
           sizes: '512x512',
           type: 'image/svg+xml',
@@ -151,26 +152,34 @@ viteConfig.plugins?.push(
       ],
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
+      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
       globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
-  }),
+  })
 );
-if (appConfig.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
-if (appConfig.mode === 'development' && !isStorybook)
-  viteConfig.plugins?.push([
+
+// Enable HTTPS in development if the frontend URL uses it
+if (appConfig.frontendUrl.includes('https')) {
+  viteConfig.plugins?.push(basicSsl());
+}
+
+// Enable additional plugins only in development mode
+if (appConfig.mode === 'development' && !isStorybook) {
+  viteConfig.plugins?.push(
+    i18nextHMRPlugin({ localesDir: '../locales' }),
+    swallowLocaleHMR(),
     watchBackendOpenApi(),
-    heyApiPlugin({ config: openApiConfig }),
     reactScan({
       enable: false,
       scanOptions: {
         showToolbar: false,
       },
-    }),
-  ]);
+    })
+  );
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(viteConfig);

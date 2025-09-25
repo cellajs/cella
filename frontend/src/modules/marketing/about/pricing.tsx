@@ -3,10 +3,11 @@ import { appConfig } from 'config';
 import { Check, Sparkles } from 'lucide-react';
 import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WaitlistForm } from '~/modules/auth/waitlist-form';
+
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { pricingPlans } from '~/modules/marketing/marketing-config';
+import { WaitlistForm } from '~/modules/requests/waitlist-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
@@ -35,7 +36,7 @@ const Pricing = () => {
       navigate({ to: '/auth/authenticate', replace: true });
     }
     if (action === 'waitlist_request') {
-      useDialoger.getState().create(<WaitlistForm email="" className="p-6" dialog emailField />, {
+      useDialoger.getState().create(<WaitlistForm className="p-4" buttonClassName="sm:max-w-50" dialog />, {
         id: 'waitlist-form',
         triggerRef: buttonRef,
         drawerOnMobile: true,

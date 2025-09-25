@@ -9,17 +9,19 @@ type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAtt
  * Keys for attachments related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
  */
-export const attachmentsKeys = {
-  all: ['attachments'] as const,
+const keys = {
+  all: ['attachments'],
   list: {
-    base: () => [...attachmentsKeys.all, 'list'] as const,
-    table: (filters: GetAttachmentsParams) => [...attachmentsKeys.list.base(), 'table', filters] as const,
-    similarTable: (filters: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...attachmentsKeys.list.base(), 'table', filters] as const,
+    base: ['attachments', 'list'],
+    table: (filters: GetAttachmentsParams) => [...keys.list.base, 'table', filters],
+    similarTable: (filters: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...keys.list.base, 'table', filters],
   },
-  create: () => [...attachmentsKeys.all, 'create'] as const,
-  update: () => [...attachmentsKeys.all, 'update'] as const,
-  delete: () => [...attachmentsKeys.all, 'delete'] as const,
+  create: ['attachments', 'create'],
+  update: ['attachments', 'update'],
+  delete: ['attachments', 'delete'],
 };
+
+export const attachmentsKeys = keys;
 
 /**
  * Query Options for fetching a grouped attachments.
@@ -31,7 +33,7 @@ export const attachmentsKeys = {
  * @returns  Query options.
  */
 export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<GetAttachmentsParams, 'attachmentId' | 'orgIdOrSlug'>) => {
-  const queryKey = attachmentsKeys.list.base();
+  const queryKey = attachmentsKeys.list.base;
 
   return queryOptions({
     queryKey,

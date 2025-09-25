@@ -33,7 +33,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
 
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.create(),
+    mutationKey: attachmentsKeys.create,
     mutationFn: async ({ localCreation, attachments, orgIdOrSlug }) => {
       if (localCreation) {
         console.info('Attachments uploaded locally:', attachments);
@@ -62,6 +62,7 @@ export const useAttachmentCreateMutation = () =>
           thumbnailUrl: thumbnailKey ?? null,
           convertedUrl: convertedKey ?? null,
           convertedContentType: attachment.convertedContentType ?? null,
+          public: attachment.public ?? false,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entityType: 'attachment',
@@ -155,8 +156,36 @@ export const useAttachmentCreateMutation = () =>
 
 export const useAttachmentUpdateMutation = () =>
   useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.update(),
-    mutationFn: async ({ id, orgIdOrSlug, ...body }) => {
+    mutationKey: attachmentsKeys.update,
+    mutationFn: async ({ id, orgIdOrSlug, localUpdate, ...body }) => {
+      if (localUpdate && body.name) {
+        const file = await LocalFileStorage.updateFileName(id, body.name);
+
+        if (!file) throw new Error(`Failed to update file name (${id}):`);
+
+        // TODO(IMPROVE)offline update responce(add createdAt/By, groupId into the file?)
+        const localAttachment: Attachment = {
+          id: file.id,
+          size: String(file.data.size ?? 0),
+          url: file.preview || '',
+          thumbnailUrl: null,
+          convertedUrl: null,
+          contentType: file.type,
+          convertedContentType: null,
+          name: file.name || file.meta.name,
+          public: file.meta.public ?? false,
+          bucketName: file.meta.bucketName,
+          entityType: 'attachment',
+          createdAt: new Date().toISOString(),
+          createdBy: null,
+          modifiedAt: new Date().toISOString(),
+          modifiedBy: null,
+          groupId: '',
+          filename: file.meta.name || 'Unnamed file',
+          organizationId: orgIdOrSlug,
+        };
+        return localAttachment;
+      }
       return await updateAttachment({ body, path: { id, orgIdOrSlug } });
     },
     onMutate: async (variables: UpdateAttachmentParams) => {
@@ -218,7 +247,7 @@ export const useAttachmentUpdateMutation = () =>
 
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.delete(),
+    mutationKey: attachmentsKeys.delete,
     mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
       const localResult = true;
       let serverResult = true;

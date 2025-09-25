@@ -1,5 +1,5 @@
 export const config = {
-  mode: 'development',
+  mode: 'development' satisfies BaseConfigType['mode'],
   name: 'Cella',
   slug: 'cella',
   domain: 'cellajs.com',
@@ -16,7 +16,7 @@ export const config = {
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
-  description: 'Cella is a TypeScript template to build web apps with sync engine. MIT licensed.',
+  description: 'Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
@@ -61,13 +61,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with s3 on Scaleway
-  s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs
+  s3BucketPrefix: 'cella' satisfies BaseConfigType['s3BucketPrefix'] as BaseConfigType['s3BucketPrefix'], // Prefix to namespace files when sharing a bucket across apps or envs
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
   s3Host: 's3.nl-ams.scw.cloud',
   privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
-  publicCDNUrl: 'https://544ba5eb-2c7a-417f-a5bf-b13950b89755.svc.edge.scw.cloud',
+  publicCDNUrl: 'https://imado-dev.s3.nl-ams.scw.cloud',
 
   // Upload templates using Transloadit
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
@@ -111,14 +111,21 @@ The documentation is generated from source code using \`zod\` schemas, converted
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
   defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
-  // Enabled auth strategies providers
-  enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
+/**
+ * Enabled authentication strategies.
+ * Currently available: 'password', 'passkey', 'oauth' and 'totp.
+ */
+enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 
-  // OAuth providers
-  enabledOAuthProviders: ['github', 'microsoft'] as const,
+/**
+ * Enabled OAuth providers.
+ * Currently supported: 'github', 'google', 'microsoft'.
+ * Only these providers can be selected in enabledAuthStrategies when 'oauth' is enabled.
+ */
+enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
+  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
 
   // Optional settings
   has: {
@@ -129,9 +136,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
+
+  // TOTP configuration
+  totpConfig: { 
+    intervalInSeconds: 60,
+    gracePeriodInSeconds: 60,
+    digits: 6
+  },
+
   // Default user flags
   defaultUserFlags: { 
-    finishedOnboarding: false
+    finishedOnboarding: false 
   },
 
   /**
@@ -280,7 +295,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
       requiredMetaFields: [],
     },
   },
-};
+}
 export default config;
 
 export type DeepPartial<T> = T extends object
@@ -289,4 +304,12 @@ export type DeepPartial<T> = T extends object
   }
   : T;
 
-export type Config = DeepPartial<typeof config>;
+type BaseConfigType = {
+  mode: 'development' | 'production' | 'tunnel' | 'test' | 'staging',
+  s3BucketPrefix?: string
+}
+
+type ConfigType = DeepPartial<typeof config> 
+
+export type Config = Omit<ConfigType, keyof BaseConfigType> & BaseConfigType;
+

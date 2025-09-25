@@ -1,25 +1,26 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { appConfig, type PageEntityType } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
-import type { ContextEntityItems } from '~/modules/entities/types';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 import { useUserStore } from '~/store/user';
 
 /**
- * Keys for entities related queries. These keys help to uniquely identify different query.
+ * Keys for entities related queries. These keys help to uniquely identify different queries.
  * For managing query caching and invalidation.
  */
-export const entitiesKeys = {
-  all: 'entities' as const,
-  product: 'product' as const,
-  context: 'context' as const,
-  search: (searchQuery: string) => [entitiesKeys.all, entitiesKeys.context, 'search', searchQuery] as const,
+const keys = {
+  all: 'entities',
+  product: 'product',
+  context: 'context',
+  search: (searchQuery: string) => ['entities', 'context', 'search', searchQuery],
   grid: {
-    base: () => [entitiesKeys.all, 'greed'] as const,
-    context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
+    base: ['entities', 'grid'],
+    context: (filters: GetContextEntitiesData['query']) => [...keys.grid.base, filters],
   },
-  single: (idOrSlug: string, entityType: PageEntityType) => [entitiesKeys.all, entitiesKeys.context, entityType, idOrSlug] as const,
+  single: (idOrSlug: string, entityType: ContextEntityType | 'user') => [keys.all, keys.context, entityType, idOrSlug] as const,
 };
+
+export const entitiesKeys = keys;
 
 /**
  * Query options for fetching context entities based on input query.
@@ -44,8 +45,7 @@ export const searchContextEntitiesQueryOptions = ({
     staleTime: 0,
     enabled: q.trim().length > 0, // to avoid issues with spaces
     initialData: {
-      // TODO fix typing
-      items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
+      items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as { [P in ContextEntityType]: [] },
       total: 0,
     },
     placeholderData: keepPreviousData,

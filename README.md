@@ -18,7 +18,7 @@
 <p>
 	<h1><b>Cella</b></h1>
 <p>
-    <b>Narrow stack TypeScript template to build web apps with sync & offline capabilities.</b>
+    <b>Narrow stack TypeScript template to build collaborative web apps with sync & offline capabilities.</b>
     <br />
     <br />
     <a href="https://cellajs.com">Website</a>
@@ -49,7 +49,7 @@
 <br>
 
 ## Create your own app
-Want to try cella to build a new web app with sync engine? Use the create CLI to get started:
+Want to try cella to build a new web app with sync engine? We recommend NOT TO FORK this repo directly. Instead, use the create CLI to get started:
 
 ```bash
 pnpm create @cellajs/cella@latest

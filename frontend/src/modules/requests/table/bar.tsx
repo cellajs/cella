@@ -16,12 +16,11 @@ import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster/service';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
-import type { RequestsSearch } from '~/modules/requests/table';
-import type { Request } from '~/modules/requests/types';
+import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
-type RequestsTableBarProps = BaseTableBarProps<Request, RequestsSearch>;
+type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
 export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
   const { t } = useTranslation();

@@ -44,7 +44,7 @@ const getParentNode = (node: HTMLElement) => {
 };
 
 let stickyProp: null | string = null;
-if (typeof CSS !== 'undefined' && CSS.supports) {
+if (CSS?.supports) {
   if (CSS.supports('position', 'sticky')) stickyProp = 'sticky';
   else if (CSS.supports('position', '-webkit-sticky')) stickyProp = '-webkit-sticky';
 }

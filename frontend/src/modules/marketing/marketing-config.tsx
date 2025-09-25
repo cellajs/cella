@@ -1,8 +1,9 @@
 import { appConfig, type EntityType } from 'config';
 import { Building2, Cloud, Github, type LucideIcon, Users } from 'lucide-react';
-import type { Integration } from '~/modules/marketing/about/integrations';
+import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { nanoid } from '~/utils/nanoid';
+import { ShowcaseItem } from './about/showcase';
 
 /*************************************************************************************************
  * Nav
@@ -71,14 +72,15 @@ export const features = [
 ];
 
 /*************************************************************************************************
- * About - Integrations
+ * About - Cards
  ************************************************************************************************/
 
-export const integrations: Integration[] = [
+export const cards: AboutCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
+  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'one-dollar-stats' },
+  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
   { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
   { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
-  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
   { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
@@ -130,4 +132,23 @@ export const whyDarkSlides = [
   { id: nanoid(), url: '/static/screenshots/system-page-dark.png', name: 'System page', filename: 'system-page-dark.png', contentType: 'image/png' },
   { id: nanoid(), url: '/static/screenshots/org-page-dark.png', name: 'Organization page', filename: 'org-page-dark.png', contentType: 'image/png' },
   { id: nanoid(), url: '/static/screenshots/settings-dark.png', name: 'User settings page', filename: 'settings-dark.png', contentType: 'image/png' },
+];
+
+/*************************************************************************************************
+ * About - Showcase
+ ************************************************************************************************/
+
+export const showcaseItems: ShowcaseItem[] = [
+  {
+    id: 'raak',
+    url: 'https://raak.dev',
+    lightItems: [
+      { id: nanoid(), url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
+    ],
+    darkItems: [
+      { id: nanoid(), url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
+    ],
+  },
 ];

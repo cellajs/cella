@@ -1,7 +1,7 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitesResponse } from '~/api.gen';
+import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitationsResponse } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
@@ -11,12 +11,15 @@ import { ResendMembershipInviteButton } from '~/modules/memberships/resend-membe
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { UserCell } from '~/modules/users/user-cell';
-import { getEntityRoute } from '~/nav-config';
 import { queryClient } from '~/query/query-client';
+import { getEntityRoute } from '~/routes-resolver';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-export const EntityInvites = () => {
+/**
+ * Component to show a list of pending entity invitations for the current user
+ */
+export const EntityInvitations = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
@@ -27,7 +30,7 @@ export const EntityInvites = () => {
     mutationFn: (token) => acceptEntityInvite({ path: { token } }),
     onSuccess: async (acceptedEntity) => {
       await getAndSetMenu();
-      queryClient.setQueryData<GetMyInvitesResponse>(meKeys.invites(), (oldData) => {
+      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
         return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
       });
@@ -35,7 +38,7 @@ export const EntityInvites = () => {
     },
   });
 
-  const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites() });
+  const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites });
 
   if (!invites?.length) return null;
 

@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
 type DialogContainerOptions = {
-  id: string;
+  ref: RefObject<HTMLDivElement | null>;
   overlay?: boolean;
 };
 

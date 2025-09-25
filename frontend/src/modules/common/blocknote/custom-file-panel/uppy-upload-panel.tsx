@@ -4,7 +4,7 @@ import { DialogDescription } from '@radix-ui/react-dialog';
 import * as Sentry from '@sentry/react';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
-import ImageEditor from '@uppy/image-editor/lib/ImageEditor';
+import ImageEditor from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
@@ -25,14 +25,6 @@ import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/comm
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
 
-import '@uppy/audio/dist/style.css';
-import '@uppy/dashboard/dist/style.min.css';
-import '@uppy/image-editor/dist/style.css';
-import '@uppy/screen-capture/dist/style.css';
-import '@uppy/url/dist/style.css';
-import '@uppy/webcam/dist/style.css';
-import '~/modules/common/uploader/uppy.css';
-
 const basicBlockTypes = {
   image: {
     allowedFileTypes: ['image/*'],
@@ -52,7 +44,7 @@ const basicBlockTypes = {
   },
 };
 
-const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyFilePanelProps & FilePanelProps) => {
+const UppyFilePanel = ({ onComplete, onError, organizationId, block, isPublic = false }: BaseUppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { isOnline } = useOnlineManager();
@@ -88,7 +80,7 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: false, templateId: 'attachment', organizationId });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: isPublic, templateId: 'attachment', organizationId });
 
         localUppy
           .on('error', (error) => {

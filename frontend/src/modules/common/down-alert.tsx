@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
+import { AlertTriangle, ClockAlert, CloudOff, Construction, ShieldAlert, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -39,6 +39,12 @@ const downAlertConfig = {
     icon: AlertTriangle,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:auth_unavailable" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:auth_unavailable.text" />,
+    variant: 'plain',
+  },
+  enable_mfa: {
+    icon: ShieldAlert,
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:require_mfa" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:require_mfa.text" />,
     variant: 'plain',
   },
 } as const;

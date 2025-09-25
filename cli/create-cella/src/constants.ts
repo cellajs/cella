@@ -39,7 +39,7 @@ export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }
   './config/default.ts': [
     {
       regexMatch: /enabledAuthStrategies:\s*\[[^\]]+\]\s*as\s*const,/g,
-      replaceWith: "enabledAuthStrategies: ['password', 'passkey'] as const,",
+      replaceWith: "enabledAuthStrategies: ['password', 'passkey', 'totp'] as const,",
     },
     {
       regexMatch: /uploadEnabled:\s*(true|false),/g,

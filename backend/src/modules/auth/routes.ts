@@ -3,19 +3,22 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
+import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   emailBodySchema,
   emailPasswordBodySchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
-  passkeyChallengeQuerySchema,
+  passkeyChallengeBodySchema,
+  passkeyChallengeSchema,
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
+  totpVerificationBodySchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
-import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -42,11 +45,12 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   stopImpersonation: createCustomRoute({
     operationId: 'stopImpersonation',
     method: 'get',
     path: '/impersonation/stop',
-    guard: isPublicAccess,
+    guard: isAuthenticated,
     tags: ['auth'],
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
@@ -62,12 +66,13 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   checkEmail: createCustomRoute({
     operationId: 'checkEmail',
     method: 'post',
     path: '/check-email',
     guard: isPublicAccess,
-    middleware: [emailEnumLimiter],
+    middleware: [isNoBot, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
     description: 'Checks if a user with the specified email address exists in the system.',
@@ -93,79 +98,55 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   signUp: createCustomRoute({
     operationId: 'signUp',
     method: 'post',
     path: '/sign-up',
     guard: isPublicAccess,
-    middleware: [spamLimiter, emailEnumLimiter],
+    middleware: [isNoBot, spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Sign up with password',
     description: 'Registers a new user using an email and password. Sends a verification email upon successful sign up.',
     security: [],
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: emailPasswordBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: emailPasswordBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'User signed up',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       302: {
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
         description: 'Redirect to frontend',
       },
       ...errorResponses,
     },
   }),
+
   signUpWithToken: createCustomRoute({
     operationId: 'signUpWithToken',
     method: 'post',
     path: '/sign-up/{token}',
     guard: isPublicAccess,
-    middleware: [spamLimiter, emailEnumLimiter, hasValidToken('invitation')],
+    middleware: [tokenLimiter('signup_invitation'), emailEnumLimiter, hasValidToken('invitation')],
     tags: ['auth'],
     summary: 'Sign up to accept invite',
     description: 'Registers a user using an email and password in response to a system or organization invitation.',
     security: [],
     request: {
       params: tokenParamSchema,
-      body: {
-        content: {
-          'application/json': {
-            schema: emailPasswordBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
     },
     responses: {
       200: {
         description: 'User signed up',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
-      },
-      302: {
-        headers: z.object({ Location: z.string() }),
-        description: 'Redirect to frontend',
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: redirectResponseSchema } },
       },
       ...errorResponses,
     },
@@ -183,16 +164,17 @@ const authRoutes = {
     security: [],
     request: {
       params: tokenParamSchema,
-      query: z.object({ redirect: z.string().optional(), tokenId: z.string() }),
+      query: z.object({ redirect: z.string().optional() }),
     },
     responses: {
       302: {
         description: 'Session created and redirected',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
+
   requestPassword: createCustomRoute({
     operationId: 'requestPassword',
     method: 'post',
@@ -204,26 +186,17 @@ const authRoutes = {
     description: "Sends an email with a link to reset the user's password.",
     security: [],
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: emailBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: emailBodySchema } } },
     },
     responses: {
       200: {
         description: 'Password reset email sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   }),
+
   createPasswordWithToken: createCustomRoute({
     operationId: 'createPassword',
     method: 'post',
@@ -235,28 +208,64 @@ const authRoutes = {
     description: 'Sets a new password using a token and grants a session immediately upon success.',
     security: [],
     request: {
-      params: z.object({ token: z.string() }),
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({ password: passwordSchema }),
-          },
-        },
-      },
+      params: tokenParamSchema,
+      body: { content: { 'application/json': { schema: z.object({ password: passwordSchema }) } } },
     },
     responses: {
       200: {
         description: 'Password created',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: redirectResponseSchema } },
       },
       ...errorResponses,
     },
   }),
-  verifyPasskey: createCustomRoute({
+
+  verifyTotp: createCustomRoute({
+    operationId: 'signInWithTotp',
+    method: 'post',
+    path: '/totp-verification',
+    guard: isPublicAccess,
+    // TODO look into rate limit customized for totp
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Verify TOTP',
+    description: 'Validates the TOTP code and completes TOTP based authentication.',
+    security: [],
+    request: {
+      body: { content: { 'application/json': { schema: totpVerificationBodySchema } } },
+    },
+    responses: {
+      200: {
+        description: 'TOTP verified',
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  createPasskeyChallenge: createCustomRoute({
+    operationId: 'createPasskeyChallenge',
+    method: 'post',
+    path: '/passkey-challenge',
+    guard: isPublicAccess,
+    // TODO look into rate limit customized for passkeys
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Create passkey challenge',
+    description: 'Initiates the passkey registration or authentication flow by creating a device bound challenge.',
+    security: [],
+    request: { body: { content: { 'application/json': { schema: passkeyChallengeBodySchema } } } },
+    responses: {
+      200: {
+        description: 'Challenge created',
+        content: { 'application/json': { schema: passkeyChallengeSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  signInWithPasskey: createCustomRoute({
     operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
@@ -266,29 +275,18 @@ const authRoutes = {
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: passkeyVerificationBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: passkeyVerificationBodySchema } } },
     },
     responses: {
       200: {
         description: 'Passkey verified',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   }),
+
   signIn: createCustomRoute({
     operationId: 'signIn',
     method: 'post',
@@ -300,50 +298,41 @@ const authRoutes = {
     description: 'Authenticates an existing user using their email and password.',
     security: [],
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: emailPasswordBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
     },
     responses: {
       200: {
         description: 'User signed in',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: { 'application/json': { schema: successWithoutDataSchema } },
+        headers: z.object({ 'Set-Cookie': cookieSchema.optional() }),
+        content: { 'application/json': { schema: redirectResponseSchema } },
       },
       ...errorResponses,
     },
   }),
-  refreshToken: createCustomRoute({
-    operationId: 'refreshToken',
+
+  checkToken: createCustomRoute({
+    operationId: 'checkToken',
     method: 'post',
-    path: '/refresh-token/{id}',
+    path: '/check-token/{tokenId}',
     guard: isPublicAccess,
+    middleware: isNoBot,
     tags: ['auth'],
-    summary: 'Token validation and nonce retrieval',
+    summary: 'Check token',
     description:
-      'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.',
+      'Checks by token id - NOT token itself - if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.',
     request: {
-      params: z.object({ id: idSchema }),
+      params: z.object({ tokenId: z.string() }),
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),
     },
     responses: {
       200: {
         description: 'Token is valid',
-        content: {
-          'application/json': {
-            schema: tokenWithDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: tokenWithDataSchema } },
       },
       ...errorResponses,
     },
   }),
+
   acceptEntityInvite: createCustomRoute({
     operationId: 'acceptEntityInvite',
     method: 'post',
@@ -353,44 +342,42 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Accept invitation',
     description: 'Accepts an invitation token and activates the associated membership or system access.',
-    request: {
-      params: tokenParamSchema,
-    },
+    request: { params: tokenParamSchema },
     responses: {
       200: {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: contextEntityWithMembershipSchema.extend({
-              createdAt: z.string(),
-            }),
+            schema: contextEntityWithMembershipSchema.extend({ createdAt: z.string() }),
           },
         },
       },
       ...errorResponses,
     },
   }),
-  githubSignIn: createCustomRoute({
-    operationId: 'githubSignIn',
+
+  github: createCustomRoute({
+    operationId: 'github',
     method: 'get',
     path: '/github',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description:
-      'Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
+      'Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
       302: {
         description: 'Redirect to GitHub',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
-  githubSignInCallback: createCustomRoute({
-    operationId: 'githubSignInCallback',
+
+  githubCallback: createCustomRoute({
+    operationId: 'githubCallback',
     method: 'get',
     path: '/github/callback',
     guard: isPublicAccess,
@@ -409,53 +396,34 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
-  getPasskeyChallenge: createCustomRoute({
-    operationId: 'getPasskeyChallenge',
-    method: 'get',
-    path: '/passkey-challenge',
-    guard: isPublicAccess,
-    tags: ['auth'],
-    summary: 'Get passkey challenge',
-    description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
-    security: [],
-    responses: {
-      200: {
-        description: 'Challenge created',
-        content: {
-          'application/json': {
-            schema: passkeyChallengeQuerySchema,
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  }),
-  googleSignIn: createCustomRoute({
-    operationId: 'googleSignIn',
+
+  google: createCustomRoute({
+    operationId: 'google',
     method: 'get',
     path: '/google',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description:
-      'Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
+      'Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
       302: {
         description: 'Redirect to Google',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
-  googleSignInCallback: createCustomRoute({
-    operationId: 'googleSignInCallback',
+
+  googleCallback: createCustomRoute({
+    operationId: 'googleCallback',
     method: 'get',
     path: '/google/callback',
     guard: isPublicAccess,
@@ -468,32 +436,34 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
-  microsoftSignIn: createCustomRoute({
-    operationId: 'microsoftSignIn',
+
+  microsoft: createCustomRoute({
+    operationId: 'microsoft',
     method: 'get',
     path: '/microsoft',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description:
-      'Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
+      'Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
       302: {
         description: 'Redirect to Microsoft',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
-  microsoftSignInCallback: createCustomRoute({
-    operationId: 'microsoftSignInCallback',
+
+  microsoftCallback: createCustomRoute({
+    operationId: 'microsoftCallback',
     method: 'get',
     path: '/microsoft/callback',
     guard: isPublicAccess,
@@ -506,11 +476,12 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
   }),
+
   signOut: createCustomRoute({
     operationId: 'signOut',
     method: 'get',
@@ -522,11 +493,7 @@ const authRoutes = {
     responses: {
       200: {
         description: 'User signed out',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

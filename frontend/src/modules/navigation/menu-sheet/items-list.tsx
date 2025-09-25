@@ -18,7 +18,7 @@ interface MenuSheetItemsProps {
 
 export const MenuSheetItems = ({ data, type, isArchived, options, className }: MenuSheetItemsProps) => {
   const { t } = useTranslation();
-  const hideSubmenu = useNavigationStore((state) => state.hideSubmenu);
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
   const buttonRef = useRef(null);
 
@@ -45,10 +45,10 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
     return (
       <>
         {filteredItems.map((item) => (
-          <li className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section my-1' : 'my-1'} key={item.id}>
+          <li className={item.submenu?.length && detailedMenu ? 'relative submenu-section my-1' : 'my-1'} key={item.id}>
             <MenuSheetItem item={item} className={className} icon={options?.icon} />
             {/* Submenu below */}
-            {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
+            {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
               <ul>
                 <MenuSheetItems type={item.submenu[0].entityType} data={item.submenu} isArchived={false} />
               </ul>

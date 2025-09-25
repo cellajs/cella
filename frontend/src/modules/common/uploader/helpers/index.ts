@@ -22,7 +22,11 @@ import { nanoid } from '~/utils/nanoid';
 export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   const uppy = new Uppy({
     ...uppyOptions,
-    meta: { public: tokenQuery.public, offlineUploaded: !onlineManager.isOnline() },
+    meta: {
+      public: tokenQuery.public,
+      bucketName: tokenQuery.public ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
+      offlineUploaded: !onlineManager.isOnline(),
+    },
     onBeforeFileAdded,
     onBeforeUpload: (files) => {
       // Determine if we can upload based on online status and s3 configuration
@@ -65,9 +69,5 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 const onBeforeFileAdded = (file: CustomUppyFile) => {
   // Simplify file ID and add content type to meta
   file.id = nanoid();
-
-  // Generate preview for all file types using blob URL
-  if (!file.preview && file.data instanceof Blob) file.preview = URL.createObjectURL(file.data);
-
   return file;
 };

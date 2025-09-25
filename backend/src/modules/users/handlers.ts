@@ -8,8 +8,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -70,7 +69,7 @@ const usersRouteHandlers = app
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
             )
-        : db.select({ ...userSelect }).from(usersTable);
+        : usersBaseQuery();
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
 
@@ -123,7 +122,8 @@ const usersRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
     // Fetch users by IDs
-    const targets = await getUsersByConditions([inArray(usersTable.id, toDeleteIds)]);
+
+    const targets = await usersBaseQuery().where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
@@ -161,7 +161,9 @@ const usersRouteHandlers = app
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
-    const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
+    const [targetUser] = await usersBaseQuery()
+      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
+      .limit(1);
 
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
@@ -200,7 +202,10 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
+    const [targetUser] = await usersBaseQuery()
+      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
+      .limit(1);
+
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');

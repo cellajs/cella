@@ -97,9 +97,9 @@ const MenuContent = memo(() => {
 
   const menu = useNavigationStore((state) => state.menu);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
-  const hideSubmenu = useNavigationStore((state) => state.hideSubmenu);
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
-  const toggleHideSubmenu = useNavigationStore((state) => state.toggleHideSubmenu);
+  const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
   const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -191,9 +191,15 @@ const MenuContent = memo(() => {
             {pwaEnabled && <OfflineAccessSwitch />}
             {appConfig.menuStructure.some(({ subentityType }) => subentityType) && (
               <div className="flex items-center gap-4 ml-1">
-                <Switch size="xs" id="hideSubmenu" checked={!hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
-                <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-                  {t('common:nested_menu')}
+                <Switch
+                  size="xs"
+                  id="detailedMenu"
+                  checked={detailedMenu}
+                  onCheckedChange={toggleDetailedMenu}
+                  aria-label={t('common:detailed_menu')}
+                />
+                <label htmlFor="detailedMenu" className="cursor-pointer select-none text-sm font-medium leading-none">
+                  {t('common:detailed_menu')}
                 </label>
               </div>
             )}
