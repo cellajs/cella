@@ -6,6 +6,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import type { TokenModel } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
+import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { initiateMfa } from '#/modules/auth/helpers/mfa';
@@ -32,12 +33,11 @@ import { getIsoDate } from '#/utils/iso-date';
  * @returns A redirect response.
  */
 export const handleOAuthCallback = async (
-  ctx: Context,
+  ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
   cookiePayload: OAuthCookiePayload,
 ): Promise<Response> => {
-  // Restore Context: linked oauthAccount, invitation or account linking
   const oauthAccount = await getOAuthAccount(providerUser.id, provider, providerUser.email);
 
   const { connectUserId, inviteTokenId, verifyTokenId } = cookiePayload;
@@ -102,7 +102,7 @@ export const handleOAuthCallback = async (
  * @returns A redirect response.
  */
 const connectCallbackFlow = async (
-  ctx: Context,
+  ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
   connectUserId: string,
@@ -147,7 +147,7 @@ const connectCallbackFlow = async (
  * @returns A redirect response.
  */
 const inviteCallbackFlow = async (
-  ctx: Context,
+  ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
   token: TokenModel['token'],
@@ -187,7 +187,7 @@ const inviteCallbackFlow = async (
 };
 
 const verifyCallbackFlow = async (
-  ctx: Context,
+  ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
   token: TokenModel['token'],
@@ -317,7 +317,7 @@ const createOAuthAccount = async (
  * @param oauthAccount - The verified OAuth account.
  * @returns A redirect response.
  */
-const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
+const handleVerifiedOAuthAccount = async (ctx: Context<Env>, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
   // Start MFA challenge if the user has MFA enabled
   const mfaRedirectPath = await initiateMfa(ctx, user);
 
@@ -339,7 +339,7 @@ const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAc
  * @returns A redirect response.
  */
 const handleUnverifiedOAuthAccount = async (
-  ctx: Context,
+  ctx: Context<Env>,
   oauthAccount: OAuthAccountModel,
   reason: 'signup' | 'signin' | 'connect' | 'invite',
 ): Promise<Response> => {
@@ -358,7 +358,7 @@ const handleUnverifiedOAuthAccount = async (
  * @param ctx - The request context.
  * @returns A validated redirect path string.
  */
-const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
+const getOAuthRedirectPath = async (ctx: Context<Env>): Promise<string> => {
   const redirect = await getAuthCookie(ctx, 'oauth-redirect');
 
   return isValidRedirectPath(redirect) || appConfig.defaultRedirectPath;

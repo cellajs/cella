@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
+import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
@@ -19,7 +20,7 @@ import { createDate, TimeSpan } from '#/utils/time-span';
  * @param user - User to start MFA for
  * @returns Redirect path to MFA confirmation page, or null if MFA is not enabled
  */
-export const initiateMfa = async (ctx: Context, user: UserModel) => {
+export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   // If the user does not have MFA enabled, do nothing
   if (!user.mfaRequired) return null;
 
@@ -51,7 +52,7 @@ export const initiateMfa = async (ctx: Context, user: UserModel) => {
  * @returns UserModel
  * @throws AppError if token is missing, not found, or expired
  */
-export const validateConfirmMfaToken = async (ctx: Context): Promise<UserModel> => {
+export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
   // TODO should be token itself, Get token ID from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm_mfa');
   if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
@@ -73,7 +74,7 @@ export const validateConfirmMfaToken = async (ctx: Context): Promise<UserModel> 
  * Marks it as used in the database and deletes the cookie.
  */
 // TODO shouldnt this use getValidToken for consistency?
-export const consumeMfaToken = async (ctx: Context): Promise<void> => {
+export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm_mfa');
   if (!tokenIdFromCookie) return;
 

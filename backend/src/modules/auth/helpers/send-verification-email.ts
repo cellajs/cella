@@ -26,6 +26,7 @@ interface Props {
  * 1. Regular email verification (no oauthAccountId): user verifies their email address
  * 2. OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
  */
+// TODO perhaps split or consider refactoring
 export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
   const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
 
@@ -95,15 +96,9 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = !oauthAccount ? `/auth/consume-token/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
+  const verifyPath = `/auth/consume-token/${tokenRecord.token}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
-  // Add query params to pass through OAuth verification
-  if (oauthAccount) {
-    verificationURL.searchParams.set('tokenId', tokenRecord.id);
-    verificationURL.searchParams.set('token', tokenRecord.token);
-    verificationURL.searchParams.set('type', 'verify');
-  }
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
 
   // Prepare & send email

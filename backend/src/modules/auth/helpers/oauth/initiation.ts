@@ -1,5 +1,6 @@
 import { appConfig } from 'config';
 import type { Context } from 'hono';
+import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
@@ -30,10 +31,10 @@ export interface OAuthCookiePayload {
  * @param codeVerifier - PKCE code verifier (optional)
  * @returns redirect response
  */
-export const handleOAuthInitiation = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
+export const handleOAuthInitiation = async (ctx: Context<Env>, provider: string, url: URL, state: string, codeVerifier?: string) => {
   const { type } = ctx.req.query();
 
-  const { redirectPath } = await prepareOAuth(ctx);
+  const { redirectPath } = await prepareOAuthByContext(ctx);
   const cookieContent = JSON.stringify({ redirectPath, codeVerifier });
 
   // TODO state in name? perhaps in content instead? reconsider cookie lifecycle security
@@ -59,7 +60,7 @@ export const handleOAuthInitiation = async (ctx: Context, provider: string, url:
  *
  */
 // TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
-const prepareOAuth = async (ctx: Context) => {
+const prepareOAuthByContext = async (ctx: Context<Env>) => {
   const { type, redirect } = ctx.req.query();
 
   // default payload
@@ -112,7 +113,7 @@ const resolveOAuthRedirect = (redirect?: string): string => {
  * @returns tokenId + redirectPath
  * @throws AppError if token is missing or invalid
  */
-const prepareOAuthAcceptInvite = async (ctx: Context) => {
+const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
   const token = await getAuthCookie(ctx, 'invitation');
 
   // Must provide a token and tokenId
@@ -135,7 +136,7 @@ const prepareOAuthAcceptInvite = async (ctx: Context) => {
  * @returns connectUserId and redirectPath
  * @throws AppError if missing param or user mismatch
  */
-const prepareOAuthConnect = async (ctx: Context) => {
+const prepareOAuthConnect = async (ctx: Context<Env>) => {
   const connectUserId = ctx.req.query('connectUserId');
 
   if (!connectUserId) {
@@ -156,6 +157,8 @@ const prepareOAuthConnect = async (ctx: Context) => {
 };
 /**
  * Validates and extracts verification context for an OAuth flow.
+ * To make sure that the user that started the OAuth flow is the same as the one that proceeds after
+ * email verification, we use a cookie to store the token.
  *
  * - Ensures `token` param exists
  * - Validates token record against type `email_verification`
@@ -165,11 +168,13 @@ const prepareOAuthConnect = async (ctx: Context) => {
  * @returns tokenId + redirectPath
  * @throws AppError if missing or invalid token
  */
-const prepareOAuthVerify = async (ctx: Context) => {
+const prepareOAuthVerify = async (ctx: Context<Env>) => {
   const token = await getAuthCookie(ctx, 'email_verification');
-
   // Must provide a token
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
+
+  // TODO split in different endpoints when you are returning for second time, you get "Token is invalid" because it was consumed already
+  //   then we need to get singleUUseToken here or somehow divert to another FileDownloadableLink, i
 
   const tokenRecord = await getValidToken({ token, consumeToken: false, isRedirect: true, tokenType: 'email_verification' });
 

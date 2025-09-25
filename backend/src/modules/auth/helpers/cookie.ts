@@ -2,11 +2,13 @@ import { appConfig, TokenType } from 'config';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
+import { Env } from '#/lib/context';
 import type { TimeSpan } from '#/utils/time-span';
 import { env } from '../../../env';
 
 const isProduction = appConfig.mode === 'production';
 // TODO make underscore consistent in cookie names
+// TODO add oauth_verification
 type CookieName =
   | TokenType
   | 'session'
@@ -25,7 +27,7 @@ type CookieName =
  * @param content - Content to store in the cookie.
  * @param timeSpan - Duration for which the cookie is valid.
  */
-export const setAuthCookie = async (ctx: Context, name: CookieName, content: string, timeSpan: TimeSpan) => {
+export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
   const options = {
     secure: appConfig.mode !== 'development',
@@ -45,7 +47,7 @@ export const setAuthCookie = async (ctx: Context, name: CookieName, content: str
  * @param name - Cookie name.
  * @returns The content stored in the cookie.
  */
-export const getAuthCookie = async (ctx: Context, name: CookieName) => {
+export const getAuthCookie = async (ctx: Context<Env>, name: CookieName) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
   const content = isProduction ? await getSignedCookie(ctx, env.COOKIE_SECRET, versionedName) : getCookie(ctx, versionedName);
@@ -59,7 +61,7 @@ export const getAuthCookie = async (ctx: Context, name: CookieName) => {
  * @param name - Cookie name.
  * @returns Deleted value
  */
-export const deleteAuthCookie = (ctx: Context, name: CookieName) => {
+export const deleteAuthCookie = (ctx: Context<Env>, name: CookieName) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
   return deleteCookie(ctx, versionedName, {

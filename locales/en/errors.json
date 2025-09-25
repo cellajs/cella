@@ -112,7 +112,7 @@
   "no_user_found": "No user found",
   "not_found": "Not found",
   "not_found.text": "This resource does not exist or has been deleted.",
-  "token_not_found": "Token is invalid. Please request a new one.",
+  "token_not_found": "Token is invalid.",
   "connect_user_not_found": "Failed to connect account, user data missing.",
   "verification_not_found": "Failed to verify email, token missing or invalid.",
   "oauth_failed": "OAuth failed",

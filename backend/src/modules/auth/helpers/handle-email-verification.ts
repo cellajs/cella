@@ -16,8 +16,14 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
   // Token requires userId
   if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-  // Only allow verify emails for "password" strategy (Oauth verification is handled by Oauth callback handlers)
-  if (token.oauthAccountId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (token.oauthAccountId) {
+    const verifyPath = `/auth/github`; // TODO ${oauthAccount.providerId}
+    const verificationURL = new URL(verifyPath, appConfig.backendUrl);
+
+    verificationURL.searchParams.set('tokenId', token.id);
+    verificationURL.searchParams.set('type', 'verify');
+    return ctx.redirect(verificationURL, 302);
+  }
 
   // Get user
   const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
@@ -43,7 +49,7 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
   const redirectPath = mfaRedirectPath || appConfig.defaultRedirectPath;
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
-  // If MFA is not required, set  user session immediately
+  // If MFA is not required, set user session immediately
   if (!mfaRedirectPath) await setUserSession(ctx, user, 'email');
 
   return ctx.redirect(redirectUrl, 302);
