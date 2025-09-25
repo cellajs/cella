@@ -1,5 +1,4 @@
 import attachmentRouteHandlers from '#/modules/attachments/handlers';
-import authRouteHandlers from '#/modules/auth/handlers';
 import entityRouteHandlers from '#/modules/entities/handlers';
 import meRouteHandlers from '#/modules/me/handlers';
 import membershipRouteHandlers from '#/modules/memberships/handlers';
@@ -9,10 +8,19 @@ import requestRouteHandlers from '#/modules/requests/handlers';
 import systemRouteHandlers from '#/modules/system/handlers';
 import userRouteHandlers from '#/modules/users/handlers';
 import baseApp from '#/server';
+import authGeneralRouteHandlers from '#/modules/auth/general/handlers';
+import authTotpRouteHandlers from '#/modules/auth/totps/handlers';
+import authOAuthRouteHandlers from '#/modules/auth/oauth/handlers';
+import authPasskeysRouteHandlers from '#/modules/auth/passkeys/handlers';
+import authPasswordsRouteHandlers from './modules/auth/passwords/handlers';
 
 // Define backend routes of your app
 const app = baseApp
-  .route('/auth', authRouteHandlers)
+  .route('/auth/', authGeneralRouteHandlers)
+  .route('/auth/', authTotpRouteHandlers)
+  .route('/auth/', authPasswordsRouteHandlers)
+  .route('/auth/', authPasskeysRouteHandlers)
+  .route('/auth/', authOAuthRouteHandlers)
   .route('/me', meRouteHandlers)
   .route('/users', userRouteHandlers)
   .route('/organizations', organizationRouteHandlers)

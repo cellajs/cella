@@ -1,6 +1,4 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32UpperCase } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
 import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
@@ -21,9 +19,8 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { deviceInfo } from '#/modules/auth/helpers/device-info';
-import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
+import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { verifyTotp } from '#/modules/auth/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -36,7 +33,6 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 type UserMenu = z.infer<typeof menuSchema>;
@@ -68,6 +64,7 @@ const meRouteHandlers = app
     // Determine which MFA strategy user is using
     const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
+    // TODO isnt this duplicated logic from passkeys module and totps module?
     try {
       // --- Passkey verification ---
       if (passkeyData) {
@@ -135,6 +132,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
+    // TODO put in helper
     // Queries for user authentication factors
     // Select passkey fields except for sensitive credential data
     const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
@@ -350,133 +348,6 @@ const meRouteHandlers = app
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], entity.id)));
 
     logEvent('info', 'User left entity', { userId: user.id });
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Register passkey
-   */
-  .openapi(meRoutes.createPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
-    const user = getContextUser();
-
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
-
-    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
-
-    const device = deviceInfo(ctx);
-    const passkeyValue = {
-      userId: user.id,
-      credentialId,
-      publicKey,
-      nameOnDevice,
-      deviceName: device.name,
-      deviceType: device.type,
-      deviceOs: device.os,
-      browser: device.browser,
-    };
-
-    const { credentialId: _, publicKey: __, ...passkeySelect } = getTableColumns(passkeysTable);
-
-    // Save public key in database
-    const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);
-
-    return ctx.json(newPasskey, 200);
-  })
-  /*
-   * Delete passkey
-   */
-  .openapi(meRoutes.deletePasskey, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-    const user = getContextUser();
-
-    // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
-
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
-
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Register TOTP
-   */
-  .openapi(meRoutes.registerTotp, async (ctx) => {
-    const user = getContextUser();
-
-    // Generate a 20-byte random secret and encode it as Base32
-    const secretBytes = crypto.getRandomValues(new Uint8Array(20));
-
-    // Base32 → for authenticator app (manual entry or QR code)
-    const manualKey = encodeBase32UpperCase(secretBytes);
-
-    // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
-
-    // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
-
-    return ctx.json({ totpUri, manualKey }, 200);
-  })
-  /*
-   * Activate TOTP
-   */
-  .openapi(meRoutes.activateTotp, async (ctx) => {
-    const { code } = ctx.req.valid('json');
-    const user = getContextUser();
-
-    // Retrieve the encoded totp secret from cookie
-    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
-    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
-
-    // Verify TOTP code
-    try {
-      const isValid = verifyTotp(code, encodedSecret);
-      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      throw new AppError({
-        status: 500,
-        type: 'invalid_credentials',
-        severity: 'error',
-        ...(error instanceof Error ? { originalError: error } : {}),
-      });
-    }
-
-    // Save encoded secret key in database
-    await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Unlink TOTP
-   */
-  .openapi(meRoutes.deleteTotp, async (ctx) => {
-    const user = getContextUser();
-
-    // Remove all totps linked to this user's email
-    await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
-
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
 
     return ctx.json(true, 200);
   })

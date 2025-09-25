@@ -1,16 +1,15 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
-import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
-import { totpVerificationBodySchema, webAuthnAssertionSchema } from '#/modules/auth/schema';
 import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
+import { passkeySchema, webAuthnAssertionSchema } from '../auth/passkeys/schema';
+import { totpVerificationBodySchema } from '../auth/totps/schema';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
-export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
 
 export const meAuthDataSchema = z.object({
   enabledOAuth: z.array(enabledOAuthProvidersEnum),
@@ -45,12 +44,6 @@ export const menuSchema = z
   )
   .openapi('MenuSchema');
 
-export const passkeyRegistrationBodySchema = z.object({
-  attestationObject: z.string(),
-  clientDataJSON: z.string(),
-  nameOnDevice: z.string(),
-});
-
 export const uploadTokenSchema = z.object({
   public: z.boolean(),
   sub: z.string(),
@@ -73,7 +66,7 @@ export const uploadTokenQuerySchema = z.object({
   templateId: z.enum(appConfig.uploadTemplateIds),
 });
 
-export const toggleMfaStateBody = z.object({
+export const toggleMfaBodySchema = z.object({
   passkeyData: webAuthnAssertionSchema.optional(),
   totpCode: totpVerificationBodySchema.shape.code.optional(),
   mfaRequired: z.boolean(),
