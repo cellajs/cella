@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -23,6 +19,10 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
 import { handleEmailVerification } from '../helpers/handle-email-verification';
 import { handleCreateUser } from '../helpers/user';
@@ -200,6 +200,7 @@ const authPasswordsRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
+    // TODO(bug) MFA on when user already auth, FE not revalidate session just keep prev one
     const redirectPath = await initiateMfa(ctx, user);
     if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
