@@ -154,8 +154,9 @@ const inviteCallbackFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   const invitationToken = await getValidToken({
+    ctx,
     token,
-    consumeToken: false,
+    invokeToken: false,
     tokenType: 'invitation',
     isRedirect: true,
   });
@@ -194,8 +195,9 @@ const verifyCallbackFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   const verifyToken = await getValidToken({
+    ctx,
     token,
-    consumeToken: false,
+    invokeToken: false,
     tokenType: 'email_verification',
     isRedirect: true,
   });

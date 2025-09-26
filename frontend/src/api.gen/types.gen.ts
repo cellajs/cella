@@ -257,16 +257,17 @@ export type CheckEmailResponses = {
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 
-export type ConsumeTokenData = {
+export type InvokeTokenData = {
   body?: never;
   path: {
+    type: 'email_verification' | 'oauth_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
     token: string;
   };
   query?: never;
-  url: '/auth/consume-token/{token}';
+  url: '/auth/invoke-token/{type}/{token}';
 };
 
-export type ConsumeTokenErrors = {
+export type InvokeTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -299,7 +300,7 @@ export type ConsumeTokenErrors = {
   };
 };
 
-export type ConsumeTokenError = ConsumeTokenErrors[keyof ConsumeTokenErrors];
+export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 
 export type GetTokenDataData = {
   body?: never;

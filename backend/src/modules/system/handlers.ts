@@ -147,7 +147,7 @@ const systemRouteHandlers = app
       email: t.email,
       lng,
       name: slugFromEmail(t.email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/consume-token/${t.token}`,
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${t.type}/${t.token}`,
     }));
     type Recipient = (typeof recipients)[number];
 

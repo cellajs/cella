@@ -33,7 +33,7 @@
 </div>
 
 > [!CAUTION]
-> This is a prerelease. Versioned releases will start once we have solid tests for authentication, authorization and data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
+> This is a prerelease. Versioned releases will start once we have enough tests for authentication, authorization and data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
 
 #### Contents
 - [Create app](#create-app)

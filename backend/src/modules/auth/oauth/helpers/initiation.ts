@@ -119,9 +119,11 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
   // Must provide a token and tokenId
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
-  const tokenRecord = await getValidToken({ token, consumeToken: false, tokenType: 'invitation' });
+  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation' });
 
-  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}` : appConfig.defaultRedirectPath;
+  const redirectPath = tokenRecord.entityType
+    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`
+    : appConfig.defaultRedirectPath;
 
   return { redirectPath };
 };
@@ -173,13 +175,15 @@ const prepareOAuthVerify = async (ctx: Context<Env>) => {
   // Must provide a token
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
-  // TODO split in different endpoints when you are returning for second time, you get "Token is invalid" because it was consumed already
+  // TODO split in different endpoints when you are returning for second time, you get "Token is invalid" because it was invoked already
   //   then we need to get singleUUseToken here or somehow divert to another FileDownloadableLink, i
 
-  const tokenRecord = await getValidToken({ token, consumeToken: false, isRedirect: true, tokenType: 'email_verification' });
+  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, isRedirect: true, tokenType: 'email_verification' });
 
   // If entityType exists, proceed to invitation flow
-  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}` : appConfig.defaultRedirectPath;
+  const redirectPath = tokenRecord.entityType
+    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`
+    : appConfig.defaultRedirectPath;
 
   return { verifyTokenId: tokenRecord.id, redirectPath };
 };

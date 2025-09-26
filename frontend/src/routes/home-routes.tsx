@@ -26,7 +26,7 @@ export const HomeAliasRoute = createRoute({
   validateSearch: z.object({
     invitationTokenId: z.string().optional(),
     invitationMembershipId: z.string().optional(),
-    skipWelcome: z.string().optional(),
+    skipWelcome: z.boolean().optional(),
   }),
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Home') }] }),

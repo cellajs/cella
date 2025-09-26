@@ -1,3 +1,7 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -19,10 +23,6 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
 import { handleEmailVerification } from '../helpers/handle-email-verification';
 import { handleCreateUser } from '../helpers/user';
@@ -155,7 +155,7 @@ const authPasswordsRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}`;
+    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];

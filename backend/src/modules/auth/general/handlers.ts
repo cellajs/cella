@@ -63,11 +63,11 @@ const authGeneralRouteHandlers = app
   /**
    * Consume token and redirect with single use session token in cookie
    */
-  .openapi(authGeneralRoutes.consumeToken, async (ctx) => {
-    const { token } = ctx.req.valid('param');
+  .openapi(authGeneralRoutes.invokeToken, async (ctx) => {
+    const { token, type: tokenType } = ctx.req.valid('param');
 
     // Check if token exists and create a new refresh token
-    const tokenRecord = await getValidToken({ token, consumeToken: true });
+    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
     if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', isRedirect: true });
 
     // Set cookie using token type as name. Content is single use token. Expires in 10 minutes or until used.
@@ -82,18 +82,16 @@ const authGeneralRouteHandlers = app
     // Determine redirect URL based on token type
     let redirectUrl = appConfig.defaultRedirectPath;
 
-    if (tokenRecord.type === 'invitation' && tokenRecord.entityType)
-      redirectUrl = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
-    else if (tokenRecord.type === 'invitation' && !tokenRecord.entityType)
-      redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
-    else if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
+    if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
-    logEvent('info', 'Token consumed, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
+    if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
+
+    logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
 
     return ctx.redirect(redirectUrl, 302);
   })
   /**
-   * Check token by id (without consuming it)
+   * Get token data by id (without invoking it)
    */
   // TODO simplify?
   .openapi(authGeneralRoutes.getTokenData, async (ctx) => {

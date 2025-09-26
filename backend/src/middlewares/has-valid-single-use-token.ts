@@ -19,7 +19,7 @@ export const hasValidSingleUseToken = (tokenType: TokenType): MiddlewareHandler<
   createMiddleware<Env>(async (ctx, next) => {
     if (ctx.req.method !== 'POST') throw new AppError({ status: 400, type: 'insecure_request', severity: 'error' });
 
-    // Check if single use token exists and consume it
+    // Check if single use token exists and invoke it
     const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
 
     // Revoke single use token by deleting cookie

@@ -54,7 +54,7 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
   };
 
   const defaultTitle = error?.name || i18n.t('error:error');
-  const defaultMessage = error?.message || i18n.t('error:reported_try_or_contact');
+  const defaultMessage = error?.message || '';
 
   // Title translation
   const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });

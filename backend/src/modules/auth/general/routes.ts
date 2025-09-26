@@ -87,10 +87,10 @@ const authGeneralRoutes = {
     },
   }),
 
-  consumeToken: createCustomRoute({
-    operationId: 'consumeToken',
+  invokeToken: createCustomRoute({
+    operationId: 'invokeToken',
     method: 'get',
-    path: '/consume-token/{token}',
+    path: '/invoke-token/{type}/{token}',
     guard: isPublicAccess,
     middleware: isNoBot,
     tags: ['auth'],
@@ -98,7 +98,7 @@ const authGeneralRoutes = {
     description:
       'Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.',
     request: {
-      params: z.object({ token: z.string() }),
+      params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
     },
     responses: {
       302: {

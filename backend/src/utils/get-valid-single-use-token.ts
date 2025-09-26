@@ -12,7 +12,6 @@ type BaseProps = {
 };
 /**
  * Validates a single use token by its value, ensuring it matches the required type.
- * It always removes the single use token cookie.
  *
  * @param ctx - Hono context
  * @param tokenType (optional) The required type of the token (e.g., 'password_reset', 'email_verification').
@@ -39,8 +38,6 @@ export const getValidSingleUseToken = async ({ ctx, tokenType }: BaseProps): Pro
 
   // Sanity check
   if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error' });
-
-  // Create single use session token and mark token as consumed
 
   return tokenRecord;
 };

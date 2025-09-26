@@ -221,7 +221,7 @@ const membershipRouteHandlers = app
     const recipients = insertedTokens.map(({ email, token }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${appConfig.backendAuthUrl}/consume-token/${token}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${token}`,
     }));
 
     const emailProps = {
@@ -577,7 +577,7 @@ const membershipRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.backendAuthUrl}/consume-token/${newToken}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
     };
 
     const emailProps = {

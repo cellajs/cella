@@ -12,8 +12,6 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
-  ConsumeTokenData,
-  ConsumeTokenErrors,
   CreateAttachmentData,
   CreateAttachmentErrors,
   CreateAttachmentResponses,
@@ -136,6 +134,8 @@ import type {
   GoogleCallbackErrors,
   GoogleData,
   GoogleErrors,
+  InvokeTokenData,
+  InvokeTokenErrors,
   MembershipInviteData,
   MembershipInviteErrors,
   MembershipInviteResponses,
@@ -257,14 +257,15 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
  *
  * Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.
  *
- * **GET /auth/consume-token/{token}** ·· [consumeToken](http://localhost:4000/docs#tag/auth/get/auth/consume-token/{token}) ·· _auth_
+ * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](http://localhost:4000/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· _auth_
  *
- * @param {consumeTokenData} options
+ * @param {invokeTokenData} options
+ * @param {enum} options.path.type - `enum`
  * @param {string} options.path.token - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const consumeToken = <ThrowOnError extends boolean = true>(options: Options<ConsumeTokenData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, ConsumeTokenErrors, ThrowOnError, 'data'>({
+export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -273,7 +274,7 @@ export const consumeToken = <ThrowOnError extends boolean = true>(options: Optio
         type: 'apiKey',
       },
     ],
-    url: '/auth/consume-token/{token}',
+    url: '/auth/invoke-token/{type}/{token}',
     ...options,
   });
 };

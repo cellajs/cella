@@ -223,9 +223,10 @@ export const zCheckEmailData = z.object({
  */
 export const zCheckEmailResponse = z.boolean();
 
-export const zConsumeTokenData = z.object({
+export const zInvokeTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
+    type: z.enum(['email_verification', 'oauth_verification', 'password_reset', 'invitation', 'confirm_mfa']),
     token: z.string(),
   }),
   query: z.optional(z.never()),
