@@ -1,6 +1,3 @@
-import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -18,6 +15,9 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.
@@ -32,6 +32,17 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
     if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
 
+  // // Delete previous session (skip if impersonation)
+  // if (type !== 'impersonation') {
+  //   const existingSession = deleteAuthCookie(ctx, 'session');
+
+  //   if (existingSession) {
+  //     const [existingSessionToken] = existingSession.split('.');
+
+  //     // Remove previous session from DB
+  //     await db.delete(sessionsTable).where(eq(sessionsTable.token, existingSessionToken));
+  //   }
+  // }
   // Get device information
   const device = deviceInfo(ctx);
 
