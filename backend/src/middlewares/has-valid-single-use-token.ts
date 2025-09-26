@@ -1,6 +1,6 @@
+import type { TokenType } from 'config';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
-import type { TokenModel } from '#/db/schema/tokens';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
@@ -13,9 +13,9 @@ import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
  * @returns Error response or undefined if the token is valid.
  *
  */
-// TODO how to provide additional security against CSRF for endpoints using the cookie with hasValidToken middleware?
+// TODO how to provide additional security against CSRF for endpoints using the cookie with hasValidSingleUseToken middleware?
 // Can this middleware be used to directly check a CRSF token?
-export const hasValidToken = (tokenType: TokenModel['type']): MiddlewareHandler<Env> =>
+export const hasValidSingleUseToken = (tokenType: TokenType): MiddlewareHandler<Env> =>
   createMiddleware<Env>(async (ctx, next) => {
     if (ctx.req.method !== 'POST') throw new AppError({ status: 400, type: 'insecure_request', severity: 'error' });
 
@@ -23,7 +23,7 @@ export const hasValidToken = (tokenType: TokenModel['type']): MiddlewareHandler<
     const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
 
     // Revoke single use token by deleting cookie
-    deleteAuthCookie(ctx, tokenType);
+    deleteAuthCookie(ctx, tokenRecord.type);
 
     // Set token in context
     ctx.set('token', tokenRecord);

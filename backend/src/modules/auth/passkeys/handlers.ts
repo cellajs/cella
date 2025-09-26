@@ -25,7 +25,7 @@ const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authPasskeysRouteHandlers = app
-  /*
+  /**
    * Register passkey
    */
   .openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
@@ -56,7 +56,7 @@ const authPasskeysRouteHandlers = app
 
     return ctx.json(newPasskey, 200);
   })
-  /*
+  /**
    * Delete passkey
    */
   .openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
@@ -79,7 +79,7 @@ const authPasskeysRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Passkey challenge
    */
   .openapi(authPasskeysRoutes.createPasskeyChallenge, async (ctx) => {
@@ -121,7 +121,7 @@ const authPasskeysRouteHandlers = app
 
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
-  /*
+  /**
    * Signin using passkey
    */
   .openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {

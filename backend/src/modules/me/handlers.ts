@@ -43,7 +43,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 export const streams = new Map<string, SSEStreamingApi>();
 
 const meRouteHandlers = app
-  /*
+  /**
    * Get me
    */
   .openapi(meRoutes.getMe, async (ctx) => {
@@ -54,7 +54,7 @@ const meRouteHandlers = app
 
     return ctx.json(user, 200);
   })
-  /*
+  /**
    * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
@@ -126,7 +126,7 @@ const meRouteHandlers = app
 
     return ctx.json(updatedUser, 200);
   })
-  /*
+  /**
    * Get my auth data
    */
   .openapi(meRoutes.getMyAuth, async (ctx) => {
@@ -174,7 +174,7 @@ const meRouteHandlers = app
       200,
     );
   })
-  /*
+  /**
    * Get my user menu
    */
   .openapi(meRoutes.getMyMenu, async (ctx) => {
@@ -213,7 +213,7 @@ const meRouteHandlers = app
 
     return ctx.json(menu, 200);
   })
-  /*
+  /**
    * Get my invitations - a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
@@ -255,7 +255,7 @@ const meRouteHandlers = app
 
     return ctx.json(pendingInvites.flat(), 200);
   })
-  /*
+  /**
    * Terminate one or more of my sessions
    */
   .openapi(meRoutes.deleteMySessions, async (ctx) => {
@@ -283,7 +283,7 @@ const meRouteHandlers = app
       return ctx.json({ success: false, rejectedItems: sessionIds }, 200);
     }
   })
-  /*
+  /**
    * Update current user (me)
    */
   .openapi(meRoutes.updateMe, async (ctx) => {
@@ -314,7 +314,7 @@ const meRouteHandlers = app
 
     return ctx.json(updatedUser, 200);
   })
-  /*
+  /**
    * Delete current user (me)
    */
   .openapi(meRoutes.deleteMe, async (ctx) => {
@@ -331,7 +331,7 @@ const meRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Delete one of my entity memberships
    */
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
@@ -351,7 +351,7 @@ const meRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Get upload token
    */
   .openapi(meRoutes.getUploadToken, async (ctx) => {
@@ -380,7 +380,7 @@ const meRouteHandlers = app
       });
     }
   })
-  /*
+  /**
    * Unsubscribe myself by token from receiving newsletters
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
@@ -404,7 +404,7 @@ const meRouteHandlers = app
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
   })
-  /*
+  /**
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {

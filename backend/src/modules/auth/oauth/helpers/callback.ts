@@ -359,7 +359,7 @@ const handleUnverifiedOAuthAccount = async (
  * @returns A validated redirect path string.
  */
 const getOAuthRedirectPath = async (ctx: Context<Env>): Promise<string> => {
-  const redirect = await getAuthCookie(ctx, 'oauth-redirect');
+  const redirect = await getAuthCookie(ctx, 'oauth_redirect');
 
   return isValidRedirectPath(redirect) || appConfig.defaultRedirectPath;
 };

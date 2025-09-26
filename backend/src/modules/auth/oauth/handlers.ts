@@ -44,7 +44,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authOAuthRouteHandlers = app
 
-  /*
+  /**
    * Initiates GitHub OAuth authentication flow
    */
   .openapi(authOAuthRoutes.github, async (ctx) => {
@@ -55,7 +55,7 @@ const authOAuthRouteHandlers = app
     // Start the OAuth session & flow (Persist `state`)
     return await handleOAuthInitiation(ctx, 'github', url, state);
   })
-  /*
+  /**
    * Initiates Google OAuth authentication flow
    */
   .openapi(authOAuthRoutes.google, async (ctx) => {
@@ -67,7 +67,7 @@ const authOAuthRouteHandlers = app
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
     return await handleOAuthInitiation(ctx, 'google', url, state, codeVerifier);
   })
-  /*
+  /**
    * Initiates Microsoft OAuth authentication flow
    */
   .openapi(authOAuthRoutes.microsoft, async (ctx) => {
@@ -80,7 +80,7 @@ const authOAuthRouteHandlers = app
     return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier);
   })
 
-  /*
+  /**
    * GitHub callback
    */
   .openapi(authOAuthRoutes.githubCallback, async (ctx) => {
@@ -111,7 +111,7 @@ const authOAuthRouteHandlers = app
     }
 
     // Verify cookie by `state` (CSRF protection)
-    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const oauthCookie = await getAuthCookie(ctx, `oauth_${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
@@ -151,7 +151,7 @@ const authOAuthRouteHandlers = app
     }
   })
 
-  /*
+  /**
    * Google callback
    */
   .openapi(authOAuthRoutes.googleCallback, async (ctx) => {
@@ -164,7 +164,7 @@ const authOAuthRouteHandlers = app
     }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
-    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const oauthCookie = await getAuthCookie(ctx, `oauth_${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
@@ -197,7 +197,7 @@ const authOAuthRouteHandlers = app
       });
     }
   })
-  /*
+  /**
    * Microsoft callback
    */
   .openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
@@ -210,7 +210,7 @@ const authOAuthRouteHandlers = app
     }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
-    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const oauthCookie = await getAuthCookie(ctx, `oauth_${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {

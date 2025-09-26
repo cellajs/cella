@@ -19,7 +19,7 @@ const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const requestRouteHandlers = app
-  /*
+  /**
    *  Create request
    */
   .openapi(requestRoutes.createRequest, async (ctx) => {
@@ -63,7 +63,7 @@ const requestRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    *  Get list of requests for system admins
    */
   .openapi(requestRoutes.getRequests, async (ctx) => {
@@ -96,7 +96,7 @@ const requestRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    *  Delete requests
    */
   .openapi(requestRoutes.deleteRequests, async (ctx) => {

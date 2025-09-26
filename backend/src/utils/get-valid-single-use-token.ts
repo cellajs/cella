@@ -1,3 +1,4 @@
+import { TokenType } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
 import { db } from '#/db/db';
@@ -7,7 +8,7 @@ import { getAuthCookie } from '#/modules/auth/helpers/cookie';
 
 type BaseProps = {
   ctx: Context;
-  tokenType: TokenModel['type'];
+  tokenType: TokenType;
 };
 /**
  * Validates a single use token by its value, ensuring it matches the required type.

@@ -7,16 +7,9 @@ import type { TimeSpan } from '#/utils/time-span';
 import { env } from '../../../env';
 
 const isProduction = appConfig.mode === 'production';
-// TODO make underscore consistent in cookie names
-type CookieName =
-  | TokenType
-  | 'session'
-  | 'totp-key'
-  | 'passkey-challenge'
-  | `oauth-${string}`
-  | 'email-verification'
-  | 'invitation'
-  | 'password-reset';
+
+// TODO totp_challenge?
+type CookieName = TokenType | 'session' | 'totp_key' | 'passkey-challenge' | `oauth_${string}`;
 
 /**
  * Sets an authentication cookie.

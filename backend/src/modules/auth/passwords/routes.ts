@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isPublicAccess } from '#/middlewares/guard';
-import { hasValidToken } from '#/middlewares/has-valid-token';
+import { hasValidSingleUseToken } from '#/middlewares/has-valid-single-use-token';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/common';
@@ -44,7 +44,7 @@ const authPasswordsRoutes = {
     method: 'post',
     path: '/sign-up/{tokenId}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter('signup_invitation'), emailEnumLimiter, hasValidToken('invitation')],
+    middleware: [tokenLimiter('signup_invitation'), emailEnumLimiter, hasValidSingleUseToken('invitation')],
     tags: ['auth'],
     summary: 'Sign up to accept invite',
     description: 'Registers a user using an email and password in response to a system or organization invitation.',
@@ -68,7 +68,7 @@ const authPasswordsRoutes = {
     method: 'get',
     path: '/verify-email/{tokenId}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter('email_verification'), hasValidToken('email_verification')],
+    middleware: [tokenLimiter('email_verification'), hasValidSingleUseToken('email_verification')],
     tags: ['auth'],
     summary: 'Verify email by token',
     description: "Verifies a user's email using a single-use session token in cookie. Grants a session upon success.",
@@ -113,7 +113,7 @@ const authPasswordsRoutes = {
     method: 'post',
     path: '/create-password/{tokenId}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter('password_reset'), hasValidToken('password_reset')],
+    middleware: [tokenLimiter('password_reset'), hasValidSingleUseToken('password_reset')],
     tags: ['auth'],
     summary: 'Create password',
     description: 'Sets a new password using a single-use session token in cookie and grants a session immediately upon success.',

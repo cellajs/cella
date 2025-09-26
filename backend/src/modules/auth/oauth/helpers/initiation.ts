@@ -38,7 +38,7 @@ export const handleOAuthInitiation = async (ctx: Context<Env>, provider: string,
   const cookieContent = JSON.stringify({ redirectPath, codeVerifier });
 
   // TODO state in name? perhaps in content instead? reconsider cookie lifecycle security
-  await setAuthCookie(ctx, `oauth-${state}`, cookieContent, new TimeSpan(5, 'm'));
+  await setAuthCookie(ctx, `oauth_${state}`, cookieContent, new TimeSpan(5, 'm'));
 
   logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 

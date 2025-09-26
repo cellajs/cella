@@ -365,7 +365,7 @@
   "skip_org_creation.text": "You are not part of an organization yet. To complete the onboarding process, please create one.",
   "slug": "Slug",
   "status_page": "Status page",
-  "still_not_accepted": "{{count}} of {{total}} haven't accepted the invitation yet.",
+  "still_not_accepted": "{{count}} of {{total}} already joined or already have invitations.",
   "stop_impersonation": "Stop impersonation",
   "strategy": "Method",
   "subitem": "Subitem",

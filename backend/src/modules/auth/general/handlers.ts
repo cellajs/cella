@@ -24,7 +24,7 @@ import authGeneralRoutes from './routes';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authGeneralRouteHandlers = app
-  /*
+  /**
    * Check if email exists
    */
   .openapi(authGeneralRoutes.checkEmail, async (ctx) => {
@@ -60,7 +60,7 @@ const authGeneralRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Consume token and redirect with single use session token in cookie
    */
   .openapi(authGeneralRoutes.consumeToken, async (ctx) => {
@@ -81,14 +81,18 @@ const authGeneralRouteHandlers = app
 
     // Determine redirect URL based on token type
     let redirectUrl = appConfig.defaultRedirectPath;
-    if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
-    if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
+
+    if (tokenRecord.type === 'invitation' && tokenRecord.entityType)
+      redirectUrl = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
+    else if (tokenRecord.type === 'invitation' && !tokenRecord.entityType)
+      redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
+    else if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
     logEvent('info', 'Token consumed, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
 
     return ctx.redirect(redirectUrl, 302);
   })
-  /*
+  /**
    * Check token by id (without consuming it)
    */
   // TODO simplify?
@@ -133,7 +137,7 @@ const authGeneralRouteHandlers = app
 
     return ctx.json(dataWithOrg, 200);
   })
-  /*
+  /**
    * Start impersonation
    */
   .openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
@@ -150,7 +154,7 @@ const authGeneralRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Stop impersonation
    */
   .openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
@@ -178,7 +182,7 @@ const authGeneralRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Sign out
    */
   .openapi(authGeneralRoutes.signOut, async (ctx) => {

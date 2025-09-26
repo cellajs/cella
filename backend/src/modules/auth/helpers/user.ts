@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
@@ -31,14 +31,6 @@ interface HandleCreateUserProps {
  * @returns Error response or Redirect response or Response
  */
 export const handleCreateUser = async ({ newUser, membershipInviteTokenId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
-  // If signing up without token while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
-  const [inviteToken] = await db
-    .select()
-    .from(tokensTable)
-    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId), isNull(tokensTable.invokedAt)));
-
-  if (!membershipInviteTokenId && inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
-
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 

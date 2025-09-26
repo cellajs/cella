@@ -33,7 +33,7 @@ const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authPasswordsRouteHandlers = app
-  /*
+  /**
    * Sign up with email & password.
    * Attention: sign up is also used for new users that received (system or membership) invitations.
    * Only when invited to a new organization (context), user will proceed to accept this first after signing up.
@@ -64,7 +64,7 @@ const authPasswordsRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Sign up with email & password to accept (system or membership) invitations.
    * Token is in single use session cookie.
    * Only for organization membership invitations, user will proceed to accept after signing up.
@@ -75,7 +75,7 @@ const authPasswordsRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const membershipInvite = validToken.type === 'invitation';
+    const isMembershipInvite = validToken.type === 'invitation' && validToken.entityType;
 
     // Verify if strategy allowed
     const strategy = 'password';
@@ -84,7 +84,7 @@ const authPasswordsRouteHandlers = app
     }
 
     // add token if it's membership invitation
-    const membershipInviteTokenId = membershipInvite ? validToken.id : undefined;
+    const membershipInviteTokenId = isMembershipInvite ? validToken.id : undefined;
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
@@ -99,6 +99,10 @@ const authPasswordsRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user, strategy);
 
+    // If no membership invitation, we are done
+    if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 200);
+
+    // If membership invitation, get membership to forward
     const [invitationMembership] = await db
       .select(membershipBaseSelect)
       .from(membershipsTable)
@@ -107,12 +111,11 @@ const authPasswordsRouteHandlers = app
     if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
 
     // Redirect to accept invitation if membership invite
-    const redirectPath = membershipInvite
-      ? `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`
-      : appConfig.defaultRedirectPath;
+    const redirectPath = `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`;
+
     return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })
-  /*
+  /**
    * Verify email
    */
   .openapi(authPasswordsRoutes.verifyEmail, async (ctx) => {
@@ -120,7 +123,7 @@ const authPasswordsRouteHandlers = app
 
     return handleEmailVerification(ctx, token);
   })
-  /*
+  /**
    * Request reset password email
    */
   .openapi(authPasswordsRoutes.requestPassword, async (ctx) => {
@@ -165,7 +168,7 @@ const authPasswordsRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Create password with single use session token in cookie
    */
   .openapi(authPasswordsRoutes.createPasswordWithToken, async (ctx) => {
@@ -207,7 +210,7 @@ const authPasswordsRouteHandlers = app
     await setUserSession(ctx, user, strategy);
     return ctx.json({ shouldRedirect: false }, 200);
   })
-  /*
+  /**
    * Sign in with email and password
    * Attention: sign in is also used as a preparation to accept organization invitations (when signed out & user exists),
    * after signing in, we proceed to accept the invitation.

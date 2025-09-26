@@ -31,7 +31,7 @@ import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const membershipRouteHandlers = app
-  /*
+  /**
    * Create memberships (invite members) for an entity such as an organization
    */
   .openapi(membershipRoutes.createMemberships, async (ctx) => {
@@ -243,7 +243,7 @@ const membershipRouteHandlers = app
     const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));
     return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
   })
-  /*
+  /**
    * Delete memberships to remove users from entity
    * When user is allowed to delete entity, they can delete memberships too
    */
@@ -292,7 +292,7 @@ const membershipRouteHandlers = app
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
-  /*
+  /**
    * Update user membership
    */
   .openapi(membershipRoutes.updateMembership, async (ctx) => {
@@ -366,7 +366,7 @@ const membershipRouteHandlers = app
 
     return ctx.json(updatedMembership, 200);
   })
-  /*
+  /**
    * Accept - or reject - organization membership invitation
    */
   .openapi(membershipRoutes.acceptMembership, async (ctx) => {
@@ -413,7 +413,7 @@ const membershipRouteHandlers = app
 
     return ctx.json({ ...entity, membership }, 200);
   })
-  /*
+  /**
    * Get members by entity id/slug and type
    */
   .openapi(membershipRoutes.getMembers, async (ctx) => {
@@ -468,7 +468,7 @@ const membershipRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Get pending membership invitations by entity id/slug and type
    */
   .openapi(membershipRoutes.getPendingInvitations, async (ctx) => {
@@ -481,6 +481,7 @@ const membershipRouteHandlers = app
 
     const entityIdField = appConfig.entityIdFields[entity.entityType];
 
+    // TODO optimize this code
     const invitedMemberSelect = {
       id: tokensTable.id,
       name: usersTable.name,
@@ -503,6 +504,7 @@ const membershipRouteHandlers = app
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
           isNotNull(tokensTable.role),
+          isNotNull(tokensTable.entityType),
           isNull(tokensTable.invokedAt),
         ),
       )
@@ -514,7 +516,7 @@ const membershipRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Resend invitation email for entity invites.
    */
   .openapi(membershipRoutes.resendInvitation, async (ctx) => {

@@ -23,7 +23,7 @@ const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authTotpsRouteHandlers = app
-  /*
+  /**
    * Register TOTP
    */
   .openapi(authTotpsRoutes.createTotpChallenge, async (ctx) => {
@@ -36,14 +36,14 @@ const authTotpsRouteHandlers = app
     const manualKey = encodeBase32UpperCase(secretBytes);
 
     // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
+    await setAuthCookie(ctx, 'totp_key', manualKey, new TimeSpan(5, 'm'));
 
     // otpauth:// URI for QR scanner apps
     const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
 
     return ctx.json({ totpUri, manualKey }, 200);
   })
-  /*
+  /**
    * Activate TOTP
    */
   .openapi(authTotpsRoutes.createTotp, async (ctx) => {
@@ -51,7 +51,7 @@ const authTotpsRouteHandlers = app
     const user = getContextUser();
 
     // Retrieve the encoded totp secret from cookie
-    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
+    const encodedSecret = await getAuthCookie(ctx, 'totp_key');
     if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
 
     // Verify TOTP code
@@ -74,7 +74,7 @@ const authTotpsRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Unlink TOTP
    */
   .openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
@@ -96,7 +96,7 @@ const authTotpsRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Verify TOTP
    */
   .openapi(authTotpRoutes.signInWithTotp, async (ctx) => {
