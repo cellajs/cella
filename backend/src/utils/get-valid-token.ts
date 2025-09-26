@@ -22,7 +22,7 @@ type BaseProps = {
  * @param ctx - Hono context.
  * @param token The token string to validate.
  * @param invokeToken (optional) Whether to create a single-use token after invoking/consuming the primary `token`.
- * @param tokenType The required type of the token (e.g., 'password_reset', 'email_verification').
+ * @param tokenType The required type of the token (e.g., 'password-reset', 'email-verification').
  * @param isRedirect - Whether error requests should be redirects.
  * @returns The valid token record from the database.
  * @throws AppError if the token is not found, expired, or of an invalid type.
@@ -47,7 +47,9 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true,
   if (!tokenRecord) tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
 
   // Token expired
-  if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', isRedirect });
+  if (isExpiredDate(tokenRecord.expiresAt)) {
+    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', isRedirect });
+  }
 
   // Sanity check
   if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error', isRedirect });

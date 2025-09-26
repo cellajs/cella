@@ -9,9 +9,9 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { handleEmailVerification } from '#/modules/auth/helpers/handle-email-verification';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidToken } from '#/utils/get-valid-token';
@@ -74,17 +74,17 @@ const authGeneralRouteHandlers = app
     await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(10, 'm'));
 
     // If verification email, we process it immediately and redirect to app
-    if (tokenRecord.type === 'email_verification') return handleEmailVerification(ctx, tokenRecord);
+    if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
 
     // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
-    if (tokenRecord.type === 'oauth_verification') return handleOAuthVerification(ctx, tokenRecord);
+    if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
 
     // Determine redirect URL based on token type
     let redirectUrl = appConfig.defaultRedirectPath;
 
     if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
-    if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
+    if (tokenRecord.type === 'password-reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
     logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
 
@@ -184,11 +184,11 @@ const authGeneralRouteHandlers = app
    * Sign out
    */
   .openapi(authGeneralRoutes.signOut, async (ctx) => {
-    const confirmMfa = await getAuthCookie(ctx, 'confirm_mfa');
+    const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
 
     if (confirmMfa) {
       // Delete mfa cookie
-      deleteAuthCookie(ctx, 'confirm_mfa');
+      deleteAuthCookie(ctx, 'confirm-mfa');
 
       logEvent('info', 'User mfa canceled');
 

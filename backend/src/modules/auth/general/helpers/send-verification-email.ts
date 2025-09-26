@@ -12,8 +12,8 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
-import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../emails/oauth-verification';
+import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
+import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../../emails/oauth-verification';
 
 interface Props {
   userId: string;
@@ -54,7 +54,7 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
       and(
         ...[
           eq(tokensTable.userId, user.id),
-          eq(tokensTable.type, 'email_verification'),
+          eq(tokensTable.type, 'email-verification'),
           ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
         ],
       ),
@@ -68,7 +68,7 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
     .insert(tokensTable)
     .values({
       token,
-      type: 'email_verification',
+      type: 'email-verification',
       userId: user.id,
       email,
       createdBy: user.id,

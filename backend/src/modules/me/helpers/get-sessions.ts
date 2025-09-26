@@ -4,7 +4,7 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { sessionsTable } from '#/db/schema/sessions';
 import { Env } from '#/lib/context';
-import { getParsedSessionCookie } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
 import type { sessionSchema } from '#/modules/me/schema';
 
 /**

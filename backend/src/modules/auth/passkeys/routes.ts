@@ -33,7 +33,7 @@ const authPasskeysRoutes = {
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
-    tags: ['me'],
+    tags: ['auth'],
     summary: 'Create passkey',
     description:
       'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.',
@@ -58,7 +58,7 @@ const authPasskeysRoutes = {
     method: 'delete',
     path: '/passkey/{id}',
     guard: isAuthenticated,
-    tags: ['me'],
+    tags: ['auth'],
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the *current user*.',
     security: [],

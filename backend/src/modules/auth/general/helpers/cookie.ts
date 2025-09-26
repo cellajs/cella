@@ -4,7 +4,7 @@ import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } 
 import type { CookieOptions } from 'hono/utils/cookie';
 import { Env } from '#/lib/context';
 import type { TimeSpan } from '#/utils/time-span';
-import { env } from '../../../env';
+import { env } from '../../../../env';
 
 const isProduction = appConfig.mode === 'production';
 

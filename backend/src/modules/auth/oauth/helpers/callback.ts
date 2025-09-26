@@ -8,11 +8,11 @@ import type { TokenModel } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie } from '#/modules/auth/helpers/cookie';
-import { initiateMfa } from '#/modules/auth/helpers/mfa';
-import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
-import { setUserSession } from '#/modules/auth/helpers/session';
-import { handleCreateUser } from '#/modules/auth/helpers/user';
+import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
+import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
@@ -198,7 +198,7 @@ const verifyCallbackFlow = async (
     ctx,
     token,
     invokeToken: false,
-    tokenType: 'email_verification',
+    tokenType: 'email-verification',
     isRedirect: true,
   });
 
@@ -207,7 +207,7 @@ const verifyCallbackFlow = async (
 
   // Invalid token settings → invalid verification
   if (
-    verifyToken.type !== 'email_verification' ||
+    verifyToken.type !== 'email-verification' ||
     verifyToken.email !== providerUser.email ||
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.provider !== provider

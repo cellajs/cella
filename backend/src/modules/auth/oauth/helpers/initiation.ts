@@ -2,8 +2,8 @@ import { appConfig } from 'config';
 import type { Context } from 'hono';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
@@ -171,14 +171,12 @@ const prepareOAuthConnect = async (ctx: Context<Env>) => {
  * @throws AppError if missing or invalid token
  */
 const prepareOAuthVerify = async (ctx: Context<Env>) => {
-  const token = await getAuthCookie(ctx, 'email_verification');
+  const token = await getAuthCookie(ctx, 'email-verification');
   // Must provide a token
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
-  // TODO split in different endpoints when you are returning for second time, you get "Token is invalid" because it was invoked already
-  //   then we need to get singleUUseToken here or somehow divert to another FileDownloadableLink, i
-
-  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, isRedirect: true, tokenType: 'email_verification' });
+  // Get token or single use token.
+  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, isRedirect: true, tokenType: 'email-verification' });
 
   // If entityType exists, proceed to invitation flow
   const redirectPath = tokenRecord.entityType

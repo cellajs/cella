@@ -260,7 +260,7 @@ export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'email_verification' | 'oauth_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
+    type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
     token: string;
   };
   query?: never;
@@ -308,7 +308,7 @@ export type GetTokenDataData = {
     tokenId: string;
   };
   query: {
-    type: 'email_verification' | 'oauth_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
+    type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
   };
   url: '/auth/token/{tokenId}';
 };

@@ -11,10 +11,10 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextToken } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
-import { initiateMfa } from '#/modules/auth/helpers/mfa';
-import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
-import { setUserSession } from '#/modules/auth/helpers/session';
+import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
+import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -24,8 +24,8 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
-import { handleEmailVerification } from '../helpers/handle-email-verification';
-import { handleCreateUser } from '../helpers/user';
+import { handleCreateUser } from '../general/helpers/user';
+import { handleEmailVerification } from './helpers/handle-email-verification';
 import authPasswordsRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -138,14 +138,14 @@ const authPasswordsRouteHandlers = app
     if (!user) throw new AppError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
 
     // Delete old token if exists
-    await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
+    await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password-reset')));
 
     // TODO hash token
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
         token: nanoid(40),
-        type: 'password_reset',
+        type: 'password-reset',
         userId: user.id,
         email,
         createdBy: user.id,

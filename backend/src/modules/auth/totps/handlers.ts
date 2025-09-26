@@ -9,12 +9,12 @@ import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
-import { setUserSession } from '#/modules/auth/helpers/session';
-import { signInWithTotp } from '#/modules/auth/helpers/totps';
+import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { signInWithTotp } from '#/modules/auth/totps/helpers/totps';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import { getAuthCookie, setAuthCookie } from '../helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '../general/helpers/cookie';
 import authTotpRoutes from './routes';
 import authTotpsRoutes from './routes';
 

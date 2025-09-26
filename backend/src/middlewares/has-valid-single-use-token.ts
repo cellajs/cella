@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 
 /**

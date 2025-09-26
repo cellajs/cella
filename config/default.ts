@@ -126,7 +126,7 @@ enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'oauth_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
+  tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
 
   // Optional settings
   has: {

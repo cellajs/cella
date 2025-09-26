@@ -32,7 +32,7 @@ const CreatePasswordForm = () => {
 
   const { tokenId } = useParams({ from: '/publicLayout/authLayout/auth/create-password/$tokenId' });
 
-  const { data, isLoading, error } = useGetTokenData('password_reset', tokenId);
+  const { data, isLoading, error } = useGetTokenData('password-reset', tokenId);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in
@@ -43,7 +43,7 @@ const CreatePasswordForm = () => {
   } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
     mutationFn: ({ tokenId, password }) => createPassword({ path: { tokenId }, body: { password } }),
     onSuccess: () => {
-      toaster(t('common:success.password_reset'), 'success');
+      toaster(t('common:success.password-reset'), 'success');
       navigate({ to: appConfig.defaultRedirectPath });
     },
   });

@@ -26,7 +26,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
-import { getParsedSessionCookie, validateSession } from '../auth/helpers/session';
+import { getParsedSessionCookie, validateSession } from '../auth/general/helpers/session';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

@@ -104,7 +104,7 @@ const membershipRoutes = {
     method: 'post',
     path: '/{id}/{acceptOrReject}',
     guard: isAuthenticated,
-    tags: ['auth'],
+    tags: ['membership'],
     summary: 'Accept invitation',
     // TODO reject flow needs to be added
     description: 'Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.',

@@ -270,7 +270,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -298,7 +298,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -325,7 +325,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -351,7 +351,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -377,7 +377,7 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -392,7 +392,7 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  *
  * Generates a new TOTP challenge for current user and returns a provisioning URI and Base32 manual key.
  *
- * **POST /auth/totp/register** ·· [createTotpChallenge](http://localhost:4000/docs#tag/me/post/auth/totp/register) ·· _me_
+ * **POST /auth/totp/register** ·· [createTotpChallenge](http://localhost:4000/docs#tag/auth/post/auth/totp/register) ·· _auth_
  *
  * @param {createTotpChallengeData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -411,7 +411,7 @@ export const createTotpChallenge = <ThrowOnError extends boolean = true>(options
  *
  * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
  *
- * **POST /auth/totp/activate** ·· [createTotp](http://localhost:4000/docs#tag/me/post/auth/totp/activate) ·· _me_
+ * **POST /auth/totp/activate** ·· [createTotp](http://localhost:4000/docs#tag/auth/post/auth/totp/activate) ·· _auth_
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -435,7 +435,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
  *
  * Delete TOTP credential for current user.
  *
- * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/me/delete/auth/totp) ·· _me_
+ * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/auth/delete/auth/totp) ·· _auth_
  *
  * @param {deleteTotpData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -529,7 +529,7 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Verify email by token
  * 🌐 Public access
- * ⏳ token_email_verification (10/h)
+ * ⏳ token_email-verification (10/h)
  *
  * Verifies a user's email using a single-use session token in cookie. Grants a session upon success.
  *
@@ -576,7 +576,7 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
 /**
  * Create password
  * 🌐 Public access
- * ⏳ token_password_reset (10/h)
+ * ⏳ token_password-reset (10/h)
  *
  * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
@@ -631,7 +631,7 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
- * **POST /auth/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/auth/passkey) ·· _me_
+ * **POST /auth/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey) ·· _auth_
  *
  * @param {createPasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
@@ -657,7 +657,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Delete a passkey by id from the *current user*.
  *
- * **DELETE /auth/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/auth/passkey/{id}) ·· _me_
+ * **DELETE /auth/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/auth/delete/auth/passkey/{id}) ·· _auth_
  *
  * @param {deletePasskeyData} options
  * @param {string} options.path.id - `string`
@@ -721,7 +721,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -892,7 +892,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -918,7 +918,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -952,7 +952,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -985,7 +985,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1015,7 +1015,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1041,7 +1041,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1067,7 +1067,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1094,7 +1094,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1148,7 +1148,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1176,7 +1176,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1203,7 +1203,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1242,7 +1242,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1269,7 +1269,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1303,7 +1303,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1334,7 +1334,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1369,7 +1369,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1397,7 +1397,7 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1428,7 +1428,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1472,7 +1472,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1516,7 +1516,7 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1545,7 +1545,7 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1574,7 +1574,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1605,7 +1605,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1637,7 +1637,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1664,7 +1664,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1699,7 +1699,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1730,7 +1730,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1765,7 +1765,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1795,7 +1795,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(options?: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1826,7 +1826,7 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1853,7 +1853,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1888,7 +1888,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1916,7 +1916,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1953,7 +1953,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1980,7 +1980,7 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2012,7 +2012,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2042,7 +2042,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2074,7 +2074,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2104,7 +2104,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2139,7 +2139,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2175,7 +2175,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2194,7 +2194,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  *
  * Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.
  *
- * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [acceptMembership](http://localhost:4000/docs#tag/auth/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _auth_
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [acceptMembership](http://localhost:4000/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
  *
  * @param {acceptMembershipData} options
  * @param {string} options.path.id - `string`
@@ -2207,7 +2207,7 @@ export const acceptMembership = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2242,7 +2242,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2276,7 +2276,7 @@ export const getPendingInvitations = <ThrowOnError extends boolean = true>(optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],

@@ -226,7 +226,7 @@ export const zCheckEmailResponse = z.boolean();
 export const zInvokeTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    type: z.enum(['email_verification', 'oauth_verification', 'password_reset', 'invitation', 'confirm_mfa']),
+    type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     token: z.string(),
   }),
   query: z.optional(z.never()),
@@ -238,7 +238,7 @@ export const zGetTokenDataData = z.object({
     tokenId: z.string(),
   }),
   query: z.object({
-    type: z.enum(['email_verification', 'oauth_verification', 'password_reset', 'invitation', 'confirm_mfa']),
+    type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
   }),
 });
 

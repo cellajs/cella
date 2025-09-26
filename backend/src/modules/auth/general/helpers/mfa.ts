@@ -5,7 +5,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
@@ -30,7 +30,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
     .insert(tokensTable)
     .values({
       token: nanoid(40),
-      type: 'confirm_mfa',
+      type: 'confirm-mfa',
       userId: user.id,
       email: user.email,
       createdBy: user.id,
@@ -39,7 +39,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
     .returning({ token: tokensTable.id });
 
   // Set a temporary auth cookie to track confirm MFA session
-  await setAuthCookie(ctx, 'confirm_mfa', generatedTokenId, timespan);
+  await setAuthCookie(ctx, 'confirm-mfa', generatedTokenId, timespan);
 
   // Return the path to redirect the user to MFA confirmation page
   return '/auth/authenticate/mfa-confirmation';
@@ -54,11 +54,11 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
  */
 export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
   // TODO should be token itself, Get token ID from cookie
-  const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm_mfa');
-  if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'confirm_mfa_not_found', severity: 'error' });
+  const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
+  if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'confirm-mfa_not_found', severity: 'error' });
 
   // Fetch token record and associated user
-  const tokenRecord = await getValidToken({ ctx, token: tokenIdFromCookie, invokeToken: false, tokenType: 'confirm_mfa' });
+  const tokenRecord = await getValidToken({ ctx, token: tokenIdFromCookie, invokeToken: false, tokenType: 'confirm-mfa' });
 
   // Sanity check
   if (!tokenRecord.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
@@ -70,12 +70,12 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
 };
 
 /**
- * Consumes the MFA token stored in the 'confirm_mfa' cookie.
+ * Consumes the MFA token stored in the 'confirm-mfa' cookie.
  * Marks it as used in the database and deletes the cookie.
  */
 // TODO shouldnt this use getValidToken for consistency? Or be a middleware?
 export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
-  const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm_mfa');
+  const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenIdFromCookie) return;
 
   const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, tokenIdFromCookie)).limit(1);
@@ -85,5 +85,5 @@ export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
   await db.update(tokensTable).set({ invokedAt: new Date() }).where(eq(tokensTable.id, tokenRecord.id));
 
   // Delete cookie
-  deleteAuthCookie(ctx, 'confirm_mfa');
+  deleteAuthCookie(ctx, 'confirm-mfa');
 };
