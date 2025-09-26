@@ -3,6 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { sessionsTable } from '#/db/schema/sessions';
+import { Env } from '#/lib/context';
 import { getParsedSessionCookie } from '#/modules/auth/helpers/session';
 import type { sessionSchema } from '#/modules/me/schema';
 
@@ -13,7 +14,7 @@ import type { sessionSchema } from '#/modules/me/schema';
  * @param userId - ID of the user whose sessions are requested.
  * @returns A list of sessions, with an additional `isCurrent` flag indicating if the session is the current active session.
  */
-export const getUserSessions = async (ctx: Context, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
+export const getUserSessions = async (ctx: Context<Env>, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
   const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId)).orderBy(desc(sessionsTable.createdAt));
   const { sessionToken } = await getParsedSessionCookie(ctx);
 

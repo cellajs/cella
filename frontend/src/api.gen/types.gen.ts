@@ -257,175 +257,16 @@ export type CheckEmailResponses = {
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 
-export type SignUpData = {
-  body?: {
-    email: string;
-    password: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/sign-up';
-};
-
-export type SignUpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SignUpError = SignUpErrors[keyof SignUpErrors];
-
-export type SignUpResponses = {
-  /**
-   * User signed up
-   */
-  200: boolean;
-};
-
-export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
-
-export type SignUpWithTokenData = {
-  body?: {
-    email: string;
-    password: string;
-  };
-  path: {
-    token: string;
-  };
-  query?: never;
-  url: '/auth/sign-up/{token}';
-};
-
-export type SignUpWithTokenErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SignUpWithTokenError = SignUpWithTokenErrors[keyof SignUpWithTokenErrors];
-
-export type SignUpWithTokenResponses = {
-  /**
-   * User signed up
-   */
-  200: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
-  };
-};
-
-export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
-
-export type VerifyEmailData = {
+export type ConsumeTokenData = {
   body?: never;
   path: {
     token: string;
   };
-  query?: {
-    redirect?: string;
-  };
-  url: '/auth/verify-email/{token}';
-};
-
-export type VerifyEmailErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
-
-export type RequestPasswordData = {
-  body?: {
-    email: string;
-  };
-  path?: never;
   query?: never;
-  url: '/auth/request-password';
+  url: '/auth/consume-token/{token}';
 };
 
-export type RequestPasswordErrors = {
+export type ConsumeTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -458,144 +299,20 @@ export type RequestPasswordErrors = {
   };
 };
 
-export type RequestPasswordError = RequestPasswordErrors[keyof RequestPasswordErrors];
+export type ConsumeTokenError = ConsumeTokenErrors[keyof ConsumeTokenErrors];
 
-export type RequestPasswordResponses = {
-  /**
-   * Password reset email sent
-   */
-  200: boolean;
-};
-
-export type RequestPasswordResponse = RequestPasswordResponses[keyof RequestPasswordResponses];
-
-export type CreatePasswordData = {
-  body?: {
-    password: string;
-  };
-  path: {
-    token: string;
-  };
-  query?: never;
-  url: '/auth/create-password/{token}';
-};
-
-export type CreatePasswordErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type CreatePasswordError = CreatePasswordErrors[keyof CreatePasswordErrors];
-
-export type CreatePasswordResponses = {
-  /**
-   * Password created
-   */
-  200: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
-  };
-};
-
-export type CreatePasswordResponse = CreatePasswordResponses[keyof CreatePasswordResponses];
-
-export type SignInData = {
-  body?: {
-    email: string;
-    password: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/sign-in';
-};
-
-export type SignInErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SignInError = SignInErrors[keyof SignInErrors];
-
-export type SignInResponses = {
-  /**
-   * User signed in
-   */
-  200: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
-  };
-};
-
-export type SignInResponse = SignInResponses[keyof SignInResponses];
-
-export type CheckTokenData = {
+export type GetTokenDataData = {
   body?: never;
   path: {
     tokenId: string;
   };
   query: {
-    type: 'email_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
+    type: 'email_verification' | 'oauth_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
   };
-  url: '/auth/check-token/{tokenId}';
+  url: '/auth/token/{tokenId}';
 };
 
-export type CheckTokenErrors = {
+export type GetTokenDataErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -628,9 +345,9 @@ export type CheckTokenErrors = {
   };
 };
 
-export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
+export type GetTokenDataError = GetTokenDataErrors[keyof GetTokenDataErrors];
 
-export type CheckTokenResponses = {
+export type GetTokenDataResponses = {
   /**
    * Token is valid
    */
@@ -644,65 +361,7 @@ export type CheckTokenResponses = {
   };
 };
 
-export type CheckTokenResponse = CheckTokenResponses[keyof CheckTokenResponses];
-
-export type AcceptEntityInviteData = {
-  body?: never;
-  path: {
-    token: string;
-  };
-  query?: never;
-  url: '/auth/accept-invite/{token}';
-};
-
-export type AcceptEntityInviteErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type AcceptEntityInviteError = AcceptEntityInviteErrors[keyof AcceptEntityInviteErrors];
-
-export type AcceptEntityInviteResponses = {
-  /**
-   * Invitation was accepted
-   */
-  200: ContextEntityBaseSchema & {
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
-    };
-    createdAt: string;
-  };
-};
-
-export type AcceptEntityInviteResponse = AcceptEntityInviteResponses[keyof AcceptEntityInviteResponses];
+export type GetTokenDataResponse = GetTokenDataResponses[keyof GetTokenDataResponses];
 
 export type StartImpersonationData = {
   body?: never;
@@ -858,6 +517,776 @@ export type SignOutResponses = {
 };
 
 export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
+
+export type CreateTotpChallengeData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/totp/register';
+};
+
+export type CreateTotpChallengeErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type CreateTotpChallengeError = CreateTotpChallengeErrors[keyof CreateTotpChallengeErrors];
+
+export type CreateTotpChallengeResponses = {
+  /**
+   * Challenge created
+   */
+  200: {
+    totpUri: string;
+    manualKey: string;
+  };
+};
+
+export type CreateTotpChallengeResponse = CreateTotpChallengeResponses[keyof CreateTotpChallengeResponses];
+
+export type CreateTotpData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/totp/activate';
+};
+
+export type CreateTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type CreateTotpError = CreateTotpErrors[keyof CreateTotpErrors];
+
+export type CreateTotpResponses = {
+  /**
+   * TOTP activated
+   */
+  200: boolean;
+};
+
+export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
+
+export type DeleteTotpData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/totp';
+};
+
+export type DeleteTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type DeleteTotpError = DeleteTotpErrors[keyof DeleteTotpErrors];
+
+export type DeleteTotpResponses = {
+  /**
+   * TOTP deleted
+   */
+  200: boolean;
+};
+
+export type DeleteTotpResponse = DeleteTotpResponses[keyof DeleteTotpResponses];
+
+export type SignInWithTotpData = {
+  body?: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/totp-verification';
+};
+
+export type SignInWithTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignInWithTotpError = SignInWithTotpErrors[keyof SignInWithTotpErrors];
+
+export type SignInWithTotpResponses = {
+  /**
+   * TOTP verified
+   */
+  200: boolean;
+};
+
+export type SignInWithTotpResponse = SignInWithTotpResponses[keyof SignInWithTotpResponses];
+
+export type SignUpData = {
+  body?: {
+    email: string;
+    password: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/sign-up';
+};
+
+export type SignUpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignUpError = SignUpErrors[keyof SignUpErrors];
+
+export type SignUpResponses = {
+  /**
+   * User signed up
+   */
+  200: boolean;
+};
+
+export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
+
+export type SignUpWithTokenData = {
+  body?: {
+    email: string;
+    password: string;
+  };
+  path: {
+    tokenId: string;
+  };
+  query?: never;
+  url: '/auth/sign-up/{tokenId}';
+};
+
+export type SignUpWithTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignUpWithTokenError = SignUpWithTokenErrors[keyof SignUpWithTokenErrors];
+
+export type SignUpWithTokenResponses = {
+  /**
+   * User signed up
+   */
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
+};
+
+export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
+
+export type VerifyEmailData = {
+  body?: never;
+  path: {
+    tokenId: string;
+  };
+  query?: {
+    redirect?: string;
+  };
+  url: '/auth/verify-email/{tokenId}';
+};
+
+export type VerifyEmailErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
+
+export type RequestPasswordData = {
+  body?: {
+    email: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/request-password';
+};
+
+export type RequestPasswordErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type RequestPasswordError = RequestPasswordErrors[keyof RequestPasswordErrors];
+
+export type RequestPasswordResponses = {
+  /**
+   * Password reset email sent
+   */
+  200: boolean;
+};
+
+export type RequestPasswordResponse = RequestPasswordResponses[keyof RequestPasswordResponses];
+
+export type CreatePasswordData = {
+  body?: {
+    password: string;
+  };
+  path: {
+    tokenId: string;
+  };
+  query?: never;
+  url: '/auth/create-password/{tokenId}';
+};
+
+export type CreatePasswordErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type CreatePasswordError = CreatePasswordErrors[keyof CreatePasswordErrors];
+
+export type CreatePasswordResponses = {
+  /**
+   * Password created
+   */
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
+};
+
+export type CreatePasswordResponse = CreatePasswordResponses[keyof CreatePasswordResponses];
+
+export type SignInData = {
+  body?: {
+    email: string;
+    password: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/sign-in';
+};
+
+export type SignInErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignInError = SignInErrors[keyof SignInErrors];
+
+export type SignInResponses = {
+  /**
+   * User signed in
+   */
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
+};
+
+export type SignInResponse = SignInResponses[keyof SignInResponses];
+
+export type CreatePasskeyData = {
+  body: {
+    attestationObject: string;
+    clientDataJSON: string;
+    nameOnDevice: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/passkey';
+};
+
+export type CreatePasskeyErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
+
+export type CreatePasskeyResponses = {
+  /**
+   * Passkey created
+   */
+  200: {
+    id: string;
+    userId: string;
+    deviceName: string | null;
+    deviceType: 'desktop' | 'mobile';
+    deviceOs: string | null;
+    browser: string | null;
+    nameOnDevice: string;
+    createdAt: string;
+  };
+};
+
+export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyResponses];
+
+export type DeletePasskeyData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/auth/passkey/{id}';
+};
+
+export type DeletePasskeyErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
+
+export type DeletePasskeyResponses = {
+  /**
+   * Passkey deleted
+   */
+  200: boolean;
+};
+
+export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
+
+export type CreatePasskeyChallengeData = {
+  body?: {
+    type: 'authentication' | 'mfa' | 'registration';
+    email?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/passkey-challenge';
+};
+
+export type CreatePasskeyChallengeErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type CreatePasskeyChallengeError = CreatePasskeyChallengeErrors[keyof CreatePasskeyChallengeErrors];
+
+export type CreatePasskeyChallengeResponses = {
+  /**
+   * Challenge created
+   */
+  200: {
+    challengeBase64: string;
+    credentialIds: Array<string>;
+  };
+};
+
+export type CreatePasskeyChallengeResponse = CreatePasskeyChallengeResponses[keyof CreatePasskeyChallengeResponses];
+
+export type SignInWithPasskeyData = {
+  body?: {
+    credentialId: string;
+    clientDataJSON: string;
+    authenticatorData: string;
+    signature: string;
+    type: 'authentication' | 'mfa';
+    email?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/passkey-verification';
+};
+
+export type SignInWithPasskeyErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignInWithPasskeyError = SignInWithPasskeyErrors[keyof SignInWithPasskeyErrors];
+
+export type SignInWithPasskeyResponses = {
+  /**
+   * Passkey verified
+   */
+  200: boolean;
+};
+
+export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
 
 export type GithubData = {
   body?: never;
@@ -1140,174 +1569,6 @@ export type MicrosoftCallbackErrors = {
 };
 
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
-
-export type CreatePasskeyChallengeData = {
-  body?: {
-    type: 'authentication' | 'mfa' | 'registration';
-    email?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/passkey-challenge';
-};
-
-export type CreatePasskeyChallengeErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type CreatePasskeyChallengeError = CreatePasskeyChallengeErrors[keyof CreatePasskeyChallengeErrors];
-
-export type CreatePasskeyChallengeResponses = {
-  /**
-   * Challenge created
-   */
-  200: {
-    challengeBase64: string;
-    credentialIds: Array<string>;
-  };
-};
-
-export type CreatePasskeyChallengeResponse = CreatePasskeyChallengeResponses[keyof CreatePasskeyChallengeResponses];
-
-export type SignInWithPasskeyData = {
-  body?: {
-    credentialId: string;
-    clientDataJSON: string;
-    authenticatorData: string;
-    signature: string;
-    type: 'authentication' | 'mfa';
-    email?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/passkey-verification';
-};
-
-export type SignInWithPasskeyErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SignInWithPasskeyError = SignInWithPasskeyErrors[keyof SignInWithPasskeyErrors];
-
-export type SignInWithPasskeyResponses = {
-  /**
-   * Passkey verified
-   */
-  200: boolean;
-};
-
-export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
-
-export type SignInWithTotpData = {
-  body?: {
-    code: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/totp-verification';
-};
-
-export type SignInWithTotpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SignInWithTotpError = SignInWithTotpErrors[keyof SignInWithTotpErrors];
-
-export type SignInWithTotpResponses = {
-  /**
-   * TOTP verified
-   */
-  200: boolean;
-};
-
-export type SignInWithTotpResponse = SignInWithTotpResponses[keyof SignInWithTotpResponses];
 
 export type DeleteMeData = {
   body?: never;
@@ -1706,19 +1967,19 @@ export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitation
 
 export type GetMyInvitationsResponses = {
   /**
-   * Invitations pending
+   * Entity memberships pending
    */
   200: Array<{
     entity: ContextEntityBaseSchema & {
       organizationId?: string;
     };
-    expiresAt: string;
     invitedBy: UserBaseSchema &
       ({
         [key: string]: unknown;
       } | null);
-    token: string;
-    tokenId: string;
+    membership: MembershipBaseSchema & {
+      [key: string]: unknown;
+    };
   }>;
 };
 
@@ -1833,281 +2094,6 @@ export type DeleteMyMembershipResponses = {
 };
 
 export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
-
-export type CreatePasskeyData = {
-  body: {
-    attestationObject: string;
-    clientDataJSON: string;
-    nameOnDevice: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/me/passkey';
-};
-
-export type CreatePasskeyErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
-
-export type CreatePasskeyResponses = {
-  /**
-   * Passkey created
-   */
-  200: {
-    id: string;
-    userId: string;
-    deviceName: string | null;
-    deviceType: 'desktop' | 'mobile';
-    deviceOs: string | null;
-    browser: string | null;
-    nameOnDevice: string;
-    createdAt: string;
-  };
-};
-
-export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyResponses];
-
-export type DeletePasskeyData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/me/passkey/{id}';
-};
-
-export type DeletePasskeyErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
-
-export type DeletePasskeyResponses = {
-  /**
-   * Passkey deleted
-   */
-  200: boolean;
-};
-
-export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
-
-export type RegisterTotpData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/totp/register';
-};
-
-export type RegisterTotpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type RegisterTotpError = RegisterTotpErrors[keyof RegisterTotpErrors];
-
-export type RegisterTotpResponses = {
-  /**
-   * totpUri & manualKey
-   */
-  200: {
-    totpUri: string;
-    manualKey: string;
-  };
-};
-
-export type RegisterTotpResponse = RegisterTotpResponses[keyof RegisterTotpResponses];
-
-export type ActivateTotpData = {
-  body: {
-    code: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/me/totp/activate';
-};
-
-export type ActivateTotpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type ActivateTotpError = ActivateTotpErrors[keyof ActivateTotpErrors];
-
-export type ActivateTotpResponses = {
-  /**
-   * TOTP activated
-   */
-  200: boolean;
-};
-
-export type ActivateTotpResponse = ActivateTotpResponses[keyof ActivateTotpResponses];
-
-export type DeleteTotpData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/totp';
-};
-
-export type DeleteTotpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type DeleteTotpError = DeleteTotpErrors[keyof DeleteTotpErrors];
-
-export type DeleteTotpResponses = {
-  /**
-   * TOTP deleted
-   */
-  200: boolean;
-};
-
-export type DeleteTotpResponse = DeleteTotpResponses[keyof DeleteTotpResponses];
 
 export type GetUploadTokenData = {
   body?: never;
@@ -4070,6 +4056,65 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type AcceptMembershipData = {
+  body?: never;
+  path: {
+    id: string;
+    acceptOrReject: 'accept' | 'reject';
+  };
+  query?: never;
+  url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
+};
+
+export type AcceptMembershipErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type AcceptMembershipError = AcceptMembershipErrors[keyof AcceptMembershipErrors];
+
+export type AcceptMembershipResponses = {
+  /**
+   * Invitation was accepted
+   */
+  200: ContextEntityBaseSchema & {
+    membership: MembershipBaseSchema & {
+      [key: string]: unknown;
+    };
+    createdAt: string;
+  };
+};
+
+export type AcceptMembershipResponse = AcceptMembershipResponses[keyof AcceptMembershipResponses];
 
 export type GetMembersData = {
   body?: never;

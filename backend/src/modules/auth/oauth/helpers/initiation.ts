@@ -1,12 +1,13 @@
 import { appConfig } from 'config';
 import type { Context } from 'hono';
+import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
+import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { getValidToken } from '#/utils/validate-token';
 
 export interface OAuthCookiePayload {
   redirectPath: string;
@@ -30,12 +31,13 @@ export interface OAuthCookiePayload {
  * @param codeVerifier - PKCE code verifier (optional)
  * @returns redirect response
  */
-export const handleOAuthInitiation = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
+export const handleOAuthInitiation = async (ctx: Context<Env>, provider: string, url: URL, state: string, codeVerifier?: string) => {
   const { type } = ctx.req.query();
 
-  const payload = await getOAuthPayload(ctx);
-  const cookieContent = JSON.stringify({ ...payload, codeVerifier });
+  const { redirectPath } = await prepareOAuthByContext(ctx);
+  const cookieContent = JSON.stringify({ redirectPath, codeVerifier });
 
+  // TODO state in name? perhaps in content instead? reconsider cookie lifecycle security
   await setAuthCookie(ctx, `oauth-${state}`, cookieContent, new TimeSpan(5, 'm'));
 
   logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
@@ -58,33 +60,30 @@ export const handleOAuthInitiation = async (ctx: Context, provider: string, url:
  *
  */
 // TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
-const getOAuthPayload = async (ctx: Context) => {
+const prepareOAuthByContext = async (ctx: Context<Env>) => {
   const { type, redirect } = ctx.req.query();
 
   // default payload
   let redirectPath = resolveOAuthRedirect(redirect);
-  let inviteTokenId: string | null = null;
-  let connectUserId: string | null = null;
-  let verifyTokenId: string | null = null;
 
   switch (type) {
     case 'invite': {
-      ({ inviteTokenId, redirectPath } = await prepareOAuthAcceptInvite(ctx));
+      ({ redirectPath } = await prepareOAuthAcceptInvite(ctx));
       break;
     }
     case 'connect': {
-      ({ connectUserId, redirectPath } = await prepareOAuthConnect(ctx));
+      ({ redirectPath } = await prepareOAuthConnect(ctx));
       break;
     }
     case 'verify': {
-      ({ verifyTokenId, redirectPath } = await prepareOAuthVerify(ctx));
+      ({ redirectPath } = await prepareOAuthVerify(ctx));
       break;
     }
     default:
       break;
   }
 
-  return { redirectPath, inviteTokenId, connectUserId, verifyTokenId };
+  return { redirectPath };
 };
 /**
  * Resolves and validates the redirect path used after OAuth.
@@ -114,17 +113,17 @@ const resolveOAuthRedirect = (redirect?: string): string => {
  * @returns tokenId + redirectPath
  * @throws AppError if token is missing or invalid
  */
-const prepareOAuthAcceptInvite = async (ctx: Context) => {
-  const { tokenId, token } = ctx.req.query();
+const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
+  const token = await getAuthCookie(ctx, 'invitation');
 
   // Must provide a token and tokenId
-  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
+  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
-  const tokenRecord = await getValidToken({ requiredType: 'invitation', tokenId, consumeToken: false });
+  const tokenRecord = await getValidToken({ token, consumeToken: false, tokenType: 'invitation' });
 
-  const redirectPath = tokenRecord.entityType ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
+  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
-  return { inviteTokenId: tokenRecord.id, redirectPath };
+  return { redirectPath };
 };
 
 /**
@@ -137,12 +136,14 @@ const prepareOAuthAcceptInvite = async (ctx: Context) => {
  * @returns connectUserId and redirectPath
  * @throws AppError if missing param or user mismatch
  */
-const prepareOAuthConnect = async (ctx: Context) => {
+const prepareOAuthConnect = async (ctx: Context<Env>) => {
   const connectUserId = ctx.req.query('connectUserId');
 
   if (!connectUserId) {
     throw new AppError({ status: 400, type: 'connect_user_not_found', severity: 'error', isRedirect: true });
   }
+
+  // TODO set cookie with connectUserId
 
   const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: true });
   const { user } = await validateSession(sessionToken);
@@ -156,6 +157,8 @@ const prepareOAuthConnect = async (ctx: Context) => {
 };
 /**
  * Validates and extracts verification context for an OAuth flow.
+ * To make sure that the user that started the OAuth flow is the same as the one that proceeds after
+ * email verification, we use a cookie to store the token.
  *
  * - Ensures `token` param exists
  * - Validates token record against type `email_verification`
@@ -165,16 +168,18 @@ const prepareOAuthConnect = async (ctx: Context) => {
  * @returns tokenId + redirectPath
  * @throws AppError if missing or invalid token
  */
-const prepareOAuthVerify = async (ctx: Context) => {
-  const { tokenId, token } = ctx.req.query();
+const prepareOAuthVerify = async (ctx: Context<Env>) => {
+  const token = await getAuthCookie(ctx, 'email_verification');
+  // Must provide a token
+  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
-  // Must provide a token and tokenId
-  if (!token || !tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
+  // TODO split in different endpoints when you are returning for second time, you get "Token is invalid" because it was consumed already
+  //   then we need to get singleUUseToken here or somehow divert to another FileDownloadableLink, i
 
-  const tokenRecord = await getValidToken({ requiredType: 'email_verification', tokenId, consumeToken: false, isRedirect: true });
+  const tokenRecord = await getValidToken({ token, consumeToken: false, isRedirect: true, tokenType: 'email_verification' });
 
   // If entityType exists, proceed to invitation flow
-  const redirectPath = tokenRecord.entityType ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
+  const redirectPath = tokenRecord.entityType ? `${appConfig.backendAuthUrl}/consume-token/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
   return { verifyTokenId: tokenRecord.id, redirectPath };
 };

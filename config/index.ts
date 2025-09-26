@@ -53,10 +53,16 @@ export type UserFlags = typeof appConfig.defaultUserFlags
  * Theme options
  */
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
+
 /**
  * Severity levels to be used in error handling
  */
 export type Severity = keyof typeof appConfig.severityLevels
+
+/**
+ * All token types used in the app
+ */
+export type TokenType = (typeof appConfig.tokenTypes)[number];
 
 const configModes = {
   development,

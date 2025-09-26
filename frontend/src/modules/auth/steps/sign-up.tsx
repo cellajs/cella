@@ -34,7 +34,7 @@ export const SignUpStep = () => {
 
   const { email, tokenData, setStep, resetSteps } = useAuthStepsContext();
 
-  const { token } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const isMobile = window.innerWidth < 640;
 
@@ -54,7 +54,7 @@ export const SignUpStep = () => {
     ApiError,
     NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
   >({
-    mutationFn: ({ token, ...body }) => signUpWithToken({ body, path: { token } }),
+    mutationFn: ({ tokenId, ...body }) => signUpWithToken({ body, path: { tokenId } }),
     onSuccess: ({ redirectPath }) => {
       const to = redirectPath ?? appConfig.defaultRedirectPath;
       return navigate({ to, replace: true });
@@ -69,7 +69,7 @@ export const SignUpStep = () => {
 
   // Handle submit action
   const onSubmit = (formValues: FormValues) => {
-    if (token) return _signUpWithToken({ ...formValues, token });
+    if (tokenId) return _signUpWithToken({ ...formValues, tokenId });
     _signUp({ ...formValues });
   };
 

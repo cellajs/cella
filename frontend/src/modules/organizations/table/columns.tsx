@@ -69,7 +69,7 @@ export const useColumns = () => {
           renderSelect({
             row,
             onRowChange,
-            options: appConfig.rolesByType.entityRoles,
+            options: appConfig.roles.entityRoles,
           }),
       },
       {

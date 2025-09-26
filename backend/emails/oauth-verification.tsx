@@ -23,18 +23,14 @@ export const OAuthVerificationEmail = ({ lng, verificationLink, email, name, pro
   return (
     <EmailContainer previewText={i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName })}>
       <EmailHeader headerText={i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName })} />
+     
       <EmailBody>
         <Text>
-          <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.oauth_verification.text', { lng, appName, email, providerEmail, providerName, name }),
-            }}
-          />
+          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.oauth_verification.text', { lng, appName, email, providerEmail, providerName, name }) }} />
         </Text>
-
         <EmailButton ButtonText={i18n.t('backend:email.oauth_verification.verify', { lng, providerName })} href={verificationLink} />
       </EmailBody>
+      
       <AppLogo />
       <Footer />
     </EmailContainer>

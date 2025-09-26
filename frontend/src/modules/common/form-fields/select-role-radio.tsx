@@ -6,14 +6,14 @@ import { cn } from '~/utils/cn';
 interface Props {
   entityType?: ContextEntityType;
   onChange: (value?: string) => void;
-  value?: (typeof appConfig.rolesByType.allRoles)[number];
+  value?: (typeof appConfig.roles.allRoles)[number];
   className?: string;
 }
 
 const SelectRoleRadio = ({ entityType, onChange, value, className }: Props) => {
   const { t } = useTranslation();
 
-  const roles = entityType ? appConfig.rolesByType.entityRoles : ['user'];
+  const roles = entityType ? appConfig.roles.entityRoles : ['user'];
 
   return (
     <RadioGroup value={value} onValueChange={onChange} className={cn('inline-flex gap-4 items-center', className)}>

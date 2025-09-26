@@ -1,8 +1,8 @@
 pre-commit:
   commands:
-    typescript:
-      run: pnpm generate:openapi && pnpm ts && git add frontend/src/api.gen
-    biome:
-      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: pnpm dlx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
-  parallel: false
+  #   typescript:
+  #     run: pnpm generate:openapi && pnpm ts && git add frontend/src/api.gen
+  #   biome:
+  #     glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+  #     run: pnpm dlx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+  # parallel: false

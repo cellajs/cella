@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
@@ -11,7 +11,7 @@ import { type CreatePasswordData, type CreatePasswordResponse, createPassword } 
 import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useCheckToken } from '~/modules/auth/use-token-check';
+import { useGetTokenData } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -30,10 +30,9 @@ const CreatePasswordForm = () => {
 
   const requestButtonRef = useRef(null);
 
-  const { token } = useParams({ from: '/publicLayout/authLayout/auth/create-password/$token' });
-  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/create-password/$token' });
+  const { tokenId } = useParams({ from: '/publicLayout/authLayout/auth/create-password/$tokenId' });
 
-  const { data, isLoading, error } = useCheckToken('password_reset', tokenId);
+  const { data, isLoading, error } = useGetTokenData('password_reset', tokenId);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in
@@ -42,7 +41,7 @@ const CreatePasswordForm = () => {
     isPending,
     error: resetPasswordError,
   } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
-    mutationFn: ({ token, password }) => createPassword({ path: { token }, body: { password } }),
+    mutationFn: ({ tokenId, password }) => createPassword({ path: { tokenId }, body: { password } }),
     onSuccess: () => {
       toaster(t('common:success.password_reset'), 'success');
       navigate({ to: appConfig.defaultRedirectPath });
@@ -55,7 +54,7 @@ const CreatePasswordForm = () => {
   });
 
   // Submit new password
-  const onSubmit = ({ password }: FormValues) => _createPassword({ token, password });
+  const onSubmit = ({ password }: FormValues) => _createPassword({ tokenId, password });
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
 

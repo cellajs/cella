@@ -74,7 +74,7 @@ const requestRouteHandlers = app
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
     const requestsQuery = db
-      .select({ ...requestsSelect, wasInvited: sql`(${requestsTable.tokenId} IS NOT NULL)`.as('wasInvited') })
+      .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited') })
       .from(requestsTable)
       .where(filter);
 

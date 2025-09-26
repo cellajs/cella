@@ -13,6 +13,7 @@ import {
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { contextEntityWithMembershipSchema } from '../entities/schema';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -42,6 +43,7 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
+
   deleteMemberships: createCustomRoute({
     operationId: 'deleteMemberships',
     method: 'delete',
@@ -69,6 +71,7 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
+
   updateMembership: createCustomRoute({
     operationId: 'updateMembership',
     method: 'put',
@@ -95,6 +98,31 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
+
+  acceptMembership: createCustomRoute({
+    operationId: 'acceptMembership',
+    method: 'post',
+    path: '/{id}/{acceptOrReject}',
+    guard: isAuthenticated,
+    tags: ['auth'],
+    summary: 'Accept invitation',
+    // TODO reject flow needs to be added
+    description: 'Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.',
+    request: { params: z.object({ id: z.string(), acceptOrReject: z.enum(['accept', 'reject']) }) },
+    responses: {
+      200: {
+        description: 'Invitation was accepted',
+        content: {
+          'application/json': {
+            // TODO why the extend?
+            schema: contextEntityWithMembershipSchema.extend({ createdAt: z.string() }),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  }),
+
   getMembers: createCustomRoute({
     operationId: 'getMembers',
     method: 'get',

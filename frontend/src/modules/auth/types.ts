@@ -1,4 +1,4 @@
-import type { CheckTokenResponse, CreatePasskeyChallengeData } from '~/api.gen';
+import type { CreatePasskeyChallengeData, GetTokenDataResponse } from '~/api.gen';
 
 type PasskeyChallengeType = NonNullable<CreatePasskeyChallengeData['body']>['type'];
 
@@ -7,6 +7,6 @@ export interface PasskeyCredentialProps {
   type: PasskeyChallengeType;
 }
 
-export type TokenData = CheckTokenResponse;
+export type TokenData = GetTokenDataResponse;
 
 export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'error' | 'mfa';

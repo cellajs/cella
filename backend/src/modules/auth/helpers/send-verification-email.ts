@@ -26,6 +26,7 @@ interface Props {
  * 1. Regular email verification (no oauthAccountId): user verifies their email address
  * 2. OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
  */
+// TODO perhaps split or consider refactoring
 export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
   const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
 
@@ -95,15 +96,9 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = !oauthAccount ? `/auth/verify-email/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
-  const verificationURL = new URL(verifyPath, appConfig.backendAuthUrl);
+  const verifyPath = `/auth/consume-token/${tokenRecord.token}`;
+  const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
-  // Add query params to pass through OAuth verification
-  if (oauthAccount) {
-    verificationURL.searchParams.set('tokenId', tokenRecord.id);
-    verificationURL.searchParams.set('token', tokenRecord.token);
-    verificationURL.searchParams.set('type', 'verify');
-  }
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
 
   // Prepare & send email
@@ -114,7 +109,7 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   type Recipient = { email: string };
 
   if (oauthAccount) {
-    const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.providerId };
+    const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
     mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
   } else {
     mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);

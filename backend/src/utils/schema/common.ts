@@ -3,6 +3,13 @@ import { appConfig } from 'config';
 import { t } from 'i18next';
 import { isCDNUrl } from '../is-cdn-url';
 
+/** Schema to use boolean parameters (transform string to boolean) */
+export const booleanTransformSchema = z
+  .union([z.string(), z.boolean()])
+  .default('false')
+  .transform((v) => v === true || v === 'true')
+  .pipe(z.boolean());
+
 /*************************************************************************************************
  * Entity schemas
  ************************************************************************************************/
@@ -51,9 +58,6 @@ export const languageSchema = z.enum(appConfig.languages);
  * Common param schemas
  ************************************************************************************************/
 
-/** Schema for authentication token parameter (token string) */
-export const tokenParamSchema = z.object({ token: z.string() });
-
 /** Schema for entity identifier idOrSlug */
 export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
 
@@ -72,13 +76,6 @@ export const idInOrgParamSchema = z.object({ id: idSchema, orgIdOrSlug: idOrSlug
 
 /** Schema for idOrSlug that must be a specific entity type */
 export const entityWithTypeQuerySchema = z.object({ idOrSlug: idOrSlugSchema, entityType: contextEntityTypeSchema });
-
-/** Schema to use boolean query parameters (transform string to boolean) */
-export const booleanQuerySchema = z
-  .union([z.string(), z.boolean()])
-  .default('false')
-  .transform((v) => v === true || v === 'true')
-  .pipe(z.boolean());
 
 const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;

@@ -59,7 +59,7 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, quer
  *
  * @returns Query options.
  */
-export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
 /**
  * Mutation hook for updating current user (self) info

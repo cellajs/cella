@@ -14,7 +14,7 @@ const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totpConfig
  * @param {string} secret - The Base32-encoded shared secret.
  * @returns {boolean} - Returns `true` if the OTP is valid within the grace period, otherwise `false`.
  */
-export const verifyTotp = (otp: string, secret: string): boolean => {
+export const signInWithTotp = (otp: string, secret: string): boolean => {
   const secretBytes = decodeBase32(secret);
 
   return verifyTOTPWithGracePeriod(secretBytes, intervalInSeconds, digits, otp, gracePeriodInSeconds);

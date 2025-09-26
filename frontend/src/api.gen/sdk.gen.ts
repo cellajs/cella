@@ -3,21 +3,17 @@
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
-  AcceptEntityInviteData,
-  AcceptEntityInviteErrors,
-  AcceptEntityInviteResponses,
-  ActivateTotpData,
-  ActivateTotpErrors,
-  ActivateTotpResponses,
+  AcceptMembershipData,
+  AcceptMembershipErrors,
+  AcceptMembershipResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
-  CheckTokenData,
-  CheckTokenErrors,
-  CheckTokenResponses,
+  ConsumeTokenData,
+  ConsumeTokenErrors,
   CreateAttachmentData,
   CreateAttachmentErrors,
   CreateAttachmentResponses,
@@ -36,6 +32,12 @@ import type {
   CreateRequestData,
   CreateRequestErrors,
   CreateRequestResponses,
+  CreateTotpChallengeData,
+  CreateTotpChallengeErrors,
+  CreateTotpChallengeResponses,
+  CreateTotpData,
+  CreateTotpErrors,
+  CreateTotpResponses,
   DeleteAttachmentsData,
   DeleteAttachmentsErrors,
   DeleteAttachmentsResponses,
@@ -114,6 +116,9 @@ import type {
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
+  GetTokenDataData,
+  GetTokenDataErrors,
+  GetTokenDataResponses,
   GetUploadTokenData,
   GetUploadTokenErrors,
   GetUploadTokenResponses,
@@ -144,9 +149,6 @@ import type {
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
-  RegisterTotpData,
-  RegisterTotpErrors,
-  RegisterTotpResponses,
   RequestPasswordData,
   RequestPasswordErrors,
   RequestPasswordResponses,
@@ -250,6 +252,227 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
 };
 
 /**
+ * Refresh token
+ * 🌐 Public access
+ *
+ * Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.
+ *
+ * **GET /auth/consume-token/{token}** ·· [consumeToken](http://localhost:4000/docs#tag/auth/get/auth/consume-token/{token}) ·· _auth_
+ *
+ * @param {consumeTokenData} options
+ * @param {string} options.path.token - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const consumeToken = <ThrowOnError extends boolean = true>(options: Options<ConsumeTokenData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, ConsumeTokenErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/consume-token/{token}',
+    ...options,
+  });
+};
+
+/**
+ * Get token data
+ * 🌐 Public access
+ *
+ * Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.
+ *
+ * **GET /auth/token/{tokenId}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{tokenId}) ·· _auth_
+ *
+ * @param {getTokenDataData} options
+ * @param {string} options.path.tokenid - `string`
+ * @param {enum} options.query.type - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
+  return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/token/{tokenId}',
+    ...options,
+  });
+};
+
+/**
+ * Start impersonating
+ * 🛡️ Requires authentication (system access)
+ *
+ * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
+ *
+ * **GET /auth/impersonation/start** ·· [startImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/start) ·· _auth_
+ *
+ * @param {startImpersonationData} options
+ * @param {string} options.query.targetuserid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
+  return (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/impersonation/start',
+    ...options,
+  });
+};
+
+/**
+ * Stop impersonating
+ * 🛡️ Requires authentication
+ *
+ * Ends impersonation by clearing the current impersonation session and restoring the admin context.
+ *
+ * **GET /auth/impersonation/stop** ·· [stopImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
+ *
+ * @param {stopImpersonationData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
+  return (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/impersonation/stop',
+    ...options,
+  });
+};
+
+/**
+ * Sign out
+ * 🌐 Public access
+ *
+ * Signs out the *current user* and clears the active session.
+ *
+ * **GET /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/get/auth/sign-out) ·· _auth_
+ *
+ * @param {signOutData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
+  return (options?.client ?? client).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/sign-out',
+    ...options,
+  });
+};
+
+/**
+ * Create TOTP challenge
+ * 🛡️ Requires authentication
+ *
+ * Generates a new TOTP challenge for current user and returns a provisioning URI and Base32 manual key.
+ *
+ * **POST /auth/totp/register** ·· [createTotpChallenge](http://localhost:4000/docs#tag/me/post/auth/totp/register) ·· _me_
+ *
+ * @param {createTotpChallengeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createTotpChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreateTotpChallengeData, ThrowOnError>) => {
+  return (options?.client ?? client).post<CreateTotpChallengeResponses, CreateTotpChallengeErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp/register',
+    ...options,
+  });
+};
+
+/**
+ * Activate TOTP
+ * 🛡️ Requires authentication
+ *
+ * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
+ *
+ * **POST /auth/totp/activate** ·· [createTotp](http://localhost:4000/docs#tag/me/post/auth/totp/activate) ·· _me_
+ *
+ * @param {createTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp/activate',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete TOTP
+ * 🛡️ Requires authentication
+ *
+ * Delete TOTP credential for current user.
+ *
+ * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/me/delete/auth/totp) ·· _me_
+ *
+ * @param {deleteTotpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
+  return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp',
+    ...options,
+  });
+};
+
+/**
+ * Verify TOTP
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
+ *
+ * Validates the TOTP code and completes TOTP based authentication.
+ *
+ * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
+ *
+ * @param {signInWithTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
+  return (options?.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp-verification',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
  * Sign up with password
  * 🌐 Public access
  * ⏳ Spam (10/h), Email (5/h)
@@ -278,14 +501,14 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 /**
  * Sign up to accept invite
  * 🌐 Public access
- * ⏳ token_signup_invitation (5/h), Email (5/h)
+ * ⏳ token_signup_invitation (10/h), Email (5/h)
  *
  * Registers a user using an email and password in response to a system or organization invitation.
  *
- * **POST /auth/sign-up/{token}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{token}) ·· _auth_
+ * **POST /auth/sign-up/{tokenId}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{tokenId}) ·· _auth_
  *
  * @param {signUpWithTokenData} options
- * @param {string} options.path.token - `string`
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -293,7 +516,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/sign-up/{token}',
+    url: '/auth/sign-up/{tokenId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -305,21 +528,21 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Verify email by token
  * 🌐 Public access
- * ⏳ token_email_verification (5/h)
+ * ⏳ token_email_verification (10/h)
  *
- * Verifies a user's email using a token from their verification email. Grants a session upon success.
+ * Verifies a user's email using a single-use session token in cookie. Grants a session upon success.
  *
- * **GET /auth/verify-email/{token}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{token}) ·· _auth_
+ * **GET /auth/verify-email/{tokenId}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{tokenId}) ·· _auth_
  *
  * @param {verifyEmailData} options
- * @param {string} options.path.token - `string`
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.query.redirect - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
   return (options.client ?? client).get<unknown, VerifyEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/verify-email/{token}',
+    url: '/auth/verify-email/{tokenId}',
     ...options,
   });
 };
@@ -350,23 +573,23 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
 };
 
 /**
- * Create password by token
+ * Create password
  * 🌐 Public access
- * ⏳ token_password_reset (5/h)
+ * ⏳ token_password_reset (10/h)
  *
- * Sets a new password using a token and grants a session immediately upon success.
+ * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
- * **POST /auth/create-password/{token}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{token}) ·· _auth_
+ * **POST /auth/create-password/{tokenId}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{tokenId}) ·· _auth_
  *
  * @param {createPasswordData} options
- * @param {string} options.path.token - `string`
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
   return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/create-password/{token}',
+    url: '/auth/create-password/{tokenId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -402,137 +625,111 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
 };
 
 /**
- * Check token
- * 🌐 Public access
- *
- * Checks by token id - NOT token itself - if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.
- *
- * **POST /auth/check-token/{tokenId}** ·· [checkToken](http://localhost:4000/docs#tag/auth/post/auth/check-token/{tokenId}) ·· _auth_
- *
- * @param {checkTokenData} options
- * @param {string} options.path.tokenid - `string`
- * @param {enum} options.query.type - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const checkToken = <ThrowOnError extends boolean = true>(options: Options<CheckTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/check-token/{tokenId}',
-    ...options,
-  });
-};
-
-/**
- * Accept invitation
- * 🛡️ Requires authentication
- * ⏳ token_invitation (5/h)
- *
- * Accepts an invitation token and activates the associated membership or system access.
- *
- * **POST /auth/accept-invite/{token}** ·· [acceptEntityInvite](http://localhost:4000/docs#tag/auth/post/auth/accept-invite/{token}) ·· _auth_
- *
- * @param {acceptEntityInviteData} options
- * @param {string} options.path.token - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/accept-invite/{token}',
-    ...options,
-  });
-};
-
-/**
- * Start impersonating
- * 🛡️ Requires authentication (system access)
- *
- * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
- *
- * **GET /auth/impersonation/start** ·· [startImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/start) ·· _auth_
- *
- * @param {startImpersonationData} options
- * @param {string} options.query.targetuserid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
-  return (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/impersonation/start',
-    ...options,
-  });
-};
-
-/**
- * Stop impersonating
+ * Create passkey
  * 🛡️ Requires authentication
  *
- * Ends impersonation by clearing the current impersonation session and restoring the admin context.
+ * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
- * **GET /auth/impersonation/stop** ·· [stopImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
+ * **POST /auth/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/auth/passkey) ·· _me_
  *
- * @param {stopImpersonationData} options
+ * @param {createPasskeyData} options
+ * @param {string=} options.body.attestationObject - `string` (optional)
+ * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @param {string=} options.body.nameOnDevice - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
-  return (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
+export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/impersonation/stop',
+    url: '/auth/passkey',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete passkey
+ * 🛡️ Requires authentication
+ *
+ * Delete a passkey by id from the *current user*.
+ *
+ * **DELETE /auth/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/auth/passkey/{id}) ·· _me_
+ *
+ * @param {deletePasskeyData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
+  return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/passkey/{id}',
     ...options,
   });
 };
 
 /**
- * Sign out
+ * Create passkey challenge
  * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
- * Signs out the *current user* and clears the active session.
+ * Initiates the passkey registration or authentication flow by creating a device bound challenge.
  *
- * **GET /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/get/auth/sign-out) ·· _auth_
+ * **POST /auth/passkey-challenge** ·· [createPasskeyChallenge](http://localhost:4000/docs#tag/auth/post/auth/passkey-challenge) ·· _auth_
  *
- * @param {signOutData} options
+ * @param {createPasskeyChallengeData} options
+ * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
-  return (options?.client ?? client).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
+export const createPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreatePasskeyChallengeData, ThrowOnError>) => {
+  return (options?.client ?? client).post<CreatePasskeyChallengeResponses, CreatePasskeyChallengeErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/passkey-challenge',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Verify passkey
+ * 🌐 Public access
+ * ⏳ token_passkey (10/h)
+ *
+ * Validates the signed challenge and completes passkey based authentication.
+ *
+ * **POST /auth/passkey-verification** ·· [signInWithPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
+ *
+ * @param {signInWithPasskeyData} options
+ * @param {string=} options.body.credentialId - `string` (optional)
+ * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @param {string=} options.body.authenticatorData - `string` (optional)
+ * @param {string=} options.body.signature - `string` (optional)
+ * @param {enum | enum=} options.body.type - `enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
+  return (options?.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
-    url: '/auth/sign-out',
+    url: '/auth/passkey-verification',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };
 
@@ -611,7 +808,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(options: Options<
 /**
  * Callback for GitHub
  * 🌐 Public access
- * ⏳ token_github (5/h)
+ * ⏳ token_github (10/h)
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -636,7 +833,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Callback for Google
  * 🌐 Public access
- * ⏳ token_google (5/h)
+ * ⏳ token_google (10/h)
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -658,7 +855,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Callback for Microsoft
  * 🌐 Public access
- * ⏳ token_microsoft (5/h)
+ * ⏳ token_microsoft (10/h)
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -674,94 +871,6 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
     responseStyle: 'data',
     url: '/auth/microsoft/callback',
     ...options,
-  });
-};
-
-/**
- * Create passkey challenge
- * 🌐 Public access
- * ⏳ Spam (10/h)
- *
- * Initiates the passkey registration or authentication flow by creating a device bound challenge.
- *
- * **POST /auth/passkey-challenge** ·· [createPasskeyChallenge](http://localhost:4000/docs#tag/auth/post/auth/passkey-challenge) ·· _auth_
- *
- * @param {createPasskeyChallengeData} options
- * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const createPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreatePasskeyChallengeData, ThrowOnError>) => {
-  return (options?.client ?? client).post<CreatePasskeyChallengeResponses, CreatePasskeyChallengeErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/passkey-challenge',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-};
-
-/**
- * Verify passkey
- * 🌐 Public access
- * ⏳ token_passkey (5/h)
- *
- * Validates the signed challenge and completes passkey based authentication.
- *
- * **POST /auth/passkey-verification** ·· [signInWithPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
- *
- * @param {signInWithPasskeyData} options
- * @param {string=} options.body.credentialId - `string` (optional)
- * @param {string=} options.body.clientDataJSON - `string` (optional)
- * @param {string=} options.body.authenticatorData - `string` (optional)
- * @param {string=} options.body.signature - `string` (optional)
- * @param {enum | enum=} options.body.type - `enum | enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/passkey-verification',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-};
-
-/**
- * Verify TOTP
- * 🌐 Public access
- * ⏳ Spam (10/h)
- *
- * Validates the TOTP code and completes TOTP based authentication.
- *
- * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
- *
- * @param {signInWithTotpData} options
- * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/totp-verification',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
   });
 };
 
@@ -782,7 +891,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -808,7 +917,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -842,7 +951,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -875,7 +984,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -905,7 +1014,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -931,7 +1040,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -944,7 +1053,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  * Get invitations
  * 🛡️ Requires authentication
  *
- * Returns a list of pending entity invitations which *current user* received.
+ * Returns a list of entities with pending memberships - meaning activatedAt is still null.
  *
  * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
  *
@@ -957,7 +1066,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -984,7 +1093,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1019,114 +1128,6 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
- * Create passkey
- * 🛡️ Requires authentication
- *
- * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
- *
- * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
- *
- * @param {createPasskeyData} options
- * @param {string=} options.body.attestationObject - `string` (optional)
- * @param {string=} options.body.clientDataJSON - `string` (optional)
- * @param {string=} options.body.nameOnDevice - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/passkey',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Delete passkey
- * 🛡️ Requires authentication
- *
- * Delete a passkey by id from the *current user*.
- *
- * **DELETE /me/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey/{id}) ·· _me_
- *
- * @param {deletePasskeyData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/passkey/{id}',
-    ...options,
-  });
-};
-
-/**
- * Register TOTP
- * 🛡️ Requires authentication
- *
- * Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.
- *
- * **POST /me/totp/register** ·· [registerTotp](http://localhost:4000/docs#tag/me/post/me/totp/register) ·· _me_
- *
- * @param {registerTotpData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const registerTotp = <ThrowOnError extends boolean = true>(options?: Options<RegisterTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<RegisterTotpResponses, RegisterTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/totp/register',
-    ...options,
-  });
-};
-
-/**
- * Activate TOTP
- * 🛡️ Requires authentication
- *
- * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is activated for the account.
- *
- * **POST /me/totp/activate** ·· [activateTotp](http://localhost:4000/docs#tag/me/post/me/totp/activate) ·· _me_
- *
- * @param {activateTotpData} options
- * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const activateTotp = <ThrowOnError extends boolean = true>(options: Options<ActivateTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<ActivateTotpResponses, ActivateTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/totp/activate',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Delete TOTP
- * 🛡️ Requires authentication
- *
- * Delete TOTP credential for current user.
- *
- * **DELETE /me/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/me/delete/me/totp) ·· _me_
- *
- * @param {deleteTotpData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/totp',
-    ...options,
-  });
-};
-
-/**
  * Get upload token
  * 🛡️ Requires authentication
  *
@@ -1146,7 +1147,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1158,7 +1159,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Unsubscribe
  * 🌐 Public access
- * ⏳ token_unsubscribe (5/h)
+ * ⏳ token_unsubscribe (10/h)
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
@@ -1174,7 +1175,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1201,7 +1202,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1240,7 +1241,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1267,7 +1268,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1301,7 +1302,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1332,7 +1333,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1367,7 +1368,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1395,7 +1396,7 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1426,7 +1427,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1470,7 +1471,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1514,7 +1515,7 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1543,7 +1544,7 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1572,7 +1573,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1603,7 +1604,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1635,7 +1636,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1647,7 +1648,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Paddle webhook (WIP)
  * 🌐 Public access
- * ⏳ token_paddle (5/h)
+ * ⏳ token_paddle (10/h)
  *
  * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  *
@@ -1662,7 +1663,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1697,7 +1698,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1728,7 +1729,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1763,7 +1764,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1793,7 +1794,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(options?: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1824,7 +1825,7 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1851,7 +1852,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1886,7 +1887,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1914,7 +1915,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1951,7 +1952,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1978,7 +1979,7 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2010,7 +2011,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2040,7 +2041,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2056,7 +2057,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 /**
  * Redirect to attachment
  * 🌐 Public access
- * ⏳ token_attachment_redirect (5/h)
+ * ⏳ token_attachment_redirect (10/h)
  *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *
@@ -2072,7 +2073,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2102,7 +2103,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2137,7 +2138,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2173,7 +2174,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2183,6 +2184,34 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Accept invitation
+ * 🛡️ Requires authentication
+ *
+ * Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.
+ *
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [acceptMembership](http://localhost:4000/docs#tag/auth/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _auth_
+ *
+ * @param {acceptMembershipData} options
+ * @param {string} options.path.id - `string`
+ * @param {enum} options.path.acceptorreject - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const acceptMembership = <ThrowOnError extends boolean = true>(options: Options<AcceptMembershipData, ThrowOnError>) => {
+  return (options.client ?? client).post<AcceptMembershipResponses, AcceptMembershipErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
+    ...options,
   });
 };
 
@@ -2212,7 +2241,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2246,7 +2275,7 @@ export const getPendingInvitations = <ThrowOnError extends boolean = true>(optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
