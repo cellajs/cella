@@ -14,6 +14,7 @@ import { mailer } from '#/lib/mailer';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
@@ -24,7 +25,6 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
-import { handleCreateUser } from '../general/helpers/user';
 import { handleEmailVerification } from './helpers/handle-email-verification';
 import authPasswordsRoutes from './routes';
 

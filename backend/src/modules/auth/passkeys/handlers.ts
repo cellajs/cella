@@ -11,13 +11,13 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/passkeys/helpers/passkey';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import { deviceInfo } from '../general/helpers/device-info';
 import authPasskeysRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;

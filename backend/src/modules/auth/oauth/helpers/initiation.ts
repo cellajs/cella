@@ -139,18 +139,16 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
  * @throws AppError if missing param or user mismatch
  */
 const prepareOAuthConnect = async (ctx: Context<Env>) => {
+  // Get userId to connect
   const connectUserId = ctx.req.query('connectUserId');
+  if (!connectUserId) throw new AppError({ status: 400, type: 'connect_user_not_found', severity: 'error', isRedirect: true });
 
-  if (!connectUserId) {
-    throw new AppError({ status: 400, type: 'connect_user_not_found', severity: 'error', isRedirect: true });
-  }
-
-  // TODO set cookie with connectUserId
-
+  // Get user from valid session
   const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: true });
   const { user } = await validateSession(sessionToken);
-
   if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', isRedirect: true });
+
+  // Make sure it matches with connectUserId
   if (user.id !== connectUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'error', isRedirect: true });
 
   const redirectPath = '/settings#authentication';
@@ -171,12 +169,13 @@ const prepareOAuthConnect = async (ctx: Context<Env>) => {
  * @throws AppError if missing or invalid token
  */
 const prepareOAuthVerify = async (ctx: Context<Env>) => {
-  const token = await getAuthCookie(ctx, 'email-verification');
+  const token = await getAuthCookie(ctx, 'oauth-verification');
+
   // Must provide a token
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
   // Get token or single use token.
-  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, isRedirect: true, tokenType: 'email-verification' });
+  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, isRedirect: true, tokenType: 'oauth-verification' });
 
   // If entityType exists, proceed to invitation flow
   const redirectPath = tokenRecord.entityType

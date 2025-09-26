@@ -15,7 +15,7 @@ beforeAll(async () => {
 
   // Tmp solution: Mock the sendVerificationEmail function to avoid background running tasks...
   // Later we should only mock the email sending part, not the whole function. 
-  vi.mock('#/modules/auth/helpers/send-verification-email', () => ({
+  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
     sendVerificationEmail: vi.fn().mockResolvedValue(undefined)
   }));
 });
