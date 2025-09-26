@@ -18,7 +18,7 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { handleOAuthVerification } from '../helpers/handle-oauth-verification';
+import { handleOAuthVerification } from '../oauth/helpers/handle-oauth-verification';
 import authGeneralRoutes from './routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });

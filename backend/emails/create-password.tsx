@@ -25,11 +25,7 @@ export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePas
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.create_password.text', { appName, lng }),
-            }}
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.create_password.text', { appName, lng }) }}
           />
         </Text>
         <EmailButton ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })} href={createPasswordLink} />

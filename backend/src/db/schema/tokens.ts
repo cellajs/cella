@@ -8,7 +8,7 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const tokenTypeEnum = appConfig.tokenTypes;
-const roleEnum = appConfig.rolesByType.entityRoles;
+const roleEnum = appConfig.roles.entityRoles;
 
 // Base columns for tokens table
 const baseColumns = {

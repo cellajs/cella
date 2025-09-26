@@ -23,15 +23,9 @@ export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: E
       <EmailHeader headerText={i18n.t('backend:email.email_verification.title', { appName, lng })} />
       <EmailBody>
         <Text>
-          <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }),
-            }}
-          />
+          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }) }}/>
         </Text>
 
-{/* TODO add you can only use the link ONCE */}
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
       </EmailBody>
       <AppLogo />
