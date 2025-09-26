@@ -5,7 +5,7 @@ import type { attachmentsRouteSearchParamsSchema } from '~/routes/search-params-
 
 export type AttachmentsRouteSearchParams = z.infer<typeof attachmentsRouteSearchParamsSchema>;
 
-export type AttachmentToInsert = CreateAttachmentData['body'][number] & { type: string };
+export type AttachmentToInsert = CreateAttachmentData['body'][number] & { id: string; public: boolean; bucketName: string; type: string };
 
 export type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
