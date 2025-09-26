@@ -5,8 +5,8 @@ import { env } from '#/env';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
-import { handleOAuthCallback } from '#/modules/auth/helpers/oauth/callback';
-import { handleOAuthInitiation, type OAuthCookiePayload } from '#/modules/auth/helpers/oauth/initiation';
+import { handleOAuthCallback } from '#/modules/auth/oauth/helpers/callback';
+import { handleOAuthInitiation, type OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -15,8 +15,8 @@ import {
   googleAuth,
   type MicrosoftUserProps,
   microsoftAuth,
-} from '#/modules/auth/helpers/oauth/providers';
-import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
+} from '#/modules/auth/oauth/helpers/providers';
+import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { defaultHook } from '#/utils/default-hook';
 import authOAuthRoutes from './routes';
 
