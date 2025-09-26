@@ -24,8 +24,7 @@ const baseColumns = {
   oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'set null' }),
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   expiresAt: timestampColumns.expiresAt,
-  // TODO InvokedAt is better
-  consumedAt: timestamp({ withTimezone: true, mode: 'date' }),
+  invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
 };
 
 // Generate entity id columns based on entity-config

@@ -237,7 +237,7 @@ export const zGetTokenDataData = z.object({
     tokenId: z.string(),
   }),
   query: z.object({
-    type: z.enum(['email_verification', 'password_reset', 'invitation', 'confirm_mfa']),
+    type: z.enum(['email_verification', 'oauth_verification', 'password_reset', 'invitation', 'confirm_mfa']),
   }),
 });
 
@@ -288,21 +288,21 @@ export const zSignOutData = z.object({
  */
 export const zSignOutResponse = z.boolean();
 
-export const zRegisterTotpData = z.object({
+export const zCreateTotpChallengeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
 
 /**
- * totpUri & manualKey
+ * Challenge created
  */
-export const zRegisterTotpResponse = z.object({
+export const zCreateTotpChallengeResponse = z.object({
   totpUri: z.string(),
   manualKey: z.string(),
 });
 
-export const zActivateTotpData = z.object({
+export const zCreateTotpData = z.object({
   body: z.object({
     code: z.string().regex(/^\d{6}$/),
   }),
@@ -313,7 +313,7 @@ export const zActivateTotpData = z.object({
 /**
  * TOTP activated
  */
-export const zActivateTotpResponse = z.boolean();
+export const zCreateTotpResponse = z.boolean();
 
 export const zDeleteTotpData = z.object({
   body: z.optional(z.never()),

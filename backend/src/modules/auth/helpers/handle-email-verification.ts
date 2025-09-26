@@ -16,15 +16,6 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
   // Token requires userId
   if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-  if (token.oauthAccountId) {
-    const verifyPath = `/auth/github`; // TODO ${oauthAccount.providerId}
-    const verificationURL = new URL(verifyPath, appConfig.backendUrl);
-
-    verificationURL.searchParams.set('tokenId', token.id);
-    verificationURL.searchParams.set('type', 'verify');
-    return ctx.redirect(verificationURL, 302);
-  }
-
   // Get user
   const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'user', meta: { userId: token.userId } });

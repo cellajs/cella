@@ -8,7 +8,6 @@ import { env } from '../../../env';
 
 const isProduction = appConfig.mode === 'production';
 // TODO make underscore consistent in cookie names
-// TODO add oauth_verification
 type CookieName =
   | TokenType
   | 'session'

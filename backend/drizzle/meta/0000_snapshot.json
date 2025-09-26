@@ -1,5 +1,5 @@
 {
-  "id": "75bbbd1e-2632-4772-a33a-a9c31dd611b0",
+  "id": "eb63c351-3bd9-470d-a7ae-afb456ca323a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -461,8 +461,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "provider_id": {
-          "name": "provider_id",
+        "provider": {
+          "name": "provider",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -492,12 +492,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "user_id": {
           "name": "user_id",
           "type": "varchar",
@@ -523,11 +517,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "oauth_accounts_providerId_providerUserId_email_unique": {
-          "name": "oauth_accounts_providerId_providerUserId_email_unique",
+        "oauth_accounts_provider_providerUserId_email_unique": {
+          "name": "oauth_accounts_provider_providerUserId_email_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "provider_id",
+            "provider",
             "provider_user_id",
             "email"
           ]
@@ -1197,8 +1191,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "consumed_at": {
-          "name": "consumed_at",
+        "invoked_at": {
+          "name": "invoked_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

@@ -55,16 +55,16 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
 export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
   // TODO should be token itself, Get token ID from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm_mfa');
-  if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
+  if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'confirm_mfa_not_found', severity: 'error' });
 
   // Fetch token record and associated user
   const tokenRecord = await getValidToken({ token: tokenIdFromCookie, consumeToken: false, tokenType: 'confirm_mfa' });
 
   // Sanity check
-  if (!tokenRecord.userId) throw new AppError({ status: 404, type: 'confirm_mfa_not_found', severity: 'warn' });
+  if (!tokenRecord.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   const [user] = await usersBaseQuery().where(eq(usersTable.id, tokenRecord.userId)).limit(1);
-  if (!user) throw new AppError({ status: 404, type: 'confirm_mfa_not_found', severity: 'warn' });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
 
   return user;
 };
@@ -73,7 +73,7 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
  * Consumes the MFA token stored in the 'confirm_mfa' cookie.
  * Marks it as used in the database and deletes the cookie.
  */
-// TODO shouldnt this use getValidToken for consistency?
+// TODO shouldnt this use getValidToken for consistency? Or be a middleware?
 export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm_mfa');
   if (!tokenIdFromCookie) return;
@@ -82,7 +82,7 @@ export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
   if (!tokenRecord) return;
 
   // Mark token as consumed
-  await db.update(tokensTable).set({ consumedAt: new Date() }).where(eq(tokensTable.id, tokenRecord.id));
+  await db.update(tokensTable).set({ invokedAt: new Date() }).where(eq(tokensTable.id, tokenRecord.id));
 
   // Delete cookie
   deleteAuthCookie(ctx, 'confirm_mfa');

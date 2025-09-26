@@ -6,19 +6,19 @@ import { and, eq, getTableColumns } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { getContextUser, type Env } from '#/lib/context';
+import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { setUserSession } from '#/modules/auth/helpers/session';
-import authPasskeysRoutes from './routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import { totpsTable } from '#/db/schema/totps';
 import { deviceInfo } from '../helpers/device-info';
+import authPasskeysRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

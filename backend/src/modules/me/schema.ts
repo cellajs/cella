@@ -7,7 +7,7 @@ import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
 import { passkeySchema, webAuthnAssertionSchema } from '../auth/passkeys/schema';
-import { totpVerificationBodySchema } from '../auth/totps/schema';
+import { totpCreateBodySchema } from '../auth/totps/schema';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
@@ -68,7 +68,7 @@ export const uploadTokenQuerySchema = z.object({
 
 export const toggleMfaBodySchema = z.object({
   passkeyData: webAuthnAssertionSchema.optional(),
-  totpCode: totpVerificationBodySchema.shape.code.optional(),
+  totpCode: totpCreateBodySchema.shape.code.optional(),
   mfaRequired: z.boolean(),
 });
 

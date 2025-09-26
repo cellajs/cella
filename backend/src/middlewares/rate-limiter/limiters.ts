@@ -26,7 +26,6 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> => {
 
   // Register the token rate limiter with OpenAPI documentation
   registerMiddlewareDescription({
-    // TODO dont mix cases
     name: `token_${tokenType}Limiter`,
     middleware: tokenRateLimiter,
     category: 'rate-limit',

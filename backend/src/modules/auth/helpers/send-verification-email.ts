@@ -109,7 +109,7 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   type Recipient = { email: string };
 
   if (oauthAccount) {
-    const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.providerId };
+    const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
     mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
   } else {
     mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);

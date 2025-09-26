@@ -1,14 +1,14 @@
-import { passkeysTable } from '#/db/schema/passkeys';
 import { z } from '@hono/zod-openapi';
 import { createSelectSchema } from 'drizzle-zod';
 import { t } from 'i18next';
+import { passkeysTable } from '#/db/schema/passkeys';
 
 const passkeyTypeSchema = z.union([z.literal('authentication'), z.literal('mfa')]);
 const challengeTypeSchema = z.union([...passkeyTypeSchema.options, z.literal('registration')]);
 
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
 
-export const passkeyRegistrationBodySchema = z.object({
+export const passkeyCreateBodySchema = z.object({
   attestationObject: z.string(),
   clientDataJSON: z.string(),
   nameOnDevice: z.string(),

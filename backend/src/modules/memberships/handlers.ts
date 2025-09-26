@@ -66,7 +66,7 @@ const membershipRouteHandlers = app
           inArray(tokensTable.email, normalizedEmails),
           isNotNull(tokensTable.entityType),
           gt(tokensTable.expiresAt, new Date()),
-          isNull(tokensTable.consumedAt),
+          isNull(tokensTable.invokedAt),
         ),
       );
 
@@ -503,7 +503,7 @@ const membershipRouteHandlers = app
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
           isNotNull(tokensTable.role),
-          isNull(tokensTable.consumedAt),
+          isNull(tokensTable.invokedAt),
         ),
       )
       .orderBy(orderColumn);
@@ -526,7 +526,7 @@ const membershipRouteHandlers = app
       eq(tokensTable.email, normalizedEmail),
       isNotNull(tokensTable.entityType),
       isNotNull(tokensTable.role),
-      isNull(tokensTable.consumedAt),
+      isNull(tokensTable.invokedAt),
     ];
     if (tokenId) filters.push(eq(tokensTable.id, tokenId));
 

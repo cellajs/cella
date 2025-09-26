@@ -2,10 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { passkeyChallengeBodySchema, passkeyChallengeSchema, passkeyVerificationBodySchema } from './schema';
 import { cookieSchema, idSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { passkeyRegistrationBodySchema, passkeySchema } from './schema';
+import { passkeyChallengeBodySchema, passkeyChallengeSchema, passkeyCreateBodySchema, passkeySchema, passkeyVerificationBodySchema } from './schema';
 
 const authPasskeysRoutes = {
   createPasskeyChallenge: createCustomRoute({
@@ -29,7 +28,6 @@ const authPasskeysRoutes = {
     },
   }),
 
-  // TODO confusing in relation to totp, what is register,create, activate?
   createPasskey: createCustomRoute({
     operationId: 'createPasskey',
     method: 'post',
@@ -43,7 +41,7 @@ const authPasskeysRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: passkeyRegistrationBodySchema } },
+        content: { 'application/json': { schema: passkeyCreateBodySchema } },
       },
     },
     responses: {

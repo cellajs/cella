@@ -25,7 +25,7 @@ type BaseProps = {
 // TODO redirect always true?
 export const getValidToken = async ({ token, tokenType, consumeToken = true, isRedirect = false }: BaseProps): Promise<TokenModel> => {
   const condition = [
-    isNull(tokensTable.consumedAt), // Token not yet consumed
+    isNull(tokensTable.invokedAt), // Token not yet consumed
     gt(tokensTable.expiresAt, new Date()), // Token not expired
     eq(tokensTable.token, token), // Match token value
   ];
@@ -50,7 +50,7 @@ export const getValidToken = async ({ token, tokenType, consumeToken = true, isR
   if (consumeToken) {
     const [consumedTokenRecord] = await db
       .update(tokensTable)
-      .set({ singleUseToken: nanoid(40), consumedAt: new Date() })
+      .set({ singleUseToken: nanoid(40), invokedAt: new Date() })
       .where(eq(tokensTable.id, tokenRecord.id))
       .returning();
     return consumedTokenRecord;

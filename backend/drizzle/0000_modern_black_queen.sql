@@ -50,14 +50,13 @@ CREATE TABLE "memberships" (
 CREATE TABLE "oauth_accounts" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
-	"provider_id" varchar NOT NULL,
+	"provider" varchar NOT NULL,
 	"provider_user_id" varchar NOT NULL,
 	"email" varchar NOT NULL,
 	"verified" boolean DEFAULT false NOT NULL,
 	"verified_at" timestamp,
-	"tenant_id" varchar,
 	"user_id" varchar NOT NULL,
-	CONSTRAINT "oauth_accounts_providerId_providerUserId_email_unique" UNIQUE("provider_id","provider_user_id","email")
+	CONSTRAINT "oauth_accounts_provider_providerUserId_email_unique" UNIQUE("provider","provider_user_id","email")
 );
 --> statement-breakpoint
 CREATE TABLE "organizations" (
@@ -147,7 +146,7 @@ CREATE TABLE "tokens" (
 	"oauth_account_id" varchar,
 	"created_by" varchar,
 	"expires_at" timestamp with time zone NOT NULL,
-	"consumed_at" timestamp with time zone,
+	"invoked_at" timestamp with time zone,
 	"organization_id" varchar
 );
 --> statement-breakpoint

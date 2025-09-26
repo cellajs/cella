@@ -15,18 +15,18 @@ import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2i
 import { initiateMfa } from '#/modules/auth/helpers/mfa';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/helpers/session';
-import authPasswordsRoutes from './routes';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
-import { getIsoDate } from '#/utils/iso-date';
 import { handleEmailVerification } from '../helpers/handle-email-verification';
 import { handleCreateUser } from '../helpers/user';
+import authPasswordsRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

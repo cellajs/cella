@@ -208,7 +208,7 @@ const verifyCallbackFlow = async (
     verifyToken.type !== 'email_verification' ||
     verifyToken.email !== providerUser.email ||
     verifyToken.oauthAccountId !== oauthAccount.id ||
-    oauthAccount.providerId !== provider
+    oauthAccount.provider !== provider
   ) {
     throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', isRedirect: true });
   }
@@ -256,13 +256,13 @@ const verifyCallbackFlow = async (
  * Retrieves an OAuth account based on provider user ID, provider ID, and email.
  *
  * @param providerUserId - Unique user ID provided by the OAuth provider.
- * @param providerId - Identifier for the OAuth provider (e.g., "google", "github").
+ * @param provider - Identifier for the OAuth provider (e.g., "google", "github").
  * @param providerUserEmail - Email address associated with the OAuth account.
  * @returns The matched OAuth account or null if not found.
  */
 const getOAuthAccount = async (
   providerUserId: Provider['userId'],
-  providerId: Provider['id'],
+  provider: Provider['id'],
   providerUserEmail: UserModel['email'],
 ): Promise<OAuthAccountModel | null> => {
   const [oauthAccount] = await db
@@ -271,7 +271,7 @@ const getOAuthAccount = async (
     .where(
       and(
         eq(oauthAccountsTable.providerUserId, providerUserId),
-        eq(oauthAccountsTable.providerId, providerId),
+        eq(oauthAccountsTable.provider, provider),
         eq(oauthAccountsTable.email, providerUserEmail),
       ),
     );
@@ -284,14 +284,14 @@ const getOAuthAccount = async (
  *
  * @param userId - Internal user ID to associate with the OAuth account.
  * @param providerUserId - Unique user ID from the OAuth provider.
- * @param providerId - Identifier for the OAuth provider.
+ * @param provider - Identifier for the OAuth provider.
  * @param email - Email address associated with the OAuth account.
  * @returns The created OAuth account.
  */
 const createOAuthAccount = async (
   userId: OAuthAccountModel['userId'],
   providerUserId: Provider['userId'],
-  providerId: Provider['id'],
+  provider: Provider['id'],
   email: UserModel['email'],
 ): Promise<OAuthAccountModel> => {
   const [oauthAccount] = await db
@@ -299,7 +299,7 @@ const createOAuthAccount = async (
     .values({
       userId,
       providerUserId,
-      providerId,
+      provider,
       email,
       verified: false,
     })
@@ -326,7 +326,7 @@ const handleVerifiedOAuthAccount = async (ctx: Context<Env>, user: UserModel, oa
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
   // If MFA is not required, set  user session immediately
-  if (!mfaRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
+  if (!mfaRedirectPath) await setUserSession(ctx, user, oauthAccount.provider);
 
   return ctx.redirect(redirectUrl, 302);
 };
@@ -347,7 +347,7 @@ const handleUnverifiedOAuthAccount = async (
 
   sendVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath });
 
-  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${oauthAccount.providerId}`, appConfig.frontendUrl);
+  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${oauthAccount.provider}`, appConfig.frontendUrl);
 
   return ctx.redirect(redirectUrl, 302);
 };

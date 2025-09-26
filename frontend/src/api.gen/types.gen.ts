@@ -307,7 +307,7 @@ export type GetTokenDataData = {
     tokenId: string;
   };
   query: {
-    type: 'email_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
+    type: 'email_verification' | 'oauth_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
   };
   url: '/auth/token/{tokenId}';
 };
@@ -518,14 +518,14 @@ export type SignOutResponses = {
 
 export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 
-export type RegisterTotpData = {
+export type CreateTotpChallengeData = {
   body?: never;
   path?: never;
   query?: never;
   url: '/auth/totp/register';
 };
 
-export type RegisterTotpErrors = {
+export type CreateTotpChallengeErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -558,11 +558,11 @@ export type RegisterTotpErrors = {
   };
 };
 
-export type RegisterTotpError = RegisterTotpErrors[keyof RegisterTotpErrors];
+export type CreateTotpChallengeError = CreateTotpChallengeErrors[keyof CreateTotpChallengeErrors];
 
-export type RegisterTotpResponses = {
+export type CreateTotpChallengeResponses = {
   /**
-   * totpUri & manualKey
+   * Challenge created
    */
   200: {
     totpUri: string;
@@ -570,9 +570,9 @@ export type RegisterTotpResponses = {
   };
 };
 
-export type RegisterTotpResponse = RegisterTotpResponses[keyof RegisterTotpResponses];
+export type CreateTotpChallengeResponse = CreateTotpChallengeResponses[keyof CreateTotpChallengeResponses];
 
-export type ActivateTotpData = {
+export type CreateTotpData = {
   body: {
     code: string;
   };
@@ -581,7 +581,7 @@ export type ActivateTotpData = {
   url: '/auth/totp/activate';
 };
 
-export type ActivateTotpErrors = {
+export type CreateTotpErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -614,16 +614,16 @@ export type ActivateTotpErrors = {
   };
 };
 
-export type ActivateTotpError = ActivateTotpErrors[keyof ActivateTotpErrors];
+export type CreateTotpError = CreateTotpErrors[keyof CreateTotpErrors];
 
-export type ActivateTotpResponses = {
+export type CreateTotpResponses = {
   /**
    * TOTP activated
    */
   200: boolean;
 };
 
-export type ActivateTotpResponse = ActivateTotpResponses[keyof ActivateTotpResponses];
+export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
 
 export type DeleteTotpData = {
   body?: never;

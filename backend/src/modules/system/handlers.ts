@@ -61,7 +61,7 @@ const systemRouteHandlers = app
           // Make sure its a system invitation
           isNull(tokensTable.entityType),
           lt(tokensTable.expiresAt, new Date()),
-          isNull(tokensTable.consumedAt),
+          isNull(tokensTable.invokedAt),
         ),
       );
 

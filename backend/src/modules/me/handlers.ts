@@ -22,7 +22,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
-import { verifyTotp } from '#/modules/auth/helpers/totps';
+import { signInWithTotp } from '#/modules/auth/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -96,7 +96,7 @@ const meRouteHandlers = app
         if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
         // Verify  provided TOTP code
-        const isValid = verifyTotp(totpCode, credentials.secret);
+        const isValid = signInWithTotp(totpCode, credentials.secret);
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
     } catch (error) {
@@ -144,7 +144,7 @@ const meRouteHandlers = app
 
     // Query to get verified OAuth accounts
     const getOAuth = db
-      .select({ providerId: oauthAccountsTable.providerId })
+      .select({ provider: oauthAccountsTable.provider })
       .from(oauthAccountsTable)
       .where(and(eq(oauthAccountsTable.userId, user.id), eq(oauthAccountsTable.verified, true)));
 
@@ -159,7 +159,7 @@ const meRouteHandlers = app
 
     // Filter only providers that are enabled in appConfig
     const enabledOAuth = oauthAccounts
-      .map((el) => el.providerId)
+      .map((el) => el.provider)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
     // Return a consolidated JSON response with all relevant auth info

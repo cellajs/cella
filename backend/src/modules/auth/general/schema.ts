@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { membershipSchema } from '#/modules/memberships/schema';
-import { idSchema } from '#/utils/schema/common';
 import { userSchema } from '#/modules/users/schema';
+import { idSchema } from '#/utils/schema/common';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,

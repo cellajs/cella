@@ -12,13 +12,14 @@ import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { handleEmailVerification } from '#/modules/auth/helpers/handle-email-verification';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
-import authGeneralRoutes from './routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { handleOAuthVerification } from '../helpers/handle-oauth-verification';
+import authGeneralRoutes from './routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -42,7 +43,7 @@ const authGeneralRouteHandlers = app
           isNull(tokensTable.userId),
           isNotNull(tokensTable.entityType),
           isNotNull(tokensTable.role),
-          isNull(tokensTable.consumedAt),
+          isNull(tokensTable.invokedAt),
         ),
       )
       .limit(1);
@@ -72,15 +73,18 @@ const authGeneralRouteHandlers = app
     // Set cookie using token type as name. Content is single use token. Expires in 10 minutes or until used.
     await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(10, 'm'));
 
-    // If verification email, we process it immediately and redirect to frontend accordingly
+    // If verification email, we process it immediately and redirect to app
     if (tokenRecord.type === 'email_verification') return handleEmailVerification(ctx, tokenRecord);
 
-    let redirectUrl = appConfig.defaultRedirectPath;
+    // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
+    if (tokenRecord.type === 'oauth_verification') return handleOAuthVerification(ctx, tokenRecord);
 
+    // Determine redirect URL based on token type
+    let redirectUrl = appConfig.defaultRedirectPath;
     if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
     if (tokenRecord.type === 'password_reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
-    logEvent('info', 'Token consumed, redirecting with single use session token', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
+    logEvent('info', 'Token consumed, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
 
     return ctx.redirect(redirectUrl, 302);
   })

@@ -113,7 +113,8 @@ The documentation is generated from source code using \`zod\` schemas, converted
 
 /**
  * Enabled authentication strategies.
- * Currently available: 'password', 'passkey', 'oauth' and 'totp.
+ * Currently available: 'password', 'passkey', 'oauth' and 'totp'.
+ * Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
  */
 enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 
@@ -125,7 +126,7 @@ enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
+  tokenTypes: ['email_verification', 'oauth_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
 
   // Optional settings
   has: {

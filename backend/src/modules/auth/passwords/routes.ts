@@ -4,10 +4,10 @@ import { isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { emailPasswordBodySchema } from './schema';
 import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { emailBodySchema } from '../general/schema';
+import { emailPasswordBodySchema } from './schema';
 
 const authPasswordsRoutes = {
   signUp: createCustomRoute({

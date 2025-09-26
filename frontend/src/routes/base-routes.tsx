@@ -109,6 +109,7 @@ export const AppLayoutRoute = createRoute({
     // If location is root and has user, redirect to home
     if (location.pathname === '/') throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
+  // @ts-ignore // TODO
   loader: async ({ cause }) => {
     if (cause !== 'enter') return;
 

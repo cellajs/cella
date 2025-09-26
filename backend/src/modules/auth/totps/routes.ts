@@ -2,43 +2,43 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
-import { totpVerificationBodySchema } from './schema';
 import { cookieSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { totpCreateBodySchema } from './schema';
 
 const authTotpsRoutes = {
-  registerTotp: createCustomRoute({
-    operationId: 'registerTotp',
+  createTotpChallenge: createCustomRoute({
+    operationId: 'createTotpChallenge',
     method: 'post',
     path: '/totp/register',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Register TOTP',
-    description: 'Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.',
+    summary: 'Create TOTP challenge',
+    description: 'Generates a new TOTP challenge for current user and returns a provisioning URI and Base32 manual key.',
     security: [],
     responses: {
       200: {
-        description: 'totpUri & manualKey',
+        description: 'Challenge created',
         content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
       },
       ...errorResponses,
     },
   }),
 
-  activateTotp: createCustomRoute({
-    operationId: 'activateTotp',
+  createTotp: createCustomRoute({
+    operationId: 'createTotp',
     method: 'post',
     path: '/totp/activate',
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Activate TOTP',
     description:
-      'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is activated for the account.',
+      'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.',
     security: [],
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: totpVerificationBodySchema.pick({ code: true }) } },
+        content: { 'application/json': { schema: totpCreateBodySchema.pick({ code: true }) } },
       },
     },
 
@@ -69,7 +69,7 @@ const authTotpsRoutes = {
     },
   }),
 
-  verifyTotp: createCustomRoute({
+  signInWithTotp: createCustomRoute({
     operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
@@ -81,7 +81,7 @@ const authTotpsRoutes = {
     description: 'Validates the TOTP code and completes TOTP based authentication.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: totpVerificationBodySchema } } },
+      body: { content: { 'application/json': { schema: totpCreateBodySchema } } },
     },
     responses: {
       200: {

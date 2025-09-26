@@ -1,22 +1,22 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase32UpperCase } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
 import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
-import { getContextUser, type Env } from '#/lib/context';
+import { usersTable } from '#/db/schema/users';
+import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { setUserSession } from '#/modules/auth/helpers/session';
-import { verifyTotp } from '#/modules/auth/helpers/totps';
+import { signInWithTotp } from '#/modules/auth/helpers/totps';
 import { defaultHook } from '#/utils/default-hook';
-import authTotpRoutes from './routes';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { usersTable } from '#/db/schema/users';
-import authTotpsRoutes from './routes';
 import { TimeSpan } from '#/utils/time-span';
-import { encodeBase32UpperCase } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import { setAuthCookie, getAuthCookie } from '../helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '../helpers/cookie';
+import authTotpRoutes from './routes';
+import authTotpsRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
@@ -26,7 +26,7 @@ const authTotpsRouteHandlers = app
   /*
    * Register TOTP
    */
-  .openapi(authTotpsRoutes.registerTotp, async (ctx) => {
+  .openapi(authTotpsRoutes.createTotpChallenge, async (ctx) => {
     const user = getContextUser();
 
     // Generate a 20-byte random secret and encode it as Base32
@@ -46,7 +46,7 @@ const authTotpsRouteHandlers = app
   /*
    * Activate TOTP
    */
-  .openapi(authTotpsRoutes.activateTotp, async (ctx) => {
+  .openapi(authTotpsRoutes.createTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -56,7 +56,7 @@ const authTotpsRouteHandlers = app
 
     // Verify TOTP code
     try {
-      const isValid = verifyTotp(code, encodedSecret);
+      const isValid = signInWithTotp(code, encodedSecret);
       if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -99,7 +99,7 @@ const authTotpsRouteHandlers = app
   /*
    * Verify TOTP
    */
-  .openapi(authTotpRoutes.verifyTotp, async (ctx) => {
+  .openapi(authTotpRoutes.signInWithTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
 
     const strategy = 'totp';
@@ -121,7 +121,7 @@ const authTotpsRouteHandlers = app
 
     try {
       // Verify TOTP code using stored secret
-      const isValid = verifyTotp(code, credentials.secret);
+      const isValid = signInWithTotp(code, credentials.secret);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof AppError) throw error;
