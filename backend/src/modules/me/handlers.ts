@@ -1,6 +1,4 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32UpperCase } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
 import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
@@ -11,7 +9,6 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { passwordsTable } from '#/db/schema/passwords';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
@@ -22,11 +19,10 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { deviceInfo } from '#/modules/auth/helpers/device-info';
-import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
-import { verifyTotp } from '#/modules/auth/helpers/totps';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { verifyPassKeyPublic } from '#/modules/auth/passkeys/helpers/passkey';
+import { signInWithTotp } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -37,7 +33,6 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 type UserMenu = z.infer<typeof menuSchema>;
@@ -48,7 +43,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 export const streams = new Map<string, SSEStreamingApi>();
 
 const meRouteHandlers = app
-  /*
+  /**
    * Get me
    */
   .openapi(meRoutes.getMe, async (ctx) => {
@@ -59,7 +54,7 @@ const meRouteHandlers = app
 
     return ctx.json(user, 200);
   })
-  /*
+  /**
    * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
@@ -69,6 +64,7 @@ const meRouteHandlers = app
     // Determine which MFA strategy user is using
     const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
+    // TODO isnt this duplicated logic from passkeys module and totps module?
     try {
       // --- Passkey verification ---
       if (passkeyData) {
@@ -100,7 +96,7 @@ const meRouteHandlers = app
         if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
         // Verify  provided TOTP code
-        const isValid = verifyTotp(totpCode, credentials.secret);
+        const isValid = signInWithTotp(totpCode, credentials.secret);
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
     } catch (error) {
@@ -130,12 +126,13 @@ const meRouteHandlers = app
 
     return ctx.json(updatedUser, 200);
   })
-  /*
+  /**
    * Get my auth data
    */
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
+    // TODO put in helper
     // Queries for user authentication factors
     // Select passkey fields except for sensitive credential data
     const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
@@ -145,7 +142,11 @@ const meRouteHandlers = app
 
     const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
+    // Query to get verified OAuth accounts
+    const getOAuth = db
+      .select({ provider: oauthAccountsTable.provider })
+      .from(oauthAccountsTable)
+      .where(and(eq(oauthAccountsTable.userId, user.id), eq(oauthAccountsTable.verified, true)));
 
     // Run all queries + fetch user sessions in parallel
     const [passkeys, password, totps, oauthAccounts, sessions] = await Promise.all([
@@ -158,7 +159,7 @@ const meRouteHandlers = app
 
     // Filter only providers that are enabled in appConfig
     const enabledOAuth = oauthAccounts
-      .map((el) => el.providerId)
+      .map((el) => el.provider)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
     // Return a consolidated JSON response with all relevant auth info
@@ -173,7 +174,7 @@ const meRouteHandlers = app
       200,
     );
   })
-  /*
+  /**
    * Get my user menu
    */
   .openapi(meRoutes.getMyMenu, async (ctx) => {
@@ -212,8 +213,8 @@ const meRouteHandlers = app
 
     return ctx.json(menu, 200);
   })
-  /*
-   * Get my invites data
+  /**
+   * Get my invitations - a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
     const user = getContextUser();
@@ -222,6 +223,7 @@ const meRouteHandlers = app
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
         const entityIdField = appConfig.entityIdFields[entityType];
+        // TODO cant we use an existing select for this? or resolveEntity util?
         const entitySelect = {
           id: entityTable.id,
           entityType: entityTable.entityType,
@@ -235,20 +237,17 @@ const meRouteHandlers = app
           .select({
             entity: entitySelect,
             invitedBy: userBaseSelect,
-            expiresAt: tokensTable.expiresAt,
-            token: tokensTable.token,
-            tokenId: tokensTable.id,
+            membership: membershipsTable,
           })
-          .from(tokensTable)
-          .leftJoin(usersTable, eq(usersTable.id, tokensTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, tokensTable[entityIdField]))
+          .from(membershipsTable)
+          .leftJoin(usersTable, eq(usersTable.id, membershipsTable.createdBy))
+          .innerJoin(entityTable, eq(entityTable.id, membershipsTable[entityIdField]))
           .where(
             and(
-              eq(tokensTable.type, 'invitation'),
-              eq(tokensTable.entityType, entityType),
-              eq(tokensTable.userId, user.id),
-              isNotNull(tokensTable.role),
-              isNull(tokensTable.consumedAt),
+              eq(membershipsTable.contextType, entityType),
+              eq(membershipsTable.userId, user.id),
+              isNotNull(membershipsTable.tokenId),
+              isNull(membershipsTable.activatedAt),
             ),
           );
       }),
@@ -256,7 +255,7 @@ const meRouteHandlers = app
 
     return ctx.json(pendingInvites.flat(), 200);
   })
-  /*
+  /**
    * Terminate one or more of my sessions
    */
   .openapi(meRoutes.deleteMySessions, async (ctx) => {
@@ -284,7 +283,7 @@ const meRouteHandlers = app
       return ctx.json({ success: false, rejectedItems: sessionIds }, 200);
     }
   })
-  /*
+  /**
    * Update current user (me)
    */
   .openapi(meRoutes.updateMe, async (ctx) => {
@@ -315,7 +314,7 @@ const meRouteHandlers = app
 
     return ctx.json(updatedUser, 200);
   })
-  /*
+  /**
    * Delete current user (me)
    */
   .openapi(meRoutes.deleteMe, async (ctx) => {
@@ -332,7 +331,7 @@ const meRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
+  /**
    * Delete one of my entity memberships
    */
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
@@ -352,134 +351,7 @@ const meRouteHandlers = app
 
     return ctx.json(true, 200);
   })
-  /*
-   * Register passkey
-   */
-  .openapi(meRoutes.createPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
-    const user = getContextUser();
-
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
-
-    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
-
-    const device = deviceInfo(ctx);
-    const passkeyValue = {
-      userId: user.id,
-      credentialId,
-      publicKey,
-      nameOnDevice,
-      deviceName: device.name,
-      deviceType: device.type,
-      deviceOs: device.os,
-      browser: device.browser,
-    };
-
-    const { credentialId: _, publicKey: __, ...passkeySelect } = getTableColumns(passkeysTable);
-
-    // Save public key in database
-    const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);
-
-    return ctx.json(newPasskey, 200);
-  })
-  /*
-   * Delete passkey
-   */
-  .openapi(meRoutes.deletePasskey, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-    const user = getContextUser();
-
-    // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
-
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
-
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Register TOTP
-   */
-  .openapi(meRoutes.registerTotp, async (ctx) => {
-    const user = getContextUser();
-
-    // Generate a 20-byte random secret and encode it as Base32
-    const secretBytes = crypto.getRandomValues(new Uint8Array(20));
-
-    // Base32 → for authenticator app (manual entry or QR code)
-    const manualKey = encodeBase32UpperCase(secretBytes);
-
-    // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
-
-    // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
-
-    return ctx.json({ totpUri, manualKey }, 200);
-  })
-  /*
-   * Activate TOTP
-   */
-  .openapi(meRoutes.activateTotp, async (ctx) => {
-    const { code } = ctx.req.valid('json');
-    const user = getContextUser();
-
-    // Retrieve the encoded totp secret from cookie
-    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
-    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
-
-    // Verify TOTP code
-    try {
-      const isValid = verifyTotp(code, encodedSecret);
-      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      throw new AppError({
-        status: 500,
-        type: 'invalid_credentials',
-        severity: 'error',
-        ...(error instanceof Error ? { originalError: error } : {}),
-      });
-    }
-
-    // Save encoded secret key in database
-    await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Unlink TOTP
-   */
-  .openapi(meRoutes.deleteTotp, async (ctx) => {
-    const user = getContextUser();
-
-    // Remove all totps linked to this user's email
-    await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
-
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
-
-    return ctx.json(true, 200);
-  })
-  /*
+  /**
    * Get upload token
    */
   .openapi(meRoutes.getUploadToken, async (ctx) => {
@@ -508,7 +380,7 @@ const meRouteHandlers = app
       });
     }
   })
-  /*
+  /**
    * Unsubscribe myself by token from receiving newsletters
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
@@ -532,7 +404,7 @@ const meRouteHandlers = app
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
   })
-  /*
+  /**
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {

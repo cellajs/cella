@@ -15,7 +15,7 @@ type RateLimitOptions = Partial<RateLimiterPostgres> | Partial<RateLimiterMemory
 // Default options
 export const defaultOptions = {
   tableName: 'rate_limits', // Name of table in database
-  points: 5, // 5 requests
+  points: 10, // 10 requests
   duration: 60 * 60, // within 1 hour
   blockDuration: 60 * 30, // Block for 30 minutes
 };

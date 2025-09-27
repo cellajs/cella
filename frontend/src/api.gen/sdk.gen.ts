@@ -3,12 +3,9 @@
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
-  AcceptEntityInviteData,
-  AcceptEntityInviteErrors,
-  AcceptEntityInviteResponses,
-  ActivateTotpData,
-  ActivateTotpErrors,
-  ActivateTotpResponses,
+  AcceptMembershipData,
+  AcceptMembershipErrors,
+  AcceptMembershipResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
@@ -33,6 +30,12 @@ import type {
   CreateRequestData,
   CreateRequestErrors,
   CreateRequestResponses,
+  CreateTotpChallengeData,
+  CreateTotpChallengeErrors,
+  CreateTotpChallengeResponses,
+  CreateTotpData,
+  CreateTotpErrors,
+  CreateTotpResponses,
   DeleteAttachmentsData,
   DeleteAttachmentsErrors,
   DeleteAttachmentsResponses,
@@ -111,6 +114,9 @@ import type {
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
+  GetTokenDataData,
+  GetTokenDataErrors,
+  GetTokenDataResponses,
   GetUploadTokenData,
   GetUploadTokenErrors,
   GetUploadTokenResponses,
@@ -128,6 +134,8 @@ import type {
   GoogleCallbackErrors,
   GoogleData,
   GoogleErrors,
+  InvokeTokenData,
+  InvokeTokenErrors,
   MembershipInviteData,
   MembershipInviteErrors,
   MembershipInviteResponses,
@@ -141,9 +149,6 @@ import type {
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
-  RegisterTotpData,
-  RegisterTotpErrors,
-  RegisterTotpResponses,
   RequestPasswordData,
   RequestPasswordErrors,
   RequestPasswordResponses,
@@ -203,9 +208,6 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
-  ValidateTokenData,
-  ValidateTokenErrors,
-  ValidateTokenResponses,
   VerifyEmailData,
   VerifyEmailErrors,
 } from './types.gen';
@@ -250,172 +252,48 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
 };
 
 /**
- * Sign up with password
+ * Refresh token
  * 🌐 Public access
- * ⏳ Spam (10/h), Email (5/h)
  *
- * Registers a new user using an email and password. Sends a verification email upon successful sign up.
+ * Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.
  *
- * **POST /auth/sign-up** ·· [signUp](http://localhost:4000/docs#tag/auth/post/auth/sign-up) ·· _auth_
+ * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](http://localhost:4000/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· _auth_
  *
- * @param {signUpData} options
- * @param {string=} options.body.email - `string` (optional)
- * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
- */
-export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-up',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-};
-
-/**
- * Sign up to accept invite
- * 🌐 Public access
- * ⏳ Spam (10/h), Email (5/h)
- *
- * Registers a user using an email and password in response to a system or organization invitation.
- *
- * **POST /auth/sign-up/{token}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{token}) ·· _auth_
- *
- * @param {signUpWithTokenData} options
+ * @param {invokeTokenData} options
+ * @param {enum} options.path.type - `enum`
  * @param {string} options.path.token - `string`
- * @param {string=} options.body.email - `string` (optional)
- * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-up/{token}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Verify email by token
- * 🌐 Public access
- * ⏳ token_email_verification (5/h)
- *
- * Verifies a user's email using a token from their verification email. Grants a session upon success.
- *
- * **GET /auth/verify-email/{token}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{token}) ·· _auth_
- *
- * @param {verifyEmailData} options
- * @param {string} options.path.token - `string`
- * @param {string=} options.query.redirect - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, VerifyEmailErrors, ThrowOnError, 'data'>({
+export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/verify-email/{token}',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/invoke-token/{type}/{token}',
     ...options,
   });
 };
 
 /**
- * Request new password
- * 🌐 Public access
- * ⏳ Spam (10/h), Email (5/h)
- *
- * Sends an email with a link to reset the user's password.
- *
- * **POST /auth/request-password** ·· [requestPassword](http://localhost:4000/docs#tag/auth/post/auth/request-password) ·· _auth_
- *
- * @param {requestPasswordData} options
- * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const requestPassword = <ThrowOnError extends boolean = true>(options?: Options<RequestPasswordData, ThrowOnError>) => {
-  return (options?.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/request-password',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-};
-
-/**
- * Create password by token
- * 🌐 Public access
- * ⏳ token_password_reset (5/h)
- *
- * Sets a new password using a token and grants a session immediately upon success.
- *
- * **POST /auth/create-password/{token}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{token}) ·· _auth_
- *
- * @param {createPasswordData} options
- * @param {string} options.path.token - `string`
- * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/create-password/{token}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Sign in with password
- * 🌐 Public access
- * ⏳ Password (5/h)
- *
- * Authenticates an existing user using their email and password.
- *
- * **POST /auth/sign-in** ·· [signIn](http://localhost:4000/docs#tag/auth/post/auth/sign-in) ·· _auth_
- *
- * @param {signInData} options
- * @param {string=} options.body.email - `string` (optional)
- * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const signIn = <ThrowOnError extends boolean = true>(options?: Options<SignInData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-in',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-};
-
-/**
- * Validate token
+ * Get token data
  * 🌐 Public access
  *
- * Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.
+ * Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.
  *
- * **POST /auth/validate-token/{token}** ·· [validateToken](http://localhost:4000/docs#tag/auth/post/auth/validate-token/{token}) ·· _auth_
+ * **GET /auth/token/{tokenId}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{tokenId}) ·· _auth_
  *
- * @param {validateTokenData} options
- * @param {string} options.path.token - `string`
+ * @param {getTokenDataData} options
+ * @param {string} options.path.tokenid - `string`
  * @param {enum} options.query.type - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const validateToken = <ThrowOnError extends boolean = true>(options: Options<ValidateTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<ValidateTokenResponses, ValidateTokenErrors, ThrowOnError, 'data'>({
+export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
+  return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -424,35 +302,7 @@ export const validateToken = <ThrowOnError extends boolean = true>(options: Opti
         type: 'apiKey',
       },
     ],
-    url: '/auth/validate-token/{token}',
-    ...options,
-  });
-};
-
-/**
- * Accept invitation
- * 🛡️ Requires authentication
- * ⏳ token_invitation (5/h)
- *
- * Accepts an invitation token and activates the associated membership or system access.
- *
- * **POST /auth/accept-invite/{token}** ·· [acceptEntityInvite](http://localhost:4000/docs#tag/auth/post/auth/accept-invite/{token}) ·· _auth_
- *
- * @param {acceptEntityInviteData} options
- * @param {string} options.path.token - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/accept-invite/{token}',
+    url: '/auth/token/{tokenId}',
     ...options,
   });
 };
@@ -486,7 +336,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Stop impersonating
- * 🌐 Public access
+ * 🛡️ Requires authentication
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
@@ -537,139 +387,286 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
 };
 
 /**
- * Authenticate with GitHub
+ * Create TOTP challenge
+ * 🛡️ Requires authentication
+ *
+ * Generates a new TOTP challenge for current user and returns a provisioning URI and Base32 manual key.
+ *
+ * **POST /auth/totp/register** ·· [createTotpChallenge](http://localhost:4000/docs#tag/auth/post/auth/totp/register) ·· _auth_
+ *
+ * @param {createTotpChallengeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createTotpChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreateTotpChallengeData, ThrowOnError>) => {
+  return (options?.client ?? client).post<CreateTotpChallengeResponses, CreateTotpChallengeErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp/register',
+    ...options,
+  });
+};
+
+/**
+ * Activate TOTP
+ * 🛡️ Requires authentication
+ *
+ * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
+ *
+ * **POST /auth/totp/activate** ·· [createTotp](http://localhost:4000/docs#tag/auth/post/auth/totp/activate) ·· _auth_
+ *
+ * @param {createTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp/activate',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete TOTP
+ * 🛡️ Requires authentication
+ *
+ * Delete TOTP credential for current user.
+ *
+ * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/auth/delete/auth/totp) ·· _auth_
+ *
+ * @param {deleteTotpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
+  return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp',
+    ...options,
+  });
+};
+
+/**
+ * Verify TOTP
  * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
- * Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ * Validates the TOTP code and completes TOTP based authentication.
  *
- * **GET /auth/github** ·· [github](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
+ * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
  *
- * @param {githubData} options
- * @param {enum} options.query.type - `enum`
+ * @param {signInWithTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
+  return (options?.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp-verification',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Sign up with password
+ * 🌐 Public access
+ * ⏳ Spam (10/h), Email (5/h)
+ *
+ * Registers a new user using an email and password. Sends a verification email upon successful sign up.
+ *
+ * **POST /auth/sign-up** ·· [signUp](http://localhost:4000/docs#tag/auth/post/auth/sign-up) ·· _auth_
+ *
+ * @param {signUpData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
+ */
+export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
+  return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/sign-up',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Sign up to accept invite
+ * 🌐 Public access
+ * ⏳ token_signup_invitation (10/h), Email (5/h)
+ *
+ * Registers a user using an email and password in response to a system or organization invitation.
+ *
+ * **POST /auth/sign-up/{tokenId}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{tokenId}) ·· _auth_
+ *
+ * @param {signUpWithTokenData} options
+ * @param {string} options.path.tokenid - `string`
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
+  return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/sign-up/{tokenId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Verify email by token
+ * 🌐 Public access
+ * ⏳ token_email-verification (10/h)
+ *
+ * Verifies a user's email using a single-use session token in cookie. Grants a session upon success.
+ *
+ * **GET /auth/verify-email/{tokenId}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{tokenId}) ·· _auth_
+ *
+ * @param {verifyEmailData} options
+ * @param {string} options.path.tokenid - `string`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connect - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const github = <ThrowOnError extends boolean = true>(options: Options<GithubData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
+export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, VerifyEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/github',
+    url: '/auth/verify-email/{tokenId}',
     ...options,
   });
 };
 
 /**
- * Authenticate with Google
+ * Request new password
  * 🌐 Public access
+ * ⏳ Spam (10/h), Email (5/h)
  *
- * Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ * Sends an email with a link to reset the user's password.
  *
- * **GET /auth/google** ·· [google](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
+ * **POST /auth/request-password** ·· [requestPassword](http://localhost:4000/docs#tag/auth/post/auth/request-password) ·· _auth_
  *
- * @param {googleData} options
- * @param {enum} options.query.type - `enum`
- * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connect - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ * @param {requestPasswordData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const google = <ThrowOnError extends boolean = true>(options: Options<GoogleData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
+export const requestPassword = <ThrowOnError extends boolean = true>(options?: Options<RequestPasswordData, ThrowOnError>) => {
+  return (options?.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/google',
+    url: '/auth/request-password',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };
 
 /**
- * Authenticate with Microsoft
+ * Create password
  * 🌐 Public access
+ * ⏳ token_password-reset (10/h)
  *
- * Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
- * **GET /auth/microsoft** ·· [microsoft](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
+ * **POST /auth/create-password/{tokenId}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{tokenId}) ·· _auth_
  *
- * @param {microsoftData} options
- * @param {enum} options.query.type - `enum`
- * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connect - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ * @param {createPasswordData} options
+ * @param {string} options.path.tokenid - `string`
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const microsoft = <ThrowOnError extends boolean = true>(options: Options<MicrosoftData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
+export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/microsoft',
+    url: '/auth/create-password/{tokenId}',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 };
 
 /**
- * Callback for GitHub
+ * Sign in with password
  * 🌐 Public access
- * ⏳ token_github (5/h)
+ * ⏳ Password (5/h)
  *
- * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
+ * Authenticates an existing user using their email and password.
  *
- * **GET /auth/github/callback** ·· [githubCallback](http://localhost:4000/docs#tag/auth/get/auth/github/callback) ·· _auth_
+ * **POST /auth/sign-in** ·· [signIn](http://localhost:4000/docs#tag/auth/post/auth/sign-in) ·· _auth_
  *
- * @param {githubCallbackData} options
- * @param {string} options.query.code - `string`
- * @param {string} options.query.state - `string`
- * @param {string=} options.query.error - `string` (optional)
- * @param {string=} options.query.error_description - `string` (optional)
- * @param {string=} options.query.error_uri - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ * @param {signInData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const githubCallback = <ThrowOnError extends boolean = true>(options: Options<GithubCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
+export const signIn = <ThrowOnError extends boolean = true>(options?: Options<SignInData, ThrowOnError>) => {
+  return (options?.client ?? client).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/github/callback',
+    url: '/auth/sign-in',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };
 
 /**
- * Callback for Google
- * 🌐 Public access
- * ⏳ token_google (5/h)
+ * Create passkey
+ * 🛡️ Requires authentication
  *
- * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
+ * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
- * **GET /auth/google/callback** ·· [googleCallback](http://localhost:4000/docs#tag/auth/get/auth/google/callback) ·· _auth_
+ * **POST /auth/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey) ·· _auth_
  *
- * @param {googleCallbackData} options
- * @param {string} options.query.code - `string`
- * @param {string} options.query.state - `string`
- * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ * @param {createPasskeyData} options
+ * @param {string=} options.body.attestationObject - `string` (optional)
+ * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @param {string=} options.body.nameOnDevice - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const googleCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
+export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/google/callback',
+    url: '/auth/passkey',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 };
 
 /**
- * Callback for Microsoft
- * 🌐 Public access
- * ⏳ token_microsoft (5/h)
+ * Delete passkey
+ * 🛡️ Requires authentication
  *
- * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
+ * Delete a passkey by id from the *current user*.
  *
- * **GET /auth/microsoft/callback** ·· [microsoftCallback](http://localhost:4000/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
+ * **DELETE /auth/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/auth/delete/auth/passkey/{id}) ·· _auth_
  *
- * @param {microsoftCallbackData} options
- * @param {string} options.query.code - `string`
- * @param {string} options.query.state - `string`
- * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ * @param {deletePasskeyData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const microsoftCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
+export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
+  return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/microsoft/callback',
+    url: '/auth/passkey/{id}',
     ...options,
   });
 };
@@ -703,7 +700,7 @@ export const createPasskeyChallenge = <ThrowOnError extends boolean = true>(opti
 /**
  * Verify passkey
  * 🌐 Public access
- * ⏳ token_passkey (5/h)
+ * ⏳ token_passkey (10/h)
  *
  * Validates the signed challenge and completes passkey based authentication.
  *
@@ -738,27 +735,134 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
 };
 
 /**
- * Verify TOTP
+ * Authenticate with GitHub
  * 🌐 Public access
- * ⏳ Spam (10/h)
  *
- * Validates the TOTP code and completes TOTP based authentication.
+ * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
+ * **GET /auth/github** ·· [github](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
  *
- * @param {signInWithTotpData} options
- * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @param {githubData} options
+ * @param {enum} options.query.type - `enum`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+export const github = <ThrowOnError extends boolean = true>(options: Options<GithubData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/totp-verification',
+    url: '/auth/github',
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+  });
+};
+
+/**
+ * Authenticate with Google
+ * 🌐 Public access
+ *
+ * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
+ *
+ * **GET /auth/google** ·· [google](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
+ *
+ * @param {googleData} options
+ * @param {enum} options.query.type - `enum`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const google = <ThrowOnError extends boolean = true>(options: Options<GoogleData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/google',
+    ...options,
+  });
+};
+
+/**
+ * Authenticate with Microsoft
+ * 🌐 Public access
+ *
+ * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
+ *
+ * **GET /auth/microsoft** ·· [microsoft](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
+ *
+ * @param {microsoftData} options
+ * @param {enum} options.query.type - `enum`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const microsoft = <ThrowOnError extends boolean = true>(options: Options<MicrosoftData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/microsoft',
+    ...options,
+  });
+};
+
+/**
+ * Callback for GitHub
+ * 🌐 Public access
+ * ⏳ token_github (10/h)
+ *
+ * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
+ *
+ * **GET /auth/github/callback** ·· [githubCallback](http://localhost:4000/docs#tag/auth/get/auth/github/callback) ·· _auth_
+ *
+ * @param {githubCallbackData} options
+ * @param {string} options.query.code - `string`
+ * @param {string} options.query.state - `string`
+ * @param {string=} options.query.error - `string` (optional)
+ * @param {string=} options.query.error_description - `string` (optional)
+ * @param {string=} options.query.error_uri - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const githubCallback = <ThrowOnError extends boolean = true>(options: Options<GithubCallbackData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/github/callback',
+    ...options,
+  });
+};
+
+/**
+ * Callback for Google
+ * 🌐 Public access
+ * ⏳ token_google (10/h)
+ *
+ * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
+ *
+ * **GET /auth/google/callback** ·· [googleCallback](http://localhost:4000/docs#tag/auth/get/auth/google/callback) ·· _auth_
+ *
+ * @param {googleCallbackData} options
+ * @param {string} options.query.code - `string`
+ * @param {string} options.query.state - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const googleCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleCallbackData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/google/callback',
+    ...options,
+  });
+};
+
+/**
+ * Callback for Microsoft
+ * 🌐 Public access
+ * ⏳ token_microsoft (10/h)
+ *
+ * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
+ *
+ * **GET /auth/microsoft/callback** ·· [microsoftCallback](http://localhost:4000/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
+ *
+ * @param {microsoftCallbackData} options
+ * @param {string} options.query.code - `string`
+ * @param {string} options.query.state - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const microsoftCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftCallbackData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/microsoft/callback',
+    ...options,
   });
 };
 
@@ -941,7 +1045,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  * Get invitations
  * 🛡️ Requires authentication
  *
- * Returns a list of pending entity invitations which *current user* received.
+ * Returns a list of entities with pending memberships - meaning activatedAt is still null.
  *
  * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
  *
@@ -1016,114 +1120,6 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
- * Create passkey
- * 🛡️ Requires authentication
- *
- * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
- *
- * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
- *
- * @param {createPasskeyData} options
- * @param {string=} options.body.attestationObject - `string` (optional)
- * @param {string=} options.body.clientDataJSON - `string` (optional)
- * @param {string=} options.body.nameOnDevice - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/passkey',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Delete passkey
- * 🛡️ Requires authentication
- *
- * Delete a passkey by id from the *current user*.
- *
- * **DELETE /me/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey/{id}) ·· _me_
- *
- * @param {deletePasskeyData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/passkey/{id}',
-    ...options,
-  });
-};
-
-/**
- * Register TOTP
- * 🛡️ Requires authentication
- *
- * Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.
- *
- * **POST /me/totp/register** ·· [registerTotp](http://localhost:4000/docs#tag/me/post/me/totp/register) ·· _me_
- *
- * @param {registerTotpData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const registerTotp = <ThrowOnError extends boolean = true>(options?: Options<RegisterTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<RegisterTotpResponses, RegisterTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/totp/register',
-    ...options,
-  });
-};
-
-/**
- * Activate TOTP
- * 🛡️ Requires authentication
- *
- * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is activated for the account.
- *
- * **POST /me/totp/activate** ·· [activateTotp](http://localhost:4000/docs#tag/me/post/me/totp/activate) ·· _me_
- *
- * @param {activateTotpData} options
- * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const activateTotp = <ThrowOnError extends boolean = true>(options: Options<ActivateTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<ActivateTotpResponses, ActivateTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/totp/activate',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Delete TOTP
- * 🛡️ Requires authentication
- *
- * Delete TOTP credential for current user.
- *
- * **DELETE /me/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/me/delete/me/totp) ·· _me_
- *
- * @param {deleteTotpData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/totp',
-    ...options,
-  });
-};
-
-/**
  * Get upload token
  * 🛡️ Requires authentication
  *
@@ -1155,7 +1151,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Unsubscribe
  * 🌐 Public access
- * ⏳ token_unsubscribe (5/h)
+ * ⏳ token_unsubscribe (10/h)
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
@@ -1644,7 +1640,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Paddle webhook (WIP)
  * 🌐 Public access
- * ⏳ token_paddle (5/h)
+ * ⏳ token_paddle (10/h)
  *
  * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  *
@@ -2053,6 +2049,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 /**
  * Redirect to attachment
  * 🌐 Public access
+ * ⏳ token_attachment_redirect (10/h)
  *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *
@@ -2179,6 +2176,34 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Accept invitation
+ * 🛡️ Requires authentication
+ *
+ * Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.
+ *
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [acceptMembership](http://localhost:4000/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
+ *
+ * @param {acceptMembershipData} options
+ * @param {string} options.path.id - `string`
+ * @param {enum} options.path.acceptorreject - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const acceptMembership = <ThrowOnError extends boolean = true>(options: Options<AcceptMembershipData, ThrowOnError>) => {
+  return (options.client ?? client).post<AcceptMembershipResponses, AcceptMembershipErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
+    ...options,
   });
 };
 

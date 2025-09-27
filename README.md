@@ -33,10 +33,10 @@
 </div>
 
 > [!CAUTION]
-> This is a prerelease. It does NOT meet production requirements yet and large breaking changes occur regularly. Versioned releases will begin once we have solid tests for authentication, authorization and data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
+> This is a prerelease. Versioned releases will start once we have enough tests for authentication, authorization and data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
 
 #### Contents
-- [Installation](#installation)
+- [Create app](#create-app)
 - [Architecture](/info/ARCHITECTURE.md)
 - [Roadmap](/info/ROADMAP.md)
 - [Deployment](/info/DEPLOYMENT.md)
@@ -47,18 +47,18 @@
 
 <br>
 
-## Create your own app
-Want to try cella to build a new web app with sync engine? We recommend NOT TO FORK this repo directly. Instead, use the create CLI to get started:
+## Create app
+Do **not fork** this repo directly. Use the create CLI to get started:
 
 ```bash
-pnpm create @cellajs/cella@latest
+pnpm create @cellajs/cella
 ```
 
 You now have an implementation-ready web app 🤯. But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
 <p>&nbsp;</p>
 
-## Installation
+## Contribute
 For those that (also) want to participate in development:
 
 ```bash
@@ -89,8 +89,6 @@ pnpm dev
 
 Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
 
-
-<br />
-<br />
+<p>&nbsp;</p>
 
 💙💛 Big thank you to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [electric](https://github.com/electric-sql/electric).

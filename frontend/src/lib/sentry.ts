@@ -1,23 +1,15 @@
 import * as Sentry from '@sentry/react';
 import { appConfig } from 'config';
 
-// Initialize Sentry
-window.ononline = () => {
-  initSentry();
-};
-
-// Close Sentry when offline to avoid sending errors
-window.onoffline = () => {
-  console.info('You went offline. Closing Sentry.');
-  Sentry.close();
-};
-
 export const initSentry = () => {
+  if (!appConfig.sentryDsn) return;
+
   // Send errors to Sentry
   Sentry.init({
-    enabled: !!appConfig.sentryDsn,
     dsn: appConfig.sentryDsn,
+    debug: appConfig.debug,
     environment: appConfig.mode,
+    transport: Sentry.makeBrowserOfflineTransport(Sentry.makeFetchTransport),
     // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
     tracesSampleRate: 1.0,
     // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled

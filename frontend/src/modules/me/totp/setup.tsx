@@ -3,7 +3,7 @@ import { CircleAlert, CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ActivateTotpData, type ActivateTotpResponse, type ApiError, activateTotp, registerTotp } from '~/api.gen';
+import { type ApiError, type CreateTotpData, type CreateTotpResponse, createTotp, createTotpChallenge } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -19,8 +19,8 @@ export const SetupTotp = () => {
   const [formVersion, setFormVersion] = useState(0);
 
   // Mutation to validate and activate TOTP with provided code
-  const { mutate, isPending } = useMutation<ActivateTotpResponse, ApiError | Error, NonNullable<ActivateTotpData['body']>>({
-    mutationFn: async (body) => await activateTotp({ body }),
+  const { mutate, isPending } = useMutation<CreateTotpResponse, ApiError | Error, NonNullable<CreateTotpData['body']>>({
+    mutationFn: async (body) => await createTotp({ body }),
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
       useUserStore.getState().setMeAuthData({ hasTotp: true });
@@ -40,7 +40,7 @@ export const SetupTotp = () => {
   // Fetch TOTP registration data (URI and manual key)
   const { data } = useSuspenseQuery({
     queryKey: ['totp', 'uri'],
-    queryFn: async () => await registerTotp(),
+    queryFn: async () => await createTotpChallenge(),
     staleTime: 0,
   });
 

@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { baseElectrycSyncQuery, idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
@@ -37,6 +38,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   getAttachments: createCustomRoute({
     operationId: 'getAttachments',
     method: 'get',
@@ -61,6 +63,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   getAttachment: createCustomRoute({
     operationId: 'getAttachment',
     method: 'get',
@@ -84,6 +87,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   updateAttachment: createCustomRoute({
     operationId: 'updateAttachment',
     method: 'put',
@@ -114,6 +118,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   deleteAttachments: createCustomRoute({
     operationId: 'deleteAttachments',
     method: 'delete',
@@ -144,6 +149,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   shapeProxy: createCustomRoute({
     operationId: 'shapeProxy',
     method: 'get',
@@ -162,11 +168,13 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   redirectToAttachment: createCustomRoute({
     operationId: 'redirectToAttachment',
     method: 'get',
     path: '/{id}/link',
     guard: isPublicAccess,
+    middleware: [tokenLimiter('attachment_redirect')],
     tags: ['attachments'],
     summary: 'Redirect to attachment',
     description: "Redirects to the file's public or presigned URL, depending on storage visibility.",

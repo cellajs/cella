@@ -1,0 +1,119 @@
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
+import { db } from '#/db/db';
+import { type EmailModel, emailsTable } from '#/db/schema/emails';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
+import { tokensTable } from '#/db/schema/tokens';
+import { usersTable } from '#/db/schema/users';
+import { AppError } from '#/lib/errors';
+import { mailer } from '#/lib/mailer';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { logEvent } from '#/utils/logger';
+import { nanoid } from '#/utils/nanoid';
+import { createDate, TimeSpan } from '#/utils/time-span';
+import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
+import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../../emails/oauth-verification';
+
+interface Props {
+  userId: string;
+  oauthAccountId?: string;
+  redirectPath?: string;
+}
+
+/**
+ * Send a verification email to user. There are two scenarios:
+ * 1. Regular email verification (no oauthAccountId): user verifies their email address
+ * 2. OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
+ */
+// TODO perhaps split or consider refactoring
+export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
+  const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
+
+  // User not found
+  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+
+  // OAuthAccountId is provided and doesnt exist
+  const [oauthAccount] = oauthAccountId ? await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, oauthAccountId)) : [];
+  if (oauthAccountId && !oauthAccount) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+
+  const [emailInUse]: (EmailModel | undefined)[] = await db
+    .select()
+    .from(emailsTable)
+    .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
+
+  // email verified (+ optional OAuthAccount verified)
+  if (emailInUse && (!oauthAccountId || oauthAccount.verified)) {
+    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
+  }
+
+  // Delete previous token
+  await db
+    .delete(tokensTable)
+    .where(
+      and(
+        ...[
+          eq(tokensTable.userId, user.id),
+          eq(tokensTable.type, 'email-verification'),
+          ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
+        ],
+      ),
+    );
+
+  const token = nanoid(40);
+  const email = oauthAccount?.email ?? user.email;
+
+  // Create new token
+  const [tokenRecord] = await db
+    .insert(tokensTable)
+    .values({
+      token,
+      type: 'email-verification',
+      userId: user.id,
+      email,
+      createdBy: user.id,
+      ...(oauthAccountId && { oauthAccountId: oauthAccountId }),
+      expiresAt: createDate(new TimeSpan(2, 'h')),
+    })
+    .returning();
+
+  // Only update when no verified email exists
+  if (!emailInUse) {
+    await db
+      .insert(emailsTable)
+      .values({ email, userId: user.id, tokenId: tokenRecord.id })
+      .onConflictDoUpdate({
+        target: emailsTable.email,
+        where: eq(emailsTable.verified, false),
+        set: {
+          tokenId: tokenRecord.id,
+          userId: user.id,
+        },
+      });
+  }
+
+  // Send email
+  const lng = user.language;
+
+  // Create verification link: go to
+  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
+  const verificationURL = new URL(verifyPath, appConfig.backendUrl);
+
+  if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
+
+  // Prepare & send email
+  const subjectText = oauthAccount ? 'backend:email.oauth_verification.subject' : 'backend:email.email_verification.subject';
+  const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
+  const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
+  const recipients = [{ email }];
+  type Recipient = { email: string };
+
+  if (oauthAccount) {
+    const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
+    mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
+  } else {
+    mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
+  }
+
+  logEvent('info', 'Verification email sent', { userId: user.id });
+};

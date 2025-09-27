@@ -19,7 +19,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const usersRouteHandlers = app
-  /*
+  /**
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
@@ -110,7 +110,7 @@ const usersRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Delete users
    */
   .openapi(userRoutes.deleteUsers, async (ctx) => {
@@ -151,7 +151,7 @@ const usersRouteHandlers = app
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
-  /*
+  /**
    * Get a user by id or slug
    */
   .openapi(userRoutes.getUser, async (ctx) => {
@@ -194,7 +194,7 @@ const usersRouteHandlers = app
 
     return ctx.json(targetUser, 200);
   })
-  /*
+  /**
    * Update a user by id or slug
    */
   .openapi(userRoutes.updateUser, async (ctx) => {

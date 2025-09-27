@@ -21,7 +21,7 @@ const SelectRoles = ({ onChange, value = [], className }: SelectRoleProps) => {
 
   return (
     <div className={cn('inline-flex gap-2 items-center', className)}>
-      {appConfig.rolesByType.entityRoles.map((role) => (
+      {appConfig.roles.entityRoles.map((role) => (
         // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
           <Checkbox checked={value.includes(role)} onCheckedChange={() => handleCheckboxChange(role)} className="w-5 h-5" />

@@ -19,7 +19,7 @@ const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const requestRouteHandlers = app
-  /*
+  /**
    *  Create request
    */
   .openapi(requestRoutes.createRequest, async (ctx) => {
@@ -63,7 +63,7 @@ const requestRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    *  Get list of requests for system admins
    */
   .openapi(requestRoutes.getRequests, async (ctx) => {
@@ -74,7 +74,7 @@ const requestRouteHandlers = app
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
     const requestsQuery = db
-      .select({ ...requestsSelect, wasInvited: sql`(${requestsTable.tokenId} IS NOT NULL)`.as('wasInvited') })
+      .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited') })
       .from(requestsTable)
       .where(filter);
 
@@ -96,7 +96,7 @@ const requestRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    *  Delete requests
    */
   .openapi(requestRoutes.deleteRequests, async (ctx) => {

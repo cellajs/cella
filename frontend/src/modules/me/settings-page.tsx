@@ -84,7 +84,7 @@ const UserSettingsPage = () => {
     // Proceed to OAuth URL with redirect and connect
     try {
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams({ connect: user.id, type: 'connect', redirect: encodeURIComponent(window.location.pathname) });
+      const params = new URLSearchParams({ connectUserId: user.id, type: 'connect', redirect: encodeURIComponent(window.location.pathname) });
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);

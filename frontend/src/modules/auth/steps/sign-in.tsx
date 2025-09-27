@@ -35,7 +35,7 @@ export const SignInStep = () => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { redirect: encodedRedirect, token } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { redirect: encodedRedirect, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;
@@ -55,12 +55,17 @@ export const SignInStep = () => {
         return;
       }
 
-      const redirectPath = token ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+      // Go to invitation if token is provided, otherwise use provided redirect or default path
+      const redirectPath = tokenId
+        ? `/home?invitationTokenId=${tokenId}&skipWelcome=true`
+        : redirect?.startsWith('/')
+          ? redirect
+          : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,
         replace: true,
-        ...(token && { params: { token } }),
+        ...(tokenId && { search: { tokenId } }),
       });
     },
     onError: (error: ApiError) => {
@@ -82,15 +87,15 @@ export const SignInStep = () => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        {tokenId ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
         <Button
           variant="ghost"
           onClick={resetAuth}
-          disabled={!!token}
+          disabled={!!tokenId}
           className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
         >
           <span className="truncate">{email}</span>
-          {!token && <ChevronDown size={16} className="ml-1" />}
+          {!tokenId && <ChevronDown size={16} className="ml-1" />}
         </Button>
       </h1>
       {emailEnabled && (
@@ -135,6 +140,7 @@ export const SignInStep = () => {
                 {t('common:sign_in')}
                 <ArrowRight size={16} className="ml-2" />
               </SubmitButton>
+              {/* TODO: add callback to reset auth steps forgot email is different from current email state */}
               <RequestPasswordDialog email={email}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
                   {t('common:forgot_password')}

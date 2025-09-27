@@ -28,7 +28,7 @@ export const TextEffect = ({ text, className = '' }: TextEffectProps) => {
       animate={isInView ? 'show' : ''}
       variants={variants}
       viewport={{ once: true }}
-      className={cn('text-xl text-center font-medium sm:text-4xl md:text-5xl md:leading-[4rem]', className)}
+      className={cn('', className)}
     >
       {letters.map((word, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered

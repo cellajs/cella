@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { appConfig, ContextEntityType } from 'config';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { UserBaseSchema } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -20,6 +21,8 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 };
 
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
+  const { t } = useTranslation();
+
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   const parentData = parent ? useGetEntityBaseData(parent) : null;
@@ -52,7 +55,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             {'membership' in entity && entity.membership && (
               <>
                 <Badge className="opacity-70" variant="plain">
-                  {entity.membership.role}
+                  {t(entity.membership.role, { ns: ['app', 'common'] })}
                 </Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>

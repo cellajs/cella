@@ -26,6 +26,7 @@ docs(app);
 Sentry.init({
   enabled: !!appConfig.sentryDsn,
   dsn: appConfig.sentryDsn,
+  debug: appConfig.debug,
   environment: appConfig.mode,
   integrations: [nodeProfilingIntegration()],
   // Tracing to capture 100% of transactions

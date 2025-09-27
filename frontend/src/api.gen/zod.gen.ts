@@ -223,123 +223,29 @@ export const zCheckEmailData = z.object({
  */
 export const zCheckEmailResponse = z.boolean();
 
-export const zSignUpData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      password: z.string().min(8).max(100),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * User signed up
- */
-export const zSignUpResponse = z.boolean();
-
-export const zSignUpWithTokenData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      password: z.string().min(8).max(100),
-    }),
-  ),
-  path: z.object({
-    token: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * User signed up
- */
-export const zSignUpWithTokenResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
-});
-
-export const zVerifyEmailData = z.object({
+export const zInvokeTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    token: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      redirect: z.optional(z.string()),
-    }),
-  ),
-});
-
-export const zRequestPasswordData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Password reset email sent
- */
-export const zRequestPasswordResponse = z.boolean();
-
-export const zCreatePasswordData = z.object({
-  body: z.optional(
-    z.object({
-      password: z.string().min(8).max(100),
-    }),
-  ),
-  path: z.object({
+    type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     token: z.string(),
   }),
   query: z.optional(z.never()),
 });
 
-/**
- * Password created
- */
-export const zCreatePasswordResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
-});
-
-export const zSignInData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      password: z.string().min(8).max(100),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * User signed in
- */
-export const zSignInResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
-});
-
-export const zValidateTokenData = z.object({
+export const zGetTokenDataData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    token: z.string(),
+    tokenId: z.string(),
   }),
   query: z.object({
-    type: z.enum(['email_verification', 'password_reset', 'invitation', 'confirm_mfa']),
+    type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
   }),
 });
 
 /**
  * Token is valid
  */
-export const zValidateTokenResponse = z.object({
+export const zGetTokenDataResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
@@ -347,24 +253,6 @@ export const zValidateTokenResponse = z.object({
   organizationSlug: z.optional(z.string()),
   organizationId: z.optional(z.string()),
 });
-
-export const zAcceptEntityInviteData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    token: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Invitation was accepted
- */
-export const zAcceptEntityInviteResponse = zContextEntityBaseSchema.and(
-  z.object({
-    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
-    createdAt: z.string(),
-  }),
-);
 
 export const zStartImpersonationData = z.object({
   body: z.optional(z.never()),
@@ -401,68 +289,198 @@ export const zSignOutData = z.object({
  */
 export const zSignOutResponse = z.boolean();
 
-export const zGithubData = z.object({
+export const zCreateTotpChallengeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.object({
-    type: z.enum(['auth', 'connect', 'invite', 'verify']),
-    redirect: z.optional(z.string()),
-    connect: z.optional(z.string()),
-    token: z.optional(z.string()),
-  }),
+  query: z.optional(z.never()),
 });
 
-export const zGoogleData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.object({
-    type: z.enum(['auth', 'connect', 'invite', 'verify']),
-    redirect: z.optional(z.string()),
-    connect: z.optional(z.string()),
-    token: z.optional(z.string()),
-  }),
+/**
+ * Challenge created
+ */
+export const zCreateTotpChallengeResponse = z.object({
+  totpUri: z.string(),
+  manualKey: z.string(),
 });
 
-export const zMicrosoftData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.object({
-    type: z.enum(['auth', 'connect', 'invite', 'verify']),
-    redirect: z.optional(z.string()),
-    connect: z.optional(z.string()),
-    token: z.optional(z.string()),
+export const zCreateTotpData = z.object({
+  body: z.object({
+    code: z.string().regex(/^\d{6}$/),
   }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
 });
 
-export const zGithubCallbackData = z.object({
+/**
+ * TOTP activated
+ */
+export const zCreateTotpResponse = z.boolean();
+
+export const zDeleteTotpData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.object({
-    code: z.string(),
-    state: z.string(),
-    error: z.optional(z.string()),
-    error_description: z.optional(z.string()),
-    error_uri: z.optional(z.string()),
-  }),
+  query: z.optional(z.never()),
 });
 
-export const zGoogleCallbackData = z.object({
-  body: z.optional(z.never()),
+/**
+ * TOTP deleted
+ */
+export const zDeleteTotpResponse = z.boolean();
+
+export const zSignInWithTotpData = z.object({
+  body: z.optional(
+    z.object({
+      code: z.string().regex(/^\d{6}$/),
+    }),
+  ),
   path: z.optional(z.never()),
-  query: z.object({
-    code: z.string(),
-    state: z.string(),
-  }),
+  query: z.optional(z.never()),
 });
 
-export const zMicrosoftCallbackData = z.object({
-  body: z.optional(z.never()),
+/**
+ * TOTP verified
+ */
+export const zSignInWithTotpResponse = z.boolean();
+
+export const zSignUpData = z.object({
+  body: z.optional(
+    z.object({
+      email: z.email(),
+      password: z.string().min(8).max(100),
+    }),
+  ),
   path: z.optional(z.never()),
-  query: z.object({
-    code: z.string(),
-    state: z.string(),
-  }),
+  query: z.optional(z.never()),
 });
+
+/**
+ * User signed up
+ */
+export const zSignUpResponse = z.boolean();
+
+export const zSignUpWithTokenData = z.object({
+  body: z.optional(
+    z.object({
+      email: z.email(),
+      password: z.string().min(8).max(100),
+    }),
+  ),
+  path: z.object({
+    tokenId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * User signed up
+ */
+export const zSignUpWithTokenResponse = z.object({
+  shouldRedirect: z.boolean(),
+  redirectPath: z.optional(z.string()),
+});
+
+export const zVerifyEmailData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    tokenId: z.string(),
+  }),
+  query: z.optional(
+    z.object({
+      redirect: z.optional(z.string()),
+    }),
+  ),
+});
+
+export const zRequestPasswordData = z.object({
+  body: z.optional(
+    z.object({
+      email: z.email(),
+    }),
+  ),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Password reset email sent
+ */
+export const zRequestPasswordResponse = z.boolean();
+
+export const zCreatePasswordData = z.object({
+  body: z.optional(
+    z.object({
+      password: z.string().min(8).max(100),
+    }),
+  ),
+  path: z.object({
+    tokenId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Password created
+ */
+export const zCreatePasswordResponse = z.object({
+  shouldRedirect: z.boolean(),
+  redirectPath: z.optional(z.string()),
+});
+
+export const zSignInData = z.object({
+  body: z.optional(
+    z.object({
+      email: z.email(),
+      password: z.string().min(8).max(100),
+    }),
+  ),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * User signed in
+ */
+export const zSignInResponse = z.object({
+  shouldRedirect: z.boolean(),
+  redirectPath: z.optional(z.string()),
+});
+
+export const zCreatePasskeyData = z.object({
+  body: z.object({
+    attestationObject: z.string(),
+    clientDataJSON: z.string(),
+    nameOnDevice: z.string(),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Passkey created
+ */
+export const zCreatePasskeyResponse = z.object({
+  id: z.string(),
+  userId: z.string(),
+  deviceName: z.union([z.string(), z.null()]),
+  deviceType: z.enum(['desktop', 'mobile']),
+  deviceOs: z.union([z.string(), z.null()]),
+  browser: z.union([z.string(), z.null()]),
+  nameOnDevice: z.string(),
+  createdAt: z.string(),
+});
+
+export const zDeletePasskeyData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Passkey deleted
+ */
+export const zDeletePasskeyResponse = z.boolean();
 
 export const zCreatePasskeyChallengeData = z.object({
   body: z.optional(
@@ -503,20 +521,62 @@ export const zSignInWithPasskeyData = z.object({
  */
 export const zSignInWithPasskeyResponse = z.boolean();
 
-export const zSignInWithTotpData = z.object({
-  body: z.optional(
-    z.object({
-      code: z.string().regex(/^\d{6}$/),
-    }),
-  ),
+export const zGithubData = z.object({
+  body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  query: z.object({
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
+    redirect: z.optional(z.string()),
+  }),
 });
 
-/**
- * TOTP verified
- */
-export const zSignInWithTotpResponse = z.boolean();
+export const zGoogleData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.object({
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
+    redirect: z.optional(z.string()),
+  }),
+});
+
+export const zMicrosoftData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.object({
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
+    redirect: z.optional(z.string()),
+  }),
+});
+
+export const zGithubCallbackData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.object({
+    code: z.string(),
+    state: z.string(),
+    error: z.optional(z.string()),
+    error_description: z.optional(z.string()),
+    error_uri: z.optional(z.string()),
+  }),
+});
+
+export const zGoogleCallbackData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.object({
+    code: z.string(),
+    state: z.string(),
+  }),
+});
+
+export const zMicrosoftCallbackData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.object({
+    code: z.string(),
+    state: z.string(),
+  }),
+});
 
 export const zDeleteMeData = z.object({
   body: z.optional(z.never()),
@@ -650,7 +710,7 @@ export const zGetMyInvitationsData = z.object({
 });
 
 /**
- * Invitations pending
+ * Entity memberships pending
  */
 export const zGetMyInvitationsResponse = z.array(
   z.object({
@@ -659,10 +719,8 @@ export const zGetMyInvitationsResponse = z.array(
         organizationId: z.optional(z.string()),
       }),
     ),
-    expiresAt: z.iso.date(),
     invitedBy: zUserBaseSchema.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
-    token: z.string(),
-    tokenId: z.string(),
+    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
   }),
 );
 
@@ -697,81 +755,6 @@ export const zDeleteMyMembershipData = z.object({
  * Membership removed
  */
 export const zDeleteMyMembershipResponse = z.boolean();
-
-export const zCreatePasskeyData = z.object({
-  body: z.object({
-    attestationObject: z.string(),
-    clientDataJSON: z.string(),
-    nameOnDevice: z.string(),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Passkey created
- */
-export const zCreatePasskeyResponse = z.object({
-  id: z.string(),
-  userId: z.string(),
-  deviceName: z.union([z.string(), z.null()]),
-  deviceType: z.enum(['desktop', 'mobile']),
-  deviceOs: z.union([z.string(), z.null()]),
-  browser: z.union([z.string(), z.null()]),
-  nameOnDevice: z.string(),
-  createdAt: z.string(),
-});
-
-export const zDeletePasskeyData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Passkey deleted
- */
-export const zDeletePasskeyResponse = z.boolean();
-
-export const zRegisterTotpData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * totpUri & manualKey
- */
-export const zRegisterTotpResponse = z.object({
-  totpUri: z.string(),
-  manualKey: z.string(),
-});
-
-export const zActivateTotpData = z.object({
-  body: z.object({
-    code: z.string().regex(/^\d{6}$/),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * TOTP activated
- */
-export const zActivateTotpResponse = z.boolean();
-
-export const zDeleteTotpData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * TOTP deleted
- */
-export const zDeleteTotpResponse = z.boolean();
 
 export const zGetUploadTokenData = z.object({
   body: z.optional(z.never()),
@@ -1451,6 +1434,25 @@ export const zUpdateMembershipResponse = z.object({
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
 });
+
+export const zAcceptMembershipData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+    acceptOrReject: z.enum(['accept', 'reject']),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invitation was accepted
+ */
+export const zAcceptMembershipResponse = zContextEntityBaseSchema.and(
+  z.object({
+    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+    createdAt: z.string(),
+  }),
+);
 
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),

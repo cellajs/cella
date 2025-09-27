@@ -20,7 +20,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app
-  /*
+  /**
    * Get all users' context entities with members counts
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
@@ -158,7 +158,7 @@ const entityRouteHandlers = app
     // Return response
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Get base entity info
    */
   .openapi(entityRoutes.getContextEntity, async (ctx) => {
@@ -169,7 +169,7 @@ const entityRouteHandlers = app
 
     return ctx.json(entity, 200);
   })
-  /*
+  /**
    * Check if slug is available
    */
   .openapi(entityRoutes.checkSlug, async (ctx) => {

@@ -15,7 +15,7 @@ export interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
   senderName: string;
   entityName: string;
-  role: (typeof appConfig.rolesByType.entityRoles)[number];
+  role: (typeof appConfig.roles.entityRoles)[number];
 }
 
 const appName = appConfig.name;
@@ -33,26 +33,15 @@ export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, mem
 
       <EmailHeader
         headerText={
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.member_invite.title', { lng, entityName }),
-            }}
-          />
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.member_invite.title', { lng, entityName }) }} />
         }
       />
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }),
-            }}
-          />
+          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }) }} />
         </Text>
-        {/* User is sent to org invite page, where this invitation token will be used to accept invitation. If not already signed in, 
-        it will either forward user to sign in if user exists, or to sign up if user does not exist. */}
+
         <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={memberInviteLink} />
 
         <Text style={{ fontSize: '.85rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>

@@ -157,7 +157,35 @@ export const useAttachmentCreateMutation = () =>
 export const useAttachmentUpdateMutation = () =>
   useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.update,
-    mutationFn: async ({ id, orgIdOrSlug, ...body }) => {
+    mutationFn: async ({ id, orgIdOrSlug, localUpdate, ...body }) => {
+      if (localUpdate && body.name) {
+        const file = await LocalFileStorage.updateFileName(id, body.name);
+
+        if (!file) throw new Error(`Failed to update file name (${id}):`);
+
+        // TODO(IMPROVE)offline update responce(add createdAt/By, groupId into the file?)
+        const localAttachment: Attachment = {
+          id: file.id,
+          size: String(file.data.size ?? 0),
+          url: file.preview || '',
+          thumbnailUrl: null,
+          convertedUrl: null,
+          contentType: file.type,
+          convertedContentType: null,
+          name: file.name || file.meta.name,
+          public: file.meta.public ?? false,
+          bucketName: file.meta.bucketName,
+          entityType: 'attachment',
+          createdAt: new Date().toISOString(),
+          createdBy: null,
+          modifiedAt: new Date().toISOString(),
+          modifiedBy: null,
+          groupId: '',
+          filename: file.meta.name || 'Unnamed file',
+          organizationId: orgIdOrSlug,
+        };
+        return localAttachment;
+      }
       return await updateAttachment({ body, path: { id, orgIdOrSlug } });
     },
     onMutate: async (variables: UpdateAttachmentParams) => {

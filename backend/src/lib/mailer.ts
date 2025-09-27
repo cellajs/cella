@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { render } from 'jsx-email';
 import type { ReactElement } from 'react';
 import { env } from '#/env';
+import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 
@@ -34,7 +35,7 @@ type Mailer = {
 
 export const mailer: Mailer = {
   /**
-   * Prepare and send emails to multiple recipients using a provided template.
+   * Prepare to send emails to multiple recipients using a provided template.
    * It will render the template for each recipient and send the email.
    *
    * @param template - React component template that will be used to render the email content.
@@ -63,7 +64,7 @@ export const mailer: Mailer = {
   },
 
   /**
-   * Send an email using the Brevo service.
+   * Send an email using the email service.
    *
    * @param to - Recipient email address.
    * @param subject - Subject of the email.
@@ -77,8 +78,9 @@ export const mailer: Mailer = {
     }
 
     const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sanitizedSubject = sanitizeEmailSubject(subject || `${appConfig.name} message`);
 
-    sendSmtpEmail.subject = subject || `${appConfig.name} message`;
+    sendSmtpEmail.subject = sanitizedSubject;
     sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
     sendSmtpEmail.replyTo = { email: replyTo || appConfig.supportEmail };

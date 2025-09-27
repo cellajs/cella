@@ -8,8 +8,8 @@ import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
-import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
+import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
 

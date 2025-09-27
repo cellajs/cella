@@ -113,7 +113,8 @@ The documentation is generated from source code using \`zod\` schemas, converted
 
 /**
  * Enabled authentication strategies.
- * Currently available: 'password', 'passkey', 'oauth' and 'totp.
+ * Currently available: 'password', 'passkey', 'oauth' and 'totp'.
+ * Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
  */
 enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 
@@ -125,13 +126,13 @@ enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
+  tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
 
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: true, // Realtime updates and sync using Electric Sync
-    registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
+    registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
@@ -226,7 +227,7 @@ enabledOAuthProviders: ['github'] as const,
   /**
    * Roles on system and entity level
    */
-  rolesByType: {
+  roles: {
     systemRoles: ['user', 'admin'] as const,
     entityRoles: ['member', 'admin'] as const,
     allRoles: ['user', 'member', 'admin'] as const,

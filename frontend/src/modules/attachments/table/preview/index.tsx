@@ -1,5 +1,5 @@
+import { useAttachmentUrl } from '~/modules/attachments/hooks/use-attachment-url';
 import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
-import { useAttachmentUrl } from '~/modules/attachments/use-attachment-url';
 
 interface Props {
   id: string;

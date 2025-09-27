@@ -7,7 +7,7 @@ import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = appConfig.rolesByType.entityRoles;
+const roleEnum = appConfig.roles.entityRoles;
 
 const { organizationId, ...otherEntityIdColumns } = generateContextEntityTypeFields();
 

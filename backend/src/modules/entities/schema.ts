@@ -30,7 +30,7 @@ export const userBaseSchema = contextEntityBaseSchema
 export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
   targetUserId: idSchema.optional(),
   targetOrgId: idSchema.optional(),
-  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
+  role: z.enum(appConfig.roles.entityRoles).optional(),
   sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
   excludeArchived: z
     .enum(['true', 'false'])

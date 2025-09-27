@@ -66,7 +66,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             renderSelect({
               row,
               onRowChange,
-              options: appConfig.rolesByType.entityRoles,
+              options: appConfig.roles.entityRoles,
             }),
         }),
       },

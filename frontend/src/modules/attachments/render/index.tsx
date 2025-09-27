@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useAttachmentUrl } from '~/modules/attachments/use-attachment-url';
+import { useAttachmentUrl } from '~/modules/attachments/hooks/use-attachment-url';
 import Spinner from '~/modules/common/spinner';
 
 // Lazy-loaded components

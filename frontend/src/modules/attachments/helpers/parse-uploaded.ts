@@ -1,11 +1,10 @@
 import { uploadTemplates } from 'config/templates';
-
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { nanoid } from '~/utils/nanoid';
 
 export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, groupId = nanoid()) => {
-  const uploadedAttachments: (AttachmentToInsert & { id: string })[] = [];
+  const uploadedAttachments: AttachmentToInsert[] = [];
 
   // Process original files
   const originalFiles = result[':original'] || [];
@@ -16,8 +15,9 @@ export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>,
       size: String(size || 0),
       contentType: mime,
       filename: original_name || user_meta.name,
-      bucketName: user_meta.bucketName,
       organizationId,
+      public: user_meta.public === 'true',
+      bucketName: user_meta.bucketName,
       type: type ?? ext,
     });
   }

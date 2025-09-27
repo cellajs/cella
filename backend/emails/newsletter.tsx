@@ -18,12 +18,7 @@ export const NewsletterEmail = ({ lng, content, subject, unsubscribeLink, orgNam
     <EmailContainer previewText={subject}>
       <EmailHeader
         headerText={
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.newsletter.title', { orgName, lng }),
-            }}
-          />
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.newsletter.title', { orgName, lng }) }} />
         }
       />
       <EmailBody>

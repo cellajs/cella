@@ -12,7 +12,7 @@ export const renderSelect = <TRow extends User | Member | Organization>({
 }: {
   row: TRow;
   onRowChange: (row: TRow, commitChanges?: boolean) => void;
-  options: typeof appConfig.rolesByType.entityRoles | typeof appConfig.rolesByType.systemRoles;
+  options: typeof appConfig.roles.entityRoles | typeof appConfig.roles.systemRoles;
 }) => {
   const { t } = useTranslation();
 

@@ -28,7 +28,7 @@ import { defaultWelcomeText } from '#json/text-blocks.json';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const organizationRouteHandlers = app
-  /*
+  /**
    * Create organization
    */
   .openapi(organizationRoutes.createOrganization, async (ctx) => {
@@ -79,7 +79,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
@@ -143,7 +143,7 @@ const organizationRouteHandlers = app
 
     return ctx.json({ items: organizations, total }, 200);
   })
-  /*
+  /**
    * Get organization by id or slug
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
@@ -156,7 +156,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Update an organization by id or slug
    */
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
@@ -206,7 +206,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Delete organizations by ids
    */
   .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {

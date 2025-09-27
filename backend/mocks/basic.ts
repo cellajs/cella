@@ -173,7 +173,7 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
     userId: user.id,
     organizationId: organization.id,
     contextType: 'organization',
-    role: faker.helpers.arrayElement(appConfig.rolesByType.entityRoles),
+    role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
     order: getMembershipOrderOffset(organization.id) * 10,
     createdAt: pastIsoDate(),
     activatedAt: pastIsoDate(),
