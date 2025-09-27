@@ -6,9 +6,10 @@ import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 
-type BaseProps = {
+type Props = {
   ctx: Context;
   tokenType: TokenType;
+  isRedirect?: boolean;
 };
 /**
  * Validates a single use token by its value, ensuring it matches the required type.
@@ -18,10 +19,10 @@ type BaseProps = {
  * @returns The valid single use token record from the database.
  * @throws AppError if the token is not found or of an invalid type.
  */
-export const getValidSingleUseToken = async ({ ctx, tokenType }: BaseProps): Promise<TokenModel> => {
+export const getValidSingleUseToken = async ({ ctx, tokenType, isRedirect }: Props): Promise<TokenModel> => {
   // Find single use token in cookie
   const singleUseToken = await getAuthCookie(ctx, tokenType);
-  if (!singleUseToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (!singleUseToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect });
 
   const condition = [
     eq(tokensTable.type, tokenType), // Match token type
@@ -34,10 +35,10 @@ export const getValidSingleUseToken = async ({ ctx, tokenType }: BaseProps): Pro
     .where(and(...condition))
     .limit(1);
 
-  if (!tokenRecord) throw new AppError({ status: 404, type: `${tokenType}_not_found`, severity: 'error' });
+  if (!tokenRecord) throw new AppError({ status: 404, type: `${tokenType}_not_found`, severity: 'error', isRedirect });
 
   // Sanity check
-  if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error' });
+  if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error', isRedirect });
 
   return tokenRecord;
 };

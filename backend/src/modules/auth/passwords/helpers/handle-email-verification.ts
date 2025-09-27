@@ -7,10 +7,10 @@ import type { TokenModel } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
+import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
-import { initiateMfa } from '../../general/helpers/mfa';
-import { setUserSession } from '../../general/helpers/session';
 
 export const handleEmailVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId

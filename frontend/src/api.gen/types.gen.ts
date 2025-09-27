@@ -1295,9 +1295,6 @@ export type GithubData = {
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
-    connectUserId?: string;
-    token?: string;
-    tokenId?: string;
   };
   url: '/auth/github';
 };
@@ -1343,9 +1340,6 @@ export type GoogleData = {
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
-    connectUserId?: string;
-    token?: string;
-    tokenId?: string;
   };
   url: '/auth/google';
 };
@@ -1391,9 +1385,6 @@ export type MicrosoftData = {
   query: {
     type: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
-    connectUserId?: string;
-    token?: string;
-    tokenId?: string;
   };
   url: '/auth/microsoft';
 };

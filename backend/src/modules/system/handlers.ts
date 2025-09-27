@@ -17,6 +17,7 @@ import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import systemRoutes from '#/modules/system/routes';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -26,7 +27,6 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
-import { getParsedSessionCookie, validateSession } from '../auth/general/helpers/session';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

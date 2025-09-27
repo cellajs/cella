@@ -140,6 +140,7 @@
   "page_not_found": "Page not found",
   "page_not_found.text": "This page didn't exist or has been deleted.",
   "passkey_registration_failed": "Passkey registration failed. Try again later.",
+  "single_use_token_invalid": "Short-lived session invalid",
   "passkey_not_found": "Passkey not recognized",
   "passkey_not_found.text": "We couldn`t verify this passkey. It may not belong to your account or has been removed.",
   "passkey_verification_failed": "Passkey verification failed",

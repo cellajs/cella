@@ -745,9 +745,6 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
  * @param {githubData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connectuserid - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
- * @param {string=} options.query.tokenid - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const github = <ThrowOnError extends boolean = true>(options: Options<GithubData, ThrowOnError>) => {
@@ -769,9 +766,6 @@ export const github = <ThrowOnError extends boolean = true>(options: Options<Git
  * @param {googleData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connectuserid - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
- * @param {string=} options.query.tokenid - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const google = <ThrowOnError extends boolean = true>(options: Options<GoogleData, ThrowOnError>) => {
@@ -793,9 +787,6 @@ export const google = <ThrowOnError extends boolean = true>(options: Options<Goo
  * @param {microsoftData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string=} options.query.connectuserid - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
- * @param {string=} options.query.tokenid - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const microsoft = <ThrowOnError extends boolean = true>(options: Options<MicrosoftData, ThrowOnError>) => {

@@ -44,7 +44,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true,
     .limit(1);
 
   // If token not found, perhaps user already has the single-use token
-  if (!tokenRecord) tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
+  if (!tokenRecord) tokenRecord = await getValidSingleUseToken({ ctx, tokenType, isRedirect });
 
   // Token expired
   if (isExpiredDate(tokenRecord.expiresAt)) {
