@@ -1,4 +1,5 @@
 import { useMatchRoute, useSearch } from '@tanstack/react-router';
+import { appConfig } from 'config';
 import { type ReactNode, useEffect, useState } from 'react';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep } from '~/modules/auth/types';
@@ -10,7 +11,7 @@ import { AuthContext } from './provider-context';
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const matchRoute = useMatchRoute();
   const { lastUser } = useUserStore();
-  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { tokenId, error, severity } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa-confirmation' });
 
@@ -39,6 +40,14 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isMfaRoute) setStepState('mfa');
   }, [isMfaRoute]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    if (error === 'sign_up_restricted') {
+      setStepState(appConfig.has.waitlist ? 'waitlist' : 'inviteOnly');
+    } else setStepState('error');
+  }, [error, severity]);
 
   // If token is provided, directly set email and step based on token data
   useEffect(() => {
