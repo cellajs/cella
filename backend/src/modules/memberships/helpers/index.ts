@@ -57,7 +57,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     createdBy,
     tokenId,
     activatedAt: tokenId ? null : getIsoDate(),
-    order: maxOrder ? maxOrder + 1 : 1,
+    order: maxOrder ? maxOrder + 10 : 1000,
   };
 
   // Insert organization membership first
