@@ -54,6 +54,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
  */
 export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
   // TODO should be token itself, Get token ID from cookie
+  // TODO on error redirect?
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'confirm-mfa_not_found', severity: 'error' });
 

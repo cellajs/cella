@@ -21,6 +21,8 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 
+const redirectPath = '/auth/authenticate';
+
 /**
  * Handles the default OAuth authentication/signup flow.
  * Determines if the user has an existing verified/unverified account or needs to register.
@@ -69,14 +71,14 @@ export const handleOAuthCallback = async (
     .limit(2);
 
   // Multiple users with the same email → conflict
-  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
+  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
 
   // Existing user (by email) found -> suggest sign in and connect
-  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn', isRedirect: true });
+  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn', redirectPath });
 
   // No user found and registration is disabled
   if (!appConfig.has.registrationEnabled) {
-    throw new AppError({ status: 403, type: 'sign_up_restricted', isRedirect: true });
+    throw new AppError({ status: 403, type: 'sign_up_restricted', redirectPath });
   }
 
   // No user match → create a new user and OAuth account
@@ -111,7 +113,7 @@ const connectCallbackFlow = async (
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
+      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
     }
 
     // Already linked + verified → log in the user
@@ -127,7 +129,7 @@ const connectCallbackFlow = async (
   // New OAuth account connection → validate email isn't used by another user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
+    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
   }
 
   // Safe to connect → create and link OAuth account to current user
@@ -158,20 +160,20 @@ const inviteCallbackFlow = async (
     token,
     invokeToken: false,
     tokenType: 'invitation',
-    isRedirect: true,
+    redirectPath,
   });
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
-    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error', isRedirect: true });
+    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error', redirectPath });
   }
 
   // OAuth account already linked
-  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', isRedirect: true });
+  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
 
   // No linked OAuth account and email already in use by an existing user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', isRedirect: true });
+  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', redirectPath });
 
   // TODO User already signed up meanwhile?
 
@@ -199,11 +201,11 @@ const verifyCallbackFlow = async (
     token,
     invokeToken: false,
     tokenType: 'email-verification',
-    isRedirect: true,
+    redirectPath,
   });
 
   // No OauthAccount → invalid verification
-  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', isRedirect: true });
+  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
 
   // Invalid token settings → invalid verification
   if (
@@ -212,7 +214,7 @@ const verifyCallbackFlow = async (
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.provider !== provider
   ) {
-    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', isRedirect: true });
+    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
   }
 
   const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));

@@ -109,7 +109,7 @@ export const validateSession = async (hashedSessionToken: string): Promise<{ ses
 };
 
 type ParseSessionCookieOptions = {
-  redirectOnError?: boolean;
+  redirectOnError?: string;
   deleteOnError?: boolean;
   deleteAfterAttempt?: boolean;
 };
@@ -118,7 +118,7 @@ export const getParsedSessionCookie = async (
   ctx: Context<Env>,
   options?: ParseSessionCookieOptions,
 ): Promise<z.infer<typeof sessionCookieSchema>> => {
-  const { redirectOnError = false, deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
+  const { redirectOnError, deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
   try {
     // Retrieve session cookie data
     const sessionData = await getAuthCookie(ctx, 'session');
@@ -135,7 +135,7 @@ export const getParsedSessionCookie = async (
     return sessionCookieSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
     if (deleteOnError) deleteAuthCookie(ctx, 'session');
-    throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn', isRedirect: redirectOnError });
+    throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn', redirectPath: redirectOnError });
   } finally {
     if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
   }
