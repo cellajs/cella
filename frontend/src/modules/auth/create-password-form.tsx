@@ -9,9 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import AuthErrorNotice from '~/modules/auth/error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useGetTokenData } from '~/modules/auth/use-token-check';
+import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -61,13 +61,13 @@ const CreatePasswordForm = () => {
   // If error, allow to request new password reset
   if (error || resetPasswordError)
     return (
-      <AuthErrorNotice error={error || resetPasswordError}>
+      <ErrorNotice error={error || resetPasswordError} level={'public'}>
         <RequestPasswordDialog email={data?.email}>
           <Button ref={requestButtonRef} size="lg">
             {t('common:forgot_password')}
           </Button>
         </RequestPasswordDialog>
-      </AuthErrorNotice>
+      </ErrorNotice>
     );
 
   if (!data?.email) return null;

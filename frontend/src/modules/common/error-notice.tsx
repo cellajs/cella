@@ -14,9 +14,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export type ErrorNoticeError = ApiError | Error | null;
 
 interface ErrorNoticeProps {
-  error?: ErrorNoticeError;
-  resetErrorBoundary?: () => void;
   level: 'root' | 'app' | 'public';
+  error?: ErrorNoticeError;
+  children?: React.ReactNode;
+  resetErrorBoundary?: () => void;
 }
 
 export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
@@ -75,7 +76,7 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
  * app: no footer required
  * public: show footer
  */
-const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
+const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -163,15 +164,21 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
               </CardContent>
             )}
             <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 justify-center">
-              <Button onClick={handleGoToHome} variant="secondary">
-                <Home size={16} className="mr-2" />
-                {t('common:home')}
-              </Button>
-              {!location.pathname.startsWith('/error') && severity !== 'info' && (
-                <Button onClick={handleReload}>
-                  <RefreshCw size={16} className="mr-2" />
-                  {t('common:reload')}
-                </Button>
+              {children ? (
+                children
+              ) : (
+                <>
+                  <Button onClick={handleGoToHome} variant="secondary">
+                    <Home size={16} className="mr-2" />
+                    {t('common:home')}
+                  </Button>
+                  {!location.pathname.startsWith('/error') && severity !== 'info' && (
+                    <Button onClick={handleReload}>
+                      <RefreshCw size={16} className="mr-2" />
+                      {t('common:reload')}
+                    </Button>
+                  )}
+                </>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
