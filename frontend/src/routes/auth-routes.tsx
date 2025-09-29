@@ -10,16 +10,18 @@ import AuthSteps from '~/modules/auth/steps';
 import { MfaStep } from '~/modules/auth/steps/mfa';
 import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
-import { PublicLayoutRoute } from '~/routes/base-routes';
+import { errorSearchSchema, PublicLayoutRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
-const authenticateRouteSearch = z.object({
-  tokenId: z.string().optional(),
-  token: z.string().optional(),
-  redirect: z.string().optional(),
-  fromRoot: z.boolean().optional(),
-});
+const authenticateRouteSearch = z
+  .object({
+    tokenId: z.string().optional(),
+    token: z.string().optional(),
+    redirect: z.string().optional(),
+    fromRoot: z.boolean().optional(),
+  })
+  .extend(errorSearchSchema.shape);
 
 export const AuthLayoutRoute = createRoute({
   id: 'authLayout',

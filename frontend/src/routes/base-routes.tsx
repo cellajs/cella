@@ -19,7 +19,7 @@ import appTitle from '~/utils/app-title';
 // Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app/layout'));
 
-const errorSearchSchema = z.object({
+export const errorSearchSchema = z.object({
   error: z.string().optional(),
   severity: zApiError.shape.severity.optional(),
 });
