@@ -19,10 +19,10 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
-import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
-import { verifyPassKeyPublic } from '#/modules/auth/passkeys/helpers/passkey';
-import { signInWithTotp } from '#/modules/auth/totps/helpers/totps';
+import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
+import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -64,41 +64,12 @@ const meRouteHandlers = app
     // Determine which MFA strategy user is using
     const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
-    // TODO isnt this duplicated logic from passkeys module and totps module?
     try {
       // --- Passkey verification ---
-      if (passkeyData) {
-        const { credentialId, signature, authenticatorData, clientDataJSON } = passkeyData;
-
-        // Retrieve the passkey challenge stored in a secure cookie
-        const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-        if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
-
-        // Fetch passkey record for this user and credential ID
-        const [passkeyRecord] = await db
-          .select()
-          .from(passkeysTable)
-          .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
-          .limit(1);
-
-        if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
-
-        // Verify signature against public key and challenge
-        const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
-
-        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
-      }
+      if (passkeyData) await validatePasskey(ctx, { ...passkeyData, userId: user.id });
 
       // --- TOTP verification ---
-      if (totpCode) {
-        // Fetch  TOTP secret for this user
-        const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
-        if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-
-        // Verify  provided TOTP code
-        const isValid = signInWithTotp(totpCode, credentials.secret);
-        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
-      }
+      if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -113,9 +84,9 @@ const meRouteHandlers = app
 
     const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
 
-    if (mfaRequired) {
+    if (updatedUser.mfaRequired) {
       // Invalidate all existing regular sessions
-      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, user.id), eq(sessionsTable.type, 'regular')));
+      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
 
       // Clear session cookie to enforce fresh login
       deleteAuthCookie(ctx, 'session');

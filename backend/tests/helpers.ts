@@ -48,7 +48,6 @@ export async function createUser(email: string, password: string) {
  * @param email - The email of the user to retrieve.
  * @returns 
  */
-// TODO not used anymore?
 export async function getUserByEmail(email: string): Promise<UserModel[]> {
   return await db
     .select()

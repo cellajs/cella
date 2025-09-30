@@ -1,8 +1,8 @@
-import { testClient } from 'hono/testing'
+import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { mockFetchRequest, migrateDatabase, clearDatabase, setTestConfig, getAuthApp } from '../setup';
-import { signUpUser, defaultHeaders } from '../fixtures';
-import { getUserByEmail, createUser } from '../helpers';
+import { defaultHeaders, signUpUser } from '../fixtures';
+import { createUser, getUserByEmail } from '../helpers';
+import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
 
 setTestConfig({
   enabledAuthStrategies: ['password'],

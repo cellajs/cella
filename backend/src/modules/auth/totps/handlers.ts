@@ -12,11 +12,10 @@ import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { signInWithTotp } from '#/modules/auth/totps/helpers/totps';
+import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import authTotpRoutes from './routes';
-import authTotpsRoutes from './routes';
+import { default as authTotpRoutes, default as authTotpsRoutes } from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
@@ -36,7 +35,7 @@ const authTotpsRouteHandlers = app
     const manualKey = encodeBase32UpperCase(secretBytes);
 
     // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp_key', manualKey, new TimeSpan(5, 'm'));
+    await setAuthCookie(ctx, 'totp-challenge', manualKey, new TimeSpan(5, 'm'));
 
     // otpauth:// URI for QR scanner apps
     const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
@@ -51,7 +50,7 @@ const authTotpsRouteHandlers = app
     const user = getContextUser();
 
     // Retrieve the encoded totp secret from cookie
-    const encodedSecret = await getAuthCookie(ctx, 'totp_key');
+    const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
     if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
 
     // Verify TOTP code
@@ -114,15 +113,8 @@ const authTotpsRouteHandlers = app
 
     // Validate MFA token and retrieve user
     const user = await validateConfirmMfaToken(ctx);
-
-    // Get totp credentials
-    const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
-    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
-
     try {
-      // Verify TOTP code using stored secret
-      const isValid = signInWithTotp(code, credentials.secret);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
+      await validateTOTP({ code, userId: user.id });
     } catch (error) {
       if (error instanceof AppError) throw error;
 

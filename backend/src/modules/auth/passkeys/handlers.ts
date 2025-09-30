@@ -14,7 +14,7 @@ import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/coo
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/passkeys/helpers/passkey';
+import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
@@ -125,7 +125,7 @@ const authPasskeysRouteHandlers = app
    * Signin using passkey
    */
   .openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
+    const { email, type, ...passkeyData } = ctx.req.valid('json');
     // Define strategy and session type for metadata/logging purposes
     const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
@@ -156,22 +156,8 @@ const authPasskeysRouteHandlers = app
     // Fail early if user not found
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
 
-    // Retrieve the passkey challenge from cookie
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
-
-    // Get passkey credentials
-    const [passkeyRecord] = await db
-      .select()
-      .from(passkeysTable)
-      .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
-      .limit(1);
-
-    if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn', meta });
-
     try {
-      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
+      await validatePasskey(ctx, { ...passkeyData, userId: user.id });
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -186,6 +172,7 @@ const authPasskeysRouteHandlers = app
 
     // Consume the MFA token now that TOTP verification succeeded
     await consumeMfaToken(ctx);
+
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 

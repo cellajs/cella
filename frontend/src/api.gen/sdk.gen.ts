@@ -709,7 +709,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
  * @param {signInWithPasskeyData} options
  * @param {string=} options.body.credentialId - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
- * @param {string=} options.body.authenticatorData - `string` (optional)
+ * @param {string=} options.body.authenticatorObject - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
  * @param {enum | enum=} options.body.type - `enum | enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
