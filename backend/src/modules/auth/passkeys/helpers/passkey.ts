@@ -92,7 +92,7 @@ export const validatePasskey = async (ctx: Context, passkeyData: Omit<PasskeyDat
   const { userId, credentialId, ...restPasskeyData } = passkeyData;
 
   // Retrieve the passkey challenge stored in a secure cookie
-  const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
+  const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
   if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
 
   // Fetch passkey record for this user and credential ID
