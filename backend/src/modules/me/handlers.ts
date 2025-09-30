@@ -22,7 +22,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
-import { signInWithTotp } from '#/modules/auth/totps/helpers/totps';
+import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -64,21 +64,12 @@ const meRouteHandlers = app
     // Determine which MFA strategy user is using
     const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
-    // TODO isnt this duplicated logic from passkeys module and totps module?
     try {
       // --- Passkey verification ---
       if (passkeyData) await validatePasskey(ctx, { ...passkeyData, userId: user.id });
 
       // --- TOTP verification ---
-      if (totpCode) {
-        // Fetch  TOTP secret for this user
-        const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
-        if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-
-        // Verify  provided TOTP code
-        const isValid = signInWithTotp(totpCode, credentials.secret);
-        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
-      }
+      if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
     } catch (error) {
       if (error instanceof AppError) throw error;
 
