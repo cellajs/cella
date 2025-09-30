@@ -68,7 +68,7 @@ const authGeneralRouteHandlers = app
 
     // Check if token exists and create a new refresh token
     const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
-    if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', isRedirect: true });
+    if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', redirectPath: '/error' });
 
     // Set cookie using token type as name. Content is single use token. Expires in 10 minutes or until used.
     await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(10, 'm'));

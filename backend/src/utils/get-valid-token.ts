@@ -13,7 +13,7 @@ type BaseProps = {
   token: string;
   tokenType: TokenModel['type'];
   invokeToken?: boolean;
-  isRedirect?: boolean;
+  redirectPath?: string;
 };
 /**
  * Validates a token by its value or ID, ensuring it matches the required type and is neither expired nor invoked.
@@ -27,8 +27,7 @@ type BaseProps = {
  * @returns The valid token record from the database.
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
-// TODO redirect always true?
-export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true, isRedirect = true }: BaseProps): Promise<TokenModel> => {
+export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true, redirectPath }: BaseProps): Promise<TokenModel> => {
   const condition = [
     isNull(tokensTable.invokedAt), // Token not yet invoked
     gt(tokensTable.expiresAt, new Date()), // Token not expired
@@ -44,15 +43,15 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true,
     .limit(1);
 
   // If token not found, perhaps user already has the single-use token
-  if (!tokenRecord) tokenRecord = await getValidSingleUseToken({ ctx, tokenType, isRedirect });
+  if (!tokenRecord) tokenRecord = await getValidSingleUseToken({ ctx, tokenType, redirectPath });
 
   // Token expired
   if (isExpiredDate(tokenRecord.expiresAt)) {
-    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', isRedirect });
+    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', redirectPath });
   }
 
   // Sanity check
-  if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error', isRedirect });
+  if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error', redirectPath });
 
   // Create single use session token and mark token as invoked
   if (invokeToken) {

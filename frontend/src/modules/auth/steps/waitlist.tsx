@@ -21,11 +21,12 @@ export const WaitlistStep = () => {
       <>
         <div className="text-2xl text-center">
           <h1 className="text-xxl">{t('common:request_access')}</h1>
-
-          <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
-            <span className="truncate">{email}</span>
-            <ChevronDown size={16} className="ml-1" />
-          </Button>
+          {email.length > 0 && (
+            <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
+              <span className="truncate">{email}</span>
+              <ChevronDown size={16} className="ml-1" />
+            </Button>
+          )}
         </div>
         <LegalNotice email={email} mode="waitlist" />
       </>

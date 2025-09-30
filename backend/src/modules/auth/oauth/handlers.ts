@@ -100,14 +100,14 @@ const authOAuthRouteHandlers = app
 
     // When something went wrong during Github OAuth, fail early.
     if (error || !code) {
-      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'warn', isRedirect: true });
+      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'warn', redirectPath: '/auth/authenticate' });
     }
 
     // Check if Github OAuth is enabled
     const strategy = 'github' as EnabledOAuthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
 
     // Verify cookie by `state` (CSRF protection)
@@ -115,7 +115,7 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
 
     try {
@@ -145,7 +145,7 @@ const authOAuthRouteHandlers = app
         type,
         severity: 'warn',
         meta: { strategy },
-        isRedirect: true,
+        redirectPath: '/auth/authenticate',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -160,7 +160,7 @@ const authOAuthRouteHandlers = app
     // Check if Google OAuth is enabled
     const strategy = 'google' as EnabledOAuthProvider;
     if (!isOAuthEnabled(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
@@ -168,7 +168,7 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
 
     try {
@@ -192,7 +192,7 @@ const authOAuthRouteHandlers = app
         type,
         severity: 'warn',
         meta: { strategy },
-        isRedirect: true,
+        redirectPath: '/auth/authenticate',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -206,7 +206,7 @@ const authOAuthRouteHandlers = app
     // Check if Microsoft OAuth is enabled
     const strategy = 'microsoft' as EnabledOAuthProvider;
     if (!isOAuthEnabled(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
@@ -214,7 +214,7 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
 
     try {
@@ -238,7 +238,7 @@ const authOAuthRouteHandlers = app
         type,
         severity: 'warn',
         meta: { strategy },
-        isRedirect: true,
+        redirectPath: '/auth/authenticate',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }

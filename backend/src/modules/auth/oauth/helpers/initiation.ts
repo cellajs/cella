@@ -118,9 +118,9 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
   const token = await getAuthCookie(ctx, 'invitation');
 
   // Must provide a token and tokenId
-  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
+  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', redirectPath: '/auth/authenticate' });
 
-  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation' });
+  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation', redirectPath: '/auth/authenticate' });
 
   const redirectPath = tokenRecord.entityType
     ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`
@@ -138,11 +138,11 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
  * @throws AppError if missing param or user mismatch
  */
 const prepareOAuthConnect = async (ctx: Context<Env>) => {
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: true });
+  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/authenticate' });
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', isRedirect: true });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/authenticate' });
 
   //TODO we do this on callback or not?
   const redirectPath = '/settings#authentication';
@@ -158,7 +158,7 @@ const prepareOAuthConnect = async (ctx: Context<Env>) => {
  */
 const prepareOAuthVerify = async (ctx: Context<Env>) => {
   // Validate single use token from db
-  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', isRedirect: true });
+  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: '/auth/authenticate' });
 
   // Revoke single use token by deleting cookie
   deleteAuthCookie(ctx, 'oauth-verification');
