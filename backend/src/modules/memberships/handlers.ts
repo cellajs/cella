@@ -33,6 +33,11 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const membershipRouteHandlers = app
   /**
    * Create memberships (invite members) for an entity such as an organization
+   * TODO: rework this to not use tokens if not necessary.
+   * 1. email doesn't exist in emailsTable AND not in tokensTable (so no pending invitation) -> add to recipients list and create invitation token.
+   * 2. email doesn't exist in emailsTable BUT does exist in tokensTable (so pending invitation already) -> if token is expired, add to recipients,
+   * remove the old token and create a new one.
+   * 3. email exists in emailsTable: dont create a token but just s membership without activation.
    */
   .openapi(membershipRoutes.createMemberships, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
@@ -262,9 +267,7 @@ const membershipRouteHandlers = app
     const targets = await db
       .select()
       .from(membershipsTable)
-      .where(
-        and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id), isNotNull(membershipsTable.activatedAt)),
-      );
+      .where(and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)));
 
     // Check if membership exist
     const rejectedItems: string[] = [];
