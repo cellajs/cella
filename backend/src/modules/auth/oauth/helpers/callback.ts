@@ -110,10 +110,12 @@ const connectCallbackFlow = async (
   connectUserId: string,
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
+  const connectRedirectPath = '/settings';
+
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath: connectRedirectPath });
     }
 
     // Already linked + verified → log in the user
@@ -129,7 +131,7 @@ const connectCallbackFlow = async (
   // New OAuth account connection → validate email isn't used by another user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath: connectRedirectPath });
   }
 
   // Safe to connect → create and link OAuth account to current user
