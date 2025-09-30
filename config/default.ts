@@ -140,7 +140,7 @@ enabledOAuthProviders: ['github'] as const,
 
   // TOTP configuration
   totpConfig: { 
-    intervalInSeconds: 60,
+    intervalInSeconds: 30,
     gracePeriodInSeconds: 60,
     digits: 6
   },

@@ -7,21 +7,21 @@ import { errorResponses, successWithoutDataSchema } from '#/utils/schema/respons
 import { passkeyChallengeBodySchema, passkeyChallengeSchema, passkeyCreateBodySchema, passkeySchema, passkeyVerificationBodySchema } from './schema';
 
 const authPasskeysRoutes = {
-  createPasskeyChallenge: createCustomRoute({
-    operationId: 'createPasskeyChallenge',
+  generatePasskeyChallenge: createCustomRoute({
+    operationId: 'generatePasskeyChallenge',
     method: 'post',
-    path: '/passkey-challenge',
+    path: '/passkey/generate-challenge',
     guard: isPublicAccess,
     // TODO look into rate limit customized for passkeys
     middleware: [spamLimiter],
     tags: ['auth'],
-    summary: 'Create passkey challenge',
-    description: 'Initiates the passkey registration or authentication flow by creating a device bound challenge.',
+    summary: 'Generate passkey challenge',
+    description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
     request: { body: { content: { 'application/json': { schema: passkeyChallengeBodySchema } } } },
     responses: {
       200: {
-        description: 'Challenge created',
+        description: 'Challenge generated',
         content: { 'application/json': { schema: passkeyChallengeSchema } },
       },
       ...errorResponses,

@@ -519,14 +519,14 @@ export type SignOutResponses = {
 
 export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 
-export type CreateTotpChallengeData = {
+export type GenerateTotpKeyData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/auth/totp/register';
+  url: '/auth/totp/generate-key';
 };
 
-export type CreateTotpChallengeErrors = {
+export type GenerateTotpKeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -559,9 +559,9 @@ export type CreateTotpChallengeErrors = {
   };
 };
 
-export type CreateTotpChallengeError = CreateTotpChallengeErrors[keyof CreateTotpChallengeErrors];
+export type GenerateTotpKeyError = GenerateTotpKeyErrors[keyof GenerateTotpKeyErrors];
 
-export type CreateTotpChallengeResponses = {
+export type GenerateTotpKeyResponses = {
   /**
    * Challenge created
    */
@@ -571,60 +571,7 @@ export type CreateTotpChallengeResponses = {
   };
 };
 
-export type CreateTotpChallengeResponse = CreateTotpChallengeResponses[keyof CreateTotpChallengeResponses];
-
-export type CreateTotpData = {
-  body: {
-    code: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/totp/activate';
-};
-
-export type CreateTotpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type CreateTotpError = CreateTotpErrors[keyof CreateTotpErrors];
-
-export type CreateTotpResponses = {
-  /**
-   * TOTP activated
-   */
-  200: boolean;
-};
-
-export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
+export type GenerateTotpKeyResponse = GenerateTotpKeyResponses[keyof GenerateTotpKeyResponses];
 
 export type DeleteTotpData = {
   body?: never;
@@ -676,6 +623,59 @@ export type DeleteTotpResponses = {
 };
 
 export type DeleteTotpResponse = DeleteTotpResponses[keyof DeleteTotpResponses];
+
+export type CreateTotpData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/totp';
+};
+
+export type CreateTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type CreateTotpError = CreateTotpErrors[keyof CreateTotpErrors];
+
+export type CreateTotpResponses = {
+  /**
+   * TOTP created
+   */
+  200: boolean;
+};
+
+export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
 
 export type SignInWithTotpData = {
   body?: {
@@ -1174,17 +1174,17 @@ export type DeletePasskeyResponses = {
 
 export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
 
-export type CreatePasskeyChallengeData = {
+export type GeneratePasskeyChallengeData = {
   body?: {
     type: 'authentication' | 'mfa' | 'registration';
     email?: string;
   };
   path?: never;
   query?: never;
-  url: '/auth/passkey-challenge';
+  url: '/auth/passkey/generate-challenge';
 };
 
-export type CreatePasskeyChallengeErrors = {
+export type GeneratePasskeyChallengeErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1217,11 +1217,11 @@ export type CreatePasskeyChallengeErrors = {
   };
 };
 
-export type CreatePasskeyChallengeError = CreatePasskeyChallengeErrors[keyof CreatePasskeyChallengeErrors];
+export type GeneratePasskeyChallengeError = GeneratePasskeyChallengeErrors[keyof GeneratePasskeyChallengeErrors];
 
-export type CreatePasskeyChallengeResponses = {
+export type GeneratePasskeyChallengeResponses = {
   /**
-   * Challenge created
+   * Challenge generated
    */
   200: {
     challengeBase64: string;
@@ -1229,7 +1229,7 @@ export type CreatePasskeyChallengeResponses = {
   };
 };
 
-export type CreatePasskeyChallengeResponse = CreatePasskeyChallengeResponses[keyof CreatePasskeyChallengeResponses];
+export type GeneratePasskeyChallengeResponse = GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
 
 export type SignInWithPasskeyData = {
   body?: {

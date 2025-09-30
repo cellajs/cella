@@ -3,7 +3,7 @@ import { CircleAlert, CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type CreateTotpData, type CreateTotpResponse, createTotp, createTotpChallenge } from '~/api.gen';
+import { type ApiError, type CreateTotpData, type CreateTotpResponse, createTotp, generateTotpKey } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -40,7 +40,7 @@ export const SetupTotp = () => {
   // Fetch TOTP registration data (URI and manual key)
   const { data } = useSuspenseQuery({
     queryKey: ['totp', 'uri'],
-    queryFn: async () => await createTotpChallenge(),
+    queryFn: async () => await generateTotpKey(),
     staleTime: 0,
   });
 

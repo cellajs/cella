@@ -7,14 +7,14 @@ import { errorResponses, successWithoutDataSchema } from '#/utils/schema/respons
 import { totpCreateBodySchema } from './schema';
 
 const authTotpsRoutes = {
-  createTotpChallenge: createCustomRoute({
-    operationId: 'createTotpChallenge',
+  generateTotpKey: createCustomRoute({
+    operationId: 'generateTotpKey',
     method: 'post',
-    path: '/totp/register',
+    path: '/totp/generate-key',
     guard: isAuthenticated,
     tags: ['auth'],
-    summary: 'Create TOTP challenge',
-    description: 'Generates a new TOTP challenge for current user and returns a provisioning URI and Base32 manual key.',
+    summary: 'Generate TOTP key',
+    description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
     security: [],
     responses: {
       200: {
@@ -28,10 +28,10 @@ const authTotpsRoutes = {
   createTotp: createCustomRoute({
     operationId: 'createTotp',
     method: 'post',
-    path: '/totp/activate',
+    path: '/totp',
     guard: isAuthenticated,
     tags: ['auth'],
-    summary: 'Activate TOTP',
+    summary: 'Set TOTP',
     description:
       'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.',
     security: [],
@@ -44,7 +44,7 @@ const authTotpsRoutes = {
 
     responses: {
       200: {
-        description: 'TOTP activated',
+        description: 'TOTP created',
         content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,

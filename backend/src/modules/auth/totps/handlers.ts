@@ -24,9 +24,9 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authTotpsRouteHandlers = app
   /**
-   * Register TOTP
+   * Create TOTP key
    */
-  .openapi(authTotpsRoutes.createTotpChallenge, async (ctx) => {
+  .openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
     const user = getContextUser();
 
     // Generate a 20-byte random secret and encode it as Base32
@@ -44,7 +44,7 @@ const authTotpsRouteHandlers = app
     return ctx.json({ totpUri, manualKey }, 200);
   })
   /**
-   * Activate TOTP
+   * Create TOTP in database
    */
   .openapi(authTotpsRoutes.createTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
