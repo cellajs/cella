@@ -186,6 +186,7 @@ const authPasskeysRouteHandlers = app
 
     // Consume the MFA token now that TOTP verification succeeded
     await consumeMfaToken(ctx);
+
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
