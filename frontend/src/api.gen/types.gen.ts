@@ -1235,7 +1235,7 @@ export type SignInWithPasskeyData = {
   body?: {
     credentialId: string;
     clientDataJSON: string;
-    authenticatorData: string;
+    authenticatorObject: string;
     signature: string;
     type: 'authentication' | 'mfa';
     email?: string;
@@ -1731,7 +1731,7 @@ export type ToggleMfaData = {
     passkeyData?: {
       credentialId: string;
       clientDataJSON: string;
-      authenticatorData: string;
+      authenticatorObject: string;
       signature: string;
     };
     totpCode?: string;

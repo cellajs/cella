@@ -506,7 +506,7 @@ export const zSignInWithPasskeyData = z.object({
     z.object({
       credentialId: z.string(),
       clientDataJSON: z.string(),
-      authenticatorData: z.string(),
+      authenticatorObject: z.string(),
       signature: z.string(),
       type: z.union([z.enum(['authentication']), z.enum(['mfa'])]),
       email: z.optional(z.string()),
@@ -639,7 +639,7 @@ export const zToggleMfaData = z.object({
         z.object({
           credentialId: z.string(),
           clientDataJSON: z.string(),
-          authenticatorData: z.string(),
+          authenticatorObject: z.string(),
           signature: z.string(),
         }),
       ),

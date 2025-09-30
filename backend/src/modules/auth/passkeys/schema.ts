@@ -26,7 +26,7 @@ export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), cr
 export const webAuthnAssertionSchema = z.object({
   credentialId: z.string(),
   clientDataJSON: z.string(),
-  authenticatorData: z.string(),
+  authenticatorObject: z.string(),
   signature: z.string(),
 });
 

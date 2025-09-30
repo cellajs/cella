@@ -79,7 +79,7 @@ export const getPasskeyVerifyCredential = async (
   return {
     credentialId: encodeBase64(new Uint8Array(rawId)),
     clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-    authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
+    authenticatorObject: encodeBase64(new Uint8Array(response.authenticatorData)),
     signature: encodeBase64(new Uint8Array(response.signature)),
     ...query,
   };

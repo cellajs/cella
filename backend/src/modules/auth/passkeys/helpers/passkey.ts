@@ -12,6 +12,12 @@ import {
   parseClientDataJSON,
 } from '@oslojs/webauthn';
 import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { Context } from 'hono';
+import { db } from '#/db/db';
+import { passkeysTable } from '#/db/schema/passkeys';
+import { AppError } from '#/lib/errors';
+import { getAuthCookie } from '../../general/helpers/cookie';
 
 /**
  * Parses and validates passkey attestation data.
@@ -75,6 +81,35 @@ export const parseAndValidatePasskeyAttestation = (
   };
 };
 
+type PasskeyData = {
+  publicKey: string;
+  signature: string;
+  authenticatorObject: string;
+  clientDataJSON: string;
+};
+
+export const validatePasskey = async (ctx: Context, passkeyData: Omit<PasskeyData, 'publicKey'> & { credentialId: string; userId: string }) => {
+  const { userId, credentialId, ...restPasskeyData } = passkeyData;
+
+  // Retrieve the passkey challenge stored in a secure cookie
+  const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
+  if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+
+  // Fetch passkey record for this user and credential ID
+  const [passkeyRecord] = await db
+    .select()
+    .from(passkeysTable)
+    .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.credentialId, credentialId)))
+    .limit(1);
+
+  if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
+
+  // Verify signature against public key and challenge
+  const isValid = await verifyPassKeyPublic({ ...restPasskeyData, publicKey: passkeyRecord.publicKey, challengeFromCookie });
+
+  if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+};
+
 /**
  * Verifies a passkey public key signature.
  *
@@ -88,13 +123,13 @@ export const parseAndValidatePasskeyAttestation = (
  * @throws Error if some data is invalid.
  * @returns Boolean indicating whether the signature is valid.
  */
-export const verifyPassKeyPublic = async (
-  signature: string,
-  authenticatorObject: string,
-  clientDataJSON: string,
-  publicKey: string,
-  challengeFromCookie?: string,
-) => {
+const verifyPassKeyPublic = async ({
+  signature,
+  authenticatorObject,
+  clientDataJSON,
+  publicKey,
+  challengeFromCookie,
+}: PasskeyData & { challengeFromCookie?: string }) => {
   // Converting strings to Uint8Arrays
   const decodedSignature = decodeBase64(signature);
   const decodedClientDataJSON = decodeBase64(clientDataJSON);
