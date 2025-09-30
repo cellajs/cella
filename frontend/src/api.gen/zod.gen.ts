@@ -524,28 +524,34 @@ export const zSignInWithPasskeyResponse = z.boolean();
 export const zGithubData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.object({
-    type: z.enum(['auth', 'connect', 'invite', 'verify']),
-    redirect: z.optional(z.string()),
-  }),
+  query: z.optional(
+    z.object({
+      type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
+      redirect: z.optional(z.string()),
+    }),
+  ),
 });
 
 export const zGoogleData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.object({
-    type: z.enum(['auth', 'connect', 'invite', 'verify']),
-    redirect: z.optional(z.string()),
-  }),
+  query: z.optional(
+    z.object({
+      type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
+      redirect: z.optional(z.string()),
+    }),
+  ),
 });
 
 export const zMicrosoftData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.object({
-    type: z.enum(['auth', 'connect', 'invite', 'verify']),
-    redirect: z.optional(z.string()),
-  }),
+  query: z.optional(
+    z.object({
+      type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
+      redirect: z.optional(z.string()),
+    }),
+  ),
 });
 
 export const zGithubCallbackData = z.object({

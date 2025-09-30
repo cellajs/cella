@@ -41,7 +41,7 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
       ) : (
         <AvatarFallback className={avatarBackground}>
           <span className="sr-only">{name}</span>
-          <div className="text-black opacity-80 flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
+          <div className="text-black opacity-80 font-semibold flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>
       )}
     </Avatar>

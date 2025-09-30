@@ -22,4 +22,5 @@ export const oauthAccountsTable = pgTable(
   (table) => [unique().on(table.provider, table.providerUserId, table.email)],
 );
 
-export type OAuthAccountModel = typeof oauthAccountsTable.$inferInsert;
+export type OAuthAccountModel = typeof oauthAccountsTable.$inferSelect;
+export type InsertOAuthAccountModel = typeof oauthAccountsTable.$inferInsert;

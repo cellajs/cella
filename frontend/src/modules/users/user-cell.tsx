@@ -51,7 +51,7 @@ export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: Us
     >
       <AvatarWrap
         type="user"
-        className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-semibold"
+        className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-bold"
         id={user.id}
         name={user.name}
         url={user.thumbnailUrl}

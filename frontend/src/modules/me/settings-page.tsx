@@ -82,9 +82,10 @@ const UserSettingsPage = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
+    // TODO show spinner/loading like in auth page?
     try {
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams({ connectUserId: user.id, type: 'connect', redirect: encodeURIComponent(window.location.pathname) });
+      const params = new URLSearchParams({ type: 'connect', redirect: encodeURIComponent(window.location.pathname) });
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);

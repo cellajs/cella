@@ -100,7 +100,7 @@ const authOAuthRouteHandlers = app
 
     // When something went wrong during Github OAuth, fail early.
     if (error || !code) {
-      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'warn', redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath: '/auth/authenticate' });
     }
 
     // Check if Github OAuth is enabled
@@ -115,8 +115,10 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
+
+    const callbackType = cookiePayload.type;
 
     try {
       // Exchange authorization code for access token and fetch Github user info
@@ -134,7 +136,7 @@ const authOAuthRouteHandlers = app
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
       // TODO is it a good idea to have this inside the try catch too?
-      return await handleOAuthCallback(ctx, providerUser, strategy, cookiePayload);
+      return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -143,7 +145,7 @@ const authOAuthRouteHandlers = app
       throw new AppError({
         status: 401,
         type,
-        severity: 'warn',
+        severity: 'error',
         meta: { strategy },
         redirectPath: '/auth/authenticate',
         ...(error instanceof Error ? { originalError: error } : {}),
@@ -168,8 +170,10 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
+
+    const callbackType = cookiePayload.type;
 
     try {
       // Exchange authorization code for access token and fetch Google user info
@@ -181,7 +185,7 @@ const authOAuthRouteHandlers = app
       const googleUser = (await response.json()) as GoogleUserProps;
       const providerUser = transformSocialUserData(googleUser);
 
-      return await handleOAuthCallback(ctx, providerUser, strategy, cookiePayload);
+      return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -190,7 +194,7 @@ const authOAuthRouteHandlers = app
       throw new AppError({
         status: 401,
         type,
-        severity: 'warn',
+        severity: 'error',
         meta: { strategy },
         redirectPath: '/auth/authenticate',
         ...(error instanceof Error ? { originalError: error } : {}),
@@ -214,8 +218,10 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
     }
+
+    const callbackType = cookiePayload.type;
 
     try {
       // Exchange authorization code for access token and fetch Microsoft user info
@@ -227,7 +233,7 @@ const authOAuthRouteHandlers = app
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const providerUser = transformSocialUserData(microsoftUser);
 
-      return await handleOAuthCallback(ctx, providerUser, strategy, cookiePayload);
+      return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -236,7 +242,7 @@ const authOAuthRouteHandlers = app
       throw new AppError({
         status: 401,
         type,
-        severity: 'warn',
+        severity: 'error',
         meta: { strategy },
         redirectPath: '/auth/authenticate',
         ...(error instanceof Error ? { originalError: error } : {}),

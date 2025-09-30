@@ -2,19 +2,18 @@ import { appConfig } from 'config';
 import type { Context } from 'hono';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { OAuthFlowType } from '../schema';
 
 export interface OAuthCookiePayload {
   redirectPath: string;
-  inviteTokenId: string | null;
-  connectUserId: string | null;
-  verifyTokenId: string | null;
+  type: OAuthFlowType;
   codeVerifier?: string;
 }
 
@@ -33,12 +32,13 @@ export interface OAuthCookiePayload {
  * @returns redirect response
  */
 export const handleOAuthInitiation = async (ctx: Context<Env>, provider: string, url: URL, state: string, codeVerifier?: string) => {
+  // TODO Type of type is string, can we somehow get a stronger type from hono/zod/openapi, since it should be type OAuthFlowType?
   const { type } = ctx.req.query();
 
   const { redirectPath } = await prepareOAuthByContext(ctx);
-  const cookieContent = JSON.stringify({ redirectPath, codeVerifier });
+  const cookieContent = JSON.stringify({ redirectPath, codeVerifier, type });
 
-  // TODO state in name? perhaps in content instead? reconsider cookie lifecycle security
+  // TODO state in name? perhaps in content instead? reconsider cookie lifecycle security and cleanliness
   await setAuthCookie(ctx, `oauth_${state}`, cookieContent, new TimeSpan(5, 'm'));
 
   logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
@@ -159,9 +159,6 @@ const prepareOAuthConnect = async (ctx: Context<Env>) => {
 const prepareOAuthVerify = async (ctx: Context<Env>) => {
   // Validate single use token from db
   const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: '/auth/authenticate' });
-
-  // Revoke single use token by deleting cookie
-  deleteAuthCookie(ctx, 'oauth-verification');
 
   let redirectPath = appConfig.defaultRedirectPath;
 

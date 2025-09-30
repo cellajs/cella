@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
@@ -11,47 +12,65 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
+import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../../emails/oauth-verification';
 
 interface Props {
   userId: string;
+  oauthAccountId: string;
   redirectPath?: string;
 }
 
 /**
- * Send a verification email to user.
+ * OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
+ * This is done to be sure that the oauth account holder also owns the email address.
  */
-export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => {
+export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
   const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+
+  // OAuthAccountId is provided and doesnt exist
+  const [oauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, oauthAccountId));
+  if (!oauthAccount) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
     .from(emailsTable)
     .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
 
-  // email verified / TODO email_exists is perhaps wrong text, shouldnt it be email_already_verified?
-  if (emailInUse) {
+  // email and oauthAccount verified
+  if (emailInUse && oauthAccount.verified) {
     throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
   }
 
+  // TODO move these queries into another helper that also is used by send-email-verification.ts?
   // Delete previous token
-  await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email-verification')));
+  await db
+    .delete(tokensTable)
+    .where(
+      and(
+        ...[
+          eq(tokensTable.userId, user.id),
+          eq(tokensTable.type, 'oauth-verification'),
+          ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
+        ],
+      ),
+    );
 
   const token = nanoid(40);
-  const email = user.email;
+  const email = oauthAccount?.email ?? user.email;
 
   // Create new token
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
       token,
-      type: 'email-verification',
+      type: 'oauth-verification',
       userId: user.id,
       email,
       createdBy: user.id,
+      ...(oauthAccountId && { oauthAccountId: oauthAccountId }),
       expiresAt: createDate(new TimeSpan(2, 'h')),
     })
     .returning();
@@ -87,7 +106,8 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const recipients = [{ email }];
   type Recipient = { email: string };
 
-  mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
+  const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
+  mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
 
   logEvent('info', 'Verification email sent', { userId: user.id });
 };

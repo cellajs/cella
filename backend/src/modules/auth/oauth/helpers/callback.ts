@@ -4,50 +4,48 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import type { TokenModel } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
-import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
-import type { OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
+import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
-import { getValidToken } from '#/utils/get-valid-token';
+import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
-
-const redirectPath = '/auth/authenticate';
+import { OAuthFlowType } from '../schema';
 
 /**
  * Handles the default OAuth authentication/signup flow.
  * Determines if the user has an existing verified/unverified account or needs to register.
  *
  * @param ctx - The request context.
+ * @param callbackType - type of callback, ie 'invite', 'connect'.
  * @param providerUser - The transformed user data from the OAuth provider.
  * @param provider - The OAuth provider (e.g., 'google', 'github').
- * @param oauthAccount - The linked OAuth account, if one exists.
  *
  * @returns A redirect response.
  */
 export const handleOAuthCallback = async (
   ctx: Context<Env>,
+  callbackType: OAuthFlowType,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
-  cookiePayload: OAuthCookiePayload,
 ): Promise<Response> => {
+  const redirectPath = '/auth/authenticate';
   const oauthAccount = await getOAuthAccount(providerUser.id, provider, providerUser.email);
 
-  const { connectUserId, inviteTokenId, verifyTokenId } = cookiePayload;
-
   // Handle OAuth callback flows based on cookie
-  if (connectUserId) return await connectCallbackFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
-  if (inviteTokenId) return await inviteCallbackFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
-  if (verifyTokenId) return await verifyCallbackFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
+  if (callbackType === 'connect') return await connectCallbackFlow(ctx, providerUser, provider, oauthAccount);
+  if (callbackType === 'invite') return await inviteCallbackFlow(ctx, providerUser, provider, oauthAccount);
+  if (callbackType === 'verify') return await verifyCallbackFlow(ctx, providerUser, provider, oauthAccount);
+
+  // If not any of the above, proceed with basic authentication (sign in / sign up) flow
 
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
@@ -107,15 +105,22 @@ const connectCallbackFlow = async (
   ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
-  connectUserId: string,
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
-  const connectRedirectPath = '/settings';
+  const redirectPath = `/settings#authentication`;
+
+  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: redirectPath });
+
+  // Get user from valid session
+  const { user } = await validateSession(sessionToken);
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath });
+
+  const connectUserId = user.id;
 
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath: connectRedirectPath });
+      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
     }
 
     // Already linked + verified → log in the user
@@ -131,7 +136,7 @@ const connectCallbackFlow = async (
   // New OAuth account connection → validate email isn't used by another user
   const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath: connectRedirectPath });
+    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
   }
 
   // Safe to connect → create and link OAuth account to current user
@@ -146,7 +151,6 @@ const connectCallbackFlow = async (
  * @param ctx - The request context.
  * @param providerUser - The transformed user data from the OAuth provider.
  * @param provider - The OAuth provider (e.g., 'google', 'github').
- * @param token - The invitation token.
  * @param oauthAccount - The linked OAuth account, if one exists.
  * @returns A redirect response.
  */
@@ -154,16 +158,10 @@ const inviteCallbackFlow = async (
   ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
-  token: TokenModel['token'],
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
-  const invitationToken = await getValidToken({
-    ctx,
-    token,
-    invokeToken: false,
-    tokenType: 'invitation',
-    redirectPath,
-  });
+  const redirectPath = '/auth/authenticate';
+  const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation', redirectPath });
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
@@ -195,23 +193,17 @@ const verifyCallbackFlow = async (
   ctx: Context<Env>,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
-  token: TokenModel['token'],
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
-  const verifyToken = await getValidToken({
-    ctx,
-    token,
-    invokeToken: false,
-    tokenType: 'email-verification',
-    redirectPath,
-  });
+  const redirectPath = '/auth/authenticate';
+  const verifyToken = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
 
   // No OauthAccount → invalid verification
   if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
 
   // Invalid token settings → invalid verification
   if (
-    verifyToken.type !== 'email-verification' ||
+    verifyToken.type !== 'oauth-verification' ||
     verifyToken.email !== providerUser.email ||
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.provider !== provider
@@ -351,7 +343,7 @@ const handleUnverifiedOAuthAccount = async (
 ): Promise<Response> => {
   const redirectPath = await getOAuthRedirectPath(ctx);
 
-  sendVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath });
+  sendOAuthVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath });
 
   const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${oauthAccount.provider}`, appConfig.frontendUrl);
 

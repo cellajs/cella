@@ -1292,8 +1292,8 @@ export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInW
 export type GithubData = {
   body?: never;
   path?: never;
-  query: {
-    type: 'auth' | 'connect' | 'invite' | 'verify';
+  query?: {
+    type?: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
   };
   url: '/auth/github';
@@ -1337,8 +1337,8 @@ export type GithubError = GithubErrors[keyof GithubErrors];
 export type GoogleData = {
   body?: never;
   path?: never;
-  query: {
-    type: 'auth' | 'connect' | 'invite' | 'verify';
+  query?: {
+    type?: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
   };
   url: '/auth/google';
@@ -1382,8 +1382,8 @@ export type GoogleError = GoogleErrors[keyof GoogleErrors];
 export type MicrosoftData = {
   body?: never;
   path?: never;
-  query: {
-    type: 'auth' | 'connect' | 'invite' | 'verify';
+  query?: {
+    type?: 'auth' | 'connect' | 'invite' | 'verify';
     redirect?: string;
   };
   url: '/auth/microsoft';
