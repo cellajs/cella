@@ -32,7 +32,7 @@ const authPasskeysRouteHandlers = app
     const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
     const user = getContextUser();
 
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
+    const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
     if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
@@ -90,7 +90,7 @@ const authPasskeysRouteHandlers = app
     const challengeBase64 = encodeBase64(challenge);
 
     // Save the challenge in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'passkey_challenge', challengeBase64, new TimeSpan(5, 'm'));
+    await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
 
     let user: UserModel | null = null;
 
