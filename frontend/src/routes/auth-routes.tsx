@@ -1,5 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
+import i18n from 'i18next';
 import { z } from 'zod';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
@@ -53,7 +54,7 @@ export const AuthenticateRoute = createRoute({
 });
 
 export const MfaRoute = createRoute({
-  path: '/mfa-confirmation',
+  path: '/mfa',
   validateSearch: authenticateRouteSearch,
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
@@ -66,7 +67,13 @@ export const RequestPasswordRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Request password') }] }),
   getParentRoute: () => AuthLayoutRoute,
-  component: () => <RequestPasswordForm />,
+  component: () => (
+    <>
+      <h1 className="text-2xl text-center">{i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase() })}</h1>
+      <p className="font-light text-center space-x-1">{i18n.t('common:reset_password.text')}</p>
+      <RequestPasswordForm />
+    </>
+  ),
 });
 
 export const CreatePasswordWithTokenRoute = createRoute({

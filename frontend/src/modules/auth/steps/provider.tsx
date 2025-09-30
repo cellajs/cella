@@ -13,7 +13,7 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const { lastUser } = useUserStore();
   const { tokenId, error, severity } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
-  const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa-confirmation' });
+  const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa' });
 
   // Initialize email and step
   const initEmail = (!tokenId && lastUser?.email) || '';

@@ -1,5 +1,6 @@
 {
-  "call_to_action.start": ".. with a dedicated community, cella can become a fully 🇪🇺 European alternative to build collaborative web apps.",
+  "call_to_action.intro": "Build & deploy in Europe",
+  "call_to_action.start": ".. with a dedicated community, cella can become a European alternative to build sovereign, collaborative web apps.",
   "call_to_action.finish": " Want to join?",
   "feature.hono_text": "A simple, fast server. Web standards, RPC support and great middleware.",
   "feature.vite_text": "With vite and pnpm we have a monorepo with a fast build process.",
