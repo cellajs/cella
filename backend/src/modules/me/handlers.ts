@@ -21,6 +21,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
@@ -30,7 +31,6 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { getAuthInfo, getUserSessions } from './helpers/get-user-info';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;

@@ -16,6 +16,8 @@ import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verif
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
+import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
+import authPasswordsRoutes from '#/modules/auth/passwords/routes';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -25,8 +27,6 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
-import { handleEmailVerification } from './helpers/handle-email-verification';
-import authPasswordsRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

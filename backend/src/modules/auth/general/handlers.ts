@@ -10,6 +10,8 @@ import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import authGeneralRoutes from '#/modules/auth/general/routes';
+import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -17,8 +19,6 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { handleOAuthVerification } from '../oauth/helpers/handle-oauth-verification';
-import authGeneralRoutes from './routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

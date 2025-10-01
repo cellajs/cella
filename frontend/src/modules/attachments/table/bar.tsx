@@ -6,6 +6,7 @@ import type { Attachment } from '~/api.gen';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import type { AttachmentsTableProps } from '~/modules/attachments/table';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
+import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -17,7 +18,6 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
-import type { AttachmentsRouteSearchParams } from '../types';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & {

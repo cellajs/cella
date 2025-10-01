@@ -3,7 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
-import { showcaseItems } from '../marketing-config';
+import { showcaseItems } from '~/modules/marketing/marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 

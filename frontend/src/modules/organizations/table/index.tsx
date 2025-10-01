@@ -15,8 +15,8 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
+import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
 import { useUserStore } from '~/store/user';
-import type { OrganizationsRouteSearchParams } from '../types';
 
 const LIMIT = appConfig.requestLimits.organizations;
 

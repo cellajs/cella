@@ -17,8 +17,8 @@ import {
   microsoftAuth,
 } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
+import authOAuthRoutes from '#/modules/auth/oauth/routes';
 import { defaultHook } from '#/utils/default-hook';
-import authOAuthRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;

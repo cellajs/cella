@@ -2,9 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/schema';
 import { locationSchema } from '#/utils/schema/common';
 import { errorResponses } from '#/utils/schema/responses';
-import { oauthCallbackQuerySchema, oauthQuerySchema } from './schema';
 
 const authOAuthRoutes = {
   github: createCustomRoute({

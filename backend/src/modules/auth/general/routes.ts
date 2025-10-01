@@ -4,9 +4,9 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
+import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
 import { cookieSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { emailBodySchema, tokenWithDataSchema } from './schema';
 
 const authGeneralRoutes = {
   startImpersonation: createCustomRoute({

@@ -2,9 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
 import { cookieSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { totpCreateBodySchema } from './schema';
 
 const authTotpsRoutes = {
   createTotpChallenge: createCustomRoute({

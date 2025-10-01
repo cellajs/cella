@@ -6,8 +6,8 @@ import type z from 'zod';
 import { zCreateTotpData } from '~/api.gen/zod.gen';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/totp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/totp';
 
 const formSchema = zCreateTotpData.shape.body;
 type FormValues = z.infer<typeof formSchema>;

@@ -2,8 +2,8 @@ import { appConfig, type EntityType } from 'config';
 import { Building2, Cloud, Github, type LucideIcon, Users } from 'lucide-react';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
+import { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { nanoid } from '~/utils/nanoid';
-import { ShowcaseItem } from './about/showcase';
 
 /*************************************************************************************************
  * Nav

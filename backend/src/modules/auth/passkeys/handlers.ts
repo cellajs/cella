@@ -15,10 +15,10 @@ import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
+import authPasskeysRoutes from '#/modules/auth/passkeys/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import authPasskeysRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

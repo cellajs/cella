@@ -4,12 +4,12 @@ import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { OAuthFlowType } from '#/modules/auth/oauth/schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { OAuthFlowType } from '../schema';
 
 export interface OAuthCookiePayload {
   redirectPath: string;

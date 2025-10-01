@@ -14,12 +14,12 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
+import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
 import { isCDNUrl } from '~/utils/is-cdn-url';
-import type { AttachmentsRouteSearchParams } from '../types';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
