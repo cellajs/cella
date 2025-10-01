@@ -143,13 +143,13 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
  * @throws AppError if missing param or user mismatch
  */
 const prepareOAuthConnect = async (ctx: Context<Env>) => {
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/authenticate' });
+  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/error' });
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/authenticate' });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/error' });
 
-  //TODO we do this on callback or not?
+  //TODO we do this on callback or not? handle error query params in /settings
   const redirectPath = '/settings#authentication';
 
   return { connectUserId: user.id, redirectPath };
