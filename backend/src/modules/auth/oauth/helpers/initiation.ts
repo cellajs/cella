@@ -31,9 +31,14 @@ export interface OAuthCookiePayload {
  * @param codeVerifier - PKCE code verifier (optional)
  * @returns redirect response
  */
-export const handleOAuthInitiation = async (ctx: Context<Env>, provider: string, url: URL, state: string, codeVerifier?: string) => {
-  // TODO Type of type is string, can we somehow get a stronger type from hono/zod/openapi, since it should be type OAuthFlowType?
-  const { type } = ctx.req.query();
+export const handleOAuthInitiation = async (
+  ctx: Context<Env, any, { out: { query: { type: OAuthFlowType } } }>,
+  provider: string,
+  url: URL,
+  state: string,
+  codeVerifier?: string,
+) => {
+  const { type } = ctx.req.valid('query');
 
   const { redirectPath } = await prepareOAuthByContext(ctx);
   const cookieContent = JSON.stringify({ redirectPath, codeVerifier, type });
