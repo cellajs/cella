@@ -38,7 +38,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   }
 
   // Delete previous token
-  await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email-verification')));
+  await deleteVerificationTokens(user.id, 'email-verification');
 
   const token = nanoid(40);
   const email = user.email;
@@ -90,4 +90,18 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
 
   logEvent('info', 'Verification email sent', { userId: user.id });
+};
+
+export const deleteVerificationTokens = async (
+  userId: string,
+  type: Extract<(typeof appConfig.tokenTypes)[number], 'email-verification' | 'oauth-verification'>,
+  oauthAccountId?: string,
+) => {
+  return await db
+    .delete(tokensTable)
+    .where(
+      and(
+        ...[eq(tokensTable.userId, userId), eq(tokensTable.type, type), ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : [])],
+      ),
+    );
 };
