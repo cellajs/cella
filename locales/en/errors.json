@@ -10,6 +10,7 @@
   "delete_resources": "{{resources}} could not be deleted",
   "duplicate_creation": "Item already exist",
   "email_exists": "Email already exists",
+  "email_already_verified": "Email already verified",
   "email-verification_expired": "Email verification token expired",
   "email-verification_expired.text": "Use forgot password to verify.",
   "oauth-verification_expired": "OAuth verification token expired",

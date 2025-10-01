@@ -32,9 +32,9 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
     .from(emailsTable)
     .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
 
-  // email verified / TODO email_exists is perhaps wrong text, shouldnt it be email_already_verified?
+  // email verified
   if (emailInUse) {
-    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
+    throw new AppError({ status: 422, type: 'email_already_verified', severity: 'warn', entityType: 'user' });
   }
 
   // Delete previous token
