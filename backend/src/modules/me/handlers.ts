@@ -9,6 +9,7 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { passwordsTable } from '#/db/schema/passwords';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
+import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
@@ -207,12 +208,14 @@ const meRouteHandlers = app
         return db
           .select({
             entity: entitySelect,
+            expiresAt: tokensTable.expiresAt,
             invitedBy: userBaseSelect,
             membership: membershipsTable,
           })
           .from(membershipsTable)
           .leftJoin(usersTable, eq(usersTable.id, membershipsTable.createdBy))
           .innerJoin(entityTable, eq(entityTable.id, membershipsTable[entityIdField]))
+          .innerJoin(tokensTable, eq(tokensTable.id, membershipsTable.tokenId))
           .where(
             and(
               eq(membershipsTable.contextType, entityType),

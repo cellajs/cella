@@ -3,9 +3,6 @@
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
-  AcceptMembershipData,
-  AcceptMembershipErrors,
-  AcceptMembershipResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
@@ -134,6 +131,9 @@ import type {
   GoogleCallbackErrors,
   GoogleData,
   GoogleErrors,
+  HandleMembershipInvitationData,
+  HandleMembershipInvitationErrors,
+  HandleMembershipInvitationResponses,
   InvokeTokenData,
   InvokeTokenErrors,
   MembershipInviteData,
@@ -2180,20 +2180,20 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
 };
 
 /**
- * Accept invitation
+ * Respond to membership invitation
  * 🛡️ Requires authentication
  *
  * Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.
  *
- * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [acceptMembership](http://localhost:4000/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](http://localhost:4000/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
  *
- * @param {acceptMembershipData} options
+ * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
  * @param {enum} options.path.acceptorreject - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const acceptMembership = <ThrowOnError extends boolean = true>(options: Options<AcceptMembershipData, ThrowOnError>) => {
-  return (options.client ?? client).post<AcceptMembershipResponses, AcceptMembershipErrors, ThrowOnError, 'data'>({
+export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(options: Options<HandleMembershipInvitationData, ThrowOnError>) => {
+  return (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {

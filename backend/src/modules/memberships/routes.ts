@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { contextEntityBaseSchema } from '#/modules/entities/schema';
 import {
   memberListQuerySchema,
   membershipCreateBodySchema,
@@ -13,7 +14,6 @@ import {
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { contextEntityWithMembershipSchema } from '../entities/schema';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -99,25 +99,19 @@ const membershipRoutes = {
     },
   }),
 
-  acceptMembership: createCustomRoute({
-    operationId: 'acceptMembership',
+  handleMembershipInvitation: createCustomRoute({
+    operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
     guard: isAuthenticated,
     tags: ['membership'],
-    summary: 'Accept invitation',
-    // TODO reject flow needs to be added
+    summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.',
     request: { params: z.object({ id: z.string(), acceptOrReject: z.enum(['accept', 'reject']) }) },
     responses: {
       200: {
         description: 'Invitation was accepted',
-        content: {
-          'application/json': {
-            // TODO why the extend?
-            schema: contextEntityWithMembershipSchema.extend({ createdAt: z.string() }),
-          },
-        },
+        content: { 'application/json': { schema: contextEntityBaseSchema } },
       },
       ...errorResponses,
     },

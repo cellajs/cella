@@ -77,5 +77,6 @@ export const meInvitationsSchema = z.array(
     entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
     invitedBy: userBaseSchema.nullable(),
     membership: membershipBaseSchema,
+    expiresAt: z.string(),
   }),
 );

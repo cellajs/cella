@@ -1972,6 +1972,7 @@ export type GetMyInvitationsResponses = {
     membership: MembershipBaseSchema & {
       [key: string]: unknown;
     };
+    expiresAt: string;
   }>;
 };
 
@@ -4049,7 +4050,7 @@ export type UpdateMembershipResponses = {
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
 
-export type AcceptMembershipData = {
+export type HandleMembershipInvitationData = {
   body?: never;
   path: {
     id: string;
@@ -4059,7 +4060,7 @@ export type AcceptMembershipData = {
   url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
 };
 
-export type AcceptMembershipErrors = {
+export type HandleMembershipInvitationErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4092,21 +4093,16 @@ export type AcceptMembershipErrors = {
   };
 };
 
-export type AcceptMembershipError = AcceptMembershipErrors[keyof AcceptMembershipErrors];
+export type HandleMembershipInvitationError = HandleMembershipInvitationErrors[keyof HandleMembershipInvitationErrors];
 
-export type AcceptMembershipResponses = {
+export type HandleMembershipInvitationResponses = {
   /**
    * Invitation was accepted
    */
-  200: ContextEntityBaseSchema & {
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
-    };
-    createdAt: string;
-  };
+  200: ContextEntityBaseSchema;
 };
 
-export type AcceptMembershipResponse = AcceptMembershipResponses[keyof AcceptMembershipResponses];
+export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;

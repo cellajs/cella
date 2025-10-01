@@ -483,5 +483,6 @@
   "require_mfa": "Secure Account with MFA",
   "require_mfa.text": "Your account does not have MFA enabled. Enabling MFA helps secure your account.",
   "enable_resource": "Enable {{resource}}",
-  "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account."
+  "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account.",
+  "reject": "Reject"
 }

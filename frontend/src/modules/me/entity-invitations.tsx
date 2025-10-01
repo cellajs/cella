@@ -1,7 +1,13 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { AcceptMembershipData, type AcceptMembershipResponse, type ApiError, acceptMembership, type GetMyInvitationsResponse } from '~/api.gen';
+import {
+  type ApiError,
+  type GetMyInvitationsResponse,
+  HandleMembershipInvitationData,
+  type HandleMembershipInvitationResponse,
+  handleMembershipInvitation,
+} from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
@@ -23,13 +29,13 @@ export const EntityInvitations = () => {
   const queryOptions = meInvitationsQueryOptions();
   const { data: invites } = useSuspenseQuery(queryOptions);
 
-  const { mutate: _acceptMembership } = useMutation<AcceptMembershipResponse, ApiError, AcceptMembershipData['path']>({
-    mutationFn: ({ id, acceptOrReject }) => acceptMembership({ path: { id, acceptOrReject } }),
-    onSuccess: async (acceptedEntity) => {
+  const { mutate: handleInvitation } = useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
+    mutationFn: ({ id, acceptOrReject }) => handleMembershipInvitation({ path: { id, acceptOrReject } }),
+    onSuccess: async (settledEntity) => {
       await getAndSetMenu();
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
-        return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
+        return oldData.filter((invite) => invite.entity.id !== settledEntity.id);
       });
       toaster(t('common:invitation_accepted'), 'success');
     },
@@ -52,11 +58,14 @@ export const EntityInvitations = () => {
           </div>
           <ExpandableList
             items={invites}
-            renderItem={({ entity, invitedBy, membership }) => {
+            renderItem={({ entity, invitedBy, expiresAt, membership }) => {
               const { to, params, search } = getEntityRoute({ ...entity, membership: null });
+              const actionButtons = [
+                { label: t('common:accept'), variant: 'darkSuccess', action: 'accept' },
+                { label: t('common:reject'), variant: 'destructive', action: 'reject' },
+              ] as const;
 
-              // TODO
-              const isExpired = new Date(membership.createdAt as string) < new Date();
+              const isExpired = new Date(expiresAt) < new Date();
               return (
                 <div className="grid grid-cols-4 col-end- items-center gap-4 py-2">
                   <Link to={to} params={params} search={search} draggable="false" className="flex space-x-2 items-center outline-0 ring-0 group">
@@ -72,16 +81,23 @@ export const EntityInvitations = () => {
                     </span>
                   </Link>
                   {invitedBy ? <UserCell user={invitedBy} tabIndex={0} /> : '-'}
-                  {/* TODO */}
-                  <span>{isExpired ? 'Expired' : dateShort(membership.createdAt as string)}</span>
-                  <Button
-                    className="w-[60%] ml-auto"
-                    size="xs"
-                    variant="darkSuccess"
-                    onClick={() => _acceptMembership({ id: membership.id, acceptOrReject: 'accept' })}
-                  >
-                    {t('common:accept')}
-                  </Button>
+                  <span>{isExpired ? 'Expired' : dateShort(expiresAt)}</span>
+
+                  <div className="flex flex-col sm:flex-row gap-2 items-end justify-end">
+                    {/* TODO disable on expired it will auto clean by DB, or add button request invite? */}
+                    {actionButtons.map(({ label, variant, action }) => (
+                      <Button
+                        disabled={isExpired}
+                        className="w-[40%]"
+                        key={action}
+                        size="xs"
+                        variant={variant}
+                        onClick={() => handleInvitation({ id: membership.id, acceptOrReject: action })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               );
             }}
