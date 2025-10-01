@@ -30,7 +30,7 @@
     "db:clear": "tsx scripts/clear-db.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate": "pnpm generate:pg",
-    "generate-openapi": "PGLITE=true tsx scripts/generate-openapi.ts || true",
+    "generate-openapi": "tsx scripts/generate-openapi.ts || true",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "emails:build": "email build emails",
