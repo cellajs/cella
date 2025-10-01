@@ -4,9 +4,9 @@ import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
+import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { getValidSingleUseToken } from './get-valid-single-use-token';
-import { nanoid } from './nanoid';
+import { nanoid } from '#/utils/nanoid';
 
 type BaseProps = {
   ctx: Context<Env>;

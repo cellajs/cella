@@ -17,7 +17,7 @@ import { Context } from 'hono';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie } from '../../general/helpers/cookie';
+import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 
 /**
  * Parses and validates passkey attestation data.

@@ -16,6 +16,8 @@ import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verif
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
+import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
+import authPasswordsRoutes from '#/modules/auth/passwords/routes';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -25,8 +27,6 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
-import { handleEmailVerification } from './helpers/handle-email-verification';
-import authPasswordsRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
@@ -203,9 +203,12 @@ const authPasswordsRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    // TODO(bug) MFA on when user already auth, FE not revalidate session just keep prev one
-    const redirectPath = await initiateMfa(ctx, user);
-    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    const mfaRedirectPath = await initiateMfa(ctx, user);
+    if (mfaRedirectPath) {
+      // Append fromRoot to avoid redirecting to FE homepage
+      const redirectPath = `${mfaRedirectPath}?fromRoot=true`;
+      return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    }
 
     await setUserSession(ctx, user, strategy);
     return ctx.json({ shouldRedirect: false }, 200);

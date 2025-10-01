@@ -10,6 +10,7 @@ type Responses = Parameters<typeof createRoute>[0]['responses'];
 /**
  * Schema for responses that may include a redirect.
  */
+// TODO refine don't require redirectPath by TS
 export const redirectResponseSchema = z
   .object({
     shouldRedirect: z.boolean(),

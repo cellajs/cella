@@ -14,11 +14,11 @@ import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
+import { OAuthFlowType } from '#/modules/auth/oauth/schema';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
-import { OAuthFlowType } from '../schema';
 
 /**
  * Handles the default OAuth authentication/signup flow.

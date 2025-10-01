@@ -8,6 +8,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
+import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -44,19 +45,8 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
     throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
   }
 
-  // TODO move these queries into another helper that also is used by send-email-verification.ts?
   // Delete previous token
-  await db
-    .delete(tokensTable)
-    .where(
-      and(
-        ...[
-          eq(tokensTable.userId, user.id),
-          eq(tokensTable.type, 'oauth-verification'),
-          ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
-        ],
-      ),
-    );
+  await deleteVerificationTokens(user.id, 'oauth-verification', oauthAccountId);
 
   const token = nanoid(40);
   const email = oauthAccount?.email ?? user.email;

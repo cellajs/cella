@@ -13,9 +13,9 @@ import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/coo
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
+import { default as authTotpRoutes, default as authTotpsRoutes } from '#/modules/auth/totps/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import { default as authTotpRoutes, default as authTotpsRoutes } from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

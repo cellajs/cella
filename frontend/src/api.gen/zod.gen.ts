@@ -727,6 +727,7 @@ export const zGetMyInvitationsResponse = z.array(
     ),
     invitedBy: zUserBaseSchema.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
     membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+    expiresAt: z.string(),
   }),
 );
 
@@ -1441,7 +1442,7 @@ export const zUpdateMembershipResponse = z.object({
   organizationId: z.string(),
 });
 
-export const zAcceptMembershipData = z.object({
+export const zHandleMembershipInvitationData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     id: z.string(),
@@ -1453,12 +1454,7 @@ export const zAcceptMembershipData = z.object({
 /**
  * Invitation was accepted
  */
-export const zAcceptMembershipResponse = zContextEntityBaseSchema.and(
-  z.object({
-    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
-    createdAt: z.string(),
-  }),
-);
+export const zHandleMembershipInvitationResponse = zContextEntityBaseSchema;
 
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),

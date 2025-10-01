@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { isCDNUrl } from '../is-cdn-url';
+import { isCDNUrl } from '#/utils/is-cdn-url';
 
 /** Schema to use boolean parameters (transform string to boolean) */
 export const booleanTransformSchema = z

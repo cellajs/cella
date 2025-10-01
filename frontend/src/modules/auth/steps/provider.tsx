@@ -2,10 +2,10 @@ import { useMatchRoute, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { type ReactNode, useEffect, useState } from 'react';
 import type { ApiError } from '~/lib/api';
+import { AuthContext } from '~/modules/auth/steps/provider-context';
 import type { AuthStep } from '~/modules/auth/types';
 import { useGetTokenData } from '~/modules/auth/use-token-check';
 import { useUserStore } from '~/store/user';
-import { AuthContext } from './provider-context';
 
 // TODO refactor to store?
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {

@@ -372,12 +372,10 @@ const membershipRouteHandlers = app
   /**
    * Accept - or reject - organization membership invitation
    */
-  .openapi(membershipRoutes.acceptMembership, async (ctx) => {
+  .openapi(membershipRoutes.handleMembershipInvitation, async (ctx) => {
     const { id: membershipId, acceptOrReject } = ctx.req.valid('param');
 
     const user = getContextUser();
-
-    console.log('TODO, reject not handled', acceptOrReject);
 
     // TODO use get membership util
     const [membership] = await db
@@ -385,6 +383,7 @@ const membershipRouteHandlers = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.tokenId)))
       .limit(1);
+
     if (!membership) throw new AppError({ status: 404, type: 'membership_not_found', severity: 'error', meta: { membershipId } });
 
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
@@ -399,22 +398,26 @@ const membershipRouteHandlers = app
     // Make sure its an organization membership
     if (membership.contextType !== 'organization') throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
-    // TODO test this in raak for projects and edge cases
-    const activatedMemberships = await db
-      .update(membershipsTable)
-      .set({ tokenId: null, activatedAt: getIsoDate() })
-      .where(and(eq(membershipsTable.tokenId, membership.tokenId)))
-      .returning();
+    if (acceptOrReject === 'accept') {
+      // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
+      // TODO test this in raak for projects and edge cases
+      const activatedMemberships = await db
+        .update(membershipsTable)
+        .set({ tokenId: null, activatedAt: getIsoDate() })
+        .where(and(eq(membershipsTable.tokenId, membership.tokenId)))
+        .returning();
+
+      eventManager.emit('acceptedMembership', membership);
+
+      logEvent('info', 'Accepted memberships', { ids: activatedMemberships.map((m) => m.id) });
+    }
+
+    if (acceptOrReject === 'reject') await db.delete(tokensTable).where(and(eq(tokensTable.id, membership.tokenId)));
 
     const entity = await resolveEntity('organization', membership.organizationId);
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
 
-    eventManager.emit('acceptedMembership', membership);
-
-    logEvent('info', 'Accepted memberships', { ids: activatedMemberships.map((m) => m.id) });
-
-    return ctx.json({ ...entity, membership }, 200);
+    return ctx.json(entity, 200);
   })
   /**
    * Get members by entity id/slug and type

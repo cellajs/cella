@@ -2,9 +2,15 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import {
+  passkeyChallengeBodySchema,
+  passkeyChallengeSchema,
+  passkeyCreateBodySchema,
+  passkeySchema,
+  passkeyVerificationBodySchema,
+} from '#/modules/auth/passkeys/schema';
 import { cookieSchema, idSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { passkeyChallengeBodySchema, passkeyChallengeSchema, passkeyCreateBodySchema, passkeySchema, passkeyVerificationBodySchema } from './schema';
 
 const authPasskeysRoutes = {
   generatePasskeyChallenge: createCustomRoute({

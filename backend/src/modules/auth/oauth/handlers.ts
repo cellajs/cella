@@ -17,8 +17,8 @@ import {
   microsoftAuth,
 } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
+import authOAuthRoutes from '#/modules/auth/oauth/routes';
 import { defaultHook } from '#/utils/default-hook';
-import authOAuthRoutes from './routes';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -135,7 +135,6 @@ const authOAuthRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      // TODO is it a good idea to have this inside the try catch too?
       return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;

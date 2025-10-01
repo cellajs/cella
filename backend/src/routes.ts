@@ -2,6 +2,7 @@ import attachmentRouteHandlers from '#/modules/attachments/handlers';
 import authGeneralRouteHandlers from '#/modules/auth/general/handlers';
 import authOAuthRouteHandlers from '#/modules/auth/oauth/handlers';
 import authPasskeysRouteHandlers from '#/modules/auth/passkeys/handlers';
+import authPasswordsRouteHandlers from '#/modules/auth/passwords/handlers';
 import authTotpRouteHandlers from '#/modules/auth/totps/handlers';
 import entityRouteHandlers from '#/modules/entities/handlers';
 import meRouteHandlers from '#/modules/me/handlers';
@@ -12,7 +13,6 @@ import requestRouteHandlers from '#/modules/requests/handlers';
 import systemRouteHandlers from '#/modules/system/handlers';
 import userRouteHandlers from '#/modules/users/handlers';
 import baseApp from '#/server';
-import authPasswordsRouteHandlers from './modules/auth/passwords/handlers';
 
 // Define backend routes of your app
 const app = baseApp

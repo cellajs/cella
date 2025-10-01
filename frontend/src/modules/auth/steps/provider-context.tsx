@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { ApiError } from '~/lib/api';
-import type { AuthStep, TokenData } from '../types';
+import type { AuthStep, TokenData } from '~/modules/auth/types';
 
 interface AuthContextProps {
   step: AuthStep;

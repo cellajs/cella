@@ -4,12 +4,12 @@ import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { OAuthFlowType } from '#/modules/auth/oauth/schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { OAuthFlowType } from '../schema';
 
 export interface OAuthCookiePayload {
   redirectPath: string;
@@ -31,9 +31,14 @@ export interface OAuthCookiePayload {
  * @param codeVerifier - PKCE code verifier (optional)
  * @returns redirect response
  */
-export const handleOAuthInitiation = async (ctx: Context<Env>, provider: string, url: URL, state: string, codeVerifier?: string) => {
-  // TODO Type of type is string, can we somehow get a stronger type from hono/zod/openapi, since it should be type OAuthFlowType?
-  const { type } = ctx.req.query();
+export const handleOAuthInitiation = async (
+  ctx: Context<Env, any, { out: { query: { type: OAuthFlowType } } }>,
+  provider: string,
+  url: URL,
+  state: string,
+  codeVerifier?: string,
+) => {
+  const { type } = ctx.req.valid('query');
 
   const { redirectPath } = await prepareOAuthByContext(ctx);
   const cookieContent = JSON.stringify({ redirectPath, codeVerifier, type });
@@ -138,13 +143,13 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
  * @throws AppError if missing param or user mismatch
  */
 const prepareOAuthConnect = async (ctx: Context<Env>) => {
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/authenticate' });
+  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/error' });
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/authenticate' });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/error' });
 
-  //TODO we do this on callback or not?
+  //TODO we do this on callback or not? handle error query params in /settings
   const redirectPath = '/settings#authentication';
 
   return { connectUserId: user.id, redirectPath };

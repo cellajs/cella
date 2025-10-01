@@ -1,10 +1,10 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import AttachmentDialog from '~/modules/attachments/dialog';
+import { clearAttachmentDialogSearchParams } from '~/modules/attachments/dialog/clear-search-params';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
-import { clearAttachmentDialogSearchParams } from './clear-search-params';
 
 const AttachmentDialogHandler = memo(() => {
   const { attachmentDialogId, groupId } = useSearch({ strict: false });

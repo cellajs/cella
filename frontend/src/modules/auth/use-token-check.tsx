@@ -7,7 +7,7 @@ import type { TokenData } from '~/modules/auth/types';
 /**
  *  Get token data by ID.
  *
- * @param type Type of the token (`"email_verification" | "password_reset" | "invitation"`)
+ * @param type Type of the token (`"email-verification" | "password-reset" | "invitation"`)
  * @param tokenId Token ID to check
  * @param enabled (Default true) Enable the query
  */

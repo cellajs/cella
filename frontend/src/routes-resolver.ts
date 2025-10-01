@@ -1,8 +1,8 @@
-import type { UserBaseSchema } from './api.gen';
-import type { EntityPage } from './modules/entities/types';
-import type { UserMenuItem } from './modules/me/types';
-import type { EntityRoute } from './modules/navigation/types';
-import { baseEntityRoutes } from './routes-config';
+import type { UserBaseSchema } from '~/api.gen';
+import type { EntityPage } from '~/modules/entities/types';
+import type { UserMenuItem } from '~/modules/me/types';
+import type { EntityRoute } from '~/modules/navigation/types';
+import { baseEntityRoutes } from '~/routes-config';
 
 /**
  * App-specific entity path resolver
