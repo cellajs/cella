@@ -9,7 +9,7 @@ const CallToAction = () => {
 
   return (
     <div className="mx-auto grid max-w-4xl text-center">
-      <p className="font-semibold text-4xl sm:text-6xl lg:text-7xl leading-[4rem] mb-12">{t('about:call_to_action.intro')}</p>
+      <p className="font-semibold text-4xl sm:text-5xl lg:text-6xl leading-[4rem] mb-12">{t('about:call_to_action.intro')}</p>
       <p className="text-2xl sm:text-4xl leading-[3.3rem] mb-12">
         <span className="opacity-50 mr-2">“</span>
         <span className="font-light">{t('about:call_to_action.start')}</span>
