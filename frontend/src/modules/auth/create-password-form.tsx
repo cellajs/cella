@@ -42,9 +42,9 @@ const CreatePasswordForm = () => {
     error: resetPasswordError,
   } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
     mutationFn: ({ tokenId, password }) => createPassword({ path: { tokenId }, body: { password } }),
-    onSuccess: () => {
+    onSuccess: ({ redirectPath }) => {
       toaster(t('common:success.password-reset'), 'success');
-      navigate({ to: appConfig.defaultRedirectPath });
+      navigate({ to: redirectPath ?? appConfig.defaultRedirectPath });
     },
   });
 

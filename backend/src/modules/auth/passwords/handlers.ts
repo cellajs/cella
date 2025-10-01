@@ -203,9 +203,12 @@ const authPasswordsRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    // TODO(bug) MFA on when user already auth, FE not revalidate session just keep prev one
-    const redirectPath = await initiateMfa(ctx, user);
-    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    const mfaRedirectPath = await initiateMfa(ctx, user);
+    if (mfaRedirectPath) {
+      // Append fromRoot to avoid redirecting to FE homepage
+      const redirectPath = `${mfaRedirectPath}?fromRoot=true`;
+      return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    }
 
     await setUserSession(ctx, user, strategy);
     return ctx.json({ shouldRedirect: false }, 200);

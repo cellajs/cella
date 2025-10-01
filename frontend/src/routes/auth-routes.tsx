@@ -41,7 +41,7 @@ export const AuthenticateRoute = createRoute({
     if (cause !== 'enter' || search.fromRoot) return;
 
     // If stored user, redirect to home
-    const storedUser = useUserStore.getState().user;
+    const { user: storedUser } = useUserStore.getState();
     if (!storedUser) return;
     throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
