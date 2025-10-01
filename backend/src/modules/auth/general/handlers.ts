@@ -3,7 +3,6 @@ import { appConfig } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { organizationsTable } from '#/db/schema/organizations';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -93,7 +92,6 @@ const authGeneralRouteHandlers = app
   /**
    * Get token data by id (without invoking it)
    */
-  // TODO simplify?
   .openapi(authGeneralRoutes.getTokenData, async (ctx) => {
     // Find token in request
     const { tokenId } = ctx.req.valid('param');
@@ -103,37 +101,27 @@ const authGeneralRouteHandlers = app
     const [tokenRecord] = await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.id, tokenId), eq(tokensTable.type, tokenType)));
+      .where(and(eq(tokensTable.id, tokenId), eq(tokensTable.type, tokenType)))
+      .limit(1);
     if (!tokenRecord) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
 
-    const baseData = {
+    const data = {
       email: tokenRecord.email,
       role: tokenRecord.role,
       userId: tokenRecord.userId || '',
     };
 
     // If its NOT an organization invitation, return base data
-    if (!tokenRecord.organizationId) return ctx.json(baseData, 200);
+    if (!tokenRecord.organizationId) return ctx.json(data, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
     const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
-      baseData.userId = existingUser.id;
+      data.userId = existingUser.id;
     }
 
-    // Add organization data to base data
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
-
-    const dataWithOrg = {
-      ...baseData,
-      organizationId: organization.id || '',
-      organizationName: organization.name || '',
-      organizationSlug: organization.slug || '',
-    };
-
-    return ctx.json(dataWithOrg, 200);
+    return ctx.json(data, 200);
   })
   /**
    * Start impersonation
