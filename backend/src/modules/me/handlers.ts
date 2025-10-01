@@ -1,16 +1,12 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { passwordsTable } from '#/db/schema/passwords';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
-import { totpsTable } from '#/db/schema/totps';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
@@ -25,7 +21,6 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
@@ -35,6 +30,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { getAuthInfo, getUserSessions } from './helpers/get-user-info';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -104,47 +100,16 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
-    // TODO put in helper
-    // Queries for user authentication factors
-    // Select passkey fields except for sensitive credential data
-    const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
-    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
+    // Get auth info + sessions in parallel
+    const [authInfo, sessions] = await Promise.all([getAuthInfo(user.id), getUserSessions(ctx, user.id)]);
 
-    const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, user.id)).limit(1);
-
-    const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    // Query to get verified OAuth accounts
-    const getOAuth = db
-      .select({ provider: oauthAccountsTable.provider })
-      .from(oauthAccountsTable)
-      .where(and(eq(oauthAccountsTable.userId, user.id), eq(oauthAccountsTable.verified, true)));
-
-    // Run all queries + fetch user sessions in parallel
-    const [passkeys, password, totps, oauthAccounts, sessions] = await Promise.all([
-      getPasskeys,
-      getPassword,
-      getTotp,
-      getOAuth,
-      getUserSessions(ctx, user.id),
-    ]);
-
+    const { oauth, ...restInfo } = authInfo;
     // Filter only providers that are enabled in appConfig
-    const enabledOAuth = oauthAccounts
-      .map((el) => el.provider)
+    const enabledOAuth = oauth
+      .map(({ provider }) => provider)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    // Return a consolidated JSON response with all relevant auth info
-    return ctx.json(
-      {
-        enabledOAuth,
-        hasTotp: !!totps.length,
-        hasPassword: !!password.length,
-        sessions,
-        passkeys,
-      },
-      200,
-    );
+    return ctx.json({ ...restInfo, enabledOAuth, sessions }, 200);
   })
   /**
    * Get my user menu
