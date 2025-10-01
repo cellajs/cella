@@ -31,13 +31,14 @@ export const EntityInvitations = () => {
 
   const { mutate: handleInvitation } = useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
     mutationFn: ({ id, acceptOrReject }) => handleMembershipInvitation({ path: { id, acceptOrReject } }),
-    onSuccess: async (settledEntity) => {
+    onSuccess: async (settledEntity, { acceptOrReject }) => {
       await getAndSetMenu();
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
         return oldData.filter((invite) => invite.entity.id !== settledEntity.id);
       });
-      toaster(t('common:invitation_accepted'), 'success');
+
+      toaster(t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
     },
   });
 
