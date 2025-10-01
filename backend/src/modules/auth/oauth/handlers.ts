@@ -135,7 +135,6 @@ const authOAuthRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      // TODO is it a good idea to have this inside the try catch too?
       return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
