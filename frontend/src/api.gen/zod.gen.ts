@@ -289,7 +289,7 @@ export const zSignOutData = z.object({
  */
 export const zSignOutResponse = z.boolean();
 
-export const zCreateTotpChallengeData = z.object({
+export const zGenerateTotpKeyData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -298,23 +298,10 @@ export const zCreateTotpChallengeData = z.object({
 /**
  * Challenge created
  */
-export const zCreateTotpChallengeResponse = z.object({
+export const zGenerateTotpKeyResponse = z.object({
   totpUri: z.string(),
   manualKey: z.string(),
 });
-
-export const zCreateTotpData = z.object({
-  body: z.object({
-    code: z.string().regex(/^\d{6}$/),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * TOTP activated
- */
-export const zCreateTotpResponse = z.boolean();
 
 export const zDeleteTotpData = z.object({
   body: z.optional(z.never()),
@@ -326,6 +313,19 @@ export const zDeleteTotpData = z.object({
  * TOTP deleted
  */
 export const zDeleteTotpResponse = z.boolean();
+
+export const zCreateTotpData = z.object({
+  body: z.object({
+    code: z.string().regex(/^\d{6}$/),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * TOTP created
+ */
+export const zCreateTotpResponse = z.boolean();
 
 export const zSignInWithTotpData = z.object({
   body: z.optional(
@@ -482,7 +482,7 @@ export const zDeletePasskeyData = z.object({
  */
 export const zDeletePasskeyResponse = z.boolean();
 
-export const zCreatePasskeyChallengeData = z.object({
+export const zGeneratePasskeyChallengeData = z.object({
   body: z.optional(
     z.object({
       type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
@@ -494,9 +494,9 @@ export const zCreatePasskeyChallengeData = z.object({
 });
 
 /**
- * Challenge created
+ * Challenge generated
  */
-export const zCreatePasskeyChallengeResponse = z.object({
+export const zGeneratePasskeyChallengeResponse = z.object({
   challengeBase64: z.string(),
   credentialIds: z.array(z.string()),
 });

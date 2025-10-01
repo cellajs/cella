@@ -1,17 +1,21 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
+import { mailer } from '#/lib/mailer';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { RequestResponseEmail, RequestResponseEmailProps } from '../../../emails/request-was-sent';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
@@ -55,6 +59,16 @@ const requestRouteHandlers = app
     if (type === 'waitlist') await sendSlackMessage('Join waitlist request', normalizedEmail);
     if (type === 'newsletter') await sendSlackMessage('Join newsletter request', normalizedEmail);
     if (type === 'contact') await sendSlackMessage(`Request for contact with message: ${message},`, normalizedEmail);
+
+    // Send email
+    const lng = appConfig.defaultLanguage;
+    const subject = i18n.t('backend:email.request.subject', { lng, appName: appConfig.name, requestType: type });
+    const staticProps = { lng, subject, type, message };
+    const recipients = [{ email: normalizedEmail }];
+
+    type Recipient = { email: string };
+
+    mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestResponseEmail, staticProps, recipients);
 
     const data = {
       ...createdRequest,

@@ -38,7 +38,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
         onChange={(e) => setEmailValue(e.target.value)}
         required
       />
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col gap-2">
         <SubmitButton disabled={!emailValue} loading={isPending} onClick={() => requestPasswordEmail(emailValue)}>
           <Send size={16} className="mr-2" />
           {t('common:send_reset_link')}

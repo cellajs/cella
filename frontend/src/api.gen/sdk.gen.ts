@@ -15,9 +15,6 @@ import type {
   CreateOrganizationData,
   CreateOrganizationErrors,
   CreateOrganizationResponses,
-  CreatePasskeyChallengeData,
-  CreatePasskeyChallengeErrors,
-  CreatePasskeyChallengeResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -27,9 +24,6 @@ import type {
   CreateRequestData,
   CreateRequestErrors,
   CreateRequestResponses,
-  CreateTotpChallengeData,
-  CreateTotpChallengeErrors,
-  CreateTotpChallengeResponses,
   CreateTotpData,
   CreateTotpErrors,
   CreateTotpResponses,
@@ -63,6 +57,12 @@ import type {
   DeleteUsersData,
   DeleteUsersErrors,
   DeleteUsersResponses,
+  GeneratePasskeyChallengeData,
+  GeneratePasskeyChallengeErrors,
+  GeneratePasskeyChallengeResponses,
+  GenerateTotpKeyData,
+  GenerateTotpKeyErrors,
+  GenerateTotpKeyResponses,
   GetAttachmentData,
   GetAttachmentErrors,
   GetAttachmentResponses,
@@ -387,45 +387,21 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
 };
 
 /**
- * Create TOTP challenge
+ * Generate TOTP key
  * 🛡️ Requires authentication
  *
- * Generates a new TOTP challenge for current user and returns a provisioning URI and Base32 manual key.
+ * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
  *
- * **POST /auth/totp/register** ·· [createTotpChallenge](http://localhost:4000/docs#tag/auth/post/auth/totp/register) ·· _auth_
+ * **POST /auth/totp/generate-key** ·· [generateTotpKey](http://localhost:4000/docs#tag/auth/post/auth/totp/generate-key) ·· _auth_
  *
- * @param {createTotpChallengeData} options
+ * @param {generateTotpKeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const createTotpChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreateTotpChallengeData, ThrowOnError>) => {
-  return (options?.client ?? client).post<CreateTotpChallengeResponses, CreateTotpChallengeErrors, ThrowOnError, 'data'>({
+export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: Options<GenerateTotpKeyData, ThrowOnError>) => {
+  return (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/totp/register',
+    url: '/auth/totp/generate-key',
     ...options,
-  });
-};
-
-/**
- * Activate TOTP
- * 🛡️ Requires authentication
- *
- * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
- *
- * **POST /auth/totp/activate** ·· [createTotp](http://localhost:4000/docs#tag/auth/post/auth/totp/activate) ·· _auth_
- *
- * @param {createTotpData} options
- * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/totp/activate',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 };
 
@@ -445,6 +421,30 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
     responseStyle: 'data',
     url: '/auth/totp',
     ...options,
+  });
+};
+
+/**
+ * Set TOTP
+ * 🛡️ Requires authentication
+ *
+ * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
+ *
+ * **POST /auth/totp** ·· [createTotp](http://localhost:4000/docs#tag/auth/post/auth/totp) ·· _auth_
+ *
+ * @param {createTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 };
 
@@ -672,23 +672,23 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
 };
 
 /**
- * Create passkey challenge
+ * Generate passkey challenge
  * 🌐 Public access
  * ⏳ Spam (10/h)
  *
- * Initiates the passkey registration or authentication flow by creating a device bound challenge.
+ * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
- * **POST /auth/passkey-challenge** ·· [createPasskeyChallenge](http://localhost:4000/docs#tag/auth/post/auth/passkey-challenge) ·· _auth_
+ * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](http://localhost:4000/docs#tag/auth/post/auth/passkey/generate-challenge) ·· _auth_
  *
- * @param {createPasskeyChallengeData} options
+ * @param {generatePasskeyChallengeData} options
  * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const createPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<CreatePasskeyChallengeData, ThrowOnError>) => {
-  return (options?.client ?? client).post<CreatePasskeyChallengeResponses, CreatePasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GeneratePasskeyChallengeData, ThrowOnError>) => {
+  return (options?.client ?? client).post<GeneratePasskeyChallengeResponses, GeneratePasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/passkey-challenge',
+    url: '/auth/passkey/generate-challenge',
     ...options,
     headers: {
       'Content-Type': 'application/json',
