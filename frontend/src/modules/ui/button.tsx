@@ -69,7 +69,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp className={cn(baseStyle, loading && 'relative')} ref={ref} disabled={loading || disabled} {...props}>
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/75">
+          <div className={cn(baseStyle, 'absolute inset-0 flex items-center justify-center bg-background/75')}>
             <Loader2 className="animate-spin text-primary" />
           </div>
         )}

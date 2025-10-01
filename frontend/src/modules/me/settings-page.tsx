@@ -43,6 +43,8 @@ const UserSettingsPage = () => {
   const deleteButtonRef = useRef(null);
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
+
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   const { mutate: requestPasswordChange } = useMutation<RequestPasswordResponse, ApiError | Error, NonNullable<RequestPasswordData['body']>>({
@@ -82,8 +84,9 @@ const UserSettingsPage = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
-    // TODO show spinner/loading like in auth page?
     try {
+      setLoadingProvider(provider);
+
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams({ type: 'connect', redirect: encodeURIComponent(window.location.pathname) });
 
@@ -91,6 +94,7 @@ const UserSettingsPage = () => {
       window.location.assign(providerUrl);
     } catch (error) {
       toaster(t('common:url_malformed'), 'error');
+      setLoadingProvider(null);
     }
   };
 
@@ -211,6 +215,7 @@ const UserSettingsPage = () => {
                         return (
                           // Assert is necessary because apps might not have all providers enabled
                           <Button
+                            loading={loadingProvider === provider.id}
                             key={provider.id}
                             type="button"
                             variant="plain"
