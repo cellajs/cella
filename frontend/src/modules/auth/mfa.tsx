@@ -4,18 +4,19 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
+import { useUserStore } from '~/store/user';
 
 /**
- * Handles multifactor authentication step in the authentication process.
+ * Handles multifactor authentication in the authentication flows.
  */
-export const MfaStep = () => {
+export const Mfa = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, resetSteps } = useAuthStepsContext();
+
+  const { lastUser, clearUserStore } = useUserStore();
 
   const [isActive, setIsActive] = useState(false);
 
@@ -24,18 +25,25 @@ export const MfaStep = () => {
       await signOut();
       toaster(t('common:success.cancel_mfa'), 'success');
     } catch (error) {
+      // TODO log to sentry?
     } finally {
-      resetSteps();
+      clearUserStore();
       navigate({ to: '/auth/authenticate', replace: true });
     }
   };
+
+  // If somehow undefined return to authenticate
+  if (!lastUser?.email) {
+    navigate({ to: '/auth/authenticate', replace: true });
+    return <></>;
+  }
 
   return (
     <>
       <h1 className="text-2xl text-center">{t('common:mfa_header')}</h1>
 
       <Button variant="ghost" onClick={handleCancelMfa} className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10">
-        <span className="truncate">{email}</span>
+        <span className="truncate">{lastUser.email}</span>
         <ChevronDown size={16} className="ml-1" />
       </Button>
 

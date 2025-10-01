@@ -34,7 +34,7 @@ export const SignInStep = () => {
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  const { lastUser, clearUserStore } = useUserStore();
+  const { lastUser, clearUserStore, setLastUser } = useUserStore();
   const { redirect: encodedRedirect, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
@@ -51,6 +51,8 @@ export const SignInStep = () => {
     mutationFn: (body) => signIn({ body }),
     onSuccess: ({ redirectPath: apiRedirectPath }) => {
       if (apiRedirectPath) {
+        // TODO refactor conditional like this
+        if (apiRedirectPath === '/auth/mfa') setLastUser({ email, mfaRequired: true });
         navigate({ to: apiRedirectPath, replace: true });
         return;
       }

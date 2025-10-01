@@ -31,7 +31,8 @@ export const routeTree = RootRoute.addChildren([
     ErrorNoticeRoute,
     SignOutRoute,
     AuthLayoutRoute.addChildren([
-      AuthenticateRoute.addChildren([MfaRoute]),
+      AuthenticateRoute,
+      MfaRoute,
       RequestPasswordRoute,
       CreatePasswordWithTokenRoute,
       EmailVerificationRoute,

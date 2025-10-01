@@ -1,4 +1,4 @@
-import { useMatchRoute, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { type ReactNode, useEffect, useState } from 'react';
 import type { ApiError } from '~/lib/api';
@@ -9,11 +9,8 @@ import { useUserStore } from '~/store/user';
 
 // TODO refactor to store?
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
-  const matchRoute = useMatchRoute();
   const { lastUser } = useUserStore();
   const { tokenId, error, severity } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
-
-  const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa' });
 
   // Initialize email and step
   const initEmail = (!tokenId && lastUser?.email) || '';
@@ -35,11 +32,6 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
     setStepState('checkEmail');
     setAuthError(null);
   };
-
-  // Handle MFA from query params
-  useEffect(() => {
-    if (isMfaRoute) setStepState('mfa');
-  }, [isMfaRoute]);
 
   useEffect(() => {
     if (!error) return;

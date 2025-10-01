@@ -5,10 +5,10 @@ import { z } from 'zod';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
 import AuthPage from '~/modules/auth/layout';
+import { Mfa } from '~/modules/auth/mfa';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
-import { MfaStep } from '~/modules/auth/steps/mfa';
 import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { errorSearchSchema, PublicLayoutRoute } from '~/routes/base-routes';
@@ -54,12 +54,12 @@ export const AuthenticateRoute = createRoute({
 });
 
 export const MfaRoute = createRoute({
-  path: '/mfa',
+  path: '/auth/mfa',
   validateSearch: authenticateRouteSearch,
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
-  getParentRoute: () => AuthenticateRoute,
-  component: () => <MfaStep />,
+  getParentRoute: () => AuthLayoutRoute,
+  component: () => <Mfa />,
 });
 
 export const RequestPasswordRoute = createRoute({

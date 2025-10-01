@@ -1,4 +1,3 @@
-import { Outlet } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import OAuthProviders from '~/modules/auth/oauth-providers';
@@ -46,8 +45,6 @@ const AuthSteps = () => {
 
       {step === 'signIn' && <SignInStep />}
       {step === 'signUp' && <SignUpStep />}
-
-      {step === 'mfa' && <Outlet />}
 
       {step === 'waitlist' && <WaitlistStep />}
       {step === 'inviteOnly' && <InviteOnlyStep />}

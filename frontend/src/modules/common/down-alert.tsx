@@ -80,7 +80,7 @@ export const DownAlert = () => {
     };
   }, [downAlert, isOnline]);
 
-  // Triggered by Failed to fetch err on serv helth check and runs a delayed health check fn to wait for backend recovery
+  // Triggered by Failed to fetch err on server health check and runs a delayed health check fn to wait for backend recovery
   useEffect(() => {
     if (downAlert !== 'backend_not_ready' || dismissedAlerts.backend_not_ready || !isOnline) return;
 

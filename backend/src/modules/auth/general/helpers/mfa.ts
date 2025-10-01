@@ -42,7 +42,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   await setAuthCookie(ctx, 'confirm-mfa', generatedToken, timespan);
 
   // Return the path to redirect the user to MFA authentication page
-  return '/auth/authenticate/mfa';
+  return '/auth/mfa';
 };
 
 /**
