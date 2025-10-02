@@ -42,6 +42,7 @@ export const useInviteMemberMutation = () =>
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
     onSuccess: ({ invitesSentCount }, { entity }) => {
+      // TODO make SSE for updating pending counts and table
       const { id, slug, entityType, organizationId } = entity;
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
@@ -66,6 +67,18 @@ export const useInviteMemberMutation = () =>
 
           return updateInvitesCount(oldEntity, invitesSentCount);
         });
+
+        const queries = queryClient.getQueriesData<EntityPage>({
+          queryKey: [entityType],
+          predicate: (query) => {
+            const oldEntity = query.state.data as EntityPage | undefined;
+            return !!oldEntity && oldEntity.id === id; // only update matching entity
+          },
+        });
+
+        for (const [key] of queries) {
+          queryClient.setQueryData<EntityPage>(key, (entity) => (entity ? updateInvitesCount(entity, invitesSentCount) : entity));
+        }
       }
     },
     onError,
