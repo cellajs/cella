@@ -103,7 +103,7 @@ const membershipRouteHandlers = app
           db
             .update(tokensTable)
             .set({
-              entityType: entityType,
+              entityType,
               [targetEntityIdField]: entityId,
               ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
               expiresAt: createDate(new TimeSpan(7, 'd')),
@@ -146,15 +146,16 @@ const membershipRouteHandlers = app
     // Process existing users
     await Promise.all(
       existingUsers.map(async ({ id: userId, email }) => {
+        const userMemberships = memberships.filter((m) => m.userId === userId);
         // Check if the user is already a member of the target entity
-        const targetMembership = memberships.find((m) => m.contextType === entityType && m[targetEntityIdField] === entityId);
+        const targetMembership = userMemberships.find((m) => m.contextType === entityType && m[targetEntityIdField] === entityId);
         if (targetMembership) {
           logEvent('info', `User already member of ${entityType}`, { userId: userId, [targetEntityIdField]: entityId });
           return;
         }
 
         // Check for organization memberships
-        const hasOrgMembership = memberships.some((m) => m.contextType === 'organization' && m.organizationId === organization.id);
+        const hasOrgMembership = userMemberships.some((m) => m.contextType === 'organization' && m.organizationId === organization.id);
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
 
@@ -163,7 +164,7 @@ const membershipRouteHandlers = app
 
         // Check for associated memberships
         const addAssociatedMembership = associatedEntity
-          ? memberships.some((m) => m.contextType === associatedEntity.type && m[associatedEntity.field] === associatedEntity.id)
+          ? userMemberships.some((m) => m.contextType === associatedEntity.type && m[associatedEntity.field] === associatedEntity.id)
           : false;
 
         const createdMembership = await insertMembership({ userId, role, entity, addAssociatedMembership });
