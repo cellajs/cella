@@ -12,13 +12,11 @@ type SSEEventsMap = {
   entity_deleted: { id: string };
 };
 
-type EventCallback<T extends keyof SSEEventsMap> = (event: MessageEvent<string>, data: SSEEventsMap[T]) => void;
-
-const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: EventCallback<T>) => {
-  useSSE(type, (e) => {
+const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: (data: SSEEventsMap[T]) => void) => {
+  useSSE(type, (e: MessageEvent<string>) => {
     try {
       const data = JSON.parse(e.data) as SSEEventsMap[T];
-      callback(e, data);
+      callback(data);
     } catch (error) {
       Sentry.captureException(error);
       console.error(`Failed to parse SSE event - ${type}`, error);
@@ -28,15 +26,15 @@ const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: EventCallb
 
 const SSE = () => {
   // Add menu item
-  useTypedSSE('membership_created', (_, data) => addMenuItem(data.newItem, data.attachToIdOrSlug));
+  useTypedSSE('membership_created', ({ newItem, attachToIdOrSlug }) => addMenuItem(newItem, attachToIdOrSlug));
 
   // Update menu item
-  useTypedSSE('entity_updated', (_, data) => updateMenuItem(data));
-  useTypedSSE('membership_updated', (_, data) => updateMenuItem(data));
+  useTypedSSE('entity_updated', (data) => updateMenuItem(data));
+  useTypedSSE('membership_updated', (data) => updateMenuItem(data));
 
   // Delete menu item
-  useTypedSSE('entity_deleted', (_, data) => deleteMenuItem(data.id));
-  useTypedSSE('membership_removed', (_, data) => deleteMenuItem(data.id));
+  useTypedSSE('entity_deleted', ({ id }) => deleteMenuItem(id));
+  useTypedSSE('membership_removed', ({ id }) => deleteMenuItem(id));
 
   return null; // This component does not render any UI
 };
