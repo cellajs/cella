@@ -4,13 +4,12 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 
 const SSE = () => {
-  // Handle incoming event to add a new entity to the menu
-  const addEntity = (e: MessageEvent<string>) => {
+  // Handle incoming event to add a new menu item
+  const handleAddMenuItem = (e: MessageEvent<string>) => {
     try {
       const data = JSON.parse(e.data);
       const { newItem, sectionName, parentSlug } = data;
 
-      // Add new menu item under correct section and parent(if exist)
       addMenuItem(newItem as UserMenuItem, sectionName, parentSlug);
     } catch (error) {
       Sentry.captureException(error);
@@ -19,34 +18,34 @@ const SSE = () => {
   };
 
   // Handle updates to an existing menu item
-  const updateEntity = (e: MessageEvent<string>) => {
+  const handleUpdateMenuItem = (e: MessageEvent<string>) => {
     try {
       const updatedItem = JSON.parse(e.data);
-
       updateMenuItem(updatedItem as UserMenuItem);
     } catch (error) {
       Sentry.captureException(error);
-      console.error('Error parsing update event', error);
+      console.error('Error parsing update menu item event', error);
     }
   };
 
-  // Handle removal of an entity from the menu
-  const removeEntity = (e: MessageEvent<string>) => {
+  // Handle removal of a menu item
+  const handleDeleteMenuItem = (e: MessageEvent<string>) => {
     try {
       const deleteResponse = JSON.parse(e.data);
-
-      // Remove item by ID
       deleteMenuItem(deleteResponse.id);
     } catch (error) {
       Sentry.captureException(error);
-      console.error('Error parsing remove event', error);
+      console.error('Error parsing delete menu item event', error);
     }
   };
 
   // Register SSE listeners
-  useSSE('add_entity', (e) => addEntity(e));
-  useSSE('update_entity', (e) => updateEntity(e));
-  useSSE('remove_entity', (e) => removeEntity(e));
+  useSSE('membership_created', (e) => handleAddMenuItem(e));
+  useSSE('membership_updated', (e) => handleUpdateMenuItem(e));
+  useSSE('membership_removed', (e) => handleDeleteMenuItem(e));
+
+  useSSE('entity_updated', (e) => handleUpdateMenuItem(e));
+  useSSE('entity_deleted', (e) => handleDeleteMenuItem(e));
 
   return null; // This component does not render any UI
 };
