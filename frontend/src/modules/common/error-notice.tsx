@@ -21,9 +21,7 @@ interface ErrorNoticeProps {
 }
 
 export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
-  if (!window.Gleap) {
-    return contactFormHandler(ref);
-  }
+  if (!window.Gleap) return contactFormHandler(ref);
   window.Gleap.openConversations();
 };
 

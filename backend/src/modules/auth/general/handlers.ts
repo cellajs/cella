@@ -60,7 +60,7 @@ const authGeneralRouteHandlers = app
     return ctx.json(true, 200);
   })
   /**
-   * Consume token and redirect with single use session token in cookie
+   * Validate and consume token and redirect with single use session token in cookie
    */
   .openapi(authGeneralRoutes.invokeToken, async (ctx) => {
     const { token, type: tokenType } = ctx.req.valid('param');

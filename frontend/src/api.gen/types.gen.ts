@@ -843,52 +843,6 @@ export type SignUpWithTokenResponses = {
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
 
-export type VerifyEmailData = {
-  body?: never;
-  path: {
-    tokenId: string;
-  };
-  query?: {
-    redirect?: string;
-  };
-  url: '/auth/verify-email/{tokenId}';
-};
-
-export type VerifyEmailErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
-
 export type RequestPasswordData = {
   body?: {
     email: string;

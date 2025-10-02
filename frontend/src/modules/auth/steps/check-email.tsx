@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -8,11 +9,11 @@ import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -28,7 +29,9 @@ type FormValues = z.infer<typeof formSchema>;
  */
 export const CheckEmailStep = () => {
   const { t } = useTranslation();
-  const { setStep } = useAuthStepsContext();
+  const navigate = useNavigate();
+
+  const { setStep, setError } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
@@ -44,9 +47,11 @@ export const CheckEmailStep = () => {
     onError: (error: ApiError) => {
       let nextStep: AuthStep = 'inviteOnly';
 
-      // If there is an unclaimed invitation token, redirect to error page
-      if (error.type === 'invite_takes_priority') return setStep('error', form.getValues('email'), error);
-
+      // If there is an unclaimed invitation token, redirect to auth error page
+      if (error.type === 'invite_takes_priority') {
+        setError(error);
+        navigate({ to: '/auth/error' });
+      }
       // If registration is enabled or user has a token, proceed to sign up
       if (appConfig.has.registrationEnabled) nextStep = 'signUp';
       // If registration is disabled and user has no token, proceed to waitlist

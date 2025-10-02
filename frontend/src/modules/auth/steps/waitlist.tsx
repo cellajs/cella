@@ -1,9 +1,9 @@
 import { ChevronDown, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { LegalNotice } from '~/modules/auth/steps/legal-notice';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
+import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 import { Button } from '~/modules/ui/button';
+import { useAuthStore } from '~/store/auth';
 
 /**
  * Renders the waitlist request step, including:
@@ -14,7 +14,7 @@ import { Button } from '~/modules/ui/button';
 export const WaitlistStep = () => {
   const { t } = useTranslation();
 
-  const { email, resetSteps } = useAuthStepsContext();
+  const { email, resetSteps } = useAuthStore();
 
   return (
     <>

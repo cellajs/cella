@@ -1,7 +1,7 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
@@ -12,7 +12,7 @@ const requestRoutes = {
     method: 'post',
     path: '/',
     guard: isPublicAccess,
-    middleware: [isNoBot, spamLimiter],
+    middleware: [isNoBot, emailEnumLimiter, spamLimiter],
     tags: ['requests'],
     summary: 'Create request',
     description: 'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',

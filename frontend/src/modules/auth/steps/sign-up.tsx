@@ -10,12 +10,13 @@ import type { z } from 'zod';
 import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import { LegalNotice } from '~/modules/auth/steps/legal-notice';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
+import { LegalNotice } from '~/modules/auth/legal-notice';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { TokenData } from '../types';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -28,11 +29,11 @@ type FormValues = z.infer<typeof formSchema>;
 /**
  * Handles user sign-up, including standard registration and invitation token flow.
  */
-export const SignUpStep = () => {
+export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { email, tokenData, setStep, resetSteps } = useAuthStepsContext();
+  const { email, resetSteps } = useAuthStore();
 
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
@@ -42,10 +43,6 @@ export const SignUpStep = () => {
   const { mutate: _signUp, isPending } = useMutation<SignUpResponse, ApiError, NonNullable<SignUpData['body']>>({
     mutationFn: (body) => signUp({ body }),
     onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
-    onError: (error: ApiError) => {
-      // If there is an unclaimed invitation token, redirect to error page
-      if (error.type === 'invite_takes_priority') return setStep('error', form.getValues('email'), error);
-    },
   });
 
   // Handle sign up with token to accept invitation

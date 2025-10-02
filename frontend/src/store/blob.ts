@@ -15,6 +15,9 @@ interface BlobStoreState {
   clearAll: () => void;
 }
 
+/**
+ * Blok store to manage cached indexedDb files as long as you leave the browser tab open.
+ */
 export const useBlobStore = create<BlobStoreState>()(
   devtools(
     persist(

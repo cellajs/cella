@@ -12,6 +12,9 @@ interface DraftStoreState {
   clearForms(): void; // Clears all stored drafts
 }
 
+/**
+ * Draft store for having auto draft functionality on forms that use useDraftForm.
+ */
 export const useDraftStore = create<DraftStoreState>()(
   immer(
     persist(

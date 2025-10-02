@@ -11,10 +11,10 @@ import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -30,7 +30,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const SignInStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, resetSteps } = useAuthStepsContext();
+  const { email, resetSteps } = useAuthStore();
 
   const passwordRef = useRef<HTMLInputElement>(null);
 

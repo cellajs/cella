@@ -379,18 +379,6 @@ export const zSignUpWithTokenResponse = z.object({
   redirectPath: z.optional(z.string()),
 });
 
-export const zVerifyEmailData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    tokenId: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      redirect: z.optional(z.string()),
-    }),
-  ),
-});
-
 export const zRequestPasswordData = z.object({
   body: z.optional(
     z.object({

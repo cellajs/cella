@@ -16,7 +16,6 @@ import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verif
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
-import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
 import authPasswordsRoutes from '#/modules/auth/passwords/routes';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
@@ -114,14 +113,6 @@ const authPasswordsRouteHandlers = app
     const redirectPath = `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`;
 
     return ctx.json({ shouldRedirect: true, redirectPath }, 200);
-  })
-  /**
-   * Verify email
-   */
-  .openapi(authPasswordsRoutes.verifyEmail, async (ctx) => {
-    const token = getContextToken();
-
-    return handleEmailVerification(ctx, token);
   })
   /**
    * Request reset password email

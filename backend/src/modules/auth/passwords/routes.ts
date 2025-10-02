@@ -63,29 +63,6 @@ const authPasswordsRoutes = {
     },
   }),
 
-  verifyEmail: createCustomRoute({
-    operationId: 'verifyEmail',
-    method: 'get',
-    path: '/verify-email/{tokenId}',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('email-verification'), hasValidSingleUseToken('email-verification')],
-    tags: ['auth'],
-    summary: 'Verify email by token',
-    description: "Verifies a user's email using a single-use session token in cookie. Grants a session upon success.",
-    security: [],
-    request: {
-      params: z.object({ tokenId: z.string() }),
-      query: z.object({ redirect: z.string().optional() }),
-    },
-    responses: {
-      302: {
-        description: 'Session created and redirected',
-        headers: locationSchema,
-      },
-      ...errorResponses,
-    },
-  }),
-
   requestPassword: createCustomRoute({
     operationId: 'requestPassword',
     method: 'post',

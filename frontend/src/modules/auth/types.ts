@@ -9,4 +9,4 @@ export interface PasskeyCredentialProps {
 
 export type TokenData = GetTokenDataResponse;
 
-export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'error' | 'mfa';
+export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'mfa';
