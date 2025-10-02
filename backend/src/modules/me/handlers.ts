@@ -313,7 +313,7 @@ const meRouteHandlers = app
 
       throw new AppError({
         status: 500,
-        type: 'missing_auth_key',
+        type: 'auth_key_not_found',
         severity: 'error',
         ...(error instanceof Error ? { originalError: error } : {}),
       });

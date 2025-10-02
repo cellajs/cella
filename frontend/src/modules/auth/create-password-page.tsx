@@ -24,7 +24,7 @@ const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const formSchema = z.object({ password: z.string().min(8).max(100) });
 type FormValues = z.infer<typeof formSchema>;
 
-const CreatePasswordForm = () => {
+const CreatePasswordPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -109,4 +109,4 @@ const CreatePasswordForm = () => {
   );
 };
 
-export default CreatePasswordForm;
+export default CreatePasswordPage;

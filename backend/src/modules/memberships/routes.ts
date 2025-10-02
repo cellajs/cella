@@ -12,7 +12,14 @@ import {
   pendingInvitationSchema,
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
-import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import {
+  emailOrTokenIdQuerySchema,
+  entityWithTypeQuerySchema,
+  idInOrgParamSchema,
+  idOrSlugSchema,
+  idsBodySchema,
+  inOrgParamSchema,
+} from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
@@ -177,7 +184,7 @@ const membershipRoutes = {
     description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: z.object({ email: z.email(), tokenId: z.string().optional() }) } } },
+      body: { content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
     },
     responses: {
       200: {

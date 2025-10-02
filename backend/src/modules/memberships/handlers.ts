@@ -16,7 +16,7 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
-import { memberSelect, userSelect } from '#/modules/users/helpers/select';
+import { memberSelect, userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -224,10 +224,10 @@ const membershipRouteHandlers = app
     );
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map(({ email, token }) => ({
+    const recipients = insertedTokens.map(({ email, token, id }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${token}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${token}?tokenId=${id}`,
     }));
 
     const emailProps = {
@@ -382,22 +382,23 @@ const membershipRouteHandlers = app
     const [membership] = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.tokenId)))
+      .where(
+        and(
+          eq(membershipsTable.id, membershipId),
+          eq(membershipsTable.userId, user.id),
+          eq(membershipsTable.contextType, 'organization'),
+          isNotNull(membershipsTable.tokenId),
+        ),
+      )
       .limit(1);
 
     if (!membership) throw new AppError({ status: 404, type: 'membership_not_found', severity: 'error', meta: { membershipId } });
-
-    // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
-    if (user.id !== membership.userId) throw new AppError({ status: 401, type: 'user_mismatch', severity: 'error' });
 
     // Can't accept already active membership
     if (membership.activatedAt) throw new AppError({ status: 400, type: 'membership_already_active', severity: 'error', meta: { membershipId } });
 
     // Can't accept membership without token
     if (!membership.tokenId) throw new AppError({ status: 400, type: 'membership_without_token', severity: 'error', meta: { membershipId } });
-
-    // Make sure its an organization membership
-    if (membership.contextType !== 'organization') throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
     if (acceptOrReject === 'accept') {
       // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
@@ -528,16 +529,14 @@ const membershipRouteHandlers = app
    */
   .openapi(membershipRoutes.resendInvitation, async (ctx) => {
     const { email, tokenId } = ctx.req.valid('json');
-    const normalizedEmail = email.toLowerCase().trim();
 
-    const filters = [
-      eq(tokensTable.type, 'invitation'),
-      eq(tokensTable.email, normalizedEmail),
-      isNotNull(tokensTable.entityType),
-      isNotNull(tokensTable.role),
-      isNull(tokensTable.invokedAt),
-    ];
-    if (tokenId) filters.push(eq(tokensTable.id, tokenId));
+    const normalizedEmail = email?.toLowerCase().trim();
+
+    const filters = [eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNotNull(tokensTable.role)];
+
+    if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
+    else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
+    else throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Retrieve token
     const [oldToken] = await db
@@ -547,18 +546,18 @@ const membershipRouteHandlers = app
       .orderBy(desc(tokensTable.createdAt))
       .limit(1);
 
-    if (!oldToken) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+    if (!oldToken) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
 
     const { entityType, role, email: userEmail } = oldToken;
 
-    if (!entityType || !role) throw new AppError({ status: 401, type: 'invalid_request', severity: 'warn' });
+    if (!entityType || !role) throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
 
     const entityIdField = appConfig.entityIdFields[entityType];
     const entityId = oldToken[entityIdField];
-    if (!entityId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+    if (!entityId) throw new AppError({ status: 500, type: 'server_error', entityType, severity: 'error' });
 
     const entity = await resolveEntity(entityType, entityId);
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType });
 
     // Insert token first
     const [{ newTokenId, newToken }] = await db
@@ -568,6 +567,8 @@ const membershipRouteHandlers = app
         id: nanoid(),
         token: nanoid(40), // unique hashed token
         expiresAt: createDate(new TimeSpan(7, 'd')),
+        invokedAt: null,
+        singleUseToken: null,
       })
       .returning({ newTokenId: tokensTable.id, newToken: tokensTable.token });
 
@@ -584,10 +585,23 @@ const membershipRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}?tokenId=${newTokenId}`,
     };
 
+    let senderName = 'System';
+    let senderThumbnailUrl: null | string = null;
+
+    // Get original sender
+    if (oldToken.createdBy) {
+      const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+
+      senderName = sender.name;
+      senderThumbnailUrl = sender.thumbnailUrl;
+    }
+
     const emailProps = {
+      senderName,
+      senderThumbnailUrl,
       entityName: entity.name,
       role,
       subject: i18n.t('backend:email.member_invite.subject', {

@@ -356,8 +356,9 @@ const handleUnverifiedOAuthAccount = async (
  * @param ctx - The request context.
  * @returns A validated redirect path string.
  */
+// TODO is see nowhere a setAuthCookie for this cookie name?
 const getOAuthRedirectPath = async (ctx: Context<Env>): Promise<string> => {
-  const redirect = await getAuthCookie(ctx, 'oauth_redirect');
+  const redirect = await getAuthCookie(ctx, 'oauth-redirect');
 
   return isValidRedirectPath(redirect) || appConfig.defaultRedirectPath;
 };

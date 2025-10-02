@@ -2,7 +2,7 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 
-const EmailVerification = () => {
+const EmailVerificationPage = () => {
   const { t } = useTranslation();
 
   const { reason } = useParams({ from: '/publicLayout/authLayout/auth/email-verification/$reason' });
@@ -20,4 +20,4 @@ const EmailVerification = () => {
   );
 };
 
-export default EmailVerification;
+export default EmailVerificationPage;

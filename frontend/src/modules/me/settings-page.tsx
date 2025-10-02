@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
@@ -93,6 +94,7 @@ const UserSettingsPage = () => {
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
     } catch (error) {
+      Sentry.captureException(error);
       toaster(t('common:url_malformed'), 'error');
       setLoadingProvider(null);
     }

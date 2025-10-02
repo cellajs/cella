@@ -263,7 +263,9 @@ export type InvokeTokenData = {
     type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
     token: string;
   };
-  query?: never;
+  query: {
+    tokenId: string;
+  };
   url: '/auth/invoke-token/{type}/{token}';
 };
 
@@ -4220,7 +4222,7 @@ export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof
 
 export type ResendInvitationData = {
   body?: {
-    email: string;
+    email?: string;
     tokenId?: string;
   };
   path?: never;

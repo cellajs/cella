@@ -39,7 +39,6 @@ function isOAuthEnabled(provider: EnabledOAuthProvider): boolean {
   return enabledOAuthProviders.includes(provider);
 }
 
-// TODO make this generic for all modules?
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authOAuthRouteHandlers = app
@@ -111,7 +110,7 @@ const authOAuthRouteHandlers = app
     }
 
     // Verify cookie by `state` (CSRF protection)
-    const oauthCookie = await getAuthCookie(ctx, `oauth_${state}`);
+    const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
@@ -165,7 +164,7 @@ const authOAuthRouteHandlers = app
     }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
-    const oauthCookie = await getAuthCookie(ctx, `oauth_${state}`);
+    const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
@@ -213,7 +212,7 @@ const authOAuthRouteHandlers = app
     }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
-    const oauthCookie = await getAuthCookie(ctx, `oauth_${state}`);
+    const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {

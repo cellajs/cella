@@ -32,7 +32,7 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
     if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
 
-  // // Delete previous session (skip if impersonation)
+  // TODO why is this commented out? // Delete previous session (skip if impersonation)
   // if (type !== 'impersonation') {
   //   const existingSession = deleteAuthCookie(ctx, 'session');
 
@@ -43,6 +43,7 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
   //     await db.delete(sessionsTable).where(eq(sessionsTable.token, existingSessionToken));
   //   }
   // }
+
   // Get device information
   const device = deviceInfo(ctx);
 

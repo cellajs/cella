@@ -43,8 +43,7 @@ export const handleOAuthInitiation = async (
   const { redirectPath } = await prepareOAuthByContext(ctx);
   const cookieContent = JSON.stringify({ redirectPath, codeVerifier, type });
 
-  // TODO state in name? perhaps in content instead? reconsider cookie lifecycle security and cleanliness
-  await setAuthCookie(ctx, `oauth_${state}`, cookieContent, new TimeSpan(5, 'm'));
+  await setAuthCookie(ctx, `oauth-state-${state}`, cookieContent, new TimeSpan(5, 'm'));
 
   logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 
@@ -128,7 +127,7 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
   const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation', redirectPath: '/auth/authenticate' });
 
   const redirectPath = tokenRecord.entityType
-    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`
+    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`
     : appConfig.defaultRedirectPath;
 
   return { redirectPath };
@@ -143,11 +142,11 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
  * @throws AppError if missing param or user mismatch
  */
 const prepareOAuthConnect = async (ctx: Context<Env>) => {
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/error' });
+  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/error' });
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/error' });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/error' });
 
   //TODO we do this on callback or not? handle error query params in /settings
   const redirectPath = '/settings#authentication';

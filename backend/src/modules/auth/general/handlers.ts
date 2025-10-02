@@ -60,17 +60,17 @@ const authGeneralRouteHandlers = app
     return ctx.json(true, 200);
   })
   /**
-   * Validate and consume token and redirect with single use session token in cookie
+   * Validate and invoke token by creating a single use session token in cookie
    */
   .openapi(authGeneralRoutes.invokeToken, async (ctx) => {
     const { token, type: tokenType } = ctx.req.valid('param');
 
-    // Check if token exists and create a new refresh token
-    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
-    if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', redirectPath: '/error' });
+    // Check if token exists and create a new single use token session
+    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true, redirectPath: '/auth/error' });
+    if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', redirectPath: '/auth/error' });
 
-    // Set cookie using token type as name. Content is single use token. Expires in 10 minutes or until used.
-    await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(10, 'm'));
+    // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
+    await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
 
     // If verification email, we process it immediately and redirect to app
     if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);

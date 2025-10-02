@@ -100,12 +100,12 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
   return (
     <>
       {level === 'root' && <Dialoger />}
-      <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center">
+      <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
         <div className="mt-auto mb-auto">
-          <Card className="max-w-[80vw] sm:max-w-[36rem] m-4">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
-              <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
+          <Card className="max-w-[80vw] sm:max-w-[36rem] mt-8 bg-transparent border-none">
+            <CardHeader className="text-center p-0">
+              <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
+              <CardDescription className="font-light flex-col gap-2 p-0">
                 <span className="block">{message}</span>
                 <span className="block mt-2 font-light">
                   <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
@@ -114,7 +114,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap text-red-600 font-mono pb-4">
+              <CardContent className="whitespace-pre-wrap text-red-600 font-mono p-0 pb-4">
                 {error.type && (
                   <Button
                     variant="link"
@@ -161,7 +161,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 justify-center">
+            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 p-0 justify-center">
               {children ? (
                 children
               ) : (
@@ -170,7 +170,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
                     <Home size={16} className="mr-2" />
                     {t('common:home')}
                   </Button>
-                  {!location.pathname.startsWith('/error') && severity !== 'info' && (
+                  {!location.pathname.endsWith('/error') && severity !== 'info' && (
                     <Button onClick={handleReload}>
                       <RefreshCw size={16} className="mr-2" />
                       {t('common:reload')}

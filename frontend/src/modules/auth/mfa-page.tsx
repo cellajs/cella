@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import { useUserStore } from '~/store/user';
 /**
  * Handles multifactor authentication in the authentication flows.
  */
-export const Mfa = () => {
+const MfaPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -25,7 +26,8 @@ export const Mfa = () => {
       await signOut();
       toaster(t('common:success.cancel_mfa'), 'success');
     } catch (error) {
-      // TODO log to sentry?
+      Sentry.captureException(error);
+      console.error('Failed to retrieve data:', error);
     } finally {
       clearUserStore();
       navigate({ to: '/auth/authenticate', replace: true });
@@ -54,3 +56,5 @@ export const Mfa = () => {
     </>
   );
 };
+
+export default MfaPage;

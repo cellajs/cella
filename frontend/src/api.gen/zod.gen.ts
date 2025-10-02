@@ -229,7 +229,9 @@ export const zInvokeTokenData = z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     token: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.object({
+    tokenId: z.string(),
+  }),
 });
 
 export const zGetTokenDataData = z.object({
@@ -1531,7 +1533,7 @@ export const zGetPendingInvitationsResponse = z.object({
 export const zResendInvitationData = z.object({
   body: z.optional(
     z.object({
-      email: z.email(),
+      email: z.optional(z.email()),
       tokenId: z.optional(z.string()),
     }),
   ),

@@ -308,7 +308,7 @@
   "requests": "Requests",
   "requests.text": "Requests per minute",
   "resend": "Resend",
-  "resend_invitation.text": "Send a duplicate invitation with a new expiration date.",
+  "resend_invitation.text": "Receive a new invitation by email with a new expiration date.",
   "reset": "Reset",
   "reset_password.text": "Enter your email to receive a link to renew your password.",
   "reset_resource": "Reset {{resource}}",

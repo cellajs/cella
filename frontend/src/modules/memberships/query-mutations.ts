@@ -42,8 +42,8 @@ export const useInviteMemberMutation = () =>
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
     onSuccess: ({ invitesSentCount }, { entity }) => {
-      // TODO make SSE for updating pending counts and table
       const { id, slug, entityType, organizationId } = entity;
+
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
         if (entityType !== 'organization' && organizationId) {

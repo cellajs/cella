@@ -34,7 +34,6 @@ export const onError = (error: Error | ApiError) => {
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
 
-    // TODO maybe just me?
     const isCasualSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);
 
     // Maintenance mode
