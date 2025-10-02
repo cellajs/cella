@@ -3,6 +3,7 @@ import { useSSE } from '~/modules/common/sse/use-sse';
 import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 
+// TODO in future add is to shared?
 type SSEEventsMap = {
   membership_created: { newItem: UserMenuItem; attachToIdOrSlug?: string };
   membership_updated: UserMenuItem;
