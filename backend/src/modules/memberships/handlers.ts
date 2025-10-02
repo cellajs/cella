@@ -175,8 +175,7 @@ const membershipRouteHandlers = app
             ...entity,
             membership: createdMembership,
           },
-          sectionName: associatedEntity?.type || entity.entityType,
-          ...(associatedEntity && { parentIdOrSlug: associatedEntity.id }),
+          ...(associatedEntity && { attachToIdOrSlug: associatedEntity.id }),
         });
       }),
     );

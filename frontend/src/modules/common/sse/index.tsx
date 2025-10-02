@@ -8,9 +8,9 @@ const SSE = () => {
   const handleAddMenuItem = (e: MessageEvent<string>) => {
     try {
       const data = JSON.parse(e.data);
-      const { newItem, sectionName, parentSlug } = data;
+      const { newItem, attachToIdOrSlug } = data;
 
-      addMenuItem(newItem as UserMenuItem, sectionName, parentSlug);
+      addMenuItem(newItem as UserMenuItem, attachToIdOrSlug);
     } catch (error) {
       Sentry.captureException(error);
       console.error('Error parsing add menu item event', error);
