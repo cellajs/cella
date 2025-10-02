@@ -3,49 +3,39 @@ import { useSSE } from '~/modules/common/sse/use-sse';
 import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 
+type SSEEventsMap = {
+  membership_created: { newItem: UserMenuItem; attachToIdOrSlug?: string };
+  membership_updated: UserMenuItem;
+  entity_updated: UserMenuItem;
+  membership_removed: { id: string };
+  entity_deleted: { id: string };
+};
+
+type EventCallback<T extends keyof SSEEventsMap> = (event: MessageEvent<string>, data: SSEEventsMap[T]) => void;
+
+const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: EventCallback<T>) => {
+  useSSE(type, (e) => {
+    try {
+      const data = JSON.parse(e.data) as SSEEventsMap[T];
+      callback(e, data);
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to parse SSE event - ${type}`, error);
+    }
+  });
+};
+
 const SSE = () => {
-  // Handle incoming event to add a new menu item
-  const handleAddMenuItem = (e: MessageEvent<string>) => {
-    try {
-      const data = JSON.parse(e.data);
-      const { newItem, attachToIdOrSlug } = data;
+  // Add menu item
+  useTypedSSE('membership_created', (_, data) => addMenuItem(data.newItem, data.attachToIdOrSlug));
 
-      addMenuItem(newItem as UserMenuItem, attachToIdOrSlug);
-    } catch (error) {
-      Sentry.captureException(error);
-      console.error('Error parsing add menu item event', error);
-    }
-  };
+  // Update menu item
+  useTypedSSE('entity_updated', (_, data) => updateMenuItem(data));
+  useTypedSSE('membership_updated', (_, data) => updateMenuItem(data));
 
-  // Handle updates to an existing menu item
-  const handleUpdateMenuItem = (e: MessageEvent<string>) => {
-    try {
-      const updatedItem = JSON.parse(e.data);
-      updateMenuItem(updatedItem as UserMenuItem);
-    } catch (error) {
-      Sentry.captureException(error);
-      console.error('Error parsing update menu item event', error);
-    }
-  };
-
-  // Handle removal of a menu item
-  const handleDeleteMenuItem = (e: MessageEvent<string>) => {
-    try {
-      const deleteResponse = JSON.parse(e.data);
-      deleteMenuItem(deleteResponse.id);
-    } catch (error) {
-      Sentry.captureException(error);
-      console.error('Error parsing delete menu item event', error);
-    }
-  };
-
-  // Register SSE listeners
-  useSSE('membership_created', (e) => handleAddMenuItem(e));
-  useSSE('membership_updated', (e) => handleUpdateMenuItem(e));
-  useSSE('membership_removed', (e) => handleDeleteMenuItem(e));
-
-  useSSE('entity_updated', (e) => handleUpdateMenuItem(e));
-  useSSE('entity_deleted', (e) => handleDeleteMenuItem(e));
+  // Delete menu item
+  useTypedSSE('entity_deleted', (_, data) => deleteMenuItem(data.id));
+  useTypedSSE('membership_removed', (_, data) => deleteMenuItem(data.id));
 
   return null; // This component does not render any UI
 };
