@@ -100,6 +100,11 @@ export const paginationQuerySchema = z.object({
     .refine(limitRefine, t('invalid_limit', { max: limitMax })),
 });
 
+export const emailOrTokenIdQuerySchema = z.union([
+  z.object({ email: z.string().email(), tokenId: z.undefined() }),
+  z.object({ email: z.undefined(), tokenId: z.string() }),
+]);
+
 /*************************************************************************************************
  * Common body schemas
  ************************************************************************************************/

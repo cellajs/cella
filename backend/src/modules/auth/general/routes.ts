@@ -94,15 +94,16 @@ const authGeneralRoutes = {
     guard: isPublicAccess,
     middleware: isNoBot,
     tags: ['auth'],
-    summary: 'Refresh token',
+    summary: 'Invoke token session',
     description:
-      'Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.',
+      'Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
     request: {
       params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
+      query: z.object({ tokenId: z.string() }),
     },
     responses: {
       302: {
-        description: 'Redirect with refreshed token in cookie',
+        description: 'Redirect with token session',
         headers: locationSchema,
       },
       ...errorResponses,

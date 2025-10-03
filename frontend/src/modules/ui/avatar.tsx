@@ -9,7 +9,7 @@ const Avatar = React.forwardRef<React.ComponentRef<typeof AvatarPrimitive.Root>,
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
 const AvatarImage = React.forwardRef<React.ComponentRef<typeof AvatarPrimitive.Image>, React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>>(
-  ({ className, ...props }, ref) => <AvatarPrimitive.Image ref={ref} className={cn('aspect-square h-full w-full', className)} {...props} />,
+  ({ className, ...props }, ref) => <AvatarPrimitive.Image ref={ref} className={cn('aspect-square h-full w-full bg-muted', className)} {...props} />,
 );
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 

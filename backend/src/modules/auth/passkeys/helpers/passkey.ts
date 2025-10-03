@@ -17,7 +17,7 @@ import { Context } from 'hono';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 
 /**
  * Parses and validates passkey attestation data.
@@ -93,6 +93,7 @@ export const validatePasskey = async (ctx: Context, passkeyData: Omit<PasskeyDat
 
   // Retrieve the passkey challenge stored in a secure cookie
   const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
+  deleteAuthCookie(ctx, 'passkey-challenge');
   if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
 
   // Fetch passkey record for this user and credential ID

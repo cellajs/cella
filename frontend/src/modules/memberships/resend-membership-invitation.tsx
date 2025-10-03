@@ -15,7 +15,6 @@ type ResendButtonPrpos = {
   callback?: () => void;
 };
 
-// TODO refactor to resend token or refresh token with token refresh functionality that is upcoming
 export const ResendMembershipInviteButton = ({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) => {
   const { t } = useTranslation();
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
@@ -45,7 +44,14 @@ export const ResendMembershipInviteButton = ({ resendData, wrapperClassName, but
       className={wrapperClassName}
       toolTipContent={disabledResetPassword ? t('common:retry_resend_invitation.text') : t('common:resend_invitation.text')}
     >
-      <Button {...buttonProps} aria-label="Resend invitation" onClick={resendInvitationClick} loading={isPending} disabled={disabledResetPassword}>
+      <Button
+        {...buttonProps}
+        className="max-sm:w-full"
+        aria-label="Resend invitation"
+        onClick={resendInvitationClick}
+        loading={isPending}
+        disabled={disabledResetPassword}
+      >
         <Mail size={16} className="mr-2" />
         {t('common:resend')}
       </Button>

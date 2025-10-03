@@ -73,7 +73,7 @@ export const AccountSheet = () => {
             style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
           >
             <AvatarWrap
-              className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 border-bg border-2 rounded-full"
+              className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
               type="user"
               id={user.id}
               name={user.name}
@@ -87,10 +87,17 @@ export const AccountSheet = () => {
             isOnline={isOnline}
             icon={CircleUserRound}
             id="btn-profile"
-            label={t('common:view_item', { item: t('common:profile').toLowerCase() })}
+            label={t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
             action={`/users/${user.slug}`}
           />
-          <AccountButton offlineAccess={false} isOnline={isOnline} icon={Settings} id="btn-account" label={t('common:settings')} action="/settings" />
+          <AccountButton
+            offlineAccess={false}
+            isOnline={isOnline}
+            icon={Settings}
+            id="btn-account"
+            label={t('common:my_account')}
+            action="/account"
+          />
           {isSystemAdmin && (
             <AccountButton
               offlineAccess={false}

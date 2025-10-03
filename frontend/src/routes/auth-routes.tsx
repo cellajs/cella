@@ -2,27 +2,28 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { z } from 'zod';
-import CreatePasswordForm from '~/modules/auth/create-password-form';
-import EmailVerification from '~/modules/auth/email-verification';
+import AuthErrorPage from '~/modules/auth/auth-error-page';
+import AuthenticatePage from '~/modules/auth/authenticate-page';
+import CreatePasswordPage from '~/modules/auth/create-password-page';
+import EmailVerificationPage from '~/modules/auth/email-verification-page';
 import AuthPage from '~/modules/auth/layout';
-import { Mfa } from '~/modules/auth/mfa';
+import MfaPage from '~/modules/auth/mfa-page';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
-import AuthSteps from '~/modules/auth/steps';
-import { AuthStepsProvider } from '~/modules/auth/steps/provider';
-import Unsubscribed from '~/modules/auth/unsubscribed';
+import UnsubscribedPage from '~/modules/auth/unsubscribed-page';
 import { errorSearchSchema, PublicLayoutRoute } from '~/routes/base-routes';
+import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
-const authenticateRouteSearch = z
-  .object({
-    tokenId: z.string().optional(),
-    token: z.string().optional(),
-    redirect: z.string().optional(),
-    fromRoot: z.boolean().optional(),
-  })
-  .extend(errorSearchSchema.shape);
+const authenticateRouteSearch = z.object({
+  tokenId: z.string().optional(),
+  token: z.string().optional(),
+  redirect: z.string().optional(),
+  fromRoot: z.boolean().optional(),
+});
+
+const authErrorRouteSearch = z.object({ tokenId: z.string().optional() }).extend(errorSearchSchema.shape);
 
 export const AuthLayoutRoute = createRoute({
   id: 'authLayout',
@@ -38,6 +39,8 @@ export const AuthenticateRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
   getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ cause, search }) => {
+    useAuthStore.getState().resetSteps();
+
     // Only check auth if entering to prevent loop
     if (cause !== 'enter' || search.fromRoot) return;
 
@@ -46,11 +49,7 @@ export const AuthenticateRoute = createRoute({
     if (!storedUser) return;
     throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
-  component: () => (
-    <AuthStepsProvider>
-      <AuthSteps />
-    </AuthStepsProvider>
-  ),
+  component: () => <AuthenticatePage />,
 });
 
 export const MfaRoute = createRoute({
@@ -59,7 +58,7 @@ export const MfaRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
   getParentRoute: () => AuthLayoutRoute,
-  component: () => <Mfa />,
+  component: () => <MfaPage />,
 });
 
 export const RequestPasswordRoute = createRoute({
@@ -81,7 +80,7 @@ export const CreatePasswordWithTokenRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Create password') }] }),
   getParentRoute: () => AuthLayoutRoute,
-  component: () => <CreatePasswordForm />,
+  component: () => <CreatePasswordPage />,
 });
 
 export const EmailVerificationRoute = createRoute({
@@ -90,7 +89,7 @@ export const EmailVerificationRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Email verification') }] }),
   getParentRoute: () => AuthLayoutRoute,
-  component: () => <EmailVerification />,
+  component: () => <EmailVerificationPage />,
 });
 
 export const UnsubscribedRoute = createRoute({
@@ -98,7 +97,16 @@ export const UnsubscribedRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Unsubscribed') }] }),
   getParentRoute: () => AuthLayoutRoute,
-  component: () => <Unsubscribed />,
+  component: () => <UnsubscribedPage />,
+});
+
+export const AuthErrorRoute = createRoute({
+  path: '/auth/error',
+  validateSearch: authErrorRouteSearch,
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: appTitle('Authentication error') }] }),
+  getParentRoute: () => AuthLayoutRoute,
+  component: () => <AuthErrorPage />,
 });
 
 export const SignOutRoute = createRoute({

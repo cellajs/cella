@@ -1,5 +1,6 @@
 import type { NavItemId } from '~/modules/navigation/types';
 import {
+  AuthErrorRoute,
   AuthenticateRoute,
   AuthLayoutRoute,
   CreatePasswordWithTokenRoute,
@@ -14,7 +15,7 @@ import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing-routes';
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organization-routes';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system-routes';
-import { UserInOrganizationProfileRoute, UserProfileRoute, UserSettingsRoute } from '~/routes/user-routes';
+import { UserAccountRoute, UserInOrganizationProfileRoute, UserProfileRoute } from '~/routes/user-routes';
 
 //App-specific route imports here
 //...
@@ -37,6 +38,7 @@ export const routeTree = RootRoute.addChildren([
       CreatePasswordWithTokenRoute,
       EmailVerificationRoute,
       UnsubscribedRoute,
+      AuthErrorRoute,
     ]),
   ]),
   AppLayoutRoute.addChildren([
@@ -46,7 +48,7 @@ export const routeTree = RootRoute.addChildren([
     SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,
     UserInOrganizationProfileRoute,
-    UserSettingsRoute,
+    UserAccountRoute,
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
 
     // App-specific routes here

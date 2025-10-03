@@ -119,6 +119,12 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     redirectUrl.searchParams.set('error', type);
     redirectUrl.searchParams.set('severity', severity);
 
+    // TODO(improve) this is not a great for SOC
+    if (ctx.req.query('tokenId')) {
+      const tokenId = ctx.req.query('tokenId');
+      redirectUrl.searchParams.set('tokenId', tokenId!!);
+    }
+
     return ctx.redirect(redirectUrl, 302);
   }
 

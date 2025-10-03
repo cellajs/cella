@@ -5,6 +5,7 @@ import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { isExpiredDate } from './is-expired-date';
 
 type Props = {
   ctx: Context;
@@ -24,21 +25,19 @@ export const getValidSingleUseToken = async ({ ctx, tokenType, redirectPath }: P
   const singleUseToken = await getAuthCookie(ctx, tokenType);
   if (!singleUseToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', redirectPath });
 
-  const condition = [
-    eq(tokensTable.type, tokenType), // Match token type
-    eq(tokensTable.singleUseToken, singleUseToken), // Match token value
-  ];
-
+  // Get token record that matches type and singleUseToken value
   const [tokenRecord] = await db
     .select()
     .from(tokensTable)
-    .where(and(...condition))
+    .where(and(eq(tokensTable.type, tokenType), eq(tokensTable.singleUseToken, singleUseToken)))
     .limit(1);
 
   if (!tokenRecord) throw new AppError({ status: 404, type: `${tokenType}_not_found`, severity: 'error', redirectPath });
 
-  // Sanity check
-  if (tokenType && tokenRecord.type !== tokenType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'error', redirectPath });
+  // Token expired
+  if (isExpiredDate(tokenRecord.expiresAt)) {
+    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', redirectPath });
+  }
 
   return tokenRecord;
 };

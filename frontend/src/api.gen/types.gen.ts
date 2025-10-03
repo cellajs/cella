@@ -263,7 +263,9 @@ export type InvokeTokenData = {
     type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
     token: string;
   };
-  query?: never;
+  query: {
+    tokenId: string;
+  };
   url: '/auth/invoke-token/{type}/{token}';
 };
 
@@ -842,52 +844,6 @@ export type SignUpWithTokenResponses = {
 };
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
-
-export type VerifyEmailData = {
-  body?: never;
-  path: {
-    tokenId: string;
-  };
-  query?: {
-    redirect?: string;
-  };
-  url: '/auth/verify-email/{tokenId}';
-};
-
-export type VerifyEmailErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
 
 export type RequestPasswordData = {
   body?: {
@@ -4266,7 +4222,7 @@ export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof
 
 export type ResendInvitationData = {
   body?: {
-    email: string;
+    email?: string;
     tokenId?: string;
   };
   path?: never;

@@ -10,7 +10,7 @@ import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -33,6 +33,8 @@ const authPasskeysRouteHandlers = app
     const user = getContextUser();
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
+    deleteAuthCookie(ctx, 'passkey-challenge');
+
     if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);

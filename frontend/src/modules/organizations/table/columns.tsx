@@ -36,7 +36,7 @@ export const useColumns = () => {
           >
             <AvatarWrap
               type="organization"
-              className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-bold"
+              className="h-8 w-8 group-active:translate-y-[.05rem]"
               id={row.id}
               name={row.name}
               url={row.thumbnailUrl}

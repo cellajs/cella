@@ -45,7 +45,8 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
     const entityId = (entity as Record<string, unknown>)[entityIdField];
 
     const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId);
-    if (!membership) throw new AppError({ status: 403, type: 'missing_membership', severity: 'error', entityType: contextEntityType, meta: entity });
+    if (!membership)
+      throw new AppError({ status: 403, type: 'membership_not_found', severity: 'error', entityType: contextEntityType, meta: entity });
 
     // Step 4: Validate organization alignment
     const organization = getContextOrganization();
