@@ -72,7 +72,7 @@ export const EntityInvitations = () => {
                   <Link to={to} params={params} search={search} draggable="false" className="flex space-x-2 items-center outline-0 ring-0 group">
                     <AvatarWrap
                       type="organization"
-                      className="h-10 w-10 group-active:translate-y-[.05rem] group-hover:font-bold"
+                      className="h-10 w-10 group-active:translate-y-[.05rem]"
                       id={entity.id}
                       name={entity.name}
                       url={entity.thumbnailUrl}

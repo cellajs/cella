@@ -9,7 +9,7 @@ import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
-const UserSettingsPage = lazy(() => import('~/modules/me/settings-page'));
+const UserAccountPage = lazy(() => import('~/modules/me/account-page'));
 
 export const UserProfileRoute = createRoute({
   path: '/users/$idOrSlug',
@@ -59,10 +59,10 @@ export const UserInOrganizationProfileRoute = createRoute({
   },
 });
 
-export const UserSettingsRoute = createRoute({
-  path: '/settings',
+export const UserAccountRoute = createRoute({
+  path: '/account',
   staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: appTitle('Settings') }] }),
+  head: () => ({ meta: [{ title: appTitle('My account') }] }),
   getParentRoute: () => AppLayoutRoute,
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();
@@ -72,7 +72,7 @@ export const UserSettingsRoute = createRoute({
   component: () => {
     return (
       <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-        <UserSettingsPage />
+        <UserAccountPage />
       </Suspense>
     );
   },

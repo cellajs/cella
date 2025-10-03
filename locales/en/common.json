@@ -345,7 +345,7 @@
   "sessions": "Sessions",
   "sessions.text": "Here you can view and terminate your active sessions. Terminating a session will sign you out from that device.",
   "settings": "Settings",
-  "settings.text": "Update your account settings and preferences",
+  "my_account.text": "Update your account settings and preferences",
   "short_name": "Short name",
   "show_advanced_settings": "Show advanced settings",
   "show_all": "Show all",
@@ -468,7 +468,7 @@
   "verify_signin": "Verify & sign in",
   "Video": "Video",
   "view": "View",
-  "view_item": "View {{item}}",
+  "view_resource": "View {{resource}}",
   "visit": "Visit",
   "waitlist": "Waitlist",
   "waitlist_request": "Join waitlist",
@@ -484,5 +484,6 @@
   "require_mfa.text": "Your account does not have MFA enabled. Enabling MFA helps secure your account.",
   "enable_resource": "Enable {{resource}}",
   "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account.",
-  "reject": "Reject"
+  "reject": "Reject",
+  "my_account": "My account"
 }

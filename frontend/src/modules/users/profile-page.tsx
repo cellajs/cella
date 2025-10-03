@@ -76,13 +76,13 @@ const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
           isSelf && (
             <div className="max-xs:hidden flex items-center p-2">
               <Link
-                to="/settings"
+                to="/account"
                 draggable="false"
                 tabIndex={0}
                 className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-effect bg-primary text-primary-foreground hover:bg-primary/80"
               >
                 <Settings size={16} />
-                <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
+                <span className="max-sm:hidden ml-1">{t('common:my_account')}</span>
               </Link>
             </div>
           )

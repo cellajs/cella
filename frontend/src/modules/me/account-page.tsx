@@ -35,7 +35,7 @@ const tabs = [
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
 
-const UserSettingsPage = () => {
+const UserAccountPage = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
@@ -104,7 +104,7 @@ const UserSettingsPage = () => {
     <div className="container md:flex md:flex-row my-4 md:mt-8 mx-auto gap-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
         <StickyBox className="z-10 max-md:block!">
-          <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
+          <SimpleHeader className="p-3" heading="common:my_account" text="common:my_account.text" />
           <PageAside tabs={tabs} className="py-2" setFocus />
         </StickyBox>
       </div>
@@ -278,4 +278,4 @@ const UserSettingsPage = () => {
   );
 };
 
-export default UserSettingsPage;
+export default UserAccountPage;
