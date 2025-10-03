@@ -17,7 +17,6 @@ interface Props<T> {
   entity: T;
   createdBy?: string;
   tokenId?: string | null;
-  addAssociatedMembership?: boolean;
 }
 
 /**
@@ -30,17 +29,9 @@ interface Props<T> {
  * @param info.entity - Entity to which membership belongs.
  * @param info.createdBy - Optional, user who created membership (default: current user).
  * @param info.tokenId - Optional, Id of a token if it's and invite membership (default: null).
- * @param info.addAssociatedMembership - Optional, boolean flag whether to check and add user to an associated entity of target entity (default: true)
  * @returns Inserted target membership.
  */
-export const insertMembership = async <T extends BaseEntityModel>({
-  userId,
-  role,
-  entity,
-  createdBy = userId,
-  tokenId = null,
-  addAssociatedMembership = true,
-}: Props<T>) => {
+export const insertMembership = async <T extends BaseEntityModel>({ userId, role, entity, createdBy = userId, tokenId = null }: Props<T>) => {
   // Get max order number
   const [{ maxOrder }] = await db
     .select({ maxOrder: max(membershipsTable.order) })
@@ -81,7 +72,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
   }
 
   // Insert associated entity membership first (if applicable)
-  if (addAssociatedMembership && associatedEntity) {
+  if (associatedEntity) {
     await db
       .insert(membershipsTable)
       .values({

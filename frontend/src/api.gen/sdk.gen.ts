@@ -208,6 +208,8 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
+  VerifyEmailData,
+  VerifyEmailErrors,
 } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
@@ -250,17 +252,16 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
 };
 
 /**
- * Invoke token session
+ * Refresh token
  * 🌐 Public access
  *
- * Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
+ * Validates email token (for password reset, email verification or invitations) and redirects user to backend with a refreshed token in a cookie.
  *
  * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](http://localhost:4000/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· _auth_
  *
  * @param {invokeTokenData} options
  * @param {enum} options.path.type - `enum`
  * @param {string} options.path.token - `string`
- * @param {string} options.query.tokenid - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
@@ -522,6 +523,28 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Verify email by token
+ * 🌐 Public access
+ * ⏳ token_email-verification (10/h)
+ *
+ * Verifies a user's email using a single-use session token in cookie. Grants a session upon success.
+ *
+ * **GET /auth/verify-email/{tokenId}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/get/auth/verify-email/{tokenId}) ·· _auth_
+ *
+ * @param {verifyEmailData} options
+ * @param {string} options.path.tokenid - `string`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
+ */
+export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
+  return (options.client ?? client).get<unknown, VerifyEmailErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/verify-email/{tokenId}',
+    ...options,
   });
 };
 
@@ -1745,7 +1768,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
 /**
  * Create request
  * 🌐 Public access
- * ⏳ Email (5/h), Spam (10/h)
+ * ⏳ Spam (10/h)
  *
  * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  *

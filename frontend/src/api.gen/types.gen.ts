@@ -263,9 +263,7 @@ export type InvokeTokenData = {
     type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
     token: string;
   };
-  query: {
-    tokenId: string;
-  };
+  query?: never;
   url: '/auth/invoke-token/{type}/{token}';
 };
 
@@ -356,11 +354,7 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
-    role: 'member' | 'admin' | null;
     userId?: string;
-    organizationName?: string;
-    organizationSlug?: string;
-    organizationId?: string;
   };
 };
 
@@ -844,6 +838,52 @@ export type SignUpWithTokenResponses = {
 };
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
+
+export type VerifyEmailData = {
+  body?: never;
+  path: {
+    tokenId: string;
+  };
+  query?: {
+    redirect?: string;
+  };
+  url: '/auth/verify-email/{tokenId}';
+};
+
+export type VerifyEmailErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
 
 export type RequestPasswordData = {
   body?: {
@@ -2943,7 +2983,7 @@ export type SystemInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSentCount: number;
+    invitesCount: number;
   };
 };
 
@@ -3928,7 +3968,7 @@ export type MembershipInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSentCount: number;
+    invitesCount: number;
   };
 };
 
@@ -4155,7 +4195,7 @@ export type GetPendingInvitationsData = {
   };
   query: {
     q?: string;
-    sort?: 'email' | 'role' | 'expiresAt' | 'createdAt' | 'createdBy';
+    sort?: 'email' | 'role' | 'createdAt' | 'createdBy';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -4207,11 +4247,10 @@ export type GetPendingInvitationsResponses = {
   200: {
     items: Array<{
       id: string;
-      email: string;
       createdAt: string;
       createdBy: string | null;
       role: 'member' | 'admin';
-      expiresAt: string;
+      email: string;
       name: string | null;
     }>;
     total: number;
@@ -4222,7 +4261,7 @@ export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof
 
 export type ResendInvitationData = {
   body?: {
-    email?: string;
+    email: string;
     tokenId?: string;
   };
   path?: never;
