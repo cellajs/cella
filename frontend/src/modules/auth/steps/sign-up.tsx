@@ -76,12 +76,7 @@ export const SignUpStep = () => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData?.organizationSlug
-          ? t('common:invite_accept_proceed')
-          : tokenData
-            ? t('common:invite_create_account')
-            : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
-        <br />
+        {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
             <span className="truncate">{email}</span>

@@ -42,15 +42,15 @@ export const useColumns = () => {
           </div>
         ),
       },
-      {
-        key: 'expiresAt',
-        name: t('common:expires_at'),
-        sortable: true,
-        visible: true,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.expiresAt ? dateShort(row.expiresAt) : <span className="text-muted">-</span>),
-        minWidth: 80,
-      },
+      // {
+      //   key: 'expiresAt',
+      //   name: t('common:expires_at'),
+      //   sortable: true,
+      //   visible: true,
+      //   renderHeaderCell: HeaderCell,
+      //   renderCell: ({ row }) => (row.expiresAt ? dateShort(row.expiresAt) : <span className="text-muted">-</span>),
+      //   minWidth: 80,
+      // },
       {
         key: 'createdAt',
         name: t('common:invited_at'),

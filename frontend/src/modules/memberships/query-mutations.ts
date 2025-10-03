@@ -41,10 +41,10 @@ export const useInviteMemberMutation = () =>
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
-    onSuccess: ({ invitesSentCount }, { entity }) => {
+    onSuccess: ({ invitesCount }, { entity }) => {
       // TODO make SSE for updating pending counts and table
       const { id, slug, entityType, organizationId } = entity;
-      if (invitesSentCount) {
+      if (invitesCount) {
         // If the entity is not an organization but belongs to one, update its cache too
         if (entityType !== 'organization' && organizationId) {
           const orgEntityType = 'organization';
@@ -54,7 +54,7 @@ export const useInviteMemberMutation = () =>
             const orgPendingTableQueries = getSimilarQueries(membersKeys.table.similarPending({ idOrSlug: oldOrg.slug, entityType }));
             for (const [queryKey] of orgPendingTableQueries) queryClient.invalidateQueries({ queryKey });
 
-            return updateInvitesCount(oldOrg, invitesSentCount);
+            return updateInvitesCount(oldOrg, invitesCount);
           });
         }
 
@@ -65,7 +65,7 @@ export const useInviteMemberMutation = () =>
         queryClient.setQueryData<EntityPage>([entityType], (oldEntity) => {
           if (!oldEntity || !oldEntity.counts || oldEntity.id !== id) return oldEntity;
 
-          return updateInvitesCount(oldEntity, invitesSentCount);
+          return updateInvitesCount(oldEntity, invitesCount);
         });
 
         const queries = queryClient.getQueriesData<EntityPage>({
@@ -77,7 +77,7 @@ export const useInviteMemberMutation = () =>
         });
 
         for (const [key] of queries) {
-          queryClient.setQueryData<EntityPage>(key, (entity) => (entity ? updateInvitesCount(entity, invitesSentCount) : entity));
+          queryClient.setQueryData<EntityPage>(key, (entity) => (entity ? updateInvitesCount(entity, invitesCount) : entity));
         }
       }
     },

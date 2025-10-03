@@ -148,7 +148,6 @@
   "invalid.url": "URL must start with https://",
   "invitation_settled": "Invitation has been {{action}}!",
   "invite": "Invite",
-  "invite_accept_proceed": "Sign up to proceed",
   "invite_by_email": "Invite with email addresses",
   "invite_by_name": "Invite by searching for users",
   "invite_create_account": "Sign up to accept invitation",

@@ -1,8 +1,7 @@
 import { appConfig, type ContextEntityType } from 'config';
-import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import { tokensTable } from '#/db/schema/tokens';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
 
@@ -18,34 +17,38 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
   const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
   if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);
 
-  // Subquery to count pending invitations
-  const inviteCountSubquery = db
-    .select({
-      id: tokensTable[targetEntityIdField],
-      invites: count().as('invites'),
-    })
-    .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNull(tokensTable.invokedAt)))
-    .groupBy(tokensTable[targetEntityIdField])
-    .as('invites');
+  // // Subquery to count pending invitations
+  // const inviteCountSubquery = db
+  //   .select({
+  //     id: membershipsTable[targetEntityIdField],
+  //     invites: count().as('invites'),
+  //   })
+  //   .from(membershipsTable)
+  //   .where(and(isNull(membershipsTable.activatedAt), isNotNull(membershipsTable.activatedAt)))
+  //   .groupBy(membershipsTable[targetEntityIdField])
+  //   .as('invites');
 
-  return db
-    .select({
-      id: entityIdColumn,
-      admin: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
-      member: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
-      pending:
-        sql<number>`CAST(${count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`)} + COALESCE(${inviteCountSubquery.invites}, 0) AS INTEGER)`.as(
-          'pending',
-        ),
+  return (
+    db
+      .select({
+        id: entityIdColumn,
+        admin: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
+        member: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
+        pending: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`).as('pending'),
+        // sql<number>`CAST(${count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`)} + COALESCE(${inviteCountSubquery.invites}, 0) AS INTEGER)`.as(
+        //   'pending',
+        // ),
 
-      total: count().as('total'), // Fixed alias to avoid confusion
-    })
-    .from(membershipsTable)
-    .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
-    .where(and(eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
-    .groupBy(entityIdColumn, inviteCountSubquery.invites)
-    .as('membership_counts');
+        total: count().as('total'), // Fixed alias to avoid confusion
+      })
+      .from(membershipsTable)
+      // .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
+      // .where(and(eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
+      // .groupBy(entityIdColumn, inviteCountSubquery.invites)
+      .where(and(eq(membershipsTable.contextType, entityType)))
+      .groupBy(entityIdColumn)
+      .as('membership_counts')
+  );
 };
 
 /**

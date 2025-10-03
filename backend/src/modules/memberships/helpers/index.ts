@@ -17,6 +17,7 @@ interface Props<T> {
   entity: T;
   createdBy?: string;
   tokenId?: string | null;
+  activate?: boolean;
   addAssociatedMembership?: boolean;
 }
 
@@ -29,17 +30,21 @@ interface Props<T> {
  * @param info.role - Role of user within entity.
  * @param info.entity - Entity to which membership belongs.
  * @param info.createdBy - Optional, user who created membership (default: current user).
- * @param info.tokenId - Optional, Id of a token if it's and invite membership (default: null).
- * @param info.addAssociatedMembership - Optional, boolean flag whether to check and add user to an associated entity of target entity (default: true)
+ * @param info.tokenId - Optional, Id of a token (default: null).
+ *   - If provided, membership will be created **inactive** (`activatedAt = null`).
+ *   - Activation happens later when the token is redeemed.
+ * @param info.activate - Optional, should instantly activate membership (default: !!tokenId).
+ *   - Ignored if `tokenId` is provided, because token-based memberships must start as inactive.
  * @returns Inserted target membership.
  */
+
 export const insertMembership = async <T extends BaseEntityModel>({
   userId,
   role,
   entity,
   createdBy = userId,
   tokenId = null,
-  addAssociatedMembership = true,
+  activate = !!tokenId,
 }: Props<T>) => {
   // Get max order number
   const [{ maxOrder }] = await db
@@ -56,7 +61,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     role,
     createdBy,
     tokenId,
-    activatedAt: tokenId ? null : getIsoDate(),
+    activatedAt: tokenId ? null : activate ? getIsoDate() : null,
     order: maxOrder ? maxOrder + 10 : 1000,
   };
 
@@ -81,7 +86,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
   }
 
   // Insert associated entity membership first (if applicable)
-  if (addAssociatedMembership && associatedEntity) {
+  if (associatedEntity) {
     await db
       .insert(membershipsTable)
       .values({

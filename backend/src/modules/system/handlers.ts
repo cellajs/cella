@@ -76,7 +76,6 @@ const systemRouteHandlers = app
         and(
           inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.entityType), // system invite
           isNull(tokensTable.invokedAt), // pending (not used)
         ),
       );
@@ -116,9 +115,7 @@ const systemRouteHandlers = app
       recipientEmails.push(email);
     }
 
-    if (recipientEmails.length === 0) {
-      return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
-    }
+    if (recipientEmails.length === 0) return ctx.json({ success: false, rejectedItems, invitesCount: 0 }, 200);
 
     // 5) Create new tokens for recipients
     const tokens = recipientEmails.map((email) => ({
@@ -156,7 +153,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
-    return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
+    return ctx.json({ success: true, rejectedItems, invitesCount: recipients.length }, 200);
   })
   /**
    * Get presigned URL

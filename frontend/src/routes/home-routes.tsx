@@ -25,7 +25,6 @@ export const HomeAliasRoute = createRoute({
   path: '/home',
   validateSearch: z.object({
     invitationTokenId: z.string().optional(),
-    invitationMembershipId: z.string().optional(),
     skipWelcome: z.boolean().optional(),
   }),
   staticData: { isAuth: true },

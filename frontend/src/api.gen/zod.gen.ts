@@ -247,11 +247,7 @@ export const zGetTokenDataData = z.object({
  */
 export const zGetTokenDataResponse = z.object({
   email: z.email(),
-  role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
-  organizationName: z.optional(z.string()),
-  organizationSlug: z.optional(z.string()),
-  organizationId: z.optional(z.string()),
 });
 
 export const zStartImpersonationData = z.object({
@@ -1079,7 +1075,7 @@ export const zSystemInviteData = z.object({
 export const zSystemInviteResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-  invitesSentCount: z.number(),
+  invitesCount: z.number(),
 });
 
 export const zGetPresignedUrlData = z.object({
@@ -1405,7 +1401,7 @@ export const zMembershipInviteData = z.object({
 export const zMembershipInviteResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-  invitesSentCount: z.number(),
+  invitesCount: z.number(),
 });
 
 export const zUpdateMembershipData = z.object({
@@ -1513,7 +1509,7 @@ export const zGetPendingInvitationsData = z.object({
   }),
   query: z.object({
     q: z.optional(z.string()),
-    sort: z.optional(z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy'])),
+    sort: z.optional(z.enum(['email', 'role', 'createdAt', 'createdBy'])),
     order: z.optional(z.enum(['asc', 'desc'])),
     offset: z.optional(z.string()),
     limit: z.optional(z.string()),
@@ -1529,11 +1525,10 @@ export const zGetPendingInvitationsResponse = z.object({
   items: z.array(
     z.object({
       id: z.string(),
-      email: z.string(),
       createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),
       role: z.enum(['member', 'admin']),
-      expiresAt: z.string(),
+      email: z.string(),
       name: z.union([z.string(), z.null()]),
     }),
   ),

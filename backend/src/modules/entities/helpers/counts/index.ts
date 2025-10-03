@@ -50,6 +50,7 @@ export const getEntityCounts = async (entityType: ContextEntityType, entityId: s
     .leftJoin(membershipCountsQuery, eq(table.id, membershipCountsQuery.id))
     .leftJoin(relatedCountsQuery, eq(table.id, relatedCountsQuery.id))
     .where(eq(table.id, entityId));
+  console.log('🚀 ~ getEntityCounts ~ counts:', counts);
 
   return counts;
 };

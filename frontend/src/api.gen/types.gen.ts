@@ -354,11 +354,7 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
-    role: 'member' | 'admin' | null;
     userId?: string;
-    organizationName?: string;
-    organizationSlug?: string;
-    organizationId?: string;
   };
 };
 
@@ -2987,7 +2983,7 @@ export type SystemInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSentCount: number;
+    invitesCount: number;
   };
 };
 
@@ -3972,7 +3968,7 @@ export type MembershipInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSentCount: number;
+    invitesCount: number;
   };
 };
 
@@ -4199,7 +4195,7 @@ export type GetPendingInvitationsData = {
   };
   query: {
     q?: string;
-    sort?: 'email' | 'role' | 'expiresAt' | 'createdAt' | 'createdBy';
+    sort?: 'email' | 'role' | 'createdAt' | 'createdBy';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -4251,11 +4247,10 @@ export type GetPendingInvitationsResponses = {
   200: {
     items: Array<{
       id: string;
-      email: string;
       createdAt: string;
       createdBy: string | null;
       role: 'member' | 'admin';
-      expiresAt: string;
+      email: string;
       name: string | null;
     }>;
     total: number;

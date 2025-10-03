@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { sessionsTable } from '#/db/schema/sessions';
@@ -35,16 +35,7 @@ const authGeneralRouteHandlers = app
     const [inviteToken] = await db
       .select()
       .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.email, normalizedEmail),
-          eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.userId),
-          isNotNull(tokensTable.entityType),
-          isNotNull(tokensTable.role),
-          isNull(tokensTable.invokedAt),
-        ),
-      )
+      .where(and(eq(tokensTable.email, normalizedEmail), eq(tokensTable.type, 'invitation'), isNull(tokensTable.invokedAt)))
       .limit(1);
 
     if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
@@ -105,21 +96,7 @@ const authGeneralRouteHandlers = app
       .limit(1);
     if (!tokenRecord) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
 
-    const data = {
-      email: tokenRecord.email,
-      role: tokenRecord.role,
-      userId: tokenRecord.userId || '',
-    };
-
-    // If its NOT an organization invitation, return base data
-    if (!tokenRecord.organizationId) return ctx.json(data, 200);
-
-    // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
-    if (!tokenRecord.userId && existingUser) {
-      await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
-      data.userId = existingUser.id;
-    }
+    const data = { email: tokenRecord.email, userId: tokenRecord.userId || '' };
 
     return ctx.json(data, 200);
   })

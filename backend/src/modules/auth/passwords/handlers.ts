@@ -75,8 +75,6 @@ const authPasswordsRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const isMembershipInvite = validToken.type === 'invitation' && validToken.entityType;
-
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -84,13 +82,12 @@ const authPasswordsRouteHandlers = app
     }
 
     // add token if it's membership invitation
-    const membershipInviteTokenId = isMembershipInvite ? validToken.id : undefined;
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
-    const newUser = { slug, name: slug, email: validToken.email };
+    const newUser = { id: validToken.userId || nanoid(), slug, name: slug, email: validToken.email };
 
-    const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
+    const user = await handleCreateUser({ newUser, emailVerified: true });
 
     // Separately insert password
     const hashedPassword = await hashPassword(password);
@@ -99,19 +96,16 @@ const authPasswordsRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user, strategy);
 
-    // If no membership invitation, we are done
-    if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 200);
-
     // If membership invitation, get membership to forward
-    const [invitationMembership] = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
+    const invitationMembership = await db
+      .update(membershipsTable)
+      .set({ activatedAt: getIsoDate() })
       .where(eq(membershipsTable.tokenId, validToken.id))
-      .limit(1);
-    if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
+      .returning(membershipBaseSelect)
+      .then((rows) => !!rows.length);
 
     // Redirect to accept invitation if membership invite
-    const redirectPath = `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`;
+    const redirectPath = invitationMembership ? `/home?skipWelcome=true` : appConfig.defaultRedirectPath;
 
     return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })

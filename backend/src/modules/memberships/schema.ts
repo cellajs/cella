@@ -2,7 +2,6 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import { tokensTable } from '#/db/schema/tokens';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
 
 export const membershipSchema = z.object({
@@ -43,15 +42,14 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
 export const pendingInvitationListQuerySchema = paginationQuerySchema.extend({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
-  sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
+  sort: z.enum(['email', 'role', 'createdAt', 'createdBy']).default('createdAt').optional(),
 });
 
-export const pendingInvitationSchema = createSelectSchema(tokensTable)
+export const pendingInvitationSchema = createSelectSchema(membershipsTable)
   .pick({
     id: true,
-    email: true,
     createdAt: true,
     createdBy: true,
     role: true,
   })
-  .extend({ expiresAt: z.string(), name: z.string().nullable() });
+  .extend({ email: z.string(), name: z.string().nullable() });

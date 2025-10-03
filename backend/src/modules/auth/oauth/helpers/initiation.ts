@@ -1,13 +1,18 @@
 import { appConfig } from 'config';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { OAuthFlowType } from '#/modules/auth/oauth/schema';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -127,9 +132,16 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
 
   const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation', redirectPath: '/auth/authenticate' });
 
-  const redirectPath = tokenRecord.entityType
-    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`
-    : appConfig.defaultRedirectPath;
+  // If membership invitation, get membership to forward
+  const invitationMembership = await db
+    .update(membershipsTable)
+    .set({ activatedAt: getIsoDate() })
+    .where(eq(membershipsTable.tokenId, tokenRecord.id))
+    .returning(membershipBaseSelect)
+    .then((rows) => !!rows.length);
+
+  // Redirect to accept invitation if membership invite
+  const redirectPath = invitationMembership ? `/home?skipWelcome=true` : appConfig.defaultRedirectPath;
 
   return { redirectPath };
 };
@@ -165,10 +177,16 @@ const prepareOAuthVerify = async (ctx: Context<Env>) => {
   // Validate single use token from db
   const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: '/auth/authenticate' });
 
-  let redirectPath = appConfig.defaultRedirectPath;
+  // If membership invitation, get membership to forward
+  const invitationMembership = await db
+    .update(membershipsTable)
+    .set({ activatedAt: getIsoDate() })
+    .where(eq(membershipsTable.tokenId, tokenRecord.id))
+    .returning(membershipBaseSelect)
+    .then((rows) => !!rows.length);
 
-  // If its a membership invitation
-  if (tokenRecord.entityType) redirectPath = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
+  // Redirect to accept invitation if membership invite
+  const redirectPath = invitationMembership ? `/home?skipWelcome=true` : appConfig.defaultRedirectPath;
 
   return { verifyTokenId: tokenRecord.id, redirectPath };
 };
