@@ -1,6 +1,3 @@
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
@@ -11,6 +8,9 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
 
 interface Props {
@@ -75,7 +75,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));

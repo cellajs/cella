@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
@@ -7,6 +5,8 @@ import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
 import { cookieSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 const authGeneralRoutes = {
   startImpersonation: createCustomRoute({
@@ -97,10 +97,7 @@ const authGeneralRoutes = {
     summary: 'Invoke token session',
     description:
       'Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
-    request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
-      query: z.object({ tokenId: z.string() }),
-    },
+    request: { params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }) },
     responses: {
       302: {
         description: 'Redirect with token session',

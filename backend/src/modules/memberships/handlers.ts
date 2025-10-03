@@ -222,11 +222,11 @@ const membershipRouteHandlers = app
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
 
     // Prepare & send emails
-    const recipients = insertedTokens.map(({ id, token, email, type }) => ({
+    const recipients = insertedTokens.map(({ token, email, type }) => ({
       email,
       lng,
       name: slugFromEmail(email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${id}?tokenId=${token}`,
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${token}`,
     }));
     type Recipient = (typeof recipients)[number];
 
@@ -573,7 +573,7 @@ const membershipRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}?tokenId=${newTokenId}`,
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
     };
 
     let senderName = 'System';

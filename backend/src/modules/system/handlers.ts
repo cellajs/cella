@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';
@@ -25,6 +20,11 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -143,11 +143,11 @@ const systemRouteHandlers = app
     );
 
     // 7) Prepare & send emails
-    const recipients = insertedTokens.map((t) => ({
-      email: t.email,
+    const recipients = insertedTokens.map(({ email, token, type }) => ({
+      email,
       lng,
-      name: slugFromEmail(t.email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${t.type}/${t.id}?tokenId=${t.token}`,
+      name: slugFromEmail(email),
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${token}`,
     }));
     type Recipient = (typeof recipients)[number];
 

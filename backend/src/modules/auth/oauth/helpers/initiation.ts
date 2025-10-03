@@ -1,5 +1,3 @@
-import { appConfig } from 'config';
-import type { Context } from 'hono';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -10,6 +8,8 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import type { Context } from 'hono';
 
 export interface OAuthCookiePayload {
   redirectPath: string;
@@ -127,7 +127,7 @@ const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
   const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation', redirectPath: '/auth/authenticate' });
 
   const redirectPath = tokenRecord.entityType
-    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`
+    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`
     : appConfig.defaultRedirectPath;
 
   return { redirectPath };
