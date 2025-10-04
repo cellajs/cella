@@ -171,13 +171,12 @@ const membershipRouteHandlers = app
 
         eventManager.emit('instantMembershipCreation', createdMembership);
 
-        sendSSEToUsers([userId], 'add_entity', {
+        sendSSEToUsers([userId], 'membership_created', {
           newItem: {
             ...entity,
             membership: createdMembership,
           },
-          sectionName: associatedEntity?.type || entity.entityType,
-          ...(associatedEntity && { parentIdOrSlug: associatedEntity.id }),
+          ...(associatedEntity && { attachToIdOrSlug: associatedEntity.id }),
         });
       }),
     );
@@ -290,7 +289,7 @@ const membershipRouteHandlers = app
 
     // Send the event to the user if they are a member of the organization
     const memberIds = targets.map((el) => el.userId);
-    sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
+    sendSSEToUsers(memberIds, 'membership_deleted', { id: entity.id, entityType: entity.entityType });
 
     logEvent('info', 'Deleted members', memberIds);
 
@@ -360,7 +359,7 @@ const membershipRouteHandlers = app
 
     // Trigger SSE notification only if the update is for a different user
     if (updatedMembership.userId !== user.id) {
-      sendSSEToUsers([updatedMembership.userId], 'update_entity', {
+      sendSSEToUsers([updatedMembership.userId], 'membership_updated', {
         ...membershipContext,
         membership: updatedMembership,
       });
