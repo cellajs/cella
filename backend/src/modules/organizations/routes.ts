@@ -1,7 +1,6 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import {
-  fullCountsSchema,
   organizationCreateBodySchema,
   organizationListQuerySchema,
   organizationSchema,
@@ -54,7 +53,7 @@ const organizationRoutes = {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: paginationSchema(organizationSchema.extend({ counts: fullCountsSchema })),
+            schema: paginationSchema(organizationSchema),
           },
         },
       },

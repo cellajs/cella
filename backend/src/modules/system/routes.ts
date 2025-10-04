@@ -4,7 +4,7 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -53,13 +53,8 @@ const systemRoutes = {
       },
     },
     responses: {
-      200: {
-        description: 'Organization',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+      204: {
+        description: 'Newsletter sent',
       },
       ...errorResponses,
     },
@@ -103,13 +98,8 @@ const systemRoutes = {
       },
     },
     responses: {
-      200: {
+      204: {
         description: 'Paddle webhook received',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
       },
       ...errorResponses,
     },

@@ -197,7 +197,7 @@ const organizationRouteHandlers = app
           isNotNull(membershipsTable.activatedAt),
         ),
       );
-    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
+    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
@@ -243,7 +243,7 @@ const organizationRouteHandlers = app
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
+      sendSSEToUsers(userIds, 'entity_deleted', { id, entityType: 'organization' });
     }
 
     logEvent('info', 'Organizations deleted', allowedIds);

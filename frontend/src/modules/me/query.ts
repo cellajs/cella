@@ -1,6 +1,6 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { ToggleMfaData, User } from '~/api.gen';
+import type { DeletePasskeyData, DeletePasskeyResponse, ToggleMfaData, User } from '~/api.gen';
 import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, type UpdateMeData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
@@ -144,10 +144,10 @@ export const useCreatePasskeyMutation = () => {
  * @returns The mutation hook for deleting passkey.
  */
 export const useDeletePasskeyMutation = () => {
-  return useMutation<boolean, ApiError, string>({
+  return useMutation<DeletePasskeyResponse, ApiError, DeletePasskeyData['path']>({
     mutationKey: meKeys.delete.passkey,
-    mutationFn: (id: string) => deletePasskey({ path: { id } }),
-    onSuccess: (_data, id) => {
+    mutationFn: ({ id }) => deletePasskey({ path: { id } }),
+    onSuccess: (_data, { id }) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return {
@@ -170,7 +170,7 @@ export const useDeletePasskeyMutation = () => {
  * @returns The mutation hook for unlink totp.
  */
 export const useDeleteTotpMutation = () => {
-  return useMutation<boolean, ApiError, void>({
+  return useMutation<DeletePasskeyResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {

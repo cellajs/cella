@@ -20,9 +20,8 @@ export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; set
 
   const { mutate: totpSignIn } = useMutation<SignInWithTotpResponse, ApiError | Error, NonNullable<SignInWithTotpData['body']>>({
     mutationFn: async (body) => await signInWithTotp({ body }),
-    onSuccess: (success) => {
-      if (success) navigate({ to: appConfig.defaultRedirectPath, replace: true });
-      else toaster(t('error:totp_verification_failed'), 'error');
+    onSuccess: () => {
+      navigate({ to: appConfig.defaultRedirectPath, replace: true });
     },
     onError: () => toaster(t('error:totp_verification_failed'), 'error'),
   });

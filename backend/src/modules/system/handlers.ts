@@ -1,3 +1,8 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';
@@ -20,11 +25,6 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -219,7 +219,7 @@ const systemRouteHandlers = app
       logError('Error handling paddle webhook', error);
     }
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Send newsletter to members of one or more organizations matching one ore more roles.
@@ -305,7 +305,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default systemRouteHandlers;

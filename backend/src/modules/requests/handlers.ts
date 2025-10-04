@@ -123,7 +123,7 @@ const requestRouteHandlers = app
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default requestRouteHandlers;

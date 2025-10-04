@@ -1,3 +1,5 @@
+import { appConfig } from 'config';
+import type { Context } from 'hono';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -8,8 +10,6 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { appConfig } from 'config';
-import type { Context } from 'hono';
 
 export interface OAuthCookiePayload {
   redirectPath: string;

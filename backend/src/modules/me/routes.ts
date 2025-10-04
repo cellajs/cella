@@ -12,7 +12,7 @@ import {
 } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, locationSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -101,9 +101,8 @@ const meRoutes = {
     description:
       "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     responses: {
-      200: {
+      204: {
         description: 'User deleted',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -162,9 +161,8 @@ const meRoutes = {
       query: entityWithTypeQuerySchema,
     },
     responses: {
-      200: {
+      204: {
         description: 'Membership removed',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

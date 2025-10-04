@@ -9,7 +9,6 @@ import { type Env, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import entityRoutes from '#/modules/entities/routes';
-import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -140,7 +139,7 @@ const entityRouteHandlers = app
         // Fetch items and total count in parallel
         const [items, [{ total }]] = await Promise.all([
           query.limit(limit).offset(offset),
-          db.select({ total: count() }).from(query.as('entitiCount')),
+          db.select({ total: count() }).from(query.as('entityCount')),
         ]);
 
         return { items, total };
@@ -148,12 +147,10 @@ const entityRouteHandlers = app
     );
 
     // Map items per entity type
-    const items = Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queryResults[i].items])) as z.infer<
-      typeof contextEntitiesResponseSchema
-    >['items'];
+    const items = queryResults[0].items;
 
     // Compute grand total
-    const total = queryResults.reduce((sum, result) => sum + (result.total ?? 0), 0);
+    const total = queryResults[0].total;
 
     // Return response
     return ctx.json({ items, total }, 200);
@@ -177,7 +174,7 @@ const entityRouteHandlers = app
 
     const slugAvailable = await checkSlugAvailable(slug, entityType);
 
-    return ctx.json(slugAvailable, 200);
+    return slugAvailable ? ctx.body(null, 204) : ctx.body(null, 409);
   });
 
 export default entityRouteHandlers;

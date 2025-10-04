@@ -1,3 +1,7 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -21,10 +25,6 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -61,7 +61,7 @@ const authPasswordsRouteHandlers = app
 
     sendVerificationEmail({ userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Sign up with email & password to accept (system or membership) invitations.
@@ -157,7 +157,7 @@ const authPasswordsRouteHandlers = app
 
     logEvent('info', 'Create password link sent', { userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Create password with single use session token in cookie

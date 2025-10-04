@@ -71,7 +71,7 @@ const authTotpsRouteHandlers = app
     // Save encoded secret key in database
     await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Unlink TOTP
@@ -93,7 +93,7 @@ const authTotpsRouteHandlers = app
       await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
     }
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Verify TOTP
@@ -133,7 +133,7 @@ const authTotpsRouteHandlers = app
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default authTotpsRouteHandlers;

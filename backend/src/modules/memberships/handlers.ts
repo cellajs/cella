@@ -1,3 +1,7 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -13,7 +17,7 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
-import { memberSelect, usersBaseQuery, userSelect } from '#/modules/users/helpers/select';
+import { memberSelect, userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -23,10 +27,6 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { SystemInviteEmail, SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -278,7 +278,7 @@ const membershipRouteHandlers = app
 
     // Send the event to the user if they are a member of the organization
     const memberIds = targets.map((el) => el.userId);
-    sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
+    sendSSEToUsers(memberIds, 'membership_deleted', { id: entity.id, entityType: entity.entityType });
 
     logEvent('info', 'Deleted members', memberIds);
 
@@ -348,7 +348,7 @@ const membershipRouteHandlers = app
 
     // Trigger SSE notification only if the update is for a different user
     if (updatedMembership.userId !== user.id) {
-      sendSSEToUsers([updatedMembership.userId], 'update_entity', {
+      sendSSEToUsers([updatedMembership.userId], 'membership_updated', {
         ...membershipContext,
         membership: updatedMembership,
       });
@@ -603,7 +603,7 @@ const membershipRouteHandlers = app
 
     logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default membershipRouteHandlers;

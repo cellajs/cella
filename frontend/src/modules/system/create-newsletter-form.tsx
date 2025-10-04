@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SendNewsletterData, sendNewsletter } from '~/api.gen';
+import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from '~/api.gen';
 import { zSendNewsletterData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { ApiError } from '~/lib/api';
@@ -48,7 +48,11 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   // Send newsletter
-  const { mutate: _sendNewsletter, isPending } = useMutation<boolean, ApiError, { body: SendNewsletterData['body'] } & SendNewsletterData['query']>({
+  const { mutate: _sendNewsletter, isPending } = useMutation<
+    SendNewsletterResponse,
+    ApiError,
+    { body: SendNewsletterData['body'] } & SendNewsletterData['query']
+  >({
     mutationFn: async ({ body, toSelf }) => {
       return await sendNewsletter({ body, query: { toSelf } });
     },

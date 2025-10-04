@@ -1,10 +1,10 @@
 import { useQueries } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { History, Search, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBaseSchema, UserBaseSchema } from '~/api.gen';
+import type { ContextEntityBaseSchema, GetContextEntitiesResponse, UserBaseSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -62,12 +62,21 @@ export const AppSearch = () => {
     combine: ([contextEntitiesResult, usersResult]) => {
       const usersData = usersResult.data;
       const entitiesData = contextEntitiesResult.data;
-
       const combinedTotal = (usersData.total || 0) + (entitiesData.total || 0);
+
+      const groupedEntities = entitiesData?.items?.reduce(
+        (acc, entity) => {
+          const type = entity.entityType;
+          (acc[type] ??= []).push(entity);
+          return acc;
+        },
+        {} as Record<ContextEntityType, GetContextEntitiesResponse['items'][number][]>,
+      );
+
       return {
         data: {
           user: usersData.items,
-          ...entitiesData.items,
+          ...groupedEntities,
         },
         notFound: combinedTotal === 0, // true if there are no results
         isFetching: usersResult.isFetching || contextEntitiesResult.isFetching,
@@ -161,7 +170,7 @@ export const AppSearch = () => {
             </>
           )}
           {appConfig.pageEntityTypes.map((entityType) => (
-            <SearchResultBlock key={entityType} results={data[entityType]} entityType={entityType} onSelect={onSelectItem} />
+            <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} onSelect={onSelectItem} />
           ))}
         </CommandList>
       </ScrollArea>

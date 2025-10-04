@@ -27,7 +27,7 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
     fetchNextPage,
   } = useSuspenseInfiniteQuery({
     ...queryOptions,
-    select: (data) => data.pages.flatMap(({ items }) => items[entityType]),
+    select: (data) => data.pages.flatMap(({ items }) => items.filter((e) => e.entityType === entityType)),
   });
 
   const isFiltered = !!searchVars.q;

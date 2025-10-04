@@ -4,6 +4,36 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});
 };
 
+export type ContextEntityBaseSchema = {
+  id: string;
+  entityType: 'organization';
+  slug: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+};
+
+export type MembershipBaseSchema = {
+  id: string;
+  contextType: 'organization';
+  userId: string;
+  role: 'member' | 'admin';
+  archived: boolean;
+  muted: boolean;
+  order: number;
+  organizationId: string;
+};
+
+export type UserBaseSchema = {
+  id: string;
+  slug: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+  email: string;
+  entityType: 'user';
+};
+
 export type User = {
   createdAt: string;
   id: string;
@@ -30,17 +60,6 @@ export type User = {
   modifiedBy: string | null;
 };
 
-export type MembershipBaseSchema = {
-  id: string;
-  contextType: 'organization';
-  userId: string;
-  role: 'member' | 'admin';
-  archived: boolean;
-  muted: boolean;
-  order: number;
-  organizationId: string;
-} | null;
-
 export type Organization = {
   createdAt: string;
   id: string;
@@ -66,7 +85,16 @@ export type Organization = {
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
-  membership: MembershipBaseSchema;
+  membership: {
+    id: string;
+    contextType: 'organization';
+    userId: string;
+    role: 'member' | 'admin';
+    archived: boolean;
+    muted: boolean;
+    order: number;
+    organizationId: string;
+  } | null;
   counts: {
     membership: {
       admin: number;
@@ -101,25 +129,6 @@ export type Attachment = {
   convertedUrl: string | null;
 };
 
-export type UserBaseSchema = {
-  id: string;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-  email: string;
-  entityType: 'user';
-};
-
-export type ContextEntityBaseSchema = {
-  id: string;
-  entityType: 'organization';
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-};
-
 export type MenuSchema = {
   organization: Array<{
     id: string;
@@ -127,25 +136,19 @@ export type MenuSchema = {
     slug: string;
     name: string;
     thumbnailUrl?: string | null;
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
-    };
+    bannerUrl?: string | null;
+    membership: MembershipBaseSchema;
     createdAt: string;
     modifiedAt: string | null;
     organizationId?: string;
-    submenu?: Array<{
-      id: string;
-      entityType: 'organization';
-      slug: string;
-      name: string;
-      thumbnailUrl?: string | null;
-      membership: MembershipBaseSchema & {
-        [key: string]: unknown;
-      };
-      createdAt: string;
-      modifiedAt: string | null;
-      organizationId?: string;
-    }>;
+    submenu?: Array<
+      ContextEntityBaseSchema & {
+        membership: MembershipBaseSchema;
+        createdAt: string;
+        modifiedAt: string | null;
+        organizationId?: string;
+      }
+    >;
   }>;
 };
 
@@ -252,7 +255,7 @@ export type CheckEmailResponses = {
   /**
    * Email exists
    */
-  200: boolean;
+  204: void;
 };
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
@@ -354,7 +357,11 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
+    role: 'member' | 'admin' | null;
     userId?: string;
+    organizationName?: string;
+    organizationSlug?: string;
+    organizationId?: string;
   };
 };
 
@@ -408,7 +415,7 @@ export type StartImpersonationResponses = {
   /**
    * Impersonating
    */
-  200: boolean;
+  204: void;
 };
 
 export type StartImpersonationResponse = StartImpersonationResponses[keyof StartImpersonationResponses];
@@ -459,7 +466,7 @@ export type StopImpersonationResponses = {
   /**
    * Stopped impersonating
    */
-  200: boolean;
+  204: void;
 };
 
 export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImpersonationResponses];
@@ -510,7 +517,7 @@ export type SignOutResponses = {
   /**
    * User signed out
    */
-  200: boolean;
+  204: void;
 };
 
 export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
@@ -615,7 +622,7 @@ export type DeleteTotpResponses = {
   /**
    * TOTP deleted
    */
-  200: boolean;
+  204: void;
 };
 
 export type DeleteTotpResponse = DeleteTotpResponses[keyof DeleteTotpResponses];
@@ -668,7 +675,7 @@ export type CreateTotpResponses = {
   /**
    * TOTP created
    */
-  200: boolean;
+  204: void;
 };
 
 export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
@@ -721,7 +728,7 @@ export type SignInWithTotpResponses = {
   /**
    * TOTP verified
    */
-  200: boolean;
+  204: void;
 };
 
 export type SignInWithTotpResponse = SignInWithTotpResponses[keyof SignInWithTotpResponses];
@@ -775,7 +782,7 @@ export type SignUpResponses = {
   /**
    * User signed up
    */
-  200: boolean;
+  204: void;
 };
 
 export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
@@ -839,52 +846,6 @@ export type SignUpWithTokenResponses = {
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
 
-export type VerifyEmailData = {
-  body?: never;
-  path: {
-    tokenId: string;
-  };
-  query?: {
-    redirect?: string;
-  };
-  url: '/auth/verify-email/{tokenId}';
-};
-
-export type VerifyEmailErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
-
 export type RequestPasswordData = {
   body?: {
     email: string;
@@ -933,7 +894,7 @@ export type RequestPasswordResponses = {
   /**
    * Password reset email sent
    */
-  200: boolean;
+  204: void;
 };
 
 export type RequestPasswordResponse = RequestPasswordResponses[keyof RequestPasswordResponses];
@@ -1165,7 +1126,7 @@ export type DeletePasskeyResponses = {
   /**
    * Passkey deleted
    */
-  200: boolean;
+  204: void;
 };
 
 export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
@@ -1280,7 +1241,7 @@ export type SignInWithPasskeyResponses = {
   /**
    * Passkey verified
    */
-  200: boolean;
+  204: void;
 };
 
 export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
@@ -1604,7 +1565,7 @@ export type DeleteMeResponses = {
   /**
    * User deleted
    */
-  200: boolean;
+  204: void;
 };
 
 export type DeleteMeResponse = DeleteMeResponses[keyof DeleteMeResponses];
@@ -1961,13 +1922,16 @@ export type GetMyInvitationsResponses = {
     entity: ContextEntityBaseSchema & {
       organizationId?: string;
     };
-    invitedBy: UserBaseSchema &
-      ({
-        [key: string]: unknown;
-      } | null);
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
-    };
+    invitedBy: {
+      id: string;
+      slug: string;
+      name: string;
+      thumbnailUrl?: string | null;
+      bannerUrl?: string | null;
+      email: string;
+      entityType: 'user';
+    } | null;
+    membership: MembershipBaseSchema;
     expiresAt: string;
   }>;
 };
@@ -2079,7 +2043,7 @@ export type DeleteMyMembershipResponses = {
   /**
    * Membership removed
    */
-  200: boolean;
+  204: void;
 };
 
 export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
@@ -2315,11 +2279,7 @@ export type GetUsersResponses = {
   200: {
     items: Array<
       User & {
-        memberships: Array<
-          MembershipBaseSchema & {
-            [key: string]: unknown;
-          }
-        >;
+        memberships: Array<MembershipBaseSchema>;
       }
     >;
     total: number;
@@ -2551,11 +2511,7 @@ export type GetOrganizationsResponses = {
    * Organizations
    */
   200: {
-    items: Array<
-      Organization & {
-        [key: string]: unknown;
-      }
-    >;
+    items: Array<Organization>;
     total: number;
   };
 };
@@ -2612,8 +2568,15 @@ export type CreateOrganizationResponses = {
    * Organization was created
    */
   200: Organization & {
-    membership?: MembershipBaseSchema & {
-      [key: string]: unknown;
+    membership?: {
+      id: string;
+      contextType: 'organization';
+      userId: string;
+      role: 'member' | 'admin';
+      archived: boolean;
+      muted: boolean;
+      order: number;
+      organizationId: string;
     };
   };
 };
@@ -2803,20 +2766,27 @@ export type GetContextEntitiesResponses = {
    * Context entities
    */
   200: {
-    items: {
-      organization: Array<
-        ContextEntityBaseSchema & {
-          createdAt: string;
-          membership: MembershipBaseSchema;
-          membershipCounts: {
-            admin: number;
-            member: number;
-            pending: number;
-            total: number;
-          };
-        }
-      >;
-    };
+    items: Array<
+      ContextEntityBaseSchema & {
+        membership: {
+          id: string;
+          contextType: 'organization';
+          userId: string;
+          role: 'member' | 'admin';
+          archived: boolean;
+          muted: boolean;
+          order: number;
+          organizationId: string;
+        } | null;
+        createdAt: string;
+        membershipCounts: {
+          admin: number;
+          member: number;
+          pending: number;
+          total: number;
+        };
+      }
+    >;
     total: number;
   };
 };
@@ -2927,7 +2897,7 @@ export type CheckSlugResponses = {
   /**
    * Slug is available
    */
-  200: boolean;
+  204: void;
 };
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
@@ -2983,7 +2953,7 @@ export type SystemInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesCount: number;
+    invitesSentCount: number;
   };
 };
 
@@ -3089,7 +3059,7 @@ export type PaddleWebhookResponses = {
   /**
    * Paddle webhook received
    */
-  200: boolean;
+  204: void;
 };
 
 export type PaddleWebhookResponse = PaddleWebhookResponses[keyof PaddleWebhookResponses];
@@ -3145,9 +3115,9 @@ export type SendNewsletterError = SendNewsletterErrors[keyof SendNewsletterError
 
 export type SendNewsletterResponses = {
   /**
-   * Organization
+   * Newsletter sent
    */
-  200: boolean;
+  204: void;
 };
 
 export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
@@ -3198,9 +3168,9 @@ export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsError
 
 export type DeleteRequestsResponses = {
   /**
-   * Requests
+   * Requests deleted
    */
-  200: boolean;
+  204: void;
 };
 
 export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
@@ -3968,7 +3938,7 @@ export type MembershipInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesCount: number;
+    invitesSentCount: number;
   };
 };
 
@@ -4178,9 +4148,7 @@ export type GetMembersResponses = {
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
-      membership: MembershipBaseSchema & {
-        [key: string]: unknown;
-      };
+      membership: MembershipBaseSchema;
     }>;
     total: number;
   };
@@ -4195,7 +4163,7 @@ export type GetPendingInvitationsData = {
   };
   query: {
     q?: string;
-    sort?: 'email' | 'role' | 'createdAt' | 'createdBy';
+    sort?: 'email' | 'role' | 'expiresAt' | 'createdAt' | 'createdBy';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -4247,10 +4215,11 @@ export type GetPendingInvitationsResponses = {
   200: {
     items: Array<{
       id: string;
+      email: string;
       createdAt: string;
       createdBy: string | null;
       role: 'member' | 'admin';
-      email: string;
+      expiresAt: string;
       name: string | null;
     }>;
     total: number;
@@ -4260,10 +4229,15 @@ export type GetPendingInvitationsResponses = {
 export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof GetPendingInvitationsResponses];
 
 export type ResendInvitationData = {
-  body?: {
-    email: string;
-    tokenId?: string;
-  };
+  body:
+    | {
+        email: string;
+        tokenId?: string;
+      }
+    | {
+        email?: string;
+        tokenId: string;
+      };
   path?: never;
   query?: never;
   url: '/{orgIdOrSlug}/memberships/resend-invitation';
@@ -4308,7 +4282,7 @@ export type ResendInvitationResponses = {
   /**
    * Invitation email sent
    */
-  200: boolean;
+  204: void;
 };
 
 export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
