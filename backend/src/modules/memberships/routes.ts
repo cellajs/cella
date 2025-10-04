@@ -20,7 +20,7 @@ import {
   idsBodySchema,
   inOrgParamSchema,
 } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -184,12 +184,11 @@ const membershipRoutes = {
     description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
+      body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
     },
     responses: {
-      200: {
+      204: {
         description: 'Invitation email sent',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

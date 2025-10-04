@@ -235,7 +235,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(options?: Options<CheckEmailData, ThrowOnError>) => {
   return (options?.client ?? client).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
@@ -316,7 +316,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
  *
  * @param {startImpersonationData} options
  * @param {string} options.query.targetuserid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
   return (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
@@ -342,7 +342,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
  * **GET /auth/impersonation/stop** ·· [stopImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
  *
  * @param {stopImpersonationData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
   return (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
@@ -368,7 +368,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
  * **GET /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/get/auth/sign-out) ·· _auth_
  *
  * @param {signOutData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
   return (options?.client ?? client).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
@@ -413,7 +413,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
  * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/auth/delete/auth/totp) ·· _auth_
  *
  * @param {deleteTotpData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
   return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
@@ -433,7 +433,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
   return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
@@ -458,7 +458,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
   return (options?.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
@@ -484,7 +484,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Op
  * @param {signUpData} options
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 302, 400, 401, 403, 404, 429
  */
 export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
   return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
@@ -536,7 +536,7 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  *
  * @param {requestPasswordData} options
  * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const requestPassword = <ThrowOnError extends boolean = true>(options?: Options<RequestPasswordData, ThrowOnError>) => {
   return (options?.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
@@ -638,7 +638,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
  *
  * @param {deletePasskeyData} options
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
   return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
@@ -690,7 +690,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
  * @param {string=} options.body.signature - `string` (optional)
  * @param {enum | enum=} options.body.type - `enum | enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
   return (options?.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
@@ -852,7 +852,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
  * **DELETE /me** ·· [deleteMe](http://localhost:4000/docs#tag/me/delete/me) ·· _me_
  *
  * @param {deleteMeData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<DeleteMeData, ThrowOnError>) => {
   return (options?.client ?? client).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
@@ -1086,7 +1086,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
  * @param {deleteMyMembershipData} options
  * @param {string | string} options.query.idorslug - `string | string`
  * @param {enum} options.query.entitytype - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteMyMembership = <ThrowOnError extends boolean = true>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
   return (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
@@ -1534,7 +1534,7 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
  * @param {checkSlugData} options
  * @param {string=} options.body.slug - `string` (optional)
  * @param {enum=} options.body.entityType - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options<CheckSlugData, ThrowOnError>) => {
   return (options?.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
@@ -1624,7 +1624,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
  * **POST /system/paddle-webhook** ·· [paddleWebhook](http://localhost:4000/docs#tag/system/post/system/paddle-webhook) ·· _system_
  *
  * @param {paddleWebhookData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
   return (options?.client ?? client).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
@@ -1659,7 +1659,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
  * @param {any[]=} options.body.roles - `any[]` (optional)
  * @param {string=} options.body.subject - `string` (optional)
  * @param {string=} options.body.content - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Options<SendNewsletterData, ThrowOnError>) => {
   return (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
@@ -1690,7 +1690,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
  *
  * @param {deleteRequestsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Options<DeleteRequestsData, ThrowOnError>) => {
   return (options?.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
@@ -2263,18 +2263,16 @@ export const getPendingInvitations = <ThrowOnError extends boolean = true>(optio
  * **POST /{orgIdOrSlug}/memberships/resend-invitation** ·· [resendInvitation](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships/resend-invitation) ·· _memberships_
  *
  * @param {resendInvitationData} options
- * @param {string=} options.body.email - `string` (optional)
- * @param {string=} options.body.tokenId - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const resendInvitation = <ThrowOnError extends boolean = true>(options?: Options<ResendInvitationData, ThrowOnError>) => {
-  return (options?.client ?? client).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'>({
+export const resendInvitation = <ThrowOnError extends boolean = true>(options: Options<ResendInvitationData, ThrowOnError>) => {
+  return (options.client ?? client).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/{orgIdOrSlug}/memberships/resend-invitation',
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...options.headers,
     },
   });
 };

@@ -615,7 +615,7 @@ const membershipRouteHandlers = app
 
     logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default membershipRouteHandlers;

@@ -57,7 +57,7 @@ const authGeneralRouteHandlers = app
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Validate and invoke token by creating a single use session token in cookie
@@ -138,7 +138,7 @@ const authGeneralRouteHandlers = app
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Stop impersonation
@@ -166,7 +166,7 @@ const authGeneralRouteHandlers = app
 
     logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Sign out
@@ -180,7 +180,7 @@ const authGeneralRouteHandlers = app
 
       logEvent('info', 'User mfa canceled');
 
-      return ctx.json(true, 200);
+      return ctx.body(null, 204);
     }
 
     // Find session & invalidate
@@ -191,7 +191,7 @@ const authGeneralRouteHandlers = app
 
     logEvent('info', 'User signed out', { userId: currentSession.userId });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default authGeneralRouteHandlers;

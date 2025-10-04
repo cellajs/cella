@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
-import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/api.gen';
+import { type CheckSlugData, CheckSlugResponse, checkSlug } from '~/api.gen';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
@@ -53,15 +53,17 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   const slug = useWatch({ control: form.control, name: name });
 
   // Check if slug is available
-  const { mutate: checkAvailability } = useMutation<boolean, ApiError, NonNullable<CheckSlugData['body']>>({
+  const { mutate: checkAvailability } = useMutation<CheckSlugResponse, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: [name],
     mutationFn: async (body) => {
-      return await checkSlugAvailable({ body });
+      return await checkSlug({ body });
     },
-    onSuccess: (isAvailable) => {
-      if (isValidSlug(slug)) form.clearErrors(name);
-      if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
-      // Slug is not available
+    onSuccess: () => {
+      if (!isValidSlug(slug)) return;
+      form.clearErrors(name);
+      setSlugAvailable('available');
+    },
+    onError: () => {
       form.setError(name, { type: 'manual', message: t('error:slug_exists') });
       setSlugAvailable('notAvailable');
     },

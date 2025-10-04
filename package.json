@@ -55,7 +55,7 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.4",
+    "@biomejs/biome": "^2.2.5",
     "@evilmartians/lefthook": "^1.13.6",
     "@typescript/native-preview": "7.0.0-dev.20250910.1",
     "cross-env": "^10.1.0",

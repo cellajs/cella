@@ -30,9 +30,8 @@ const PasskeyStrategy = ({
       // Send signed response to BE to complete authentication
       return await signInWithPasskey({ body });
     },
-    onSuccess: (success) => {
-      if (success) navigate({ to: redirectPath, replace: true });
-      else toaster(t('error:passkey_verification_failed'), 'error');
+    onSuccess: () => {
+      navigate({ to: redirectPath, replace: true });
     },
     onError: (error) => {
       if (type === 'mfa' && error instanceof ApiError) {

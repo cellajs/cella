@@ -10,7 +10,7 @@ import {
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/schema';
 import { cookieSchema, idSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses } from '#/utils/schema/responses';
 
 const authPasskeysRoutes = {
   generatePasskeyChallenge: createCustomRoute({
@@ -72,9 +72,8 @@ const authPasskeysRoutes = {
       params: z.object({ id: idSchema }),
     },
     responses: {
-      200: {
+      204: {
         description: 'Passkey deleted',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -93,10 +92,9 @@ const authPasskeysRoutes = {
       body: { content: { 'application/json': { schema: passkeyVerificationBodySchema } } },
     },
     responses: {
-      200: {
+      204: {
         description: 'Passkey verified',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

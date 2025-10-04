@@ -101,8 +101,8 @@ export const paginationQuerySchema = z.object({
 });
 
 export const emailOrTokenIdQuerySchema = z.union([
-  z.object({ email: z.string().email(), tokenId: z.undefined() }),
-  z.object({ email: z.undefined(), tokenId: z.string() }),
+  z.object({ email: z.email(), tokenId: z.string().optional() }),
+  z.object({ email: z.email().optional(), tokenId: z.string() }),
 ]);
 
 /*************************************************************************************************

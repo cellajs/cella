@@ -105,7 +105,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
           <Card className="max-w-[80vw] sm:max-w-[36rem] mt-8 bg-transparent border-none">
             <CardHeader className="text-center p-0">
               <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
-              <CardDescription className="font-light flex-col gap-2 p-0">
+              <CardDescription className="text-base flex-col gap-2 p-0">
                 <span className="block">{message}</span>
                 <span className="block mt-2 font-light">
                   <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
@@ -114,7 +114,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap text-red-600 font-mono p-0 pb-4">
+              <CardContent className="whitespace-pre-wrap text-red-600 font-mono px-0 py-4">
                 {error.type && (
                   <Button
                     variant="link"

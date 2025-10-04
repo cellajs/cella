@@ -19,8 +19,8 @@ export const meAuthDataSchema = z.object({
   passkeys: z.array(passkeySchema),
 });
 
-export const menuItemSchema = contextEntityWithMembershipSchema.omit({ bannerUrl: true }).extend({
-  createdAt: z.string(),
+// TODO can we remove this in favour of a standardized contextEntityWithMembershipSchema?
+export const menuItemSchema = contextEntityWithMembershipSchema.extend({
   modifiedAt: z.string().nullable(),
   organizationId: membershipBaseSchema.shape.organizationId.optional(),
 });
@@ -75,7 +75,7 @@ export const toggleMfaBodySchema = z.object({
 export const meInvitationsSchema = z.array(
   z.object({
     entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
-    invitedBy: userBaseSchema.nullable(),
+    invitedBy: z.object({ ...userBaseSchema.shape }).nullable(),
     membership: membershipBaseSchema,
     expiresAt: z.string(),
   }),

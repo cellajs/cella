@@ -268,7 +268,7 @@ const meRouteHandlers = app
     deleteAuthCookie(ctx, 'session');
     logEvent('info', 'User deleted itself', { userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Delete one of my entity memberships
@@ -288,7 +288,7 @@ const meRouteHandlers = app
 
     logEvent('info', 'User left entity', { userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Get upload token

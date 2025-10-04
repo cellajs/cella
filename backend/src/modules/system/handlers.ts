@@ -219,7 +219,7 @@ const systemRouteHandlers = app
       logError('Error handling paddle webhook', error);
     }
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Send newsletter to members of one or more organizations matching one ore more roles.
@@ -305,7 +305,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default systemRouteHandlers;

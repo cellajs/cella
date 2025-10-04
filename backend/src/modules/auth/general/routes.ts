@@ -6,7 +6,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
 import { cookieSchema, locationSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses } from '#/utils/schema/responses';
 
 const authGeneralRoutes = {
   startImpersonation: createCustomRoute({
@@ -19,16 +19,11 @@ const authGeneralRoutes = {
     description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { query: z.object({ targetUserId: z.string() }) },
     responses: {
-      200: {
+      204: {
         description: 'Impersonating',
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
       },
       ...errorResponses,
     },
@@ -43,13 +38,8 @@ const authGeneralRoutes = {
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
     responses: {
-      200: {
+      204: {
         description: 'Stopped impersonating',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
       },
       ...errorResponses,
     },
@@ -75,13 +65,8 @@ const authGeneralRoutes = {
       },
     },
     responses: {
-      200: {
+      204: {
         description: 'Email exists',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
       },
       ...errorResponses,
     },
@@ -142,9 +127,8 @@ const authGeneralRoutes = {
     summary: 'Sign out',
     description: 'Signs out the *current user* and clears the active session.',
     responses: {
-      200: {
+      204: {
         description: 'User signed out',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

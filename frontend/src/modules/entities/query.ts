@@ -45,7 +45,7 @@ export const searchContextEntitiesQueryOptions = ({
     staleTime: 0,
     enabled: q.trim().length > 0, // to avoid issues with spaces
     initialData: {
-      items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as { [P in ContextEntityType]: [] },
+      items: [],
       total: 0,
     },
     placeholderData: keepPreviousData,
@@ -76,26 +76,14 @@ export const contextEntitiesQueryOptions = ({
 }: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId' | 'orgAffiliated' | 'order' | 'limit'> & { limit?: number }) => {
   const limit = String(baseLimit);
   const orgAffiliated = 'false';
-  const { initialPageParam } = baseInfiniteQueryOptions;
 
   return infiniteQueryOptions({
     queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types, role }),
-    initialPageParam,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getContextEntities({ query: { q, sort, types, role, targetUserId, excludeArchived, orgAffiliated, offset, limit }, signal });
     },
-    getNextPageParam: (lastPage, allPages) => {
-      const total = lastPage.total;
-
-      const fetchedCount = allPages.reduce((acc, page) => {
-        const pageCount = Object.values(page.items).reduce((sum, arr) => sum + arr.length, 0);
-        return acc + pageCount;
-      }, 0);
-
-      if (fetchedCount >= total) return undefined;
-      return { page: allPages.length, offset: fetchedCount };
-    },
+    ...baseInfiniteQueryOptions,
     staleTime: 0,
   });
 };

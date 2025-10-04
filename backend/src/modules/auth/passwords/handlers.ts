@@ -61,7 +61,7 @@ const authPasswordsRouteHandlers = app
 
     sendVerificationEmail({ userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Sign up with email & password to accept (system or membership) invitations.
@@ -157,7 +157,7 @@ const authPasswordsRouteHandlers = app
 
     logEvent('info', 'Create password link sent', { userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
   /**
    * Create password with single use session token in cookie

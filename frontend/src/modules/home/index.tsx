@@ -13,6 +13,7 @@ const Home = () => {
 
   useEffect(() => {
     (async () => {
+      // TODO
       getContextEntities();
     })();
 
