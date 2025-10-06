@@ -79,7 +79,10 @@ const authTotpsRoutes = {
     description: 'Validates the TOTP code and completes TOTP based authentication.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: totpCreateBodySchema } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: totpCreateBodySchema } },
+      },
     },
     responses: {
       204: {

@@ -16,7 +16,10 @@ const entityRoutes = {
     description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
       Primarily used to prevent slug collisions before creating or updating an entity.`,
     request: {
-      body: { content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } },
+      },
     },
     responses: {
       204: {

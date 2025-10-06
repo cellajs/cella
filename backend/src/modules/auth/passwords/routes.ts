@@ -50,7 +50,10 @@ const authPasswordsRoutes = {
     security: [],
     request: {
       params: z.object({ tokenId: z.string() }),
-      body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: emailPasswordBodySchema } },
+      },
     },
     responses: {
       201: {
@@ -73,7 +76,10 @@ const authPasswordsRoutes = {
     description: "Sends an email with a link to reset the user's password.",
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: emailBodySchema } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: emailBodySchema } },
+      },
     },
     responses: {
       204: {
@@ -95,7 +101,10 @@ const authPasswordsRoutes = {
     security: [],
     request: {
       params: z.object({ tokenId: z.string() }),
-      body: { content: { 'application/json': { schema: z.object({ password: passwordSchema }) } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: z.object({ password: passwordSchema }) } },
+      },
     },
     responses: {
       201: {
@@ -117,7 +126,10 @@ const authPasswordsRoutes = {
     description: 'Authenticates an existing user using their email and password.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: emailPasswordBodySchema } },
+      },
     },
     responses: {
       200: {

@@ -17,11 +17,8 @@ const systemRoutes = {
     description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: inviteBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: inviteBodySchema } },
       },
     },
     responses: {
@@ -45,11 +42,7 @@ const systemRoutes = {
       query: z.object({ toSelf: booleanTransformSchema }),
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: sendNewsletterBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: sendNewsletterBodySchema } },
       },
     },
     responses: {
@@ -89,13 +82,7 @@ const systemRoutes = {
     summary: 'Paddle webhook (WIP)',
     description: 'Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: z.unknown(),
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: z.unknown() } } },
     },
     responses: {
       204: {

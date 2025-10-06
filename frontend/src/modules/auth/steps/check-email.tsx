@@ -19,7 +19,7 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
-const formSchema = zCheckEmailData.shape.body.unwrap();
+const formSchema = zCheckEmailData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
 /**

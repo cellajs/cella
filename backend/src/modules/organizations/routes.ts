@@ -22,11 +22,7 @@ const organizationRoutes = {
     request: {
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: organizationCreateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: organizationCreateBodySchema } },
       },
     },
     responses: {
@@ -45,17 +41,11 @@ const organizationRoutes = {
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Returns a list of *organizations* at the system level.',
-    request: {
-      query: organizationListQuerySchema,
-    },
+    request: { query: organizationListQuerySchema },
     responses: {
       200: {
         description: 'Organizations',
-        content: {
-          'application/json': {
-            schema: paginationSchema(organizationSchema),
-          },
-        },
+        content: { 'application/json': { schema: paginationSchema(organizationSchema) } },
       },
       ...errorResponses,
     },
@@ -71,11 +61,7 @@ const organizationRoutes = {
     request: {
       params: entityParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: organizationUpdateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: organizationUpdateBodySchema } },
       },
     },
     responses: {
@@ -94,9 +80,7 @@ const organizationRoutes = {
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID or slug.',
-    request: {
-      params: entityParamSchema,
-    },
+    request: { params: entityParamSchema },
     responses: {
       200: {
         description: 'Organization',
@@ -115,6 +99,7 @@ const organizationRoutes = {
     description: 'Deletes one or more *organizations* by ID.',
     request: {
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },

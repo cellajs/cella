@@ -24,7 +24,12 @@ const authPasskeysRoutes = {
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
-    request: { body: { content: { 'application/json': { schema: passkeyChallengeBodySchema } } } },
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: passkeyChallengeBodySchema } },
+      },
+    },
     responses: {
       200: {
         description: 'Challenge generated',
@@ -68,9 +73,7 @@ const authPasskeysRoutes = {
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the *current user*.',
     security: [],
-    request: {
-      params: z.object({ id: idSchema }),
-    },
+    request: { params: z.object({ id: idSchema }) },
     responses: {
       204: {
         description: 'Passkey deleted',
@@ -89,7 +92,10 @@ const authPasskeysRoutes = {
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',
     request: {
-      body: { content: { 'application/json': { schema: passkeyVerificationBodySchema } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: passkeyVerificationBodySchema } },
+      },
     },
     responses: {
       204: {

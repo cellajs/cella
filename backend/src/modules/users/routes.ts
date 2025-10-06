@@ -45,17 +45,14 @@ const userRoutes = {
       "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     request: {
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {
       200: {
         description: 'Success',
-        content: {
-          'application/json': {
-            schema: successWithRejectedItemsSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
       ...errorResponses,
     },
@@ -68,9 +65,7 @@ const userRoutes = {
     tags: ['users'],
     summary: 'Get user',
     description: 'Retrieves a *user* by ID or slug.',
-    request: {
-      params: entityParamSchema,
-    },
+    request: { params: entityParamSchema },
     responses: {
       200: {
         description: 'User',
@@ -90,11 +85,7 @@ const userRoutes = {
     request: {
       params: entityParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: userUpdateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: userUpdateBodySchema } },
       },
     },
     responses: {

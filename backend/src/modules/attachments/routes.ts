@@ -19,11 +19,7 @@ const attachmentRoutes = {
       params: inOrgParamSchema,
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: attachmentCreateManySchema,
-          },
-        },
+        content: { 'application/json': { schema: attachmentCreateManySchema } },
       },
     },
     responses: {
@@ -54,11 +50,7 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachments',
-        content: {
-          'application/json': {
-            schema: paginationSchema(attachmentSchema),
-          },
-        },
+        content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
       },
       ...errorResponses,
     },
@@ -72,9 +64,7 @@ const attachmentRoutes = {
     tags: ['attachments'],
     summary: 'Get attachment',
     description: 'Fetches metadata and access details for a single *attachment* by ID.',
-    request: {
-      params: idInOrgParamSchema,
-    },
+    request: { params: idInOrgParamSchema },
     responses: {
       200: {
         description: 'Attachment',
@@ -99,11 +89,8 @@ const attachmentRoutes = {
     request: {
       params: idInOrgParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: attachmentUpdateBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: attachmentUpdateBodySchema } },
       },
     },
     responses: {
@@ -130,11 +117,8 @@ const attachmentRoutes = {
     request: {
       params: inOrgParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: idsBodySchema(),
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {
@@ -162,9 +146,7 @@ const attachmentRoutes = {
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
     request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
     responses: {
-      200: {
-        description: 'Success',
-      },
+      200: { description: 'Success' },
       ...errorResponses,
     },
   }),
@@ -178,13 +160,9 @@ const attachmentRoutes = {
     tags: ['attachments'],
     summary: 'Redirect to attachment',
     description: "Redirects to the file's public or presigned URL, depending on storage visibility.",
-    request: {
-      params: z.object({ id: idSchema }),
-    },
+    request: { params: z.object({ id: idSchema }) },
     responses: {
-      200: {
-        description: 'Success',
-      },
+      200: { description: 'Success' },
       ...errorResponses,
     },
   }),

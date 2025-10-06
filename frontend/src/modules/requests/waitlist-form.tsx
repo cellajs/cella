@@ -16,7 +16,7 @@ import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const formSchema = zCreateRequestData.shape.body.unwrap();
+const formSchema = zCreateRequestData.shape.body;
 
 type FormValues = z.infer<typeof formSchema>;
 

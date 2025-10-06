@@ -15,7 +15,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
 
-const InviteFormSchema = zMembershipInviteData.shape.body.unwrap();
+const InviteFormSchema = zMembershipInviteData.shape.body;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
 export const useInviteFormDraft = (entityId?: string) => {
