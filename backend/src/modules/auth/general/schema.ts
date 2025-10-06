@@ -10,7 +10,5 @@ export const tokenWithDataSchema = z.object({
   email: z.email(),
   role: z.union([membershipSchema.shape.role, z.null()]),
   userId: idSchema.optional(),
-  organizationName: z.string().optional(),
-  organizationSlug: z.string().optional(),
-  organizationId: z.string().optional(),
+  organizationId: idSchema.optional(),
 });

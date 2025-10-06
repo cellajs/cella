@@ -308,12 +308,11 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    tokenId: string;
-  };
-  query: {
     type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
+    id: string;
   };
-  url: '/auth/token/{tokenId}';
+  query?: never;
+  url: '/auth/token/{type}/{id}';
 };
 
 export type GetTokenDataErrors = {
@@ -359,8 +358,6 @@ export type GetTokenDataResponses = {
     email: string;
     role: 'member' | 'admin' | null;
     userId?: string;
-    organizationName?: string;
-    organizationSlug?: string;
     organizationId?: string;
   };
 };

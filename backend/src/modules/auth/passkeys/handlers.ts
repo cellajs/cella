@@ -12,7 +12,7 @@ import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import authPasskeysRoutes from '#/modules/auth/passkeys/routes';
@@ -124,7 +124,7 @@ const authPasskeysRouteHandlers = app
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /**
-   * Signin using passkey
+   * Sign in using passkey
    */
   .openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
     const { email, type, ...passkeyData } = ctx.req.valid('json');
@@ -172,8 +172,8 @@ const authPasskeysRouteHandlers = app
       });
     }
 
-    // Consume the MFA token now that TOTP verification succeeded
-    await consumeMfaToken(ctx);
+    // Revoke single use token by deleting cookie
+    deleteAuthCookie(ctx, 'confirm-mfa');
 
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);

@@ -15,6 +15,7 @@ import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oau
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
@@ -90,25 +91,23 @@ const authGeneralRouteHandlers = app
     return ctx.redirect(redirectUrl, 302);
   })
   /**
-   * Get token data by id (without invoking it)
+   * Get token data by single use token in cookie
    */
   .openapi(authGeneralRoutes.getTokenData, async (ctx) => {
     // Find token in request
-    const { tokenId } = ctx.req.valid('param');
-    const { type: tokenType } = ctx.req.valid('query');
+    const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
-    // Get token
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, tokenId), eq(tokensTable.type, tokenType)))
-      .limit(1);
-    if (!tokenRecord) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
+    // Check if token session is valid
+    const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
+
+    // Check if tokenId matches the one being requested
+    if (tokenRecord.id !== tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
 
     const data = {
       email: tokenRecord.email,
       role: tokenRecord.role,
       userId: tokenRecord.userId || '',
+      organizationId: tokenRecord.organizationId || '',
     };
 
     // If its NOT an organization invitation, return base data

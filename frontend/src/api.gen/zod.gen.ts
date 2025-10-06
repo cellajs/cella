@@ -243,11 +243,10 @@ export const zInvokeTokenData = z.object({
 export const zGetTokenDataData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tokenId: z.string(),
-  }),
-  query: z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
+    id: z.string(),
   }),
+  query: z.optional(z.never()),
 });
 
 /**
@@ -257,8 +256,6 @@ export const zGetTokenDataResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
-  organizationName: z.optional(z.string()),
-  organizationSlug: z.optional(z.string()),
   organizationId: z.optional(z.string()),
 });
 

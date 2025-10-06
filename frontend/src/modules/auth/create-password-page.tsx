@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useGetTokenData } from '~/modules/auth/use-token-check';
+import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
@@ -63,9 +63,7 @@ const CreatePasswordPage = () => {
     return (
       <ErrorNotice error={error || resetPasswordError} level={'public'}>
         <RequestPasswordDialog email={data?.email}>
-          <Button ref={requestButtonRef} size="lg">
-            {t('common:forgot_password')}
-          </Button>
+          <Button ref={requestButtonRef}>{t('common:forgot_password')}</Button>
         </RequestPasswordDialog>
       </ErrorNotice>
     );

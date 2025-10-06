@@ -13,7 +13,7 @@ import type { AuthStep } from '~/modules/auth/types';
 import Spinner from '~/modules/common/spinner';
 import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
-import { useGetTokenData } from './use-token-check';
+import { useGetTokenData } from './use-get-token-data';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

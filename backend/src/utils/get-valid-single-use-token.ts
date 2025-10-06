@@ -23,7 +23,7 @@ type Props = {
 export const getValidSingleUseToken = async ({ ctx, tokenType, redirectPath }: Props): Promise<TokenModel> => {
   // Find single use token in cookie
   const singleUseToken = await getAuthCookie(ctx, tokenType);
-  if (!singleUseToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', redirectPath });
+  if (!singleUseToken) throw new AppError({ status: 400, type: 'invalid_token', severity: 'warn', redirectPath });
 
   // Get token record that matches type and singleUseToken value
   const [tokenRecord] = await db
