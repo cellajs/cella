@@ -19,7 +19,6 @@ const authPasswordsRoutes = {
     tags: ['auth'],
     summary: 'Sign up with password',
     description: 'Registers a new user using an email and password. Sends a verification email upon successful sign up.',
-    security: [],
     request: {
       body: {
         content: { 'application/json': { schema: emailPasswordBodySchema } },
@@ -47,7 +46,6 @@ const authPasswordsRoutes = {
     tags: ['auth'],
     summary: 'Sign up to accept invite',
     description: 'Registers a user using an email and password in response to a system or organization invitation.',
-    security: [],
     request: {
       params: z.object({ tokenId: z.string() }),
       body: {
@@ -74,7 +72,6 @@ const authPasswordsRoutes = {
     tags: ['auth'],
     summary: 'Request new password',
     description: "Sends an email with a link to reset the user's password.",
-    security: [],
     request: {
       body: {
         required: true,
@@ -98,7 +95,6 @@ const authPasswordsRoutes = {
     tags: ['auth'],
     summary: 'Create password',
     description: 'Sets a new password using a single-use session token in cookie and grants a session immediately upon success.',
-    security: [],
     request: {
       params: z.object({ tokenId: z.string() }),
       body: {
@@ -124,7 +120,6 @@ const authPasswordsRoutes = {
     tags: ['auth'],
     summary: 'Sign in with password',
     description: 'Authenticates an existing user using their email and password.',
-    security: [],
     request: {
       body: {
         required: true,

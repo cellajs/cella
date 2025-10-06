@@ -46,6 +46,14 @@ export function registerMiddlewareDescription(descriptor: MiddlewareDescriptor) 
 }
 
 /**
+ * Retrieve the registered descriptor for a middleware.
+ * Returns undefined if the middleware has not been registered.
+ */
+export function getMiddlewareDescriptor(middleware: MiddlewareHandler): MiddlewareDescriptor | undefined {
+  return middlewareRegistry.get(middleware);
+}
+
+/**
  * Enhance an OpenAPI route description by prefixing it with security or metadata context
  * derived from known middleware in the route.
  *

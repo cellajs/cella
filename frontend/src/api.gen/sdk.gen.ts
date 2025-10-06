@@ -266,13 +266,6 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
 export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
   return (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/auth/invoke-token/{type}/{token}',
     ...options,
   });
@@ -294,13 +287,6 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
 export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
   return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/auth/token/{tokenId}',
     ...options,
   });
@@ -373,13 +359,6 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
 export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
   return (options?.client ?? client).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/auth/sign-out',
     ...options,
   });
@@ -399,6 +378,13 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
 export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: Options<GenerateTotpKeyData, ThrowOnError>) => {
   return (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
     url: '/auth/totp/generate-key',
     ...options,
   });
@@ -418,6 +404,13 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
 export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
   return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
     url: '/auth/totp',
     ...options,
   });
@@ -438,6 +431,13 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
 export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
   return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
     url: '/auth/totp',
     ...options,
     headers: {
@@ -619,6 +619,13 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
 export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
   return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
     url: '/auth/passkey',
     ...options,
     headers: {
@@ -643,6 +650,13 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
 export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
   return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
     url: '/auth/passkey/{id}',
     ...options,
   });
@@ -695,13 +709,6 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: Options<SignInWithPasskeyData, ThrowOnError>) => {
   return (options.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/auth/passkey-verification',
     ...options,
     headers: {
@@ -1091,6 +1098,13 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
 export const deleteMyMembership = <ThrowOnError extends boolean = true>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
   return (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
     url: '/me/leave',
     ...options,
   });
@@ -1141,13 +1155,6 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
   return (options.client ?? client).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/me/unsubscribe',
     ...options,
   });
@@ -1602,13 +1609,6 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
 export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
   return (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/system/presigned-url',
     ...options,
   });
@@ -1629,13 +1629,6 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
   return (options?.client ?? client).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/system/paddle-webhook',
     ...options,
     headers: {
@@ -1760,13 +1753,6 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
 export const createRequest = <ThrowOnError extends boolean = true>(options: Options<CreateRequestData, ThrowOnError>) => {
   return (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/requests',
     ...options,
     headers: {
@@ -1818,13 +1804,6 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
 export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
   return (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/metrics/public',
     ...options,
   });
@@ -2039,13 +2018,6 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 export const redirectToAttachment = <ThrowOnError extends boolean = true>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
   return (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/{orgIdOrSlug}/attachments/{id}/link',
     ...options,
   });

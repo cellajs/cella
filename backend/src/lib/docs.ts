@@ -23,7 +23,6 @@ const openApiConfig = {
   },
   openapi: '3.1.0',
   tags: apiModulesList,
-  security: [{ cookieAuth: [] }],
 };
 
 /**

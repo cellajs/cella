@@ -50,7 +50,6 @@ const authGeneralRoutes = {
     tags: ['auth'],
     summary: 'Check if email exists',
     description: 'Checks if a user with the specified email address exists in the system.',
-    security: [],
     request: {
       body: {
         required: true,

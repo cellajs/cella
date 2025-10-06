@@ -177,7 +177,6 @@ const membershipRoutes = {
     tags: ['memberships'],
     summary: 'Resend invitation',
     description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
-    security: [],
     request: {
       body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
     },

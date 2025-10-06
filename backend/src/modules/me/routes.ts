@@ -156,7 +156,6 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
-    security: [],
     request: { query: entityWithTypeQuerySchema },
     responses: {
       204: {
