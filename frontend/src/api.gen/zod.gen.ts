@@ -217,11 +217,9 @@ export const zApiError = z.object({
 });
 
 export const zCheckEmailData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-    }),
-  ),
+  body: z.object({
+    email: z.email(),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -332,17 +330,10 @@ export const zCreateTotpData = z.object({
   query: z.optional(z.never()),
 });
 
-/**
- * TOTP created
- */
-export const zCreateTotpResponse = z.void();
-
 export const zSignInWithTotpData = z.object({
-  body: z.optional(
-    z.object({
-      code: z.string().regex(/^\d{6}$/),
-    }),
-  ),
+  body: z.object({
+    code: z.string().regex(/^\d{6}$/),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -363,18 +354,11 @@ export const zSignUpData = z.object({
   query: z.optional(z.never()),
 });
 
-/**
- * User signed up
- */
-export const zSignUpResponse = z.void();
-
 export const zSignUpWithTokenData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      password: z.string().min(8).max(100),
-    }),
-  ),
+  body: z.object({
+    email: z.email(),
+    password: z.string().min(8).max(100),
+  }),
   path: z.object({
     tokenId: z.string(),
   }),
@@ -390,11 +374,9 @@ export const zSignUpWithTokenResponse = z.object({
 });
 
 export const zRequestPasswordData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-    }),
-  ),
+  body: z.object({
+    email: z.email(),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -405,11 +387,9 @@ export const zRequestPasswordData = z.object({
 export const zRequestPasswordResponse = z.void();
 
 export const zCreatePasswordData = z.object({
-  body: z.optional(
-    z.object({
-      password: z.string().min(8).max(100),
-    }),
-  ),
+  body: z.object({
+    password: z.string().min(8).max(100),
+  }),
   path: z.object({
     tokenId: z.string(),
   }),
@@ -425,12 +405,10 @@ export const zCreatePasswordResponse = z.object({
 });
 
 export const zSignInData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      password: z.string().min(8).max(100),
-    }),
-  ),
+  body: z.object({
+    email: z.email(),
+    password: z.string().min(8).max(100),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -481,12 +459,10 @@ export const zDeletePasskeyData = z.object({
 export const zDeletePasskeyResponse = z.void();
 
 export const zGeneratePasskeyChallengeData = z.object({
-  body: z.optional(
-    z.object({
-      type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
-      email: z.optional(z.string()),
-    }),
-  ),
+  body: z.object({
+    type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
+    email: z.optional(z.string()),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -500,16 +476,14 @@ export const zGeneratePasskeyChallengeResponse = z.object({
 });
 
 export const zSignInWithPasskeyData = z.object({
-  body: z.optional(
-    z.object({
-      credentialId: z.string(),
-      clientDataJSON: z.string(),
-      authenticatorObject: z.string(),
-      signature: z.string(),
-      type: z.union([z.enum(['authentication']), z.enum(['mfa'])]),
-      email: z.optional(z.string()),
-    }),
-  ),
+  body: z.object({
+    credentialId: z.string(),
+    clientDataJSON: z.string(),
+    authenticatorObject: z.string(),
+    signature: z.string(),
+    type: z.union([z.enum(['authentication']), z.enum(['mfa'])]),
+    email: z.optional(z.string()),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -605,22 +579,20 @@ export const zGetMeData = z.object({
 export const zGetMeResponse = zUser;
 
 export const zUpdateMeData = z.object({
-  body: z.optional(
-    z.object({
-      bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      firstName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
-      lastName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
-      language: z.optional(z.enum(['en', 'nl'])),
-      newsletter: z.optional(z.boolean()),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      slug: z.optional(z.string().min(2).max(100)),
-      userFlags: z.optional(
-        z.object({
-          finishedOnboarding: z.optional(z.boolean()),
-        }),
-      ),
-    }),
-  ),
+  body: z.object({
+    bannerUrl: z.optional(z.union([z.string(), z.null()])),
+    firstName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
+    lastName: z.optional(z.union([z.string().min(2).max(100), z.null()])),
+    language: z.optional(z.enum(['en', 'nl'])),
+    newsletter: z.optional(z.boolean()),
+    thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+    slug: z.optional(z.string().min(2).max(100)),
+    userFlags: z.optional(
+      z.object({
+        finishedOnboarding: z.optional(z.boolean()),
+      }),
+    ),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -743,7 +715,7 @@ export const zGetMyInvitationsResponse = z.array(
 export const zDeleteMySessionsData = z.object({
   body: z.optional(
     z.object({
-      ids: z.array(z.string()).min(1),
+      ids: z.array(z.string()).min(1).max(50),
     }),
   ),
   path: z.optional(z.never()),
@@ -807,11 +779,9 @@ export const zUnsubscribeMeData = z.object({
 });
 
 export const zDeleteUsersData = z.object({
-  body: z.optional(
-    z.object({
-      ids: z.array(z.string()).min(1).max(50),
-    }),
-  ),
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -894,11 +864,9 @@ export const zUpdateUserData = z.object({
 export const zUpdateUserResponse = zUser;
 
 export const zDeleteOrganizationsData = z.object({
-  body: z.optional(
-    z.object({
-      ids: z.array(z.string()).min(1).max(50),
-    }),
-  ),
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1078,12 +1046,10 @@ export const zGetContextEntityData = z.object({
 export const zGetContextEntityResponse = zContextEntityBaseSchema;
 
 export const zCheckSlugData = z.object({
-  body: z.optional(
-    z.object({
-      slug: z.string(),
-      entityType: z.enum(['user', 'organization', 'attachment']),
-    }),
-  ),
+  body: z.object({
+    slug: z.string(),
+    entityType: z.enum(['user', 'organization', 'attachment']),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1094,11 +1060,9 @@ export const zCheckSlugData = z.object({
 export const zCheckSlugResponse = z.void();
 
 export const zSystemInviteData = z.object({
-  body: z.optional(
-    z.object({
-      emails: z.array(z.email()).min(1).max(50),
-    }),
-  ),
+  body: z.object({
+    emails: z.array(z.email()).min(1).max(50),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1158,11 +1122,9 @@ export const zSendNewsletterData = z.object({
 export const zSendNewsletterResponse = z.void();
 
 export const zDeleteRequestsData = z.object({
-  body: z.optional(
-    z.object({
-      ids: z.array(z.string()).min(1).max(50),
-    }),
-  ),
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1204,13 +1166,11 @@ export const zGetRequestsResponse = z.object({
 });
 
 export const zCreateRequestData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      type: z.enum(['waitlist', 'newsletter', 'contact']),
-      message: z.union([z.string(), z.null()]),
-    }),
-  ),
+  body: z.object({
+    email: z.email(),
+    type: z.enum(['waitlist', 'newsletter', 'contact']),
+    message: z.union([z.string(), z.null()]),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
@@ -1274,11 +1234,9 @@ export const zShapeProxyData = z.object({
 });
 
 export const zDeleteAttachmentsData = z.object({
-  body: z.optional(
-    z.object({
-      ids: z.array(z.string()).min(1).max(50),
-    }),
-  ),
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
@@ -1364,12 +1322,10 @@ export const zGetAttachmentData = z.object({
 export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
-  body: z.optional(
-    z.object({
-      name: z.optional(z.string()),
-      originalKey: z.optional(z.string()),
-    }),
-  ),
+  body: z.object({
+    name: z.optional(z.string()),
+    originalKey: z.optional(z.string()),
+  }),
   path: z.object({
     id: z.string(),
     orgIdOrSlug: z.string(),
@@ -1391,11 +1347,9 @@ export const zRedirectToAttachmentData = z.object({
 });
 
 export const zDeleteMembershipsData = z.object({
-  body: z.optional(
-    z.object({
-      ids: z.array(z.string()).min(1).max(50),
-    }),
-  ),
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
@@ -1414,12 +1368,10 @@ export const zDeleteMembershipsResponse = z.object({
 });
 
 export const zMembershipInviteData = z.object({
-  body: z.optional(
-    z.object({
-      emails: z.array(z.email().min(4).max(100)).min(1).max(50),
-      role: z.enum(['member', 'admin']),
-    }),
-  ),
+  body: z.object({
+    emails: z.array(z.email().min(4).max(100)).min(1).max(50),
+    role: z.enum(['member', 'admin']),
+  }),
   path: z.object({
     orgIdOrSlug: z.string(),
   }),

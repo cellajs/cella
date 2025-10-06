@@ -23,7 +23,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const formSchema = zCreateRequestData.shape.body.unwrap().extend({ name: z.string().min(2, t('error:name_required')) });
+  const formSchema = zCreateRequestData.shape.body.extend({ name: z.string().min(2, t('error:name_required')) });
 
   type FormValues = z.infer<typeof formSchema>;
 

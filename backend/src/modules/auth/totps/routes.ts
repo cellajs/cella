@@ -15,7 +15,6 @@ const authTotpsRoutes = {
     tags: ['auth'],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
-    security: [],
     responses: {
       200: {
         description: 'Challenge created',
@@ -34,7 +33,6 @@ const authTotpsRoutes = {
     summary: 'Set TOTP',
     description:
       'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.',
-    security: [],
     request: {
       body: {
         required: true,
@@ -43,7 +41,7 @@ const authTotpsRoutes = {
     },
 
     responses: {
-      204: {
+      201: {
         description: 'TOTP created',
       },
       ...errorResponses,
@@ -58,11 +56,8 @@ const authTotpsRoutes = {
     tags: ['auth'],
     summary: 'Delete TOTP',
     description: 'Delete TOTP credential for current user.',
-    security: [],
     responses: {
-      204: {
-        description: 'TOTP deleted',
-      },
+      204: { description: 'TOTP deleted' },
       ...errorResponses,
     },
   }),
@@ -77,9 +72,11 @@ const authTotpsRoutes = {
     tags: ['auth'],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',
-    security: [],
     request: {
-      body: { content: { 'application/json': { schema: totpCreateBodySchema } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: totpCreateBodySchema } },
+      },
     },
     responses: {
       204: {

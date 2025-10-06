@@ -7,7 +7,7 @@ import { lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
+import { type SignUpData, type SignUpResponses, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { LegalNotice } from '~/modules/auth/legal-notice';
@@ -40,7 +40,7 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
   const isMobile = window.innerWidth < 640;
 
   // Handle basic sign up
-  const { mutate: _signUp, isPending } = useMutation<SignUpResponse, ApiError, NonNullable<SignUpData['body']>>({
+  const { mutate: _signUp, isPending } = useMutation<SignUpResponses[201], ApiError, NonNullable<SignUpData['body']>>({
     mutationFn: (body) => signUp({ body }),
     onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
   });

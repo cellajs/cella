@@ -11,7 +11,7 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
-import { entityWithTypeQuerySchema, locationSchema } from '#/utils/schema/common';
+import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const meRoutes = {
@@ -77,6 +77,7 @@ const meRoutes = {
     description: 'Updates the *current user*.',
     request: {
       body: {
+        required: true,
         content: {
           'application/json': { schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }) },
         },
@@ -101,9 +102,7 @@ const meRoutes = {
     description:
       "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     responses: {
-      204: {
-        description: 'User deleted',
-      },
+      204: { description: 'User deleted' },
       ...errorResponses,
     },
   }),
@@ -134,8 +133,9 @@ const meRoutes = {
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
     request: {
+      required: true,
       body: {
-        content: { 'application/json': { schema: z.object({ ids: z.array(z.string()).min(1, 'Add at least one item') }) } },
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
 
@@ -156,10 +156,7 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
-    security: [],
-    request: {
-      query: entityWithTypeQuerySchema,
-    },
+    request: { query: entityWithTypeQuerySchema },
     responses: {
       204: {
         description: 'Membership removed',
@@ -178,9 +175,7 @@ const meRoutes = {
     summary: 'Unsubscribe',
     description:
       'Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.',
-    request: {
-      query: z.object({ token: z.string() }),
-    },
+    request: { query: z.object({ token: z.string() }) },
     responses: {
       302: {
         description: 'Redirect to FE',

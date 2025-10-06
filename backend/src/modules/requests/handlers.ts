@@ -75,7 +75,7 @@ const requestRouteHandlers = app
       wasInvited: false,
     };
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
   /**
    *  Get list of requests for system admins

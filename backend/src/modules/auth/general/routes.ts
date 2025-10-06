@@ -21,9 +21,7 @@ const authGeneralRoutes = {
     responses: {
       204: {
         description: 'Impersonating',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
       },
       ...errorResponses,
     },
@@ -38,9 +36,7 @@ const authGeneralRoutes = {
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
     responses: {
-      204: {
-        description: 'Stopped impersonating',
-      },
+      204: { description: 'Stopped impersonating' },
       ...errorResponses,
     },
   }),
@@ -54,20 +50,14 @@ const authGeneralRoutes = {
     tags: ['auth'],
     summary: 'Check if email exists',
     description: 'Checks if a user with the specified email address exists in the system.',
-    security: [],
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: emailBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: emailBodySchema } },
       },
     },
     responses: {
-      204: {
-        description: 'Email exists',
-      },
+      204: { description: 'Email exists' },
       ...errorResponses,
     },
   }),
@@ -120,16 +110,14 @@ const authGeneralRoutes = {
 
   signOut: createCustomRoute({
     operationId: 'signOut',
-    method: 'get',
+    method: 'post',
     path: '/sign-out',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Sign out',
     description: 'Signs out the *current user* and clears the active session.',
     responses: {
-      204: {
-        description: 'User signed out',
-      },
+      204: { description: 'User signed out' },
       ...errorResponses,
     },
   }),

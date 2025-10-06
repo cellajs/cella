@@ -16,7 +16,6 @@ const authOAuthRoutes = {
     summary: 'Authenticate with GitHub',
     description:
       'Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.',
-    security: [],
     request: { query: oauthQuerySchema },
     responses: {
       302: {
@@ -36,7 +35,6 @@ const authOAuthRoutes = {
     tags: ['auth'],
     summary: 'Callback for GitHub',
     description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
-    security: [],
     request: {
       query: oauthCallbackQuerySchema.extend({
         error: z.string().optional(),
@@ -62,7 +60,6 @@ const authOAuthRoutes = {
     summary: 'Authenticate with Google',
     description:
       'Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.',
-    security: [],
     request: { query: oauthQuerySchema },
     responses: {
       302: {
@@ -82,7 +79,6 @@ const authOAuthRoutes = {
     tags: ['auth'],
     summary: 'Callback for Google',
     description: 'Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.',
-    security: [],
     request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {
@@ -102,7 +98,6 @@ const authOAuthRoutes = {
     summary: 'Authenticate with Microsoft',
     description:
       'Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.',
-    security: [],
     request: { query: oauthQuerySchema },
     responses: {
       302: {
@@ -122,7 +117,6 @@ const authOAuthRoutes = {
     tags: ['auth'],
     summary: 'Callback for Microsoft',
     description: 'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
-    security: [],
     request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {

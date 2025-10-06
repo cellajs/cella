@@ -56,7 +56,7 @@ const authPasskeysRouteHandlers = app
     // Save public key in database
     const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);
 
-    return ctx.json(newPasskey, 200);
+    return ctx.json(newPasskey, 201);
   })
   /**
    * Delete passkey

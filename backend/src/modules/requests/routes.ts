@@ -18,15 +18,12 @@ const requestRoutes = {
     description: 'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: requestCreateBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: requestCreateBodySchema } },
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Requests',
         content: { 'application/json': { schema: requestSchema } },
       },
@@ -41,9 +38,7 @@ const requestRoutes = {
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
-    request: {
-      query: requestListQuerySchema,
-    },
+    request: { query: requestListQuerySchema },
     responses: {
       200: {
         description: 'Requests',
@@ -66,6 +61,7 @@ const requestRoutes = {
     description: 'Deletes one or more *requests* from the system by their IDs.',
     request: {
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
