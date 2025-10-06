@@ -77,6 +77,7 @@ const authGeneralRoutes = {
     method: 'get',
     path: '/invoke-token/{type}/{token}',
     guard: isPublicAccess,
+    // TODO add brute rate limiter,
     middleware: isNoBot,
     tags: ['auth'],
     summary: 'Invoke token session',
@@ -100,8 +101,7 @@ const authGeneralRoutes = {
     middleware: isNoBot,
     tags: ['auth'],
     summary: 'Get token data',
-    description:
-      'Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.',
+    description: 'Get basic token data by id, for password reset and invitation. It returns basic data if the token is still valid.',
     request: {
       params: z.object({ tokenId: z.string() }),
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),

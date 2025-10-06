@@ -281,7 +281,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
  * Get token data
  * 🌐 Public access
  *
- * Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.
+ * Get basic token data by id, for password reset and invitation. It returns basic data if the token is still valid.
  *
  * **GET /auth/token/{tokenId}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{tokenId}) ·· _auth_
  *

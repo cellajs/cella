@@ -9,8 +9,8 @@ export const openApiConfig: UserConfig = {
   },
   output: {
     path: './src/api.gen',
-    lint: false,
-    format: false,
+    lint: null,
+    format: null,
   },
   parser: {
     transforms: {
