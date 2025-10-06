@@ -351,13 +351,13 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
  *
  * Signs out the *current user* and clears the active session.
  *
- * **GET /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/get/auth/sign-out) ·· _auth_
+ * **POST /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/post/auth/sign-out) ·· _auth_
  *
  * @param {signOutData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
-  return (options?.client ?? client).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
+  return (options?.client ?? client).post<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-out',
     ...options,

@@ -110,7 +110,7 @@ const authGeneralRoutes = {
 
   signOut: createCustomRoute({
     operationId: 'signOut',
-    method: 'get',
+    method: 'post',
     path: '/sign-out',
     guard: isPublicAccess,
     tags: ['auth'],
