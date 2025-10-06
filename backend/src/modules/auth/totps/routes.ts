@@ -43,7 +43,7 @@ const authTotpsRoutes = {
     },
 
     responses: {
-      204: {
+      201: {
         description: 'TOTP created',
       },
       ...errorResponses,

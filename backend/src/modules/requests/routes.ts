@@ -26,7 +26,7 @@ const requestRoutes = {
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Requests',
         content: { 'application/json': { schema: requestSchema } },
       },

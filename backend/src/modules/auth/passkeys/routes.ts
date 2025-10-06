@@ -51,7 +51,7 @@ const authPasskeysRoutes = {
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Passkey created',
         content: { 'application/json': { schema: passkeySchema } },
       },

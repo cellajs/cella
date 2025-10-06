@@ -27,7 +27,7 @@ const attachmentRoutes = {
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Attachment',
         content: {
           'application/json': {

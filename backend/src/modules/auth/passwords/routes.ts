@@ -26,7 +26,7 @@ const authPasswordsRoutes = {
       },
     },
     responses: {
-      204: {
+      201: {
         description: 'User signed up',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
       },
@@ -53,7 +53,7 @@ const authPasswordsRoutes = {
       body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
     },
     responses: {
-      200: {
+      201: {
         description: 'User signed up',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
         content: { 'application/json': { schema: redirectResponseSchema } },
@@ -98,7 +98,7 @@ const authPasswordsRoutes = {
       body: { content: { 'application/json': { schema: z.object({ password: passwordSchema }) } } },
     },
     responses: {
-      200: {
+      201: {
         description: 'Password created',
         content: { 'application/json': { schema: redirectResponseSchema } },
       },

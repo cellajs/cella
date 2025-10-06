@@ -332,11 +332,6 @@ export const zCreateTotpData = z.object({
   query: z.optional(z.never()),
 });
 
-/**
- * TOTP created
- */
-export const zCreateTotpResponse = z.void();
-
 export const zSignInWithTotpData = z.object({
   body: z.optional(
     z.object({
@@ -362,11 +357,6 @@ export const zSignUpData = z.object({
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
-
-/**
- * User signed up
- */
-export const zSignUpResponse = z.void();
 
 export const zSignUpWithTokenData = z.object({
   body: z.optional(

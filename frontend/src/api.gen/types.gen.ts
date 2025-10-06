@@ -677,10 +677,8 @@ export type CreateTotpResponses = {
   /**
    * TOTP created
    */
-  204: void;
+  201: unknown;
 };
-
-export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
 
 export type SignInWithTotpData = {
   body?: {
@@ -784,10 +782,8 @@ export type SignUpResponses = {
   /**
    * User signed up
    */
-  204: void;
+  201: unknown;
 };
-
-export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
 
 export type SignUpWithTokenData = {
   body?: {
@@ -840,7 +836,7 @@ export type SignUpWithTokenResponses = {
   /**
    * User signed up
    */
-  200: {
+  201: {
     shouldRedirect: boolean;
     redirectPath?: string;
   };
@@ -951,7 +947,7 @@ export type CreatePasswordResponses = {
   /**
    * Password created
    */
-  200: {
+  201: {
     shouldRedirect: boolean;
     redirectPath?: string;
   };
@@ -1066,7 +1062,7 @@ export type CreatePasskeyResponses = {
   /**
    * Passkey created
    */
-  200: {
+  201: {
     id: string;
     userId: string;
     deviceName: string | null;
@@ -2569,7 +2565,7 @@ export type CreateOrganizationResponses = {
   /**
    * Organization was created
    */
-  200: Organization & {
+  201: Organization & {
     membership?: {
       id: string;
       contextType: 'organization';
@@ -3294,7 +3290,7 @@ export type CreateRequestResponses = {
   /**
    * Requests
    */
-  200: {
+  201: {
     createdAt: string;
     id: string;
     message: string | null;
@@ -3655,7 +3651,7 @@ export type CreateAttachmentResponses = {
   /**
    * Attachment
    */
-  200: Array<Attachment>;
+  201: Array<Attachment>;
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];

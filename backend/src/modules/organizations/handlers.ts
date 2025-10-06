@@ -77,7 +77,7 @@ const organizationRouteHandlers = app
       counts: { membership: memberCounts, entities: entitiesCounts },
     };
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
   /**
    * Get list of organizations

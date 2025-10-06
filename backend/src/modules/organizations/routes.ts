@@ -30,7 +30,7 @@ const organizationRoutes = {
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Organization was created',
         content: { 'application/json': { schema: organizationWithMembershipSchema } },
       },

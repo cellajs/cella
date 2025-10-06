@@ -433,7 +433,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
   return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
@@ -484,7 +484,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Op
  * @param {signUpData} options
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 204, 302, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 302, 400, 401, 403, 404, 429
  */
 export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
   return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
@@ -511,7 +511,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @param {string} options.path.tokenid - `string`
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
@@ -562,7 +562,7 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
  * @param {createPasswordData} options
  * @param {string} options.path.tokenid - `string`
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
   return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
@@ -614,7 +614,7 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @param {string=} options.body.attestationObject - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.nameOnDevice - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
   return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
@@ -1357,7 +1357,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
  * @param {createOrganizationData} options
  * @param {string=} options.body.name - `string` (optional)
  * @param {string=} options.body.slug - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createOrganization = <ThrowOnError extends boolean = true>(options: Options<CreateOrganizationData, ThrowOnError>) => {
   return (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
@@ -1755,7 +1755,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
  * @param {string=} options.body.email - `string` (optional)
  * @param {enum=} options.body.type - `enum` (optional)
  * @param {string | null=} options.body.message - `string | null` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(options?: Options<CreateRequestData, ThrowOnError>) => {
   return (options?.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
@@ -1940,7 +1940,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
  *
  * @param {createAttachmentData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createAttachment = <ThrowOnError extends boolean = true>(options: Options<CreateAttachmentData, ThrowOnError>) => {
   return (options.client ?? client).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
