@@ -1,4 +1,3 @@
-import { checkBlockIsFileBlock } from '@blocknote/core';
 import { useBlockNoteEditor, useComponentsContext, useSelectedBlocks } from '@blocknote/react';
 import { Scaling } from 'lucide-react';
 import { useMemo, useRef } from 'react';
@@ -18,7 +17,7 @@ export const FileOpenPreviewButton = () => {
 
     const block = selectedBlocks[0];
 
-    return checkBlockIsFileBlock(block, editor);
+    return block.type === 'file';
   }, [editor, selectedBlocks]);
 
   if (!showButton) return null;

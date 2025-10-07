@@ -1,17 +1,12 @@
-import { codeBlock } from '@blocknote/code-block';
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
+import '@blocknote/shadcn/style.css';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
-
+import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import {
-  allowedTypes,
-  customSchema,
-  customSlashIndexedItems,
-  customSlashNotIndexedItems,
-  supportedLanguages,
-} from '~/modules/common/blocknote/blocknote-config';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import { customSchema, customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
@@ -21,14 +16,16 @@ import { compareIsContentSame, getParsedContent } from '~/modules/common/blockno
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
-import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
-import type { CommonBlockNoteProps, CustomBlockFileTypes, CustomBlockNoteEditor, CustomBlockRegularTypes } from '~/modules/common/blocknote/types';
-import { useUIStore } from '~/store/ui';
-
-import '@blocknote/shadcn/style.css';
-import { getPresignedUrl } from '~/api.gen';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import type {
+  CommonBlockNoteProps,
+  CustomBlockFileTypes,
+  CustomBlockNoteEditor,
+  CustomBlockRegularTypes,
+  CustomBlockTypes,
+} from '~/modules/common/blocknote/types';
+import { useUIStore } from '~/store/ui';
+import { shadCNComponents } from './helpers/shad-cn';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
@@ -55,7 +52,6 @@ const BlockNote = ({
   clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
   // Editor functional
   headingLevels = [1, 2, 3],
-  codeBlockDefaultLanguage = 'text',
   editable = type !== 'preview',
   sideMenu = true,
   slashMenu = true,
@@ -78,22 +74,15 @@ const BlockNote = ({
 
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
 
-  const allowedBlockTypes = allowedTypes.filter(
+  const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
+  const allowedBlockTypes = defaultAllowedBlockTypes.filter(
     (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
 
-  const emojiPicker = slashMenu
-    ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('emoji') && allowedBlockTypes.includes('emoji')
-    : emojis;
+  const emojiPicker = slashMenu ? customSlashIndexedItems.includes('emoji') && allowedBlockTypes.includes('emoji') : emojis;
 
   const editor = useCreateBlockNote({
     schema: customSchema,
-    codeBlock: {
-      indentLineWithTab: true,
-      defaultLanguage: codeBlockDefaultLanguage,
-      supportedLanguages,
-      createHighlighter: codeBlock.createHighlighter,
-    },
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),

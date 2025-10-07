@@ -1,26 +1,14 @@
-import {
-  BlockNoteSchema,
-  type CodeBlockOptions,
-  type DefaultSuggestionItem,
-  type Dictionary,
-  defaultBlockSpecs,
-  defaultInlineContentSpecs,
-  defaultStyleSpecs,
-} from '@blocknote/core';
+import { BlockNoteSchema, type DefaultSuggestionItem, type Dictionary } from '@blocknote/core';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
-
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
-import { getSlashNotifySlashItem, Notify } from '~/modules/common/blocknote/custom-elements/notify';
+import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify';
 import { baseBlocknoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
 import type {
-  BlockAlignTypes,
-  BlockStyleTypes,
   CommonBlockNoteProps,
   CustomBlockNoteEditor,
   CustomBlockTypes,
   CustomFormatToolBarConfig,
   SlashIndexedItems,
-  SlashItemKeys,
 } from '~/modules/common/blocknote/types';
 
 /**
@@ -28,43 +16,10 @@ import type {
  */
 
 // Base custom schema
-export const customSchema = BlockNoteSchema.create({
-  blockSpecs: { ...defaultBlockSpecs, notify: Notify }, // Adds Notify block
-  inlineContentSpecs: { ...defaultInlineContentSpecs, mention: MentionSchema }, // Adds Mention tag
-  styleSpecs: { ...defaultStyleSpecs },
+export const customSchema = BlockNoteSchema.create().extend({
+  blockSpecs: { notify: notifyBlock() }, // Adds Notify block
+  inlineContentSpecs: { mention: MentionSchema }, // Adds Mention tag
 });
-
-// Config for supported languages for BlockNote code blocks
-export const supportedLanguages = {
-  text: {
-    name: 'Plain Text',
-    aliases: ['text', 'txt', 'plain'],
-  },
-  html: {
-    name: 'HTML',
-    aliases: ['htm'],
-  },
-  javascript: {
-    name: 'JavaScript',
-    aliases: ['javascript', 'js'],
-  },
-  json: {
-    name: 'JSON',
-    aliases: ['json'],
-  },
-  jsonc: {
-    name: 'JSON with Comments',
-    aliases: ['jsonc'],
-  },
-  markdown: {
-    name: 'Markdown',
-    aliases: ['markdown', 'md'],
-  },
-  typescript: {
-    name: 'TypeScript',
-    aliases: ['typescript', 'ts'],
-  },
-} satisfies CodeBlockOptions['supportedLanguages'];
 
 // Extend Blocknote types to include custom block keys for slash menu
 declare module '~/modules/common/blocknote/types' {
@@ -73,36 +28,12 @@ declare module '~/modules/common/blocknote/types' {
   }
 }
 
-// Default allowed block types
-export const allowedTypes: CustomBlockTypes[] = [
-  'notify',
-  'table',
-  'emoji',
-  'paragraph',
-  'heading',
-  'codeBlock',
-  'bulletListItem',
-  'numberedListItem',
-  'checkListItem',
-  'toggleListItem',
-  'image',
-  'video',
-  'audio',
-  'file',
-];
-
-// Blocks to witch can be switched
+// Blocks to witch can be switched by sidemenu btn or in formatting toolbar
 export const customBlockTypeSelectItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
-
-export const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = { ...baseBlocknoteTypeToKeys };
 
 /**
  *  Side Menu Configuration
  */
-// Block types that trigger the side menu when selected
-export const sideMenuOpenOnTypes: CustomBlockTypes[] = ['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem'];
-
-// Generate side menu items based on dictionary input
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
 /**
@@ -112,82 +43,58 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
 
-// Non-indexed items (accessed via browsing)
-export const customSlashNotIndexedItems: CustomBlockTypes[] = [
-  'table',
-  'audio',
-  'heading',
-  'paragraph',
-  'codeBlock',
-  'quote',
-  'emoji',
-  'toggleListItem',
-  'checkListItem',
-];
-
 // Generate the complete Slash menu items list
 export const getSlashMenuItems = (
   editor: CustomBlockNoteEditor,
   allowedTypes: CustomBlockTypes[],
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
 ): DefaultReactSuggestionItem[] => {
-  // Get all available slash items
   const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
-  // Filter allowed indexed and non-indexed types once
-  const allowedIndexed = customSlashIndexedItems.filter((type) => allowedTypes.includes(type));
-  const allowedNotIndexed = customSlashNotIndexedItems.filter((type) => allowedTypes.includes(type));
-
-  // Combine allowed types in order
-  const orderedTypes = [...allowedIndexed, ...allowedNotIndexed];
-
-  const { heading, ...restTypeToKeys } = typeToBlocknoteKeys;
-
-  // Filter heading keys like "heading", "heading_2", "toggle_heading_3", etc.
-  const filteredHeading = heading.filter((el) => {
-    const match = el.match(/(?:_)?(\d)$/); // match ending digit with optional underscore (handles "heading_2" or "toggle_heading_3")
-    const level = match ? Number.parseInt(match[1], 10) : 1; // "heading" (no number) defaults to level 1
+  // Filter heading keys based on allowed headingLevels
+  const { heading, ...restTypeToKeys } = { ...baseBlocknoteTypeToKeys };
+  const filteredHeading = heading.filter((key) => {
+    const match = key.match(/(?:_)?(\d)$/);
+    const level = match ? Number.parseInt(match[1], 10) : 1;
     return headingLevels.includes(level as (typeof headingLevels)[number]);
   });
 
-  const validTypeToBlocknoteKeys = { ...restTypeToKeys, heading: filteredHeading };
+  // Build a map of allowed types to keys
+  const allowedTypeToKeys = {
+    ...restTypeToKeys,
+    heading: filteredHeading,
+  };
 
-  // Create a sort order map where keys map to their index in orderedTypes
-  const sortOrder = new Map(orderedTypes.flatMap((type, index) => validTypeToBlocknoteKeys[type].map((key) => [key, index])));
+  // Only keep types that are allowed
+  const filteredTypeToKeys = Object.fromEntries(
+    Object.entries(allowedTypeToKeys).filter(([type]) => allowedTypes.includes(type as CustomBlockTypes)),
+  );
 
-  // Filter items that have keys present in sortOrder, then sort by that index
-  const filteredSortedItems = baseItems
-    .filter((item): item is DefaultSuggestionItem & { key: SlashItemKeys } => 'key' in item && sortOrder.has(item.key as SlashItemKeys))
-    .sort(({ key: first }, { key: second }) => {
-      const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
-      const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
-      return aIndex - bIndex;
-    });
+  // Flatten the keys to filter baseItems
+  const allowedKeys = Object.values(filteredTypeToKeys).flat();
 
-  return filteredSortedItems;
+  // Optional: sort by `customSlashIndexedItems`
+  const sortOrder = new Map(
+    customSlashIndexedItems
+      .filter((type) => allowedTypes.includes(type))
+      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index])),
+  );
+
+  return baseItems
+    .filter((item): item is DefaultSuggestionItem => 'key' in item && allowedKeys.includes(item.key as DefaultSuggestionItem['key']))
+    .sort(({ key: a }, { key: b }) => (sortOrder.get(a) ?? Number.POSITIVE_INFINITY) - (sortOrder.get(b) ?? Number.POSITIVE_INFINITY));
 };
 
 /**
  *  Formatting toolbar Configuration
  */
-
-// Toolbar configuration settings
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
-  blockTypeSelect: false,
+  blockTypeSelect: true,
   blockStyleSelect: true,
-  blockAlignSelect: false,
-  textColorSelect: false,
-  blockNestingSelect: false,
+  blockAlignSelect: true,
+  textColorSelect: true,
+  blockNestingSelect: true,
   fileCaption: true,
   openPreview: true,
   createLink: true,
 };
-
-// Text alignment options available in the Formatting Toolbar
-export const formattingToolBarTextAlignItems: BlockAlignTypes[] = ['left', 'center', 'right'];
-
-// Text styles available in the Formatting Toolbar
-export const formattingToolBarTextStyleSelect: BlockStyleTypes[] = ['bold', 'italic', 'underline', 'strike', 'code'];
-
-// Blocks that can have formatting styles applied
-export const formattingToolBarStyleForBlocks: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];

@@ -9,4 +9,5 @@ import * as Tabs from '~/modules/ui/tabs';
 import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
 
+// To ensure compatibility, your ShadCN components should not use Portals (comment these out from your DropdownMenu, Popover and Select components).
 export const shadCNComponents = { Button, DropdownMenu, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs };
