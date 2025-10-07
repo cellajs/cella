@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
-export const Notify = createReactBlockSpec(
+export const notifyBlock = createReactBlockSpec(
   {
     type: 'notify',
     propSchema: {
