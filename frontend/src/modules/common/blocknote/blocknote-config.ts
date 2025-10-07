@@ -29,7 +29,7 @@ declare module '~/modules/common/blocknote/types' {
 }
 
 // Blocks to witch can be switched by sidemenu btn or in formatting toolbar
-export const customBlockTypeSelectItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
+export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
 /**
  *  Side Menu Configuration

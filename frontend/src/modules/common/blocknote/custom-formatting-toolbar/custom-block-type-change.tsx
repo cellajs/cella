@@ -10,7 +10,7 @@ import {
 } from '@blocknote/react';
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
+import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => {
@@ -21,7 +21,7 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
 
   const selectedBlocks = useSelectedBlocks(editor);
   const currentBlock = selectedBlocks[0];
-  const itemsType: readonly string[] = customBlockTypeSelectItems;
+  const itemsType: readonly string[] = customBlockTypeSwitchItems;
 
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 

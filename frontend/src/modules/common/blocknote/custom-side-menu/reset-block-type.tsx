@@ -1,7 +1,7 @@
 import type { Block, BlockConfig, InlineContentSchema, StyleSchema } from '@blocknote/core';
 import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
 import { useMemo } from 'react';
-import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
+import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
@@ -17,7 +17,7 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, hea
   const Components = useComponentsContext()!;
   const dict = useDictionary();
 
-  const filteredSelectItems = customBlockTypeSelectItems.filter((i) => allowedTypes.includes(i));
+  const filteredSelectItems = customBlockTypeSwitchItems.filter((i) => allowedTypes.includes(i));
   const selectItemsType: readonly string[] = filteredSelectItems;
 
   const filteredItems = useMemo(() => {
