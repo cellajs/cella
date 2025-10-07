@@ -1,12 +1,12 @@
-import { FileAnalysis, ZwizzleEntry } from '../../types/index';
+import { FileAnalysis, SwizzleEntry } from '../../types/index';
 
 /**
  * Detects if a file has been edited in the fork compared to the boilerplate,
- * indicating a potential "edited" zwizzle event.
+ * indicating a potential "edited" swizzle event.
  * @param analyzedFile - The analyzed file information.
- * @returns A ZwizzleEntry if the file is detected as edited, otherwise null.
+ * @returns A SwizzleEntry if the file is detected as edited, otherwise null.
  */
-export function detectEditedZwizzle(analyzedFile: FileAnalysis): ZwizzleEntry | null {
+export function detectEditedSwizzle(analyzedFile: FileAnalysis): SwizzleEntry | null {
   const { filePath, commitSummary, blobStatus, boilerplateFile, forkFile } = analyzedFile;
 
   if (blobStatus !== 'different') {
@@ -19,11 +19,11 @@ export function detectEditedZwizzle(analyzedFile: FileAnalysis): ZwizzleEntry | 
     return {
       filePath,
       event: 'edited',
-      zwizzled: true,
+      swizzled: true,
       sharedAncestorSha: commitSummary.sharedAncestorSha,
       lastCommitSha: forkFile?.lastCommitSha,
       commitAfterSwizzle: commitSummary.sharedAncestorSha, // Assuming this is the commit after the swizzle
-      lastZwizzledAt: new Date().toISOString(),
+      lastSwizzledAt: new Date().toISOString(),
       boilerplateLastCommitSha: boilerplateFile.lastCommitSha,
       boilerplateBlobSha: boilerplateFile.blobSha,
     };

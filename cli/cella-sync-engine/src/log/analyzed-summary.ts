@@ -13,18 +13,18 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     highRisk: 0,
     highRiskSafeByGit: 0,
     safeByGit: 0,
-    zwizzled: 0,
-    zwizzledNew: 0,
+    swizzled: 0,
+    swizzledNew: 0,
   }
 
   for (const file of analyzedFiles) {
     Summary.totalFiles++;
 
-    const zwizzle = file.zwizzle;
-    if (zwizzle) {
-      if (zwizzle?.existingMetadata?.zwizzled || zwizzle?.newMetadata?.zwizzled) {
-        Summary.zwizzled++;
-        if (zwizzle.newMetadata?.zwizzled) Summary.zwizzledNew++;
+    const swizzle = file.swizzle;
+    if (swizzle) {
+      if (swizzle?.existingMetadata?.swizzled || swizzle?.newMetadata?.swizzled) {
+        Summary.swizzled++;
+        if (swizzle.newMetadata?.swizzled) Summary.swizzledNew++;
       }
     }
 
@@ -53,7 +53,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     `  Medium Risk: ${pc.yellow(Summary.mediumRisk)} (${pc.yellow(Summary.mediumRiskSafeByGit)} safe by Git)`,
     `  High Risk: ${pc.red(Summary.highRisk)} (${pc.red(Summary.highRiskSafeByGit)} safe by Git)`,
     `  Safe by Git: ${pc.bold(pc.cyan(Summary.safeByGit))} (${pc.bold(pc.cyan(Summary.totalFiles))} total files)`,
-    `  Zwizzled: ${pc.bold(pc.cyan(Summary.zwizzled))} (${pc.bold(pc.cyan(Summary.zwizzledNew))} new zwizzles)`,
+    `  Swizzled: ${pc.bold(pc.cyan(Summary.swizzled))} (${pc.bold(pc.cyan(Summary.swizzledNew))} new swizzles)`,
   ];
 }
 

@@ -4,7 +4,7 @@ import { RepoConfig } from '../config';
 import { FileAnalysis, FileEntry } from '../types';
 import { analyzeFileCommits } from './git/analyze-file-commits';
 import { analyzeFileBlob } from './git/analyze-file-blob';
-import { analyzeZwizzle } from './zwizzle/analyze';
+import { analyzeSwizzle } from './swizzle/analyze';
 import { determineFileMergeStrategy } from './git/determine-file-merge-strategy';
 
 // Run 10 analyses at a time
@@ -29,8 +29,8 @@ export async function analyzeFile(
     blobStatus
   } as FileAnalysis;
 
-  // Extend the analysis with zwizzle data
-  analyzedFile.zwizzle = analyzeZwizzle(analyzedFile);
+  // Extend the analysis with swizzle data
+  analyzedFile.swizzle = analyzeSwizzle(analyzedFile);
 
   // Extend the analysis with a merge strategy
   analyzedFile.mergeStrategy = determineFileMergeStrategy(analyzedFile);

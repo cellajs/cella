@@ -2,10 +2,10 @@ import { FileAnalysis, FileMergeStrategy } from "../../types";
 
 /**
  * Determines the most appropriate merge strategy for a given file,
- * based on commit history, blob comparisons, and zwizzle metadata.
+ * based on commit history, blob comparisons, and swizzle metadata.
  *
  * Resolution priority is as follows:
- * 1. **Zwizzle metadata** — if the file is explicitly zwizzled in the fork,
+ * 1. **Swizzle metadata** — if the file is explicitly swizzled in the fork,
  *    prefer the fork’s decision (keep or remove).
  * 2. **Commit HEADs identical** — if the last modifying commits match,
  *    no merge is required (keep fork).
@@ -18,7 +18,7 @@ import { FileAnalysis, FileMergeStrategy } from "../../types";
  * 6. **Fallback** — if none of the above conditions match, return "unknown".
  *
  * @param fileAnalysis - Precomputed analysis object for a single file,
- *   containing commit history, blob status, and optional zwizzle metadata.
+ *   containing commit history, blob status, and optional swizzle metadata.
  *
  * @returns A {@link FileMergeStrategy} object indicating which merge
  *   action to take (e.g., "keep-fork", "remove-from-fork", "manual").
@@ -26,14 +26,14 @@ import { FileAnalysis, FileMergeStrategy } from "../../types";
 export function determineFileMergeStrategy(
   fileAnalysis: FileAnalysis
 ): FileMergeStrategy {
-  const zwizzleInfo = fileAnalysis.zwizzle?.newMetadata || fileAnalysis.zwizzle?.existingMetadata;
+  const swizzleInfo = fileAnalysis.swizzle?.newMetadata || fileAnalysis.swizzle?.existingMetadata;
 
-  // 1. Zwizzle overrides everything
-  if (zwizzleInfo?.zwizzled) {
-    if (zwizzleInfo.event === "removed") {
+  // 1. Swizzle overrides everything
+  if (swizzleInfo?.swizzled) {
+    if (swizzleInfo.event === "removed") {
       return { 
         strategy: "remove-from-fork", 
-        reason: "Zwizzled (removed in fork)",
+        reason: "Swizzled (removed in fork)",
       };
     }
   }

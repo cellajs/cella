@@ -18,7 +18,7 @@
     "root": ["package.json", "package-lock.json", "index.ts"],
     "src": {
       "config": ["*"],
-      "log": ["analyzed-file.ts", "analyzed-summary.ts", "analyzed-zwizzle.ts"],
+      "log": ["analyzed-file.ts", "analyzed-summary.ts", "analyzed-swizzle.ts"],
       "modules": {
         "git": [
           "analyze-file.blob.ts",
@@ -26,7 +26,7 @@
           "analyze-file-merge-risk.ts",
           "check-file-merge.ts"
         ],
-        "zwizzle": ["analyze.ts", "detect.ts", "detect-removed.ts", "metadata.ts"],
+        "swizzle": ["analyze.ts", "detect.ts", "detect-removed.ts", "metadata.ts"],
         "*": ["analyze-file.ts"]
       },
       "utils": {
@@ -34,7 +34,7 @@
         "*": ["files.ts"]
       },
       "index.ts": "*",
-      "types": ["index.ts", "git.ts", "zwizzle.ts"]
+      "types": ["index.ts", "git.ts", "swizzle.ts"]
     },
     "cli": {
       "cella-sync-engine": ["*"]
@@ -76,26 +76,26 @@
       "reason": "'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unknown'",
       "automergeable": "boolean"
     },
-    "ZwizzleEntry": {
+    "SwizzleEntry": {
       "filePath": "string",
-      "zwizzled": "boolean",
+      "swizzled": "boolean",
       "event": "'removed' | 'edited' | 'renamed' | 'binaryReplaced'",
       "sharedAncestorSha?": "string",
       "lastCommitSha?": "string",
       "blobSha?": "string",
       "commitAfterSwizzle?": "string",
-      "lastZwizzledAt": "string",
+      "lastSwizzledAt": "string",
       "boilerplateLastCommitSha?": "string",
       "boilerplateBlobSha?": "string"
     },
-    "ZwizzleMetadata": {
+    "SwizzleMetadata": {
       "version": "string",
-      "entries": "Record<string, ZwizzleEntry>"
+      "entries": "Record<string, SwizzleEntry>"
     },
-    "ZwizzleAnalysis": {
-      "existingMetadata?": "ZwizzleEntry",
+    "SwizzleAnalysis": {
+      "existingMetadata?": "SwizzleEntry",
       "existingMetadataValid?": "boolean",
-      "newMetadata?": "ZwizzleEntry"
+      "newMetadata?": "SwizzleEntry"
     },
     "FileAnalysis": {
       "filePath": "string",
@@ -105,7 +105,7 @@
       "blobStatus?": "'identical' | 'different' | 'missing'",
       "mergeRisk?": "MergeRisk",
       "mergeCheck?": "MergeCheck",
-      "zwizzle?": "ZwizzleAnalysis"
+      "swizzle?": "SwizzleAnalysis"
     }
   },
   "metadataVersion": "1.0.0"

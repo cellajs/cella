@@ -27,15 +27,15 @@ export type Log = {
     commitSummaryState?: string[];
     mergeStrategyStrategy?: string[];
   },
-  analyzedZwizzle: {
-    // Filters to filter zwizzle analysis
+  analyzedSwizzle: {
+    // Filters to filter swizzle analysis
     filePath?: string[];
-    zwizzled?: boolean;
+    swizzled?: boolean;
   }
 }
 
 export const logConfig: Log = {
-  modules: ['analyzedFile', 'analyzedSummary'], // 'analyzedZwizzle'
+  modules: ['analyzedFile', 'analyzedSummary'], // 'analyzedSwizzle'
   analyzedFile: {
     // filePath: [
     //   'frontend/public/static/icons/icon-57x57.png'
@@ -55,8 +55,8 @@ export const logConfig: Log = {
       "unknown",
     ]
   },
-  analyzedZwizzle: {
-    zwizzled: true,
+  analyzedSwizzle: {
+    swizzled: true,
   }
 };
 
@@ -86,8 +86,8 @@ export const forkConfig: RepoConfig = {
   repo: "",   // Only used if use === 'remote'
 };
 
-export const zwizzleConfig = {
-  version: '1.0.0', // Version of the zwizzle metadata format
+export const swizzleConfig = {
+  version: '1.0.0', // Version of the swizzle metadata format
   fileName: 'cella-swizzle.metadata.json', // default
   rootDir: process.cwd(),         // can be overridden per run
   get filePath() {

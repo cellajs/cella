@@ -1,8 +1,8 @@
 import { CommitSummary, FileEntry, FileMergeStrategy, MergeResult } from './git';
-import { ZwizzleAnalysis } from './zwizzle';
+import { SwizzleAnalysis } from './swizzle';
 
 export * from './git';
-export * from './zwizzle';
+export * from './swizzle';
 
 export type FileAnalysis = {
   filePath: string;
@@ -10,7 +10,7 @@ export type FileAnalysis = {
   forkFile?: FileEntry;
   commitSummary?: CommitSummary;
   blobStatus?: 'identical' | 'different' | 'missing';
-  zwizzle?: ZwizzleAnalysis;
+  swizzle?: SwizzleAnalysis;
   mergeStrategy?: FileMergeStrategy;
 }
 

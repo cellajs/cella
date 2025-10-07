@@ -5,9 +5,9 @@ import { getGitFileHashes } from "./utils/git/files";
 import { analyzeManyFiles } from "./modules/analyze-file";
 import { analyzedFileLine, logAnalyzedFileLine } from "./log/analyzed-file";
 import { analyzedSummaryLines, logAnalyzedSummaryLines } from "./log/analyzed-summary";
-import { analyzedZwizzleLine, logAnalyzedZwizzleLine } from "./log/analyzed-zwizzle";
-import { extractZwizzleEntries } from "./modules/zwizzle/analyze";
-import { writeZwizzleMetadata } from "./modules/zwizzle/metadata";
+import { analyzedSwizzleLine, logAnalyzedSwizzleLine } from "./log/analyzed-swizzle";
+import { extractSwizzleEntries } from "./modules/swizzle/analyze";
+import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
 
 import { runSync } from "./run-sync";
 
@@ -35,10 +35,10 @@ async function main(): Promise<void> {
 
   spinner.stop();
 
-  spinner.start("Update zwizzle...");
+  spinner.start("Update swizzle...");
   
-  const zwizzleEntries = extractZwizzleEntries(analyzedFiles);
-  writeZwizzleMetadata(zwizzleEntries);
+  const swizzleEntries = extractSwizzleEntries(analyzedFiles);
+  writeSwizzleMetadata(swizzleEntries);
 
   spinner.stop();
 
@@ -49,11 +49,11 @@ async function main(): Promise<void> {
     logAnalyzedFileLine(file, line);
   }
 
-  // Log the zwizzle analysis
-  console.log(pc.bold("\nZwizzle analysis:"));
+  // Log the swizzle analysis
+  console.log(pc.bold("\nSwizzle analysis:"));
   for (const file of analyzedFiles) {
-    const line = analyzedZwizzleLine(file);
-    logAnalyzedZwizzleLine(file, line);
+    const line = analyzedSwizzleLine(file);
+    logAnalyzedSwizzleLine(file, line);
   }
 
   // Log the summary of analyzed files
