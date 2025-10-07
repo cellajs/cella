@@ -151,6 +151,8 @@ jobs:
 
   # Generates draft release notes (for testing only)
   draft-release-notes:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
