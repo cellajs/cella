@@ -1,11 +1,13 @@
+import '@blocknote/shadcn/style.css';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
+
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import '@blocknote/shadcn/style.css';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import { customSchema, customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
@@ -16,7 +18,6 @@ import { compareIsContentSame, getParsedContent } from '~/modules/common/blockno
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
-import '~/modules/common/blocknote/styles.css';
 import type {
   CommonBlockNoteProps,
   CustomBlockFileTypes,
@@ -25,7 +26,6 @@ import type {
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/store/ui';
-import { shadCNComponents } from './helpers/shad-cn';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
@@ -43,6 +43,7 @@ type BlockNoteProps =
       baseFilePanelProps?: never;
     });
 
+// TODO ensure code block highliht works and shadCn components
 const BlockNote = ({
   id,
   type,
@@ -202,7 +203,7 @@ const BlockNote = ({
       ref={blockNoteRef}
       className={className}
       data-color-scheme={mode}
-      shadCNComponents={shadCNComponents}
+      // shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
