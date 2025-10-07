@@ -45,6 +45,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
 
   return (
     <div className={cn('relative z-20', className)}>
+      {/* TODO use input group? */}
       <Search
         size={16}
         className="absolute left-3 -z-10 top-1/2 -translate-y-1/2 opacity-50
@@ -53,6 +54,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
       <Input
         disabled={!hasStarted && isMobile} // Delay to prevent focus on initial render
         type="text"
+        id="nav-sheet-search"
         ref={focusRef}
         placeholder={t('common:search')}
         value={searchTerm}

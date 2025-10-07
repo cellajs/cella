@@ -23,10 +23,10 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
               style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
             >
               <div className="grow" />
-              <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 bg-background/40 group-hover:bg-background/60 transition-colors">
+              <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 min-h-14 bg-background/50 group-hover:bg-background/70 transition-colors">
                 <AvatarWrap className="h-10 w-10" type="organization" id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
-                <div className="flex flex-col grow gap-1 truncate">
-                  <div className="font-semibold truncate leading-4">{entity.name}</div>
+                <div className="flex flex-col grow gap-0.5 truncate">
+                  <div className="font-semibold truncate leading-5">{entity.name}</div>
                   <div className="text-sm font-light inline-flex items-center gap-2">
                     {dateShort(entity.createdAt)}
                     {entity.membership?.role && <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>}

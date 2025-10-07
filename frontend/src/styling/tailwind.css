@@ -81,7 +81,7 @@
 
 @layer components {
   .focus-effect {
-    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:focus-offset-background;
+    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
 

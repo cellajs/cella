@@ -78,7 +78,7 @@ export const MenuSheet = memo(() => {
     );
   }, [menu]);
 
-  const wrapperProps = { id: 'nav-sheet', className: 'h-full' };
+  const wrapperProps = { id: 'nav-sheet', className: 'h-full w-full' };
 
   return isMobile ? (
     <div {...wrapperProps}>
