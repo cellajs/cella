@@ -3,6 +3,7 @@ import { type BlockTypeSelectItem, SideMenuProps, useComponentsContext, useDicti
 import { useMemo } from 'react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 interface ResetBlockTypeItemProp {
@@ -70,17 +71,8 @@ export function ResetBlockTypeItem({ editor, props: { block, unfreezeMenu }, all
   return (
     <>
       {fullItems.map(({ title, type, icon, onClick }) => {
-        let isSelected = false;
+        const isSelected = block.type === 'heading' ? isHeadingMenuItemActive(block, title) : block.type === type;
 
-        if (block.type === 'heading') {
-          const levelMatch = title.includes(block.props.level.toString());
-          const toggleable = !!block.props.isToggleable;
-
-          // If toggleable, only select if title includes 'Toggle'
-          isSelected = toggleable ? levelMatch && title.includes('Toggle') : levelMatch && !title.includes('Toggle');
-        } else {
-          isSelected = block.type === type;
-        }
         return (
           <Components.Generic.Menu.Item
             className="bn-menu-item"

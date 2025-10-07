@@ -11,7 +11,8 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
-import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
+import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
+import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
@@ -40,11 +41,10 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
 
   const selectedItem = useMemo(() => {
-    // Return the first matching item with both type and level
-    if (currentBlock?.props?.level) {
-      return filteredItems.find((el) => el.type === currentBlock.type && el.name.includes(currentBlock.props.level));
-    }
-    return filteredItems.find((el) => el.type === currentBlock.type);
+    return filteredItems.find(
+      (el) =>
+        el.type === currentBlock.type && el.props?.level === currentBlock.props.level && !!el.props?.isToggleable === currentBlock.props.isToggleable,
+    );
   }, [filteredItems, currentBlock]);
 
   // Handle item click for updating the block type
@@ -62,12 +62,12 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   const fullItems = useMemo(
     () =>
       filteredItems.map((item) => {
-        const { icon: Icon, isSelected, name } = item;
+        const { icon: Icon, name, type } = item;
         return {
           title: name,
           icon: <Icon size={16} />,
           onClick: () => handleItemClick(item),
-          isSelected: isSelected(block),
+          isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block as unknown as CustomBlock, name) : block.type === type,
         };
       }),
     [block, filteredItems, editor, selectedBlocks],
