@@ -1,5 +1,5 @@
 import type { Block, BlockConfig, InlineContentSchema, StyleSchema } from '@blocknote/core';
-import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
+import { type BlockTypeSelectItem, SideMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
 import { useMemo } from 'react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
@@ -7,12 +7,12 @@ import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } fr
 
 interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteEditor;
-  props: DragHandleMenuProps;
+  props: Omit<SideMenuProps, 'addBlock'>;
   allowedTypes: CustomBlockTypes[];
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
 }
 
-export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
+export function ResetBlockTypeItem({ editor, props: { block, unfreezeMenu }, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -70,9 +70,28 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, hea
   return (
     <>
       {fullItems.map(({ title, type, icon, onClick }) => {
-        const isSelected = block.type === 'heading' ? title.includes(block.props.level.toString()) : block.type === type;
+        let isSelected = false;
+
+        if (block.type === 'heading') {
+          const levelMatch = title.includes(block.props.level.toString());
+          const toggleable = !!block.props.isToggleable;
+
+          // If toggleable, only select if title includes 'Toggle'
+          isSelected = toggleable ? levelMatch && title.includes('Toggle') : levelMatch && !title.includes('Toggle');
+        } else {
+          isSelected = block.type === type;
+        }
         return (
-          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
+          <Components.Generic.Menu.Item
+            className="bn-menu-item"
+            key={title}
+            onClick={() => {
+              onClick();
+              unfreezeMenu();
+            }}
+            icon={icon}
+            checked={isSelected}
+          >
             {title}
           </Components.Generic.Menu.Item>
         );
