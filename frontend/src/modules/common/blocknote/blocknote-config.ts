@@ -89,11 +89,11 @@ export const getSlashMenuItems = (
  *  Formatting toolbar Configuration
  */
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
-  blockTypeSelect: true,
+  blockTypeSelect: false,
   blockStyleSelect: true,
-  blockAlignSelect: true,
-  textColorSelect: true,
-  blockNestingSelect: true,
+  blockAlignSelect: false,
+  textColorSelect: false,
+  blockNestingSelect: false,
   fileCaption: true,
   openPreview: true,
   createLink: true,
