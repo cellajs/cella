@@ -95,14 +95,14 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     handleUnselect(el);
                   }}
                 >
-                  <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+                  <X className="size-4 opacity-50 hover:opacity-100" />
                 </button>
               </Badge>
             ))
           ) : (
             <span className="text-sm ml-1">{t('common:search_users')}</span>
           )}
-          <ChevronsUpDown className="absolute right-0 mx-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
         </div>
       </PopoverTrigger>
 

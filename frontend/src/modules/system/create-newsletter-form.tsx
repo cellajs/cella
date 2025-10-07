@@ -150,7 +150,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             {t('common:cancel')}
           </Button>
           <div className="max-sm:mt-2 flex gap-2 items-center">
-            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="size-4 ml-4" />
             <label htmlFor="testOnly" className="items-center text-sm">
               {t('common:test_email')}
             </label>

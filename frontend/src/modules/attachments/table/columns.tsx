@@ -165,7 +165,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip-content={t('common:download')}
             onClick={() => download(row.url, row.filename)}
           >
-            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
+            {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <Download size={16} />}
           </Button>
         );
       },

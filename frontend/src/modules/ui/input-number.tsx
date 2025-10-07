@@ -62,7 +62,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProp>(
             disabled={disabled}
             onClick={() => handleNumberEvent(NumberEvents.PLUS)}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
           </Button>
           <Button
             variant="outline"
@@ -73,7 +73,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProp>(
             disabled={disabled}
             onClick={() => handleNumberEvent(NumberEvents.MINUS)}
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="size-4" />
           </Button>
         </div>
       </div>

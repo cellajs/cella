@@ -41,7 +41,7 @@ export const Default: Story = {};
 export const Destructive: Story = {
   render: (args) => (
     <Alert {...args}>
-      <AlertCircle className="h-4 w-4" />
+      <AlertCircle className="size-4" />
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
     </Alert>

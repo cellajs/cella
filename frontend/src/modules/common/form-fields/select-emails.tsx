@@ -333,7 +333,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
                 }}
                 onClick={() => removeEmail(index)}
               >
-                <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+                <X className="size-4 opacity-50 hover:opacity-100" />
               </button>
             </Badge>
           );

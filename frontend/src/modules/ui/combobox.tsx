@@ -103,7 +103,7 @@ const Combobox = ({
           ) : (
             <span className="truncate">{placeholders.trigger}</span>
           )}
-          <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDown className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
       {/* bounds.width + bounds.x * 2 to also include padding */}

@@ -23,7 +23,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
   return (
     <Card className="w-full group/tile sm:has-[button:focus]:ring-2 transition-all" data-expanded={expanded}>
       <CardContent className="flex !p-2 sm:!p-3 lg:items-center gap-2 sm:gap-3">
-        <DeviceIcon className="w-4 h-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
+        <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-xs:flex-col gap-1 xs:gap-2">
             <span className="text-sm">{session.deviceName || t('common:unknown_device')}</span>

@@ -41,7 +41,7 @@ const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action 
         'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus-effect',
       )}
     >
-      <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+      <Icon className="mr-2 size-4" aria-hidden="true" />
       {label}
     </Link>
   );

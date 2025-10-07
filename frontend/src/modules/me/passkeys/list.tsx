@@ -30,7 +30,7 @@ const PasskeysList = () => {
     <div className="mb-6">
       <div className="flex flex-row max-sm:flex-col">
         <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
-          {hasPasskey ? <Plus className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
+          {hasPasskey ? <Plus className="size-4 mr-2" /> : <Fingerprint className="size-4 mr-2" />}
           {hasPasskey
             ? t('common:add_resource', { resource: t('common:passkey').toLowerCase() })
             : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}

@@ -111,7 +111,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             <Button
               variant="ghost"
               size="icon"
-              className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
+              className="-my-1 size-8 opacity-70 hover:opacity-100"
               onClick={() => window.open(currentItem.url, '_blank')}
             >
               <ExternalLink className="h-5 w-5" strokeWidth={1.5} />
@@ -123,14 +123,14 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               variant="ghost"
               size="icon"
               disabled={isInProgress}
-              className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
+              className="-my-1 size-8 opacity-70 hover:opacity-100"
               onClick={() => download(currentItem.url, currentItem.filename || 'file')}
             >
-              {isInProgress ? <Spinner className="w-5 h-5 text-foreground/80" noDelay /> : <Download className="h-5 w-5" strokeWidth={1.5} />}
+              {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <Download className="h-5 w-5" strokeWidth={1.5} />}
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="-my-1 w-8 h-8 opacity-70 hover:opacity-100" onClick={() => removeDialog()}>
+          <Button variant="ghost" size="icon" className="-my-1 size-8 opacity-70 hover:opacity-100" onClick={() => removeDialog()}>
             <X className="h-6 w-6" strokeWidth={1.5} />
           </Button>
         </div>

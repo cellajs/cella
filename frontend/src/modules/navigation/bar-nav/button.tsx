@@ -30,7 +30,7 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
         ref={buttonRef}
         data-theme={theme}
         data-active={isActive}
-        className={`ring-inset focus-visible:ring-offset-0 group h-14 w-14
+        className={`ring-inset focus-visible:ring-offset-0 group size-14
           data-[active=true]:bg-background/50 hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit`}
         onClick={() => {
           onClick(buttonRef);
@@ -39,7 +39,7 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
         {navItem.id === 'account' && user ? (
           <AvatarWrap
             type="user"
-            className="border-[0.1rem] w-8 h-8 sm:w-9 sm:h-9 rounded-full border-primary group-hover:scale-110 transition-transform"
+            className="border-[0.1rem] size-8 sm:size-9 rounded-full text-base border-primary group-hover:scale-110 transition-transform"
             id={user.id}
             name={user.name}
             url={user.thumbnailUrl}
