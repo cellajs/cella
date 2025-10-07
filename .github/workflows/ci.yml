@@ -108,6 +108,8 @@ jobs:
 
   # Will run a quick startup check to ensure the app starts without issues
   quick:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: [lint, test]
     steps:
