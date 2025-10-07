@@ -174,7 +174,7 @@ jobs:
       - name: Generate draft release notes
         run: |
           # Check latest and previous tags
-          LATEST_TAG=$(git describe --tags --abbrev=0)
+          LATEST_TAG=$(if [ "$(git tag | wc -l)" -ge 1 ]; then git describe --tags --abbrev=0; fi)
           PREV_TAG=$(if [ "$(git tag | wc -l)" -ge 2 ]; then git tag --sort=creatordate | tail -2 | head -1; fi)
 
           echo "Latest tag: $LATEST_TAG"
