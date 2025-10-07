@@ -82,7 +82,11 @@ export const getSlashMenuItems = (
 
   return baseItems
     .filter((item): item is DefaultSuggestionItem => 'key' in item && allowedKeys.includes(item.key as DefaultSuggestionItem['key']))
-    .sort(({ key: a }, { key: b }) => (sortOrder.get(a) ?? Number.POSITIVE_INFINITY) - (sortOrder.get(b) ?? Number.POSITIVE_INFINITY));
+    .sort(({ key: first }, { key: second }) => {
+      const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
+      const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
+      return aIndex - bIndex;
+    });
 };
 
 /**
