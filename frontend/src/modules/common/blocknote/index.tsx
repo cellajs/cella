@@ -213,6 +213,7 @@ const BlockNote = ({
       ref={blockNoteRef}
       className={className}
       data-color-scheme={mode}
+      // @ts-ignore
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}

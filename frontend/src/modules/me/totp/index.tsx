@@ -30,7 +30,7 @@ const Totp = () => {
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
-        hideClose: false,
+        showCloseButton: true,
       },
     );
   };

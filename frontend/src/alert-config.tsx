@@ -14,7 +14,7 @@ if (appConfig.mode === 'development') {
     className: 'rounded-none border-0 border-t z-60 fixed bottom-0 left-0 right-0',
     children: (
       <>
-        <strong className="mr-2">Testing credentials</strong>
+        <strong className="mr-2 text-foreground">Testing credentials</strong>
         <p>
           Hi there! New developer? Sign in using <strong>admin-test@cellajs.com</strong> and password <strong>12345678</strong>.
         </p>

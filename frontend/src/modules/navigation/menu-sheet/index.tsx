@@ -85,7 +85,7 @@ export const MenuSheet = memo(() => {
       <MenuContent />
     </div>
   ) : (
-    <ScrollArea {...wrapperProps} viewPortRef={scrollViewportRef}>
+    <ScrollArea {...wrapperProps} viewportRef={scrollViewportRef}>
       <MenuContent />
     </ScrollArea>
   );
@@ -142,7 +142,7 @@ const MenuContent = memo(() => {
               id: 'nav-sheet',
               triggerRef: accountButtonRef,
               side: 'left',
-              hideClose: true,
+              showCloseButton: false,
               modal: true,
               className:
                 'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
@@ -178,7 +178,6 @@ const MenuContent = memo(() => {
           <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch
-                size="xs"
                 id="keepMenuOpen"
                 checked={keepOpenPreference}
                 onCheckedChange={toggleKeepOpenPreference}
@@ -191,13 +190,7 @@ const MenuContent = memo(() => {
             {pwaEnabled && <OfflineAccessSwitch />}
             {appConfig.menuStructure.some(({ subentityType }) => subentityType) && (
               <div className="flex items-center gap-4 ml-1">
-                <Switch
-                  size="xs"
-                  id="detailedMenu"
-                  checked={detailedMenu}
-                  onCheckedChange={toggleDetailedMenu}
-                  aria-label={t('common:detailed_menu')}
-                />
+                <Switch id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('common:detailed_menu')} />
                 <label htmlFor="detailedMenu" className="cursor-pointer select-none text-sm font-medium leading-none">
                   {t('common:detailed_menu')}
                 </label>

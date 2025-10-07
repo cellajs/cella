@@ -23,7 +23,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     scrollableOverlay,
     title,
     titleContent = title,
-    hideClose = false,
+    showCloseButton = true,
     className: sheetClassName,
     content,
     closeSheetOnEsc = true,
@@ -97,8 +97,8 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
         id={String(id)}
         scrollableOverlay={scrollableOverlay}
         ref={sheetRef}
-        side={side} // Retained side value
-        hideClose={hideClose}
+        side={side}
+        showCloseButton={showCloseButton}
         aria-describedby={undefined}
         className={`${className} items-start`}
         onEscapeKeyDown={handleEscapeKeyDown}

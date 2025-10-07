@@ -81,7 +81,7 @@
 
 @layer components {
   .focus-effect {
-    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:focus-offset-background;
   }
 }
 
@@ -124,7 +124,7 @@
     --secondary: 240 3.7% 15%;
     --secondary-foreground: 0 0% 95%;
     --muted: 240 3.7% 25%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted-foreground: 240 5% 74.9%;
     --accent: 240 3.7% 25%;
     --accent-foreground: 0 0% 95%;
     --destructive: 0 62.8% 50%;

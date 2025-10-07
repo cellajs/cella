@@ -57,7 +57,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
         placeholder={t('common:search')}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="bg-transparent border-0 px-10"
+        className="bg-transparent border-0 shadow-none px-10"
       />
 
       <XCircle

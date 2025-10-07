@@ -121,7 +121,7 @@ const Combobox = ({
             <CommandGroup>
               {/* To avoid conflicts between ScrollArea and Virtualizer, do not set a max-h value on ScrollArea. 
               As this will cause all list elements to render at once in Virtualizer*/}
-              <ScrollArea className="h-[30vh]" viewPortRef={scrollViewportRef}>
+              <ScrollArea className="h-[30vh]" viewportRef={scrollViewportRef}>
                 <ScrollBar />
 
                 <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={2}>

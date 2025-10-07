@@ -1,63 +1,51 @@
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
-import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-
 import { cn } from '~/utils/cn';
 
-const scrollbarVariants = cva('flex touch-none transition-colors z-20', {
-  variants: {
-    orientation: {
-      vertical: 'vertical',
-      horizontal: 'horizontal',
-    },
-    size: {
-      defaultVertical: 'h-full w-2.5 border-l border-l-transparent p-[.05rem]',
-      defaultHorizontal: 'h-2.5 flex-col border-t border-t-transparent p-[.05rem]',
-    },
-  },
-  defaultVariants: {
-    orientation: 'vertical',
-    size: 'defaultVertical',
-  },
-});
+function ScrollArea({
+  className,
+  children,
+  id,
+  viewportRef,
+  viewportClassName,
+  ...props
+}: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
+  viewportRef?: React.RefObject<HTMLDivElement> | null;
+  viewportClassName?: string;
+}) {
+  return (
+    <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn('relative', className)} {...props}>
+      <ScrollAreaPrimitive.Viewport
+        id={`${id}-viewport`}
+        // to prevent warning on autoscroll set from Pragmatic DnD
+        style={{ overflowY: 'scroll', display: 'flex', flexDirection: 'column', height: '100%' }}
+        ref={viewportRef}
+        className={cn('h-full w-full [&>div]:block! rounded-[inherit]', viewportClassName)}
+      >
+        {children}
+      </ScrollAreaPrimitive.Viewport>
+      <ScrollBar />
+      <ScrollAreaPrimitive.Corner />
+    </ScrollAreaPrimitive.Root>
+  );
+}
 
-const ScrollArea = React.forwardRef<
-  React.ComponentRef<typeof ScrollAreaPrimitive.Root>,
-  VariantProps<typeof scrollbarVariants> &
-    React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> & {
-      viewPortRef?: React.Ref<HTMLDivElement>;
-      viewPortClassName?: string;
-    }
->(({ className, children, id, size, viewPortRef, viewPortClassName, ...props }, ref) => (
-  <ScrollAreaPrimitive.Root ref={ref} className={cn('relative overflow-auto', className)} {...props}>
-    <ScrollAreaPrimitive.Viewport
-      id={`${id}-viewport`}
-      // to prevent warning on autoscroll set from Pragmatic DnD
-      style={{ overflowY: 'scroll', display: 'flex', flexDirection: 'column', height: '100%' }}
-      ref={viewPortRef}
-      className={cn('h-full w-full [&>div]:block! rounded-[inherit]', viewPortClassName)}
+function ScrollBar({ className, orientation = 'vertical', ...props }: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
+  return (
+    <ScrollAreaPrimitive.ScrollAreaScrollbar
+      data-slot="scroll-area-scrollbar"
+      orientation={orientation}
+      className={cn(
+        'flex touch-none p-px transition-colors select-none',
+        orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
+        orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
+        className,
+      )}
+      {...props}
     >
-      {children}
-    </ScrollAreaPrimitive.Viewport>
-    <ScrollBar size={size} />
-    <ScrollAreaPrimitive.Corner />
-  </ScrollAreaPrimitive.Root>
-));
-ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
-
-const ScrollBar = React.forwardRef<
-  React.ComponentRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
-  VariantProps<typeof scrollbarVariants> & React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>
->(({ className, size = 'defaultVertical', orientation = 'vertical', ...props }, ref) => (
-  <ScrollAreaPrimitive.ScrollAreaScrollbar
-    ref={ref}
-    orientation={orientation}
-    className={cn(scrollbarVariants({ orientation, size }), className, 'scrollbar-track')}
-    {...props}
-  >
-    <ScrollAreaPrimitive.ScrollAreaThumb className="bg-border relative flex-1 rounded-full scrollbar-thumb" />
-  </ScrollAreaPrimitive.ScrollAreaScrollbar>
-));
-ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
+      <ScrollAreaPrimitive.ScrollAreaThumb data-slot="scroll-area-thumb" className="bg-border relative flex-1 rounded-full" />
+    </ScrollAreaPrimitive.ScrollAreaScrollbar>
+  );
+}
 
 export { ScrollArea, ScrollBar };

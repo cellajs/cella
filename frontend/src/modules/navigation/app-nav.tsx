@@ -57,7 +57,7 @@ const AppNav = () => {
       id: 'nav-sheet',
       triggerRef,
       side: sheetSide,
-      hideClose: true,
+      showCloseButton: false,
       modal: isMobile,
       closeSheetOnRouteChange: false,
       className:

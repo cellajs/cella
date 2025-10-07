@@ -52,9 +52,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             {/* Role */}
             {'membership' in entity && entity.membership && (
               <>
-                <Badge className="opacity-70" variant="plain">
-                  {t(entity.membership.role, { ns: ['app', 'common'] })}
-                </Badge>
+                <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>
             )}
