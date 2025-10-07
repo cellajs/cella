@@ -11,7 +11,7 @@
     "dev:run": "cross-env NODE_ENV=development vite --mode development",
     "tunnel": "wait-on http://localhost:4000/ping && cross-env NODE_ENV=tunnel vite --mode tunnel",
     "start": "cross-env NODE_ENV=production pnpm preview",
-    "test": "vitest",
+    "test": "echo 'No tests → skipping Vitest'",
     "ts": "tsc --pretty",
     "ts:beta": "tsgo --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
