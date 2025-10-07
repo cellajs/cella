@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 # Controls which events and branches will trigger the workflow
 on:
   push:
