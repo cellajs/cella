@@ -10,7 +10,7 @@ function ScrollArea({
   viewportClassName,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
-  viewportRef?: React.RefObject<HTMLDivElement> | null;
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
 }) {
   return (
