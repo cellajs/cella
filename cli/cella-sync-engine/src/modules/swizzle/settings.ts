@@ -40,7 +40,7 @@ export function clearSwizzleSettingsCache(): void {
  * @param filePath The file path to check.
  * @returns The swizzle status if found, otherwise undefined.
  */
-export function getMarkedAs(filePath: string): SwizzleAnalysis["markedInSettingsAs"] {
+export function getFlaggedAs(filePath: string): SwizzleAnalysis["flaggedInSettingsAs"] {
   const settings = getSwizzleSettings();
   if (!settings) return undefined;
 

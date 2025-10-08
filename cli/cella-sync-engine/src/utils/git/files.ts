@@ -1,12 +1,12 @@
 import { writeFile } from 'fs/promises';
 
-import { gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitLsTreeRecursiveAtCommit, gitShowFileAtCommit } from './command';
+import { gitAdd, gitCheckoutOursFilePath, gitCheckoutTheirsFilePath, gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitLsTreeRecursiveAtCommit, gitShowFileAtCommit } from './command';
 import { FileEntry, CommitEntry } from '../../types';
 
 /**
  * Uses `git ls-tree` and `git log` to fetch blob and commit SHAs for each file.
  */
-export async function getGitFileHashes(repoPath: string, branchName:string = 'HEAD'): Promise<FileEntry[]> {
+export async function getGitFileHashes(repoPath: string, branchName: string = 'HEAD'): Promise<FileEntry[]> {
   const output = await gitLsTreeRecursive(repoPath, branchName);
   const lines = output.split('\n');
 
@@ -32,7 +32,7 @@ export async function getGitFileHashes(repoPath: string, branchName:string = 'HE
   return entries;
 }
 
-export async function getFileCommitHistory(repoPath: string, branchName:string, filePath: string): Promise<CommitEntry[]> {
+export async function getFileCommitHistory(repoPath: string, branchName: string, filePath: string): Promise<CommitEntry[]> {
   const output = await gitLogFileHistory(repoPath, branchName, filePath);
   return output
     .trim()
@@ -94,4 +94,28 @@ export async function getFileBlobShaAtCommit(
   }
 
   return null; // file does not exist in this commit
+}
+
+/**
+ * Resolves a merge conflict by choosing either "ours" or "theirs" version of the file.
+ * Then stages the file for commit.
+ * 
+ * @param repoPath - Path to the repository
+ * @param filePath - Path to the file to resolve
+ */
+export async function resolveConflictAsOurs(repoPath: string, filePath: string): Promise<void> {
+  await gitCheckoutOursFilePath(repoPath, filePath);
+  await gitAdd(repoPath, filePath);
+}
+
+/**
+ * Resolves a merge conflict by choosing the "theirs" version of the file.
+ * Then stages the file for commit.
+ * 
+ * @param repoPath - Path to the repository
+ * @param filePath - Path to the file to resolve
+ */
+export async function resolveConflictAsTheirs(repoPath: string, filePath: string): Promise<void> {
+  await gitCheckoutTheirsFilePath(repoPath, filePath);
+  await gitAdd(repoPath, filePath);
 }

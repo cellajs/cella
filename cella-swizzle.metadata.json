@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastSyncedAt": "2025-10-07T12:54:56.272Z",
+  "lastSyncedAt": "2025-10-08T16:55:49.822Z",
   "entries": {
     "backend/.env.example": {
       "filePath": "backend/.env.example",
@@ -1706,6 +1706,146 @@
       "lastSwizzledAt": "2025-10-07T12:48:13.768Z",
       "boilerplateLastCommitSha": "a3907014e3fb46fc93f76698ca7ab9fc2334b0a9",
       "boilerplateBlobSha": "72855a23aa76d6816030d1b99f9cead93f7a18ab"
+    },
+    "cli/sync-cella/index.ts": {
+      "filePath": "cli/sync-cella/index.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.841Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "1a1817b3f546d0446ab7f7090e449edcb32a178c"
+    },
+    "cli/sync-cella/package-lock.json": {
+      "filePath": "cli/sync-cella/package-lock.json",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "414767c4eed11f18828a1d69ab7221e30ba333b2",
+      "commitAfterSwizzle": "414767c4eed11f18828a1d69ab7221e30ba333b2",
+      "lastSwizzledAt": "2025-10-08T16:45:02.834Z",
+      "boilerplateLastCommitSha": "26f4254c8cd1324e1e05dc95f29241af7ebcbb9f",
+      "boilerplateBlobSha": "69c44d7ef3bbb82e285db3a0dae0c11271f1ff70"
+    },
+    "cli/sync-cella/package.json": {
+      "filePath": "cli/sync-cella/package.json",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "e8f6b0f96521f6468e6f5deb6bfa4b632862576b",
+      "commitAfterSwizzle": "e8f6b0f96521f6468e6f5deb6bfa4b632862576b",
+      "lastSwizzledAt": "2025-10-08T16:45:02.839Z",
+      "boilerplateLastCommitSha": "42165796fa5ad93dc0098487b2345c7f67fc8b2c",
+      "boilerplateBlobSha": "d251feeb02a54ea15dcd085cab9fb2faf41784a2"
+    },
+    "cli/sync-cella/src/cli.ts": {
+      "filePath": "cli/sync-cella/src/cli.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.845Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "1702d43fe7d93c03b24fde929c1af9351a3d05bf"
+    },
+    "cli/sync-cella/src/constants.ts": {
+      "filePath": "cli/sync-cella/src/constants.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "2a8b7a7226327d3bfb97cce8188ce49ed9cf9353",
+      "commitAfterSwizzle": "2a8b7a7226327d3bfb97cce8188ce49ed9cf9353",
+      "lastSwizzledAt": "2025-10-08T16:45:02.856Z",
+      "boilerplateLastCommitSha": "fad596f89160dd84ee4537f0dbfd849c7fe7cec8",
+      "boilerplateBlobSha": "46dc5c6f83eed387d02c50a614b821ba5ea210b8"
+    },
+    "cli/sync-cella/src/diverged.ts": {
+      "filePath": "cli/sync-cella/src/diverged.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "commitAfterSwizzle": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "lastSwizzledAt": "2025-10-08T16:45:02.864Z",
+      "boilerplateLastCommitSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "boilerplateBlobSha": "03b3e261212e9e24273d8d317c703ac8afea4948"
+    },
+    "cli/sync-cella/src/fetch-remote.ts": {
+      "filePath": "cli/sync-cella/src/fetch-remote.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.879Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "f00de28be16eca4141f55a3448d3f7d7ce559d9e"
+    },
+    "cli/sync-cella/src/index.ts": {
+      "filePath": "cli/sync-cella/src/index.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "commitAfterSwizzle": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "lastSwizzledAt": "2025-10-08T16:45:02.881Z",
+      "boilerplateLastCommitSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "boilerplateBlobSha": "d565924ca47bb3a7e057cac3938565c5f15ed7d1"
+    },
+    "cli/sync-cella/src/pull-fork.ts": {
+      "filePath": "cli/sync-cella/src/pull-fork.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.869Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "671641e8cab37cfe0ba3ab02ff0efa7d17cb7271"
+    },
+    "cli/sync-cella/src/pull-upstream.ts": {
+      "filePath": "cli/sync-cella/src/pull-upstream.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.867Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "b18abb230de5440a560d0924cb688643171d22a9"
+    },
+    "cli/sync-cella/src/utils/config-file.ts": {
+      "filePath": "cli/sync-cella/src/utils/config-file.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "commitAfterSwizzle": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "lastSwizzledAt": "2025-10-08T16:45:02.871Z",
+      "boilerplateLastCommitSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "boilerplateBlobSha": "08aab155968a9c88e86a6a1871b69fdd86b1f512"
+    },
+    "cli/sync-cella/src/utils/ignore-patterns.ts": {
+      "filePath": "cli/sync-cella/src/utils/ignore-patterns.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "commitAfterSwizzle": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "lastSwizzledAt": "2025-10-08T16:45:02.874Z",
+      "boilerplateLastCommitSha": "908031d1f69c607fcb39f29c770ac1c7460ea7d6",
+      "boilerplateBlobSha": "fca80735ec0295a53ece105c1b9718358a754e2c"
+    },
+    "cli/sync-cella/src/utils/run-git-command.ts": {
+      "filePath": "cli/sync-cella/src/utils/run-git-command.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.886Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "ec4e2a5db4225e4c5c758238c58260e444d10c40"
+    },
+    "cli/sync-cella/src/utils/validate-project-name.ts": {
+      "filePath": "cli/sync-cella/src/utils/validate-project-name.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "commitAfterSwizzle": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "lastSwizzledAt": "2025-10-08T16:45:02.884Z",
+      "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
+      "boilerplateBlobSha": "edef29db64ba3e72592c55a75e6065faf9013f3d"
     }
   }
 }

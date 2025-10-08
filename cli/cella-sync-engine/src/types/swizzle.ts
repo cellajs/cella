@@ -26,5 +26,5 @@ export interface SwizzleAnalysis {
   existingMetadata?: SwizzleEntry; // The entry from metadata (if any)
   existingMetadataValid?: boolean;    // Still matches current file state?
   newMetadata?: SwizzleEntry;    // The newly detected entry (if triggered)
-  markedInSettingsAs?: 'removed' | 'edited' | undefined; // If custom config matched
+  flaggedInSettingsAs?: 'removed' | 'edited' | undefined; // If custom config matched
 }

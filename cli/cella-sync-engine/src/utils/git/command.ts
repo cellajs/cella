@@ -86,3 +86,15 @@ export async function gitMergeFile(oursPath: string, basePath: string, theirsPat
 export function isMergeInProgress(repoPath: string): boolean {
   return existsSync(`${repoPath}/.git/MERGE_HEAD`);
 }
+
+export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Promise<string> {
+  return runGitCommand(`checkout --ours ${filePath}`, repoPath);
+}
+
+export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): Promise<string> {
+  return runGitCommand(`checkout --theirs ${filePath}`, repoPath);
+}
+
+export function gitRemoveFilePathFromCache(repoPath: string, filePath: string): Promise<string> {
+  return runGitCommand(`rm --cached "${filePath}"`, repoPath);
+}
