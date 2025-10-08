@@ -70,7 +70,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
     const body = {
       ...data,
       organizationIds,
-      content: await blocksToHTML(data.content),
+      content: blocksToHTML(data.content),
     };
     _sendNewsletter({ body, toSelf: !!testOnly });
   };
