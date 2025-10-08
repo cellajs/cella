@@ -371,7 +371,6 @@ const membershipRouteHandlers = app
 
     const user = getContextUser();
 
-    // TODO use get membership util
     const [membership] = await db
       .select()
       .from(membershipsTable)
