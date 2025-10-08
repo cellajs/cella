@@ -54,11 +54,11 @@ interface ZeroValSet {
 
 function CommandInput({ className, value, clearValue, wrapClassName, isSearching, ...props }: CommandInputProps & ZeroValSet) {
   return (
-    <div data-slot="command-input-wrapper" className="flex h-10 items-center gap-2 border-b px-3">
+    <div data-slot="command-input-wrapper" className={cn('group flex h-10 items-center gap-2 border-b px-3', wrapClassName)}>
       {isSearching ? (
-        <Spinner className="size-4 mr-2 w-4 group-[.text-lg]:w-5 h-auto shrink-0" noDelay />
+        <Spinner className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" noDelay />
       ) : (
-        <Search className="size-4 mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+        <Search className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
       )}
 
       <CommandPrimitive.Input

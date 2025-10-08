@@ -155,7 +155,7 @@
 
 @layer base {
   html {
-    @apply font-sans overscroll-x-none;
+    @apply font-sans overscroll-none;
   }
 
   * {
@@ -163,7 +163,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-x-none;
+    @apply bg-background text-foreground min-h-full overscroll-none;
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */

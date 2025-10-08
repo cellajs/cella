@@ -105,7 +105,7 @@ export const AppSearch = () => {
         }}
         className="h-12 text-lg"
         isSearching={isFetching}
-        wrapClassName="text-lg"
+        wrapClassName="h-12 text-lg"
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
           const historyIndexes = recentSearches.map((_, index) => index);
