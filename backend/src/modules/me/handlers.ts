@@ -25,6 +25,7 @@ import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -175,7 +176,7 @@ const meRouteHandlers = app
             entity: entitySelect,
             expiresAt: tokensTable.expiresAt,
             invitedBy: userBaseSelect,
-            membership: membershipsTable,
+            membership: membershipBaseSelect,
           })
           .from(membershipsTable)
           .leftJoin(usersTable, eq(usersTable.id, membershipsTable.createdBy))

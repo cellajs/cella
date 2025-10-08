@@ -123,7 +123,7 @@ const membershipRouteHandlers = app
       .where(inArray(emailsTable.email, emailsWithoutInvitations));
 
     const memberships = await db
-      .select()
+      .select(membershipBaseSelect)
       .from(membershipsTable)
       .where(
         and(
@@ -265,7 +265,7 @@ const membershipRouteHandlers = app
 
     // Get target memberships
     const targets = await db
-      .select()
+      .select(membershipBaseSelect)
       .from(membershipsTable)
       .where(and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)));
 
@@ -310,7 +310,7 @@ const membershipRouteHandlers = app
 
     // Get the membership in valid organization
     const [membershipToUpdate] = await db
-      .select()
+      .select(membershipBaseSelect)
       .from(membershipsTable)
       .where(
         and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.activatedAt), eq(membershipsTable.organizationId, organization.id)),

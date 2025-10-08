@@ -95,7 +95,7 @@ const organizationRouteHandlers = app
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
     const memberships = db
-      .select()
+      .select(membershipBaseSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
       .as('memberships');
