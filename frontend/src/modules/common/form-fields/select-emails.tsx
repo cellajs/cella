@@ -39,6 +39,7 @@ export interface SelectEmailsProps {
   allowDuplicate?: boolean;
 }
 
+// TODO replace some of this with TagInput?
 export const SelectEmails = (props: SelectEmailsProps) => {
   const {
     id,
