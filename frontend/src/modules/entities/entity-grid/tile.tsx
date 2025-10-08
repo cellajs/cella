@@ -12,7 +12,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
 export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
   const { to, params, search } = getEntityRoute(entity);
   return (
-    <Card className="overflow-hidden p-0 transition hover:shadow-sm [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] ring-ring/50 ring-offset-2 ring-offset-background">
+    <Card className="overflow-hidden p-0 transition hover:shadow-sm [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] ring-ring ring-offset-2 ring-offset-background">
       <CardContent className="p-4">
         <Link to={to} params={params} search={search} className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0">
           {typeof window !== 'undefined' && (

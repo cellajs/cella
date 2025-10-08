@@ -50,7 +50,7 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         ref={inputRef}
-        className="h-10 w-full border-0 pr-8 pl-10 shadow-none dark:bg-transparent focus:dark:bg-input/15"
+        className="h-10 w-full border-0 pr-8 pl-10 shadow-none"
         aria-label={t('common:placeholder.search')}
       />
       {/* Clear Button */}
