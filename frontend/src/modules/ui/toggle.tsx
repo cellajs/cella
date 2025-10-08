@@ -10,7 +10,7 @@ const toggleVariants = cva(
       variant: {
         default: 'bg-transparent',
         outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
-        tile: 'bg-transparent text-left border hover:bg-accent hover:text-accent-foreground group p-3',
+        tile: 'bg-transparent text-left border hover:bg-accent/50 hover:text-accent-foreground group p-3',
         merged:
           'border border-input bg-transparent hover:bg-accent/50 hover:text-accent-foreground rounded-none border-r-0 first:rounded-l-md last:rounded-r-md last:border-r',
       },
@@ -19,7 +19,7 @@ const toggleVariants = cva(
         xs: 'h-7 px-2',
         sm: 'h-9 px-2.5',
         lg: 'h-11 px-5',
-        tile: 'h-full w-full',
+        tile: 'h-full w-full !rounded-xl',
       },
     },
     defaultVariants: {
