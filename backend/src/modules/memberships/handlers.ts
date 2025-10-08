@@ -14,7 +14,7 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
 import { memberSelect, userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -122,19 +122,16 @@ const membershipRouteHandlers = app
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(inArray(emailsTable.email, emailsWithoutInvitations));
 
-    const memberships = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(
-        and(
-          inArray(
-            membershipsTable.userId,
-            existingUsers.map(({ id }) => id),
-          ),
-          eq(membershipsTable.organizationId, organization.id),
-          isNull(membershipsTable.tokenId),
+    const memberships = await membershipBaseQuery().where(
+      and(
+        inArray(
+          membershipsTable.userId,
+          existingUsers.map(({ id }) => id),
         ),
-      );
+        eq(membershipsTable.organizationId, organization.id),
+        isNull(membershipsTable.tokenId),
+      ),
+    );
 
     // Exclude already-invited emails (in both direct & org scope)
     const emailsToInvite = emailsWithoutInvitations.filter((email) => !existingUsers.some((user) => user.email === email));
@@ -264,10 +261,9 @@ const membershipRouteHandlers = app
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     // Get target memberships
-    const targets = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)));
+    const targets = await membershipBaseQuery().where(
+      and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)),
+    );
 
     // Check if membership exist
     const rejectedItems: string[] = [];
@@ -309,9 +305,7 @@ const membershipRouteHandlers = app
     let orderToUpdate = order;
 
     // Get the membership in valid organization
-    const [membershipToUpdate] = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
+    const [membershipToUpdate] = await membershipBaseQuery()
       .where(
         and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.activatedAt), eq(membershipsTable.organizationId, organization.id)),
       )
