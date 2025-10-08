@@ -31,7 +31,6 @@ import { cn } from '~/utils/cn';
 const pwaEnabled = appConfig.has.pwa;
 
 export const MenuSheet = memo(() => {
-  const isMobile = useBreakpoints('max', 'sm');
   const menu = useNavigationStore((state) => state.menu);
 
   const { mutateAsync } = useMemberUpdateMutation();
@@ -80,11 +79,7 @@ export const MenuSheet = memo(() => {
 
   const wrapperProps = { id: 'nav-sheet', className: 'h-full w-full' };
 
-  return isMobile ? (
-    <div {...wrapperProps}>
-      <MenuContent />
-    </div>
-  ) : (
+  return (
     <ScrollArea {...wrapperProps} viewportRef={scrollViewportRef}>
       <MenuContent />
     </ScrollArea>
