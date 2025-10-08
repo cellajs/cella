@@ -1,7 +1,9 @@
 {
-  "swizzled": [
+  "removed": [
     "info/*",
-    "cli/create-cella/*",
+    "cli/create-cella/*"
+  ],
+  "edited": [
     "README.md",
     "package.json",
     "pnpm-lock.yaml",

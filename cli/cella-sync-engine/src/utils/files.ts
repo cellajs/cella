@@ -16,20 +16,20 @@ const binaryExtensions = new Set([
 
   // Documents
   '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-  
+
   // Archives & compressed files
   '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
-  
+
   // Audio & video
   '.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a',
   '.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm',
-  
+
   // Executables & binaries
   '.exe', '.dll', '.so', '.bin', '.apk', '.app', '.deb', '.rpm',
-  
+
   // Fonts
   '.ttf', '.otf', '.woff', '.woff2',
-  
+
   // Others
   '.class', '.pyc', '.jar', '.iso', '.dmg',
 ]);
@@ -94,4 +94,23 @@ export function writeJsonFile(filePath: string, data: any): void {
  */
 export function resolvePath(filePath: string): string {
   return path.resolve(filePath);
+}
+
+/**
+ * Matches a file path against a pattern.
+ * - `*` can appear anywhere and matches any number of characters (including `/`)
+ * - Matching is case-sensitive by default (can easily make it insensitive)
+ */
+export function matchPathPattern(filePath: string, pattern: string): boolean {
+
+  // Escape regex special characters, except for '*'
+  const escaped = pattern.replace(/[-\/\\^$+?.()|[\]{}]/g, '\\$&');
+
+  // Replace '*' with '.*' (regex equivalent)
+  const regexPattern = '^' + escaped.replace(/\*/g, '.*') + '$';
+
+  // Create regex
+  const regex = new RegExp(regexPattern);
+
+  return regex.test(filePath);
 }

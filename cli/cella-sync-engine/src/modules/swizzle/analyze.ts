@@ -1,8 +1,10 @@
 import { FileAnalysis, SwizzleAnalysis, SwizzleEntry } from "../../types";
 import { detectSwizzles } from "./detect";
 import { getSwizzleMetadata } from "./metadata";
+import { getMarkedAs } from "./settings";
 
 export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
+  const markedInSettingsAs = getMarkedAs(analyzedFile.filePath);
   const existingEntry = getSwizzleMetadata(analyzedFile.filePath);
 
   if (existingEntry) {
@@ -10,7 +12,8 @@ export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
       return {
         existingMetadata: existingEntry,
         existingMetadataValid: false,
-        newMetadata: undefined
+        newMetadata: undefined,
+        markedInSettingsAs,
       };
     }
 
@@ -18,14 +21,16 @@ export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
     return {
       existingMetadata: existingEntry,
       existingMetadataValid: false,
-      newMetadata: undefined
+      newMetadata: undefined,
+      markedInSettingsAs,
     };
   }
 
   const detectedEntry = detectSwizzles(analyzedFile);
 
   return {
-    newMetadata: detectedEntry || undefined
+    newMetadata: detectedEntry || undefined,
+    markedInSettingsAs,
   };
 }
 

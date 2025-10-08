@@ -1,3 +1,5 @@
+import { config } from "dotenv";
+
 /**
  * Configuration object for specifying a repository to be analyzed.
  *
@@ -87,10 +89,15 @@ export const forkConfig: RepoConfig = {
 };
 
 export const swizzleConfig = {
-  version: '1.0.0', // Version of the swizzle metadata format
-  fileName: 'cella-swizzle.metadata.json', // default
+  metadataVersion: '1.0.0', // Version of the swizzle metadata format
+  metadataFileName: 'cella-swizzle.metadata.json', // default
+  settingsFileName: 'cella-swizzle.json',   // default
   rootDir: process.cwd(),         // can be overridden per run
-  get filePath() {
-    return `${this.rootDir}/${this.fileName}`;
+  
+  get metadataFilePath() {
+    return `${this.rootDir}/${this.metadataFileName}`;
+  },
+  get settingsFilePath() {
+    return `${this.rootDir}/${this.settingsFileName}`;
   }
 };

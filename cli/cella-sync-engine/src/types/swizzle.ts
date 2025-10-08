@@ -17,8 +17,14 @@ export interface SwizzleMetadata {
   entries: Record<string, SwizzleEntry>; // filePath -> SwizzleEntry
 }
 
+export interface SwizzleSettings {
+  removed?: string[]; // glob patterns of files to consider "removed"
+  edited?: string[]; // glob patterns of files to consider "edited"
+}
+
 export interface SwizzleAnalysis {
   existingMetadata?: SwizzleEntry; // The entry from metadata (if any)
   existingMetadataValid?: boolean;    // Still matches current file state?
   newMetadata?: SwizzleEntry;    // The newly detected entry (if triggered)
+  markedInSettingsAs?: 'removed' | 'edited' | undefined; // If custom config matched
 }
