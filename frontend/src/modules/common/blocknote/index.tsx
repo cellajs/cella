@@ -18,6 +18,7 @@ import { compareIsContentSame, getParsedContent } from '~/modules/common/blockno
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
+import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type {
   CommonBlockNoteProps,
   CustomBlockFileTypes,
@@ -203,7 +204,6 @@ const BlockNote = ({
       ref={blockNoteRef}
       className={className}
       data-color-scheme={mode}
-      // @ts-ignore
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}
