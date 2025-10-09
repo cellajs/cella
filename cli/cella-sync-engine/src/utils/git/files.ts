@@ -1,6 +1,6 @@
 import { writeFile } from 'fs/promises';
 
-import { gitAdd, gitCheckoutOursFilePath, gitCheckoutTheirsFilePath, gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitLsTreeRecursiveAtCommit, gitShowFileAtCommit } from './command';
+import { gitAdd, gitCheckoutOursFilePath, gitCheckoutTheirsFilePath, gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitLsTreeRecursiveAtCommit, gitRemoveFilePathFromCache, gitShowFileAtCommit } from './command';
 import { FileEntry, CommitEntry } from '../../types';
 
 /**

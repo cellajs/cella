@@ -2,6 +2,8 @@ import { RepoConfig } from '../../config';
 import { gitMerge, gitCommit, isMergeInProgress, gitRemoveFilePathFromCache } from '../../utils/git/command';
 import { FileAnalysis, MergeResult } from '../../types';
 import { getUnmergedFiles, resolveConflictAsOurs, resolveConflictAsTheirs } from '../../utils/git/files';
+import path from 'node:path';
+import { removeFileIfExists } from '../../utils/files';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
@@ -46,20 +48,24 @@ async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: File
   for (const filePath of conflicts) {
     const file = analysisMap.get(filePath);
 
-    console.log('=====================')
-    console.log(file?.filePath)
-    console.log(file?.commitSummary)
-    console.log(file?.swizzle)
-    console.log(file?.mergeStrategy)
-
     if (file?.mergeStrategy?.strategy === 'keep-fork') {
       await resolveConflictAsOurs(forkConfig.repoPath, filePath);
       continue;
     }
 
     if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
+      const absolutePath = path.resolve(forkConfig.repoPath, filePath);
+
       await gitRemoveFilePathFromCache(forkConfig.repoPath, filePath);
+      await removeFileIfExists(absolutePath);
       continue;
     }
+
+    console.log('=====================')
+    if (!file) console.log('No analysis found for file:', filePath);
+    console.log(file?.filePath)
+    console.log(file?.commitSummary)
+    console.log(file?.swizzle)
+    console.log(file?.mergeStrategy)
   }
 }

@@ -114,3 +114,13 @@ export function matchPathPattern(filePath: string, pattern: string): boolean {
 
   return regex.test(filePath);
 }
+
+/**
+ * Removes a file from the filesystem if it exists.
+ */
+export async function removeFileIfExists(filePath: string): Promise<void> {
+  if (existsSync(filePath)) {
+    console.log('Removing file:', filePath);
+    await rm(filePath, { force: true });
+  }
+}
