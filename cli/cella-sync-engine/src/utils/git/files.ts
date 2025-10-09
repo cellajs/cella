@@ -1,4 +1,3 @@
-// Dependencies
 import { writeFile } from 'fs/promises';
 import {
   gitAdd,

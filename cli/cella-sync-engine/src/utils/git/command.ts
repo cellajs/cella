@@ -1,9 +1,7 @@
-// Dependencies
 import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 import { existsSync } from 'fs';
 
-// Promisified exec functions
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
 

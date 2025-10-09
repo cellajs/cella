@@ -1,4 +1,3 @@
-// Depencencies
 import { runGitCommand } from './command';
 
 /**
