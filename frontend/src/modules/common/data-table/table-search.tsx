@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
-import { Input } from '~/modules/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 
 interface TableSearchProps {
   name: string;
@@ -23,8 +23,6 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
 
   const debouncedQuery = useDebounce(inputValue, 250);
 
-  const handleClick = () => inputRef.current?.focus();
-
   // Update parent query only when debouncedQuery changes
   useEffect(() => {
     if (debouncedQuery !== value) setQuery(debouncedQuery);
@@ -41,30 +39,35 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
   }, [isFilterActive]);
 
   return (
-    <div className="relative flex w-full sm:min-w-44 md:min-w-56 lg:min-w-64 items-center" onClick={handleClick} onKeyDown={handleClick}>
-      <Search size={16} className="absolute left-3 top-3" style={{ opacity: inputValue ? 1 : 0.5 }} />
-      <Input
+    <InputGroup>
+      <InputGroupInput
         disabled={!isOnline && !allowOfflineSearch}
         placeholder={t('common:placeholder.search')}
         name={name}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         ref={inputRef}
-        className="h-10 w-full border-0 pr-8 pl-10 shadow-none"
+        className="h-10 w-full border-0 shadow-none focus-visible:ring-offset-0"
         aria-label={t('common:placeholder.search')}
       />
+      <InputGroupAddon className="pl-1.5">
+        <Search size={16} style={{ opacity: inputValue ? 1 : 0.5 }} />
+      </InputGroupAddon>
+
       {/* Clear Button */}
       {!!inputValue.length && (
-        <XCircle
-          size={16}
-          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
-          onClick={() => {
-            setInputValue('');
-            setQuery('');
-          }}
-        />
+        <InputGroupAddon className="pr-2" align="inline-end">
+          <XCircle
+            size={16}
+            className="opacity-70 hover:opacity-100 cursor-pointer"
+            onClick={() => {
+              setInputValue('');
+              setQuery('');
+            }}
+          />
+        </InputGroupAddon>
       )}
-    </div>
+    </InputGroup>
   );
 };
 
