@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { Send } from 'lucide-react';
+import { SendIcon } from 'lucide-react';
 import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
@@ -45,7 +45,7 @@ const SubscribeNewsletterForm = () => {
         />
         <div className="absolute inset-y-1 right-1 flex justify-end">
           <SubmitButton variant="link" aria-label="Submit email for newsletter" loading={isPending} className="h-full text-white rounded-xl">
-            <Send className="w-4" />
+            <SendIcon className="w-4" />
           </SubmitButton>
         </div>
       </div>

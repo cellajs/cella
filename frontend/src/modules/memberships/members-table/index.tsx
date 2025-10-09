@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Users } from 'lucide-react';
+import { UsersIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -128,7 +128,9 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={Users} title={t('common:no_resource_yet', { resource: t('common:members').toLowerCase() })} />,
+          NoRowsComponent: (
+            <ContentPlaceholder icon={UsersIcon} title={t('common:no_resource_yet', { resource: t('common:members').toLowerCase() })} />
+          ),
         }}
       />
     </div>

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowDown, Check, Copy } from 'lucide-react';
+import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
@@ -55,7 +55,7 @@ const AboutPage = () => {
               variant="ghost"
               className="rounded-full absolute right-2 top-2"
             >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
             </Button>
           </div>
           <Link
@@ -76,7 +76,7 @@ const AboutPage = () => {
             aria-label="Read more"
           >
             <span className="font-light">{t('about:why')}</span>
-            <ArrowDown size={16} className="ml-2 animate-bounce" />
+            <ArrowDownIcon size={16} className="ml-2 animate-bounce" />
           </Link>
         </Hero>
 

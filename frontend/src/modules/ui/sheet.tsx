@@ -1,7 +1,7 @@
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { X } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '~/utils/cn';
@@ -65,7 +65,7 @@ const SheetContent = React.forwardRef<React.ComponentRef<typeof SheetPrimitive.C
               scrollableOverlay && 'fixed',
             )}
           >
-            <X className="h-6 w-6" strokeWidth={1.25} />
+            <XIcon className="h-6 w-6" strokeWidth={1.25} />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
         )}

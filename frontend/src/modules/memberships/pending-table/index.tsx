@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Bird } from 'lucide-react';
+import { BirdIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -82,7 +82,9 @@ export const PendingInvitationsTable = ({ entity }: PendingInvitationsTableProps
           fetchMore,
           sortColumns,
           onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,
+          NoRowsComponent: (
+            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />
+          ),
         }}
       />
     </div>

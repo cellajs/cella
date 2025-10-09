@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig, type EntityType } from 'config';
-import { Undo } from 'lucide-react';
+import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -142,7 +142,7 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
               {previousSlug && previousSlug !== slug && (
                 <div ref={revertMeasure.ref} id="slug-revert" className="absolute inset-y-1 right-1 flex justify-end">
                   <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-                    <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
+                    <UndoIcon size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
                   </Button>
                 </div>
               )}

@@ -1,7 +1,7 @@
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { t } from 'i18next';
-import { Loader2, TriangleAlert } from 'lucide-react';
+import { Loader2Icon, TriangleAlertIcon } from 'lucide-react';
 import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/service';
@@ -70,7 +70,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp className={cn(baseStyle, loading && 'relative')} ref={ref} disabled={loading || disabled} {...props}>
         {loading && (
           <div className={cn(baseStyle, 'absolute inset-0 flex items-center justify-center bg-background/75')}>
-            <Loader2 className="animate-spin text-primary" />
+            <Loader2Icon className="animate-spin text-primary" />
           </div>
         )}
 
@@ -95,7 +95,7 @@ const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type
 
     const buttonContent = (
       <Button ref={ref} type="submit" onClick={handleClick} {...props}>
-        {!allowOfflineDelete && !isOnline && <TriangleAlert className="mr-2" size={16} />}
+        {!allowOfflineDelete && !isOnline && <TriangleAlertIcon className="mr-2" size={16} />}
         {children}
       </Button>
     );

@@ -1,5 +1,5 @@
 import { appConfig, ContextEntityType } from 'config';
-import { User } from 'lucide-react';
+import { UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityBaseSchema, UserBaseSchema } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -48,7 +48,7 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlock
 
               <div className="flex items-center">
                 <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
-                  <User size={14} />
+                  <UserIcon size={14} />
                   <span className="max-sm:hidden font-light">{t('common:member')}</span>
                 </Badge>
               </div>

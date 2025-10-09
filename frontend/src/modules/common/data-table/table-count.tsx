@@ -1,4 +1,4 @@
-import { FilterX } from 'lucide-react';
+import { FilterXIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -22,7 +22,7 @@ const TableCount = ({ count, label, className, isFiltered, children, onResetFilt
     <div className={cn('max-sm:hidden text-sm flex items-center gap-2', className)}>
       {isFiltered && (
         <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
-          <FilterX size={16} className="mr-2" />
+          <FilterXIcon size={16} className="mr-2" />
           {t('common:clear')}
         </Button>
       )}

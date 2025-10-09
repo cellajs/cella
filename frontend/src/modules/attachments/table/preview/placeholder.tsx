@@ -1,12 +1,12 @@
-import { File, FileArchive, FileAudio, FileImage, FileSpreadsheet, FileText, FileVideo } from 'lucide-react';
+import { FileArchiveIcon, FileAudioIcon, FileIcon, FileImageIcon, FileSpreadsheetIcon, FileTextIcon, FileVideoIcon } from 'lucide-react';
 
 const contentTypeMap = [
-  { match: ['image'], icon: FileImage },
-  { match: ['video'], icon: FileVideo },
-  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileText },
-  { match: ['audio'], icon: FileAudio },
-  { match: ['csv', 'xslx'], icon: FileSpreadsheet },
-  { match: ['zip', 'rar'], icon: FileArchive },
+  { match: ['image'], icon: FileImageIcon },
+  { match: ['video'], icon: FileVideoIcon },
+  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileTextIcon },
+  { match: ['audio'], icon: FileAudioIcon },
+  { match: ['csv', 'xslx'], icon: FileSpreadsheetIcon },
+  { match: ['zip', 'rar'], icon: FileArchiveIcon },
 ];
 
 interface Props {
@@ -27,7 +27,7 @@ const FilePlaceholder = ({ contentType, iconSize = 20, strokeWidth = 1.5, classN
     }
   }
 
-  return <File size={iconSize} />;
+  return <FileIcon size={iconSize} />;
 };
 
 export default FilePlaceholder;

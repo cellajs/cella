@@ -1,6 +1,6 @@
 import type { DialogProps } from '@radix-ui/react-dialog';
 import { Command as CommandPrimitive } from 'cmdk';
-import { Search, XCircle } from 'lucide-react';
+import { SearchIcon, XCircleIcon } from 'lucide-react';
 import * as React from 'react';
 
 import Spinner from '~/modules/common/spinner';
@@ -47,7 +47,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
       {isSearching ? (
         <Spinner className="mr-2 w-4 group-[.text-lg]:w-5 h-auto shrink-0" noDelay />
       ) : (
-        <Search size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+        <SearchIcon size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
       )}
 
       <CommandPrimitive.Input
@@ -60,7 +60,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
         {...props}
       />
       {value.length > 0 && (
-        <XCircle
+        <XCircleIcon
           size={16}
           className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
           onClick={() => {

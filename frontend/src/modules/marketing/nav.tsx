@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Github } from 'lucide-react';
+import { GithubIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
@@ -121,7 +121,7 @@ export const MarketingNav = () => {
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <Github strokeWidth={appConfig.theme.strokeWidth} />
+                <GithubIcon strokeWidth={appConfig.theme.strokeWidth} />
               </Button>
             )}
 
@@ -159,7 +159,7 @@ export const MarketingNav = () => {
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <Github className="mr-2" strokeWidth={appConfig.theme.strokeWidth} />
+                <GithubIcon className="mr-2" strokeWidth={appConfig.theme.strokeWidth} />
                 Github
               </Button>
             )}

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { appConfig, ContextEntityType } from 'config';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBaseSchema } from '~/api.gen';
@@ -65,12 +65,12 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                 <BreadcrumbItem>
                   <BreadcrumbLink className="p-0.5" asChild>
                     <Link to={appConfig.defaultRedirectPath}>
-                      <Home size={12} />
+                      <HomeIcon size={12} />
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator>
-                  <ChevronRight size={12} />
+                  <ChevronRightIcon size={12} />
                 </BreadcrumbSeparator>
                 {parentData && (
                   <>
@@ -82,7 +82,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator>
-                      <ChevronRight size={12} />
+                      <ChevronRightIcon size={12} />
                     </BreadcrumbSeparator>
                   </>
                 )}

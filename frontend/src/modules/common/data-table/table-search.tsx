@@ -1,4 +1,4 @@
-import { Search, XCircle } from 'lucide-react';
+import { SearchIcon, XCircleIcon } from 'lucide-react';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -42,7 +42,7 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
 
   return (
     <div className="relative flex w-full sm:min-w-44 md:min-w-56 lg:min-w-64 items-center" onClick={handleClick} onKeyDown={handleClick}>
-      <Search size={16} className="absolute left-3 top-3" style={{ opacity: inputValue ? 1 : 0.5 }} />
+      <SearchIcon size={16} className="absolute left-3 top-3" style={{ opacity: inputValue ? 1 : 0.5 }} />
       <Input
         disabled={!isOnline && !allowOfflineSearch}
         placeholder={t('common:placeholder.search')}
@@ -55,7 +55,7 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
       />
       {/* Clear Button */}
       {!!inputValue.length && (
-        <XCircle
+        <XCircleIcon
           size={16}
           className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
           onClick={() => {

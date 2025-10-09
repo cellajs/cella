@@ -1,4 +1,4 @@
-import { WifiOff } from 'lucide-react';
+import { WifiOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -13,7 +13,7 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
       <UserProfilePage idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} isSheet />
     </div>
   ) : (
-    <ContentPlaceholder icon={WifiOff} title={t(`${'common:offline.text'}`)} />
+    <ContentPlaceholder icon={WifiOffIcon} title={t(`${'common:offline.text'}`)} />
   );
 };
 

@@ -1,6 +1,6 @@
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { Bird, Search } from 'lucide-react';
+import { BirdIcon, SearchIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import type { GetContextEntitiesData } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -43,9 +43,9 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
 
   if (!isFetching && !error && !entities.length) {
     return isFiltered ? (
-      <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />
+      <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />
     ) : (
-      <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />
+      <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />
     );
   }
 

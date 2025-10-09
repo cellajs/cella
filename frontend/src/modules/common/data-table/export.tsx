@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react';
+import { DownloadIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
@@ -48,7 +48,7 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
       <TooltipButton className={className} toolTipContent={t('common:export_pdf_csv')}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="flex max-xs:hidden">
-            <Download size={16} />
+            <DownloadIcon size={16} />
             <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
           </Button>
         </DropdownMenuTrigger>

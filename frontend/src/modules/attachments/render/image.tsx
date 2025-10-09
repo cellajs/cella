@@ -1,4 +1,4 @@
-import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
+import { GrabIcon, HandIcon, MinusIcon, PlusIcon, RefreshCwIcon, RotateCwSquareIcon } from 'lucide-react';
 import type React from 'react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import ImageViewer from '~/modules/attachments/render/image-viewer';
@@ -96,9 +96,9 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
       <>
         {showButtons && (
           <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-6.5rem)] bottom-3 gap-0 rounded-md text-sm shadow-xs bg-transparent ring-offset-background">
-            <ControlButton tooltipContent="Zoom in" onClick={zoomIn} icon={<Plus size={14} />} className="rounded-l-md border-r-0 " />
-            <ControlButton tooltipContent="Zoom out" onClick={zoomOut} icon={<Minus size={14} />} className="border-r-0 " />
-            <ControlButton tooltipContent="Rotate right" onClick={rotateRight} icon={<RotateCwSquare size={14} />} className="border-r-0 " />
+            <ControlButton tooltipContent="Zoom in" onClick={zoomIn} icon={<PlusIcon size={14} />} className="rounded-l-md border-r-0 " />
+            <ControlButton tooltipContent="Zoom out" onClick={zoomOut} icon={<MinusIcon size={14} />} className="border-r-0 " />
+            <ControlButton tooltipContent="Rotate right" onClick={rotateRight} icon={<RotateCwSquareIcon size={14} />} className="border-r-0 " />
 
             {onPanStateToggle && (
               <ControlButton
@@ -107,12 +107,12 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
                   setPanState(!panState);
                   onPanStateToggle(panState);
                 }}
-                icon={panState ? <Grab size={14} /> : <Hand size={14} />}
+                icon={panState ? <GrabIcon size={14} /> : <HandIcon size={14} />}
                 className="border-r-0 "
               />
             )}
 
-            <ControlButton tooltipContent="Reset" onClick={resetAll} icon={<RefreshCw size={14} />} className="rounded-r-md " />
+            <ControlButton tooltipContent="Reset" onClick={resetAll} icon={<RefreshCwIcon size={14} />} className="rounded-r-md " />
           </div>
         )}
 

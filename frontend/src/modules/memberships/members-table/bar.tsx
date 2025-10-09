@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Mail, Trash, XSquare } from 'lucide-react';
+import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api.gen';
@@ -142,15 +142,15 @@ export const MembersTableBar = ({
                   onClick={openDeleteDialog}
                   className="relative"
                   badge={selected.length}
-                  icon={Trash}
+                  icon={TrashIcon}
                   label={entity.id ? t('common:remove') : t('common:delete')}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
               </>
             ) : (
               !isFiltered &&
-              isAdmin && <TableBarButton ref={inviteButtonRef} icon={Mail} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              isAdmin && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>

@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { AlertTriangle, ClockAlert, CloudOff, Construction, ShieldAlert, X } from 'lucide-react';
+import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon, ShieldAlertIcon, XIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -12,7 +12,7 @@ import { useUIStore } from '~/store/ui';
 
 const downAlertConfig = {
   offline: {
-    icon: CloudOff,
+    icon: CloudOffIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:offline" />,
     getContent: (dismissAlert: () => void) => {
       const offlineAccess = useUIStore.getState().offlineAccess;
@@ -24,25 +24,25 @@ const downAlertConfig = {
     variant: 'destructive',
   },
   backend_not_ready: {
-    icon: ClockAlert,
+    icon: ClockAlertIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:backend_not_ready" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:backend_not_ready.text" />,
     variant: 'warning',
   },
   maintenance: {
-    icon: Construction,
+    icon: ConstructionIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:maintenance_mode" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:maintenance_mode.text" />,
     variant: 'destructive',
   },
   auth_unavailable: {
-    icon: AlertTriangle,
+    icon: AlertTriangleIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:auth_unavailable" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:auth_unavailable.text" />,
     variant: 'plain',
   },
   enable_mfa: {
-    icon: ShieldAlert,
+    icon: ShieldAlertIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:require_mfa" />,
     getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:require_mfa.text" />,
     variant: 'plain',
@@ -103,7 +103,7 @@ export const DownAlert = () => {
       <Alert variant={variant} className="border-0 w-auto">
         {/* Dismiss Button */}
         <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={dismissAlert}>
-          <X size={16} />
+          <XIcon size={16} />
         </Button>
 
         <Icon size={16} />

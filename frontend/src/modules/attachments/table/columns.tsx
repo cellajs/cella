@@ -1,7 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
-import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download, Trash } from 'lucide-react';
+import { CloudIcon, CloudOffIcon, CopyCheckIcon, CopyIcon, DownloadIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
@@ -111,7 +111,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip="true"
             data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
           >
-            {isInCloud ? <Cloud className="text-success" size={16} /> : <CloudOff className="opacity-50" size={16} />}
+            {isInCloud ? <CloudIcon className="text-success" size={16} /> : <CloudOffIcon className="opacity-50" size={16} />}
           </div>
         );
       },
@@ -165,7 +165,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip-content={t('common:download')}
             onClick={() => download(row.url, row.filename)}
           >
-            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
+            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
           </Button>
         );
       },
@@ -184,7 +184,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         const ellipsisOptions: EllipsisOption<Attachment>[] = [
           {
             label: i18n.t('common:delete'),
-            icon: Trash,
+            icon: TrashIcon,
             onSelect: (row) => {
               const { update } = useDropdowner.getState();
               const callback = ({ status }: CallbackArgs<Attachment[]>) => {
