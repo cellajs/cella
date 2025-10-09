@@ -1,9 +1,9 @@
 import { Command as CommandPrimitive } from 'cmdk';
 import { SearchIcon, XCircleIcon } from 'lucide-react';
 import * as React from 'react';
+import Spinner from '~/modules/common/spinner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
-import Spinner from '~/modules/common/spinner';
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (
@@ -43,7 +43,7 @@ function CommandDialog({
   );
 }
 
-interface CommandInputProps extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input> {
+interface CommandInputProps extends React.ComponentProps<typeof CommandPrimitive.Input> {
   value: string;
 }
 interface ZeroValSet {
