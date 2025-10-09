@@ -56,14 +56,16 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
 
       {/* Clear Button */}
       {!!inputValue.length && (
-        <XCircleIcon
-          size={16}
-          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
-          onClick={() => {
-            setInputValue('');
-            setQuery('');
-          }}
-        />
+        <InputGroupAddon className="pr-2" align="inline-end">
+          <XCircleIcon
+            size={16}
+            className="opacity-70 hover:opacity-100 cursor-pointer"
+            onClick={() => {
+              setInputValue('');
+              setQuery('');
+            }}
+          />
+        </InputGroupAddon>
       )}
     </InputGroup>
   );
