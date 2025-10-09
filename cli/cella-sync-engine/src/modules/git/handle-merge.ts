@@ -4,6 +4,7 @@ import { FileAnalysis, MergeResult } from '../../types';
 import { getUnmergedFiles, resolveConflictAsOurs, resolveConflictAsTheirs } from '../../utils/git/files';
 import path from 'node:path';
 import { removeFileIfExists } from '../../utils/files';
+import { confirm } from '@inquirer/prompts';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
@@ -68,4 +69,20 @@ async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: File
     console.log(file?.swizzle)
     console.log(file?.mergeStrategy)
   }
+
+  // Recheck for any remaining conflicts
+  conflicts = await getUnmergedFiles(forkConfig.repoPath);
+
+  // When there are still conflict, notify user to resolve them
+  if (conflicts.length > 0) {
+    const doneResolving = await confirm({
+      message: 'Please resolve the merge conflicts manually (In another terminal). Once resolved, press "y" to continue.',
+      default: true,
+    });
+
+    if (doneResolving) {
+      await handleMerge(forkConfig, forkConfig, analyzedFiles);
+    }
+  }
+
 }

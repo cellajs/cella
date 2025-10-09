@@ -285,6 +285,43 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
 
+  cli/cella-sync-engine:
+    dependencies:
+      '@inquirer/prompts':
+        specifier: ^6.0.1
+        version: 6.0.1
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      cross-spawn:
+        specifier: ^7.0.6
+        version: 7.0.6
+      inquirer-file-selector:
+        specifier: ^0.4.0
+        version: 0.4.0
+      micromatch:
+        specifier: ^4.0.8
+        version: 4.0.8
+      p-limit:
+        specifier: ^6.2.0
+        version: 6.2.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      validate-npm-package-name:
+        specifier: ^5.0.1
+        version: 5.0.1
+      yocto-spinner:
+        specifier: ^0.1.2
+        version: 0.1.2
+    devDependencies:
+      '@types/micromatch':
+        specifier: ^4.0.9
+        version: 4.0.9
+      tsx:
+        specifier: ^4.20.3
+        version: 4.20.3
+
   cli/create-cella:
     dependencies:
       '@inquirer/prompts':
@@ -10071,6 +10108,10 @@ packages:
   p-limit@4.0.0:
     resolution: {integrity: sha512-5b0R4txpzjPWVw/cXXUResoD4hb6U/x9BH08L7nw+GN1sezDzPdxeRvpc9c433fZhBan/wusjbCsqwqm4EIBIQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  p-limit@6.2.0:
+    resolution: {integrity: sha512-kuUqqHNUqoIWp/c467RI4X6mmyuojY5jGutNU0wVTmEOOfcuwLqyMVoAi9MKi2Ak+5i9+nhmrK4ufZE8069kHA==}
+    engines: {node: '>=18'}
 
   p-locate@5.0.0:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
@@ -23727,6 +23768,10 @@ snapshots:
       yocto-queue: 0.1.0
 
   p-limit@4.0.0:
+    dependencies:
+      yocto-queue: 1.2.1
+
+  p-limit@6.2.0:
     dependencies:
       yocto-queue: 1.2.1
 
