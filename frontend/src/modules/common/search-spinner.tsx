@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import Spinner from './spinner';
+import Spinner from '~/modules/common/spinner';
 
 // TODO implement this in nav search and table search
 export function SearchSpinner({ isSearching, value }: { isSearching: boolean; value: string }) {

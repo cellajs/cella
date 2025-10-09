@@ -3,7 +3,7 @@ import { SearchIcon, XCircleIcon } from 'lucide-react';
 import * as React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
-import Spinner from '../common/spinner';
+import Spinner from '~/modules/common/spinner';
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (
