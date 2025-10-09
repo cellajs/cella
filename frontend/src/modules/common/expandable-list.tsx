@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +47,7 @@ export const ExpandableList = <T,>({ items, renderItem, initialDisplayCount, alw
             {items.length - initialDisplayCount}
           </Badge>
           {t(expandText)}
-          <ChevronDown className="opacity-50 group-hover:opacity-100 transition-opacity ml-2" size={16} />
+          <ChevronDownIcon className="opacity-50 group-hover:opacity-100 transition-opacity ml-2" size={16} />
         </Button>
       )}
     </>

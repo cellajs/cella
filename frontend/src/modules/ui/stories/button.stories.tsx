@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2Icon, MailIcon } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 
 /**
@@ -90,7 +90,7 @@ export const Link: Story = {
 export const Loading: Story = {
   render: (args) => (
     <Button {...args}>
-      <Loader2 className="mr-2 size-4 animate-spin" />
+      <Loader2Icon className="mr-2 size-4 animate-spin" />
       Button
     </Button>
   ),
@@ -107,7 +107,7 @@ export const Loading: Story = {
 export const WithIcon: Story = {
   render: (args) => (
     <Button {...args}>
-      <Mail className="mr-2 size-4" /> Login with Email Button
+      <MailIcon className="mr-2 size-4" /> Login with Email Button
     </Button>
   ),
   args: {
@@ -142,8 +142,8 @@ export const Icon: Story = {
   args: {
     ...Secondary.args,
     size: 'icon',
-    title: 'Mail',
-    children: <Mail />,
+    title: 'MailIcon',
+    children: <MailIcon />,
   },
 };
 

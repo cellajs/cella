@@ -1,6 +1,6 @@
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import { ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
 import * as React from 'react';
 import {
   Controller,
@@ -146,8 +146,8 @@ function FormDescription({ className, children, ...props }: React.ComponentProps
           onClick={toggleCollapsed}
           className="right-1 -top-6 absolute text-regular ring-inset opacity-50 hover:opacity-100 p-2 h-auto"
         >
-          {collapsed && <HelpCircle size={16} />}
-          {!collapsed && <ChevronUp size={16} />}
+          {collapsed && <HelpCircleIcon size={16} />}
+          {!collapsed && <ChevronUpIcon size={16} />}
         </Button>
         {!collapsed && <span className="py-1">{children}</span>}
       </div>

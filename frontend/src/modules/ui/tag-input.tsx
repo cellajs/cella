@@ -1,5 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster/service';
@@ -320,7 +320,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
       {showClearAllButton && (
         <Button type="button" onClick={handleClearAll} className={cn('flex items-center gap-1 mt-2', styleClasses?.clearAllButton)}>
           {t('common:clear_all')}
-          <RefreshCw size={16} />
+          <RefreshCwIcon size={16} />
         </Button>
       )}
     </div>

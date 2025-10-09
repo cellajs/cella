@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, MessageSquare, Send, User } from 'lucide-react';
+import { MailIcon, MessageSquareIcon, SendIcon, UserIcon } from 'lucide-react';
 import { lazy, Suspense, useMemo } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -62,12 +62,18 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
       <div className="w-full md:flex-[0_0_calc(50%-0.75rem)]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-            <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} required />
-            <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
-            <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
+            <InputFormField control={form.control} name="name" label={t('common:name')} icon={<UserIcon size={16} />} required />
+            <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<MailIcon size={16} />} required />
+            <InputFormField
+              control={form.control}
+              name="message"
+              label={t('common:message')}
+              type="textarea"
+              icon={<MessageSquareIcon size={16} />}
+            />
             <div className="flex flex-col sm:flex-row gap-2">
               <SubmitButton>
-                <Send size={16} className="mr-2" />
+                <SendIcon size={16} className="mr-2" />
                 {t('common:send')}
               </SubmitButton>
               <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>

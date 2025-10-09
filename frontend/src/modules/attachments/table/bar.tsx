@@ -1,4 +1,4 @@
-import { Info, Trash, Upload, XSquare } from 'lucide-react';
+import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -90,14 +90,14 @@ export const AttachmentsTableBar = ({
                   onClick={openDeleteDialog}
                   className="relative"
                   badge={selected.length}
-                  icon={Trash}
+                  icon={TrashIcon}
                   label={t('common:delete')}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
               </>
             ) : (
-              showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
+              showUpload && <TableBarButton icon={UploadIcon} label={t('common:upload')} onClick={() => open(entity.id)} />
             )}
             {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
@@ -129,7 +129,7 @@ export const AttachmentsTableBar = ({
               }}
               style={{ overflow: 'hidden' }}
             >
-              <AlertWrap id="edit_attachment" variant="plain" icon={Info}>
+              <AlertWrap id="edit_attachment" variant="plain" icon={InfoIcon}>
                 {t('common:edit_attachment.text')}
               </AlertWrap>
             </motion.div>

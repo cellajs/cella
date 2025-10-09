@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlertIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -35,13 +35,13 @@ export const MfaSwitch = () => {
         <Switch id="mfaRequired" ref={triggerRef} disabled={!hasPasskey || !hasTotp} checked={user.mfaRequired} onCheckedChange={handleToggleMfa} />
         {user.mfaRequired && (
           <p className="flex gap-2 items-center">
-            <CircleAlert size={14} className="shrink-0 text-amber-500" />
+            <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
             <span className="text-sm text-muted-foreground font-light">{t('common:mfa_enabled.text')}</span>
           </p>
         )}
         {(!hasPasskey || !hasTotp) && (
           <p className="flex gap-2 items-center">
-            <CircleAlert size={14} className="shrink-0 text-amber-500" />
+            <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
             <span className="text-sm text-muted-foreground font-light">{t('common:mfa_disabled.text')}</span>
           </p>
         )}

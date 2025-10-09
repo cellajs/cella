@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Check, ChevronsUpDown, Search, User, Users2, X } from 'lucide-react';
+import { CheckIcon, ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -95,14 +95,14 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     handleUnselect(el);
                   }}
                 >
-                  <X className="size-4 opacity-50 hover:opacity-100" />
+                  <XIcon className="size-4 opacity-50 hover:opacity-100" />
                 </button>
               </Badge>
             ))
           ) : (
             <span className="text-sm ml-1">{t('common:search_users')}</span>
           )}
-          <ChevronsUpDown className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
+          <ChevronsUpDownIcon className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
         </div>
       </PopoverTrigger>
 
@@ -122,11 +122,11 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                 <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
+                      <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Users2} title={t('common:invite_members_search.text', { appName: appConfig.name })} />
+                      <ContentPlaceholder icon={Users2Icon} title={t('common:invite_members_search.text', { appName: appConfig.name })} />
                     </CommandEmpty>
                   )}
                 </motion.div>
@@ -163,10 +163,10 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
 
                               <div className="flex items-center gap-2 min-w-0">
                                 <Badge size="sm" variant="plain" className="group-data-[already-member=true]:flex hidden gap-1">
-                                  <User size={14} />
+                                  <UserIcon size={14} />
                                   <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
                                 </Badge>
-                                <Check size={16} strokeWidth={3} className="flex text-success group-data-[was-selected=false]:hidden" />
+                                <CheckIcon size={16} strokeWidth={3} className="flex text-success group-data-[was-selected=false]:hidden" />
                                 <span className="font-light max-sm:hidden group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden">
                                   {email}
                                 </span>

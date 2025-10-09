@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { WifiOff } from 'lucide-react';
+import { WifiOffIcon } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -22,7 +22,7 @@ export const PendingInvitations = ({ entity }: PendingInvitationsTableProps) => 
           <PendingTable entity={entity} />
         </Suspense>
       ) : (
-        <ContentPlaceholder icon={WifiOff} title={t(`${'common:offline.text'}`)} />
+        <ContentPlaceholder icon={WifiOffIcon} title={t(`${'common:offline.text'}`)} />
       );
 
     createSheet(<SheetComponent entity={entity} />, {

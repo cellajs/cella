@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { EllipsisVertical } from 'lucide-react';
+import { EllipsisVerticalIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -51,7 +51,7 @@ const TableEllipsis = <T extends { id: string }>({ row, tabIndex, options }: Pro
 
   return (
     <Button ref={triggerRef} variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openDropdown}>
-      <EllipsisVertical size={16} />
+      <EllipsisVerticalIcon size={16} />
     </Button>
   );
 };

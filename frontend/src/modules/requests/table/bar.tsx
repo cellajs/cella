@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { PartyPopper, Trash, XSquare } from 'lucide-react';
+import { PartyPopperIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRequests } from '~/api.gen';
@@ -113,20 +113,20 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
                   variant="darkSuccess"
                   className="relative"
                   label={t('common:invite')}
-                  icon={PartyPopper}
+                  icon={PartyPopperIcon}
                   onClick={approveSelectedRequests}
                 />
               )}
               <TableBarButton
                 ref={deleteButtonRef}
                 variant="destructive"
-                icon={Trash}
+                icon={TrashIcon}
                 label={t('common:remove')}
                 badge={selected.length}
                 className="relative"
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
             </>
           )}
           {selected.length === 0 && <TableCount count={total} label="common:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}

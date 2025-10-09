@@ -1,4 +1,4 @@
-import { Circle } from 'lucide-react';
+import { CircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBodyClassPresence } from '~/hooks/use-body-class-presence';
 
@@ -117,7 +117,7 @@ const PullToRefresh = ({ onRefresh, refreshThreshold = 100, maximumPullLength = 
         }}
         className="bg-base-100 fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2"
       >
-        <Circle className="absolute size-8 text-background/50" strokeWidth={4} />
+        <CircleIcon className="absolute size-8 text-background/50" strokeWidth={4} />
         <svg
           className={`h-8 w-8 ${isRefreshing ? 'animate-spin' : ''}`}
           viewBox="0 0 40 40"

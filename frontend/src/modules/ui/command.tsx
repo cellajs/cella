@@ -1,5 +1,5 @@
 import { Command as CommandPrimitive } from 'cmdk';
-import { Search, XCircle } from 'lucide-react';
+import { SearchIcon, XCircleIcon } from 'lucide-react';
 import * as React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
@@ -58,7 +58,7 @@ function CommandInput({ className, value, clearValue, wrapClassName, isSearching
       {isSearching ? (
         <Spinner className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" noDelay />
       ) : (
-        <Search className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+        <SearchIcon className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
       )}
 
       <CommandPrimitive.Input
@@ -70,7 +70,7 @@ function CommandInput({ className, value, clearValue, wrapClassName, isSearching
         {...props}
       />
       {value.length > 0 && (
-        <XCircle
+        <XCircleIcon
           size={16}
           className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
           onClick={() => {
@@ -142,12 +142,12 @@ function CommandLoading({ className, ...props }: React.ComponentProps<typeof Com
 export {
   Command,
   CommandDialog,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
-  CommandShortcut,
-  CommandSeparator,
+  CommandList,
   CommandLoading,
+  CommandSeparator,
+  CommandShortcut,
 };

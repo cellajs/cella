@@ -1,7 +1,7 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { UserRoundX } from 'lucide-react';
+import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type ContextEntityBaseSchema, deleteMyMembership } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
@@ -58,7 +58,7 @@ export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfi
       className={cn('flex justify-start gap-2 items-center w-full rounded-md', buttonProps?.className)}
       aria-label="Leave"
     >
-      <UserRoundX size={16} />
+      <UserRoundXIcon size={16} />
       <span className="ml-1">{t('common:leave')}</span>
     </Button>
   );

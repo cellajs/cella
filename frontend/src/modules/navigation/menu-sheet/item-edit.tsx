@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Archive, ArchiveRestore, Bell, BellOff, type LucideIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
@@ -73,13 +73,13 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
         </div>
         <div className="flex items-center gap-2 transition-opacity delay-500">
           <MenuItemEditButton
-            icon={item.membership.archived ? ArchiveRestore : Archive}
+            icon={item.membership.archived ? ArchiveRestoreIcon : ArchiveIcon}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
             onClick={() => handleUpdateMembershipKey('archived')}
             subitem={!item.submenu}
           />
           <MenuItemEditButton
-            icon={item.membership.muted ? Bell : BellOff}
+            icon={item.membership.muted ? BellIcon : BellOffIcon}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
             onClick={() => handleUpdateMembershipKey('muted')}
             subitem={!item.submenu}

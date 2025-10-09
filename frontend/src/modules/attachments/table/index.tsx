@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Paperclip } from 'lucide-react';
+import { PaperclipIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -133,7 +133,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
             sortColumns,
             onSortColumnsChange,
             NoRowsComponent: (
-              <ContentPlaceholder icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+              <ContentPlaceholder icon={PaperclipIcon} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
             ),
           }}
         />

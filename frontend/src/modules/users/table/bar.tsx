@@ -1,4 +1,4 @@
-import { Mail, Trash, XSquare } from 'lucide-react';
+import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/api.gen';
@@ -102,14 +102,14 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
                   onClick={openDeleteDialog}
                   className="relative"
                   badge={selected.length}
-                  icon={Trash}
+                  icon={TrashIcon}
                   label={t('common:delete')}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
               </>
             ) : (
-              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={Mail} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && <TableCount count={total} label="common:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>

@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { CheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LeaveEntityButton, type LeaveEntityButtonProps } from '~/modules/memberships/leave-entity-button';
@@ -15,7 +15,7 @@ const LeaveOrgButton = (props: LeaveEntityButtonProps) => {
       <Popover open={openPopover} onOpenChange={setOpenPopover}>
         <PopoverTrigger asChild>
           <Button size="sm" variant="darkSuccess" aria-label="Leave">
-            <Check size={16} />
+            <CheckIcon size={16} />
             <span className="max-xs:hidden ml-1">{t('common:joined')}</span>
           </Button>
         </PopoverTrigger>

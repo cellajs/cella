@@ -1,4 +1,4 @@
-import { Search, XCircle } from 'lucide-react';
+import { SearchIcon, XCircleIcon } from 'lucide-react';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -51,21 +51,19 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
         aria-label={t('common:placeholder.search')}
       />
       <InputGroupAddon className="pl-1.5">
-        <Search size={16} style={{ opacity: inputValue ? 1 : 0.5 }} />
+        <SearchIcon size={16} style={{ opacity: inputValue ? 1 : 0.5 }} />
       </InputGroupAddon>
 
       {/* Clear Button */}
       {!!inputValue.length && (
-        <InputGroupAddon className="pr-2" align="inline-end">
-          <XCircle
-            size={16}
-            className="opacity-70 hover:opacity-100 cursor-pointer"
-            onClick={() => {
-              setInputValue('');
-              setQuery('');
-            }}
-          />
-        </InputGroupAddon>
+        <XCircleIcon
+          size={16}
+          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          onClick={() => {
+            setInputValue('');
+            setQuery('');
+          }}
+        />
       )}
     </InputGroup>
   );

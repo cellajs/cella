@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { Pencil } from 'lucide-react';
+import { PencilIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import type { Organization } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -47,7 +47,7 @@ const UpdateRow = ({ organization, tabIndex }: Props) => {
       data-tooltip-content={i18n.t('common:edit')}
       onClick={() => openUpdateSheet(organization, buttonRef)}
     >
-      <Pencil size={16} />
+      <PencilIcon size={16} />
     </Button>
   );
 };

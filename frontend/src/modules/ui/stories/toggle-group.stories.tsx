@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Bold, Italic, Underline } from 'lucide-react';
-
+import { BoldIcon, ItalicIcon, UnderlineIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 /**
@@ -25,13 +24,13 @@ const meta = {
   render: (args) => (
     <ToggleGroup {...args}>
       <ToggleGroupItem value="bold" aria-label="Toggle bold">
-        <Bold className="size-4" />
+        <BoldIcon className="size-4" />
       </ToggleGroupItem>
       <ToggleGroupItem value="italic" aria-label="Toggle italic">
-        <Italic className="size-4" />
+        <ItalicIcon className="size-4" />
       </ToggleGroupItem>
       <ToggleGroupItem value="underline" aria-label="Toggle underline">
-        <Underline className="size-4" />
+        <UnderlineIcon className="size-4" />
       </ToggleGroupItem>
     </ToggleGroup>
   ),

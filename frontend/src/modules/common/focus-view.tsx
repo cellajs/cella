@@ -1,4 +1,4 @@
-import { Expand, Shrink } from 'lucide-react';
+import { ExpandIcon, ShrinkIcon } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import useBodyClass from '~/hooks/use-body-class';
@@ -30,7 +30,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   return (
     <TooltipButton toolTipContent={t('common:focus_view')} disabled={!iconOnly} className="max-lg:hidden">
       <Button variant={'outline'} className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
-        {focusView ? <Shrink size={16} /> : <Expand size={16} />}
+        {focusView ? <ShrinkIcon size={16} /> : <ExpandIcon size={16} />}
         {!iconOnly && <span className="ml-1">{focusView ? t('common:leave_focus_view') : t('common:focus_view')}</span>}
       </Button>
     </TooltipButton>

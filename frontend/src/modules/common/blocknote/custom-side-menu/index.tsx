@@ -1,5 +1,5 @@
 import { DragHandleButton, SideMenu, SideMenuController, useComponentsContext } from '@blocknote/react';
-import { GripVertical } from 'lucide-react';
+import { GripVerticalIcon } from 'lucide-react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
@@ -22,7 +22,7 @@ export const CustomSideMenu = ({ editor, allowedTypes, headingLevels }: CustomBl
               onDragStart={(e) => props.blockDragStart(e, props.block)}
               onDragEnd={props.blockDragEnd}
               className="bn-button"
-              icon={<GripVertical size={22} data-test="dragHandle" />}
+              icon={<GripVerticalIcon size={22} data-test="dragHandle" />}
               label="Open side menu"
               draggable
               onClick={(e) => e.preventDefault()}

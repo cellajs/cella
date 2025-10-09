@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TextEffect } from '~/modules/common/text-effect';
 import { Button } from '~/modules/ui/button';
@@ -23,7 +23,7 @@ export const WelcomeText = ({ onboardingToStepper }: WelcomeTextProps) => {
       <Button onClick={onboardingToStepper} className="max-sm:w-full">
         {t('common:get_started')}
         <div className="-rotate-90 ml-4">
-          <ArrowDown size={16} className="animate-bounce" />
+          <ArrowDownIcon size={16} className="animate-bounce" />
         </div>
       </Button>
     </div>

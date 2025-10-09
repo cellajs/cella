@@ -1,6 +1,6 @@
 import { onlineManager, useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Bird } from 'lucide-react';
+import { BirdIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -124,7 +124,7 @@ const OrganizationsTable = () => {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
+            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),
         }}
       />

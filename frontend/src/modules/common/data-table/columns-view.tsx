@@ -1,4 +1,4 @@
-import { FoldHorizontal, SlidersHorizontal, UnfoldHorizontal } from 'lucide-react';
+import { FoldHorizontalIcon, SlidersHorizontalIcon, UnfoldHorizontalIcon } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -37,7 +37,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="relative flex">
             {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />}
-            <SlidersHorizontal className="size-4" />
+            <SlidersHorizontalIcon className="size-4" />
             <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
           </Button>
         </DropdownMenuTrigger>
@@ -68,7 +68,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
         {/* Not finished, therefore hidden */}
         {setIsCompact && isCompact !== undefined && (
           <Button variant="outline" onClick={() => setIsCompact(!isCompact)} className="hidden w-full mt-3 gap-2" size="sm">
-            {isCompact ? <UnfoldHorizontal size={16} /> : <FoldHorizontal size={16} />}
+            {isCompact ? <UnfoldHorizontalIcon size={16} /> : <FoldHorizontalIcon size={16} />}
             <span>{isCompact ? t('common:normal_density') : t('common:high_density')}</span>
           </Button>
         )}

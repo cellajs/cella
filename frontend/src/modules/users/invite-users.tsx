@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
+import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -67,7 +67,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
                 exit={{ opacity: 0 }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
-                <ChevronRight className="opacity-50" size={16} />
+                <ChevronRightIcon className="opacity-50" size={16} />
                 <UnsavedBadge title={mode[0] === 'search' ? t('common:search') : t('common:email')} />
               </motion.span>
             )}
@@ -84,7 +84,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col w-full sm:h-40 py-3 gap-2 sm:gap-3">
               <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="py-6 sm:py-10">
-                <AtSign size={48} strokeWidth={1} />
+                <AtSignIcon size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
                   <p>{t('common:invite_by_email')}</p>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
@@ -94,7 +94,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
                 </div>
               </ToggleGroupItem>
               <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="py-6 sm:py-10">
-                <Search size={48} strokeWidth={1} />
+                <SearchIcon size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
                   <div>{t('common:invite_by_name')}</div>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
@@ -108,7 +108,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
         )}
         {inviteMode && (
           <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            <AlertWrap id={`invite_${inviteMode}`} variant="success" icon={Info}>
+            <AlertWrap id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AlertWrap>
             {inviteMode === 'email' ? (

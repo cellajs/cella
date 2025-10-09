@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { Info } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 import type { AlertWrap } from '~/modules/common/alert-wrap';
 
 const alerts: AlertWrap[] = [];
@@ -10,7 +10,7 @@ if (appConfig.mode === 'development') {
   alerts.push({
     id: 'test-credentials',
     modes: ['public'],
-    icon: Info,
+    icon: InfoIcon,
     className: 'rounded-none border-0 border-t z-60 fixed bottom-0 left-0 right-0',
     children: (
       <>
@@ -28,7 +28,7 @@ if (appConfig.mode === 'production') {
   alerts.push({
     id: 'prerelease',
     modes: ['app'],
-    icon: Info,
+    icon: InfoIcon,
     className: 'rounded-none border-0 border-b',
     children: (
       <>

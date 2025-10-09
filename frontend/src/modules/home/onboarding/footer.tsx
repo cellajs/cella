@@ -1,4 +1,4 @@
-import { Redo } from 'lucide-react';
+import { RedoIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -38,7 +38,7 @@ const StepperFooter = ({ setOnboardingState }: { setOnboardingState: (newState: 
     <div className="w-full flex gap-2 max-sm:justify-stretch">
       {isOptionalStep && (
         <Button ref={skipButtonRef} onClick={skipStep} variant="secondary" className="max-sm:w-full">
-          <Redo size={16} className="mr-2" />
+          <RedoIcon size={16} className="mr-2" />
           {t('common:skip')}
         </Button>
       )}

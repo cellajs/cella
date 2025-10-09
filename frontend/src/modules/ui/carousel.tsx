@@ -1,6 +1,6 @@
 import { cva, VariantProps } from 'class-variance-authority';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -188,7 +188,7 @@ function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...pr
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft />
+      <ArrowLeftIcon />
       <span className="sr-only">Previous slide</span>
     </Button>
   );
@@ -211,7 +211,7 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
+      <ArrowRightIcon />
       <span className="sr-only">Next slide</span>
     </Button>
   );

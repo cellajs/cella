@@ -1,5 +1,5 @@
 import { appConfig, type EntityType } from 'config';
-import { Building2, Cloud, Github, type LucideIcon, Users } from 'lucide-react';
+import { Building2Icon, CloudIcon, GithubIcon, type LucideIcon, UsersIcon } from 'lucide-react';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { ShowcaseItem } from '~/modules/marketing/about/showcase';
@@ -20,8 +20,8 @@ export const marketingNavConfig = [
  ************************************************************************************************/
 
 export const socials = [
-  { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: Cloud },
-  { title: 'GitHub', href: appConfig.company.githubUrl, icon: Github },
+  { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: CloudIcon },
+  { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
 ];
 
 export const footerSections = [
@@ -113,8 +113,8 @@ export const faqsData = [
  ************************************************************************************************/
 
 export const counts = [
-  { id: 'user', title: 'common:users', icon: Users },
-  { id: 'organization', title: 'common:organizations', icon: Building2 },
+  { id: 'user', title: 'common:users', icon: UsersIcon },
+  { id: 'organization', title: 'common:organizations', icon: Building2Icon },
 ] as const satisfies readonly { id: EntityType; title: string; icon: LucideIcon }[];
 
 /*************************************************************************************************

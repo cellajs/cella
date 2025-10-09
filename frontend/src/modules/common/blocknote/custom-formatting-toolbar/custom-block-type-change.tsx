@@ -8,7 +8,7 @@ import {
   useEditorContentOrSelectionChange,
   useSelectedBlocks,
 } from '@blocknote/react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
@@ -84,7 +84,7 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
       <Components.Generic.Menu.Trigger>
         <Components.FormattingToolbar.Button className="bn-dropdown-button" label={selectedItem?.name ?? ''} mainTooltip="Select block type">
           {selectedItem && <selectedItem.icon />}
-          <ChevronDown size={16} />
+          <ChevronDownIcon size={16} />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown className="p-2">

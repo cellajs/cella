@@ -1,7 +1,7 @@
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { t } from 'i18next';
-import { Loader2, TriangleAlert } from 'lucide-react';
+import { Loader2Icon, TriangleAlertIcon } from 'lucide-react';
 import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/service';
@@ -84,9 +84,9 @@ function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, 
   const buttonContent = (
     <Button type="submit" onClick={handleClick} disabled={isDisabled} aria-busy={loading || undefined} {...props}>
       {loading ? (
-        <Loader2 className="mr-2 animate-spin" size={16} />
+        <Loader2Icon className="mr-2 animate-spin" size={16} />
       ) : (
-        !allowOfflineDelete && !isOnline && <TriangleAlert className="mr-2" size={16} />
+        !allowOfflineDelete && !isOnline && <TriangleAlertIcon className="mr-2" size={16} />
       )}
       {children}
     </Button>

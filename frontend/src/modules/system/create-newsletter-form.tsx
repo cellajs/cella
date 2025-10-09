@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
-import { Info, Send } from 'lucide-react';
+import { InfoIcon, SendIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +47,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   const formContainerId = 'create-newsletter';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
-  // Send newsletter
+  // SendIcon newsletter
   const { mutate: _sendNewsletter, isPending } = useMutation<
     SendNewsletterResponse,
     ApiError,
@@ -136,14 +136,14 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
         />
 
         {testOnly && (
-          <AlertWrap id="test-email" variant="plain" icon={Info}>
+          <AlertWrap id="test-email" variant="plain" icon={InfoIcon}>
             {t('common:test_email.text')}
           </AlertWrap>
         )}
 
         <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
           <SubmitButton disabled={!canSend()} loading={isPending}>
-            <Send size={16} className="mr-2" />
+            <SendIcon size={16} className="mr-2" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
           <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('common:cancel')} onClick={cancel}>
