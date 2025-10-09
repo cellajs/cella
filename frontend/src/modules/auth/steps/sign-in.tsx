@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -97,7 +97,7 @@ export const SignInStep = () => {
           className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
         >
           <span className="truncate">{email}</span>
-          {!tokenId && <ChevronDown size={16} className="ml-1" />}
+          {!tokenId && <ChevronDownIcon size={16} className="ml-1" />}
         </Button>
       </h1>
       {emailEnabled && (
@@ -140,7 +140,7 @@ export const SignInStep = () => {
 
               <SubmitButton loading={isPending} className="w-full">
                 {t('common:sign_in')}
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRightIcon size={16} className="ml-2" />
               </SubmitButton>
               {/* TODO: add callback to reset auth steps forgot email is different from current email state */}
               <RequestPasswordDialog email={email}>

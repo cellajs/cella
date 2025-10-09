@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { Search, XCircle } from 'lucide-react';
+import { SearchIcon, XCircleIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -45,7 +45,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
 
   return (
     <div className={cn('relative z-20', className)}>
-      <Search
+      <SearchIcon
         size={16}
         className="absolute left-3 -z-10 top-1/2 -translate-y-1/2 opacity-50
       group-data-[search=true]/menu:opacity-100"
@@ -60,7 +60,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
         className="bg-transparent border-0 px-10"
       />
 
-      <XCircle
+      <XCircleIcon
         size={16}
         className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer group-data-[search=false]/menu:hidden"
         onClick={() => {

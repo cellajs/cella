@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react';
+import { MinusIcon, PlusIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '~/modules/ui/button';
@@ -62,7 +62,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProp>(
             disabled={disabled}
             onClick={() => handleNumberEvent(NumberEvents.PLUS)}
           >
-            <Plus className="h-4 w-4" />
+            <PlusIcon className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
@@ -73,7 +73,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProp>(
             disabled={disabled}
             onClick={() => handleNumberEvent(NumberEvents.MINUS)}
           >
-            <Minus className="h-4 w-4" />
+            <MinusIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>

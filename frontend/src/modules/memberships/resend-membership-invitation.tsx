@@ -1,5 +1,5 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
-import { Mail } from 'lucide-react';
+import { MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type ResendInvitationData, type ResendInvitationResponse, resendInvitation } from '~/api.gen';
@@ -50,7 +50,7 @@ export const ResendMembershipInviteButton = ({ resendData, wrapperClassName, but
         loading={isPending}
         disabled={disabledResetPassword}
       >
-        <Mail size={16} className="mr-2" />
+        <MailIcon size={16} className="mr-2" />
         {t('common:resend')}
       </Button>
     </TooltipButton>

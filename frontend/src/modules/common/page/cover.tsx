@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Upload } from 'lucide-react';
+import { UploadIcon } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster/service';
@@ -63,7 +63,7 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
           className="relative top-3 mx-auto opacity-50 hover:opacity-80 hover:bg-secondary"
           onClick={openUploadDialog}
         >
-          <Upload size={16} />
+          <UploadIcon size={16} />
           <span className="ml-1">{t('common:upload_item', { item: t('common:cover').toLowerCase() })}</span>
         </Button>
       )}

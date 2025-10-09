@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Fingerprint } from 'lucide-react';
+import { FingerprintIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import { ApiError } from '~/lib/api';
@@ -44,7 +44,7 @@ const PasskeyStrategy = ({
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       <Button type="button" variant={type === 'mfa' ? 'default' : 'outline'} onClick={() => passkeyAuth(email)} className="w-full gap-1.5 truncate">
-        <Fingerprint size={16} />
+        <FingerprintIcon size={16} />
         <span className="truncate">
           {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>

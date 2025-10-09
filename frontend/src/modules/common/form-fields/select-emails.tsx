@@ -4,7 +4,7 @@
 // Removed autofocus
 // Use shadcn UI components and css
 
-import { X } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge } from '~/modules/ui/badge';
 import { inputClass } from '~/modules/ui/input';
@@ -335,7 +335,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
                 }}
                 onClick={() => removeEmail(index)}
               >
-                <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+                <XIcon className="h-4 w-4 opacity-50 hover:opacity-100" />
               </button>
             </Badge>
           );

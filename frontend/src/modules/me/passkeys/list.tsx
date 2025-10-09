@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { Fingerprint, Plus } from 'lucide-react';
+import { Fingerprint, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
@@ -30,7 +30,7 @@ const PasskeysList = () => {
     <div className="mb-6">
       <div className="flex flex-row max-sm:flex-col">
         <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
-          {hasPasskey ? <Plus className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
+          {hasPasskey ? <PlusIcon className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
           {hasPasskey
             ? t('common:add_resource', { resource: t('common:passkey').toLowerCase() })
             : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}

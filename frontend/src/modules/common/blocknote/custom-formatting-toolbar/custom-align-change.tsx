@@ -1,5 +1,5 @@
 import { TextAlignButton, useComponentsContext } from '@blocknote/react';
-import { ChevronDown, MoveHorizontal } from 'lucide-react';
+import { ChevronDownIcon, MoveHorizontalIcon } from 'lucide-react';
 
 // Infer BasicTextAlign type directly from component prop
 type BasicTextAlign = React.ComponentProps<typeof TextAlignButton>['textAlignment'];
@@ -14,8 +14,8 @@ export const CustomTextAlignSelect = () => {
     <Components.Generic.Menu.Root>
       <Components.Generic.Menu.Trigger>
         <Components.FormattingToolbar.Button className="bn-dropdown-button" label="Text align select" mainTooltip="Select text align">
-          <MoveHorizontal size={20} />
-          <ChevronDown size={14} />
+          <MoveHorizontalIcon size={20} />
+          <ChevronDownIcon size={14} />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown>

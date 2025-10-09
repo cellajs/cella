@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { UserX } from 'lucide-react';
+import { UserXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
@@ -28,7 +28,7 @@ const StopImpersonation = () => {
   return (
     <TooltipButton toolTipContent={t('common:stop_impersonation')} side="right" sideOffset={10} hideWhenDetached>
       <Button variant="ghost" className="w-12 h-12" onClick={stopImpersonation}>
-        <UserX size="20" strokeWidth="1.5" />
+        <UserXIcon size="20" strokeWidth="1.5" />
       </Button>
     </TooltipButton>
   );

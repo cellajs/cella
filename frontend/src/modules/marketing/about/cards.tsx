@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
@@ -50,7 +50,7 @@ const AboutCards = () => {
                 <div className="text-muted-foreground font-semibold group-hover:underline underline-offset-4">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
-                  <ArrowUpRight size={12} className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100" />
+                  <ArrowUpRightIcon size={12} className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100" />
                 </div>
               </div>
             </a>

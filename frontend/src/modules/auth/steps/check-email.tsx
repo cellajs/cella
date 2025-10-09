@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -85,7 +85,7 @@ export const CheckEmailStep = () => {
           />
           <SubmitButton loading={isPending} className="w-full">
             {t('common:continue')}
-            <ArrowRight size={16} className="ml-2" />
+            <ArrowRightIcon size={16} className="ml-2" />
           </SubmitButton>
         </form>
       )}

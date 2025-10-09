@@ -1,5 +1,5 @@
 import { appConfig, type Language } from 'config';
-import { Check, ChevronDown } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from '~/hooks/use-measure';
@@ -51,7 +51,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
           ) : (
             t('common:placeholder.select_languages')
           )}
-          <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDownIcon className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
 
@@ -70,7 +70,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
                     <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
                     <span className="truncate">{t(`common:${lang}`)}</span>
                   </div>
-                  <Check size={16} strokeWidth={3} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
+                  <CheckIcon size={16} strokeWidth={3} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
                 </CommandItem>
               ))}
             </CommandGroup>

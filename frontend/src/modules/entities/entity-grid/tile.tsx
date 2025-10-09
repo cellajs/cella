@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
-import { User } from 'lucide-react';
+import { UserIcon } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { EntityGridItem } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
@@ -39,7 +39,7 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
 
         <div className="flex items-center justify-end gap-3 pt-6 text-sm opacity-80">
           <div className="flex items-center gap-1">
-            <User size={16} />
+            <UserIcon size={16} />
             {entity.membershipCounts.total}
           </div>
         </div>

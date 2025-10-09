@@ -1,4 +1,4 @@
-import { ChevronDown, Lock } from 'lucide-react';
+import { ChevronDownIcon, LockIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
@@ -24,7 +24,7 @@ export const WaitlistStep = () => {
           {email.length > 0 && (
             <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
               <span className="truncate">{email}</span>
-              <ChevronDown size={16} className="ml-1" />
+              <ChevronDownIcon size={16} className="ml-1" />
             </Button>
           )}
         </div>
@@ -34,7 +34,7 @@ export const WaitlistStep = () => {
         email={email}
         buttonContent={
           <>
-            <Lock size={16} className="mr-2" />
+            <LockIcon size={16} className="mr-2" />
             <span className="text-base">{t('common:request_access')}</span>
           </>
         }

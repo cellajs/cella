@@ -4,7 +4,7 @@ import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-sc
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowLeft, Info, Search } from 'lucide-react';
+import { ArrowLeftIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -128,7 +128,7 @@ const MenuContent = memo(() => {
       {/* Only visible when floating nav is present. To return to home */}
       <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
         <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
-          <ArrowLeft size={16} strokeWidth={1.5} />
+          <ArrowLeftIcon size={16} strokeWidth={1.5} />
           <span className="ml-2 font-normal">Home</span>
         </Link>
         <Button
@@ -168,7 +168,7 @@ const MenuContent = memo(() => {
         {searchResultsListItems().length > 0 ? (
           searchResultsListItems()
         ) : (
-          <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
         )}
       </div>
       {!searchTerm && (
@@ -204,7 +204,7 @@ const MenuContent = memo(() => {
               </div>
             )}
             {pwaEnabled && (
-              <AlertWrap id="offline_access" variant="plain" icon={Info}>
+              <AlertWrap id="offline_access" variant="plain" icon={InfoIcon}>
                 {t('common:offline_access.text')}
               </AlertWrap>
             )}

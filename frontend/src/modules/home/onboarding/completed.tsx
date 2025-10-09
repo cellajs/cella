@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { Undo } from 'lucide-react';
+import { UndoIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Confetti } from '~/modules/home/onboarding/confetti';
@@ -43,7 +43,7 @@ export const OnboardingCompleted = () => {
       {isExploding && <Confetti fire />}
 
       {user.userFlags.finishedOnboarding && (
-        <Undo size={400} strokeWidth={0.1} className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-[30deg]" />
+        <UndoIcon size={400} strokeWidth={0.1} className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl max-w-md font-light md:leading-9 pb-8">
