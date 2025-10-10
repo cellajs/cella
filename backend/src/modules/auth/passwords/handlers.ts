@@ -17,7 +17,6 @@ import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/routes';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -103,10 +102,11 @@ const authPasswordsRouteHandlers = app
 
     // If membership invitation, get membership to forward
     const [invitationMembership] = await db
-      .select(membershipBaseSelect)
+      .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(eq(membershipsTable.tokenId, validToken.id))
       .limit(1);
+
     if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
 
     // Redirect to accept invitation if membership invite
