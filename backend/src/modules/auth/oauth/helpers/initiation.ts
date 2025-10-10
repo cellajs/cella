@@ -12,7 +12,6 @@ import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
 export interface OAuthCookiePayload {
-  redirectPath: string;
   type: OAuthFlowType;
   codeVerifier?: string;
 }
@@ -41,9 +40,12 @@ export const handleOAuthInitiation = async (
   const { type } = ctx.req.valid('query');
 
   const { redirectPath } = await prepareOAuthByContext(ctx);
-  const cookieContent = JSON.stringify({ redirectPath, codeVerifier, type });
+  const cookieContent = JSON.stringify({ codeVerifier, type });
 
-  await setAuthCookie(ctx, `oauth-state-${state}`, cookieContent, new TimeSpan(5, 'm'));
+  await Promise.all([
+    setAuthCookie(ctx, `oauth-state-${state}`, cookieContent, new TimeSpan(5, 'm')),
+    setAuthCookie(ctx, 'oauth-redirect', redirectPath, new TimeSpan(5, 'm')),
+  ]);
 
   logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 
