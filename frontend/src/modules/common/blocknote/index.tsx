@@ -204,6 +204,7 @@ const BlockNote = ({
       ref={blockNoteRef}
       className={className}
       data-color-scheme={mode}
+      //@ ts-ignore React ver missmatch
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}
