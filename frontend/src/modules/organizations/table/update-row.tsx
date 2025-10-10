@@ -15,11 +15,13 @@ interface Props {
 
 const openUpdateSheet = (organization: Organization | Organization, buttonRef: RefObject<HTMLButtonElement | null>) => {
   useSheeter.getState().create(
-    <Card className="mb-20">
-      <CardContent>
-        <UpdateOrganizationForm organization={organization} sheet />
-      </CardContent>
-    </Card>,
+    <div className="container w-full">
+      <Card className="mb-20">
+        <CardContent>
+          <UpdateOrganizationForm organization={organization} sheet />
+        </CardContent>
+      </Card>
+    </div>,
     {
       id: 'update-organization',
       triggerRef: buttonRef,

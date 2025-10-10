@@ -18,11 +18,14 @@ export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonE
   const createSheet = useSheeter.getState().create;
 
   createSheet(
-    <Card className="mb-20">
-      <CardContent>
-        <UpdateUserForm user={user} sheet />
-      </CardContent>
-    </Card>,
+    // TODO perhaps create a component for this container+card+cardcontent pattern
+    <div className="container w-full">
+      <Card className="mb-20">
+        <CardContent>
+          <UpdateUserForm user={user} sheet />
+        </CardContent>
+      </Card>
+    </div>,
     {
       id: 'update-user',
       triggerRef: buttonRef,

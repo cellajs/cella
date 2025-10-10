@@ -9,7 +9,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50 shadow-xs',
   {
     variants: {
       variant: {
@@ -17,17 +17,18 @@ const buttonVariants = cva(
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
         success: 'bg-success text-primary-foreground hover:bg-success/80',
         secondary: 'bg-secondary border border-transparent text-secondary-foreground hover:bg-secondary/80',
-        outline: 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
-        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-        outlineGhost: 'border border-foreground/20 bg-background/20 hover:bg-background/40 hover:border-foreground/30 hover:text-accent-foreground',
+        outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
+        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 shadow-none',
+        outlineGhost:
+          'border border-foreground/20 bg-background/20 hover:bg-background/40 hover:border-foreground/30 hover:text-accent-foreground shadow-none',
         outlinePrimary: 'text-primary border border-primary/30 bg-background/20 hover:bg-primary/5 hover:border-primary/50',
-        link: 'text-primary underline-offset-4 hover:underline',
+        link: 'text-primary underline-offset-4 hover:underline shadow-none',
         // Add more variants here
         darkSuccess: 'bg-green-700 text-white hover:bg-green-700/80',
-        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100',
+        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
-        input: 'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent',
-        none: 'bg-transparent border-none',
+        input: 'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent shadow-none',
+        none: 'bg-transparent border-none shadow-none',
       },
       size: {
         default: 'h-10 px-3 py-2',

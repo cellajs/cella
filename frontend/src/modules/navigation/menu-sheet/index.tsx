@@ -26,6 +26,7 @@ import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
+import { navSheetClassName } from '../app-nav';
 
 const pwaEnabled = appConfig.has.pwa;
 
@@ -138,8 +139,7 @@ const MenuContent = memo(() => {
               side: 'left',
               showCloseButton: false,
               modal: true,
-              className:
-                'sm:w-80 fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
+              className: navSheetClassName,
               onClose: () => {
                 setNavSheetOpen(null);
               },
