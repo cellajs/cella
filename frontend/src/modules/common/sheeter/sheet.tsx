@@ -8,11 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { useNavigationStore } from '~/store/navigation';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
-export interface SheetProps {
-  sheet: InternalSheet;
-}
-
-export const DesktopSheet = ({ sheet }: SheetProps) => {
+export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
   const {
     id,
     modal,
@@ -23,7 +19,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     scrollableOverlay,
     title,
     titleContent = title,
-    hideClose = false,
+    showCloseButton = true,
     className: sheetClassName,
     content,
     closeSheetOnEsc = true,
@@ -97,8 +93,8 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
         id={String(id)}
         scrollableOverlay={scrollableOverlay}
         ref={sheetRef}
-        side={side} // Retained side value
-        hideClose={hideClose}
+        side={side}
+        showCloseButton={showCloseButton}
         aria-describedby={undefined}
         className={`${className} items-start`}
         onEscapeKeyDown={handleEscapeKeyDown}

@@ -206,7 +206,7 @@ const UserAccountPage = () => {
                               <img
                                 src={`/static/images/${provider.id}-icon.svg`}
                                 alt={provider.id}
-                                className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
+                                className={`size-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
                                 loading="lazy"
                               />
                               <CheckIcon size={18} strokeWidth={3} className="text-success" />
@@ -226,7 +226,7 @@ const UserAccountPage = () => {
                             <img
                               src={`/static/images/${provider.id}-icon.svg`}
                               alt={provider.id}
-                              className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
+                              className={`size-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
                               loading="lazy"
                             />
                             {`${t('common:add')} ${provider.name} ${t('common:account').toLowerCase()}`}

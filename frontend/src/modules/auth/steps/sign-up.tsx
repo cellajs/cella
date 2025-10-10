@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
-import { TokenData } from '../types';
+import { TokenData } from '~/modules/auth/types';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

@@ -37,7 +37,7 @@ const TableEllipsis = <T extends { id: string }>({ row, tabIndex, options }: Pro
     );
 
     create(
-      <div className="p-1 flex-col flex gap-1">
+      <div className="p-1 flex-col flex gap-2">
         <DropdownContent />
       </div>,
       {

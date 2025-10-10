@@ -9,9 +9,7 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
   const { isOnline } = useOnlineManager();
 
   return isOnline ? (
-    <div className="max-sm:-mx-3">
-      <UserProfilePage idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} isSheet />
-    </div>
+    <UserProfilePage idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} isSheet />
   ) : (
     <ContentPlaceholder icon={WifiOffIcon} title={t(`${'common:offline.text'}`)} />
   );

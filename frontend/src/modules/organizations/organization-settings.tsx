@@ -130,7 +130,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <TrashIcon className="mr-2 h-4 w-4" />
+                <TrashIcon className="mr-2 size-4" />
                 <span>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</span>
               </Button>
             </CardContent>

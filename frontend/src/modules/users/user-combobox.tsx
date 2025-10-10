@@ -88,21 +88,21 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                 <span className="truncate">{el}</span>
                 <button
                   type="button"
-                  className="py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="py-1 m-[-.25rem] ml-1 rounded-full focus-effect"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     handleUnselect(el);
                   }}
                 >
-                  <XIcon className="h-4 w-4 opacity-50 hover:opacity-100" />
+                  <XIcon className="size-4 opacity-50 hover:opacity-100" />
                 </button>
               </Badge>
             ))
           ) : (
             <span className="text-sm ml-1">{t('common:search_users')}</span>
           )}
-          <ChevronsUpDownIcon className="absolute right-0 mx-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDownIcon className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
         </div>
       </PopoverTrigger>
 

@@ -74,7 +74,7 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
               data-provider={provider}
               src={`/static/images/${provider}-icon.svg`}
               alt={provider}
-              className="w-4 h-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
+              className="size-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
               loading="lazy"
             />
             <span>
