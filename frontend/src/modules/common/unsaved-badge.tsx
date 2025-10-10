@@ -12,7 +12,7 @@ function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
       {typeof title === 'string' ? <span>{title}</span> : title}
       <Badge size="sm" variant="plain" className="w-fit [.unsaved-changes_&]:flex hidden gap-2">
         <SquarePenIcon size={12} />
-        <span className="max-sm:hidden font-light">{t('common:unsaved_changes')}</span>
+        <span className="max-sm:hidden">{t('common:unsaved_changes')}</span>
       </Badge>
     </div>
   );

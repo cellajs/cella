@@ -147,14 +147,10 @@ const UserAccountPage = () => {
                 enabledStrategies.includes('passkey') && enabledStrategies.includes('totp') && (
                   <>
                     <HelpText content={t('common:mfa.text')}>
-                      <div className="flex">
+                      <div className="flex items-center">
                         <p className="font-semibold">{t('common:mfa')}</p>
                         {!user.mfaRequired && (
-                          <Badge
-                            size="xs"
-                            variant="outline"
-                            className="max-sm:hidden ml-2 uppercase text-[10px] font-normal text-green-600 border-green-600"
-                          >
+                          <Badge size="xs" variant="outline" className="max-sm:hidden ml-2 text-green-600 border-green-600">
                             {t('common:recommended')}
                           </Badge>
                         )}

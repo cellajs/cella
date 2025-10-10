@@ -39,7 +39,7 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
   }, [isFilterActive]);
 
   return (
-    <InputGroup>
+    <InputGroup className="w-full border-0 shadow-none focus-visible:ring-offset-0">
       <InputGroupInput
         disabled={!isOnline && !allowOfflineSearch}
         placeholder={t('common:placeholder.search')}
@@ -47,7 +47,6 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         ref={inputRef}
-        className="h-10 w-full border-0 shadow-none focus-visible:ring-offset-0"
         aria-label={t('common:placeholder.search')}
       />
       <InputGroupAddon className="pl-1.5">

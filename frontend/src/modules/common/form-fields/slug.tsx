@@ -12,6 +12,7 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
+import { cn } from '~/utils/cn';
 
 type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   nameValue?: string;
@@ -104,14 +105,8 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
           </FormLabel>
           {description && <FormDescription>{description}</FormDescription>}
           <FormControl>
-            <InputGroup className={inputClassName}>
-              <InputGroupInput
-                className="focus-visible:ring-offset-0"
-                type={entityType}
-                onFocus={() => setDeviating(true)}
-                value={formFieldValue || ''}
-                {...rest}
-              />
+            <InputGroup className={cn('', inputClassName)}>
+              <InputGroupInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
               <InputGroupAddon>
                 <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
                   {prefix}

@@ -31,7 +31,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-md:flex-col items-start gap-1 md:gap-2">
             <span className="text-sm">{passkey.deviceName || t('common:unknown_device')}</span>
-            <Badge size="xs" variant="outline" className="truncate flex items-center font-light gap-1 py-0">
+            <Badge size="xs" variant="outline" className="truncate">
               <KeyRoundIcon size={12} />
               <span className="truncate">{passkey.nameOnDevice}</span>
             </Badge>

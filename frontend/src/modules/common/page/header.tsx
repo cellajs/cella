@@ -30,7 +30,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   if (!disableScroll) useScrollTo(scrollToRef);
 
   return (
-    <div className="relative">
+    <div className="w-full relative">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
       <div className="absolute flex bottom-0 w-full h-18 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>

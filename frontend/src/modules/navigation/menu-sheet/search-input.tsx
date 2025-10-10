@@ -44,7 +44,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
   }, [searchTerm, menu]);
 
   return (
-    <InputGroup className={cn('z-20', className)}>
+    <InputGroup className={cn('z-20 border-0 shadow-none', className)}>
       <InputGroupInput
         id="nav-sheet-search"
         disabled={!hasStarted && isMobile} // Delay to prevent focus on initial render
@@ -53,7 +53,6 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
         placeholder={t('common:placeholder.search')}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="bg-transparent border-0 shadow-none focus-visible:ring-offset-0"
         aria-label={t('common:placeholder.search')}
       />
       <InputGroupAddon className="pl-1.5">
