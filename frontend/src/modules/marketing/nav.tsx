@@ -1,11 +1,11 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { GithubIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import HamburgerButton from '~/modules/common/hamburger';
 import Logo from '~/modules/common/logo';
+import { GithubIcon } from '~/modules/icons/github';
 import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
 import UserLanguage from '~/modules/me/user-language';
