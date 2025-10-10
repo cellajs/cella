@@ -145,15 +145,14 @@ export const zMenuSchema = z.object({
       organizationId: z.optional(z.string()),
       submenu: z.optional(
         z.array(
-          z.union([
-            zContextEntityBaseSchema,
+          zContextEntityBaseSchema.and(
             z.object({
               membership: zMembershipBaseSchema,
               createdAt: z.string(),
               modifiedAt: z.union([z.string(), z.null()]),
               organizationId: z.optional(z.string()),
             }),
-          ]),
+          ),
         ),
       ),
     }),
@@ -812,12 +811,11 @@ export const zGetUsersData = z.object({
  */
 export const zGetUsersResponse = z.object({
   items: z.array(
-    z.union([
-      zUser,
+    zUser.and(
       z.object({
         memberships: z.array(zMembershipBaseSchema),
       }),
-    ]),
+    ),
   ),
   total: z.number(),
 });
@@ -996,8 +994,7 @@ export const zGetContextEntitiesData = z.object({
  */
 export const zGetContextEntitiesResponse = z.object({
   items: z.array(
-    z.union([
-      zContextEntityBaseSchema,
+    zContextEntityBaseSchema.and(
       z.object({
         membership: z.union([
           z.object({
@@ -1020,7 +1017,7 @@ export const zGetContextEntitiesResponse = z.object({
           total: z.number(),
         }),
       }),
-    ]),
+    ),
   ),
   total: z.number(),
 });

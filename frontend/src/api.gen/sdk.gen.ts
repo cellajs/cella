@@ -286,18 +286,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
 export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
   return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-<<<<<<< HEAD
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/auth/token/{type}/{id}',
-=======
-    url: '/auth/token/{tokenId}',
->>>>>>> 2344cf14e3a59a89196bc89744715068cb100cbb
     ...options,
   });
 };
