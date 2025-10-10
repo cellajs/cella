@@ -112,7 +112,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             id: 'blocknote-newsletter',
             trailingBlock: false,
             className:
-              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
             baseFilePanelProps: { isPublic: true, organizationId: 'adminPreview' },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
           }}
@@ -150,7 +150,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             {t('common:cancel')}
           </Button>
           <div className="max-sm:mt-2 flex gap-2 items-center">
-            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="size-4 ml-4" />
             <label htmlFor="testOnly" className="items-center text-sm">
               {t('common:test_email')}
             </label>

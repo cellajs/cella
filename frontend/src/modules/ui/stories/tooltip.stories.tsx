@@ -33,7 +33,7 @@ const meta: Meta<typeof TooltipContent> = {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon className="size-4" />
           <span className="sr-only">Add</span>
         </TooltipTrigger>
         <TooltipContent {...args} />

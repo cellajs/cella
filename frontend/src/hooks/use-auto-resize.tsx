@@ -12,11 +12,8 @@ import * as React from 'react';
  *
  * @returns An object containing the `areaRef` to be used in the parent component.
  */
-export const useAutoResize = (ref: React.ForwardedRef<HTMLTextAreaElement>, autoResize: boolean) => {
+export const useAutoResize = (autoResize: boolean) => {
   const areaRef = React.useRef<HTMLTextAreaElement>(null);
-
-  // biome-ignore lint/style/noNonNullAssertion: Expose the textarea reference to parent components
-  React.useImperativeHandle(ref, () => areaRef.current!);
 
   React.useEffect(() => {
     const ref = areaRef?.current;

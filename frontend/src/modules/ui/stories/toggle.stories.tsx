@@ -15,7 +15,7 @@ const meta: Meta<typeof Toggle> = {
     },
   },
   args: {
-    children: <BoldIcon className="h-4 w-4" />,
+    children: <BoldIcon className="size-4" />,
     'aria-label': 'Toggle bold',
   },
   parameters: {
@@ -38,7 +38,7 @@ export const Default: Story = {};
 export const Outline: Story = {
   args: {
     variant: 'outline',
-    children: <ItalicIcon className="h-4 w-4" />,
+    children: <ItalicIcon className="size-4" />,
     'aria-label': 'Toggle italic',
   },
 };
@@ -49,8 +49,8 @@ export const Outline: Story = {
 export const WithText: Story = {
   render: (args) => (
     <Toggle {...args}>
-      <ItalicIcon className="mr-2 h-4 w-4" />
-      ItalicIcon
+      <ItalicIcon className="mr-2 size-4" />
+      Italic
     </Toggle>
   ),
   args: { ...Outline.args },

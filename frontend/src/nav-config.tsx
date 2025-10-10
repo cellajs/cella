@@ -20,7 +20,7 @@ const startSearchAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
     triggerRef,
     className: 'sm:max-w-2xl p-0 border-0 mb-4',
     drawerOnMobile: false,
-    hideClose: true,
+    showCloseButton: false,
   });
 };
 

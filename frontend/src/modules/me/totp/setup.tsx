@@ -51,7 +51,7 @@ export const SetupTotp = () => {
       title: t('common:totp_manual.title'),
       description: t('common:totp_manual.description'),
       className: 'sm:max-w-md',
-      hideClose: false,
+      showCloseButton: true,
     });
   };
 

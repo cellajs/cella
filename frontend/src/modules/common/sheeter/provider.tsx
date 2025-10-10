@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import { MobileSheet } from '~/modules/common/sheeter/drawer';
-import { DesktopSheet } from '~/modules/common/sheeter/sheet';
+import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
+import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -47,7 +47,7 @@ export const Sheeter = () => {
   return (
     <>
       {sheets.map((sheet) => {
-        const SheetComponent = isMobile ? MobileSheet : DesktopSheet;
+        const SheetComponent = isMobile ? SheeterDrawer : SheeterSheet;
         return <SheetComponent key={sheet.id} sheet={sheet} />;
       })}
     </>

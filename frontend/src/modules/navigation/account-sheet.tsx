@@ -38,10 +38,10 @@ const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action 
       to={action}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'lg' }),
-        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus-effect',
       )}
     >
-      <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+      <Icon className="mr-2 size-4" aria-hidden="true" />
       {label}
     </Link>
   );
@@ -63,7 +63,7 @@ export const AccountSheet = () => {
   }, []);
 
   return (
-    <ScrollArea className="h-full max-sm:-mx-3" id="nav-sheet">
+    <ScrollArea className="h-full w-full" id="nav-sheet">
       <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
         <Link to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
           <div

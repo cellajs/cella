@@ -41,6 +41,26 @@ export const Secondary: Story = {
 };
 
 /**
+ * Use the `plain` badge for the most minimal appearance, blending seamlessly
+ * with the background while still providing context.
+ */
+export const Plain: Story = {
+  args: {
+    variant: 'plain',
+  },
+};
+
+/**
+ * Use the `success` badge to indicate positive statuses, confirmations,
+ * or successful actions.
+ */
+export const Success: Story = {
+  args: {
+    variant: 'success',
+  },
+};
+
+/**
  * Use the `destructive` badge to  indicate errors, alerts, or the need for
  * immediate attention.
  */

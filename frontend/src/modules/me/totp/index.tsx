@@ -30,7 +30,7 @@ const Totp = () => {
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
-        hideClose: false,
+        showCloseButton: true,
       },
     );
   };
@@ -46,19 +46,19 @@ const Totp = () => {
     <div className="flex max-sm:flex-col gap-2 mb-6">
       {hasTotp && (
         <div className="flex items-center gap-2 px-3">
-          <RotateCcwKeyIcon className="w-4 h-4 mr-2" />
+          <RotateCcwKeyIcon className="size-4 mr-2" />
           <CheckIcon size={18} strokeWidth={3} className="text-success" />
           <span>{t('common:totp_activated')}</span>
         </div>
       )}
       {hasTotp ? (
         <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
-          <UnlinkIcon className="w-4 h-4 mr-2" />
-          <span>{t('common:unlinkIcon')}</span>
+          <UnlinkIcon className="size-4 mr-2" />
+          <span>{t('common:unlink')}</span>
         </Button>
       ) : (
         <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
-          <RotateCcwKeyIcon className="w-4 h-4 mr-2" />
+          <RotateCcwKeyIcon className="size-4 mr-2" />
           <span>{t('common:totp_setup')}</span>
         </Button>
       )}

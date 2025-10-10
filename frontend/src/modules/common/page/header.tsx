@@ -52,9 +52,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             {/* Role */}
             {'membership' in entity && entity.membership && (
               <>
-                <Badge className="opacity-70" variant="plain">
-                  {t(entity.membership.role, { ns: ['app', 'common'] })}
-                </Badge>
+                <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>
             )}
@@ -63,30 +61,30 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             <Breadcrumb className="max-sm:hidden">
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink className="p-0.5" asChild>
+                  <BreadcrumbLink className="p-0.5 text-foreground/70" asChild>
                     <Link to={appConfig.defaultRedirectPath}>
-                      <HomeIcon size={12} />
+                      <HomeIcon size={14} />
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator>
+                <BreadcrumbSeparator className="text-foreground/50">
                   <ChevronRightIcon size={12} />
                 </BreadcrumbSeparator>
                 {parentData && (
                   <>
                     <BreadcrumbItem>
-                      <BreadcrumbLink className="flex items-center" asChild>
+                      <BreadcrumbLink className="flex items-center text-foreground/70" asChild>
                         <Link to={baseEntityRoutes[parentData.entityType]} params={{ idOrSlug: parentData.slug }}>
                           <span className="truncate max-sm:max-w-24">{parentData.name}</span>
                         </Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
-                    <BreadcrumbSeparator>
+                    <BreadcrumbSeparator className="text-foreground/50">
                       <ChevronRightIcon size={12} />
                     </BreadcrumbSeparator>
                   </>
                 )}
-                <BreadcrumbItem className="flex items-center">
+                <BreadcrumbItem className="flex items-center text-foreground/70">
                   <span>{entity.entityType}</span>
                 </BreadcrumbItem>
               </BreadcrumbList>

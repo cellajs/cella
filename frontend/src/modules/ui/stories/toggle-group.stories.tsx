@@ -24,13 +24,13 @@ const meta = {
   render: (args) => (
     <ToggleGroup {...args}>
       <ToggleGroupItem value="bold" aria-label="Toggle bold">
-        <BoldIcon className="h-4 w-4" />
+        <BoldIcon className="size-4" />
       </ToggleGroupItem>
       <ToggleGroupItem value="italic" aria-label="Toggle italic">
-        <ItalicIcon className="h-4 w-4" />
+        <ItalicIcon className="size-4" />
       </ToggleGroupItem>
       <ToggleGroupItem value="underline" aria-label="Toggle underline">
-        <UnderlineIcon className="h-4 w-4" />
+        <UnderlineIcon className="size-4" />
       </ToggleGroupItem>
     </ToggleGroup>
   ),

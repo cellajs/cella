@@ -14,10 +14,8 @@ const FAQ = () => {
 
           return (
             <AccordionItem key={faq.id} value={faq.id}>
-              <AccordionTrigger>
-                <span className="sm:text-lg text-left">{t(question)}</span>
-              </AccordionTrigger>
-              <AccordionContent>
+              <AccordionTrigger className="px-3 sm:text-xl text-left">{t(question)}</AccordionTrigger>
+              <AccordionContent className="px-3 pb-8 sm:text-lg font-light">
                 <Trans
                   i18nKey={answer}
                   components={{

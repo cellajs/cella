@@ -103,7 +103,7 @@ const Combobox = ({
           ) : (
             <span className="truncate">{placeholders.trigger}</span>
           )}
-          <ChevronDownIcon className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
       {/* bounds.width + bounds.x * 2 to also include padding */}
@@ -121,7 +121,7 @@ const Combobox = ({
             <CommandGroup>
               {/* To avoid conflicts between ScrollArea and Virtualizer, do not set a max-h value on ScrollArea. 
               As this will cause all list elements to render at once in Virtualizer*/}
-              <ScrollArea className="h-[30vh]" viewPortRef={scrollViewportRef}>
+              <ScrollArea className="h-[30vh]" viewportRef={scrollViewportRef}>
                 <ScrollBar />
 
                 <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={2}>

@@ -6,7 +6,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import useMounted from '~/hooks/use-mounted';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { Input } from '~/modules/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetSearchProps {
@@ -44,30 +44,32 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
   }, [searchTerm, menu]);
 
   return (
-    <div className={cn('relative z-20', className)}>
-      <SearchIcon
-        size={16}
-        className="absolute left-3 -z-10 top-1/2 -translate-y-1/2 opacity-50
-      group-data-[search=true]/menu:opacity-100"
-      />
-      <Input
+    <InputGroup className={cn('z-20', className)}>
+      <InputGroupInput
+        id="nav-sheet-search"
         disabled={!hasStarted && isMobile} // Delay to prevent focus on initial render
         type="text"
         ref={focusRef}
-        placeholder={t('common:search')}
+        placeholder={t('common:placeholder.search')}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="bg-transparent border-0 px-10"
+        className="bg-transparent border-0 shadow-none focus-visible:ring-offset-0"
+        aria-label={t('common:placeholder.search')}
       />
+      <InputGroupAddon className="pl-1.5">
+        <SearchIcon size={16} className="-z-10 opacity-50 group-data-[search=true]/menu:opacity-100" />
+      </InputGroupAddon>
 
-      <XCircleIcon
-        size={16}
-        className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer group-data-[search=false]/menu:hidden"
-        onClick={() => {
-          setSearchTerm('');
-          setFocus();
-        }}
-      />
-    </div>
+      <InputGroupAddon className="pr-2" align="inline-end">
+        <XCircleIcon
+          size={16}
+          className="opacity-70 hover:opacity-100 cursor-pointer group-data-[search=false]/menu:hidden"
+          onClick={() => {
+            setSearchTerm('');
+            setFocus();
+          }}
+        />
+      </InputGroupAddon>
+    </InputGroup>
   );
 };
