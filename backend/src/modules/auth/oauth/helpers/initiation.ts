@@ -1,5 +1,3 @@
-import { appConfig } from 'config';
-import type { Context } from 'hono';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -10,6 +8,8 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import type { Context } from 'hono';
 
 export interface OAuthCookiePayload {
   type: OAuthFlowType;
@@ -39,7 +39,7 @@ export const handleOAuthInitiation = async (
 ) => {
   const { type } = ctx.req.valid('query');
 
-  const { redirectPath } = await prepareOAuthByContext(ctx);
+  const redirectPath = await prepareOAuthByContext(ctx);
   const cookieContent = JSON.stringify({ codeVerifier, type });
 
   await Promise.all([
@@ -67,109 +67,42 @@ export const handleOAuthInitiation = async (
  *
  */
 // TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
-const prepareOAuthByContext = async (ctx: Context<Env>) => {
+const prepareOAuthByContext = async (ctx: Context): Promise<string> => {
   const { type, redirect } = ctx.req.query();
 
-  // default payload
-  let redirectPath = resolveOAuthRedirect(redirect);
+  // Helper to resolve safe default redirect
+  const safeRedirect = redirect ? isValidRedirectPath(decodeURIComponent(redirect)) || appConfig.defaultRedirectPath : appConfig.defaultRedirectPath;
 
   switch (type) {
     case 'invite': {
-      ({ redirectPath } = await prepareOAuthAcceptInvite(ctx));
-      break;
+      const token = await getAuthCookie(ctx, 'invitation');
+      if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', redirectPath: '/auth/authenticate' });
+
+      const tokenRecord = await getValidToken({ ctx, token, tokenType: 'invitation', redirectPath: '/auth/authenticate', invokeToken: false });
+
+      if (tokenRecord.entityType)
+        return `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+
+      return safeRedirect;
     }
+
     case 'connect': {
-      ({ redirectPath } = await prepareOAuthConnect(ctx));
-      break;
+      const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/error' });
+      const { user } = await validateSession(sessionToken);
+      if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/error' });
+
+      return '/settings#authentication';
     }
+
     case 'verify': {
-      ({ redirectPath } = await prepareOAuthVerify(ctx));
-      break;
+      const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: safeRedirect });
+
+      if (tokenRecord) return `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
+
+      return safeRedirect;
     }
+
     default:
-      break;
+      return safeRedirect;
   }
-
-  return { redirectPath };
-};
-/**
- * Resolves and validates the redirect path used after OAuth.
- *
- * - Decodes the provided redirect query param
- * - Ensures it’s a safe/valid redirect path
- * - Falls back to the app default if invalid or missing
- *
- * @param redirect - raw redirect query param
- * @returns safe redirect path
- */
-const resolveOAuthRedirect = (redirect?: string): string => {
-  if (!redirect) return appConfig.defaultRedirectPath;
-
-  const decoded = decodeURIComponent(redirect);
-  return isValidRedirectPath(decoded) || appConfig.defaultRedirectPath;
-};
-
-/**
- * Validates and extracts invitation context for an OAuth flow.
- *
- * - Ensures `token` is present
- * - Fetches and validates the token record
- * - Determines correct redirect path based on entity type
- *
- * @param ctx - Hono context
- * @returns redirectPath
- * @throws AppError if token is missing or invalid
- */
-const prepareOAuthAcceptInvite = async (ctx: Context<Env>) => {
-  const token = await getAuthCookie(ctx, 'invitation');
-
-  // Must provide a token and tokenId
-  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', redirectPath: '/auth/authenticate' });
-
-  const tokenRecord = await getValidToken({ ctx, token, invokeToken: false, tokenType: 'invitation', redirectPath: '/auth/authenticate' });
-
-  const redirectPath = tokenRecord.entityType
-    ? `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`
-    : appConfig.defaultRedirectPath;
-
-  return { redirectPath };
-};
-
-/**
- * Connect an provider account such as your Github account to your existing account.
- * Can only be done from within an authenticated context.
- *
- * @param ctx - Hono context
- * @returns connectUserId and redirectPath
- * @throws AppError if missing param or user mismatch
- */
-const prepareOAuthConnect = async (ctx: Context<Env>) => {
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/error' });
-
-  // Get user from valid session
-  const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/error' });
-
-  //TODO we do this on callback or not? handle error query params in /settings
-  const redirectPath = '/settings#authentication';
-
-  return { connectUserId: user.id, redirectPath };
-};
-/**
- * Validates single-use token from cookie and revokes it to redirect back to frontend on success.
- *
- * @param ctx - Hono context
- * @returns tokenId + redirectPath
- * @throws AppError if missing or invalid token
- */
-const prepareOAuthVerify = async (ctx: Context<Env>) => {
-  // Validate single use token from db
-  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: '/auth/authenticate' });
-
-  let redirectPath = appConfig.defaultRedirectPath;
-
-  // If its a membership invitation
-  if (tokenRecord.entityType) redirectPath = `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
-
-  return { verifyTokenId: tokenRecord.id, redirectPath };
 };
