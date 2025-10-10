@@ -71,7 +71,7 @@ const authTotpsRouteHandlers = app
     // Save encoded secret key in database
     await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
 
-    return ctx.body(null, 204);
+    return ctx.body(null, 201);
   })
   /**
    * Unlink TOTP

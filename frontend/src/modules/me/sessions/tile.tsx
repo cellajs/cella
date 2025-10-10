@@ -1,4 +1,4 @@
-import { ChevronDown, Monitor, ShieldCheck, Smartphone, ZapOff } from 'lucide-react';
+import { ChevronDownIcon, MonitorIcon, ShieldCheckIcon, SmartphoneIcon, ZapOffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '~/modules/me/types';
@@ -18,12 +18,12 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
 
   const [expanded, setExpanded] = useState(false);
 
-  const DeviceIcon = session.deviceType === 'desktop' ? Monitor : Smartphone;
+  const DeviceIcon = session.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
     <Card className="w-full group/tile sm:has-[button:focus]:ring-2 transition-all" data-expanded={expanded}>
       <CardContent className="flex !p-2 sm:!p-3 lg:items-center gap-2 sm:gap-3">
-        <DeviceIcon className="w-4 h-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
+        <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-xs:flex-col gap-1 xs:gap-2">
             <span className="text-sm">{session.deviceName || t('common:unknown_device')}</span>
@@ -34,7 +34,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
                   variant="outline"
                   className="py-0 text-[10px] uppercase flex items-center font-normal gap-1 text-green-600 border-green-600"
                 >
-                  <ShieldCheck size={12} />
+                  <ShieldCheckIcon size={12} />
                   {t('common:mfa_short')}
                 </Badge>
               )}
@@ -73,14 +73,14 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDown size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </Button>
           </div>
         </div>
 
         {!session.isCurrent && (
           <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => handleDeleteSessions([session.id])}>
-            <ZapOff size={16} />
+            <ZapOffIcon size={16} />
             <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
           </Button>
         )}

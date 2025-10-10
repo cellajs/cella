@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Mail, Plus, PlusCircle, Search, UserPlus } from 'lucide-react';
+import { MailIcon, PlusCircle, PlusIcon, SearchIcon, UserPlusIcon } from 'lucide-react';
 import { expect, userEvent, within } from 'storybook/test';
 
 import {
@@ -87,25 +87,25 @@ export const WithSubmenus: Story = {
       <DropdownMenuTrigger>Open</DropdownMenuTrigger>
       <DropdownMenuContent className="w-44">
         <DropdownMenuItem>
-          <Search className="mr-2 size-4" />
-          <span>Search</span>
+          <SearchIcon className="mr-2 size-4" />
+          <span>SearchIcon</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <Plus className="mr-2 size-4" />
+            <PlusIcon className="mr-2 size-4" />
             <span>New Team</span>
             <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <UserPlus className="mr-2 size-4" />
+              <UserPlusIcon className="mr-2 size-4" />
               <span>Invite users</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                 <DropdownMenuItem>
-                  <Mail className="mr-2 size-4" />
+                  <MailIcon className="mr-2 size-4" />
                   <span>Email</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

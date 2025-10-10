@@ -18,6 +18,7 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
 import systemRoutes from '#/modules/system/routes';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -181,10 +182,7 @@ const systemRouteHandlers = app
       const { user } = await validateSession(sessionToken);
 
       if (attachment) {
-        const memberships = await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+        const memberships = await membershipBaseQuery().where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
 
         const isSystemAdmin = user.role === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);

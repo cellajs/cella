@@ -54,7 +54,7 @@ export const insertMembership = async <T extends BaseEntityModel>({ userId, role
   // Insert organization membership first
   if (entity.entityType !== 'organization') {
     const hasOrgMembership = await db
-      .select()
+      .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(
         and(
@@ -62,7 +62,8 @@ export const insertMembership = async <T extends BaseEntityModel>({ userId, role
           eq(membershipsTable.contextType, 'organization'),
           eq(membershipsTable.organizationId, baseMembership.organizationId),
         ),
-      );
+      )
+      .limit(1);
 
     if (!hasOrgMembership.length)
       await db

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +100,7 @@ const CreatePasswordPage = () => {
         />
         <SubmitButton loading={isPending} className="w-full">
           {t('common:reset')}
-          <ArrowRight size={16} className="ml-2" />
+          <ArrowRightIcon size={16} className="ml-2" />
         </SubmitButton>
       </form>
     </Form>

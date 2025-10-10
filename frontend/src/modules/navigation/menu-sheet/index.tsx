@@ -1,13 +1,12 @@
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowLeft, Info, Search } from 'lucide-react';
+import { ArrowLeftIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -31,7 +30,6 @@ import { cn } from '~/utils/cn';
 const pwaEnabled = appConfig.has.pwa;
 
 export const MenuSheet = memo(() => {
-  const isMobile = useBreakpoints('max', 'sm');
   const menu = useNavigationStore((state) => state.menu);
 
   const { mutateAsync } = useMemberUpdateMutation();
@@ -78,14 +76,10 @@ export const MenuSheet = memo(() => {
     );
   }, [menu]);
 
-  const wrapperProps = { id: 'nav-sheet', className: 'h-full' };
+  const wrapperProps = { id: 'nav-sheet', className: 'h-full w-full' };
 
-  return isMobile ? (
-    <div {...wrapperProps}>
-      <MenuContent />
-    </div>
-  ) : (
-    <ScrollArea {...wrapperProps} viewPortRef={scrollViewportRef}>
+  return (
+    <ScrollArea {...wrapperProps} viewportRef={scrollViewportRef}>
       <MenuContent />
     </ScrollArea>
   );
@@ -128,7 +122,7 @@ const MenuContent = memo(() => {
       {/* Only visible when floating nav is present. To return to home */}
       <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
         <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
-          <ArrowLeft size={16} strokeWidth={1.5} />
+          <ArrowLeftIcon size={16} strokeWidth={1.5} />
           <span className="ml-2 font-normal">Home</span>
         </Link>
         <Button
@@ -142,10 +136,10 @@ const MenuContent = memo(() => {
               id: 'nav-sheet',
               triggerRef: accountButtonRef,
               side: 'left',
-              hideClose: true,
+              showCloseButton: false,
               modal: true,
               className:
-                'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
+                'sm:w-80 fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
               onClose: () => {
                 setNavSheetOpen(null);
               },
@@ -168,7 +162,7 @@ const MenuContent = memo(() => {
         {searchResultsListItems().length > 0 ? (
           searchResultsListItems()
         ) : (
-          <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
         )}
       </div>
       {!searchTerm && (
@@ -178,7 +172,6 @@ const MenuContent = memo(() => {
           <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch
-                size="xs"
                 id="keepMenuOpen"
                 checked={keepOpenPreference}
                 onCheckedChange={toggleKeepOpenPreference}
@@ -191,20 +184,14 @@ const MenuContent = memo(() => {
             {pwaEnabled && <OfflineAccessSwitch />}
             {appConfig.menuStructure.some(({ subentityType }) => subentityType) && (
               <div className="flex items-center gap-4 ml-1">
-                <Switch
-                  size="xs"
-                  id="detailedMenu"
-                  checked={detailedMenu}
-                  onCheckedChange={toggleDetailedMenu}
-                  aria-label={t('common:detailed_menu')}
-                />
+                <Switch id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('common:detailed_menu')} />
                 <label htmlFor="detailedMenu" className="cursor-pointer select-none text-sm font-medium leading-none">
                   {t('common:detailed_menu')}
                 </label>
               </div>
             )}
             {pwaEnabled && (
-              <AlertWrap id="offline_access" variant="plain" icon={Info}>
+              <AlertWrap id="offline_access" variant="plain" icon={InfoIcon}>
                 {t('common:offline_access.text')}
               </AlertWrap>
             )}

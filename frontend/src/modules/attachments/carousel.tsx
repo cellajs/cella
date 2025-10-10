@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
-import { Download, ExternalLink, X } from 'lucide-react';
+import { DownloadIcon, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { clearAttachmentDialogSearchParams } from '~/modules/attachments/dialog/clear-search-params';
@@ -111,10 +111,10 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             <Button
               variant="ghost"
               size="icon"
-              className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
+              className="-my-1 size-8 opacity-70 hover:opacity-100"
               onClick={() => window.open(currentItem.url, '_blank')}
             >
-              <ExternalLink className="h-5 w-5" strokeWidth={1.5} />
+              <ExternalLinkIcon className="h-5 w-5" strokeWidth={1.5} />
             </Button>
           )}
 
@@ -123,15 +123,15 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               variant="ghost"
               size="icon"
               disabled={isInProgress}
-              className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
+              className="-my-1 size-8 opacity-70 hover:opacity-100"
               onClick={() => download(currentItem.url, currentItem.filename || 'file')}
             >
-              {isInProgress ? <Spinner className="w-5 h-5 text-foreground/80" noDelay /> : <Download className="h-5 w-5" strokeWidth={1.5} />}
+              {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />}
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="-my-1 w-8 h-8 opacity-70 hover:opacity-100" onClick={() => removeDialog()}>
-            <X className="h-6 w-6" strokeWidth={1.5} />
+          <Button variant="ghost" size="icon" className="-my-1 size-8 opacity-70 hover:opacity-100" onClick={() => removeDialog()}>
+            <XIcon className="h-6 w-6" strokeWidth={1.5} />
           </Button>
         </div>
       )}

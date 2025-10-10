@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 # Controls which events and branches will trigger the workflow
 on:
   push:
@@ -151,6 +154,8 @@ jobs:
 
   # Generates draft release notes (for testing only)
   draft-release-notes:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -170,7 +175,22 @@ jobs:
         run: pnpm add -Dw conventional-changelog-cli conventional-changelog-conventionalcommits
 
       - name: Generate draft release notes
-        run: npx conventional-changelog -p conventionalcommits -r 0 -o RELEASE_NOTES.md
+        run: |
+          # Check latest and previous tags
+          LATEST_TAG=$(if [ "$(git tag | wc -l)" -ge 1 ]; then git describe --tags --abbrev=0; fi)
+          PREV_TAG=$(if [ "$(git tag | wc -l)" -ge 2 ]; then git tag --sort=creatordate | tail -2 | head -1; fi)
+
+          echo "Latest tag: $LATEST_TAG"
+          echo "Previous tag: $PREV_TAG"
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "First release — include all commits"
+            npx conventional-changelog -p conventionalcommits -r 0 -o RELEASE_NOTES.md
+          else
+            echo "Generating changelog since previous tag $PREV_TAG"
+            # Use -r 2 and output commits since PREV_TAG
+            npx conventional-changelog -p conventionalcommits -r 2 -o RELEASE_NOTES.md
+          fi
 
       - name: Upload draft release notes
         uses: actions/upload-artifact@v4

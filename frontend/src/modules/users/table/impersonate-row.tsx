@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
-import { VenetianMask } from 'lucide-react';
+import { VenetianMaskIcon } from 'lucide-react';
 import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import router from '~/lib/router';
@@ -38,7 +38,7 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
       data-tooltip-content={i18n.t('common:impersonate')}
       onClick={() => handleStartImpersonation(user.id)}
     >
-      <VenetianMask size={16} />
+      <VenetianMaskIcon size={16} />
     </Button>
   );
 };

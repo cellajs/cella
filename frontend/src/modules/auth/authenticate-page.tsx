@@ -10,10 +10,10 @@ import { SignInStep } from '~/modules/auth/steps/sign-in';
 import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { AuthStep } from '~/modules/auth/types';
+import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import Spinner from '~/modules/common/spinner';
 import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
-import { useGetTokenData } from './use-get-token-data';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

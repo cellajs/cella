@@ -7,11 +7,8 @@ import { cn } from '~/utils/cn';
 
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
-export interface DialogProp {
-  dialog: InternalDialog;
-}
-export default function StandardDialog({ dialog }: DialogProp) {
-  const { id, content, open, triggerRef, description, title, titleContent = title, className, hideClose, headerClassName, container } = dialog;
+export default function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
+  const { id, content, open, triggerRef, description, title, titleContent = title, className, showCloseButton, headerClassName, container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
@@ -39,7 +36,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
       )}
       <DialogContent
         id={String(id)}
-        hideClose={hideClose}
+        showCloseButton={showCloseButton}
         container={containerElement}
         className={cn(className, containerElement && 'z-40 [.sheeter-open_&]:z-40')}
         onInteractOutside={handleInteractOutside}

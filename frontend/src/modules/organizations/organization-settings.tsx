@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Trash } from 'lucide-react';
+import { TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 // import Subscription from '~/modules/organizations/subscription';
@@ -130,7 +130,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <Trash className="mr-2 h-4 w-4" />
+                <TrashIcon className="mr-2 size-4" />
                 <span>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</span>
               </Button>
             </CardContent>

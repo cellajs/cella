@@ -1,18 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig, type EntityType } from 'config';
-import { Undo } from 'lucide-react';
+import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
-import { type CheckSlugData, CheckSlugResponse, checkSlug } from '~/api.gen';
-import { useMeasure } from '~/hooks/use-measure';
+import { checkSlug, type CheckSlugData, CheckSlugResponse } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
 
 type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   nameValue?: string;
@@ -44,10 +43,6 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
                           ${isSlugAvailable === 'notAvailable' && 'ring-red-500 focus-visible:ring-red-500'}`;
 
   const form = useFormContext<{ slug: string }>();
-  const { setFocus } = useFormContext();
-
-  const prefixMeasure = useMeasure<HTMLButtonElement>();
-  const revertMeasure = useMeasure<HTMLDivElement>();
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: name });
@@ -97,15 +92,6 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
     form.resetField(name);
   };
 
-  const prefixClick = () => {
-    setFocus(name);
-  };
-
-  const getStyle = () => ({
-    paddingLeft: `${prefixMeasure.bounds.width + 14}px`,
-    paddingRight: `${revertMeasure.bounds.width + 44}px`,
-  });
-
   return (
     <FormField
       control={control}
@@ -118,35 +104,28 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
           </FormLabel>
           {description && <FormDescription>{description}</FormDescription>}
           <FormControl>
-            <div className="relative flex w-full items-center ">
-              <button
-                ref={prefixMeasure.ref}
-                type="button"
-                tabIndex={-1}
-                id="slug-prefix"
-                onClick={prefixClick}
-                className="absolute left-3 text-xs"
-                style={{ opacity: formFieldValue ? 1 : 0.5 }}
-              >
-                {prefix}
-              </button>
-
-              <Input
-                className={inputClassName}
-                style={getStyle()}
+            <InputGroup className={inputClassName}>
+              <InputGroupInput
+                className="focus-visible:ring-offset-0"
                 type={entityType}
                 onFocus={() => setDeviating(true)}
                 value={formFieldValue || ''}
                 {...rest}
               />
+              <InputGroupAddon>
+                <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
+                  {prefix}
+                </InputGroupText>
+              </InputGroupAddon>
+
               {previousSlug && previousSlug !== slug && (
-                <div ref={revertMeasure.ref} id="slug-revert" className="absolute inset-y-1 right-1 flex justify-end">
+                <InputGroupAddon align="inline-end">
                   <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-                    <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
+                    <UndoIcon size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
                   </Button>
-                </div>
+                </InputGroupAddon>
               )}
-            </div>
+            </InputGroup>
           </FormControl>
           <FormMessage />
         </FormItem>

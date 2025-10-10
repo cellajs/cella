@@ -37,11 +37,7 @@ describe('sign-up', async () => {
     );
 
     // Check the response status
-    expect(res.status).toBe(200);
-
-    // Check the response
-    const data = await res.json();
-    expect(data).toBe(true);
+    expect(res.status).toBe(201);
 
     // Check if the user was created in the database
     const [user] = await getUserByEmail(signUpUser.email);
@@ -66,9 +62,7 @@ describe('sign-up', async () => {
       { headers: defaultHeaders },
     );
 
-    expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('should not allow duplicate emails', async () => {

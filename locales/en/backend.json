@@ -32,5 +32,12 @@
   "email.newsletter_request.title": "You're subscribed to our newsletter",
   "email.newsletter_request.text": "Thanks for subscribing to {{appName}} updates. We'll keep you in the loop with news, tips, and product updates.",
   "email.contact_request.title": "Our team has your request",
-  "email.contact_request.text": "Thanks for reaching out to {{appName}}. Our team will get back to you as soon as possible."
+  "email.contact_request.text": "Thanks for reaching out to {{appName}}. Our team will get back to you as soon as possible.",
+  "email.account_security.preview": "Hello {{name}}, security update for your {{appName}} account",
+  "email.account_security.mfa-enabled.title": "Multi-factor authentication enabled",
+  "email.account_security.mfa-disabled.title": "Multi-factor authentication disabled",
+  "email.account_security.wrong-password-lockout.title": "Account temporarily locked",
+  "email.account_security.mfa-enabled.text": "Your account on {{appName}} now has MFA enabled for extra security.",
+  "email.account_security.mfa-disabled.text": "MFA has been disabled on your {{appName}} account.",
+  "email.account_security.wrong-password-lockout.text": "There have been {{attempts}} unsuccessful login attempts on {{appName}}. Your account is locked for {{duration}} minutes."
 }

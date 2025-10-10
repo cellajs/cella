@@ -17,7 +17,6 @@ import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/routes';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -61,7 +60,7 @@ const authPasswordsRouteHandlers = app
 
     sendVerificationEmail({ userId: user.id });
 
-    return ctx.body(null, 204);
+    return ctx.body(null, 201);
   })
   /**
    * Sign up with email & password to accept (system or membership) invitations.
@@ -99,20 +98,21 @@ const authPasswordsRouteHandlers = app
     await setUserSession(ctx, user, strategy);
 
     // If no membership invitation, we are done
-    if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 200);
+    if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
 
     // If membership invitation, get membership to forward
     const [invitationMembership] = await db
-      .select(membershipBaseSelect)
+      .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(eq(membershipsTable.tokenId, validToken.id))
       .limit(1);
+
     if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
 
     // Redirect to accept invitation if membership invite
     const redirectPath = `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`;
 
-    return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    return ctx.json({ shouldRedirect: true, redirectPath }, 201);
   })
   /**
    * Request reset password email
@@ -198,11 +198,11 @@ const authPasswordsRouteHandlers = app
     if (mfaRedirectPath) {
       // Append fromRoot to avoid redirecting to FE homepage
       const redirectPath = `${mfaRedirectPath}?fromRoot=true`;
-      return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+      return ctx.json({ shouldRedirect: true, redirectPath }, 201);
     }
 
     await setUserSession(ctx, user, strategy);
-    return ctx.json({ shouldRedirect: false }, 200);
+    return ctx.json({ shouldRedirect: false }, 201);
   })
   /**
    * Sign in with email and password

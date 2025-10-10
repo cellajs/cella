@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,9 +11,9 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
-import { memberSelect, userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import { memberSelect, usersBaseQuery, userSelect } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -27,6 +23,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { SystemInviteEmail, SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -253,10 +253,9 @@ const membershipRouteHandlers = app
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     // Get target memberships
-    const targets = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)));
+    const targets = await membershipBaseQuery().where(
+      and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)),
+    );
 
     // Check if membership exist
     const rejectedItems: string[] = [];
@@ -298,9 +297,7 @@ const membershipRouteHandlers = app
     let orderToUpdate = order;
 
     // Get the membership in valid organization
-    const [membershipToUpdate] = await db
-      .select()
-      .from(membershipsTable)
+    const [membershipToUpdate] = await membershipBaseQuery()
       .where(
         and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.activatedAt), eq(membershipsTable.organizationId, organization.id)),
       )
@@ -366,7 +363,6 @@ const membershipRouteHandlers = app
 
     const user = getContextUser();
 
-    // TODO use get membership util
     const [membership] = await db
       .select()
       .from(membershipsTable)

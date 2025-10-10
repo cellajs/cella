@@ -17,6 +17,7 @@ import {
   entityWithTypeQuerySchema,
   idInOrgParamSchema,
   idOrSlugSchema,
+  idSchema,
   idsBodySchema,
   inOrgParamSchema,
 } from '#/utils/schema/common';
@@ -35,11 +36,8 @@ const membershipRoutes = {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
-        content: {
-          'application/json': {
-            schema: membershipCreateBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: membershipCreateBodySchema } },
       },
     },
     responses: {
@@ -63,6 +61,7 @@ const membershipRoutes = {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
@@ -90,11 +89,7 @@ const membershipRoutes = {
     request: {
       params: idInOrgParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: membershipUpdateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: membershipUpdateBodySchema } },
       },
     },
     responses: {
@@ -114,7 +109,7 @@ const membershipRoutes = {
     tags: ['membership'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.',
-    request: { params: z.object({ id: z.string(), acceptOrReject: z.enum(['accept', 'reject']) }) },
+    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
     responses: {
       200: {
         description: 'Invitation was accepted',
@@ -182,7 +177,6 @@ const membershipRoutes = {
     tags: ['memberships'],
     summary: 'Resend invitation',
     description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
-    security: [],
     request: {
       body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
     },

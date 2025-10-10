@@ -120,7 +120,7 @@ const attachmentsRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
   /**
    * Get attachments

@@ -1,4 +1,4 @@
-import { ChevronDown, KeyRound, Monitor, Smartphone, Unlink } from 'lucide-react';
+import { ChevronDownIcon, KeyRoundIcon, MonitorIcon, SmartphoneIcon, UnlinkIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Passkey } from '~/modules/me/types';
@@ -21,18 +21,18 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
 
   const [expanded, setExpanded] = useState(false);
 
-  const DeviceIcon = passkey.deviceType === 'desktop' ? Monitor : Smartphone;
+  const DeviceIcon = passkey.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
     <Card className="w-full group/tile sm:has-[button:focus]:ring-2 transition-all" data-expanded={expanded}>
       <CardContent className="flex !p-2 sm:!p-3 lg:items-center gap-2 sm:gap-3">
-        <DeviceIcon className="w-4 h-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
+        <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
 
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-md:flex-col items-start gap-1 md:gap-2">
             <span className="text-sm">{passkey.deviceName || t('common:unknown_device')}</span>
             <Badge size="xs" variant="outline" className="truncate flex items-center font-light gap-1 py-0">
-              <KeyRound size={12} />
+              <KeyRoundIcon size={12} />
               <span className="truncate">{passkey.nameOnDevice}</span>
             </Badge>
           </div>
@@ -57,7 +57,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDown size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </Button>
           </div>
         </div>
@@ -70,7 +70,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
           disabled={user.mfaRequired && onlyPasskeyLeft}
           onClick={() => handleUnlinkPasskey(passkey.id)}
         >
-          <Unlink size={16} />
+          <UnlinkIcon size={16} />
           <span className="ml-1 max-md:hidden">{t('common:unlink')}</span>
         </Button>
       </CardContent>

@@ -13,7 +13,7 @@ import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
 import { getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMembership } from '#/modules/memberships/helpers';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -77,7 +77,7 @@ const organizationRouteHandlers = app
       counts: { membership: memberCounts, entities: entitiesCounts },
     };
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
   /**
    * Get list of organizations
@@ -94,9 +94,7 @@ const organizationRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
-    const memberships = db
-      .select()
-      .from(membershipsTable)
+    const memberships = membershipBaseQuery()
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
       .as('memberships');
 
@@ -186,17 +184,14 @@ const organizationRouteHandlers = app
       .returning();
 
     // notify members (unchanged)
-    const organizationMemberships = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.contextType, 'organization'),
-          eq(membershipsTable.organizationId, organization.id),
-          eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
+    const organizationMemberships = await membershipBaseQuery().where(
+      and(
+        eq(membershipsTable.contextType, 'organization'),
+        eq(membershipsTable.organizationId, organization.id),
+        eq(membershipsTable.archived, false),
+        isNotNull(membershipsTable.activatedAt),
+      ),
+    );
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });

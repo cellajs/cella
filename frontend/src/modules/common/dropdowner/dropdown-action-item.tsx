@@ -20,6 +20,7 @@ export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, c
 
   if (isMobile) {
     return (
+      // TODO can we make variant configurable from outside?
       <div className="sm:p-1">
         <Button {...sharedProps} variant="secondary">
           {Icon && <Icon size={16} className="mr-2" />}

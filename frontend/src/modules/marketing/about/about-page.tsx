@@ -1,16 +1,16 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowDown, Check, Copy } from 'lucide-react';
+import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import CallToAction from '~/modules/marketing/about/call-to-action';
 import AboutCards from '~/modules/marketing/about/cards';
-// import Counters from '~/modules/marketing/about/counters';
-// import FAQ from '~/modules/marketing/about/faq';
+import Counters from '~/modules/marketing/about/counters';
+import FAQ from '~/modules/marketing/about/faq';
 import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
+import Pricing from '~/modules/marketing/about/pricing';
 import Showcase from '~/modules/marketing/about/showcase';
-// import Pricing from '~/modules/marketing/about/pricing';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
 import Why from '~/modules/marketing/about/why';
@@ -55,7 +55,7 @@ const AboutPage = () => {
               variant="ghost"
               className="rounded-full absolute right-2 top-2"
             >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
             </Button>
           </div>
           <Link
@@ -76,7 +76,7 @@ const AboutPage = () => {
             aria-label="Read more"
           >
             <span className="font-light">{t('about:why')}</span>
-            <ArrowDown size={16} className="ml-2 animate-bounce" />
+            <ArrowDownIcon size={16} className="ml-2 animate-bounce" />
           </Link>
         </Hero>
 
@@ -107,19 +107,19 @@ const AboutPage = () => {
           </AboutSection>
 
           {/* Public counters */}
-          {/* <AboutSection key={'counters'} sectionId="counters" title="about:title_5" text="about:text_5" alternate={true}>
+          <AboutSection key={'counters'} sectionId="counters" title="about:title_5" text="about:text_5" alternate={true}>
             <Counters />
-          </AboutSection> */}
+          </AboutSection>
 
           {/* Pricing */}
-          {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:title_6" text="about:text_6">
+          <AboutSection key={'pricing'} sectionId="pricing" title="about:title_6" text="about:text_6">
             <Pricing />
-          </AboutSection> */}
+          </AboutSection>
 
           {/* FAQs */}
-          {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:title_7" text="about:text_7" alternate={true}>
+          <AboutSection key={'faqs'} sectionId="faqs" title="about:title_7" text="about:text_7" alternate={true}>
             <FAQ />
-          </AboutSection> */}
+          </AboutSection>
         </div>
       </div>
       <MarketingFooter />

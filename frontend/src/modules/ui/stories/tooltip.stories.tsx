@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Plus } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modules/ui/tooltip';
 
@@ -33,7 +33,7 @@ const meta: Meta<typeof TooltipContent> = {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <Plus className="h-4 w-4" />
+          <PlusIcon className="size-4" />
           <span className="sr-only">Add</span>
         </TooltipTrigger>
         <TooltipContent {...args} />

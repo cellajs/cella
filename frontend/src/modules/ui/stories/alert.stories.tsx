@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AlertCircle } from 'lucide-react';
-
+import { AlertCircleIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 
 /**
@@ -41,7 +40,7 @@ export const Default: Story = {};
 export const Destructive: Story = {
   render: (args) => (
     <Alert {...args}>
-      <AlertCircle className="h-4 w-4" />
+      <AlertCircleIcon className="size-4" />
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
     </Alert>

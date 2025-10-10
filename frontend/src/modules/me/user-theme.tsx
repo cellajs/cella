@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
+import { BanIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -19,8 +19,8 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
   const { mode, theme, setMode, setTheme } = useUIStore();
 
   const modes = [
-    { id: 'light', label: t('common:light'), icon: Sun },
-    { id: 'dark', label: t('common:dark'), icon: Moon },
+    { id: 'light', label: t('common:light'), icon: SunIcon },
+    { id: 'dark', label: t('common:dark'), icon: MoonIcon },
   ] as const;
 
   const themes = objectEntries(appConfig.theme.colors);
@@ -33,20 +33,18 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
   if (!themes.length) {
     return (
       <Switch
-        size="sm"
         id="changeTheme"
         className={cn(mode === 'light' && 'bg-border/50!', 'scale-125 m-2', buttonClassName)}
         checked={mode === 'light'}
         onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
         aria-label={'changeTheme'}
-        thumb={
-          mode === 'light' ? (
-            <Sun size={size} strokeWidth={appConfig.theme.strokeWidth} />
-          ) : (
-            <Moon size={size} strokeWidth={appConfig.theme.strokeWidth} />
-          )
-        }
-      />
+      >
+        {mode === 'light' ? (
+          <SunIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+        ) : (
+          <MoonIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+        )}
+      </Switch>
     );
   }
 
@@ -56,9 +54,9 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={buttonClassName} aria-label="Change theme">
           {mode === 'light' ? (
-            <Sun size={size} strokeWidth={appConfig.theme.strokeWidth} />
+            <SunIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
           ) : (
-            <Moon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+            <MoonIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -72,14 +70,14 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem key={'none'} checked={theme === 'none'} onCheckedChange={() => setTheme('none')}>
           <span className={'opacity-50'}>
-            <Icon icon={Ban} />
+            <Icon icon={BanIcon} />
           </span>
           <span className="ml-2">{t('common:without_color')}</span>
         </DropdownMenuCheckboxItem>
         {themes.map(([name, color]) => (
           <DropdownMenuCheckboxItem key={name} checked={theme === name} onCheckedChange={() => setTheme(name)}>
             <span style={{ color }}>
-              <Icon icon={Circle} />
+              <Icon icon={CircleIcon} />
             </span>
             <span className="ml-2">{(name as string)[0].toUpperCase() + (name as string).slice(1)}</span>
           </DropdownMenuCheckboxItem>

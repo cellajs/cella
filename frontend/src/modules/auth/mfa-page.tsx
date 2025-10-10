@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
@@ -46,7 +46,7 @@ const MfaPage = () => {
 
       <Button variant="ghost" onClick={handleCancelMfa} className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10">
         <span className="truncate">{lastUser.email}</span>
-        <ChevronDown size={16} className="ml-1" />
+        <ChevronDownIcon size={16} className="ml-1" />
       </Button>
 
       <p className="font-light text-center space-x-1">{t('common:mfa_subheader.text')}</p>

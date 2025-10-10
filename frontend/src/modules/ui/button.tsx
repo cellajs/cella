@@ -1,7 +1,7 @@
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { t } from 'i18next';
-import { Loader2, TriangleAlert } from 'lucide-react';
+import { Loader2Icon, TriangleAlertIcon } from 'lucide-react';
 import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/service';
@@ -9,7 +9,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -17,8 +17,8 @@ const buttonVariants = cva(
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
         success: 'bg-success text-primary-foreground hover:bg-success/80',
         secondary: 'bg-secondary border border-transparent text-secondary-foreground hover:bg-secondary/80',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        ghost: 'hover:bg-accent/50',
+        outline: 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
+        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         outlineGhost: 'border border-foreground/20 bg-background/20 hover:bg-background/40 hover:border-foreground/30 hover:text-accent-foreground',
         outlinePrimary: 'text-primary border border-primary/30 bg-background/20 hover:bg-primary/5 hover:border-primary/50',
         link: 'text-primary underline-offset-4 hover:underline',
@@ -52,64 +52,51 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   asChild?: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, children, loading, disabled, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button';
+function Button({ className, variant, size, asChild = false, ...props }: React.ComponentProps<'button'> & ButtonProps) {
+  const Comp = asChild ? Slot : 'button';
+  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+}
 
-    const baseStyle = buttonVariants({ variant, size, className });
+type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
+  allowOfflineDelete?: boolean;
+};
 
-    if (asChild) {
-      return (
-        <Comp className={cn(baseStyle)} ref={ref} disabled={disabled} {...props}>
-          {children}
-        </Comp>
-      );
+/**
+ * Submit button for forms that warns when offline.
+ */
+function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, ...props }: SubmitButtonProps) {
+  const { isOnline } = useOnlineManager();
+
+  const isDisabled = disabled || loading;
+
+  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+    if (isDisabled) {
+      e.preventDefault();
+      return;
     }
+    if (!allowOfflineDelete && !isOnline) {
+      e.preventDefault();
+      return toaster(t('common:action.offline.text'), 'warning');
+    }
+    onClick?.(e);
+  };
 
-    return (
-      <Comp className={cn(baseStyle, loading && 'relative')} ref={ref} disabled={loading || disabled} {...props}>
-        {loading && (
-          <div className={cn(baseStyle, 'absolute inset-0 flex items-center justify-center bg-background/75')}>
-            <Loader2 className="animate-spin text-primary" />
-          </div>
-        )}
+  const buttonContent = (
+    <Button type="submit" onClick={handleClick} disabled={isDisabled} aria-busy={loading || undefined} {...props}>
+      {loading ? (
+        <Loader2Icon className="mr-2 animate-spin" size={16} />
+      ) : (
+        !allowOfflineDelete && !isOnline && <TriangleAlertIcon className="mr-2" size={16} />
+      )}
+      {children}
+    </Button>
+  );
 
-        {children}
-      </Comp>
-    );
-  },
-);
-Button.displayName = 'Button';
-
-const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean }>(
-  ({ onClick, children, allowOfflineDelete = false, ...props }, ref) => {
-    const { isOnline } = useOnlineManager();
-
-    const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-      if (!allowOfflineDelete && !isOnline) {
-        e.preventDefault();
-        return toaster(t('common:action.offline.text'), 'warning');
-      }
-      onClick?.(e);
-    };
-
-    const buttonContent = (
-      <Button ref={ref} type="submit" onClick={handleClick} {...props}>
-        {!allowOfflineDelete && !isOnline && <TriangleAlert className="mr-2" size={16} />}
-        {children}
-      </Button>
-    );
-
-    return (
-      <>
-        {!allowOfflineDelete && !isOnline ? (
-          <TooltipButton toolTipContent={t('common:offline.text_with_info')}>{buttonContent}</TooltipButton>
-        ) : (
-          buttonContent
-        )}
-      </>
-    );
-  },
-);
+  return !allowOfflineDelete && !isOnline ? (
+    <TooltipButton toolTipContent={t('common:offline.text_with_info')}>{buttonContent}</TooltipButton>
+  ) : (
+    buttonContent
+  );
+}
 
 export { Button, buttonVariants, SubmitButton };

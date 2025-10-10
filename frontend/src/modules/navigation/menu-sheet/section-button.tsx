@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Settings2 } from 'lucide-react';
+import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +85,7 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 20, opacity: 0 }}
                   >
-                    <Plus size={16} />
+                    <PlusIcon size={16} />
                   </motion.button>
                 </Button>
               </TooltipButton>

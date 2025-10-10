@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CircleUserRound, LogOut, type LucideProps, Settings, Wrench } from 'lucide-react';
+import { CircleUserRoundIcon, LogOutIcon, type LucideProps, SettingsIcon, WrenchIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,10 +38,10 @@ const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action 
       to={action}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'lg' }),
-        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus-effect',
       )}
     >
-      <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+      <Icon className="mr-2 size-4" aria-hidden="true" />
       {label}
     </Link>
   );
@@ -63,7 +63,7 @@ export const AccountSheet = () => {
   }, []);
 
   return (
-    <ScrollArea className="h-full max-sm:-mx-3" id="nav-sheet">
+    <ScrollArea className="h-full w-full" id="nav-sheet">
       <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
         <Link to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
           <div
@@ -85,7 +85,7 @@ export const AccountSheet = () => {
           <AccountButton
             offlineAccess={false}
             isOnline={isOnline}
-            icon={CircleUserRound}
+            icon={CircleUserRoundIcon}
             id="btn-profile"
             label={t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
             action={`/users/${user.slug}`}
@@ -93,7 +93,7 @@ export const AccountSheet = () => {
           <AccountButton
             offlineAccess={false}
             isOnline={isOnline}
-            icon={Settings}
+            icon={SettingsIcon}
             id="btn-account"
             label={t('common:my_account')}
             action="/account"
@@ -102,13 +102,20 @@ export const AccountSheet = () => {
             <AccountButton
               offlineAccess={false}
               isOnline={isOnline}
-              icon={Wrench}
+              icon={WrenchIcon}
               id="btn-system"
               label={t('common:system_panel')}
               action="/system/users"
             />
           )}
-          <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
+          <AccountButton
+            offlineAccess={false}
+            isOnline={isOnline}
+            icon={LogOutIcon}
+            id="btn-signout"
+            label={t('common:sign_out')}
+            action="/sign-out"
+          />
         </div>
         <div className="grow border-b border-dashed" />
         <AppFooter className="items-center" />

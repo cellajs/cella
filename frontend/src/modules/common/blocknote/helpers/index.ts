@@ -14,9 +14,9 @@ export const getParsedContent = (initialStringifiedBlocks: string | undefined) =
   }
 };
 
-export const blocksToHTML = async (srtBlocks: string) => {
+export const blocksToHTML = (srtBlocks: string) => {
   const editor = BlockNoteEditor.create({ schema: customSchema, _headless: true });
   const blocks = JSON.parse(srtBlocks) as CustomBlock[];
 
-  return await editor.blocksToHTMLLossy(blocks);
+  return editor.blocksToHTMLLossy(blocks);
 };

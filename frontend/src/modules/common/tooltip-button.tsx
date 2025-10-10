@@ -36,5 +36,3 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
     );
   },
 );
-
-TooltipButton.displayName = 'TooltipButton';

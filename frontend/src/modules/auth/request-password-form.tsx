@@ -1,4 +1,4 @@
-import { Send } from 'lucide-react';
+import { SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type RequestPasswordResponse, requestPassword } from '~/api.gen';
@@ -40,7 +40,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
       />
       <div className="flex flex-col gap-2">
         <SubmitButton disabled={!emailValue} loading={isPending} onClick={() => requestPasswordEmail(emailValue)}>
-          <Send size={16} className="mr-2" />
+          <SendIcon size={16} className="mr-2" />
           {t('common:send_reset_link')}
         </SubmitButton>
 

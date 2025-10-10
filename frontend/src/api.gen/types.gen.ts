@@ -208,7 +208,7 @@ export type ApiError = {
 };
 
 export type CheckEmailData = {
-  body?: {
+  body: {
     email: string;
   };
   path?: never;
@@ -672,13 +672,11 @@ export type CreateTotpResponses = {
   /**
    * TOTP created
    */
-  204: void;
+  201: unknown;
 };
 
-export type CreateTotpResponse = CreateTotpResponses[keyof CreateTotpResponses];
-
 export type SignInWithTotpData = {
-  body?: {
+  body: {
     code: string;
   };
   path?: never;
@@ -779,13 +777,11 @@ export type SignUpResponses = {
   /**
    * User signed up
    */
-  204: void;
+  201: unknown;
 };
 
-export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
-
 export type SignUpWithTokenData = {
-  body?: {
+  body: {
     email: string;
     password: string;
   };
@@ -835,7 +831,7 @@ export type SignUpWithTokenResponses = {
   /**
    * User signed up
    */
-  200: {
+  201: {
     shouldRedirect: boolean;
     redirectPath?: string;
   };
@@ -844,7 +840,7 @@ export type SignUpWithTokenResponses = {
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
 
 export type RequestPasswordData = {
-  body?: {
+  body: {
     email: string;
   };
   path?: never;
@@ -897,7 +893,7 @@ export type RequestPasswordResponses = {
 export type RequestPasswordResponse = RequestPasswordResponses[keyof RequestPasswordResponses];
 
 export type CreatePasswordData = {
-  body?: {
+  body: {
     password: string;
   };
   path: {
@@ -946,7 +942,7 @@ export type CreatePasswordResponses = {
   /**
    * Password created
    */
-  200: {
+  201: {
     shouldRedirect: boolean;
     redirectPath?: string;
   };
@@ -955,7 +951,7 @@ export type CreatePasswordResponses = {
 export type CreatePasswordResponse = CreatePasswordResponses[keyof CreatePasswordResponses];
 
 export type SignInData = {
-  body?: {
+  body: {
     email: string;
     password: string;
   };
@@ -1061,7 +1057,7 @@ export type CreatePasskeyResponses = {
   /**
    * Passkey created
    */
-  200: {
+  201: {
     id: string;
     userId: string;
     deviceName: string | null;
@@ -1129,7 +1125,7 @@ export type DeletePasskeyResponses = {
 export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
 
 export type GeneratePasskeyChallengeData = {
-  body?: {
+  body: {
     type: 'authentication' | 'mfa' | 'registration';
     email?: string;
   };
@@ -1186,7 +1182,7 @@ export type GeneratePasskeyChallengeResponses = {
 export type GeneratePasskeyChallengeResponse = GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
 
 export type SignInWithPasskeyData = {
-  body?: {
+  body: {
     credentialId: string;
     clientDataJSON: string;
     authenticatorObject: string;
@@ -1619,7 +1615,7 @@ export type GetMeResponses = {
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 
 export type UpdateMeData = {
-  body?: {
+  body: {
     bannerUrl?: string | null;
     firstName?: string | null;
     lastName?: string | null;
@@ -2162,7 +2158,7 @@ export type UnsubscribeMeErrors = {
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
 
 export type DeleteUsersData = {
-  body?: {
+  body: {
     ids: Array<string>;
   };
   path?: never;
@@ -2400,7 +2396,7 @@ export type UpdateUserResponses = {
 export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
 export type DeleteOrganizationsData = {
-  body?: {
+  body: {
     ids: Array<string>;
   };
   path?: never;
@@ -2564,7 +2560,7 @@ export type CreateOrganizationResponses = {
   /**
    * Organization was created
    */
-  200: Organization & {
+  201: Organization & {
     membership?: {
       id: string;
       contextType: 'organization';
@@ -2846,7 +2842,7 @@ export type GetContextEntityResponses = {
 export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
 
 export type CheckSlugData = {
-  body?: {
+  body: {
     slug: string;
     entityType: 'user' | 'organization' | 'attachment';
   };
@@ -2900,7 +2896,7 @@ export type CheckSlugResponses = {
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
 
 export type SystemInviteData = {
-  body?: {
+  body: {
     emails: Array<string>;
   };
   path?: never;
@@ -3120,7 +3116,7 @@ export type SendNewsletterResponses = {
 export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
 
 export type DeleteRequestsData = {
-  body?: {
+  body: {
     ids: Array<string>;
   };
   path?: never;
@@ -3240,7 +3236,7 @@ export type GetRequestsResponses = {
 export type GetRequestsResponse = GetRequestsResponses[keyof GetRequestsResponses];
 
 export type CreateRequestData = {
-  body?: {
+  body: {
     email: string;
     type: 'waitlist' | 'newsletter' | 'contact';
     message: string | null;
@@ -3289,7 +3285,7 @@ export type CreateRequestResponses = {
   /**
    * Requests
    */
-  200: {
+  201: {
     createdAt: string;
     id: string;
     message: string | null;
@@ -3469,7 +3465,7 @@ export type ShapeProxyResponses = {
 };
 
 export type DeleteAttachmentsData = {
-  body?: {
+  body: {
     ids: Array<string>;
   };
   path: {
@@ -3650,7 +3646,7 @@ export type CreateAttachmentResponses = {
   /**
    * Attachment
    */
-  200: Array<Attachment>;
+  201: Array<Attachment>;
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
@@ -3710,7 +3706,7 @@ export type GetAttachmentResponses = {
 export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
 
 export type UpdateAttachmentData = {
-  body?: {
+  body: {
     name?: string;
     originalKey?: string;
   };
@@ -3818,7 +3814,7 @@ export type RedirectToAttachmentResponses = {
 };
 
 export type DeleteMembershipsData = {
-  body?: {
+  body: {
     ids: Array<string>;
   };
   path: {
@@ -3879,7 +3875,7 @@ export type DeleteMembershipsResponses = {
 export type DeleteMembershipsResponse = DeleteMembershipsResponses[keyof DeleteMembershipsResponses];
 
 export type MembershipInviteData = {
-  body?: {
+  body: {
     emails: Array<string>;
     role: 'member' | 'admin';
   };

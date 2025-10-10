@@ -7,6 +7,8 @@ import { getPublicCounts } from '~/api.gen';
 import { counts } from '~/modules/marketing/marketing-config';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
+const countsLength = counts.length;
+
 const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
@@ -27,7 +29,7 @@ const Counters = () => {
   const { data } = useQuery(queryParams);
 
   return (
-    <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl grid-cols-2 lg:grid-cols-4">
+    <div ref={ref} className={`mx-auto grid gap-4 md:max-w-5xl grid-cols-2 lg:grid-cols-${countsLength}`}>
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
           const countValue = data[id];
@@ -35,8 +37,8 @@ const Counters = () => {
           return (
             <Card key={id} className="bg-background">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t(title)}</CardTitle>
-                <Icon className="text-muted-foreground h-4 w-4" />
+                <CardTitle className="text-sm sm:text-lg font-medium">{t(title)}</CardTitle>
+                <Icon className="text-muted-foreground size-4 sm:size-6" strokeWidth={1.5} />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">

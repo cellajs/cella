@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { LogIn } from 'lucide-react';
+import { LogInIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ErrorNotice from '~/modules/common/error-notice';
 import { ResendMembershipInviteButton } from '~/modules/memberships/resend-membership-invitation';
@@ -25,7 +25,7 @@ const AuthErrorPage = () => {
       {showResendButton && resendData && <ResendMembershipInviteButton resendData={resendData} />}
 
       <Link to="/auth/authenticate" replace className={buttonVariants({ variant: showResendButton ? 'plain' : 'default' })}>
-        <LogIn size={16} className="mr-2" />
+        <LogInIcon size={16} className="mr-2" />
         {t('common:sign_in')}
       </Link>
     </ErrorNotice>

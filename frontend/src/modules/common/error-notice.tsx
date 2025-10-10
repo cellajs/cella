@@ -1,6 +1,6 @@
 import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { ChevronUpIcon, HomeIcon, MessageCircleQuestionIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -123,7 +123,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
                     className="whitespace-pre-wrap w-full text-red-600 flex items-center"
                   >
                     <span>{showError ? t('common:hide_details') : t('common:show_details')}</span>
-                    {<ChevronUp size={16} className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
+                    {<ChevronUpIcon size={16} className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
                   </Button>
                 )}
 
@@ -167,12 +167,12 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
               ) : (
                 <>
                   <Button onClick={handleGoToHome} variant="secondary">
-                    <Home size={16} className="mr-2" />
+                    <HomeIcon size={16} className="mr-2" />
                     {t('common:home')}
                   </Button>
                   {!location.pathname.endsWith('/error') && severity !== 'info' && (
                     <Button onClick={handleReload}>
-                      <RefreshCw size={16} className="mr-2" />
+                      <RefreshCwIcon size={16} className="mr-2" />
                       {t('common:reload')}
                     </Button>
                   )}
@@ -180,7 +180,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
-                  <MessageCircleQuestion size={16} className="mr-2" />
+                  <MessageCircleQuestionIcon size={16} className="mr-2" />
                   {t('common:contact_support')}
                 </Button>
               )}

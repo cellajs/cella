@@ -1,9 +1,9 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { CircleAlert, CopyCheckIcon, CopyIcon } from 'lucide-react';
+import { CircleAlertIcon, CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type CreateTotpData, type CreateTotpResponse, createTotp, generateTotpKey } from '~/api.gen';
+import { type ApiError, type CreateTotpData, type CreateTotpResponses, createTotp, generateTotpKey } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -19,7 +19,7 @@ export const SetupTotp = () => {
   const [formVersion, setFormVersion] = useState(0);
 
   // Mutation to validate and activate TOTP with provided code
-  const { mutate, isPending } = useMutation<CreateTotpResponse, ApiError | Error, NonNullable<CreateTotpData['body']>>({
+  const { mutate, isPending } = useMutation<CreateTotpResponses[201], ApiError | Error, NonNullable<CreateTotpData['body']>>({
     mutationFn: async (body) => await createTotp({ body }),
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
@@ -51,14 +51,14 @@ export const SetupTotp = () => {
       title: t('common:totp_manual.title'),
       description: t('common:totp_manual.description'),
       className: 'sm:max-w-md',
-      hideClose: false,
+      showCloseButton: true,
     });
   };
 
   return (
     <div className="group flex flex-col space-y-2">
       <div className="flex gap-2 items-center justify-center">
-        <CircleAlert size={14} className="shrink-0 text-amber-500" />
+        <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
         <div className="text-sm text-muted-foreground">
           <span>{t('common:totp_manual.footer_description')}</span>
           <Button ref={triggerRef} variant="none" className="p-0 h-auto underline inline cursor-pointer" onClick={openManualKey}>

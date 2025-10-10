@@ -99,7 +99,7 @@ export const useToggleMfaMutation = () => {
  * @returns The mutation hook for updating the user flags.
  */
 export const useUpdateSelfFlagsMutation = () => {
-  return useMutation<User, ApiError, Pick<NonNullable<UpdateMeData['body']>, 'userFlags'>>({
+  return useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),

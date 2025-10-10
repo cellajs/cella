@@ -2,12 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
+import { type SignUpData, type SignUpResponses, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { LegalNotice } from '~/modules/auth/legal-notice';
@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
-import { TokenData } from '../types';
+import { TokenData } from '~/modules/auth/types';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -40,7 +40,7 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
   const isMobile = window.innerWidth < 640;
 
   // Handle basic sign up
-  const { mutate: _signUp, isPending } = useMutation<SignUpResponse, ApiError, NonNullable<SignUpData['body']>>({
+  const { mutate: _signUp, isPending } = useMutation<SignUpResponses[201], ApiError, NonNullable<SignUpData['body']>>({
     mutationFn: (body) => signUp({ body }),
     onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
   });
@@ -82,7 +82,7 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
             <span className="truncate">{email}</span>
-            <ChevronDown size={16} className="ml-1" />
+            <ChevronDownIcon size={16} className="ml-1" />
           </Button>
         )}
       </h1>
@@ -125,7 +125,7 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
               />
               <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
                 {t('common:sign_up')}
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRightIcon size={16} className="ml-2" />
               </SubmitButton>
             </>
           )}

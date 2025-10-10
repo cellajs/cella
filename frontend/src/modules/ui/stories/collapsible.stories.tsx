@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Info } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 import { expect, userEvent } from 'storybook/test';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 
@@ -19,7 +19,7 @@ const meta = {
     <Collapsible {...args}>
       <CollapsibleTrigger className="flex gap-2">
         <h3 className="font-semibold">Can I use this in my project?</h3>
-        <Info className="size-6" />
+        <InfoIcon className="size-6" />
       </CollapsibleTrigger>
       <CollapsibleContent>Yes. Free to use for personal and commercial projects. No attribution required.</CollapsibleContent>
     </Collapsible>
