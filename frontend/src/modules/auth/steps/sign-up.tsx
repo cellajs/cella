@@ -11,12 +11,12 @@ import { type SignUpData, type SignUpResponses, type SignUpWithTokenData, type S
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { LegalNotice } from '~/modules/auth/legal-notice';
+import { TokenData } from '~/modules/auth/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
-import { TokenData } from '~/modules/auth/types';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

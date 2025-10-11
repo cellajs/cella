@@ -3,7 +3,6 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 import { isElementInteractive } from '~/utils/is-el-interactive';
@@ -106,12 +105,8 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >
-        <StickyBox
-          className={`z-10 flex items-center justify-between bg-background/50 backdrop-blur-xs py-3 [.scrollable_&]:px-3 ${title ? '' : 'hidden'}`}
-        >
-          <SheetTitle>{titleContent}</SheetTitle>
-        </StickyBox>
-        <SheetHeader className={`${description ? '' : 'hidden'}`}>
+        <SheetHeader className={`${title || description ? '' : 'hidden'}`}>
+          <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>
         {content}

@@ -101,7 +101,7 @@ const Combobox = ({
               {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate">{placeholders.trigger}</span>
+            <span className="truncate text-muted-foreground">{placeholders.trigger}</span>
           )}
           <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>

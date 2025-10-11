@@ -12,12 +12,12 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
 export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
   const { to, params, search } = getEntityRoute(entity);
   return (
-    <Card className="overflow-hidden p-0 transition hover:shadow-sm [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] ring-ring ring-offset-2 ring-offset-background">
+    <Card className="overflow-hidden p-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
       <CardContent className="p-4">
         <Link to={to} params={params} search={search} className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0">
           {typeof window !== 'undefined' && (
             <div
-              className={`relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-[3/1] bg-opacity-80 ${
+              className={`relative flex flex-col -mx-4 -mt-6 bg-cover min-h-30 bg-center aspect-[3/1] bg-opacity-80 ${
                 entity.bannerUrl ? '' : numberToColorClass(entity.id)
               }`}
               style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
@@ -28,8 +28,8 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
                 <div className="flex flex-col grow gap-0.5 truncate">
                   <div className="font-semibold truncate leading-5">{entity.name}</div>
                   <div className="text-sm font-light inline-flex items-center gap-2">
-                    {dateShort(entity.createdAt)}
                     {entity.membership?.role && <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>}
+                    {dateShort(entity.createdAt)}
                   </div>
                 </div>
               </div>

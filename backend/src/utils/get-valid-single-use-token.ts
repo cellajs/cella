@@ -1,11 +1,11 @@
+import { TokenType } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { Context } from 'hono';
 import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { TokenType } from 'config';
-import { and, eq } from 'drizzle-orm';
-import { Context } from 'hono';
 
 type Props = {
   ctx: Context;

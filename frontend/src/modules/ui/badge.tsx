@@ -4,7 +4,7 @@ import * as React from 'react';
 import { cn } from '~/utils/cn';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-effect aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',
+  'flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-effect aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] shadow-xs overflow-hidden',
   {
     variants: {
       variant: {
@@ -17,7 +17,7 @@ const badgeVariants = cva(
         outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
       },
       size: {
-        micro: 'text-[10px] h-4',
+        micro: 'text-[10px] h-4 py-0',
         xs: 'text-xs h-5',
         sm: 'text-xs h-6',
         md: 'text-sm h-7',
@@ -30,7 +30,7 @@ const badgeVariants = cva(
         square: 'rounded-none',
       },
       context: {
-        button: 'py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in',
+        button: 'py-0 px-1 absolute -right-1.5 min-w-5 flex justify-center -top-1.5 animate-in zoom-in shadow-md',
         none: 'lowercase',
       },
     },
@@ -46,12 +46,14 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant,
+  context,
+  size,
   asChild = false,
   ...props
 }: React.ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
   const Comp = asChild ? Slot : 'span';
 
-  return <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />;
+  return <Comp data-slot="badge" className={cn(badgeVariants({ variant, size, context }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

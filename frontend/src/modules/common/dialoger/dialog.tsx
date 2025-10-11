@@ -48,7 +48,7 @@ export default function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
         }}
       >
         <DialogHeader className={`${title || description ? headerClassName || '' : 'hidden'}`}>
-          <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
+          <DialogTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>
 

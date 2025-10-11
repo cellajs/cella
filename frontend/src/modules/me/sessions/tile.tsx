@@ -27,19 +27,15 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
         <div className="flex flex-col gap-1 w-full overflow-hidden">
           <div className="flex max-xs:flex-col gap-1 xs:gap-2">
             <span className="text-sm">{session.deviceName || t('common:unknown_device')}</span>
-            <div className="empty:hidden flex gap-2">
+            <div className="empty:hidden flex items-center gap-2">
               {session.type === 'mfa' && (
-                <Badge
-                  size="xs"
-                  variant="outline"
-                  className="py-0 text-[10px] uppercase flex items-center font-normal gap-1 text-green-600 border-green-600"
-                >
+                <Badge size="xs" variant="outline" className="text-green-600 border-green-600">
                   <ShieldCheckIcon size={12} />
                   {t('common:mfa_short')}
                 </Badge>
               )}
               {session.isCurrent && (
-                <Badge size="xs" variant="plain" className="uppercase font-normal text-[10px] py-0">
+                <Badge size="xs" variant="plain">
                   {t('common:current')}
                 </Badge>
               )}
