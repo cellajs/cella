@@ -26,7 +26,7 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
 
   return (
     <StickyBox className="z-10">
-      <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between px-1 -mx-1">
+      <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between">
         <LayoutGroup>
           <Button onClick={() => toggleSection(options.entityType)} className="w-full justify-between" variant="secondary" asChild>
             <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.2 }}>

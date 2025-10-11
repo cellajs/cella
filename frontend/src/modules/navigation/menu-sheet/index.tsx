@@ -21,7 +21,6 @@ import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-acc
 import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-input';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { Button, buttonVariants } from '~/modules/ui/button';
-import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -30,6 +29,7 @@ import { navSheetClassName } from '../app-nav';
 
 const pwaEnabled = appConfig.has.pwa;
 
+// TODO can we merge this into one component and is memo necessary since we have react compiler?
 export const MenuSheet = memo(() => {
   const menu = useNavigationStore((state) => state.menu);
 
@@ -77,13 +77,7 @@ export const MenuSheet = memo(() => {
     );
   }, [menu]);
 
-  const wrapperProps = { id: 'nav-sheet', className: 'h-full w-full' };
-
-  return (
-    <ScrollArea {...wrapperProps} viewportRef={scrollViewportRef}>
-      <MenuContent />
-    </ScrollArea>
-  );
+  return <MenuContent />;
 });
 
 const MenuContent = memo(() => {
@@ -119,7 +113,7 @@ const MenuContent = memo(() => {
   }, [menu]);
 
   return (
-    <div data-search={!!searchTerm} className="group/menu py-3 sm:px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
+    <div data-search={!!searchTerm} className="group/menu w-full py-3 px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
       {/* Only visible when floating nav is present. To return to home */}
       <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
         <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
