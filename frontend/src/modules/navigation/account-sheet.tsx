@@ -9,7 +9,6 @@ import { AppFooter } from '~/modules/common/app/footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { buttonVariants } from '~/modules/ui/button';
-import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -63,63 +62,54 @@ export const AccountSheet = () => {
   }, []);
 
   return (
-    <ScrollArea className="h-full w-full" id="nav-sheet">
-      <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
-        <Link to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
-          <div
-            className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
-              user.bannerUrl ? '' : numberToColorClass(user.id)
-            }`}
-            style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
-          >
-            <AvatarWrap
-              className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
-              type="user"
-              id={user.id}
-              name={user.name}
-              url={user.thumbnailUrl}
-            />
-          </div>
-        </Link>
-        <div className="flex flex-col gap-1 max-sm:mt-4">
-          <AccountButton
-            offlineAccess={false}
-            isOnline={isOnline}
-            icon={CircleUserRoundIcon}
-            id="btn-profile"
-            label={t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
-            action={`/users/${user.slug}`}
-          />
-          <AccountButton
-            offlineAccess={false}
-            isOnline={isOnline}
-            icon={SettingsIcon}
-            id="btn-account"
-            label={t('common:my_account')}
-            action="/account"
-          />
-          {isSystemAdmin && (
-            <AccountButton
-              offlineAccess={false}
-              isOnline={isOnline}
-              icon={WrenchIcon}
-              id="btn-system"
-              label={t('common:system_panel')}
-              action="/system/users"
-            />
-          )}
-          <AccountButton
-            offlineAccess={false}
-            isOnline={isOnline}
-            icon={LogOutIcon}
-            id="btn-signout"
-            label={t('common:sign_out')}
-            action="/sign-out"
+    <div ref={buttonWrapper} className="p-3 w-full flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
+      <Link to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
+        <div
+          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
+            user.bannerUrl ? '' : numberToColorClass(user.id)
+          }`}
+          style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
+        >
+          <AvatarWrap
+            className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
+            type="user"
+            id={user.id}
+            name={user.name}
+            url={user.thumbnailUrl}
           />
         </div>
-        <div className="grow border-b border-dashed" />
-        <AppFooter className="items-center" />
+      </Link>
+      <div className="flex flex-col gap-1 max-sm:mt-4">
+        <AccountButton
+          offlineAccess={false}
+          isOnline={isOnline}
+          icon={CircleUserRoundIcon}
+          id="btn-profile"
+          label={t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
+          action={`/users/${user.slug}`}
+        />
+        <AccountButton
+          offlineAccess={false}
+          isOnline={isOnline}
+          icon={SettingsIcon}
+          id="btn-account"
+          label={t('common:my_account')}
+          action="/account"
+        />
+        {isSystemAdmin && (
+          <AccountButton
+            offlineAccess={false}
+            isOnline={isOnline}
+            icon={WrenchIcon}
+            id="btn-system"
+            label={t('common:system_panel')}
+            action="/system/users"
+          />
+        )}
+        <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
       </div>
-    </ScrollArea>
+      <div className="grow border-b border-dashed" />
+      <AppFooter className="items-center" />
+    </div>
   );
 };
