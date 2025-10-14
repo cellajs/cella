@@ -35,14 +35,14 @@ export const MenuSheet = memo(() => {
 
   const { mutateAsync } = useMemberUpdateMutation();
 
-  const scrollViewportRef = useRef(null);
-
   // monitoring drop event
   useEffect(() => {
-    if (!scrollViewportRef.current) return;
+    const viewportEl = document.getElementById('nav-sheet-viewport');
+    if (!viewportEl) return;
+
     return combine(
       autoScrollForElements({
-        element: scrollViewportRef.current,
+        element: viewportEl,
         getAllowedAxis: () => 'vertical',
       }),
       monitorForElements({

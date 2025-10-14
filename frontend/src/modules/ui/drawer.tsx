@@ -49,7 +49,9 @@ function DrawerContent({ className, children, ...props }: React.ComponentProps<t
         {...props}
       >
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
-        <ScrollArea className="w-full h-full">{children} </ScrollArea>
+        <ScrollArea id={props.id} className="w-full h-full">
+          {children}
+        </ScrollArea>
       </DrawerPrimitive.Content>
     </DrawerPortal>
   );
@@ -80,4 +82,4 @@ function DrawerDescription({ className, ...props }: React.ComponentProps<typeof 
   return <DrawerPrimitive.Description data-slot="drawer-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
 
-export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription };
+export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerOverlay, DrawerPortal, DrawerTitle, DrawerTrigger };
