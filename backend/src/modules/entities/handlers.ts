@@ -147,13 +147,17 @@ const entityRouteHandlers = app
       }),
     );
 
-    // Map items per entity type
-    const items = queryResults[0].items as z.infer<typeof contextEntityWithCountsSchema>[];
+    // Combine results from all entity types
+    // We leave it to the client to handle pagination across types
+    const { items, total } = queryResults.reduce(
+      (acc, { items: batchItems, total }) => {
+        acc.items.push(...(batchItems as z.infer<typeof contextEntityWithCountsSchema>[]));
+        acc.total += total;
+        return acc;
+      },
+      { items: [] as z.infer<typeof contextEntityWithCountsSchema>[], total: 0 },
+    );
 
-    // Compute grand total
-    const total = queryResults[0].total;
-
-    // Return response
     return ctx.json({ items, total }, 200);
   })
   /**
