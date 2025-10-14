@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { FlameKindlingIcon, ServerCrashIcon, SettingsIcon } from 'lucide-react';
+import { FlameKindlingIcon, ServerCrashIcon, UserRoundCogIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -81,7 +81,7 @@ const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
                 tabIndex={0}
                 className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium transition-colors focus-effect bg-primary text-primary-foreground hover:bg-primary/80"
               >
-                <SettingsIcon size={16} />
+                <UserRoundCogIcon size={16} />
                 <span className="max-sm:hidden ml-1">{t('common:my_account')}</span>
               </Link>
             </div>
