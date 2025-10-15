@@ -1,7 +1,7 @@
 import { Command as CommandPrimitive } from 'cmdk';
-import { SearchIcon, XCircleIcon } from 'lucide-react';
+import { XCircleIcon } from 'lucide-react';
 import * as React from 'react';
-import Spinner from '~/modules/common/spinner';
+import { SearchSpinner } from '~/modules/common/search-spinner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
@@ -55,11 +55,7 @@ interface ZeroValSet {
 function CommandInput({ className, value, clearValue, wrapClassName, isSearching, ...props }: CommandInputProps & ZeroValSet) {
   return (
     <div data-slot="command-input-wrapper" className={cn('group relative flex h-10 items-center gap-2 border-b px-3', wrapClassName)}>
-      {isSearching ? (
-        <Spinner className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" noDelay />
-      ) : (
-        <SearchIcon className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
-      )}
+      <SearchSpinner isSearching={!!isSearching} value={value} />
 
       <CommandPrimitive.Input
         data-slot="command-input"
