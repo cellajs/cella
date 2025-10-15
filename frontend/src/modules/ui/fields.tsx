@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
@@ -113,8 +113,8 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
           onClick={toggleCollapsed}
           className="right-1 -top-6 absolute text-regular ring-inset opacity-50 hover:opacity-100 p-2 h-auto"
         >
-          {collapsed && <HelpCircle size={16} />}
-          {!collapsed && <ChevronUp size={16} />}
+          {collapsed && <HelpCircleIcon size={16} />}
+          {!collapsed && <ChevronUpIcon size={16} />}
         </Button>
         {!collapsed && <span className="py-1">{props.children}</span>}
       </div>

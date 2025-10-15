@@ -15,6 +15,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
+import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
@@ -25,7 +26,6 @@ import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
-import { navSheetClassName } from '../app-nav';
 
 const pwaEnabled = appConfig.has.pwa;
 
