@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { BirdIcon, SearchIcon } from 'lucide-react';
 import { useCallback } from 'react';
@@ -25,7 +25,7 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
     error,
     hasNextPage,
     fetchNextPage,
-  } = useSuspenseInfiniteQuery({
+  } = useInfiniteQuery({
     ...queryOptions,
     select: (data) => data.pages.flatMap(({ items }) => items.filter((e) => e.entityType === entityType)),
   });
