@@ -2,7 +2,11 @@ import * as SwitchPrimitive from '@radix-ui/react-switch';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+interface SwitchProps extends React.ComponentProps<typeof SwitchPrimitive.Root> {
+  thumb?: React.ReactElement<{ className?: string }>;
+}
+
+function Switch({ className, thumb, ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
@@ -12,12 +16,24 @@ function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimi
       )}
       {...props}
     >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className={cn(
-          'bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0',
-        )}
-      />
+      {thumb ? (
+        <SwitchPrimitive.Thumb asChild>
+          {React.cloneElement(thumb, {
+            className: cn(
+              'transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0',
+              thumb.props.className,
+            ),
+          })}
+        </SwitchPrimitive.Thumb>
+      ) : (
+        // fallback default thumb
+        <SwitchPrimitive.Thumb
+          data-slot="switch-thumb"
+          className={cn(
+            'bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0',
+          )}
+        />
+      )}
     </SwitchPrimitive.Root>
   );
 }

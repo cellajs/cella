@@ -14,7 +14,7 @@ interface UserThemeProps {
   contentClassName?: string;
 }
 
-const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
+const UserTheme = ({ size = 16, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
   const { t } = useTranslation();
   const { mode, theme, setMode, setTheme } = useUIStore();
 
@@ -26,7 +26,7 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
   const themes = objectEntries(appConfig.theme.colors);
 
   function Icon({ icon: Icon }: { icon: React.ElementType<LucideProps> }) {
-    return <Icon size={16} />;
+    return <Icon size={size} strokeWidth={appConfig.theme.strokeWidth} />;
   }
 
   // if just one theme, use switch
@@ -38,13 +38,14 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
         checked={mode === 'light'}
         onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
         aria-label={'changeTheme'}
-      >
-        {mode === 'light' ? (
-          <SunIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
-        ) : (
-          <MoonIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
-        )}
-      </Switch>
+        thumb={
+          mode === 'light' ? (
+            <SunIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+          ) : (
+            <MoonIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+          )
+        }
+      />
     );
   }
 
@@ -53,11 +54,7 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={buttonClassName} aria-label="Change theme">
-          {mode === 'light' ? (
-            <SunIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
-          ) : (
-            <MoonIcon size={size} strokeWidth={appConfig.theme.strokeWidth} />
-          )}
+          <Icon icon={mode === 'light' ? SunIcon : MoonIcon} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className={cn('w-48 p-1', contentClassName)} align="end">
