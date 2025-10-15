@@ -4,7 +4,7 @@ import { cn } from '~/utils/cn';
 
 const TooltipPortal = TooltipPrimitive.Portal;
 
-function TooltipProvider({ delayDuration = 0, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+function TooltipProvider({ delayDuration = 200, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delayDuration={delayDuration} {...props} />;
 }
 
@@ -38,4 +38,4 @@ function TooltipContent({ className, sideOffset = 0, children, ...props }: React
   );
 }
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipPortal };
+export { Tooltip, TooltipContent, TooltipPortal, TooltipProvider, TooltipTrigger };
