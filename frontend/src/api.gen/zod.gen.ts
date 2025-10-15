@@ -141,8 +141,6 @@ export const zMenuSchema = z.object({
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
       membership: zMembershipBaseSchema,
       createdAt: z.string(),
-      modifiedAt: z.union([z.string(), z.null()]),
-      organizationId: z.optional(z.string()),
       submenu: z.optional(
         z.array(
           z.union([
@@ -150,8 +148,6 @@ export const zMenuSchema = z.object({
             z.object({
               membership: zMembershipBaseSchema,
               createdAt: z.string(),
-              modifiedAt: z.union([z.string(), z.null()]),
-              organizationId: z.optional(z.string()),
             }),
           ]),
         ),

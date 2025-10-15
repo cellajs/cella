@@ -67,7 +67,7 @@ export const MenuSheet = memo(() => {
           await mutateAsync({
             id: sourceItem.membership.id,
             order: newOrder,
-            orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
+            orgIdOrSlug: sourceItem.membership.organizationId || sourceItem.id,
             // Mutation variables
             idOrSlug: sourceItem.id,
             entityType: sourceItem.entityType,

@@ -19,16 +19,10 @@ export const meAuthDataSchema = z.object({
   passkeys: z.array(passkeySchema),
 });
 
-// TODO can we remove this in favour of a standardized contextEntityWithMembershipSchema?
-export const menuItemSchema = contextEntityWithMembershipSchema.extend({
-  modifiedAt: z.string().nullable(),
-  organizationId: membershipBaseSchema.shape.organizationId.optional(),
-});
-
 const menuSectionSchema = z.array(
   z.object({
-    ...menuItemSchema.shape,
-    submenu: z.array(menuItemSchema).optional(),
+    ...contextEntityWithMembershipSchema.shape,
+    submenu: z.array(contextEntityWithMembershipSchema).optional(),
   }),
 );
 

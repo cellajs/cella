@@ -21,10 +21,11 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
-import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
+import type { menuSchema } from '#/modules/me/schema';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
@@ -34,7 +35,7 @@ import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 type UserMenu = z.infer<typeof menuSchema>;
-type MenuItem = z.infer<typeof menuItemSchema>;
+type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
