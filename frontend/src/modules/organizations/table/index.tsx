@@ -74,6 +74,7 @@ const OrganizationsTable = () => {
           await updateMemberMembership.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
         } else {
           await membershipInvite({ query: mutationVariables, path: { orgIdOrSlug }, body: { emails: [user.email], role: newRole } });
+          // TODO add cache mutation for organization tables
           await getAndSetMenu();
           toaster(t('common:success.role_updated'), 'success');
         }
