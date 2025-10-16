@@ -80,7 +80,7 @@ export const features = [
 
 export const cards: AboutCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
-  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'one-dollar-stats' },
+  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'onedollarstats' },
   { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
   { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
   { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
