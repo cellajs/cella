@@ -205,5 +205,9 @@
   "update_resource": "{{resource}} could not be updated. Try again later.",
   "user_mismatch": "User mismatch",
   "user_mismatch.text": "You are already signed in as a user. And this user doesn't match with the link you used.",
-  "verification_not_found": "Failed to verify email, token missing or invalid."
+  "verification_not_found": "Failed to verify email, token missing or invalid.",
+  "env_not_provided": "Environment Not Provided",
+  "env_not_provided.text": "The required environment variable is missing. Please configure it correctly.",
+  "matrix_error": "Matrix Error",
+  "matrix_error.text": "An error occurred while sending message to Matrix."
 }
