@@ -5,6 +5,7 @@ import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { nanoid } from '~/utils/nanoid';
+import { ElementIcon } from '../icons/elemet';
 
 /*************************************************************************************************
  * Nav
@@ -22,6 +23,7 @@ export const marketingNavConfig = [
 
 export const socials = [
   { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: CloudIcon },
+  { title: 'Element', href: appConfig.company.element, icon: ElementIcon },
   { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
 ];
 

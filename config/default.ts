@@ -249,6 +249,7 @@ enabledOAuthProviders: ['github'] as const,
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',
     blueskyHandle: '@flipvh.bsky.social',
+    element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
     githubUrl: 'https://github.com/cellajs/cella',
     mapZoom: 4,
     coordinates: {
