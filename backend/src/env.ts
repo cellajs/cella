@@ -1,8 +1,8 @@
+import { additionalEnvSchema } from '#/custom-env';
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig, type Severity } from 'config';
 import { z } from 'zod';
-import { additionalEnvSchema } from '#/custom-env';
 
 dotenv({
   root: '../..',
@@ -59,6 +59,9 @@ export const env = createEnv({
 
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_ACCESS_KEY_SECRET: z.string().default(''),
+
+    ELEMENT_ROOM_ID: z.string().optional(),
+    ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
 
     PINO_LOG_LEVEL: z
       .enum(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]])

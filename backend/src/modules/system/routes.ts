@@ -1,10 +1,10 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
+import { inviteBodySchema, preasignedURLQuerySchema, sendMatrixMessageBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
 import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -26,6 +26,26 @@ const systemRoutes = {
         description: 'Invitations are sent',
         content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
+      ...errorResponses,
+    },
+  }),
+
+  sendMatrixMessage: createCustomRoute({
+    operationId: 'sendMatrixMessage',
+    method: 'post',
+    path: '/matrix-message',
+    guard: [isAuthenticated, hasSystemAccess],
+    tags: ['system'],
+    summary: 'Send a message to a Matrix room',
+    description: 'Accepts a JSON payload containing message content and sends it to a configured Matrix room using the Matrix client API.',
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: sendMatrixMessageBodySchema } },
+      },
+    },
+    responses: {
+      204: { description: 'Message successfully sent to Matrix room' },
       ...errorResponses,
     },
   }),

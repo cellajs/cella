@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { emailsTable } from '#/db/schema/emails';
@@ -14,7 +9,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError, ConstructedError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
@@ -26,6 +21,11 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -215,6 +215,49 @@ const systemRouteHandlers = app
       }
     } catch (error) {
       logError('Error handling paddle webhook', error);
+    }
+
+    return ctx.body(null, 204);
+  })
+  /**
+   * Send a message to a Matrix room
+   */
+  .openapi(systemRoutes.sendMatrixMessage, async (ctx) => {
+    const { msgtype, textMessage, html } = ctx.req.valid('json');
+
+    // Check required config
+    if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
+      throw new AppError({ status: 403, type: 'env_not_provided', severity: 'error' });
+    }
+
+    // Construct payload
+    const bodyPayload: any = {
+      msgtype,
+      body: textMessage,
+      ...(html ? { format: 'org.matrix.custom.html', formatted_body: html } : {}),
+    };
+
+    // Build Matrix send message URL
+    const txnId = nanoid();
+    const roomId = env.ELEMENT_ROOM_ID;
+    const eventType = 'm.room.message';
+
+    const url = `${appConfig.matrixURL}/_matrix/client/v3/rooms/${roomId}/send/${eventType}/${txnId}?access_token=${env.ELEMENT_BOT_ACCESS_TOKEN}`;
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyPayload),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new AppError({
+        status: response.status as ConstructedError['status'],
+        type: 'matrix_error',
+        severity: 'error',
+        meta: { matrixMessage: errorBody.error, matrixCode: errorBody.errcode },
+      });
     }
 
     return ctx.body(null, 204);
