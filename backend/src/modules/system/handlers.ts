@@ -238,7 +238,7 @@ const systemRouteHandlers = app
     };
 
     // Build Matrix send message URL
-    const txnId = nanoid();
+    const txnId = nanoid(6);
     const roomId = env.ELEMENT_ROOM_ID;
     const eventType = 'm.room.message';
 
