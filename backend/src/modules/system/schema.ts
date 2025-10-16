@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
+import { matrixMsgTypes } from '#/lib/notifications/send-matrix-message';
 import { userSchema } from '#/modules/users/schema';
 
 export const inviteBodySchema = z.object({
@@ -24,8 +25,7 @@ export const sendNewsletterBodySchema = z.object({
 
 export const sendMatrixMessageBodySchema = z
   .object({
-    // msgtype: z.enum(['m.text', 'm.notice', 'm.emote', 'm.image', 'm.audio', 'm.video', 'm.file', 'm.location', 'm.sticker']),
-    msgtype: z.enum(['m.text', 'm.notice']),
+    msgtype: z.enum(matrixMsgTypes),
 
     // All messages must include a body, it uses as a fallback for the message.
     textMessage: z.string().min(1, 'Message cannot be empty'),

@@ -16,6 +16,7 @@ import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError, ConstructedError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
+import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
@@ -225,35 +226,15 @@ const systemRouteHandlers = app
   .openapi(systemRoutes.sendMatrixMessage, async (ctx) => {
     const { msgtype, textMessage, html } = ctx.req.valid('json');
 
+    const matrixResponse = await sendMatrixMessage({ msgtype, textMessage, html });
+
     // Check required config
-    if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
-      throw new AppError({ status: 403, type: 'env_not_provided', severity: 'error' });
-    }
+    if (!matrixResponse) throw new AppError({ status: 403, type: 'env_not_provided', severity: 'error' });
 
-    // Construct payload
-    const bodyPayload: any = {
-      msgtype,
-      body: textMessage,
-      ...(html ? { format: 'org.matrix.custom.html', formatted_body: html } : {}),
-    };
-
-    // Build Matrix send message URL
-    const txnId = nanoid(6);
-    const roomId = env.ELEMENT_ROOM_ID;
-    const eventType = 'm.room.message';
-
-    const url = `${appConfig.matrixURL}/_matrix/client/v3/rooms/${roomId}/send/${eventType}/${txnId}?access_token=${env.ELEMENT_BOT_ACCESS_TOKEN}`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bodyPayload),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
+    if (!matrixResponse.ok) {
+      const errorBody = await matrixResponse.json();
       throw new AppError({
-        status: response.status as ConstructedError['status'],
+        status: matrixResponse.status as ConstructedError['status'],
         type: 'matrix_error',
         severity: 'error',
         meta: { matrixMessage: errorBody.error, matrixCode: errorBody.errcode },
