@@ -4,22 +4,14 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 
 // TODO(IMPROVEMENT) handle all matrix/element message types
-// export type matrixMsgTypes = ['m.text', 'm.notice', 'm.emote', 'm.image', 'm.audio', 'm.video', 'm.file', 'm.location', 'm.sticker']
+// export type matrixMsgTypes = 'm.text', 'm.notice', 'm.emote', 'm.image', 'm.audio', 'm.video', 'm.file', 'm.location', 'm.sticker'
 
-export const matrixMsgTypes = ['m.text', 'm.notice'] as const;
+type MatrixMsgTypes = 'm.text' | 'm.notice';
 
 /**
  * Sends a Element message via Matrix API to.
  */
-export const sendMatrixMessage = async ({
-  msgtype,
-  textMessage,
-  html,
-}: {
-  msgtype: (typeof matrixMsgTypes)[number];
-  textMessage: string;
-  html?: string;
-}) => {
+export const sendMatrixMessage = async ({ msgtype, textMessage, html }: { msgtype: MatrixMsgTypes; textMessage: string; html?: string }) => {
   if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
     logEvent('info', 'Missing required Element env values (roomId and/or  botAccessToken).');
     return;

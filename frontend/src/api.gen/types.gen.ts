@@ -3058,61 +3058,6 @@ export type PaddleWebhookResponses = {
 
 export type PaddleWebhookResponse = PaddleWebhookResponses[keyof PaddleWebhookResponses];
 
-export type SendMatrixMessageData = {
-  body: {
-    msgtype: 'm.text' | 'm.notice';
-    textMessage: string;
-    html?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/system/matrix-message';
-};
-
-export type SendMatrixMessageErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SendMatrixMessageError = SendMatrixMessageErrors[keyof SendMatrixMessageErrors];
-
-export type SendMatrixMessageResponses = {
-  /**
-   * Message successfully sent to Matrix room
-   */
-  204: void;
-};
-
-export type SendMatrixMessageResponse = SendMatrixMessageResponses[keyof SendMatrixMessageResponses];
-
 export type SendNewsletterData = {
   body: {
     organizationIds: Array<string>;

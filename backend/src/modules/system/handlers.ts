@@ -14,9 +14,8 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
-import { AppError, ConstructedError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
@@ -216,29 +215,6 @@ const systemRouteHandlers = app
       }
     } catch (error) {
       logError('Error handling paddle webhook', error);
-    }
-
-    return ctx.body(null, 204);
-  })
-  /**
-   * Send a message to a Matrix room
-   */
-  .openapi(systemRoutes.sendMatrixMessage, async (ctx) => {
-    const { msgtype, textMessage, html } = ctx.req.valid('json');
-
-    const matrixResponse = await sendMatrixMessage({ msgtype, textMessage, html });
-
-    // Check required config
-    if (!matrixResponse) throw new AppError({ status: 403, type: 'env_not_provided', severity: 'error' });
-
-    if (!matrixResponse.ok) {
-      const errorBody = await matrixResponse.json();
-      throw new AppError({
-        status: matrixResponse.status as ConstructedError['status'],
-        type: 'matrix_error',
-        severity: 'error',
-        meta: { matrixMessage: errorBody.error, matrixCode: errorBody.errcode },
-      });
     }
 
     return ctx.body(null, 204);

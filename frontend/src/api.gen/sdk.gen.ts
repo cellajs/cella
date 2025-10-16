@@ -155,9 +155,6 @@ import type {
   ResendInvitationData,
   ResendInvitationErrors,
   ResendInvitationResponses,
-  SendMatrixMessageData,
-  SendMatrixMessageErrors,
-  SendMatrixMessageResponses,
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
@@ -1637,39 +1634,6 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
-    },
-  });
-};
-
-/**
- * Send a message to a Matrix room
- * 🛡️ Requires authentication (system access)
- *
- * Accepts a JSON payload containing message content and sends it to a configured Matrix room using the Matrix client API.
- *
- * **POST /system/matrix-message** ·· [sendMatrixMessage](http://localhost:4000/docs#tag/system/post/system/matrix-message) ·· _system_
- *
- * @param {sendMatrixMessageData} options
- * @param {enum=} options.body.msgtype - `enum` (optional)
- * @param {string=} options.body.textMessage - `string` (optional)
- * @param {string=} options.body.html - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
- */
-export const sendMatrixMessage = <ThrowOnError extends boolean = true>(options: Options<SendMatrixMessageData, ThrowOnError>) => {
-  return (options.client ?? client).post<SendMatrixMessageResponses, SendMatrixMessageErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system/matrix-message',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
     },
   });
 };

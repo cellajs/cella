@@ -1097,21 +1097,6 @@ export const zPaddleWebhookData = z.object({
  */
 export const zPaddleWebhookResponse = z.void();
 
-export const zSendMatrixMessageData = z.object({
-  body: z.object({
-    msgtype: z.enum(['m.text', 'm.notice']),
-    textMessage: z.string().min(1),
-    html: z.optional(z.string()),
-  }),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Message successfully sent to Matrix room
- */
-export const zSendMatrixMessageResponse = z.void();
-
 export const zSendNewsletterData = z.object({
   body: z.object({
     organizationIds: z.array(z.string()),
