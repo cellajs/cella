@@ -485,5 +485,6 @@
   "enable_resource": "Enable {{resource}}",
   "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account.",
   "reject": "Reject",
-  "my_account": "My account"
+  "my_account": "My account",
+  "chat_with_us": "Chat with us"
 }

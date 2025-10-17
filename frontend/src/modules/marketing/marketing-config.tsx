@@ -5,6 +5,7 @@ import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { nanoid } from '~/utils/nanoid';
+import { ElementIcon } from '../icons/elemet';
 
 /*************************************************************************************************
  * Nav
@@ -22,6 +23,7 @@ export const marketingNavConfig = [
 
 export const socials = [
   { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: CloudIcon },
+  { title: 'Element', href: appConfig.company.element, icon: ElementIcon },
   { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
 ];
 
@@ -78,14 +80,13 @@ export const features = [
 
 export const cards: AboutCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
-  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'one-dollar-stats' },
+  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'onedollarstats' },
   { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
-  { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
-  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
+  { name: 'Matrix', country: 'GB', url: 'matrix.org', id: 'matrix', invert: true },
   { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
+  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
-  // { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
 ];
 
 /*************************************************************************************************
