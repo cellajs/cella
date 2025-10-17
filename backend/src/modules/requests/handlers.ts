@@ -9,7 +9,8 @@ import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { sendSlackMessage } from '#/lib/notifications';
+import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
+import { sendSlackMessage } from '#/lib/notifications/send-slack-message';
 import requestRoutes from '#/modules/requests/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -55,10 +56,30 @@ const requestRouteHandlers = app
       .values({ email: normalizedEmail, type, message })
       .returning({ ...requestsSelect });
 
-    // Slack notifications
-    if (type === 'waitlist') await sendSlackMessage('Join waitlist request', normalizedEmail);
-    if (type === 'newsletter') await sendSlackMessage('Join newsletter request', normalizedEmail);
-    if (type === 'contact') await sendSlackMessage(`Request for contact with message: ${message},`, normalizedEmail);
+    // Determine message content based on notification type
+    let textMessage: string;
+    let slackTitle: string;
+
+    switch (type) {
+      case 'waitlist':
+        textMessage = `New Waitlist Request\nEmail: ${normalizedEmail}`;
+        slackTitle = 'Join waitlist request';
+        break;
+      case 'newsletter':
+        textMessage = `Newsletter Signup Request\nEmail: ${normalizedEmail}`;
+        slackTitle = 'Join newsletter request';
+        break;
+      case 'contact':
+        textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
+        slackTitle = `Request for contact with message: "${message}"`;
+        break;
+    }
+
+    // Send message to Matrix
+    await sendMatrixMessage({ msgtype: 'm.notice', textMessage });
+
+    // Send message to Slack
+    await sendSlackMessage(slackTitle, normalizedEmail);
 
     // Send email
     const lng = appConfig.defaultLanguage;

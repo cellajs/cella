@@ -72,6 +72,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
   // Upload templates using Transloadit
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
+
+  // If you are using a different Matrix server (self-hosted or private), replace this URL with your server's base URL.
+  matrixURL: 'https://matrix-client.matrix.org',
+
   // Theme settings
   themeColor: '#26262b',
   theme: {

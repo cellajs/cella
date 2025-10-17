@@ -5,7 +5,7 @@ import { novuConfig } from '#/lib/notifications/novu-config';
 import { logError, logEvent } from '#/utils/logger';
 
 /**
- * Sends a Slack message via Novu to notify about new contact form submissions or waitlist requests.
+ * Sends a Slack message via Novu.
  */
 export const sendSlackMessage = async (prefix: string, email: string) => {
   try {
