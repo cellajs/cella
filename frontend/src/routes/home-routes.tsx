@@ -32,7 +32,7 @@ export const HomeAliasRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
   getParentRoute: () => AppLayoutRoute,
   onEnter: ({ search, cause }) => {
-    // TODO this might cause a race condition (hence onEnter is used)
+    // REMARK this might cause a race condition (hence onEnter is used)
     if (cause !== 'enter' || search.skipWelcome) return;
     const { user } = useUserStore.getState();
     if (user.userFlags.finishedOnboarding) return;
@@ -51,7 +51,7 @@ export const WelcomeRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Welcome') }] }),
   getParentRoute: () => AppLayoutRoute,
   onEnter: () => {
-    // TODO this might cause a race condition (hence onEnter is used)
+    // REMARK this might cause a race condition (hence onEnter is used)
     const { user } = useUserStore.getState();
     if (user.userFlags.finishedOnboarding) throw redirect({ to: '/home' });
   },
