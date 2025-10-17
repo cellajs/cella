@@ -1,6 +1,6 @@
 import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { ChevronUpIcon, HomeIcon, MessageCircleQuestionIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,15 +14,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export type ErrorNoticeError = ApiError | Error | null;
 
 interface ErrorNoticeProps {
-  error?: ErrorNoticeError;
-  resetErrorBoundary?: () => void;
   level: 'root' | 'app' | 'public';
+  error?: ErrorNoticeError;
+  children?: React.ReactNode;
+  resetErrorBoundary?: () => void;
 }
 
 export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
-  if (!window.Gleap) {
-    return contactFormHandler(ref);
-  }
+  if (!window.Gleap) return contactFormHandler(ref);
   window.Gleap.openConversations();
 };
 
@@ -54,7 +53,7 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
   };
 
   const defaultTitle = error?.name || i18n.t('error:error');
-  const defaultMessage = error?.message || i18n.t('error:reported_try_or_contact');
+  const defaultMessage = error?.message || '';
 
   // Title translation
   const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });
@@ -75,7 +74,7 @@ export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) 
  * app: no footer required
  * public: show footer
  */
-const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
+const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -101,19 +100,21 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
   return (
     <>
       {level === 'root' && <Dialoger />}
-      <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center">
+      <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
         <div className="mt-auto mb-auto">
-          <Card className="max-w-[80vw] sm:max-w-[36rem] m-4">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
-              <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
+          <Card className="max-w-[80vw] sm:max-w-[36rem] mt-8 bg-transparent border-none">
+            <CardHeader className="text-center p-0">
+              <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
+              <CardDescription className="text-base flex-col gap-2 p-0">
                 <span className="block">{message}</span>
-                <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
-                <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+                <span className="block mt-2 font-light">
+                  <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
+                  <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+                </span>
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap text-red-600 font-mono pb-4">
+              <CardContent className="whitespace-pre-wrap text-red-600 font-mono px-0 py-4">
                 {error.type && (
                   <Button
                     variant="link"
@@ -122,7 +123,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                     className="whitespace-pre-wrap w-full text-red-600 flex items-center"
                   >
                     <span>{showError ? t('common:hide_details') : t('common:show_details')}</span>
-                    {<ChevronUp size={16} className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
+                    {<ChevronUpIcon size={16} className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
                   </Button>
                 )}
 
@@ -160,20 +161,26 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-4 justify-center">
-              <Button onClick={handleGoToHome} variant="secondary">
-                <Home size={16} className="mr-2" />
-                {t('common:home')}
-              </Button>
-              {!location.pathname.startsWith('/error') && severity !== 'info' && (
-                <Button onClick={handleReload}>
-                  <RefreshCw size={16} className="mr-2" />
-                  {t('common:reload')}
-                </Button>
+            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 p-0 justify-center">
+              {children ? (
+                children
+              ) : (
+                <>
+                  <Button onClick={handleGoToHome} variant="secondary">
+                    <HomeIcon size={16} className="mr-2" />
+                    {t('common:home')}
+                  </Button>
+                  {!location.pathname.endsWith('/error') && severity !== 'info' && (
+                    <Button onClick={handleReload}>
+                      <RefreshCwIcon size={16} className="mr-2" />
+                      {t('common:reload')}
+                    </Button>
+                  )}
+                </>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
-                  <MessageCircleQuestion size={16} className="mr-2" />
+                  <MessageCircleQuestionIcon size={16} className="mr-2" />
                   {t('common:contact_support')}
                 </Button>
               )}

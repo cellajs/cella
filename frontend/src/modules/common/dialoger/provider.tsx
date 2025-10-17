@@ -1,7 +1,7 @@
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import StandardDialog from '~/modules/common/dialoger/dialog';
-import DrawerDialog from '~/modules/common/dialoger/drawer';
+import DialogerDialog from '~/modules/common/dialoger/dialog';
+import DialogerDrawer from '~/modules/common/dialoger/drawer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 /**
@@ -20,7 +20,7 @@ export function Dialoger() {
   if (!dialogs.length) return null;
 
   return dialogs.map((dialog) => {
-    const DialogComponent = !isMobile || !dialog.drawerOnMobile ? StandardDialog : DrawerDialog;
+    const DialogComponent = !isMobile || !dialog.drawerOnMobile ? DialogerDialog : DialogerDrawer;
     return <DialogComponent key={dialog.id} dialog={dialog} />;
   });
 }

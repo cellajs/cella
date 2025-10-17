@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import type { RenderHeaderCellProps } from 'react-data-grid';
 
 const HeaderCell = <TData,>({ column, sortDirection }: RenderHeaderCellProps<TData>) => {
@@ -10,11 +10,11 @@ const HeaderCell = <TData,>({ column, sortDirection }: RenderHeaderCellProps<TDa
     <div className="flex items-center group cursor-pointer gap-2">
       <span>{column.name}</span>
       {sortDirection === 'DESC' ? (
-        <ArrowDown className="h-4 w-4 opacity-50 group-hover:opacity-75" />
+        <ArrowDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
       ) : sortDirection === 'ASC' ? (
-        <ArrowUp className="h-4 w-4 opacity-50 group-hover:opacity-75" />
+        <ArrowUpIcon className="size-4 opacity-50 group-hover:opacity-75" />
       ) : (
-        <ChevronsUpDown className="h-4 w-4 opacity-50 group-hover:opacity-75" />
+        <ChevronsUpDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
       )}
     </div>
   );

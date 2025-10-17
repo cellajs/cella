@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Bird } from 'lucide-react';
+import { BirdIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
@@ -79,7 +79,9 @@ const RequestsTable = () => {
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />,
+          NoRowsComponent: (
+            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />
+          ),
         }}
       />
     </div>

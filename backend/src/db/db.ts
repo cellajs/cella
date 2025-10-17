@@ -22,17 +22,22 @@ export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'd
 /**
  * Database connection configuration.
  */
-export const connection = env.PGLITE
-  ? process.env.NODE_ENV === 'test'
-    ? // in-memory database for tests
-      {}
-    : // PGLite for quick local development
-      { dataDir: './.db' }
-  : // regular Postgres connection
-    {
-      connectionString: env.DATABASE_URL,
-      connectionTimeoutMillis: 10000,
-    };
+const connection = (() => {
+  if (process.env.AVOID_DB_CONNECTION === 'true') return {};
+
+  if (env.PGLITE) {
+    if (process.env.NODE_ENV === 'test') return {}; // In-memory database for tests
+
+    // PGLite for quick local development
+    return { dataDir: './.db' };
+  }
+
+  // Regular Postgres connection
+  return {
+    connectionString: env.DATABASE_URL,
+    connectionTimeoutMillis: 10000,
+  };
+})();
 
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
 type DB = PgDatabase<any> & { $client: PGlite | NodePgClient };

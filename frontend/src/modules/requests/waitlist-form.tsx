@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -16,7 +16,7 @@ import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const formSchema = zCreateRequestData.shape.body.unwrap();
+const formSchema = zCreateRequestData.shape.body;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -65,12 +65,12 @@ export const WaitlistForm = ({ email, inputClassName, buttonContent, buttonClass
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className={cn('max-xs:min-w-full flex flex-col gap-4 sm:flex-row', className)}>
+      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className={cn('max-xs:min-w-full flex flex-col items-end gap-4', className)}>
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${!email ? '' : 'hidden'} grow gap-0`}>
+            <FormItem className={`${!email ? '' : 'hidden'} grow gap-0 w-full`}>
               <FormControl>
                 <Input
                   {...field}
@@ -92,7 +92,7 @@ export const WaitlistForm = ({ email, inputClassName, buttonContent, buttonClass
           ) : (
             <>
               {t('common:join')}
-              <ArrowRight size={16} className="ml-2" />
+              <ArrowRightIcon size={16} className="ml-2" />
             </>
           )}
         </SubmitButton>

@@ -17,7 +17,7 @@ export const preasignedURLQuerySchema = z.object({
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),
-  roles: z.array(z.enum(appConfig.rolesByType.entityRoles)).min(1, { message: 'Role selection is required' }),
+  roles: z.array(z.enum(appConfig.roles.entityRoles)).min(1, { message: 'Role selection is required' }),
   subject: z.string(),
   content: z.string(),
 });

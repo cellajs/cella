@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'config';
-import { and, count, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
@@ -25,7 +25,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
       invites: count().as('invites'),
     })
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType)))
+    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNull(tokensTable.invokedAt)))
     .groupBy(tokensTable[targetEntityIdField])
     .as('invites');
 
@@ -53,7 +53,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
  *
  * @param entityType - The entity to filter by, or null for all entities.
  * @param id - id to filter the count by a specific entity instance.
- * @returns - The count of admins, members, pending and total members.
+ * @returns The count of admins, members, pending and total members.
  */
 export function getMemberCounts(entityType: ContextEntityType, id: string) {
   const query = getMemberCountsQuery(entityType);

@@ -1,5 +1,5 @@
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { ZapOff } from 'lucide-react';
+import { ZapOffIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { deleteMySessions } from '~/api.gen';
@@ -58,7 +58,7 @@ const SessionsList = () => {
           disabled={isPending}
           onClick={() => handleDeleteSessions(sessionsWithoutCurrent.map((session) => session.id))}
         >
-          <ZapOff size={16} className="mr-2" />
+          <ZapOffIcon size={16} className="mr-2" />
           {t('common:terminate_all')}
         </Button>
       )}

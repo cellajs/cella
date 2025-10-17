@@ -49,13 +49,7 @@ export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: Us
         });
       }}
     >
-      <AvatarWrap
-        type="user"
-        className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-semibold"
-        id={user.id}
-        name={user.name}
-        url={user.thumbnailUrl}
-      />
+      <AvatarWrap type="user" className="h-8 w-8 group-active:translate-y-[.05rem]" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span className="[.isCompact_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
         {user.name || '-'}
       </span>

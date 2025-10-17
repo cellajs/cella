@@ -2,59 +2,78 @@
 
 ## Overview
 
-**BlockNote** serves as the core text editor and has been customized to be an easy-to-configure tool tailored to your specific
-needs. The key benefits include modularity and flexibility.
+**BlockNote** serves as the core text editor and has been customized to be an easy-to-configure tool tailored to your
+specific needs. The key benefits include modularity and flexibility.
 
 ## BlockNote Block Customization Guide
 
 The default BlockNote schema can be extended to include custom block types, such as **Notify** and **Mention**. For example,
 you can find this custom components under `blocknote/custom-element`. For app-specific customizations, use `blocknote/
 app-specific-custom`.
-functions `getSideMenuItems` and `getSlashMenuItems` are required for integrating custom items into the side and slash menus,
-respectively. For default Cella usage, they should look like this:
+functions `getSideMenuItems` and `getSlashMenuItems` are required for integrating custom items into the side and slash
+menus, respectively. For default Cella usage, they should look like this:
 
 ```typescript
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
-export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: readonly CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
-  // Get all available slash items
-  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashSummaryItem(editor)];
+// Generate the complete Slash menu items list
+export const getSlashMenuItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: NonNullable<CommonBlockNoteProps["headingLevels"]>
+): DefaultReactSuggestionItem[] => {
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
-  // Filter allowed indexed and non-indexed types once
-  const allowedIndexed = customSlashIndexedItems.filter((type) => allowedTypes.includes(type));
-  const allowedNotIndexed = customSlashNotIndexedItems.filter((type) => allowedTypes.includes(type));
+  // Filter heading keys based on allowed headingLevels
+  const { heading, ...restTypeToKeys } = { ...baseBlocknoteTypeToKeys };
+  const filteredHeading = heading.filter((key) => {
+    const match = key.match(/(?:_)?(\d)$/);
+    const level = match ? Number.parseInt(match[1], 10) : 1;
+    return headingLevels.includes(level as (typeof headingLevels)[number]);
+  });
 
-  // Combine allowed types in order
-  const orderedTypes = [...allowedIndexed, ...allowedNotIndexed];
+  // Build a map of allowed types to keys
+  const allowedTypeToKeys = {
+    ...restTypeToKeys,
+    heading: filteredHeading
+  };
 
-  // Create a sort order map where keys map to their index in orderedTypes
-  const sortOrder = new Map(orderedTypes.flatMap((type, index) => typeToBlocknoteKeys[type].map((key) => [key, index])));
+  // Only keep types that are allowed
+  const filteredTypeToKeys = Object.fromEntries(
+    Object.entries(allowedTypeToKeys).filter(([type]) => allowedTypes.includes(type as CustomBlockTypes))
+  );
 
-  // Filter items that have keys present in sortOrder, then sort by that index
-  const filteredSortedItems = baseItems
-    .filter((item): item is DefaultSuggestionItem & { key: SlashItemKeys } => "key" in item && sortOrder.has(item.key as SlashItemKeys))
+  // Flatten the keys to filter baseItems
+  const allowedKeys = Object.values(filteredTypeToKeys).flat();
+
+  // Optional: sort by `customSlashIndexedItems`
+  const sortOrder = new Map(
+    customSlashIndexedItems
+      .filter((type) => allowedTypes.includes(type))
+      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index]))
+  );
+
+  return baseItems
+    .filter((item): item is DefaultSuggestionItem => "key" in item && allowedKeys.includes(item.key as DefaultSuggestionItem["key"]))
     .sort(({ key: first }, { key: second }) => {
       const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
       const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
       return aIndex - bIndex;
     });
-
-  return filteredSortedItems;
 };
 ```
 
 These functions are used to populate the menus with the default items and any custom items added to your configuration.
-However, the lists of items in the side and slash menus are also filtered by `customBlockTypeSelectItems`,
-`customSlashNotIndexedItems`, and `customSlashIndexedItems`.
+However, the lists of items in the side and slash menu can be filtered.
 
-- `customBlockTypeSelectItems` filters the block types available in the side menu.
-- `customSlashIndexedItems` & `customSlashNotIndexedItems` defines blocks that available for selection in the slash menu
+- `customBlockTypeSwitchItems` filters the block types available in the side menu.
+- props `excludeBlockTypes` and `excludeFileBlockTypes` on `BlockNote` defines blocks that available for selection in the slash menu
 
 By filtering these lists, you can control which block types and items are available to users in the side and slash menus,
 ensuring that only relevant blocks and actions are displayed.
 
-To add a new component, import it, add it to the schema, assign its type and key, and integrate it with `getSideMenuItems`
-and `getSlashMenuItems`.
+To add a new component, import it, add it to the schema, assign its type and key, and integrate it with
+`getSideMenuItems` and `getSlashMenuItems`.
 
 ### Example: Adding a Custom Summary Block
 
@@ -69,16 +88,10 @@ and `getSlashMenuItems`.
 
 ```typescript
 import { Summary, getSlashSummaryItem, insertSummarySideMenu } from "~/modules/common/blocknote/app-specific-custom/summary-block";
-
-export const baseBlockSpecs = { ...defaultBlockSpecs, notify: Notify }; // Adds Notify block
-export const baseInlineContentSpecs = { ...defaultInlineContentSpecs, mention: MentionSchema }; // Adds Mention tag
-export const baseStyleSpecs = { ...defaultStyleSpecs };
-
 // Base custom schema
-export const customSchema = BlockNoteSchema.create({
-  blockSpecs: baseBlockSpecs,
-  inlineContentSpecs: baseInlineContentSpecs,
-  styleSpecs: baseStyleSpecs
+export const customSchema = BlockNoteSchema.create().extend({
+  blockSpecs: { notify: notifyBlock() }, // Adds Notify block
+  inlineContentSpecs: { mention: MentionSchema } // Adds Mention tag
 });
 
 const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
@@ -86,7 +99,7 @@ const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   summary: ["summary"]
 };
 
-export const customBlockTypeSelectItems: CustomBlockTypes[] = [...existingCustomBlockTypeSelectItems, "summary"];
+export const customBlockTypeSwitchItems: CustomBlockTypes[] = [...existingCustomBlockTypeSwitchItems, "summary"];
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict), insertSummarySideMenu()];
 
 declare module "~/modules/common/blocknote/types" {
@@ -95,36 +108,55 @@ declare module "~/modules/common/blocknote/types" {
   }
 }
 // Generate the complete Slash menu items list
-export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: readonly CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
-  // Get all available slash items
+export const getSlashMenuItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: NonNullable<CommonBlockNoteProps["headingLevels"]>
+): DefaultReactSuggestionItem[] => {
   const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor), getSlashSummaryItem(editor)];
 
-  // Filter allowed indexed and non-indexed types once
-  const allowedIndexed = customSlashIndexedItems.filter((type) => allowedTypes.includes(type));
-  const allowedNotIndexed = customSlashNotIndexedItems.filter((type) => allowedTypes.includes(type));
+  // Filter heading keys based on allowed headingLevels
+  const { heading, ...restTypeToKeys } = { ...baseBlocknoteTypeToKeys };
+  const filteredHeading = heading.filter((key) => {
+    const match = key.match(/(?:_)?(\d)$/);
+    const level = match ? Number.parseInt(match[1], 10) : 1;
+    return headingLevels.includes(level as (typeof headingLevels)[number]);
+  });
 
-  // Combine allowed types in order
-  const orderedTypes = [...allowedIndexed, ...allowedNotIndexed];
+  // Build a map of allowed types to keys
+  const allowedTypeToKeys = {
+    ...restTypeToKeys,
+    heading: filteredHeading
+  };
 
-  // Create a sort order map where keys map to their index in orderedTypes
-  const sortOrder = new Map(orderedTypes.flatMap((type, index) => typeToBlocknoteKeys[type].map((key) => [key, index])));
+  // Only keep types that are allowed
+  const filteredTypeToKeys = Object.fromEntries(
+    Object.entries(allowedTypeToKeys).filter(([type]) => allowedTypes.includes(type as CustomBlockTypes))
+  );
 
-  // Filter items that have keys present in sortOrder, then sort by that index
-  const filteredSortedItems = baseItems
-    .filter((item): item is DefaultSuggestionItem & { key: SlashItemKeys } => "key" in item && sortOrder.has(item.key as SlashItemKeys))
+  // Flatten the keys to filter baseItems
+  const allowedKeys = Object.values(filteredTypeToKeys).flat();
+
+  // Optional: sort by `customSlashIndexedItems`
+  const sortOrder = new Map(
+    customSlashIndexedItems
+      .filter((type) => allowedTypes.includes(type))
+      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index]))
+  );
+
+  return baseItems
+    .filter((item): item is DefaultSuggestionItem => "key" in item && allowedKeys.includes(item.key as DefaultSuggestionItem["key"]))
     .sort(({ key: first }, { key: second }) => {
       const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
       const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
       return aIndex - bIndex;
     });
-
-  return filteredSortedItems;
 };
 ```
 
 ## Allowed Types
 
-The `allowedTypes` property in `blocknote-appConfig.ts` defines the basic block types that Blocknote will handle. Types assigned to `allowedTypes` will be used by default. You can exclude some of the types by specifying them in the <BlockNote /> component configuration. This allows you to tailor the editor to specific needs.
+Keys of `customSchema.blockSpecs` will be used by default. You can exclude some of the types by specifying them in the <BlockNote /> component configuration. This allows you to tailor the editor to specific needs.
 
 Example Usage:
 
@@ -144,24 +176,24 @@ Example Usage:
 
 ## Side menu
 
-Our BlockNote component uses a custom side menu button. The block types specified in `sideMenuOpenOnTypes` will trigger the
-side menu to open when their side button is clicked. For other block types, this button only executes the drag functionality,
-and clicking on it has no additional effect.
+Our BlockNote component uses a custom side menu button. The block types specified in `customBlockTypeSwitchItems` will
+trigger the side menu to open when their side button is clicked. For other block types, this button only executes the
+drag functionality, and clicking on it has no additional effect.
 
-The menu will include blocks that are assigned in `getSideMenuItems` and filter them using `customBlockTypeSelectItems`.
-Essentially, `customBlockTypeSelectItems` allows you to filter out basic blocks from the side menu. However, when adding a
-custom block, it must be explicitly added to both `getSideMenuItems` and `customBlockTypeSelectItems` for it to appear in the
-side menu.
+The menu will include blocks that are assigned in `getSideMenuItems` and filter them using `customBlockTypeSwitchItems`.
+Essentially, `customBlockTypeSwitchItems` allows you to filter out basic blocks from the side menu. However, when adding
+a custom block, it must be explicitly added to both `getSideMenuItems` and `customBlockTypeSwitchItems` for it to appear
+in the side menu.
 
 ## Slash menu
 
 The slash menu is divided into two parts: indexed and not-indexed. This setup allows users to quickly select blocks by their
 number when interacting with the slash menu.
 
-The indexed items are defined in `customSlashIndexedItems`, while the not-indexed items are listed in
-`customSlashNotIndexedItems`. Items are added by their key rather than their type. It’s
-important to note that the number of indexed items should not exceed 9; otherwise, the functionality may not work as expected.
-Custom items are added to the slash menu using the `getSlashMenuItems` function.
+The indexed items are defined in `customSlashIndexedItems`, while all others become the not-indexed. Items are added by
+their key rather than their type. It’s important to note that the number of indexed items should not exceed 9;
+otherwise, the functionality may not work as expected. Custom items are added to the slash menu using the
+`getSlashMenuItems` function.
 
 ## File Upload
 

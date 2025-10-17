@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Shield, UserRound } from 'lucide-react';
+import { ShieldIcon, UserRoundIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
@@ -36,7 +36,7 @@ export const useColumns = () => {
           >
             <AvatarWrap
               type="organization"
-              className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-semibold"
+              className="h-8 w-8 group-active:translate-y-[.05rem]"
               id={row.id}
               name={row.name}
               url={row.thumbnailUrl}
@@ -69,7 +69,7 @@ export const useColumns = () => {
           renderSelect({
             row,
             onRowChange,
-            options: appConfig.rolesByType.entityRoles,
+            options: appConfig.roles.entityRoles,
           }),
       },
       {
@@ -99,7 +99,7 @@ export const useColumns = () => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
-            <UserRound className="mr-2 opacity-50" size={16} />
+            <UserRoundIcon className="mr-2 opacity-50" size={16} />
             {row.counts.membership.member}
           </>
         ),
@@ -113,7 +113,7 @@ export const useColumns = () => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
-            <Shield className="mr-2 opacity-50" size={16} />
+            <ShieldIcon className="mr-2 opacity-50" size={16} />
             {row.counts.membership.admin}
           </>
         ),

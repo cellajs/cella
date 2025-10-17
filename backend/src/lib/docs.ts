@@ -23,7 +23,6 @@ const openApiConfig = {
   },
   openapi: '3.1.0',
   tags: apiModulesList,
-  security: [{ cookieAuth: [] }],
 };
 
 /**
@@ -46,15 +45,15 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
+  // Register lower-level (base) schemas
+  registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
+  registry.register('MembershipBaseSchema', membershipBaseSchema);
+  registry.register('UserBaseSchema', userBaseSchema);
+
   // Register entity schemas
   registry.register('User', userSchema);
   registry.register('Organization', organizationSchema);
   registry.register('Attachment', attachmentSchema);
-
-  // Register lower-level (base) schemas
-  registry.register('UserBaseSchema', userBaseSchema);
-  registry.register('MembershipBaseSchema', membershipBaseSchema);
-  registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
 
   registry.register('MenuSchema', menuSchema);
   registry.register('ApiError', apiErrorSchema);

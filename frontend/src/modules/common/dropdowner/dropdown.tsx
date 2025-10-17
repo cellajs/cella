@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 
-export const DesktopDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
+export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
   const triggerEl = dropdown.triggerRef?.current;
 
   // Use floating-ui to position the dropdown, remove it when the trigger is out of DOM

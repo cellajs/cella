@@ -15,7 +15,7 @@ const SelectRole = ({ entity = false, onChange, value, className }: SelectRolePr
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const roles = entity ? appConfig.rolesByType.entityRoles : appConfig.rolesByType.systemRoles;
+  const roles = entity ? appConfig.roles.entityRoles : appConfig.roles.systemRoles;
 
   return (
     <Select value={value === undefined || value === 'all' ? 'all' : value} onValueChange={(role) => onChange(role === 'all' ? undefined : role)}>

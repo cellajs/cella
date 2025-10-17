@@ -1,10 +1,10 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema } from '#/utils/schema/responses';
 
 const requestRoutes = {
   createRequest: createCustomRoute({
@@ -12,21 +12,18 @@ const requestRoutes = {
     method: 'post',
     path: '/',
     guard: isPublicAccess,
-    middleware: [isNoBot, spamLimiter],
+    middleware: [isNoBot, emailEnumLimiter, spamLimiter],
     tags: ['requests'],
     summary: 'Create request',
     description: 'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: requestCreateBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: requestCreateBodySchema } },
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Requests',
         content: { 'application/json': { schema: requestSchema } },
       },
@@ -41,9 +38,7 @@ const requestRoutes = {
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
-    request: {
-      query: requestListQuerySchema,
-    },
+    request: { query: requestListQuerySchema },
     responses: {
       200: {
         description: 'Requests',
@@ -66,17 +61,13 @@ const requestRoutes = {
     description: 'Deletes one or more *requests* from the system by their IDs.',
     request: {
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {
-      200: {
-        description: 'Requests',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+      204: {
+        description: 'Requests deleted',
       },
       ...errorResponses,
     },

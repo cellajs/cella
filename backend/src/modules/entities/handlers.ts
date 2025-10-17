@@ -9,7 +9,7 @@ import { type Env, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import entityRoutes from '#/modules/entities/routes';
-import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
+import { contextEntityWithCountsSchema } from '#/modules/entities/schema';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -20,7 +20,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app
-  /*
+  /**
    * Get all users' context entities with members counts
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
@@ -140,25 +140,27 @@ const entityRouteHandlers = app
         // Fetch items and total count in parallel
         const [items, [{ total }]] = await Promise.all([
           query.limit(limit).offset(offset),
-          db.select({ total: count() }).from(query.as('entitiCount')),
+          db.select({ total: count() }).from(query.as('entityCount')),
         ]);
 
         return { items, total };
       }),
     );
 
-    // Map items per entity type
-    const items = Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queryResults[i].items])) as z.infer<
-      typeof contextEntitiesResponseSchema
-    >['items'];
+    // Combine results from all entity types
+    // We leave it to the client to handle pagination across types
+    const { items, total } = queryResults.reduce(
+      (acc, { items: batchItems, total }) => {
+        acc.items.push(...(batchItems as z.infer<typeof contextEntityWithCountsSchema>[]));
+        acc.total += total;
+        return acc;
+      },
+      { items: [] as z.infer<typeof contextEntityWithCountsSchema>[], total: 0 },
+    );
 
-    // Compute grand total
-    const total = queryResults.reduce((sum, result) => sum + (result.total ?? 0), 0);
-
-    // Return response
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Get base entity info
    */
   .openapi(entityRoutes.getContextEntity, async (ctx) => {
@@ -169,7 +171,7 @@ const entityRouteHandlers = app
 
     return ctx.json(entity, 200);
   })
-  /*
+  /**
    * Check if slug is available
    */
   .openapi(entityRoutes.checkSlug, async (ctx) => {
@@ -177,7 +179,7 @@ const entityRouteHandlers = app
 
     const slugAvailable = await checkSlugAvailable(slug, entityType);
 
-    return ctx.json(slugAvailable, 200);
+    return slugAvailable ? ctx.body(null, 204) : ctx.body(null, 409);
   });
 
 export default entityRouteHandlers;

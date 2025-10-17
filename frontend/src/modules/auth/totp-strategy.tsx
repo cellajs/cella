@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Smartphone } from 'lucide-react';
+import { SmartphoneIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
@@ -20,9 +20,8 @@ export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; set
 
   const { mutate: totpSignIn } = useMutation<SignInWithTotpResponse, ApiError | Error, NonNullable<SignInWithTotpData['body']>>({
     mutationFn: async (body) => await signInWithTotp({ body }),
-    onSuccess: (success) => {
-      if (success) navigate({ to: appConfig.defaultRedirectPath, replace: true });
-      else toaster(t('error:totp_verification_failed'), 'error');
+    onSuccess: () => {
+      navigate({ to: appConfig.defaultRedirectPath, replace: true });
     },
     onError: () => toaster(t('error:totp_verification_failed'), 'error'),
   });
@@ -31,7 +30,7 @@ export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; set
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {!isActive && (
         <Button ref={triggerRef} type="button" onClick={() => setIsActive(true)} variant="plain" className="w-full gap-1.5 truncate">
-          <Smartphone size={16} />
+          <SmartphoneIcon size={16} />
           <span className="truncate">
             {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
           </span>

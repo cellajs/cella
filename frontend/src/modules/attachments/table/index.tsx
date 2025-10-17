@@ -1,24 +1,25 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Paperclip } from 'lucide-react';
+import { PaperclipIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
+import { useElectricSyncAttachments } from '~/modules/attachments/hooks/use-electric-sync-attachments';
+import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
+import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
-import { useElectricSyncAttachments } from '~/modules/attachments/use-electric-sync-attachments';
-import { useLocalSyncAttachments } from '~/modules/attachments/use-local-sync-attachments';
-import { useMergeLocalAttachments } from '~/modules/attachments/use-merge-local-attachments';
+import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
-import type { AttachmentsRouteSearchParams } from '../types';
+import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -80,6 +81,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         id: attachment.id,
         orgIdOrSlug: entity.id,
         name: attachment.name,
+        localUpdate: !isCDNUrl(attachment.url),
       });
     }
   };
@@ -131,7 +133,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
             sortColumns,
             onSortColumnsChange,
             NoRowsComponent: (
-              <ContentPlaceholder icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+              <ContentPlaceholder icon={PaperclipIcon} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
             ),
           }}
         />

@@ -1,12 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
-import { Info, Send } from 'lucide-react';
+import { InfoIcon, SendIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SendNewsletterData, sendNewsletter } from '~/api.gen';
+import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from '~/api.gen';
 import { zSendNewsletterData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { ApiError } from '~/lib/api';
@@ -47,8 +47,12 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   const formContainerId = 'create-newsletter';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
-  // Send newsletter
-  const { mutate: _sendNewsletter, isPending } = useMutation<boolean, ApiError, { body: SendNewsletterData['body'] } & SendNewsletterData['query']>({
+  // SendIcon newsletter
+  const { mutate: _sendNewsletter, isPending } = useMutation<
+    SendNewsletterResponse,
+    ApiError,
+    { body: SendNewsletterData['body'] } & SendNewsletterData['query']
+  >({
     mutationFn: async ({ body, toSelf }) => {
       return await sendNewsletter({ body, query: { toSelf } });
     },
@@ -66,7 +70,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
     const body = {
       ...data,
       organizationIds,
-      content: await blocksToHTML(data.content),
+      content: blocksToHTML(data.content),
     };
     _sendNewsletter({ body, toSelf: !!testOnly });
   };
@@ -108,7 +112,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             id: 'blocknote-newsletter',
             trailingBlock: false,
             className:
-              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
             baseFilePanelProps: { isPublic: true, organizationId: 'adminPreview' },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
           }}
@@ -132,21 +136,21 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
         />
 
         {testOnly && (
-          <AlertWrap id="test-email" variant="plain" icon={Info}>
+          <AlertWrap id="test-email" variant="plain" icon={InfoIcon}>
             {t('common:test_email.text')}
           </AlertWrap>
         )}
 
         <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
           <SubmitButton disabled={!canSend()} loading={isPending}>
-            <Send size={16} className="mr-2" />
+            <SendIcon size={16} className="mr-2" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
           <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('common:cancel')} onClick={cancel}>
             {t('common:cancel')}
           </Button>
           <div className="max-sm:mt-2 flex gap-2 items-center">
-            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="size-4 ml-4" />
             <label htmlFor="testOnly" className="items-center text-sm">
               {t('common:test_email')}
             </label>

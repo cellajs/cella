@@ -1,48 +1,24 @@
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-const Avatar = React.forwardRef<React.ComponentRef<typeof AvatarPrimitive.Root>, React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>>(
-  ({ className, ...props }, ref) => <AvatarPrimitive.Root ref={ref} className={cn('relative flex h-10 w-10 shrink-0', className)} {...props} />,
-);
-Avatar.displayName = AvatarPrimitive.Root.displayName;
-
-const AvatarImage = React.forwardRef<React.ComponentRef<typeof AvatarPrimitive.Image>, React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>>(
-  ({ className, ...props }, ref) => <AvatarPrimitive.Image ref={ref} className={cn('aspect-square h-full w-full', className)} {...props} />,
-);
-AvatarImage.displayName = AvatarPrimitive.Image.displayName;
-
-const AvatarFallback = React.forwardRef<
-  React.ComponentRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Fallback ref={ref} className={cn('flex h-full w-full items-center justify-center', className)} {...props} />
-));
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
-
-const avatarBadgeVariants = cva('absolute w-4 h-4 rounded-full bg-background flex items-stretch justify-stretch *:grow *:rounded-full', {
-  variants: {
-    position: {
-      bottomLeft: 'bottom-0 -left-1',
-      bottomRight: 'bottom-0 -right-1',
-      topLeft: 'top-0 -left-1',
-      topRight: 'top-0 -right-1',
-    },
-  },
-  defaultVariants: {
-    position: 'bottomLeft',
-  },
-});
-
-export interface AvatarBadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof avatarBadgeVariants> {
-  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-  children?: React.ReactElement<any, string | React.JSXElementConstructor<any>> | null | never[];
+function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+  return <AvatarPrimitive.Root data-slot="avatar" className={cn('relative flex size-8 shrink-0 overflow-hidden', className)} {...props} />;
 }
 
-const AvatarBadge = ({ className, position, ...props }: AvatarBadgeProps) => (
-  <div className={cn(avatarBadgeVariants({ position }), className)} {...props} />
-);
+function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+  return <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full', className)} {...props} />;
+}
+
+function AvatarFallback({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+  return (
+    <AvatarPrimitive.Fallback
+      data-slot="avatar-fallback"
+      className={cn('bg-muted flex size-full items-center justify-center', className)}
+      {...props}
+    />
+  );
+}
 
 type AvatarGroupContextValue = {
   count?: number;
@@ -121,6 +97,5 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
     );
   },
 );
-AvatarOverflowIndicator.displayName = 'AvatarOverflowIndicator';
 
-export { Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupList, AvatarImage, AvatarOverflowIndicator };
+export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupList, AvatarOverflowIndicator };

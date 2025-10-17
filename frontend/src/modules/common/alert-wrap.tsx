@@ -1,5 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
-import { type LucideProps, X } from 'lucide-react';
+import { type LucideProps, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { alertVariants } from '~/modules/ui/alert';
@@ -31,8 +31,8 @@ export const AlertWrap = ({ id, icon: Icon, children, className = '', title = ''
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>
-      <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={setAsSeen}>
-        <X size={16} />
+      <Button variant="ghost" size="sm" className="absolute top-1 right-1" onClick={setAsSeen}>
+        <XIcon size={16} />
       </Button>
       {Icon && <Icon size={16} />}
       {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}

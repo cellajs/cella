@@ -353,38 +353,57 @@ export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, 
     const unsubs: UnsubList = [];
     setup(node, unsubs, { offsetBottom, offsetTop, bottom, enabled });
 
-    let lastIsSticky = false; // Store last known sticky state
+    const scrollPane = getScrollParent(node);
+    const addTarget: Window | HTMLElement = scrollPane;
+
+    let lastIsSticky = false;
     let ticking = false;
 
-    const handleScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(() => {
-          const isStickyNow = calculateIsSticky(node, offsetTop, offsetBottom, bottom);
+    const calculateIsSticky = () => {
+      const elRect = node.getBoundingClientRect();
+      const spRect = scrollPane === window ? { top: 0, bottom: window.innerHeight } : (scrollPane as HTMLElement).getBoundingClientRect();
 
-          if (isStickyNow !== lastIsSticky) {
-            setIsSticky(isStickyNow); // Only update state if value changed
-            lastIsSticky = isStickyNow;
-          }
-
-          ticking = false;
-        });
-      }
+      return bottom
+        ? elRect.bottom >= spRect.bottom - offsetBottom - 0.5 // epsilon
+        : elRect.top <= spRect.top + offsetTop + 0.5;
     };
 
-    const calculateIsSticky = (el: HTMLElement, offsetTop: number, offsetBottom: number, bottom: boolean) => {
-      const rect = el.getBoundingClientRect();
-      return bottom ? rect.bottom <= window.innerHeight - offsetBottom : rect.top <= offsetTop;
+    const handleScrollLike = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const isStickyNow = calculateIsSticky();
+        if (isStickyNow !== lastIsSticky) {
+          setIsSticky(isStickyNow);
+          lastIsSticky = isStickyNow;
+        }
+        ticking = false;
+      });
     };
 
-    window.addEventListener('scroll', handleScroll, passiveArg);
-    handleScroll(); // Initial check
+    // Scroll/resize on the right target
+    const onScroll = scrollPane === window ? () => handleScrollLike() : () => handleScrollLike();
+
+    const onResize = () => handleScrollLike();
+
+    addTarget.addEventListener('scroll', onScroll, passiveArg);
+    window.addEventListener('resize', onResize, passiveArg);
+
+    // also observe size changes of the scroll parent if it's an element
+    let ro: ResizeObserver | undefined;
+    if (scrollPane !== window) {
+      ro = new ResizeObserver(onResize);
+      ro.observe(scrollPane as HTMLElement);
+    }
+
+    // initial check
+    handleScrollLike();
 
     return () => {
-      unsubs.forEach((fn) => {
-        fn();
-      });
-      window.removeEventListener('scroll', handleScroll);
+      unsubs.forEach((fn) => fn());
+      addTarget.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      ro?.disconnect();
     };
   }, [node, offsetBottom, offsetTop, bottom, enabled]);
 
@@ -403,7 +422,7 @@ const StickyBox = (props: StickyBoxCompProps) => {
     if (ref.current) setRef(ref.current);
   }, [setRef]);
 
-  const stickyClass = isSticky ? 'group/sticky is-sticky' : '';
+  const stickyClass = isSticky ? 'group/sticky is-sticky' : 'not-sticky';
 
   return (
     <div className={`${className} ${stickyClass}`} style={style} ref={ref}>

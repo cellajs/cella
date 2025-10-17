@@ -1,11 +1,10 @@
-import type { BlockNoteEditorOptions } from '@blocknote/core';
+import type { HeadingOptions } from '@blocknote/core';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
-import type { customSchema, supportedLanguages } from '~/modules/common/blocknote/blocknote-config';
+import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import type { Member } from '~/modules/memberships/types';
 
-type CustomSchema = typeof customSchema;
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
@@ -25,10 +24,6 @@ export interface CustomFormatToolBarConfig {
   openPreview?: boolean;
   createLink?: boolean;
 }
-
-// Define types for block alignment and styles
-export type BlockAlignTypes = 'right' | 'center' | 'left';
-export type BlockStyleTypes = 'bold' | 'italic' | 'underline' | 'strike' | 'code';
 
 type MaxNineItems<T extends string> =
   | [T]
@@ -64,10 +59,7 @@ export type CommonBlockNoteProps = {
   defaultValue?: string; // stringified block
   editable?: boolean;
   className?: string;
-  codeBlockDefaultLanguage?: keyof typeof supportedLanguages;
-  headingLevels?: NonNullable<
-    BlockNoteEditorOptions<CustomSchema['blockSchema'], CustomSchema['inlineContentSchema'], CustomSchema['styleSchema']>['heading']
-  >['levels'];
+  headingLevels?: NonNullable<HeadingOptions['defaultLevel']>[];
   sideMenu?: boolean;
   slashMenu?: boolean;
   formattingToolbar?: boolean;

@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Fingerprint } from 'lucide-react';
+import { FingerprintIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import { ApiError } from '~/lib/api';
@@ -30,9 +30,8 @@ const PasskeyStrategy = ({
       // Send signed response to BE to complete authentication
       return await signInWithPasskey({ body });
     },
-    onSuccess: (success) => {
-      if (success) navigate({ to: redirectPath, replace: true });
-      else toaster(t('error:passkey_verification_failed'), 'error');
+    onSuccess: () => {
+      navigate({ to: redirectPath, replace: true });
     },
     onError: (error) => {
       if (type === 'mfa' && error instanceof ApiError) {
@@ -44,8 +43,8 @@ const PasskeyStrategy = ({
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button type="button" variant="outline" onClick={() => passkeyAuth(email)} className="w-full gap-1.5 truncate">
-        <Fingerprint size={16} />
+      <Button type="button" variant={type === 'mfa' ? 'default' : 'outline'} onClick={() => passkeyAuth(email)} className="w-full gap-1.5 truncate">
+        <FingerprintIcon size={16} />
         <span className="truncate">
           {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>

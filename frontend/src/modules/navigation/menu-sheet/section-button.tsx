@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Settings2 } from 'lucide-react';
+import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +26,7 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
 
   return (
     <StickyBox className="z-10">
-      <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between px-1 -mx-1">
+      <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between">
         <LayoutGroup>
           <Button onClick={() => toggleSection(options.entityType)} className="w-full justify-between" variant="secondary" asChild>
             <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.2 }}>
@@ -85,7 +85,7 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 20, opacity: 0 }}
                   >
-                    <Plus size={16} />
+                    <PlusIcon size={16} />
                   </motion.button>
                 </Button>
               </TooltipButton>

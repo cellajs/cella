@@ -1,4 +1,5 @@
-import { Monitor, Smartphone, Unlink } from 'lucide-react';
+import { ChevronDownIcon, KeyRoundIcon, MonitorIcon, SmartphoneIcon, UnlinkIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
@@ -16,19 +17,23 @@ interface PasskeyTileProps {
 
 export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) => {
   const { t } = useTranslation();
-
   const user = useUserStore((state) => state.user);
 
-  return (
-    <Card className="w-full">
-      <CardContent className="flex !p-3 items-center gap-3">
-        {passkey.deviceType === 'desktop' ? <Monitor size={32} strokeWidth={1.25} /> : <Smartphone size={32} strokeWidth={1.25} />}
+  const [expanded, setExpanded] = useState(false);
 
-        <div className="flex flex-col gap-1 overflow-hidden">
-          <div className="flex gap-2 items-center">
-            <div className="font-semibold">{passkey.deviceName || t('common:unknown_device')}</div>
-            <Badge size="xs" variant="outline">
-              {passkey.nameOnDevice}
+  const DeviceIcon = passkey.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
+
+  return (
+    <Card className="w-full group/tile py-0 sm:has-[button:focus]:ring-2 transition-all" data-expanded={expanded}>
+      <CardContent className="flex !p-2 sm:!p-3 lg:items-center gap-2 sm:gap-3">
+        <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
+
+        <div className="flex flex-col gap-1 w-full overflow-hidden">
+          <div className="flex max-md:flex-col items-start gap-1 md:gap-2">
+            <span className="text-sm">{passkey.deviceName || t('common:unknown_device')}</span>
+            <Badge size="xs" variant="outline" className="truncate">
+              <KeyRoundIcon size={12} />
+              <span className="truncate">{passkey.nameOnDevice}</span>
             </Badge>
           </div>
 
@@ -36,12 +41,24 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
             <p className="truncate" aria-describedby={t('common:created_at')}>
               {dateShort(passkey.createdAt)}
             </p>
-            <p className="truncate max-lg:hidden" aria-describedby="OS">
+            <p className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline" aria-describedby="OS">
               {passkey.deviceOs}
             </p>
-            <p className="truncate max-md:hidden" aria-describedby={t('common:browser')}>
+            <p className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline" aria-describedby={t('common:browser')}>
               {passkey.browser}
             </p>
+
+            <Button
+              variant="link"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              size="xs"
+              className="lg:hidden p-0 font-light max-sm:text-[0.7rem] h-auto sm:opacity-0 group-hover/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-transparent ring-offset-0 outline-0 transition-opacity"
+            >
+              <div className="group-data-[expanded=true]/tile:hidden">More</div>
+              <div className="group-data-[expanded=false]/tile:hidden">Less</div>
+              <ChevronDownIcon size="12" className={`ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            </Button>
           </div>
         </div>
 
@@ -53,7 +70,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
           disabled={user.mfaRequired && onlyPasskeyLeft}
           onClick={() => handleUnlinkPasskey(passkey.id)}
         >
-          <Unlink size={16} />
+          <UnlinkIcon size={16} />
           <span className="ml-1 max-md:hidden">{t('common:unlink')}</span>
         </Button>
       </CardContent>

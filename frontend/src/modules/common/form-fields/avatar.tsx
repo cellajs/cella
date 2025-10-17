@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Trash, Upload } from 'lucide-react';
+import { TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -76,14 +76,14 @@ const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
                 <div className="flex gap-2 items-center">
                   {appConfig.has.uploadEnabled && (
                     <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
-                      <Upload size={16} className="mr-2" />
+                      <UploadIcon size={16} className="mr-2" />
                       <span>{t('common:upload')}</span>
                     </Button>
                   )}
 
                   {url && (
                     <Button variant="secondary" onClick={() => handleUpdateURL(null)} size="sm">
-                      <Trash size={16} />
+                      <TrashIcon size={16} />
                     </Button>
                   )}
                 </div>

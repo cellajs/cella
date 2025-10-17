@@ -1,23 +1,24 @@
 import type { Block, BlockConfig, InlineContentSchema, StyleSchema } from '@blocknote/core';
-import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
+import { type BlockTypeSelectItem, SideMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
 import { useMemo } from 'react';
-import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
+import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteEditor;
-  props: DragHandleMenuProps;
+  props: Omit<SideMenuProps, 'addBlock'>;
   allowedTypes: CustomBlockTypes[];
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
 }
 
-export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
+export function ResetBlockTypeItem({ editor, props: { block, unfreezeMenu }, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
 
-  const filteredSelectItems = customBlockTypeSelectItems.filter((i) => allowedTypes.includes(i));
+  const filteredSelectItems = customBlockTypeSwitchItems.filter((i) => allowedTypes.includes(i));
   const selectItemsType: readonly string[] = filteredSelectItems;
 
   const filteredItems = useMemo(() => {
@@ -70,9 +71,19 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, hea
   return (
     <>
       {fullItems.map(({ title, type, icon, onClick }) => {
-        const isSelected = block.type === 'heading' ? title.includes(block.props.level.toString()) : block.type === type;
+        const isSelected = block.type === 'heading' ? isHeadingMenuItemActive(block, title) : block.type === type;
+
         return (
-          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
+          <Components.Generic.Menu.Item
+            className="bn-menu-item"
+            key={title}
+            onClick={() => {
+              onClick();
+              unfreezeMenu();
+            }}
+            icon={icon}
+            checked={isSelected}
+          >
             {title}
           </Components.Generic.Menu.Item>
         );

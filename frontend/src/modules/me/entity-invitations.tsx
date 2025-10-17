@@ -1,41 +1,46 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitationsResponse } from '~/api.gen';
+import {
+  type ApiError,
+  type GetMyInvitationsResponse,
+  HandleMembershipInvitationData,
+  type HandleMembershipInvitationResponse,
+  handleMembershipInvitation,
+} from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { meInvitesQueryOptions, meKeys } from '~/modules/me/query';
-import { ResendMembershipInviteButton } from '~/modules/memberships/resend-membership-invitation';
+import { meInvitationsQueryOptions, meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { UserCell } from '~/modules/users/user-cell';
 import { queryClient } from '~/query/query-client';
 import { getEntityRoute } from '~/routes-resolver';
-import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-export const EntityInvites = () => {
+/**
+ * Component to show a list of pending entity invitations for the current user
+ */
+export const EntityInvitations = () => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
 
-  const queryOptions = meInvitesQueryOptions();
+  const queryOptions = meInvitationsQueryOptions();
   const { data: invites } = useSuspenseQuery(queryOptions);
 
-  const { mutate: _acceptEntityInvite } = useMutation<AcceptEntityInviteResponse, ApiError, string>({
-    mutationFn: (token) => acceptEntityInvite({ path: { token } }),
-    onSuccess: async (acceptedEntity) => {
+  const { mutate: handleInvitation } = useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
+    mutationFn: ({ id, acceptOrReject }) => handleMembershipInvitation({ path: { id, acceptOrReject } }),
+    onSuccess: async (settledEntity, { acceptOrReject }) => {
       await getAndSetMenu();
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
-        return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
+        return oldData.filter((invite) => invite.entity.id !== settledEntity.id);
       });
-      toaster(t('common:invitation_accepted'), 'success');
+
+      toaster(t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
     },
   });
-
-  const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites });
 
   if (!invites?.length) return null;
 
@@ -54,8 +59,12 @@ export const EntityInvites = () => {
           </div>
           <ExpandableList
             items={invites}
-            renderItem={({ entity, invitedBy, expiresAt, token, tokenId }) => {
+            renderItem={({ entity, invitedBy, expiresAt, membership }) => {
               const { to, params, search } = getEntityRoute({ ...entity, membership: null });
+              const actionButtons = [
+                { label: t('common:accept'), variant: 'darkSuccess', action: 'accept' },
+                { label: t('common:reject'), variant: 'destructive', action: 'reject' },
+              ] as const;
 
               const isExpired = new Date(expiresAt) < new Date();
               return (
@@ -63,7 +72,7 @@ export const EntityInvites = () => {
                   <Link to={to} params={params} search={search} draggable="false" className="flex space-x-2 items-center outline-0 ring-0 group">
                     <AvatarWrap
                       type="organization"
-                      className="h-10 w-10 group-active:translate-y-[.05rem] group-hover:font-semibold"
+                      className="h-10 w-10 group-active:translate-y-[.05rem]"
                       id={entity.id}
                       name={entity.name}
                       url={entity.thumbnailUrl}
@@ -74,18 +83,22 @@ export const EntityInvites = () => {
                   </Link>
                   {invitedBy ? <UserCell user={invitedBy} tabIndex={0} /> : '-'}
                   <span>{isExpired ? 'Expired' : dateShort(expiresAt)}</span>
-                  {isExpired ? (
-                    <ResendMembershipInviteButton
-                      resendData={{ email: user.email, tokenId }}
-                      buttonProps={{ className: 'w-full', size: 'xs', variant: 'outlinePrimary' }}
-                      wrapperClassName="w-[60%] ml-auto"
-                      callback={callback}
-                    />
-                  ) : (
-                    <Button className="w-[60%] ml-auto" size="xs" variant="darkSuccess" onClick={() => _acceptEntityInvite(token)}>
-                      {t('common:accept')}
-                    </Button>
-                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-2 items-end justify-end">
+                    {/* TODO disable on expired it will auto clean by DB, or add button request invite? */}
+                    {actionButtons.map(({ label, variant, action }) => (
+                      <Button
+                        disabled={isExpired}
+                        className="w-[40%]"
+                        key={action}
+                        size="xs"
+                        variant={variant}
+                        onClick={() => handleInvitation({ id: membership.id, acceptOrReject: action })}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               );
             }}

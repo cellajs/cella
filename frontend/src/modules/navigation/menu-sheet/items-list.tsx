@@ -1,5 +1,5 @@
 import type { ContextEntityType } from 'config';
-import { Plus } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -26,7 +26,7 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
     options?.createAction ? (
       <div className="flex items-center">
         <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
-          <Plus size={14} />
+          <PlusIcon size={14} />
           <span className="ml-1 text-sm text-light">
             {t('common:create_your_first')} {t(type).toLowerCase()}
           </span>

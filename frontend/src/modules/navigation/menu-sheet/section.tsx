@@ -1,5 +1,5 @@
 import type { ContextEntityType } from 'config';
-import { Info, type LucideIcon } from 'lucide-react';
+import { InfoIcon, type LucideIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +75,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
             }}
             style={{ overflow: 'hidden' }}
           >
-            <AlertWrap id="menu_management" variant="plain" icon={Info}>
+            <AlertWrap id="menu_management" variant="plain" icon={InfoIcon}>
               {t('common:configure_menu.text')}
             </AlertWrap>
           </motion.div>

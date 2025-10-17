@@ -1,11 +1,11 @@
-import { CircleAlert, CircleCheck, CircleX, Info } from 'lucide-react';
+import { CircleAlertIcon, CircleCheckIcon, CircleXIcon, InfoIcon } from 'lucide-react';
 
 // The types of notifies that users can choose from.
 export const notifyTypes = [
   {
     title: 'Warning',
     value: 'warning',
-    icon: CircleAlert,
+    icon: CircleAlertIcon,
     color: '#e69819',
     backgroundColor: {
       light: '#fff6e6',
@@ -15,7 +15,7 @@ export const notifyTypes = [
   {
     title: 'Error',
     value: 'error',
-    icon: CircleX,
+    icon: CircleXIcon,
     color: '#d80d0d',
     backgroundColor: {
       light: '#ffe6e6',
@@ -25,7 +25,7 @@ export const notifyTypes = [
   {
     title: 'Info',
     value: 'info',
-    icon: Info,
+    icon: InfoIcon,
     color: '#507aff',
     backgroundColor: {
       light: '#e6ebff',
@@ -35,7 +35,7 @@ export const notifyTypes = [
   {
     title: 'Success',
     value: 'success',
-    icon: CircleCheck,
+    icon: CircleCheckIcon,
     color: '#0bc10b',
     backgroundColor: {
       light: '#e6ffe6',

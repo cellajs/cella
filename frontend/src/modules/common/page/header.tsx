@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { appConfig, ContextEntityType } from 'config';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { UserBaseSchema } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -20,6 +21,8 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 };
 
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
+  const { t } = useTranslation();
+
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   const parentData = parent ? useGetEntityBaseData(parent) : null;
@@ -27,7 +30,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   if (!disableScroll) useScrollTo(scrollToRef);
 
   return (
-    <div className="relative">
+    <div className="w-full relative">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
       <div className="absolute flex bottom-0 w-full h-18 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
@@ -37,9 +40,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user'
-              ? 'h-26 w-26 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full'
-              : 'm-2 text-xl h-12 w-12'
+            entity.entityType === 'user' ? 'h-26 w-26 -mt-13 text-4xl mx-3 shadow-[0_0_0_4px_rgba(0,0,0,0.1)] rounded-full' : 'm-2 text-xl h-12 w-12'
           }
         />
 
@@ -51,9 +52,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             {/* Role */}
             {'membership' in entity && entity.membership && (
               <>
-                <Badge className="opacity-70" variant="plain">
-                  {entity.membership.role}
-                </Badge>
+                <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>
                 <div className="opacity-70 max-sm:hidden">&middot;</div>
               </>
             )}
@@ -62,30 +61,30 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             <Breadcrumb className="max-sm:hidden">
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink className="p-0.5" asChild>
+                  <BreadcrumbLink className="p-0.5 text-foreground/70" asChild>
                     <Link to={appConfig.defaultRedirectPath}>
-                      <Home size={12} />
+                      <HomeIcon size={14} />
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <ChevronRight size={12} />
+                <BreadcrumbSeparator className="text-foreground/50">
+                  <ChevronRightIcon size={12} />
                 </BreadcrumbSeparator>
                 {parentData && (
                   <>
                     <BreadcrumbItem>
-                      <BreadcrumbLink className="flex items-center" asChild>
+                      <BreadcrumbLink className="flex items-center text-foreground/70" asChild>
                         <Link to={baseEntityRoutes[parentData.entityType]} params={{ idOrSlug: parentData.slug }}>
                           <span className="truncate max-sm:max-w-24">{parentData.name}</span>
                         </Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
-                    <BreadcrumbSeparator>
-                      <ChevronRight size={12} />
+                    <BreadcrumbSeparator className="text-foreground/50">
+                      <ChevronRightIcon size={12} />
                     </BreadcrumbSeparator>
                   </>
                 )}
-                <BreadcrumbItem className="flex items-center">
+                <BreadcrumbItem className="flex items-center text-foreground/70">
                   <span>{entity.entityType}</span>
                 </BreadcrumbItem>
               </BreadcrumbList>

@@ -1,9 +1,8 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import type { SheetProps } from '~/modules/common/sheeter/sheet';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
-export const MobileSheet = ({ sheet }: SheetProps) => {
+export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
   const { modal = true, id, side, description, title, titleContent = title, className, content, open = true } = sheet;
 
   const updateSheet = useSheeter.getState().update;
@@ -30,12 +29,12 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
       onOpenChange={onOpenChange}
       onClose={closeSheet}
     >
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} direction={side} className={className}>
+      <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} className={className}>
         <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>
           <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-3 px-3">{content}</div>
+        {content}
       </DrawerContent>
     </Drawer>
   );

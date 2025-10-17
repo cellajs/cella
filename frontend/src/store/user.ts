@@ -13,6 +13,7 @@ interface UserStoreState {
   enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
+  setLastUser: (lastUser: Partial<MeUser>) => void; // Sets last user (used for MFA)
   setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasTotp' | 'enabledOAuth'> & { hasPasskey: boolean }>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
   clearUserStore: () => void; // Resets the store.
@@ -60,6 +61,14 @@ export const useUserStore = create<UserStoreState>()(
           });
 
           i18n.changeLanguage(user.language || 'en');
+        },
+        setLastUser: (lastUser) => {
+          set((state) => {
+            state.lastUser = {
+              email: lastUser.email,
+              mfaRequired: lastUser.mfaRequired,
+            };
+          });
         },
         setMeAuthData: (data) => {
           set((state) => {

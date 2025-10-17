@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { contextEntitiesQuerySchema, contextEntitiesResponseSchema, contextEntityBaseSchema } from '#/modules/entities/schema';
+import { contextEntitiesQuerySchema, contextEntityBaseSchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
 import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema } from '#/utils/schema/responses';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
@@ -16,12 +16,14 @@ const entityRoutes = {
     description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
       Primarily used to prevent slug collisions before creating or updating an entity.`,
     request: {
-      body: { content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } },
+      },
     },
     responses: {
-      200: {
+      204: {
         description: 'Slug is available',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -41,7 +43,7 @@ const entityRoutes = {
     responses: {
       200: {
         description: 'Context entities',
-        content: { 'application/json': { schema: contextEntitiesResponseSchema } },
+        content: { 'application/json': { schema: paginationSchema(contextEntityWithCountsSchema) } },
       },
       ...errorResponses,
     },

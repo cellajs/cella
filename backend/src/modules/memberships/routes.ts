@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { contextEntityBaseSchema } from '#/modules/entities/schema';
 import {
   memberListQuerySchema,
   membershipCreateBodySchema,
@@ -11,8 +12,16 @@ import {
   pendingInvitationSchema,
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
-import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import {
+  emailOrTokenIdQuerySchema,
+  entityWithTypeQuerySchema,
+  idInOrgParamSchema,
+  idOrSlugSchema,
+  idSchema,
+  idsBodySchema,
+  inOrgParamSchema,
+} from '#/utils/schema/common';
+import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -27,11 +36,8 @@ const membershipRoutes = {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
-        content: {
-          'application/json': {
-            schema: membershipCreateBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: membershipCreateBodySchema } },
       },
     },
     responses: {
@@ -42,6 +48,7 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
+
   deleteMemberships: createCustomRoute({
     operationId: 'deleteMemberships',
     method: 'delete',
@@ -54,6 +61,7 @@ const membershipRoutes = {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
@@ -69,6 +77,7 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
+
   updateMembership: createCustomRoute({
     operationId: 'updateMembership',
     method: 'put',
@@ -80,11 +89,7 @@ const membershipRoutes = {
     request: {
       params: idInOrgParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: membershipUpdateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: membershipUpdateBodySchema } },
       },
     },
     responses: {
@@ -95,6 +100,25 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
+
+  handleMembershipInvitation: createCustomRoute({
+    operationId: 'handleMembershipInvitation',
+    method: 'post',
+    path: '/{id}/{acceptOrReject}',
+    guard: isAuthenticated,
+    tags: ['membership'],
+    summary: 'Respond to membership invitation',
+    description: 'Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.',
+    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
+    responses: {
+      200: {
+        description: 'Invitation was accepted',
+        content: { 'application/json': { schema: contextEntityBaseSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
   getMembers: createCustomRoute({
     operationId: 'getMembers',
     method: 'get',
@@ -153,14 +177,12 @@ const membershipRoutes = {
     tags: ['memberships'],
     summary: 'Resend invitation',
     description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
-    security: [],
     request: {
-      body: { content: { 'application/json': { schema: z.object({ email: z.email(), tokenId: z.string().optional() }) } } },
+      body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
     },
     responses: {
-      200: {
+      204: {
         description: 'Invitation email sent',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

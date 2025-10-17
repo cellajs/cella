@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { BellRing } from 'lucide-react';
+import { BellRingIcon } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -39,7 +39,7 @@ const meta = {
         {notifications.map((notification, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: testing purposes
           <div key={index} className="flex items-center gap-4">
-            <BellRing className="size-6" />
+            <BellRingIcon className="size-6" />
             <div>
               <p>{notification.title}</p>
               <p className="text-foreground/60">{notification.description}</p>

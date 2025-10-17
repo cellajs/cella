@@ -19,7 +19,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUpdateUserMutation } from '~/modules/users/query';
@@ -128,7 +128,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
                 {t('common:language')}
                 <span className="ml-1 opacity-50">*</span>
               </FormLabel>
-              <FormDescription>{t('common:placeholder.select_language')}</FormDescription>
               <FormControl>
                 <SelectLanguage options={[...appConfig.languages]} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
               </FormControl>

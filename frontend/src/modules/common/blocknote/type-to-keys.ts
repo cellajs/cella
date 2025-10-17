@@ -1,6 +1,6 @@
 import type { CustomBlockTypes, SlashItemKeys } from '~/modules/common/blocknote/types';
 
-export const baseBlocknoteTypeToKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
+export const baseBlocknoteTypeToKeys = {
   table: ['table'],
   notify: ['notify'],
   paragraph: ['paragraph'],
@@ -16,4 +16,4 @@ export const baseBlocknoteTypeToKeys: Record<CustomBlockTypes, SlashItemKeys[]> 
   audio: ['audio'],
   emoji: ['emoji'],
   toggleListItem: ['toggle_list'],
-};
+} satisfies Record<CustomBlockTypes, SlashItemKeys[]>;

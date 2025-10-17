@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig } from 'config';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { membershipCountSchema } from '#/modules/organizations/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema } from '#/utils/schema/common';
@@ -16,7 +16,16 @@ export const contextEntityBaseSchema = z
   .openapi('ContextEntityBaseSchema');
 
 // Extend base entity schema with membership base data
-export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend({ membership: membershipBaseSchema });
+export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend({
+  membership: membershipBaseSchema,
+  createdAt: z.string(),
+});
+
+export const contextEntityWithCountsSchema = contextEntityBaseSchema.extend({
+  membership: z.object({ ...membershipBaseSchema.shape }).nullable(),
+  createdAt: z.string(),
+  membershipCounts: membershipCountSchema,
+});
 
 // Declared here to avoid circular dependencies
 export const userBaseSchema = contextEntityBaseSchema
@@ -30,7 +39,7 @@ export const userBaseSchema = contextEntityBaseSchema
 export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
   targetUserId: idSchema.optional(),
   targetOrgId: idSchema.optional(),
-  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
+  role: z.enum(appConfig.roles.entityRoles).optional(),
   sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
   excludeArchived: z
     .enum(['true', 'false'])
@@ -45,21 +54,3 @@ export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
     .optional()
     .transform((val) => val === 'true'),
 });
-
-const fullContextEntitySchema = contextEntityBaseSchema.extend({
-  createdAt: z.string(),
-  membership: membershipBaseSchema.nullable(),
-  membershipCounts: membershipCountSchema,
-});
-
-const contextEntitiesDataSchema = z.object(
-  appConfig.contextEntityTypes.reduce(
-    (acc, entityType) => {
-      acc[entityType] = z.array(fullContextEntitySchema);
-      return acc;
-    },
-    {} as Record<ContextEntityType, z.ZodArray<typeof fullContextEntitySchema>>,
-  ),
-);
-
-export const contextEntitiesResponseSchema = z.object({ items: contextEntitiesDataSchema, total: z.number() });

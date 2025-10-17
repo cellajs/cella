@@ -27,7 +27,7 @@ export type ConstructedError = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
-  isRedirect?: boolean;
+  redirectPath?: string;
 };
 
 // Custom error class to handle App errors
@@ -36,7 +36,7 @@ export class AppError extends Error {
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
   severity: ErrorSchemaType['severity'];
-  isRedirect: boolean;
+  redirectPath: string | null;
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
@@ -50,7 +50,7 @@ export class AppError extends Error {
     this.type = error.type;
     this.entityType = error.entityType;
     this.severity = error.severity || 'info';
-    this.isRedirect = error.isRedirect || false;
+    this.redirectPath = error.redirectPath || null;
     this.meta = error.meta;
     this.originalError = error.originalError;
 
@@ -80,7 +80,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   // Get non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
-  const { isRedirect, originalError, message, cause, stack, ...error } = normalizedError;
+  const { redirectPath, originalError, message, cause, stack, ...error } = normalizedError;
   const { severity, type, meta } = error;
 
   // Get the current user and organization from context
@@ -113,8 +113,18 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   else eventLogger[severity]({ ...(meta ?? {}), ...(detailsRequired ? { ...detailedError } : {}) });
 
   // Redirect to the frontend error page with query parameters for error details
-  if (isRedirect) {
-    const redirectUrl = `${appConfig.frontendUrl}/error?error=${type}&severity=${severity}`;
+  if (redirectPath) {
+    const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+    redirectUrl.searchParams.set('error', type);
+    redirectUrl.searchParams.set('severity', severity);
+
+    // TODO(improve) this is not a great for SOC
+    if (ctx.req.query('tokenId')) {
+      const tokenId = ctx.req.query('tokenId');
+      redirectUrl.searchParams.set('tokenId', tokenId!!);
+    }
+
     return ctx.redirect(redirectUrl, 302);
   }
 

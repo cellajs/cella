@@ -1,6 +1,6 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { ToggleMfaData, User } from '~/api.gen';
+import type { DeletePasskeyData, DeletePasskeyResponse, ToggleMfaData, User } from '~/api.gen';
 import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, type UpdateMeData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
@@ -59,7 +59,7 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, quer
  *
  * @returns Query options.
  */
-export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
 /**
  * Mutation hook for updating current user (self) info
@@ -99,7 +99,7 @@ export const useToggleMfaMutation = () => {
  * @returns The mutation hook for updating the user flags.
  */
 export const useUpdateSelfFlagsMutation = () => {
-  return useMutation<User, ApiError, Pick<NonNullable<UpdateMeData['body']>, 'userFlags'>>({
+  return useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
@@ -144,10 +144,10 @@ export const useCreatePasskeyMutation = () => {
  * @returns The mutation hook for deleting passkey.
  */
 export const useDeletePasskeyMutation = () => {
-  return useMutation<boolean, ApiError, string>({
+  return useMutation<DeletePasskeyResponse, ApiError, DeletePasskeyData['path']>({
     mutationKey: meKeys.delete.passkey,
-    mutationFn: (id: string) => deletePasskey({ path: { id } }),
-    onSuccess: (_data, id) => {
+    mutationFn: ({ id }) => deletePasskey({ path: { id } }),
+    onSuccess: (_data, { id }) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return {
@@ -170,7 +170,7 @@ export const useDeletePasskeyMutation = () => {
  * @returns The mutation hook for unlink totp.
  */
 export const useDeleteTotpMutation = () => {
-  return useMutation<boolean, ApiError, void>({
+  return useMutation<DeletePasskeyResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {

@@ -1,5 +1,6 @@
+import * as Sentry from '@sentry/react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Heart } from 'lucide-react';
+import { HeartIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
@@ -29,6 +30,7 @@ export const SignOut = () => {
         navigate({ to: '/about', replace: true });
       } catch (error) {
         console.error('Sign out error:', error);
+        Sentry.captureException(error);
         toaster(t('common:already_signed_out'), 'warning');
         navigate({ to: '/about', replace: true });
       }
@@ -37,5 +39,5 @@ export const SignOut = () => {
     handleSignOut();
   }, []);
 
-  return <ContentPlaceholder className="h-screen" icon={Heart} title={t('common:signing_out')} />;
+  return <ContentPlaceholder className="h-screen" icon={HeartIcon} title={t('common:signing_out')} />;
 };

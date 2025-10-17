@@ -1,6 +1,6 @@
 import { AdvancedMarker, APIProvider, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { appConfig } from 'config';
-import { ArrowUpRight, Milestone, Minus, Plus, X } from 'lucide-react';
+import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -50,7 +50,7 @@ const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: numb
             <div className="flex justify-between items-center">
               <strong className="text-sm ">{appConfig.company.name}</strong>
               <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
-                <X size={14} />
+                <XIcon size={14} />
               </Button>
             </div>
             <span className="block">{appConfig.company.streetAddress}</span>
@@ -61,9 +61,9 @@ const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: numb
               className="font-semibold flex mt-1 rounded-md p-1 focus-effect"
               rel="noreferrer"
             >
-              <Milestone size={12} strokeWidth={2.5} className="mr-1" />
+              <MilestoneIcon size={12} strokeWidth={2.5} className="mr-1" />
               {t('common:get_directions')}
-              <ArrowUpRight size={12} className="ml-1 opacity-50" />
+              <ArrowUpRightIcon size={12} className="ml-1 opacity-50" />
             </a>
           </div>
         </InfoWindow>
@@ -83,10 +83,10 @@ const CustomZoomControl = ({ controlPosition, zoom, onZoomChange }: CustomZoomCo
     <MapControl position={controlPosition}>
       <div className="flex flex-col m-2 p-1">
         <Button onClick={() => onZoomChange(zoom + 0.5)} size="micro" variant="outlineGhost" className="border-b-0 rounded-b-none">
-          <Plus size={14} />
+          <PlusIcon size={14} />
         </Button>
         <Button onClick={() => onZoomChange(zoom - 0.5)} size="micro" variant="outlineGhost" className="rounded-t-none">
-          <Minus size={14} />
+          <MinusIcon size={14} />
         </Button>
       </div>
     </MapControl>

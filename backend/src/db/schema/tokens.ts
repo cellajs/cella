@@ -8,13 +8,14 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const tokenTypeEnum = appConfig.tokenTypes;
-const roleEnum = appConfig.rolesByType.entityRoles;
+const roleEnum = appConfig.roles.entityRoles;
 
 // Base columns for tokens table
 const baseColumns = {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   token: varchar().notNull(),
+  singleUseToken: varchar(),
   type: varchar({ enum: tokenTypeEnum }).notNull(),
   email: varchar().notNull(),
   entityType: varchar({ enum: appConfig.contextEntityTypes }),
@@ -23,7 +24,7 @@ const baseColumns = {
   oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'set null' }),
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   expiresAt: timestampColumns.expiresAt,
-  consumedAt: timestamp({ withTimezone: true, mode: 'date' }),
+  invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
 };
 
 // Generate entity id columns based on entity-config

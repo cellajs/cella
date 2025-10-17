@@ -81,7 +81,7 @@ const attachmentsRouteHandlers = app
       });
     }
   })
-  /*
+  /**
    * Create one or more attachments
    */
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {
@@ -120,9 +120,9 @@ const attachmentsRouteHandlers = app
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
-  /*
+  /**
    * Get attachments
    */
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
@@ -179,7 +179,7 @@ const attachmentsRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Get attachment by id
    */
   .openapi(attachmentRoutes.getAttachment, async (ctx) => {
@@ -191,7 +191,7 @@ const attachmentsRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Update an attachment by id
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
@@ -218,7 +218,7 @@ const attachmentsRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Delete attachments by ids
    */
   .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
@@ -241,7 +241,7 @@ const attachmentsRouteHandlers = app
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
-  /*
+  /**
    * Redirect to attachment
    */
   .openapi(attachmentRoutes.redirectToAttachment, async (ctx) => {

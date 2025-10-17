@@ -3,13 +3,13 @@ import { appConfig } from 'config';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
-import { zActivateTotpData } from '~/api.gen/zod.gen';
+import { zCreateTotpData } from '~/api.gen/zod.gen';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/totp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/totp';
 
-const formSchema = zActivateTotpData.shape.body;
+const formSchema = zCreateTotpData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
 interface Props {

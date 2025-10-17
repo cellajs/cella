@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { Info } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 import type { AlertWrap } from '~/modules/common/alert-wrap';
 
 const alerts: AlertWrap[] = [];
@@ -10,11 +10,11 @@ if (appConfig.mode === 'development') {
   alerts.push({
     id: 'test-credentials',
     modes: ['public'],
-    icon: Info,
+    icon: InfoIcon,
     className: 'rounded-none border-0 border-t z-60 fixed bottom-0 left-0 right-0',
     children: (
       <>
-        <strong className="mr-2">Testing credentials</strong>
+        <strong className="mr-2 text-foreground">Testing credentials</strong>
         <p>
           Hi there! New developer? Sign in using <strong>admin-test@cellajs.com</strong> and password <strong>12345678</strong>.
         </p>
@@ -28,7 +28,7 @@ if (appConfig.mode === 'production') {
   alerts.push({
     id: 'prerelease',
     modes: ['app'],
-    icon: Info,
+    icon: InfoIcon,
     className: 'rounded-none border-0 border-b',
     children: (
       <>

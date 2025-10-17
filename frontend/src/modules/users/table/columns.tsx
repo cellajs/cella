@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { Pencil, Trash } from 'lucide-react';
+import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/api.gen';
@@ -58,7 +58,7 @@ export const useColumns = () => {
           const ellipsisOptions: EllipsisOption<User>[] = [
             {
               label: i18n.t('common:edit'),
-              icon: Pencil,
+              icon: PencilIcon,
               onSelect: (row, triggerRef) => {
                 useDropdowner.getState().remove();
                 openUpdateUserSheet(row, triggerRef);
@@ -66,7 +66,7 @@ export const useColumns = () => {
             },
             {
               label: i18n.t('common:delete'),
-              icon: Trash,
+              icon: TrashIcon,
               onSelect: (row) => {
                 const { update } = useDropdowner.getState();
                 const callback = ({ status }: CallbackArgs<User[]>) => {

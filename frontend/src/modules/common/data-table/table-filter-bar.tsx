@@ -1,4 +1,4 @@
-import { FilterX, Search, X } from 'lucide-react';
+import { FilterXIcon, SearchIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { createContext, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -60,7 +60,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
           <Button className="sm:hidden text-primary/80" variant="ghost" onClick={() => setFilterActive(true)} asChild>
             <motion.button key={key} layoutId={`table-filter-bar-button-${key}`}>
               <motion.span layoutId={`table-filter-bar-icon-${key}`}>
-                <Search width={16} height={16} />
+                <SearchIcon width={16} height={16} />
               </motion.span>
               <motion.span
                 className="ml-1"
@@ -77,7 +77,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
         {isFilterActive && (
           <Button className="sm:hidden" variant="secondary" onClick={clearFilters} asChild>
             <motion.button key={key} layoutId="table-filter-bar-button">
-              <motion.span layoutId="table-filter-bar-icon">{isFiltered ? <FilterX size={16} /> : <X size={16} />}</motion.span>
+              <motion.span layoutId="table-filter-bar-icon">{isFiltered ? <FilterXIcon size={16} /> : <XIcon size={16} />}</motion.span>
             </motion.button>
           </Button>
         )}

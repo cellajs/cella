@@ -10,7 +10,7 @@ import { cn } from '~/utils/cn';
 type SortOptionBase = {
   name: string;
   value: string;
-  icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>;
+  icon: ForwardRefExoticComponent<LucideProps & RefAttributes<SVGSVGElement>>;
 };
 
 // Inferred from sortOptions passed in

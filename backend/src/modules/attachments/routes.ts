@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { baseElectrycSyncQuery, idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
@@ -18,15 +19,11 @@ const attachmentRoutes = {
       params: inOrgParamSchema,
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: attachmentCreateManySchema,
-          },
-        },
+        content: { 'application/json': { schema: attachmentCreateManySchema } },
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Attachment',
         content: {
           'application/json': {
@@ -37,6 +34,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   getAttachments: createCustomRoute({
     operationId: 'getAttachments',
     method: 'get',
@@ -52,15 +50,12 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachments',
-        content: {
-          'application/json': {
-            schema: paginationSchema(attachmentSchema),
-          },
-        },
+        content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
       },
       ...errorResponses,
     },
   }),
+
   getAttachment: createCustomRoute({
     operationId: 'getAttachment',
     method: 'get',
@@ -69,9 +64,7 @@ const attachmentRoutes = {
     tags: ['attachments'],
     summary: 'Get attachment',
     description: 'Fetches metadata and access details for a single *attachment* by ID.',
-    request: {
-      params: idInOrgParamSchema,
-    },
+    request: { params: idInOrgParamSchema },
     responses: {
       200: {
         description: 'Attachment',
@@ -84,6 +77,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   updateAttachment: createCustomRoute({
     operationId: 'updateAttachment',
     method: 'put',
@@ -95,11 +89,8 @@ const attachmentRoutes = {
     request: {
       params: idInOrgParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: attachmentUpdateBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: attachmentUpdateBodySchema } },
       },
     },
     responses: {
@@ -114,6 +105,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   deleteAttachments: createCustomRoute({
     operationId: 'deleteAttachments',
     method: 'delete',
@@ -125,11 +117,8 @@ const attachmentRoutes = {
     request: {
       params: inOrgParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: idsBodySchema(),
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {
@@ -144,6 +133,7 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
+
   shapeProxy: createCustomRoute({
     operationId: 'shapeProxy',
     method: 'get',
@@ -156,27 +146,23 @@ const attachmentRoutes = {
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
     request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
     responses: {
-      200: {
-        description: 'Success',
-      },
+      200: { description: 'Success' },
       ...errorResponses,
     },
   }),
+
   redirectToAttachment: createCustomRoute({
     operationId: 'redirectToAttachment',
     method: 'get',
     path: '/{id}/link',
     guard: isPublicAccess,
+    middleware: [tokenLimiter('attachment_redirect')],
     tags: ['attachments'],
     summary: 'Redirect to attachment',
     description: "Redirects to the file's public or presigned URL, depending on storage visibility.",
-    request: {
-      params: z.object({ id: idSchema }),
-    },
+    request: { params: z.object({ id: idSchema }) },
     responses: {
-      200: {
-        description: 'Success',
-      },
+      200: { description: 'Success' },
       ...errorResponses,
     },
   }),

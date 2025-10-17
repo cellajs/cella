@@ -13,7 +13,7 @@ import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
 import { getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMembership } from '#/modules/memberships/helpers';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -28,7 +28,7 @@ import { defaultWelcomeText } from '#json/text-blocks.json';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const organizationRouteHandlers = app
-  /*
+  /**
    * Create organization
    */
   .openapi(organizationRoutes.createOrganization, async (ctx) => {
@@ -77,9 +77,9 @@ const organizationRouteHandlers = app
       counts: { membership: memberCounts, entities: entitiesCounts },
     };
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
-  /*
+  /**
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
@@ -94,9 +94,7 @@ const organizationRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
-    const memberships = db
-      .select()
-      .from(membershipsTable)
+    const memberships = membershipBaseQuery()
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
       .as('memberships');
 
@@ -143,7 +141,7 @@ const organizationRouteHandlers = app
 
     return ctx.json({ items: organizations, total }, 200);
   })
-  /*
+  /**
    * Get organization by id or slug
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
@@ -156,7 +154,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Update an organization by id or slug
    */
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
@@ -186,18 +184,15 @@ const organizationRouteHandlers = app
       .returning();
 
     // notify members (unchanged)
-    const organizationMemberships = await db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.contextType, 'organization'),
-          eq(membershipsTable.organizationId, organization.id),
-          eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
-    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
+    const organizationMemberships = await membershipBaseQuery().where(
+      and(
+        eq(membershipsTable.contextType, 'organization'),
+        eq(membershipsTable.organizationId, organization.id),
+        eq(membershipsTable.archived, false),
+        isNotNull(membershipsTable.activatedAt),
+      ),
+    );
+    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
@@ -206,7 +201,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Delete organizations by ids
    */
   .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
@@ -243,7 +238,7 @@ const organizationRouteHandlers = app
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
+      sendSSEToUsers(userIds, 'entity_deleted', { id, entityType: 'organization' });
     }
 
     logEvent('info', 'Organizations deleted', allowedIds);

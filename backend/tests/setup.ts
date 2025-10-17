@@ -28,11 +28,17 @@ type ConfigOverride = {
   registrationEnabled?: boolean;
 };
 
+// TODO why not get the actual app from server.ts?
 export async function getAuthApp() {
   const { default: baseApp } = await import('#/server');
-  const { default: authRouteHandlers } = await import('#/modules/auth/handlers');
+  const { default: authGeneralRouteHandlers } = await import('#/modules/auth/general/handlers');
+  const { default: authTotpsRouteHandlers } = await import('#/modules/auth/totps/handlers');
+  const { default: authPasswordsRouteHandlers } = await import('#/modules/auth/passwords/handlers');
 
-  return baseApp.route('/auth', authRouteHandlers);
+  return baseApp
+  .route('/auth', authGeneralRouteHandlers)
+  .route('/auth/totps', authTotpsRouteHandlers)
+  .route('/auth', authPasswordsRouteHandlers)
 }
 
 /**

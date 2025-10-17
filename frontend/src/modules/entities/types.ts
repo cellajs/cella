@@ -1,4 +1,3 @@
-import type { ContextEntityType } from 'config';
 import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema, Organization } from '~/api.gen';
 
 export type EntityPage = ContextEntityBaseSchema & {
@@ -8,4 +7,4 @@ export type EntityPage = ContextEntityBaseSchema & {
 };
 
 export type ContextEntityItems = GetContextEntitiesResponse['items'];
-export type EntityGridItem = ContextEntityItems[ContextEntityType][number];
+export type EntityGridItem = ContextEntityItems[number];

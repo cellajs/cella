@@ -1,4 +1,4 @@
-import { Fingerprint, ShieldMinus, Smartphone } from 'lucide-react';
+import { FingerprintIcon, ShieldMinusIcon, SmartphoneIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
@@ -19,7 +19,7 @@ export const ConfirmDisableMfa = () => {
       {!openConfirmation && (
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton variant="destructive" onClick={() => setOpenConfirmation(true)} aria-label={'disable'}>
-            {<ShieldMinus size={16} className="mr-2" />}
+            {<ShieldMinusIcon size={16} className="mr-2" />}
             {t(`common:disable`)}
           </SubmitButton>
 
@@ -60,13 +60,13 @@ export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => 
       {!isOpen && (
         <div className="flex flex-col gap-2">
           <Button type="button" onClick={() => onPasskyConfirm()} variant="plain" className="w-full gap-1.5 truncate">
-            <Fingerprint size={16} />
+            <FingerprintIcon size={16} />
             <span className="truncate">
               {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
             </span>
           </Button>
           <Button ref={totpTriggerRef} type="button" onClick={() => setIsOpen(true)} variant="plain" className="w-full gap-1.5 truncate">
-            <Smartphone size={16} />
+            <SmartphoneIcon size={16} />
             <span className="truncate">
               {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
             </span>

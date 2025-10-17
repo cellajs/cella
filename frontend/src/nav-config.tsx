@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { Home, Menu, Search, User } from 'lucide-react';
+import { HomeIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { FooterLinkProps } from '~/modules/common/app/footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -20,7 +20,7 @@ const startSearchAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
     triggerRef,
     className: 'sm:max-w-2xl p-0 border-0 mb-4',
     drawerOnMobile: false,
-    hideClose: true,
+    showCloseButton: false,
   });
 };
 
@@ -28,10 +28,10 @@ const startSearchAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
  * Declare all of your main navigation items, visible in main navigation bar or as floating buttons on mobile
  */
 export const navItems = [
-  { id: 'menu', type: 'base', icon: Menu, sheet: <MenuSheet /> },
-  { id: 'home', type: 'base', icon: Home, href: '/home' },
-  { id: 'search', type: 'base', icon: Search, action: startSearchAction },
-  { id: 'account', type: 'base', icon: User, sheet: <AccountSheet />, mirrorOnMobile: true },
+  { id: 'menu', type: 'base', icon: MenuIcon, sheet: <MenuSheet /> },
+  { id: 'home', type: 'base', icon: HomeIcon, href: '/home' },
+  { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
+  { id: 'account', type: 'base', icon: UserIcon, sheet: <AccountSheet />, mirrorOnMobile: true },
 ] as const;
 
 /**

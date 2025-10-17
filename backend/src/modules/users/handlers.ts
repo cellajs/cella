@@ -8,6 +8,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
 import { userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
@@ -19,7 +20,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const usersRouteHandlers = app
-  /*
+  /**
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
@@ -90,10 +91,7 @@ const usersRouteHandlers = app
       membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(membershipsTable[entityFieldId], targetEntityId));
     }
 
-    const memberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(...membershipFilters));
+    const memberships = await membershipBaseQuery().where(and(...membershipFilters));
 
     // Group memberships by userId in a type-safe way
     const membershipsByUser = memberships.reduce<Record<string, typeof memberships>>((acc, m) => {
@@ -110,7 +108,7 @@ const usersRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Delete users
    */
   .openapi(userRoutes.deleteUsers, async (ctx) => {
@@ -151,7 +149,7 @@ const usersRouteHandlers = app
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
-  /*
+  /**
    * Get a user by id or slug
    */
   .openapi(userRoutes.getUser, async (ctx) => {
@@ -170,7 +168,7 @@ const usersRouteHandlers = app
     const requesterOrgIds = requesterMemberships.filter((m) => m.contextType === 'organization').map((m) => m.organizationId);
 
     const [sharedMembership] = await db
-      .select()
+      .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(
         and(
@@ -194,7 +192,7 @@ const usersRouteHandlers = app
 
     return ctx.json(targetUser, 200);
   })
-  /*
+  /**
    * Update a user by id or slug
    */
   .openapi(userRoutes.updateUser, async (ctx) => {

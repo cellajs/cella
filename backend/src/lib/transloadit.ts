@@ -14,7 +14,7 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
 
   const authKey = env.TRANSLOADIT_KEY;
   const authSecret = env.TRANSLOADIT_SECRET;
-  if (!authKey || !authSecret) throw Error('missing_auth_key');
+  if (!authKey || !authSecret) throw Error('auth_key_not_found');
 
   const template = uploadTemplates[templateId];
 
@@ -45,7 +45,7 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
 
 export const getSignature = (paramsString: string) => {
   const authSecret = env.TRANSLOADIT_SECRET;
-  if (!authSecret) throw Error('missing_auth_key');
+  if (!authSecret) throw Error('auth_key_not_found');
 
   const signatureBytes = crypto.createHmac('sha384', authSecret).update(Buffer.from(paramsString, 'utf-8'));
   // The final signature needs the hash name in front, so

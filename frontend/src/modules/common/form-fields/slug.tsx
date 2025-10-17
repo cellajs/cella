@@ -1,18 +1,18 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig, type EntityType } from 'config';
-import { Undo } from 'lucide-react';
+import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
-import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/api.gen';
-import { useMeasure } from '~/hooks/use-measure';
+import { type CheckSlugData, CheckSlugResponse, checkSlug } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
+import { cn } from '~/utils/cn';
 
 type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   nameValue?: string;
@@ -44,24 +44,22 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
                           ${isSlugAvailable === 'notAvailable' && 'ring-red-500 focus-visible:ring-red-500'}`;
 
   const form = useFormContext<{ slug: string }>();
-  const { setFocus } = useFormContext();
-
-  const prefixMeasure = useMeasure<HTMLButtonElement>();
-  const revertMeasure = useMeasure<HTMLDivElement>();
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: name });
 
   // Check if slug is available
-  const { mutate: checkAvailability } = useMutation<boolean, ApiError, NonNullable<CheckSlugData['body']>>({
+  const { mutate: checkAvailability } = useMutation<CheckSlugResponse, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: [name],
     mutationFn: async (body) => {
-      return await checkSlugAvailable({ body });
+      return await checkSlug({ body });
     },
-    onSuccess: (isAvailable) => {
-      if (isValidSlug(slug)) form.clearErrors(name);
-      if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
-      // Slug is not available
+    onSuccess: () => {
+      if (!isValidSlug(slug)) return;
+      form.clearErrors(name);
+      setSlugAvailable('available');
+    },
+    onError: () => {
       form.setError(name, { type: 'manual', message: t('error:slug_exists') });
       setSlugAvailable('notAvailable');
     },
@@ -95,15 +93,6 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
     form.resetField(name);
   };
 
-  const prefixClick = () => {
-    setFocus(name);
-  };
-
-  const getStyle = () => ({
-    paddingLeft: `${prefixMeasure.bounds.width + 14}px`,
-    paddingRight: `${revertMeasure.bounds.width + 44}px`,
-  });
-
   return (
     <FormField
       control={control}
@@ -116,35 +105,22 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
           </FormLabel>
           {description && <FormDescription>{description}</FormDescription>}
           <FormControl>
-            <div className="relative flex w-full items-center ">
-              <button
-                ref={prefixMeasure.ref}
-                type="button"
-                tabIndex={-1}
-                id="slug-prefix"
-                onClick={prefixClick}
-                className="absolute left-3 text-xs"
-                style={{ opacity: formFieldValue ? 1 : 0.5 }}
-              >
-                {prefix}
-              </button>
+            <InputGroup className={cn('', inputClassName)}>
+              <InputGroupInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
+              <InputGroupAddon>
+                <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
+                  {prefix}
+                </InputGroupText>
+              </InputGroupAddon>
 
-              <Input
-                className={inputClassName}
-                style={getStyle()}
-                type={entityType}
-                onFocus={() => setDeviating(true)}
-                value={formFieldValue || ''}
-                {...rest}
-              />
               {previousSlug && previousSlug !== slug && (
-                <div ref={revertMeasure.ref} id="slug-revert" className="absolute inset-y-1 right-1 flex justify-end">
+                <InputGroupAddon align="inline-end">
                   <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-                    <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
+                    <UndoIcon size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
                   </Button>
-                </div>
+                </InputGroupAddon>
               )}
-            </div>
+            </InputGroup>
           </FormControl>
           <FormMessage />
         </FormItem>

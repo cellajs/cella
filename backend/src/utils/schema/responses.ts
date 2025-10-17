@@ -10,6 +10,7 @@ type Responses = Parameters<typeof createRoute>[0]['responses'];
 /**
  * Schema for responses that may include a redirect.
  */
+// TODO refine don't require redirectPath by TS
 export const redirectResponseSchema = z
   .object({
     shouldRedirect: z.boolean(),
@@ -20,16 +21,15 @@ export const redirectResponseSchema = z
   });
 
 /**
- * Schema for a response without data.
- */
-export const successWithoutDataSchema = z.boolean();
-
-/**
  * Schema for a response with paginated data
  *
  * @param schema - The schema for the items in the paginated data. Data object has `items` and `total` properties.
  */
-export const paginationSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ items: schema.array(), total: z.number() });
+export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
+  z.object({
+    items: z.array(schema),
+    total: z.number(),
+  });
 
 /**
  * Schema for a successful response with disallowed IDs.

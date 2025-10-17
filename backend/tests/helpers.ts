@@ -3,7 +3,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { hashPassword } from '#/modules/auth/helpers/argon2id';
+import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import { eq } from 'drizzle-orm';
 import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/basic';
 

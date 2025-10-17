@@ -1,5 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster/service';
@@ -266,7 +266,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
           'flex flex-wrap items-center p-1 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
           tagListPlacement === 'bottom' ? 'flex-col-reverse' : tagListPlacement === 'top' ? 'flex-col' : 'flex-row',
           tagListPlacement === 'inside' &&
-            'bg-background ring-offset-background border border-input focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
+            'bg-background border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground focus-effect',
           tagListPlacement === 'inside' && styleClasses?.input,
         )}
       >
@@ -300,7 +300,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
             tagListPlacement !== 'inside'
               ? cn(
                   styleClasses?.input,
-                  'bg-background ring-offset-background border border-input focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
+                  'bg-background focus-effect border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
                 )
               : 'h-8 w-auto grow border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-1'
           }
@@ -320,7 +320,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
       {showClearAllButton && (
         <Button type="button" onClick={handleClearAll} className={cn('flex items-center gap-1 mt-2', styleClasses?.clearAllButton)}>
           {t('common:clear_all')}
-          <RefreshCw size={16} />
+          <RefreshCwIcon size={16} />
         </Button>
       )}
     </div>
@@ -353,7 +353,10 @@ const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, ac
           key={tag}
           {...badgeVariants}
           className={cn(
-            { 'justify-between w-full': direction === 'column', 'ring-ring ring-offset-2 ring-2 ring-offset-background': index === activeTagIndex },
+            {
+              'justify-between w-full': direction === 'column',
+              'focus-effect': index === activeTagIndex,
+            },
             classStyleProps.tagClasses?.body,
           )}
           onClick={() => onTagClick?.(tag)}
