@@ -18,7 +18,7 @@ export const config = {
 
   description: 'Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
   keywords:
-    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant§ updates, realtime data, sync engine',
 
   supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
@@ -72,6 +72,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
   // Upload templates using Transloadit
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
+
+  // If you are using a different Matrix server (self-hosted or private), replace this URL with your server's base URL.
+  matrixURL: 'https://matrix-client.matrix.org',
+
   // Theme settings
   themeColor: '#26262b',
   theme: {
@@ -111,19 +115,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
   defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
-/**
- * Enabled authentication strategies.
- * Currently available: 'password', 'passkey', 'oauth' and 'totp'.
- * Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
- */
-enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
+  /**
+   * Enabled authentication strategies.
+   * Currently available: 'password', 'passkey', 'oauth' and 'totp'.
+   * Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
+   */
+  enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 
-/**
- * Enabled OAuth providers.
- * Currently supported: 'github', 'google', 'microsoft'.
- * Only these providers can be selected in enabledAuthStrategies when 'oauth' is enabled.
- */
-enabledOAuthProviders: ['github'] as const,
+  /**
+   * Enabled OAuth providers.
+   * Currently supported: 'github', 'google', 'microsoft'.
+   * Only these providers can be selected in enabledAuthStrategies when 'oauth' is enabled.
+   */
+  enabledOAuthProviders: ['github'] as const,
 
   // Token types
   tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
@@ -139,15 +143,15 @@ enabledOAuthProviders: ['github'] as const,
 
 
   // TOTP configuration
-  totpConfig: { 
+  totpConfig: {
     intervalInSeconds: 30,
     gracePeriodInSeconds: 60,
     digits: 6
   },
 
   // Default user flags
-  defaultUserFlags: { 
-    finishedOnboarding: false 
+  defaultUserFlags: {
+    finishedOnboarding: false
   },
 
   /**
@@ -249,6 +253,7 @@ enabledOAuthProviders: ['github'] as const,
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',
     blueskyHandle: '@flipvh.bsky.social',
+    element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
     githubUrl: 'https://github.com/cellajs/cella',
     mapZoom: 4,
     coordinates: {
@@ -310,7 +315,7 @@ type BaseConfigType = {
   s3BucketPrefix?: string
 }
 
-type ConfigType = DeepPartial<typeof config> 
+type ConfigType = DeepPartial<typeof config>
 
 export type Config = Omit<ConfigType, keyof BaseConfigType> & BaseConfigType;
 

@@ -1,10 +1,11 @@
 import { appConfig } from 'config';
-import { SearchIcon, XCircleIcon } from 'lucide-react';
+import { XCircleIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import useMounted from '~/hooks/use-mounted';
+import { SearchSpinner } from '~/modules/common/search-spinner';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
@@ -56,7 +57,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
         aria-label={t('common:placeholder.search')}
       />
       <InputGroupAddon className="pl-1.5">
-        <SearchIcon size={16} className="-z-10 opacity-50 group-data-[search=true]/menu:opacity-100" />
+        <SearchSpinner value={searchTerm} isSearching={false} />
       </InputGroupAddon>
 
       <InputGroupAddon className="pr-2" align="inline-end">

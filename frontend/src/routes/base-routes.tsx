@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/react';
-import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
@@ -44,6 +43,9 @@ export const RootRoute = createRootRouteWithContext()({
   },
 });
 
+/**
+ * This is the layout for all public routes, for users without authentication. Marketing, auth pages and more.
+ */
 export const PublicLayoutRoute = createRoute({
   id: 'publicLayout',
   staticData: { isAuth: false },
@@ -66,6 +68,9 @@ export const PublicLayoutRoute = createRoute({
   },
 });
 
+/**
+ * App layout is for authenticated users, since this view requires a user in the user store.
+ */
 export const AppLayoutRoute = createRoute({
   id: 'appLayout',
   staticData: { isAuth: false },
@@ -81,15 +86,16 @@ export const AppLayoutRoute = createRoute({
     try {
       console.debug('Fetching me before entering app:', location.pathname);
 
-      // If offline, try to use stored user
+      // Try to use stored user for fast load time, then in loader use swr to refresh it
       const storedUser = useUserStore.getState().user;
-      if (!onlineManager.isOnline() && storedUser) {
-        console.info('Continuing as offline user with session');
+      if (storedUser) {
+        console.info('Continuing user with session');
         return;
       }
 
       // Fetch and set user
-      await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      return { user };
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -109,13 +115,17 @@ export const AppLayoutRoute = createRoute({
     // If location is root and has user, redirect to home
     if (location.pathname === '/') throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
-  // @ts-ignore // TODO
-  loader: async ({ cause }) => {
+
+  loader: async ({ cause, context }) => {
     if (cause !== 'enter') return;
 
     try {
       console.debug('Fetching menu while loading app:', location.pathname);
 
+      // Revalidate user if not already awaited above
+      if (context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+
+      // Get menu too but defer it so app doesnt need to hang while its is being retrieved
       return await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true }));
     } catch (error) {
       if (error instanceof Error) {

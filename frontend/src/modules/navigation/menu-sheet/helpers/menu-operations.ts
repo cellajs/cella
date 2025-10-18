@@ -146,7 +146,7 @@ export const updateMenuItemMembership = (membershipData: Partial<MembershipBaseS
 export const deleteMenuItem = (itemId: string) => {
   const remove = (items: UserMenuItem[]): UserMenuItem[] =>
     items
-      .filter((item) => item.id !== itemId && item.organizationId !== itemId)
+      .filter((item) => item.id !== itemId && item.membership.organizationId !== itemId)
       .map((item) => (item.submenu ? { ...item, submenu: remove(item.submenu) } : item));
 
   return useTransformOnMenuItems(remove); // Use remove on every menu item by storage type from menu config

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CircleUserRoundIcon, LogOutIcon, type LucideProps, SettingsIcon, WrenchIcon } from 'lucide-react';
+import { LogOutIcon, type LucideProps, UserRoundCogIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -83,7 +83,7 @@ export const AccountSheet = () => {
         <AccountButton
           offlineAccess={false}
           isOnline={isOnline}
-          icon={CircleUserRoundIcon}
+          icon={UserRoundIcon}
           id="btn-profile"
           label={t('common:view_resource', { resource: t('common:profile').toLowerCase() })}
           action={`/users/${user.slug}`}
@@ -91,7 +91,7 @@ export const AccountSheet = () => {
         <AccountButton
           offlineAccess={false}
           isOnline={isOnline}
-          icon={SettingsIcon}
+          icon={UserRoundCogIcon}
           id="btn-account"
           label={t('common:my_account')}
           action="/account"

@@ -31,7 +31,7 @@ export const AlertWrap = ({ id, icon: Icon, children, className = '', title = ''
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>
-      <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={setAsSeen}>
+      <Button variant="ghost" size="sm" className="absolute top-1 right-1" onClick={setAsSeen}>
         <XIcon size={16} />
       </Button>
       {Icon && <Icon size={16} />}

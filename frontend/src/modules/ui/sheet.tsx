@@ -62,7 +62,9 @@ function SheetContent({
         )}
         {...props}
       >
-        <ScrollArea className="w-full h-full">{children} </ScrollArea>
+        <ScrollArea id={props.id} className="w-full h-full">
+          {children}
+        </ScrollArea>
         {showCloseButton && (
           <SheetPrimitive.Close
             data-slot="sheet-close"

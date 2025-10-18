@@ -46,13 +46,13 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent',
+        'data-[link-active=true]:ring-transparent active:translate-y-[.05rem]',
         className,
       )}
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
       <AvatarWrap
-        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs h-8 w-8 group-data-[subitem=true]/menuItem:h-6 group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:w-6"
+        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:size-6"
         type={item.entityType}
         id={item.id}
         icon={Icon}
@@ -65,18 +65,21 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
             'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',
             !searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
             searchResults ? '' : isSubitem ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : 'sm:group-hover/menuItem:pt-[0.3rem]!',
-            'group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
+            'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
           )}
         >
           {item.name}
         </div>
         <div className="text-muted-foreground text-xs">
           {searchResults && (
-            <span className="absolute transition-opacity duration-100 delay-100 ease-in-out sm:group-hover/menuItem:opacity-0">
+            <span>
               {t(item.entityType, { ns: ['app', 'common'] })}
+              <span className="transition-opacity duration-100 ease-in-out opacity-0 group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100 mx-2">
+                ·
+              </span>
             </span>
           )}
-          <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100 group-active/menuItem:translate-y-[.05rem]">
+          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? `${item.submenu[0].entityType}s` : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
               : item.membership.role

@@ -68,7 +68,7 @@ export const AppFooter = ({ className = '' }) => {
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted">|</div>
-        <UserTheme size={18} contentClassName="z-110" />
+        <UserTheme contentClassName="z-110" />
       </div>
       <FooterLinks />
     </footer>

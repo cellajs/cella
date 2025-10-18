@@ -141,16 +141,12 @@ export const zMenuSchema = z.object({
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
       membership: zMembershipBaseSchema,
       createdAt: z.string(),
-      modifiedAt: z.union([z.string(), z.null()]),
-      organizationId: z.optional(z.string()),
       submenu: z.optional(
         z.array(
           zContextEntityBaseSchema.and(
             z.object({
               membership: zMembershipBaseSchema,
               createdAt: z.string(),
-              modifiedAt: z.union([z.string(), z.null()]),
-              organizationId: z.optional(z.string()),
             }),
           ),
         ),

@@ -1,7 +1,6 @@
 import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getContextEntities } from '~/api.gen';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { EntityInvitations } from '~/modules/me/entity-invitations';
 import { useAlertStore } from '~/store/alert';
@@ -12,11 +11,6 @@ const Home = () => {
   const { setDownAlert } = useAlertStore();
 
   useEffect(() => {
-    (async () => {
-      // TODO
-      getContextEntities();
-    })();
-
     const { user } = useUserStore.getState();
     if (user.role === 'admin' && !user.mfaRequired && appConfig.mode === 'production') setDownAlert('enable_mfa');
   }, []);

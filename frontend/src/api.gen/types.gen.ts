@@ -139,14 +139,10 @@ export type MenuSchema = {
     bannerUrl?: string | null;
     membership: MembershipBaseSchema;
     createdAt: string;
-    modifiedAt: string | null;
-    organizationId?: string;
     submenu?: Array<
       ContextEntityBaseSchema & {
         membership: MembershipBaseSchema;
         createdAt: string;
-        modifiedAt: string | null;
-        organizationId?: string;
       }
     >;
   }>;
