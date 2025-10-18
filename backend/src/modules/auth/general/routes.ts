@@ -5,7 +5,7 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
-import { cookieSchema, locationSchema } from '#/utils/schema/common';
+import { cookieSchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses } from '#/utils/schema/responses';
 
 const authGeneralRoutes = {
@@ -67,6 +67,7 @@ const authGeneralRoutes = {
     method: 'get',
     path: '/invoke-token/{type}/{token}',
     guard: isPublicAccess,
+    // TODO add brute rate limiter,
     middleware: isNoBot,
     tags: ['auth'],
     summary: 'Invoke token session',
@@ -74,7 +75,6 @@ const authGeneralRoutes = {
       'Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
     request: {
       params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
-      query: z.object({ tokenId: z.string() }),
     },
     responses: {
       302: {
@@ -88,16 +88,15 @@ const authGeneralRoutes = {
   getTokenData: createCustomRoute({
     operationId: 'getTokenData',
     method: 'get',
-    path: '/token/{tokenId}',
+    path: '/token/{type}/{id}',
     guard: isPublicAccess,
+    // TODO add brute rate limiter
     middleware: isNoBot,
     tags: ['auth'],
     summary: 'Get token data',
-    description:
-      'Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.',
+    description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
-      params: z.object({ tokenId: z.string() }),
-      query: z.object({ type: z.enum(appConfig.tokenTypes) }),
+      params: z.object({ type: z.enum(appConfig.tokenTypes), id: idSchema }),
     },
     responses: {
       200: {

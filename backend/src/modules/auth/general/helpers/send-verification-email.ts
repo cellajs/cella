@@ -75,7 +75,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));

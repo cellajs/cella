@@ -146,7 +146,7 @@ const authPasswordsRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId${tokenRecord.id}`;
+    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];

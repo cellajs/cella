@@ -18,7 +18,7 @@ type BaseProps = {
   redirectPath?: string;
 };
 /**
- * Validates a token by its value or ID, ensuring it matches the required type and is neither expired nor invoked.
+ * Validates a token by its value, ensuring it matches the required type and is neither expired nor invoked.
  * By default, it invokes the token upon successful validation.
  *
  * @param ctx - Hono context.

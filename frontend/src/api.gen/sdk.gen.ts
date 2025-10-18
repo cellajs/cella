@@ -260,7 +260,6 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
  * @param {invokeTokenData} options
  * @param {enum} options.path.type - `enum`
  * @param {string} options.path.token - `string`
- * @param {string} options.query.tokenid - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
@@ -275,19 +274,19 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
  * Get token data
  * 🌐 Public access
  *
- * Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.
+ * Get basic token data from single-use token session, It returns basic data if the session is still valid.
  *
- * **GET /auth/token/{tokenId}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{tokenId}) ·· _auth_
+ * **GET /auth/token/{type}/{id}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{type}/{id}) ·· _auth_
  *
  * @param {getTokenDataData} options
- * @param {string} options.path.tokenid - `string`
- * @param {enum} options.query.type - `enum`
+ * @param {enum} options.path.type - `enum`
+ * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
   return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/token/{tokenId}',
+    url: '/auth/token/{type}/{id}',
     ...options,
   });
 };

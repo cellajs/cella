@@ -1,5 +1,6 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { isNoBot } from '#/middlewares/is-no-bot';
 import { metricListSchema, publicCountsSchema } from '#/modules/metrics/schema';
 import { errorResponses } from '#/utils/schema/responses';
 
@@ -26,6 +27,7 @@ const metricRouteConfig = {
     method: 'get',
     path: '/public',
     guard: isPublicAccess,
+    middleware: isNoBot,
     tags: ['metrics'],
     summary: 'Get public counts',
     description: `Returns basic count metrics for entity types such as \`users\` and \`organizations\`.

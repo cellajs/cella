@@ -143,13 +143,12 @@ export const zMenuSchema = z.object({
       createdAt: z.string(),
       submenu: z.optional(
         z.array(
-          z.union([
-            zContextEntityBaseSchema,
+          zContextEntityBaseSchema.and(
             z.object({
               membership: zMembershipBaseSchema,
               createdAt: z.string(),
             }),
-          ]),
+          ),
         ),
       ),
     }),
@@ -231,19 +230,16 @@ export const zInvokeTokenData = z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     token: z.string(),
   }),
-  query: z.object({
-    tokenId: z.string(),
-  }),
+  query: z.optional(z.never()),
 });
 
 export const zGetTokenDataData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tokenId: z.string(),
-  }),
-  query: z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
+    id: z.string(),
   }),
+  query: z.optional(z.never()),
 });
 
 /**
@@ -253,8 +249,6 @@ export const zGetTokenDataResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
-  organizationName: z.optional(z.string()),
-  organizationSlug: z.optional(z.string()),
   organizationId: z.optional(z.string()),
 });
 
@@ -813,12 +807,11 @@ export const zGetUsersData = z.object({
  */
 export const zGetUsersResponse = z.object({
   items: z.array(
-    z.union([
-      zUser,
+    zUser.and(
       z.object({
         memberships: z.array(zMembershipBaseSchema),
       }),
-    ]),
+    ),
   ),
   total: z.number(),
 });
@@ -997,8 +990,7 @@ export const zGetContextEntitiesData = z.object({
  */
 export const zGetContextEntitiesResponse = z.object({
   items: z.array(
-    z.union([
-      zContextEntityBaseSchema,
+    zContextEntityBaseSchema.and(
       z.object({
         membership: z.union([
           z.object({
@@ -1021,7 +1013,7 @@ export const zGetContextEntitiesResponse = z.object({
           total: z.number(),
         }),
       }),
-    ]),
+    ),
   ),
   total: z.number(),
 });

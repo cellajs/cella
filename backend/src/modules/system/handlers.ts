@@ -144,11 +144,11 @@ const systemRouteHandlers = app
     );
 
     // 7) Prepare & send emails
-    const recipients = insertedTokens.map((t) => ({
-      email: t.email,
+    const recipients = insertedTokens.map(({ email, token, type }) => ({
+      email,
       lng,
-      name: slugFromEmail(t.email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${t.type}/${t.id}?token=${t.token}`,
+      name: slugFromEmail(email),
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${token}`,
     }));
     type Recipient = (typeof recipients)[number];
 

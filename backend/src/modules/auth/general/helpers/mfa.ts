@@ -5,7 +5,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
@@ -66,19 +66,4 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
 
   return user;
-};
-
-/**
- * Consumes the MFA token stored in the 'confirm-mfa' cookie.
- * Marks it as used in the database and deletes the cookie.
- */
-export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
-  const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
-  if (!tokenFromCookie) return;
-
-  // Fetch token record and associated user
-  await getValidToken({ ctx, token: tokenFromCookie, tokenType: 'confirm-mfa' });
-
-  // Delete cookie
-  deleteAuthCookie(ctx, 'confirm-mfa');
 };

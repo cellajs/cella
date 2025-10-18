@@ -7,7 +7,7 @@ import type { TokenData } from '~/modules/auth/types';
 /**
  *  Get token data by ID.
  *
- * @param type Type of the token (`"email-verification" | "password-reset" | "invitation"`)
+ * @param type Type of the token
  * @param tokenId Token ID to check
  * @param enabled (Default true) Enable the query
  */
@@ -16,7 +16,7 @@ export const useGetTokenData = (type: TokenType, tokenId?: string, enabled = tru
     queryKey: [],
     queryFn: async () => {
       if (!tokenId) throw new Error('Token ID is required');
-      return getTokenData({ path: { tokenId }, query: { type } });
+      return getTokenData({ path: { type, id: tokenId } });
     },
     enabled,
     staleTime: 0, // Important to always get latest token status
