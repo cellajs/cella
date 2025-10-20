@@ -13,6 +13,9 @@ export interface NewsletterEmailProps extends BasicTemplateType {
   content: string;
 }
 
+/**
+ * Email template for newsletters sent to users in one or more organizations.
+ */
 export const NewsletterEmail = ({ lng, content, subject, unsubscribeLink, orgName, testEmail }: NewsletterEmailProps) => {
   return (
     <EmailContainer previewText={subject}>

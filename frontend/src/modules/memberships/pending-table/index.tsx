@@ -4,30 +4,30 @@ import { BirdIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { zGetPendingInvitationsData } from '~/api.gen/zod.gen';
+import { zGetPendingMembershipsData } from '~/api.gen/zod.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
-import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/bar';
+import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/bar';
 import { useColumns } from '~/modules/memberships/pending-table/columns';
-import { pendingInvitationsQueryOptions } from '~/modules/memberships/query';
-import type { PendingInvitation } from '~/modules/memberships/types';
+import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
+import type { PendingMembership } from '~/modules/memberships/types';
 
-const LIMIT = appConfig.requestLimits.pendingInvitations;
+const LIMIT = appConfig.requestLimits.pendingMemberships;
 
-const pendingInvitationsSearchSchema = zGetPendingInvitationsData.shape.query.pick({ sort: true, order: true });
+const pendingMembershipsSearchSchema = zGetPendingMembershipsData.shape.query.pick({ sort: true, order: true });
 
-type PendingInvitationsSearch = z.infer<typeof pendingInvitationsSearchSchema>;
+type PendingMembershipsSearch = z.infer<typeof pendingMembershipsSearchSchema>;
 
-export interface PendingInvitationsTableProps {
+export interface PendingMembershipsTableProps {
   entity: EntityPage;
 }
 
-export const PendingInvitationsTable = ({ entity }: PendingInvitationsTableProps) => {
+export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<PendingInvitationsSearch>({ saveDataInSearch: false });
+  const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });
 
   // Table state
   const { sort, order } = search;
@@ -37,7 +37,7 @@ export const PendingInvitationsTable = ({ entity }: PendingInvitationsTableProps
   const [columns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = pendingInvitationsQueryOptions({
+  const queryOptions = pendingMembershipsQueryOptions({
     idOrSlug: entity.slug,
     entityType: entity.entityType,
     orgIdOrSlug: entity.organizationId || entity.id,
@@ -66,12 +66,13 @@ export const PendingInvitationsTable = ({ entity }: PendingInvitationsTableProps
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <PendingInvitationsTableBar queryKey={queryOptions.queryKey} />
-      <DataTable<PendingInvitation>
+      <PendingMembershipsTableBar queryKey={queryOptions.queryKey} />
+      <DataTable<PendingMembership>
         {...{
           rows,
           rowHeight: 52,
-          rowKeyGetter: (row) => row.id,
+          // Its either a membershipId or tokenId
+          rowKeyGetter: (row) => row.membershipId || (row.tokenId as string),
           columns: columns.filter((column) => column.visible),
           enableVirtualization: false,
           limit,
@@ -91,4 +92,4 @@ export const PendingInvitationsTable = ({ entity }: PendingInvitationsTableProps
   );
 };
 
-export default PendingInvitationsTable;
+export default PendingMembershipsTable;

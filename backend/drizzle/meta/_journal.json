@@ -8,6 +8,13 @@
       "when": 1758835199217,
       "tag": "0000_modern_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760949896936,
+      "tag": "0001_absurd_whiplash",
+      "breakpoints": true
     }
   ]
 }

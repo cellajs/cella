@@ -1,13 +1,17 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
+import { mailer } from '#/lib/mailer';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import authGeneralRoutes from '#/modules/auth/general/routes';
@@ -19,7 +23,10 @@ import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
+import { encodeLowerCased } from '#/utils/oslo';
+import { slugFromEmail } from '#/utils/slug-from-email';
+import { createDate, TimeSpan } from '#/utils/time-span';
+import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -82,8 +89,10 @@ const authGeneralRouteHandlers = app
     // Determine redirect URL based on token type
     let redirectUrl = appConfig.defaultRedirectPath;
 
+    // If invitation, redirect to auth page with tokenId param
     if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
+    // If password reset, redirect to create password page with tokenId param
     if (tokenRecord.type === 'password-reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
     logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
@@ -164,6 +173,91 @@ const authGeneralRouteHandlers = app
     await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
 
     logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
+
+    return ctx.body(null, 204);
+  })
+  /**
+   * Resend invitation email with token for entity invites and system invites.
+   * TODO system invites not yet implemented, move entire sending email logic to helper
+   */
+  .openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
+    const { email, tokenId } = ctx.req.valid('json');
+
+    const normalizedEmail = email?.toLowerCase().trim();
+
+    const filters = [eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNotNull(tokensTable.role)];
+
+    if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
+    else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
+    else throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+
+    // Retrieve token
+    const [oldToken] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(...filters))
+      .orderBy(desc(tokensTable.createdAt))
+      .limit(1);
+
+    if (!oldToken) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
+
+    const { entityType, role, email: userEmail } = oldToken;
+
+    if (!entityType || !role) throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
+
+    const entityIdField = appConfig.entityIdFields[entityType];
+    const entityId = oldToken[entityIdField];
+    if (!entityId) throw new AppError({ status: 500, type: 'server_error', entityType, severity: 'error' });
+
+    const entity = await resolveEntity(entityType, entityId);
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType });
+
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
+    // Insert token first
+    await db.insert(tokensTable).values({
+      ...oldToken,
+      token: hashedToken,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+      invokedAt: null,
+      singleUseToken: null,
+    });
+
+    // Prepare and send invitation email
+    const recipient = {
+      email: userEmail,
+      name: slugFromEmail(userEmail),
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+    };
+
+    let senderName = 'System';
+    let senderThumbnailUrl: null | string = null;
+
+    // Get original sender
+    if (oldToken.createdBy) {
+      const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+
+      senderName = sender.name;
+      senderThumbnailUrl = sender.thumbnailUrl;
+    }
+
+    const emailProps = {
+      senderName,
+      senderThumbnailUrl,
+      entityName: entity.name,
+      role,
+      subject: i18n.t('backend:email.member_invite.subject', {
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+        entityName: entity.name,
+      }),
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+    };
+
+    await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
+
+    logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
 
     return ctx.body(null, 204);
   })

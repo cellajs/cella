@@ -3,7 +3,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-export const PendingInvitationsTableBar = ({ queryKey }: { queryKey: QueryKey }) => {
+export const PendingMembershipsTableBar = ({ queryKey }: { queryKey: QueryKey }) => {
   const total = useInfiniteQueryTotal(queryKey);
 
   return (

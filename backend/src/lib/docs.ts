@@ -6,11 +6,12 @@ import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { attachmentSchema } from '#/modules/attachments/schema';
-import { contextEntityBaseSchema, userBaseSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { menuSchema } from '#/modules/me/schema';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { membershipBaseSchema, membershipSchema } from '#/modules/memberships/schema';
 import { organizationSchema } from '#/modules/organizations/schema';
 import { userSchema } from '#/modules/users/schema';
+import { userBaseSchema } from '#/modules/users/schema-base';
 import { apiErrorSchema } from '#/utils/schema/error';
 
 // OpenAPI configuration
@@ -46,13 +47,14 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   });
 
   // Register lower-level (base) schemas
+  registry.register('UserBaseSchema', userBaseSchema);
   registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
   registry.register('MembershipBaseSchema', membershipBaseSchema);
-  registry.register('UserBaseSchema', userBaseSchema);
 
   // Register entity schemas
   registry.register('User', userSchema);
   registry.register('Organization', organizationSchema);
+  registry.register('Membership', membershipSchema);
   registry.register('Attachment', attachmentSchema);
 
   registry.register('MenuSchema', menuSchema);

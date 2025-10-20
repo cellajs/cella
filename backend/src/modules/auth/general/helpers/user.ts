@@ -8,7 +8,7 @@ import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/us
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { insertMembership } from '#/modules/memberships/helpers';
+import { insertMemberships } from '#/modules/memberships/helpers';
 import { getIsoDate } from '#/utils/iso-date';
 import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -93,7 +93,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     if (!entity) throw new Error(`Unable to resolve entity (${entityType}) using the token's entity ID.`);
 
     // Insert membership for user into entity, but not yet activated
-    await insertMembership({ userId, role, entity, tokenId });
+    await insertMemberships([{ userId, role, entity, activate: false }]);
   } catch (error) {
     logError('Error inserting membership from token data', error);
     throw error;

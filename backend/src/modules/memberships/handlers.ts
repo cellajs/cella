@@ -1,10 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
+import { MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -14,228 +14,240 @@ import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
-import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
+import { getAssociatedEntityDetails, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
-import { memberSelect, userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import { memberSelect, userBaseSelect } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
+import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
-import { SystemInviteEmail, SystemInviteEmailProps } from '../../../emails/system-invite';
+import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../emails/member-invite-with-token';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const membershipRouteHandlers = app
   /**
-   * Create memberships (invite members) for an entity such as an organization
+   * Create memberships (invite members) for an entity such as an organization, by list of emails
+   * 1. email exists in membershipsTable for this entity with activatedAt -> user is already is member of entity so we remove it from recipients.
+   * 1b. email exists in membershipsTable, but no activatedAt -> user will receive a reminder email invitation.
+   * 2. email exists in emailsTable -> user is already active in system so no token invitation but create inactive membership send a email invitation with a link to the entity.
+   * 3. add to recipients and create another token with email and an inactive membership.
+   * 
+   * | Scenario | Description                                        | Membership created?                  | Token created?                 |
+     | -------- | -------------------------------------------------- | ------------------------------------ | ------------------------------ |
+     | **1**    | Already has `activatedAt` → skip                   | ❌                                   | ❌                             |
+     | **1b**   | Has membership but not activated → reminder only   | ❌                                   | ❌                             |
+     | **2**    | Existing user (verified) but **no membership yet** | ✅                                   | ❌                             |
+     | **3**    | New email address (no user in system)              | ❌ (deferred until token is claimed) | ✅ token created in **Step 5** |
    */
   .openapi(membershipRoutes.createMemberships, async (ctx) => {
+    // Step 0: Parse and normalize input
     const { emails, role } = ctx.req.valid('json');
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
-    // Normalize emails
-    const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
+    const normalizedEmails = [...new Set(emails.map((e: string) => e.toLowerCase().trim()))];
     if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
-    // Validate entity existence and check user permission for updates
+    // Step 0: Validate target entity and caller permission (update)
     const { entity } = await getValidContextEntity(idOrSlug, passedEntityType, 'update');
 
-    // Extract entity details
-    const { entityType, id: entityId } = entity;
+    // Step 0: Extract entity context
+    const { entityType, id: entityId, slug: entitySlug, name: entityName } = entity;
     const targetEntityIdField = appConfig.entityIdFields[entityType];
 
-    // Determine additional entity details (if applicable)
-    const associatedEntity = getAssociatedEntityDetails(entity);
-
+    // Step 0: Contextual user and organization
     const user = getContextUser();
     const organization = getContextOrganization();
 
-    const existingUsers = await db
-      .select({ id: userSelect.id, email: emailsTable.email })
-      .from(usersTable)
-      .innerJoin(emailsTable, and(eq(usersTable.id, emailsTable.userId), eq(emailsTable.verified, true)))
-      .where(inArray(emailsTable.email, normalizedEmails));
+    // Step 0: Associated entity (optional hierarchy metadata)
+    const associatedEntity = getAssociatedEntityDetails(entity);
 
-    const pendingTokens = await db
-      .select()
-      .from(tokensTable)
-      .where(
-        and(
-          or(eq(tokensTable.type, 'invitation')),
-          inArray(tokensTable.email, normalizedEmails),
-          isNull(tokensTable.invokedAt), // pending (not used)
-        ),
-      );
+    // Step 0: Scenario buckets
+    const rejectedItems: string[] = []; // Scenario 1: already active members
+    const reminderEmails: string[] = []; // Scenario 1b: pending members (no token email)
+    const existingUsersToActivate: Array<{
+      // Scenario 2: create inactive membership, email link
+      userId: string;
+      email: string;
+    }> = [];
+    const newUserTokenEmails: string[] = []; // Scenario 3: new users -> create token + email with token
 
-    const existingMemberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(
-        and(
-          inArray(
-            membershipsTable.userId,
-            existingUsers.map(({ id }) => id),
-          ),
-          eq(membershipsTable.organizationId, organization.id),
-          isNull(membershipsTable.tokenId),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
-
-    const notInAppEmails: string[] = [];
-    const rejectedItems: string[] = [];
-
-    await Promise.all(
-      normalizedEmails.map(async (email) => {
-        const existingUser = existingUsers.find((user) => user.email === email);
-        const pendingToken = pendingTokens.find((token) => token.email === email);
-
-        if (existingUser) {
-          const userMemberships = existingMemberships.filter((m) => m.userId === existingUser.id);
-          // Check if the user is already a member of the target entity
-          const targetMembership = userMemberships.find((m) => m.contextType === entityType && m[targetEntityIdField] === entityId);
-          if (targetMembership) {
-            rejectedItems.push(email);
-            logEvent('info', `User already member of ${entityType}`, { userId: existingUser.id, [targetEntityIdField]: entityId });
-            return;
-          }
-
-          // Check for organization memberships
-          const hasOrgMembership = userMemberships.some((m) => m.contextType === 'organization' && m.organizationId === organization.id);
-
-          // Determine if membership should be created instantly
-          const instantCreateMembership =
-            (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && existingUser.id === user.id);
-
-          // If not instant, add to invite list
-          if (!instantCreateMembership) {
-            const [{ existingUserTokenId }] = await db
-              .insert(tokensTable)
-              .values({
-                token: nanoid(40), // unique hashed token
-                type: 'invitation' as const,
-                email,
-                userId: existingUser.id,
-                createdBy: user.id,
-                expiresAt: createDate(new TimeSpan(7, 'd')),
-                role,
-                entityType,
-                [targetEntityIdField]: entityId,
-                ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
-                ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
-              })
-              .returning({ existingUserTokenId: tokensTable.id });
-
-            await insertMembership({ userId: existingUser.id, role, entity, tokenId: existingUserTokenId });
-            return;
-          }
-
-          const createdMembership = await insertMembership({ userId: existingUser.id, role, entity });
-
-          eventManager.emit('instantMembershipCreation', createdMembership);
-
-          sendSSEToUsers([existingUser.id], 'add_entity', {
-            newItem: {
-              ...entity,
-              membership: createdMembership,
-            },
-            sectionName: associatedEntity?.type || entity.entityType,
-            ...(associatedEntity && { parentIdOrSlug: associatedEntity.id }),
-          });
-          return;
-        }
-
-        if (pendingToken) {
-          await db
-            .update(tokensTable)
-            .set({
-              ...pendingToken,
-              entityType,
-              role,
-              [targetEntityIdField]: entityId,
-              ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
-              expiresAt: createDate(new TimeSpan(7, 'd')),
-            })
-            .where(eq(tokensTable.id, pendingToken.id));
-
-          return;
-        }
-
-        notInAppEmails.push(email);
-      }),
-    );
-
-    if (!notInAppEmails.length) {
-      const invitesSentCount = normalizedEmails.length - rejectedItems.length;
-      return ctx.json({ success: invitesSentCount > 0, rejectedItems, invitesSentCount }, 200);
-    }
-    // // Check create restrictions
-    // const [{ currentOrgMemberships }] = await db
-    //   .select({ currentOrgMemberships: count() })
-    //   .from(membershipsTable)
-    //   .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
-    // const membersRestrictions = organization.restrictions.user;
-    // if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
-    //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
-    // }
-
-    // Generate invitation tokens
-    const tokens = notInAppEmails.map((email) => ({
-      token: nanoid(40), // unique hashed token
-      type: 'invitation' as const,
-      email,
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      role,
-      entityType,
-      [targetEntityIdField]: entityId,
-      ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
-      ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
-    }));
-
-    // Insert tokens first
-    const insertedTokens = await db
-      .insert(tokensTable)
-      .values(tokens)
-      .returning({ id: tokensTable.id, email: tokensTable.email, token: tokensTable.token, type: tokensTable.type });
-
-    // Link waitlist requests (if any)
-    await Promise.all(
-      insertedTokens.map(({ id, email }) =>
-        db
-          .update(requestsTable)
-          .set({ tokenId: id })
-          .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'))),
-      ),
-    );
-
+    // Step 0: Email meta for outgoing messages
     const lng = appConfig.defaultLanguage;
     const senderName = user.name;
     const senderThumbnailUrl = user.thumbnailUrl;
-    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
+    const subject = i18n.t('backend:email.member_invite.subject', { lng, entityName });
 
-    // Prepare & send emails
-    const recipients = insertedTokens.map(({ token, email, type }) => ({
-      email,
-      lng,
-      name: slugFromEmail(email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${token}`,
-    }));
-    type Recipient = (typeof recipients)[number];
+    // Step 1: Single membership-aware lookup for all emails (email -> user -> membership for this entity)
+    const membershipAwareRows = await db
+      .select({
+        email: emailsTable.email, // email identifier
+        userId: usersTable.id, // nullable if no user
+        language: usersTable.language || entity.defaultLanguage, // use user's language or entity's default
+        membershipId: membershipsTable.id, // nullable if no membership
+        activatedAt: membershipsTable.activatedAt, // nullable if not activated
+      })
+      .from(emailsTable)
+      .leftJoin(usersTable, eq(usersTable.id, emailsTable.userId))
+      .leftJoin(
+        membershipsTable,
+        and(
+          eq(membershipsTable.userId, usersTable.id),
+          eq(membershipsTable.contextType, entityType as any),
+          eq(membershipsTable[targetEntityIdField as keyof typeof membershipsTable] as any, entityId),
+        ),
+      )
+      .where(and(inArray(emailsTable.email, normalizedEmails)));
 
-    const staticProps = { senderName, senderThumbnailUrl, subject, lng };
-    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
+    // Step 1b: Index rows by email (handle potential duplicates defensively)
+    const rowsByEmail = new Map<string, typeof membershipAwareRows>();
+    for (const e of normalizedEmails) rowsByEmail.set(e, [] as any);
+    for (const r of membershipAwareRows) rowsByEmail.get(r.email)!.push(r);
 
-    logEvent('info', 'Users invited on system level', { count: recipients.length });
+    // Step 1c: Bucket by scenarios using the pre-fetched data
+    for (const email of normalizedEmails) {
+      const rows = rowsByEmail.get(email)!; // array (possibly empty)
 
-    return ctx.json({ success: true, rejectedItems, invitesSentCount: normalizedEmails.length - rejectedItems.length }, 200);
+      // Step 1c.i: If we have any row with an activated membership, Scenario 1
+      if (rows.some((r) => r.membershipId && r.activatedAt)) {
+        rejectedItems.push(email);
+        continue;
+      }
+
+      // Step 1c.ii: If we have a membership but not activated, Scenario 1b
+      if (rows.some((r) => r.membershipId && !r.activatedAt)) {
+        reminderEmails.push(email);
+        continue;
+      }
+
+      // Step 1c.iii: If we have a user (but no membership), Scenario 2
+      const userRow = rows.find((r) => r.userId);
+      if (userRow?.userId) {
+        existingUsersToActivate.push({ userId: userRow.userId, email });
+        continue;
+      }
+
+      // Step 1c.iv: Otherwise, brand-new user, Scenario 3
+      newUserTokenEmails.push(email);
+    }
+
+    // Step 2: Bulk create inactive memberships for Scenario 2 (existing users)
+    if (existingUsersToActivate.length > 0) {
+      // Step 2a: Build bulk insert rows for membershipsTable
+      const membershipsToInsert = existingUsersToActivate.map(({ userId }) => ({
+        userId,
+        role,
+        entity,
+        activate: false,
+        createdBy: user.id,
+      }));
+
+      // Step 2b: Insert in one shot
+      await insertMemberships(membershipsToInsert);
+    }
+
+    // Step 3: Prepare no-token recipients (Scenario 1b + Scenario 2)
+    const noTokenRecipients = [
+      // Step 3a: Scenario 2 invitations for existing users (inactive memberships were created)
+      ...existingUsersToActivate.map(({ email }) => {
+        const memberInviteLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
+        return { email, lng, name: slugFromEmail(email), memberInviteLink };
+      }),
+      // Step 3b: Scenario 1b reminders for pending members
+      ...reminderEmails.map((email) => {
+        const memberInviteLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
+        return { email, lng, name: slugFromEmail(email), memberInviteLink };
+      }),
+    ];
+
+    // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (no tokensTable lookup)
+    const rawTokens: Array<{ email: string; raw: string }> = [];
+    const tokensToInsert = newUserTokenEmails.map((email) => {
+      // Step 4a: Generate raw + hashed token
+      const raw = nanoid(40);
+      const hashed = encodeLowerCased(raw);
+      rawTokens.push({ email, raw });
+
+      // Step 4b: Build token record (membership for new users is deferred upon using the token session)
+      return {
+        token: hashed,
+        type: 'invitation' as const,
+        email,
+        createdBy: user.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+        role,
+        entityType,
+        [targetEntityIdField]: entityId,
+        ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
+        ...(entityType !== 'organization' && { organizationId: organization.id }),
+      };
+    });
+
+    // Step 5: Insert tokens in bulk (Scenario 3)
+    let insertedTokens: Array<{ id: string; email: string; token: string; type: string }> = [];
+    if (tokensToInsert.length > 0) {
+      insertedTokens = await db
+        .insert(tokensTable)
+        .values(tokensToInsert)
+        .returning({ id: tokensTable.id, email: tokensTable.email, token: tokensTable.token, type: tokensTable.type });
+
+      // Step 5b: Link waitlist requests to new tokens (if any)
+      await Promise.all(
+        insertedTokens.map(({ id, email }) =>
+          db
+            .update(requestsTable)
+            .set({ tokenId: id })
+            .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'))),
+        ),
+      );
+    }
+
+    // Step 6: Prepare "with-token" recipients (Scenario 3)
+    const rawByEmail = new Map(rawTokens.map((t) => [t.email, t.raw]));
+
+    const withTokenRecipients = insertedTokens.map(({ email, type }) => {
+      const rawToken = rawByEmail.get(email)!; // guaranteed from same source list
+      const memberInviteLink = `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
+
+      return { email, lng, name: slugFromEmail(email), memberInviteLink };
+    });
+
+    // Step 7: Send no-token emails for Scenarios 1b + 2
+    if (noTokenRecipients.length > 0) {
+      const staticProps = { senderName, senderThumbnailUrl, subject, lng, role, entityName };
+      await mailer.prepareEmails<MemberInviteEmailProps, (typeof noTokenRecipients)[number]>(
+        MemberInviteEmail,
+        staticProps,
+        noTokenRecipients,
+        user.email,
+      );
+    }
+
+    // Step 8: Send with-token emails for Scenario 3
+    if (withTokenRecipients.length > 0) {
+      const staticProps = { senderName, senderThumbnailUrl, subject, lng };
+      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, (typeof withTokenRecipients)[number]>(
+        MemberInviteWithTokenEmail,
+        staticProps,
+        withTokenRecipients,
+        user.email,
+      );
+    }
+
+    // Step 9: Compute and return outcome
+    const invitesSentCount = noTokenRecipients.length + withTokenRecipients.length; // excludes already members
+
+    logEvent('info', 'Users invited on entity level', { count: invitesSentCount, entityType, [targetEntityIdField]: entityId });
+
+    return ctx.json({ success: invitesSentCount > 0, rejectedItems, invitesSentCount }, 200);
   })
   /**
    * Delete memberships to remove users from entity
@@ -363,44 +375,36 @@ const membershipRouteHandlers = app
 
     const user = getContextUser();
 
-    const [membership] = await db
+    const [organizationMembership] = await db
       .select()
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.id, membershipId),
-          eq(membershipsTable.userId, user.id),
-          eq(membershipsTable.contextType, 'organization'),
-          isNotNull(membershipsTable.tokenId),
-        ),
-      )
+      .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, 'organization')))
       .limit(1);
 
-    if (!membership) throw new AppError({ status: 404, type: 'membership_not_found', severity: 'error', meta: { membershipId } });
+    if (!organizationMembership) throw new AppError({ status: 404, type: 'membership_not_found', severity: 'error', meta: { membershipId } });
 
     // Can't accept already active membership
-    if (membership.activatedAt) throw new AppError({ status: 400, type: 'membership_already_active', severity: 'error', meta: { membershipId } });
-
-    // Can't accept membership without token
-    if (!membership.tokenId) throw new AppError({ status: 400, type: 'membership_without_token', severity: 'error', meta: { membershipId } });
+    if (organizationMembership.activatedAt)
+      throw new AppError({ status: 400, type: 'membership_already_active', severity: 'error', meta: { membershipId } });
 
     if (acceptOrReject === 'accept') {
       // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
       // TODO test this in raak for projects and edge cases
       const activatedMemberships = await db
         .update(membershipsTable)
-        .set({ tokenId: null, activatedAt: getIsoDate() })
-        .where(and(eq(membershipsTable.tokenId, membership.tokenId)))
+        .set({ activatedAt: getIsoDate() })
+        .where(and(eq(membershipsTable.id, organizationMembership.id)))
         .returning();
 
-      eventManager.emit('acceptedMembership', membership);
+      eventManager.emit('acceptedMembership', organizationMembership);
 
       logEvent('info', 'Accepted memberships', { ids: activatedMemberships.map((m) => m.id) });
     }
 
-    if (acceptOrReject === 'reject') await db.delete(tokensTable).where(and(eq(tokensTable.id, membership.tokenId)));
+    // Reject membership simply deletes the membership
+    if (acceptOrReject === 'reject') await db.delete(membershipsTable).where(and(eq(membershipsTable.id, organizationMembership.id)));
 
-    const entity = await resolveEntity('organization', membership.organizationId);
+    const entity = await resolveEntity('organization', organizationMembership.organizationId);
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
 
     return ctx.json(entity, 200);
@@ -425,7 +429,6 @@ const membershipRouteHandlers = app
       eq(membershipsTable.organizationId, organization.id),
       eq(membershipsTable[entityIdField], entity.id),
       eq(membershipsTable.contextType, entityType),
-      isNull(membershipsTable.tokenId),
       isNotNull(membershipsTable.activatedAt),
     ];
 
@@ -454,152 +457,86 @@ const membershipRouteHandlers = app
       .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
       .where(and(...membersFilters, or(...$or)));
 
-    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
+    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('members'));
 
     const items = await membersQuery.orderBy(orderColumn).limit(limit).offset(offset);
 
     return ctx.json({ items, total }, 200);
   })
   /**
-   * Get pending membership invitations by entity id/slug and type
+   * Get pending memberships by entity id/slug and type.
    */
-  .openapi(membershipRoutes.getPendingInvitations, async (ctx) => {
+  .openapi(membershipRoutes.getPendingMemberships, async (ctx) => {
     const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
 
-    // Scope request to organization
     const organization = getContextOrganization();
-
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
-
     const entityIdField = appConfig.entityIdFields[entity.entityType];
 
-    // TODO optimize this code
-    const invitedMemberSelect = {
-      id: tokensTable.id,
-      name: usersTable.name,
-      email: tokensTable.email,
-      role: tokensTable.role,
-      expiresAt: tokensTable.expiresAt,
-      createdAt: tokensTable.createdAt,
-      createdBy: tokensTable.createdBy,
-    };
+    type SourceKind = 'membership' | 'invite';
 
-    const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
+    // Shape A: pending memberships (existing users)
+    const pendingMembersShape = db
+      .select({
+        source: sql<SourceKind>`'membership'`.as('source'),
 
-    const pendingInvitationsQuery = db
-      .select(invitedMemberSelect)
-      .from(tokensTable)
-      .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
+        membershipId: sql<string | null>`${membershipsTable.id}`.as('membershipId'),
+        role: sql<MembershipModel['role'] | null>`${membershipsTable.role}`.as('role'),
+        userId: sql<string | null>`${membershipsTable.userId}`.as('userId'),
+        tokenId: sql<string | null>`NULL`.as('tokenId'),
+
+        email: sql<string>`${userBaseSelect.email}`.as('email'),
+        thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
+
+        createdAt: membershipsTable.createdAt,
+        createdBy: membershipsTable.createdBy,
+      })
+      .from(membershipsTable)
+      .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
       .where(
         and(
-          eq(tokensTable.type, 'invitation'),
+          eq(membershipsTable[entityIdField], entity.id),
+          eq(membershipsTable.organizationId, organization.id),
+          isNull(membershipsTable.activatedAt),
+        ),
+      );
+
+    // Shape B: token-only invites (no user record yet)
+    const inviteShape = db
+      .select({
+        source: sql<SourceKind>`'invite'`.as('source'),
+
+        membershipId: sql<string | null>`NULL`.as('membershipId'),
+        role: sql<MembershipModel['role'] | null>`${tokensTable.role}`.as('role'),
+        userId: sql<string | null>`NULL`.as('userId'),
+        tokenId: sql<string | null>`${tokensTable.id}`.as('tokenId'),
+
+        email: sql<string>`${tokensTable.email}`.as('email'),
+        thumbnailUrl: sql<string | null>`NULL`.as('thumbnailUrl'),
+
+        createdAt: tokensTable.createdAt,
+        createdBy: tokensTable.createdBy,
+      })
+      .from(tokensTable)
+      .where(
+        and(
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
-          isNotNull(tokensTable.role),
-          isNotNull(tokensTable.entityType),
-          isNull(tokensTable.invokedAt),
+          // add more filters (accepted/expired) if needed
         ),
-      )
-      .orderBy(orderColumn);
+      );
 
-    const [{ total }] = await db.select({ total: count() }).from(pendingInvitationsQuery.as('invites'));
+    // Build union with identical shapes
+    const combinedCte = db.$with('combined').as(pendingMembersShape.unionAll(inviteShape));
 
-    const items = await pendingInvitationsQuery.limit(limit).offset(offset);
+    // Order by the CTE alias' column so types are clear
+    const itemsOrderColumn = getOrderColumn({ createdAt: combinedCte.createdAt }, sort, combinedCte.createdAt, order);
+
+    const items = await db.with(combinedCte).select().from(combinedCte).orderBy(itemsOrderColumn).limit(limit).offset(offset);
+
+    const [{ total }] = await db.with(combinedCte).select({ total: count() }).from(combinedCte);
 
     return ctx.json({ items, total }, 200);
-  })
-  /**
-   * Resend invitation email for entity invites.
-   */
-  .openapi(membershipRoutes.resendInvitation, async (ctx) => {
-    const { email, tokenId } = ctx.req.valid('json');
-
-    const normalizedEmail = email?.toLowerCase().trim();
-
-    const filters = [eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNotNull(tokensTable.role)];
-
-    if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
-    else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-    else throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
-
-    // Retrieve token
-    const [oldToken] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(...filters))
-      .orderBy(desc(tokensTable.createdAt))
-      .limit(1);
-
-    if (!oldToken) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
-
-    const { entityType, role, email: userEmail } = oldToken;
-
-    if (!entityType || !role) throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
-
-    const entityIdField = appConfig.entityIdFields[entityType];
-    const entityId = oldToken[entityIdField];
-    if (!entityId) throw new AppError({ status: 500, type: 'server_error', entityType, severity: 'error' });
-
-    const entity = await resolveEntity(entityType, entityId);
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType });
-
-    // Insert token first
-    const [{ newTokenId, newToken }] = await db
-      .insert(tokensTable)
-      .values({
-        ...oldToken,
-        id: nanoid(),
-        token: nanoid(40), // unique hashed token
-        expiresAt: createDate(new TimeSpan(7, 'd')),
-        invokedAt: null,
-        singleUseToken: null,
-      })
-      .returning({ newTokenId: tokensTable.id, newToken: tokensTable.token });
-
-    // Update membership record with new token
-    await db
-      .update(membershipsTable)
-      .set({ tokenId: newTokenId })
-      .where(and(eq(membershipsTable.tokenId, oldToken.id)));
-
-    // Delete old token (avoid triggering cascade prematurely)
-    await db.delete(tokensTable).where(eq(tokensTable.id, oldToken.id));
-
-    // Prepare and send invitation email
-    const recipient = {
-      email: userEmail,
-      name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
-    };
-
-    let senderName = 'System';
-    let senderThumbnailUrl: null | string = null;
-
-    // Get original sender
-    if (oldToken.createdBy) {
-      const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
-
-      senderName = sender.name;
-      senderThumbnailUrl = sender.thumbnailUrl;
-    }
-
-    const emailProps = {
-      senderName,
-      senderThumbnailUrl,
-      entityName: entity.name,
-      role,
-      subject: i18n.t('backend:email.member_invite.subject', {
-        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
-        entityName: entity.name,
-      }),
-      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
-    };
-
-    await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], userEmail);
-
-    logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
-
-    return ctx.body(null, 204);
   });
 
 export default membershipRouteHandlers;

@@ -1,4 +1,4 @@
-import { DeepPartial } from "./default";
+import { DeepPartial } from "./types";
 
 function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);

@@ -99,9 +99,9 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
-  GetPendingInvitationsData,
-  GetPendingInvitationsErrors,
-  GetPendingInvitationsResponses,
+  GetPendingMembershipsData,
+  GetPendingMembershipsErrors,
+  GetPendingMembershipsResponses,
   GetPresignedUrlData,
   GetPresignedUrlErrors,
   GetPresignedUrlResponses,
@@ -152,9 +152,9 @@ import type {
   RequestPasswordData,
   RequestPasswordErrors,
   RequestPasswordResponses,
-  ResendInvitationData,
-  ResendInvitationErrors,
-  ResendInvitationResponses,
+  ResendInvitationWithTokenData,
+  ResendInvitationWithTokenErrors,
+  ResendInvitationWithTokenResponses,
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
@@ -341,6 +341,30 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
     ],
     url: '/auth/impersonation/stop',
     ...options,
+  });
+};
+
+/**
+ * Resend invitation
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
+ *
+ * Resends an invitation email with token to a new user using the provided email address and token ID.
+ *
+ * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](http://localhost:4000/docs#tag/auth/post/auth/resend-invitation) ·· _auth_
+ *
+ * @param {resendInvitationWithTokenData} options
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(options: Options<ResendInvitationWithTokenData, ThrowOnError>) => {
+  return (options.client ?? client).post<ResendInvitationWithTokenResponses, ResendInvitationWithTokenErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/resend-invitation',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 };
 
@@ -1025,10 +1049,10 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
 };
 
 /**
- * Get invitations
+ * Get list of invitations
  * 🛡️ Requires authentication
  *
- * Returns a list of entities with pending memberships - meaning activatedAt is still null.
+ * Returns a list of pending memberships with entity data - meaning activatedAt is still null.
  *
  * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
  *
@@ -2131,7 +2155,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * Respond to membership invitation
  * 🛡️ Requires authentication
  *
- * Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.
+ * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
  * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](http://localhost:4000/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
  *
@@ -2191,14 +2215,14 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
 };
 
 /**
- * Get list of invitations
+ * Get list of pending memberships
  * 🛡️ Requires authentication (org access)
  *
- * Returns pending *membership* invitations for a context entity, identified by ID or slug.
+ * Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.
  *
- * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingInvitations](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
+ * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingMemberships](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
  *
- * @param {getPendingInvitationsData} options
+ * @param {getPendingMembershipsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
@@ -2209,8 +2233,8 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPendingInvitations = <ThrowOnError extends boolean = true>(options: Options<GetPendingInvitationsData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetPendingInvitationsResponses, GetPendingInvitationsErrors, ThrowOnError, 'data'>({
+export const getPendingMemberships = <ThrowOnError extends boolean = true>(options: Options<GetPendingMembershipsData, ThrowOnError>) => {
+  return (options.client ?? client).get<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2221,29 +2245,5 @@ export const getPendingInvitations = <ThrowOnError extends boolean = true>(optio
     ],
     url: '/{orgIdOrSlug}/memberships/pending',
     ...options,
-  });
-};
-
-/**
- * Resend invitation
- * 🌐 Public access
- * ⏳ Spam (10/h)
- *
- * Resends an invitation email to a new or existing user using the provided email address and token ID.
- *
- * **POST /{orgIdOrSlug}/memberships/resend-invitation** ·· [resendInvitation](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships/resend-invitation) ·· _memberships_
- *
- * @param {resendInvitationData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
- */
-export const resendInvitation = <ThrowOnError extends boolean = true>(options: Options<ResendInvitationData, ThrowOnError>) => {
-  return (options.client ?? client).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/{orgIdOrSlug}/memberships/resend-invitation',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 };

@@ -1,9 +1,10 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { contextEntitiesQuerySchema, contextEntityBaseSchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
+import { contextEntitiesQuerySchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
 import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema } from '#/utils/schema/responses';
+import { contextEntityBaseSchema } from './schema-base';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({

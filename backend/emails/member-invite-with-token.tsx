@@ -1,6 +1,7 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
+
 import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { Avatar } from './components/avatar';
@@ -10,19 +11,21 @@ import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
 
-export interface SystemInviteEmailProps extends BasicTemplateType {
-  systemInviteLink: string;
+export interface MemberInviteWithTokenEmailProps extends BasicTemplateType {
+  memberInviteLink: string;
   senderName: string;
+  entityName: string;
+  role: (typeof appConfig.roles.entityRoles)[number];
 }
 
 const appName = appConfig.name;
 
 /**
- * Email template for new users that receive a system-level invitation.
+ * Email template for new users that receive a new membership invitation with a token.
  */
-export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: SystemInviteEmailProps) => {
+export const MemberInviteWithTokenEmail = ({ name, lng, senderName, role, entityName, memberInviteLink }: MemberInviteWithTokenEmailProps) => {
   return (
-    <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>
+    <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, entityName, appName })}>
       {senderName && (
         <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="center">
@@ -33,18 +36,20 @@ export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: S
 
       <EmailHeader
         headerText={
-          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.system_invite.title', { appName, lng }) }} />
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.member_invite.title', { lng, entityName }) }} />
         }
       />
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }) }} />
+          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }) }} />
         </Text>
 
-        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={systemInviteLink} />
+        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={memberInviteLink} />
 
-        <Text style={{ fontSize: '.85rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>{i18n.t('backend:email.invite_expires', { lng })}</Text>
+        <Text style={{ fontSize: '.85rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
+          {i18n.t('backend:email.invite_expires', { lng })}
+        </Text>
       </EmailBody>
 
       <AppLogo />
@@ -54,4 +59,4 @@ export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: S
 };
 
 // Template export
-export const Template = SystemInviteEmail;
+export const Template = MemberInviteWithTokenEmail;

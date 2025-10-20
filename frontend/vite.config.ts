@@ -61,11 +61,11 @@ const viteConfig = {
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? sentryVitePlugin({
-          disable: appConfig.mode === 'development',
-          org: appConfig.slug,
-          project: appConfig.slug,
-          authToken: process.env.SENTRY_AUTH_TOKEN,
-        })
+        disable: appConfig.mode === 'development',
+        org: appConfig.slug,
+        project: appConfig.slug,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      })
       : undefined,
     viteStaticCopy({
       targets: [

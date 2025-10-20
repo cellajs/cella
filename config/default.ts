@@ -1,3 +1,5 @@
+import type { BaseConfigType } from "./types";
+
 export const config = {
   mode: 'development' satisfies BaseConfigType['mode'],
   name: 'Cella',
@@ -226,7 +228,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pendingInvitations: 20,
+    pendingMemberships: 20,
   },
   /**
    * Roles on system and entity level
@@ -304,18 +306,4 @@ The documentation is generated from source code using \`zod\` schemas, converted
 }
 export default config;
 
-export type DeepPartial<T> = T extends object
-  ? {
-    [P in keyof T]?: DeepPartial<T[P]>;
-  }
-  : T;
-
-type BaseConfigType = {
-  mode: 'development' | 'production' | 'tunnel' | 'test' | 'staging',
-  s3BucketPrefix?: string
-}
-
-type ConfigType = DeepPartial<typeof config>
-
-export type Config = Omit<ConfigType, keyof BaseConfigType> & BaseConfigType;
 

@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, ne, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -62,10 +62,7 @@ const usersRouteHandlers = app
         ? db
             .selectDistinct({ ...userSelect })
             .from(usersTable)
-            .innerJoin(
-              targetMembership,
-              and(eq(usersTable.id, targetMembership.userId), isNotNull(targetMembership.activatedAt), isNull(targetMembership.tokenId)),
-            )
+            .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId), isNotNull(targetMembership.activatedAt)))
             .innerJoin(
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),

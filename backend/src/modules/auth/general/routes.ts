@@ -3,9 +3,9 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
+import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
-import { cookieSchema, idSchema, locationSchema } from '#/utils/schema/common';
+import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses } from '#/utils/schema/responses';
 
 const authGeneralRoutes = {
@@ -102,6 +102,26 @@ const authGeneralRoutes = {
       200: {
         description: 'Token is valid',
         content: { 'application/json': { schema: tokenWithDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  resendInvitationWithToken: createCustomRoute({
+    operationId: 'resendInvitationWithToken',
+    method: 'post',
+    path: '/resend-invitation',
+    guard: isPublicAccess,
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Resend invitation',
+    description: 'Resends an invitation email with token to a new user using the provided email address and token ID.',
+    request: {
+      body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
+    },
+    responses: {
+      204: {
+        description: 'Invitation email sent',
       },
       ...errorResponses,
     },

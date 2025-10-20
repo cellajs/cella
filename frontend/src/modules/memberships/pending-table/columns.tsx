@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { PendingInvitation } from '~/modules/memberships/types';
+import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCellById } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -12,11 +12,11 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<PendingInvitation>[] = [
+    const cols: ColumnOrColumnGroup<PendingMembership>[] = [
       {
         key: 'email',
         name: t('common:email'),
-        sortable: true,
+        sortable: false,
         visible: true,
         renderHeaderCell: HeaderCell,
         minWidth: 140,
@@ -32,7 +32,7 @@ export const useColumns = () => {
       {
         key: 'role',
         name: t('common:role'),
-        sortable: true,
+        sortable: false,
         visible: true,
         width: 100,
         renderHeaderCell: HeaderCell,
@@ -41,15 +41,6 @@ export const useColumns = () => {
             {row.role ? t(row.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
           </div>
         ),
-      },
-      {
-        key: 'expiresAt',
-        name: t('common:expires_at'),
-        sortable: true,
-        visible: true,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.expiresAt ? dateShort(row.expiresAt) : <span className="text-muted">-</span>),
-        minWidth: 80,
       },
       {
         key: 'createdAt',
@@ -63,7 +54,7 @@ export const useColumns = () => {
       {
         key: 'createdBy',
         name: t('common:invited_by'),
-        sortable: true,
+        sortable: false,
         visible: !isMobile,
         minWidth: 80,
         renderHeaderCell: HeaderCell,
@@ -74,5 +65,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<PendingInvitation>[]>(columns);
+  return useState<ColumnOrColumnGroup<PendingMembership>[]>(columns);
 };
