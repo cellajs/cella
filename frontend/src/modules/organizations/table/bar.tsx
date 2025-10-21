@@ -10,7 +10,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
@@ -64,12 +64,14 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (organizations: Organization[]) => {
-      const message =
-        organizations.length === 1
-          ? t('common:success.delete_resource', { resource: t('common:organization') })
-          : t('common:success.delete_counted_resources', { count: organizations.length, resources: t('common:organizations').toLowerCase() });
-      toaster(message, 'success');
+    const callback = (args: CallbackArgs<Organization[]>) => {
+      if (args.status === 'success') {
+        const message =
+          args.data.length === 1
+            ? t('common:success.delete_resource', { resource: t('common:organization') })
+            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:organizations').toLowerCase() });
+        toaster(message, 'success');
+      }
       clearSelection();
     };
 

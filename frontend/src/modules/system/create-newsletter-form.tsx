@@ -12,6 +12,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { ApiError } from '~/lib/api';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
@@ -27,7 +28,7 @@ const formSchema = zSendNewsletterData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
   organizationIds: string[];
-  callback?: () => void;
+  callback?: (args: CallbackArgs) => void;
 }
 
 const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
@@ -61,7 +62,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
       useSheeter.getState().remove(formContainerId);
-      callback?.();
+      callback?.({ status: 'success' });
     },
   });
 

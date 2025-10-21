@@ -9,6 +9,7 @@ import { zUpdateUserData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
@@ -30,10 +31,10 @@ const formSchema = zUpdateUserData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 interface UpdateUserFormProps {
   user: User;
-  callback?: (user: User) => void;
   sheet?: boolean;
   hiddenFields?: string[];
   children?: React.ReactNode;
+  callback?: (args: CallbackArgs<User>) => void;
 }
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
@@ -90,7 +91,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           // This should ideally be done through the callback, but we need to refactor stepper
           nextStep?.();
 
-          callback?.(updatedUser);
+          callback?.({ data: updatedUser, status: 'success' });
         },
       },
     );

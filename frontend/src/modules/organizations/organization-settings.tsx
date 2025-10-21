@@ -6,6 +6,7 @@ import { Trans, useTranslation } from 'react-i18next';
 // import Subscription from '~/modules/organizations/subscription';
 import type { Organization } from '~/api.gen';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
@@ -51,6 +52,16 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
     );
   };
 
+  const callback = (args: CallbackArgs<Organization>) => {
+    if (args.status === 'success' && idOrSlug !== args.data.slug) {
+      navigate({
+        to: '/organizations/$idOrSlug/settings',
+        params: { idOrSlug: organization.slug },
+        replace: true,
+      });
+    }
+  };
+
   return (
     <div className="md:flex md:flex-row mx-auto gap-4 my-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
@@ -68,18 +79,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <UpdateOrganizationForm
-                organization={organization}
-                callback={(organization) => {
-                  if (idOrSlug !== organization.slug) {
-                    navigate({
-                      to: '/organizations/$idOrSlug/settings',
-                      params: { idOrSlug: organization.slug },
-                      replace: true,
-                    });
-                  }
-                }}
-              />
+              <UpdateOrganizationForm organization={organization} callback={callback} />
             </CardContent>
           </Card>
         </AsideAnchor>
@@ -90,18 +90,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               <CardTitle>{t('common:details')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <UpdateOrganizationDetailsForm
-                organization={organization}
-                callback={(organization) => {
-                  if (idOrSlug !== organization.slug) {
-                    navigate({
-                      to: '/organizations/$idOrSlug/settings',
-                      params: { idOrSlug: organization.slug },
-                      replace: true,
-                    });
-                  }
-                }}
-              />
+              <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
             </CardContent>
           </Card>
         </AsideAnchor>

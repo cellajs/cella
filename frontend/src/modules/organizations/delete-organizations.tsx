@@ -1,12 +1,13 @@
 import type { Organization } from '~/api.gen';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useOrganizationDeleteMutation } from '~/modules/organizations/query';
 
 interface Props {
   organizations: Organization[];
-  callback?: (organizations: Organization[]) => void;
   dialog?: boolean;
+  callback?: (args: CallbackArgs<Organization[]>) => void;
 }
 
 const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Props) => {
@@ -15,9 +16,9 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
 
   const onDelete = () => {
     deleteOrganizations(organizations, {
-      onSuccess: () => {
+      onSuccess: (_, paasedOrganizations) => {
         if (isDialog) removeDialog();
-        callback?.(organizations);
+        callback?.({ data: paasedOrganizations, status: 'success' });
       },
     });
   };

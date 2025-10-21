@@ -8,6 +8,7 @@ import type { Organization } from '~/api.gen';
 import { zCreateOrganizationData } from '~/api.gen/zod.gen';
 // Change this in the future on current schema
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper';
@@ -17,10 +18,10 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 
 interface Props {
-  callback?: (org: Organization) => void;
   dialog?: boolean;
   labelDirection?: LabelDirectionType;
   children?: React.ReactNode;
+  callback?: (args: CallbackArgs<Organization>) => void;
 }
 
 const formSchema = zCreateOrganizationData.shape.body;
@@ -54,7 +55,7 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         form.reset();
         toaster(t('common:success.create_resource', { resource: t('common:organization') }), 'success');
 
-        callback?.(createdOrganization); // Trigger callback
+        callback?.({ data: createdOrganization, status: 'success' }); // Trigger callback
 
         // Since this form is also used in onboarding, we need to call the next step
         // This should ideally be done through the callback, but we need to refactor stepper

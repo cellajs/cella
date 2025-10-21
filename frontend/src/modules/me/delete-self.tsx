@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { User } from '~/api.gen';
 import { deleteMe } from '~/api.gen';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { usersKeys } from '~/modules/users/query';
@@ -9,8 +10,8 @@ import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
 interface Props {
-  callback?: (user: User) => void;
   dialog?: boolean;
+  callback?: (user: CallbackArgs<User>) => void;
 }
 
 const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
@@ -28,7 +29,8 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
 
       navigate({ to: '/sign-out', replace: true, search: { force: true } });
       if (isDialog) removeDialog();
-      callback?.(user);
+
+      callback?.({ data: user, status: 'success' });
     },
   });
 
