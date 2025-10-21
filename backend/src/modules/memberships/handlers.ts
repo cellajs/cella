@@ -155,17 +155,19 @@ const membershipRouteHandlers = app
     }
 
     // Step 3: Prepare no-token recipients (Scenario 1b + Scenario 2)
+    const buildRecipient = (email: string) => ({
+      email,
+      lng,
+      name: slugFromEmail(email),
+      // TODO find better way to do it(not just add s)
+      memberInviteLink: `${appConfig.frontendUrl}/${entityType}s/${entitySlug}`,
+    });
+
     const noTokenRecipients = [
       // Step 3a: Scenario 2 invitations for existing users (inactive memberships were created)
-      ...existingUsersToActivate.map(({ email }) => {
-        const memberInviteLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
-        return { email, lng, name: slugFromEmail(email), memberInviteLink };
-      }),
+      ...existingUsersToActivate.map(({ email }) => buildRecipient(email)),
       // Step 3b: Scenario 1b reminders for pending members
-      ...reminderEmails.map((email) => {
-        const memberInviteLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
-        return { email, lng, name: slugFromEmail(email), memberInviteLink };
-      }),
+      ...reminderEmails.map(buildRecipient),
     ];
 
     // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (no tokensTable lookup)
