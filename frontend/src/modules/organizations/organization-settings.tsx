@@ -37,9 +37,11 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
       <DeleteOrganizations
         dialog
         organizations={[organization]}
-        callback={() => {
-          toaster(t('common:success.delete_resource', { resource: t('common:organization') }), 'success');
-          navigate({ to: appConfig.defaultRedirectPath, replace: true });
+        callback={({ status }: CallbackArgs<Organization[]>) => {
+          if (status === 'success') {
+            toaster(t('common:success.delete_resource', { resource: t('common:organization') }), 'success');
+            navigate({ to: appConfig.defaultRedirectPath, replace: true });
+          }
         }}
       />,
       {
