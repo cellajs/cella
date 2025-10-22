@@ -4,6 +4,16 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});
 };
 
+export type UserBaseSchema = {
+  id: string;
+  slug: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+  email: string;
+  entityType: 'user';
+};
+
 export type ContextEntityBaseSchema = {
   id: string;
   entityType: 'organization';
@@ -22,16 +32,6 @@ export type MembershipBaseSchema = {
   muted: boolean;
   order: number;
   organizationId: string;
-};
-
-export type UserBaseSchema = {
-  id: string;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-  email: string;
-  entityType: 'user';
 };
 
 export type User = {
@@ -106,6 +106,21 @@ export type Organization = {
       attachment: number;
     };
   };
+};
+
+export type Membership = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  userId: string;
+  role: 'member' | 'admin';
+  createdBy: string | null;
+  modifiedAt: string | null;
+  modifiedBy: string | null;
+  archived: boolean;
+  muted: boolean;
+  order: number;
+  organizationId: string;
 };
 
 export type Attachment = {
@@ -201,6 +216,21 @@ export type ApiError = {
   timestamp?: string;
   userId?: string;
   organizationId?: string;
+};
+
+export type MembershipSchema = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  userId: string;
+  role: 'member' | 'admin';
+  createdBy: string | null;
+  modifiedAt: string | null;
+  modifiedBy: string | null;
+  archived: boolean;
+  muted: boolean;
+  order: number;
+  organizationId: string;
 };
 
 export type CheckEmailData = {
@@ -352,8 +382,6 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
-    role: 'member' | 'admin' | null;
-    userId?: string;
     organizationId?: string;
   };
 };
@@ -463,6 +491,65 @@ export type StopImpersonationResponses = {
 };
 
 export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImpersonationResponses];
+
+export type ResendInvitationWithTokenData = {
+  body:
+    | {
+        email: string;
+        tokenId?: string;
+      }
+    | {
+        email?: string;
+        tokenId: string;
+      };
+  path?: never;
+  query?: never;
+  url: '/auth/resend-invitation';
+};
+
+export type ResendInvitationWithTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type ResendInvitationWithTokenError = ResendInvitationWithTokenErrors[keyof ResendInvitationWithTokenErrors];
+
+export type ResendInvitationWithTokenResponses = {
+  /**
+   * Invitation email sent
+   */
+  204: void;
+};
+
+export type ResendInvitationWithTokenResponse = ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
 
 export type SignOutData = {
   body?: never;
@@ -1905,24 +1992,22 @@ export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitation
 
 export type GetMyInvitationsResponses = {
   /**
-   * Entity memberships pending
+   * Invitations pending
    */
-  200: Array<{
-    entity: ContextEntityBaseSchema & {
-      organizationId?: string;
-    };
-    invitedBy: {
-      id: string;
-      slug: string;
-      name: string;
-      thumbnailUrl?: string | null;
-      bannerUrl?: string | null;
-      email: string;
-      entityType: 'user';
-    } | null;
-    membership: MembershipBaseSchema;
-    expiresAt: string;
-  }>;
+  200: {
+    items: Array<{
+      entity: ContextEntityBaseSchema;
+      membership: MembershipBaseSchema &
+        ({
+          [key: string]: unknown;
+        } | null);
+      createdByUser: UserBaseSchema &
+        ({
+          [key: string]: unknown;
+        } | null);
+    }>;
+    total: number;
+  };
 };
 
 export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
@@ -3987,20 +4072,7 @@ export type UpdateMembershipResponses = {
   /**
    * Membership updated
    */
-  200: {
-    createdAt: string;
-    id: string;
-    contextType: 'organization';
-    userId: string;
-    role: 'member' | 'admin';
-    createdBy: string | null;
-    modifiedAt: string | null;
-    modifiedBy: string | null;
-    archived: boolean;
-    muted: boolean;
-    order: number;
-    organizationId: string;
-  };
+  200: MembershipSchema;
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
@@ -4145,14 +4217,14 @@ export type GetMembersResponses = {
 
 export type GetMembersResponse = GetMembersResponses[keyof GetMembersResponses];
 
-export type GetPendingInvitationsData = {
+export type GetPendingMembershipsData = {
   body?: never;
   path: {
     orgIdOrSlug: string;
   };
   query: {
     q?: string;
-    sort?: 'email' | 'role' | 'expiresAt' | 'createdAt' | 'createdBy';
+    sort?: 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -4162,7 +4234,7 @@ export type GetPendingInvitationsData = {
   url: '/{orgIdOrSlug}/memberships/pending';
 };
 
-export type GetPendingInvitationsErrors = {
+export type GetPendingMembershipsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4195,83 +4267,24 @@ export type GetPendingInvitationsErrors = {
   };
 };
 
-export type GetPendingInvitationsError = GetPendingInvitationsErrors[keyof GetPendingInvitationsErrors];
+export type GetPendingMembershipsError = GetPendingMembershipsErrors[keyof GetPendingMembershipsErrors];
 
-export type GetPendingInvitationsResponses = {
+export type GetPendingMembershipsResponses = {
   /**
-   * Invited members
+   * Pending memberships
    */
   200: {
     items: Array<{
       id: string;
+      tokenId: string | null;
       email: string;
+      thumbnailUrl?: string | null;
+      role: 'member' | 'admin';
       createdAt: string;
       createdBy: string | null;
-      role: 'member' | 'admin';
-      expiresAt: string;
-      name: string | null;
     }>;
     total: number;
   };
 };
 
-export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof GetPendingInvitationsResponses];
-
-export type ResendInvitationData = {
-  body:
-    | {
-        email: string;
-        tokenId?: string;
-      }
-    | {
-        email?: string;
-        tokenId: string;
-      };
-  path?: never;
-  query?: never;
-  url: '/{orgIdOrSlug}/memberships/resend-invitation';
-};
-
-export type ResendInvitationErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
-
-export type ResendInvitationResponses = {
-  /**
-   * Invitation email sent
-   */
-  204: void;
-};
-
-export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
+export type GetPendingMembershipsResponse = GetPendingMembershipsResponses[keyof GetPendingMembershipsResponses];

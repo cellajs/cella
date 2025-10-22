@@ -39,7 +39,8 @@ export const handleOAuthInitiation = async (
 ) => {
   const { type } = ctx.req.valid('query');
 
-  const redirectPath = await prepareOAuthByContext(ctx);
+  // TODO redirect should be passed from frontend here
+  const redirectPath = await prepareOAuthByContext(ctx, type, null);
   const cookieContent = JSON.stringify({ codeVerifier, type });
 
   await Promise.all([
@@ -67,22 +68,13 @@ export const handleOAuthInitiation = async (
  *
  */
 // TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
-const prepareOAuthByContext = async (ctx: Context): Promise<string> => {
-  const { type, redirect } = ctx.req.query();
+const prepareOAuthByContext = async (ctx: Context, type: OAuthFlowType, redirect: string | null): Promise<string> => {
 
   // Helper to resolve safe default redirect
   const safeRedirect = redirect ? isValidRedirectPath(decodeURIComponent(redirect)) || appConfig.defaultRedirectPath : appConfig.defaultRedirectPath;
 
   switch (type) {
     case 'invite': {
-      const token = await getAuthCookie(ctx, 'invitation');
-      if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', redirectPath: '/auth/authenticate' });
-
-      const tokenRecord = await getValidToken({ ctx, token, tokenType: 'invitation', redirectPath: '/auth/authenticate', invokeToken: false });
-
-      if (tokenRecord.entityType)
-        return `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
-
       return safeRedirect;
     }
 

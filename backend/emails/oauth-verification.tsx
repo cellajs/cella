@@ -19,6 +19,9 @@ export interface OAuthVerificationEmailProps extends BasicTemplateType {
   providerName: string;
 }
 
+/**
+ * Email template for users to verify ownership of their email address that have been added via OAuth provider.
+ */
 export const OAuthVerificationEmail = ({ lng, verificationLink, email, name, providerEmail, providerName }: OAuthVerificationEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName })}>

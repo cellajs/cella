@@ -78,7 +78,6 @@ const authOAuthRouteHandlers = app
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
     return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier);
   })
-
   /**
    * GitHub callback
    */

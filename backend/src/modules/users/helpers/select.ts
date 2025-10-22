@@ -2,7 +2,8 @@ import { appConfig, type UserFlags } from 'config';
 import { getTableColumns, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
-import { userBaseSchema } from '#/modules/entities/schema';
+import { pickColumns } from '#/db/utils/pick-columns';
+import { userBaseSchema } from '#/modules/users/schema-base';
 
 /**
  * User select that merges userFlags with default ones
@@ -16,6 +17,7 @@ export const userSelect = (() => {
     userFlags: sql<UserFlags>` ${JSON.stringify(appConfig.defaultUserFlags)}::jsonb  || ${usersTable.userFlags}`,
   };
 })();
+
 /**
  * Member select. unnecessary fields are omitted from user select.
  */
@@ -32,11 +34,13 @@ type UserBaseSelect = Pick<TableColumns, UserBaseKeys>;
 /**
  * User select for base data only.
  */
-export const userBaseSelect: UserBaseSelect = (() => {
-  const userColumns = getTableColumns(usersTable);
-  const entries = Object.entries(userBaseSchema.shape).map(([key]) => [key, userColumns[key as UserBaseKeys]]);
-  return Object.fromEntries(entries) satisfies UserBaseSelect;
-})();
+export const userBaseSelect = (() => {
+  const cols = getTableColumns(usersTable) satisfies TableColumns;
+  const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
+  return pickColumns(cols, keys);
+})() satisfies UserBaseSelect;
+
+// TODO perhaps remove since it it an uncommon pattern to export a base query in our codebase?
 
 /**
  * Base query for selecting users.

@@ -4,7 +4,7 @@ import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { entityTables } from '#/entity-config';
-import { getRelatedEntities, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
+import { getAssociatedEntities, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
 
 /**
  * Counts related entities (Context + Product) for the given entity instance
@@ -24,7 +24,7 @@ export const getRelatedEntityCounts = async (
   const entityIdField = appConfig.entityIdFields[entityType];
 
   // Only keep entity types that actually contain the ID field we care about
-  const validEntities = getRelatedEntities(entityType);
+  const validEntities = getAssociatedEntities(entityType);
   if (!validEntities.length) return {} as Record<ValidEntities<typeof entityIdField>, number>;
 
   // Run one COUNT query per entity type in parallel
@@ -55,7 +55,7 @@ export const getRelatedEntityCountsQuery = (entityType: ContextEntityType) => {
   const entityIdColumn = table.id; // the target table must match the context — adapt as needed
 
   // Only keep entity types that actually contain the ID field we care about
-  const validEntities = getRelatedEntities(entityType);
+  const validEntities = getAssociatedEntities(entityType);
   if (!validEntities.length) return db.select({ id: entityIdColumn }).from(table).where(sql`false`).as('related_counts'); // returns zero rows
 
   const baseCounts: Record<string, SQL.Aliased<number>> = {};

@@ -8,7 +8,7 @@ import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
-// TODO(improvement) make uploaded attachment naming right, if it was changed during offline update it on upload
+// TODO(DAVID)(improvement) make uploaded attachment naming right, if it was changed during offline update it on upload
 export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { mutate: createAttachments } = useAttachmentCreateMutation();

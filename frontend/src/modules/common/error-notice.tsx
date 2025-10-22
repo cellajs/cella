@@ -2,9 +2,10 @@ import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { ChevronUpIcon, HomeIcon, MessageCircleQuestionIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type RefObject, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
+import router from '~/lib/router';
 import { AppFooter } from '~/modules/common/app/footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
@@ -78,6 +79,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
+
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const [showError, setShowError] = useState(false);
@@ -86,6 +88,14 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
   const { title, message } = getErrorInfo(error, errorFromQuery);
 
   const dateNow = new Date().toUTCString();
+
+  // Reset before route change to prevent retaining the error state
+  useEffect(() => {
+    const unsub = router.subscribe('onBeforeRouteMount', () => {
+      resetErrorBoundary?.();
+    });
+    return unsub;
+  }, [router, resetErrorBoundary]);
 
   const handleReload = () => {
     resetErrorBoundary?.();
@@ -102,7 +112,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
       {level === 'root' && <Dialoger />}
       <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
         <div className="mt-auto mb-auto">
-          <Card className="max-w-[80vw] sm:max-w-[36rem] mt-8 bg-transparent border-none">
+          <Card className="max-w-[80vw] sm:w-[40rem] mt-8 bg-transparent border-none">
             <CardHeader className="text-center p-0">
               <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
               <CardDescription className="text-base flex-col gap-2 p-0">

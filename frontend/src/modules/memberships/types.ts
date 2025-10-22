@@ -3,7 +3,7 @@ import type z from 'zod';
 import type {
   DeleteMembershipsData,
   GetMembersResponse,
-  GetPendingInvitationsResponse,
+  GetPendingMembershipsResponse,
   MembershipInviteData,
   UpdateMembershipData,
   UpdateMembershipResponse,
@@ -16,7 +16,7 @@ export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSc
 
 export type Member = GetMembersResponse['items'][number];
 export type Membership = UpdateMembershipResponse;
-export type PendingInvitation = GetPendingInvitationsResponse['items'][number];
+export type PendingMembership = GetPendingMembershipsResponse['items'][number];
 
 export type MemberQueryData = QueryData<Member>;
 export type InfiniteMemberQueryData = InfiniteQueryData<Member>;

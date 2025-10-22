@@ -19,12 +19,10 @@ export interface AccountSecurityProps extends BasicTemplateType {
   details?: Record<string, string | number>; // Optional extra details for dynamic messages
 }
 
-export const AccountSecurity = ({
-  lng,
-  name,
-  type,
-  details,
-}: AccountSecurityProps) => {
+/**
+ * Email template for account security notifications.
+ */
+export const AccountSecurity = ({ lng, name, type, details }: AccountSecurityProps) => {
   // Base properties for all i18n calls
   const baseProps = { lng, appName: appConfig.name };
 

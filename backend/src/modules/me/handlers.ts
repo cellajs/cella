@@ -1,12 +1,11 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
@@ -26,13 +25,15 @@ import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuSchema } from '#/modules/me/schema';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { contextEntityBaseSelect } from '../entities/helpers/select';
+import { membershipBaseSelect } from '../memberships/helpers/select';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
@@ -153,7 +154,7 @@ const meRouteHandlers = app
     return ctx.json(menu, 200);
   })
   /**
-   * Get my invitations - a combination of pending membership and entity data
+   * Get my invitations - a list with a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
     const user = getContextUser();
@@ -162,39 +163,24 @@ const meRouteHandlers = app
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
         const entityIdField = appConfig.entityIdFields[entityType];
-        // TODO cant we use an existing select for this? or resolveEntity util?
-        const entitySelect = {
-          id: entityTable.id,
-          entityType: entityTable.entityType,
-          slug: entityTable.slug,
-          name: entityTable.name,
-          thumbnailUrl: entityTable.thumbnailUrl,
-          bannerUrl: entityTable.bannerUrl,
-        };
 
         return db
           .select({
-            entity: entitySelect,
-            expiresAt: tokensTable.expiresAt,
-            invitedBy: userBaseSelect,
+            entity: contextEntityBaseSelect,
+            createdByUser: userBaseSelect,
             membership: membershipBaseSelect,
           })
-          .from(membershipsTable)
-          .leftJoin(usersTable, eq(usersTable.id, membershipsTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, membershipsTable[entityIdField]))
-          .innerJoin(tokensTable, eq(tokensTable.id, membershipsTable.tokenId))
-          .where(
-            and(
-              eq(membershipsTable.contextType, entityType),
-              eq(membershipsTable.userId, user.id),
-              isNotNull(membershipsTable.tokenId),
-              isNull(membershipsTable.activatedAt),
-            ),
-          );
+          .from(inactiveMembershipsTable)
+          .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
+          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdField]))
+          .where(and(eq(inactiveMembershipsTable.contextType, entityType), eq(inactiveMembershipsTable.userId, user.id), isNull(inactiveMembershipsTable.rejectedAt)));
       }),
     );
 
-    return ctx.json(pendingInvites.flat(), 200);
+    const items = pendingInvites.flat();
+    const total = items.length;
+
+    return ctx.json({ items, total }, 200);
   })
   /**
    * Terminate one or more of my sessions

@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { EntityPage } from '~/modules/entities/types';
-import type { PendingInvitationsTableProps } from '~/modules/memberships/pending-table';
+import type { PendingMembershipsTableProps } from '~/modules/memberships/pending-table';
 import { Button } from '~/modules/ui/button';
 
 const PendingTable = lazy(() => import('~/modules/memberships/pending-table'));
 
-export const PendingInvitations = ({ entity }: PendingInvitationsTableProps) => {
+export const PendingMemberships = ({ entity }: PendingMembershipsTableProps) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
   const createSheet = useSheeter((state) => state.create);
@@ -19,7 +19,9 @@ export const PendingInvitations = ({ entity }: PendingInvitationsTableProps) => 
     const SheetComponent = ({ entity }: { entity: EntityPage }) =>
       onlineManager.isOnline() ? (
         <Suspense>
-          <PendingTable entity={entity} />
+          <div className="container w-full">
+            <PendingTable entity={entity} />
+          </div>
         </Suspense>
       ) : (
         <ContentPlaceholder icon={WifiOffIcon} title={t(`${'common:offline.text'}`)} />

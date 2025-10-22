@@ -14,6 +14,9 @@ export interface RequestResponseEmailProps extends BasicTemplateType {
   message: string | null 
 }
 
+/**
+ * Email template for responses to user requests such as waitlist signups, newsletter subscriptions, or contact form submissions.
+ */
 export const RequestResponseEmail = ({ lng, type, subject, message }: RequestResponseEmailProps) => {
   return (
     <EmailContainer previewText={subject}>

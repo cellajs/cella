@@ -2,25 +2,28 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type ResendInvitationData, type ResendInvitationResponse, resendInvitation } from '~/api.gen';
+import { type ApiError, type ResendInvitationWithTokenData, type ResendInvitationWithTokenResponse, resendInvitationWithToken } from '~/api.gen';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
 type ResendButtonPrpos = {
-  resendData: ResendInvitationData['body'];
+  resendData: ResendInvitationWithTokenData['body'];
   buttonProps?: ButtonProps;
   wrapperClassName?: string;
   callback?: () => void;
 };
 
-export const ResendMembershipInviteButton = ({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) => {
+/**
+ * Button to resend an invitation token email to a non-existing user. It can either be a membership invitation or a system-level invitation.
+ */
+export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) => {
   const { t } = useTranslation();
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
 
-  const { mutate: resend, isPending } = useMutation<ResendInvitationResponse, ApiError, ResendInvitationData['body']>({
-    mutationFn: (body) => resendInvitation({ body }),
+  const { mutate: resend, isPending } = useMutation<ResendInvitationWithTokenResponse, ApiError, ResendInvitationWithTokenData['body']>({
+    mutationFn: (body) => resendInvitationWithToken({ body }),
     onSuccess: () => {
       useDialoger.getState().remove();
       toaster(t('common:success.resend_invitation'), 'success');

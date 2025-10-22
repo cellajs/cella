@@ -18,6 +18,9 @@ const baseUrl = appConfig.frontendUrl;
 const createPasswordUrl = `${baseUrl}/auth/request-password`;
 const appName = appConfig.name;
 
+/**
+ * Email template for users to create a password for their account.
+ */
 export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePasswordEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.create_password.preview', { appName, lng })}>

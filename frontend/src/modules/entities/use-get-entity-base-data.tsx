@@ -22,6 +22,8 @@ export function useGetEntityBaseData(args: {
   cacheOnly?: boolean;
 }): UserBaseSchema | undefined;
 
+// TODO can we batch this using getContextEntities, so that it waits 100ms and batches multiple calls into one API request?
+
 // context entities overload
 export function useGetEntityBaseData<T extends ContextEntityType>(args: {
   idOrSlug: string;

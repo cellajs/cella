@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -24,6 +24,7 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
@@ -77,7 +78,6 @@ const systemRouteHandlers = app
         and(
           inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.entityType), // system invite
           isNull(tokensTable.invokedAt), // pending (not used)
         ),
       );
@@ -121,14 +121,17 @@ const systemRouteHandlers = app
       return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
     }
 
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
     // 5) Create new tokens for recipients
     const tokens = recipientEmails.map((email) => ({
-      token: nanoid(40),
+      token: hashedToken,
       type: 'invitation' as const,
       email,
       createdBy: user.id,
       expiresAt: createDate(new TimeSpan(7, 'd')),
-      // entityType stays NULL => system-level
     }));
 
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
@@ -144,11 +147,11 @@ const systemRouteHandlers = app
     );
 
     // 7) Prepare & send emails
-    const recipients = insertedTokens.map(({ email, token, type }) => ({
+    const recipients = insertedTokens.map(({ email, type }) => ({
       email,
       lng,
       name: slugFromEmail(email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${token}`,
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
     }));
     type Recipient = (typeof recipients)[number];
 
@@ -182,7 +185,7 @@ const systemRouteHandlers = app
       const { user } = await validateSession(sessionToken);
 
       if (attachment) {
-        const memberships = await membershipBaseQuery().where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+        const memberships = await membershipBaseQuery().where(and(eq(membershipsTable.userId, user.id)));
 
         const isSystemAdmin = user.role === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
@@ -246,7 +249,6 @@ const systemRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
-          isNotNull(membershipsTable.activatedAt),
           eq(usersTable.newsletter, true),
         ),
       );
@@ -281,6 +283,7 @@ const systemRouteHandlers = app
     const replacements = new Map<string, string>();
 
     // For each unique src, fetch its signed URL
+    // TODO(DAVID) can we put all this content parsing in a helper folder?
     await Promise.all(
       srcs.map(async (src) => {
         try {

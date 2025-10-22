@@ -1,4 +1,4 @@
-import type { Config } from './default';
+import type { Config } from './types';
 
 export default {
   mode: 'development',

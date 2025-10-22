@@ -50,7 +50,7 @@ const AuthenticatePage = () => {
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
     if (!tokenData?.email) return;
-    setStep(tokenData.userId ? 'signIn' : 'signUp', tokenData.email);
+    setStep('signUp', tokenData.email);
   }, [tokenData, lastUser]);
 
   // Loading invitation token

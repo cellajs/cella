@@ -18,7 +18,6 @@ import appTitle from '~/utils/app-title';
 
 const authenticateRouteSearch = z.object({
   tokenId: z.string().optional(),
-  token: z.string().optional(),
   redirect: z.string().optional(),
   fromRoot: z.boolean().optional(),
 });

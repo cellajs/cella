@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -11,8 +11,8 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/counts';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
-import { getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
-import { insertMembership } from '#/modules/memberships/helpers';
+import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
+import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
@@ -62,10 +62,10 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
+    const [createdMembership] = await insertMemberships([{ userId: user.id, role: 'admin', entity: createdOrganization, activate: true }]);
 
     // Get default linked entities
-    const validEntities = getRelatedEntities(createdOrganization.entityType);
+    const validEntities = getAssociatedEntities(createdOrganization.entityType);
     const entitiesCountsArray = validEntities.map((entityType) => [entityType, 0]);
     const entitiesCounts = Object.fromEntries(entitiesCountsArray) as Record<(typeof validEntities)[number], number>;
     // Default member counts
@@ -95,7 +95,7 @@ const organizationRouteHandlers = app
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
     const memberships = membershipBaseQuery()
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -113,7 +113,7 @@ const organizationRouteHandlers = app
     const membershipCountsQuery = getMemberCountsQuery(entityType);
     const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
-    const validEntities = getRelatedEntities(entityType);
+    const validEntities = getAssociatedEntities(entityType);
     const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
 
     const organizations = await db
@@ -189,7 +189,6 @@ const organizationRouteHandlers = app
         eq(membershipsTable.contextType, 'organization'),
         eq(membershipsTable.organizationId, organization.id),
         eq(membershipsTable.archived, false),
-        isNotNull(membershipsTable.activatedAt),
       ),
     );
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
@@ -226,7 +225,6 @@ const organizationRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, allowedIds),
           eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
         ),
       );
 

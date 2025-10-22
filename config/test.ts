@@ -1,4 +1,4 @@
-import type { Config } from './default';
+import type { Config } from './types';
 
 /**
  * Ensure that this file does not include or use any sensitive information.

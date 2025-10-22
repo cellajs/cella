@@ -26,6 +26,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   const parentData = parent ? useGetEntityBaseData(parent) : null;
+
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 

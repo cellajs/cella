@@ -4,7 +4,7 @@ import type { ContextEntityTypeColumns } from '#/db/types';
 import { entityTables } from '#/entity-config';
 
 /**
- * Helper function to generate fields dynamically based on `appConfig.contextEntityTypes`,
+ * Generate fields dynamically based on `appConfig.contextEntityTypes`,
  * loops through and create references for each entity type, ensuring proper relational mapping.
  *
  * @returns A set of dynamically generated fields for context entities.

@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, ne, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -60,16 +60,13 @@ const usersRouteHandlers = app
     const baseUsersQuery =
       mode === 'shared'
         ? db
-            .selectDistinct({ ...userSelect })
-            .from(usersTable)
-            .innerJoin(
-              targetMembership,
-              and(eq(usersTable.id, targetMembership.userId), isNotNull(targetMembership.activatedAt), isNull(targetMembership.tokenId)),
-            )
-            .innerJoin(
-              requesterMembership,
-              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
-            )
+          .selectDistinct({ ...userSelect })
+          .from(usersTable)
+          .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
+          .innerJoin(
+            requesterMembership,
+            and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
+          )
         : usersBaseQuery();
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
@@ -174,7 +171,6 @@ const usersRouteHandlers = app
         and(
           eq(membershipsTable.userId, targetUser.id),
           eq(membershipsTable.contextType, 'organization'),
-          isNotNull(membershipsTable.activatedAt),
           inArray(membershipsTable.organizationId, requesterOrgIds),
         ),
       )

@@ -9,6 +9,7 @@ import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { encodeLowerCased } from './oslo';
 
 type BaseProps = {
   ctx: Context<Env>;
@@ -30,11 +31,14 @@ type BaseProps = {
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
 export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true, redirectPath }: BaseProps): Promise<TokenModel> => {
+  // Hash token
+  const hashedToken = encodeLowerCased(token);
+
   // Get token record that matches (possibly invoked) token
   let [tokenRecord] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.token, token), eq(tokensTable.type, tokenType)))
+    .where(and(eq(tokensTable.token, hashedToken), eq(tokensTable.type, tokenType)))
     .limit(1);
 
   if (!tokenRecord) throw new AppError({ status: 401, type: `${tokenType}_not_found`, severity: 'warn', redirectPath });
@@ -44,7 +48,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true,
   try {
     const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: redirectPath });
     existingSessionToken = sessionToken;
-  } catch (err) {}
+  } catch (err) { }
   if (existingSessionToken) {
     // Get user from valid session
     const { user } = await validateSession(existingSessionToken);

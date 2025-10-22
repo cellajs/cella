@@ -8,11 +8,12 @@ import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/us
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { insertMembership } from '#/modules/memberships/helpers';
+import { insertMemberships } from '#/modules/memberships/helpers';
 import { getIsoDate } from '#/utils/iso-date';
 import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 interface HandleCreateUserProps {
   newUser: InsertUserModel;
@@ -80,20 +81,19 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Update the token with the new userId
     const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();
 
-    const { entityType, role } = token;
-    // Validate if the token has an entityType and role (must be a membership invite)
-    if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
+    const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.tokenId, tokenId));
+    if (!inactiveMembership) throw new Error('No inactive memberships found for token.');
 
-    const entityIdField = appConfig.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
     // Validate if the token contains the required entity ID field
-    if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${entityType}.`);
+    if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${inactiveMembership.contextType}.`);
 
-    const entity = await resolveEntity(entityType, token[entityIdField]);
+    const entity = await resolveEntity(inactiveMembership.contextType, token[entityIdField]);
     // If the entity cannot be found, throw an error
-    if (!entity) throw new Error(`Unable to resolve entity (${entityType}) using the token's entity ID.`);
+    if (!entity) throw new Error(`Unable to resolve entity (${inactiveMembership.contextType}) using the token's entity ID.`);
 
     // Insert membership for user into entity, but not yet activated
-    await insertMembership({ userId, role, entity, tokenId });
+    await insertMemberships([{ userId, role: inactiveMembership.role, entity }]);
   } catch (error) {
     logError('Error inserting membership from token data', error);
     throw error;

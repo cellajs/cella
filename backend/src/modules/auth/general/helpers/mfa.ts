@@ -9,6 +9,7 @@ import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/coo
 import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
@@ -25,11 +26,16 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   if (!user.mfaRequired) return null;
 
   const timespan = new TimeSpan(10, 'm');
+
+  // Generate token and store hashed
+  const newToken = nanoid(40);
+  const hashedToken = encodeLowerCased(newToken);
+
   // Generate a new random token and insert it
-  const [{ token: generatedToken }] = await db
+  await db
     .insert(tokensTable)
     .values({
-      token: nanoid(40),
+      token: hashedToken,
       type: 'confirm-mfa',
       userId: user.id,
       email: user.email,
@@ -39,7 +45,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
     .returning({ token: tokensTable.token });
 
   // Set a temporary auth cookie to track confirm MFA session
-  await setAuthCookie(ctx, 'confirm-mfa', generatedToken, timespan);
+  await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);
 
   // Return the path to redirect the user to MFA authentication page
   return '/auth/mfa';

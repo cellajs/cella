@@ -1,34 +1,12 @@
 import { appConfig } from 'config';
-import { timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
-import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { organizationsTable } from './organizations';
 
 const tokenTypeEnum = appConfig.tokenTypes;
-const roleEnum = appConfig.roles.entityRoles;
-
-// Base columns for tokens table
-const baseColumns = {
-  createdAt: timestampColumns.createdAt,
-  id: varchar().primaryKey().$defaultFn(nanoid),
-  token: varchar().notNull(),
-  singleUseToken: varchar(),
-  type: varchar({ enum: tokenTypeEnum }).notNull(),
-  email: varchar().notNull(),
-  entityType: varchar({ enum: appConfig.contextEntityTypes }),
-  role: varchar({ enum: roleEnum }),
-  userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-  oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'set null' }),
-  createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-  expiresAt: timestampColumns.expiresAt,
-  invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
-};
-
-// Generate entity id columns based on entity-config
-const additionalColumns = generateContextEntityTypeFields();
 
 /**
  * Tokens table contains tokens of different types: email verification, invitation, password reset.
@@ -36,6 +14,19 @@ const additionalColumns = generateContextEntityTypeFields();
  *
  * @link http://localhost:4000/docs#tag/tokens
  */
-export const tokensTable = generateTable('tokens', baseColumns, additionalColumns);
+export const tokensTable = pgTable('tokens', {
+  createdAt: timestampColumns.createdAt,
+  id: varchar().primaryKey().$defaultFn(nanoid),
+  token: varchar().notNull(),
+  singleUseToken: varchar(),
+  type: varchar({ enum: tokenTypeEnum }).notNull(),
+  email: varchar().notNull(),
+  userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+  oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+  organizationId: varchar().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
+  expiresAt: timestampColumns.expiresAt,
+  invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
+});
 
 export type TokenModel = typeof tokensTable.$inferSelect;
