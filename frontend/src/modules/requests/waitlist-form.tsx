@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { zCreateRequestData } from '~/api.gen/zod.gen';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { useCreateRequestMutation } from '~/modules/requests/query';
@@ -26,8 +27,8 @@ interface WaitlistFormProps {
   buttonContent?: string | React.ReactNode;
   buttonClassName?: string;
   dialog?: boolean;
-  callback?: () => void;
   className?: string;
+  callback?: (args: CallbackArgs) => void;
 }
 
 /**
@@ -55,10 +56,13 @@ export const WaitlistForm = ({ email, inputClassName, buttonContent, buttonClass
         toaster(t('common:success.waitlist_request', { appName: appConfig.name }), 'success');
 
         if (isDialog) useDialoger.getState().remove();
-        callback?.();
+        callback?.({ status: 'success' });
       },
       onError: (error) => {
-        if (callback && error.status === 409) return callback();
+        if (callback && error.status === 409) {
+          callback({ error, status: 'fail' });
+          return;
+        }
       },
     });
   };

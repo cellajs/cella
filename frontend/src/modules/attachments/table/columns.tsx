@@ -14,7 +14,7 @@ import AttachmentPreview from '~/modules/attachments/table/preview';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
-import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
@@ -187,9 +187,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             icon: TrashIcon,
             onSelect: (row) => {
               const { update } = useDropdowner.getState();
-              const callback = ({ status }: CallbackArgs<Attachment[]>) => {
-                if (status) useDropdowner.getState().remove();
-              };
+              const callback = () => useDropdowner.getState().remove();
 
               update({
                 content: (

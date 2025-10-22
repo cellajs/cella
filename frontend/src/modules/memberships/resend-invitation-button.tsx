@@ -3,6 +3,7 @@ import { MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type ResendInvitationWithTokenData, type ResendInvitationWithTokenResponse, resendInvitationWithToken } from '~/api.gen';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -12,7 +13,7 @@ type ResendButtonPrpos = {
   resendData: ResendInvitationWithTokenData['body'];
   buttonProps?: ButtonProps;
   wrapperClassName?: string;
-  callback?: () => void;
+  callback?: (args: CallbackArgs) => void;
 };
 
 /**
@@ -27,10 +28,16 @@ export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonPro
     onSuccess: () => {
       useDialoger.getState().remove();
       toaster(t('common:success.resend_invitation'), 'success');
-      if (callback) callback();
+      callback?.({ status: 'success' });
     },
-    onError: () => document.getElementById('reset-email-field')?.focus(),
-    onSettled: () => setTimeout(() => setDisabledResetPassword(false), 60000),
+    onError: (error) => {
+      document.getElementById('reset-email-field')?.focus();
+      callback?.({ error, status: 'fail' });
+    },
+    onSettled: () => {
+      callback?.({ status: 'settle' });
+      setTimeout(() => setDisabledResetPassword(false), 60000);
+    },
   });
 
   const resendInvitationClick = () => {
