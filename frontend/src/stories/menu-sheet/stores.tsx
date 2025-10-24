@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { UserMenu } from '~/modules/me/types';
-import { mockEmptyMenu, mockMenu, mockUser } from './mock/data';
+import { mockMenu, mockUser } from '~/stories/menu-sheet/mock/data';
 
 // Mock Navigation Store
 export interface MockNavigationStoreState {
@@ -66,7 +66,7 @@ export const createMockNavigationStore = (initialMenu: UserMenu = mockMenu) => {
         }
       },
       setSectionsDefault: () => set({ activeSections: null }),
-      clearNavigationStore: () => set({ menu: mockEmptyMenu }),
+      clearNavigationStore: () => set({ menu: {} as UserMenu }),
     })),
   );
 };

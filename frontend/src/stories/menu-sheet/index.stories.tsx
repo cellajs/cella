@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { UserMenu } from '~/modules/me/types';
 import { MockMenuSheet } from './mock';
-import { mockEmptyMenu, mockMenu } from './mock/data';
+import { mockFullMenuWithSubteams, mockMenu, mockOrganizationsAndTeamsMenu } from './mock/data';
 
 const meta: Meta<typeof MockMenuSheet> = {
   title: 'Navigation/MenuSheet',
@@ -50,17 +50,35 @@ export const Default: Story = {
 };
 
 /**
- * Empty menu state - no organizations
+ * Organizations and Teams - organizations with teams as submenu items
  */
-export const Empty: Story = {
+export const OrganizationsAndTeams: Story = {
   render: (args) => <MockMenuSheet {...args} />,
   args: {
-    initialMenu: mockEmptyMenu,
+    initialMenu: mockOrganizationsAndTeamsMenu,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Shows the empty state when user has no organizations or menu items.',
+        story: 'Shows organizations with teams as submenu items. Teams are displayed as nested items under their parent organizations.',
+      },
+    },
+  },
+};
+
+/**
+ * Full example with Organizations, Teams, and Sub-teams
+ */
+export const FullWithSubteams: Story = {
+  render: (args) => <MockMenuSheet {...args} />,
+  args: {
+    initialMenu: mockFullMenuWithSubteams,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Shows the complete menu structure with organizations, teams, and sub-teams (like Core, Frontend, Backend, UI/UX, etc.). This demonstrates the full hierarchical navigation capabilities.',
       },
     },
   },
