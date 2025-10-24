@@ -100,7 +100,14 @@ export function MockMenuSheet({ initialMenu }: MockMenuSheetProps) {
             <div className="mt-3 flex flex-col gap-1 group-data-[search=false]/menu:hidden">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
-                  <MockMenuItem key={item.id} item={item} searchResults selectedItemId={selectedItemId} onSelect={setSelectedItemId} />
+                  <MockMenuItem
+                    key={item.id}
+                    item={item}
+                    searchResults
+                    selectedItemId={selectedItemId}
+                    onSelect={setSelectedItemId}
+                    detailedMenu={detailedMenu}
+                  />
                 ))
               ) : (
                 <div className="text-sm text-muted-foreground p-2">No results found for "{searchTerm}"</div>
@@ -201,7 +208,13 @@ export function MockMenuSheet({ initialMenu }: MockMenuSheetProps) {
                         style={{ overflow: 'hidden' }}
                       >
                         {section.activeItems.map((item) => (
-                          <MockMenuItem key={item.id} item={item} selectedItemId={selectedItemId} onSelect={setSelectedItemId} />
+                          <MockMenuItem
+                            key={item.id}
+                            item={item}
+                            selectedItemId={selectedItemId}
+                            onSelect={setSelectedItemId}
+                            detailedMenu={detailedMenu}
+                          />
                         ))}
 
                         {/* Archived Section */}
@@ -229,7 +242,13 @@ export function MockMenuSheet({ initialMenu }: MockMenuSheetProps) {
                                   style={{ overflow: 'hidden' }}
                                 >
                                   {section.archivedItems.map((item) => (
-                                    <MockMenuItem key={item.id} item={item} selectedItemId={selectedItemId} onSelect={setSelectedItemId} />
+                                    <MockMenuItem
+                                      key={item.id}
+                                      item={item}
+                                      selectedItemId={selectedItemId}
+                                      onSelect={setSelectedItemId}
+                                      detailedMenu={detailedMenu}
+                                    />
                                   ))}
                                 </motion.ul>
                               )}
@@ -288,87 +307,119 @@ function MockMenuItem({
   level = 0,
   selectedItemId,
   onSelect,
+  detailedMenu,
 }: {
   item: UserMenuItem;
   searchResults?: boolean;
   level?: number;
   selectedItemId?: string | null;
   onSelect?: (id: string) => void;
+  detailedMenu?: boolean;
 }) {
   const isSubitem = !searchResults && level > 0;
   const hasSubmenu = item.submenu && item.submenu.length > 0;
+  const shouldShowSubmenu = hasSubmenu && detailedMenu;
+
+  // Check if this item or any of its descendants are selected
+  const isItemSelectedOrHasSelectedDescendant = (item: UserMenuItem, selectedId: string | null): boolean => {
+    if (item.id === selectedId) return true;
+    if (item.submenu) {
+      return item.submenu.some((subItem) => isItemSelectedOrHasSelectedDescendant(subItem, selectedId));
+    }
+    return false;
+  };
+
+  const isSelectedOrHasSelectedDescendant = selectedItemId ? isItemSelectedOrHasSelectedDescendant(item, selectedItemId) : false;
 
   return (
-    <div>
+    <li className={hasSubmenu && detailedMenu && !searchResults ? 'relative submenu-section my-1' : 'my-1'}>
       <div
         data-subitem={isSubitem}
         className={cn(
-          'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 cursor-pointer',
+          'relative group/menuItem w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground cursor-pointer',
           'data-[link-active=true]:ring-transparent active:translate-y-[.05rem] transition-all',
+          // Progressive sizing based on level starting from 14
+          `h-${Math.max(8, 14 - level * 2)}`,
+          level === 0 ? '' : 'data-[subitem=true]:h-10',
         )}
-        style={level > 0 ? { paddingLeft: `${level * 16}px` } : {}}
         onClick={() => onSelect?.(item.id)}
       >
         <span
           className={cn(
-            'absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity',
-            selectedItemId === item.id || item.submenu?.some(({ id }) => selectedItemId === id) ? 'opacity-100' : 'opacity-0',
+            'absolute left-0 w-1 rounded-lg bg-primary transition-opacity',
+            // Adjust position based on level starting from 14
+            `${level === 0 ? 'top-3 h-[calc(100%-1.5rem)]' : level === 1 ? 'top-2 h-[calc(100%-1rem)]' : 'top-1.5 h-[calc(100%-0.75rem)]'}`,
+            isSelectedOrHasSelectedDescendant ? 'opacity-100' : 'opacity-0',
           )}
         />
         <AvatarWrap
-          className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:size-6"
+          className={cn(
+            'z-1 items-center m-2 mx-3 group-hover/menuItem:font-bold group-active/menuItem:translate-y-[.05rem]',
+            // Progressive sizing based on level starting from 14
+            `text-xs size-${Math.max(4, 8 - level)} ${level > 0 ? 'mx-4 my-2' : 'm-2 mx-3'}`,
+            level === 0 ? '' : 'group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:size-6',
+          )}
           type={item.entityType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
         />
-        <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0">
+        <div
+          className={cn('truncate grow flex flex-col justify-center pr-2 text-left', level === 0 ? '' : 'group-data-[subitem=true]/menuItem:pl-0')}
+        >
           <div
             className={cn(
-              'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',
-              !searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
-              searchResults ? '' : isSubitem ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : 'sm:group-hover/menuItem:pt-[0.3rem]!',
-              'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
+              'truncate transition-spacing group-hover/menuItem:delay-300 duration-100 ease-in-out',
+              // Progressive text sizing based on level starting from 14
+              `${level === 0 ? 'leading-5 text-md pt-2.5' : level === 1 ? 'leading-4 text-sm pt-2' : 'leading-3 text-xs pt-1.5'}`,
+              searchResults ? '' : level === 0 ? 'sm:group-hover/menuItem:pt-[0.3rem]!' : level === 1 ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : '',
+              level === 0 ? '' : 'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
             )}
           >
             {item.name}
           </div>
-          <div className="text-muted-foreground text-xs">
+          <div
+            className={cn(
+              'text-muted-foreground transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100 opacity-0',
+              // Progressive text sizing for subtitle based on level starting from 14
+              `${level === 0 ? 'text-xs' : level === 1 ? 'text-xs' : 'text-xs'}`,
+            )}
+          >
             {searchResults && (
               <span>
                 {item.entityType}
-                <span className="transition-opacity duration-100 ease-in-out opacity-0 group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100 mx-2">
-                  ·
-                </span>
+                <span className="mx-2">·</span>
               </span>
             )}
-            <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100">
-              {item.membership.role}
+            <span>
+              {item.submenu?.length
+                ? `${item.submenu?.length} ${item.submenu?.length > 1 ? `${item.submenu[0].entityType}s` : item.submenu[0].entityType}`
+                : item.membership.role
+                  ? item.membership.role
+                  : ''}
             </span>
-            {hasSubmenu && !searchResults && <span className="ml-2 opacity-50">{item.submenu?.length} items</span>}
           </div>
         </div>
-        {hasSubmenu && !searchResults && (
-          <ChevronDownIcon size={16} className="mr-3 opacity-50 transition-transform group-hover/menuItem:opacity-100" />
-        )}
       </div>
 
       {/* Render submenu items */}
-      {hasSubmenu && !searchResults && (
-        <div className="ml-4 border-l border-border/30 pl-2">
+      {shouldShowSubmenu && !searchResults && (
+        <ul>
           {item.submenu?.map((subItem) => (
-            <MockMenuItem
-              key={subItem.id}
-              item={subItem}
-              searchResults={searchResults}
-              level={level + 1}
-              selectedItemId={selectedItemId}
-              onSelect={onSelect}
-            />
+            <li key={subItem.id}>
+              <MockMenuItem
+                item={subItem}
+                searchResults={searchResults}
+                level={level + 1}
+                selectedItemId={selectedItemId}
+                onSelect={onSelect}
+                detailedMenu={detailedMenu}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </div>
+    </li>
   );
 }
 
