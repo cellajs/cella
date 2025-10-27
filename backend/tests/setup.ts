@@ -21,6 +21,7 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { db } from '#/db/db';
 import { appConfig } from 'config';
+import { Context, Next } from 'hono';
 
 /**
  * Types
@@ -49,6 +50,7 @@ export async function getAuthApp() {
   .route('/auth', authPasskeysRouteHandlers)
   .route('/auth', authOAuthRouteHandlers)
 }
+
 
 /**
  * Mock the global fetch request to avoid actual network calls during tests.
@@ -106,6 +108,46 @@ export async function clearDatabase() {
   await db.delete(oauthAccountsTable);
   await db.delete(emailsTable);
   await db.delete(usersTable);
+}
+
+/**
+ * Mock rate limiter to avoid 429 errors in tests.
+ */
+export function mockRateLimiter() {
+  vi.mock('#/middlewares/rate-limiter/core', () => ({
+    rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
+      await next();
+    }),
+    defaultOptions: {
+      tableName: 'rate_limits',
+      points: 10,
+      duration: 60 * 60,
+      blockDuration: 60 * 30,
+    },
+    slowOptions: {
+      tableName: 'rate_limits',
+      points: 100,
+      duration: 60 * 60 * 24,
+      blockDuration: 60 * 60 * 3,
+    },
+  }));
+}
+
+
+
+
+/**
+ * Mock Arctic library functions
+ */
+export function mockArcticLibrary() {
+  vi.mock('arctic', async () => {
+    const actual = await vi.importActual('arctic');
+    return {
+      ...actual,
+      generateState: () => 'mock-state-' + Math.random().toString(36).substring(7),
+      generateCodeVerifier: () => 'mock-code-verifier-' + Math.random().toString(36).substring(7),
+    };
+  });
 }
 
 /**

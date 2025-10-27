@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
+import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
@@ -11,7 +11,8 @@ import { mockUser, mockEmail } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { nanoid } from '#/utils/nanoid';
 import { appConfig } from 'config';
-import { Context, Next } from 'hono';
+import { ErrorResponse, parseResponse } from '../test-utils';
+
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -23,23 +24,7 @@ beforeAll(async () => {
   await migrateDatabase();
 
   // Mock rate limiter to avoid 429 errors in tests
-  vi.mock('#/middlewares/rate-limiter/core', () => ({
-    rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
-      await next();
-    }),
-    defaultOptions: {
-      tableName: 'rate_limits',
-      points: 10,
-      duration: 60 * 60,
-      blockDuration: 60 * 30,
-    },
-    slowOptions: {
-      tableName: 'rate_limits',
-      points: 100,
-      duration: 60 * 60 * 24,
-      blockDuration: 60 * 60 * 3,
-    },
-  }));
+  mockRateLimiter();
 });
 
 afterEach(async () => {
@@ -47,11 +32,11 @@ afterEach(async () => {
   vi.clearAllMocks();
 });
 
-describe('passkey sign-in tests', async () => {
+describe('Passkey Authentication', async () => {
   const app = await getAuthApp();
   const client = testClient(app);
 
-  describe('passkey challenge generation', () => {
+  describe('Challenge Generation', () => {
     it('should generate challenge for authentication', async () => {
       // Create user with passkey
       const userRecord = mockUser({ email: signUpUser.email });
@@ -137,7 +122,7 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(403);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('form.custom');
     });
 
@@ -148,12 +133,12 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(403);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('form.invalid_union');
     });
   });
 
-  describe('passkey verification', () => {
+  describe('Passkey Verification', () => {
     it('should reject verification with missing fields', async () => {
       const res = await client['auth']['passkey-verification'].$post(
         { json: { type: 'authentication' } as any },
@@ -161,7 +146,7 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(403);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('form.invalid_type');
     });
 
@@ -181,7 +166,7 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(404);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('not_found');
     });
 
@@ -201,7 +186,7 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(404);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('not_found');
     });
 
@@ -240,7 +225,7 @@ describe('passkey sign-in tests', async () => {
     });
   });
 
-  describe('passkey configuration scenarios', () => {
+  describe('Configuration & Feature Flags', () => {
     it('should reject passkey operations when strategy is disabled', async () => {
       // Disable passkey strategy
       setTestConfig({ enabledAuthStrategies: ['password'] });
@@ -293,7 +278,7 @@ describe('passkey sign-in tests', async () => {
       // The endpoint should either reject with forbidden_strategy or succeed if mocking interferes
       expect([400, 204]).toContain(res.status);
       if (res.status === 400) {
-        const error = await res.json() as { type: string };
+        const error = await parseResponse<ErrorResponse>(res);
         expect(error.type).toBe('forbidden_strategy');
       }
       
@@ -314,7 +299,7 @@ describe('passkey sign-in tests', async () => {
     });
   });
 
-  describe('passkey security scenarios', () => {
+  describe('Security & Input Validation', () => {
     it('should handle very long credential ID', async () => {
       const res = await client['auth']['passkey-verification'].$post(
         { 
@@ -331,7 +316,7 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(404);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('not_found');
     });
 
@@ -351,7 +336,7 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(404);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('not_found');
     });
 
@@ -371,12 +356,12 @@ describe('passkey sign-in tests', async () => {
       );
 
       expect(res.status).toBe(404);
-      const error = await res.json() as { type: string };
+      const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('not_found');
     });
   });
 
-  describe('passkey integration scenarios', () => {
+  describe('Integration & Edge Cases', () => {
     it('should handle multiple passkeys for user', async () => {
       // Create user
       const userRecord = mockUser({ email: signUpUser.email });
@@ -448,7 +433,7 @@ describe('passkey sign-in tests', async () => {
     });
   });
 
-  describe('successful passkey authentication', () => {
+  describe('Successful Authentication', () => {
     it('should authenticate successfully with valid passkey', async () => {
       // Create user with passkey
       const userRecord = mockUser({ email: signUpUser.email });

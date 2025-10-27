@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { clearDatabase, getAuthApp, migrateDatabase, setTestConfig } from '../setup';
+import { clearDatabase, getAuthApp, migrateDatabase, mockArcticLibrary, mockRateLimiter, setTestConfig } from '../setup';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
@@ -11,17 +11,10 @@ import { mockUser, mockEmail } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { nanoid } from '#/utils/nanoid';
 import { appConfig } from 'config';
-import { Context, Next } from 'hono';
 
-// Mock Arctic library functions
-vi.mock('arctic', async () => {
-  const actual = await vi.importActual('arctic');
-  return {
-    ...actual,
-    generateState: () => 'mock-state-' + Math.random().toString(36).substring(7),
-    generateCodeVerifier: () => 'mock-code-verifier-' + Math.random().toString(36).substring(7),
-  };
-});
+
+
+mockArcticLibrary()
 
 // Mock cookies storage for OAuth state handling
 const mockCookies = new Map<string, string>();
@@ -34,23 +27,7 @@ setTestConfig({
 
 beforeAll(async () => {
   // Mock rate limiter to avoid 429 errors in tests
-  vi.mock('#/middlewares/rate-limiter/core', () => ({
-    rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
-      await next();
-    }),
-    defaultOptions: {
-      tableName: 'rate_limits',
-      points: 10,
-      duration: 60 * 60,
-      blockDuration: 60 * 30,
-    },
-    slowOptions: {
-      tableName: 'rate_limits',
-      points: 100,
-      duration: 60 * 60 * 24,
-      blockDuration: 60 * 60 * 3,
-    },
-  }));
+  mockRateLimiter();
 
   // Mock fetch for OAuth API calls
   globalThis.fetch = vi.fn().mockImplementation((input) => {
@@ -259,11 +236,11 @@ afterEach(async () => {
   mockCookies.clear();
 });
 
-describe('OAuth sign-in tests', async () => {
+describe('OAuth Authentication', async () => {
   const app = await getAuthApp();
   const client = testClient(app);
 
-  describe('OAuth initiation', () => {
+  describe('OAuth Flow Initiation', () => {
     it('should initiate GitHub OAuth flow', async () => {
       const res = await client['auth']['github'].$get(
         { query: { type: 'auth' } },
@@ -326,7 +303,7 @@ describe('OAuth sign-in tests', async () => {
     });
   });
 
-  describe('OAuth callback - new user', () => {
+  describe('OAuth Callback - New User Registration', () => {
     it('should create new user and session for GitHub callback', async () => {
       // Use unique email for this test to avoid conflicts
       const uniqueEmail = `github-test-${Date.now()}@cella.com`;
@@ -530,7 +507,7 @@ describe('OAuth sign-in tests', async () => {
     });
   });
 
-  describe('OAuth callback - existing user', () => {
+  describe('OAuth Callback - Existing User Sign-In', () => {
     it('should sign in existing user with linked OAuth account', async () => {
       // Create user with the same email that the OAuth mock returns
       const userEmail = 'github-user@cella.com';
@@ -620,7 +597,7 @@ describe('OAuth sign-in tests', async () => {
     });
   });
 
-  describe('OAuth callback error scenarios', () => {
+  describe('OAuth Callback Error Handling', () => {
     it('should reject callback with invalid state', async () => {
       const res = await client['auth']['github']['callback'].$get(
         { 
@@ -684,7 +661,7 @@ describe('OAuth sign-in tests', async () => {
     });
   });
 
-  describe('OAuth security scenarios', () => {
+  describe('Security & Input Validation', () => {
     it('should handle XSS attempt in redirect parameter', async () => {
       const xssRedirect = '<script>alert("xss")</script>';
       const res = await client['auth']['github'].$get(
@@ -731,7 +708,7 @@ describe('OAuth sign-in tests', async () => {
     });
   });
 
-  describe('OAuth integration scenarios', () => {
+  describe('Integration & Edge Cases', () => {
     it('should handle OAuth flow with MFA enabled user', async () => {
       // Create user with MFA enabled
       const userEmail = 'github-user@cella.com';

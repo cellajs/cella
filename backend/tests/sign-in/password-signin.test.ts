@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createUser, getUserByEmail } from '../helpers';
-import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
+
+import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
@@ -11,7 +11,15 @@ import { eq } from 'drizzle-orm';
 import { mockUser, mockEmail, mockPassword } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { appConfig } from 'config';
-import { Context, Next } from 'hono';
+import { 
+  AuthResponse,
+  createPasswordUser, 
+  enableMFAForUser, 
+  ErrorResponse, 
+  parseResponse, 
+  verifyUserEmail, 
+} from '../test-utils';
+
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
@@ -28,41 +36,22 @@ beforeAll(async () => {
   }));
 
   // Mock rate limiter to avoid 429 errors in tests
-  vi.mock('#/middlewares/rate-limiter/core', () => ({
-    rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
-      await next();
-    }),
-    defaultOptions: {
-      tableName: 'rate_limits',
-      points: 10,
-      duration: 60 * 60,
-      blockDuration: 60 * 30,
-    },
-    slowOptions: {
-      tableName: 'rate_limits',
-      points: 100,
-      duration: 60 * 60 * 24,
-      blockDuration: 60 * 60 * 3,
-    },
-  }));
+  mockRateLimiter();
 });
 
 afterEach(async () => {
   await clearDatabase();
 });
 
-describe('password sign-in tests', async () => {
+describe('Password Authentication', async () => {
   const app = await getAuthApp();
   const client = testClient(app);
 
-  describe('successful signin scenarios', () => {
+  describe('Successful Authentication', () => {
     it('should sign in with valid credentials and verified email', async () => {
       // Create and verify a user
-      await createUser(signUpUser.email, signUpUser.password);
-      await db
-        .update(emailsTable)
-        .set({ verified: true })
-        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
+      await createPasswordUser(signUpUser.email, signUpUser.password);
+      await verifyUserEmail(signUpUser.email);
 
       const res = await client['auth']['sign-in'].$post(
         { json: signUpUser },
@@ -70,7 +59,7 @@ describe('password sign-in tests', async () => {
       );
 
       expect(res.status).toBe(200);
-      const response = await res.json() as { shouldRedirect: boolean; redirectPath?: string };
+      const response = await parseResponse<AuthResponse>(res);
       expect(response.shouldRedirect).toBe(false);
       
       // Check session cookie is set
@@ -80,56 +69,26 @@ describe('password sign-in tests', async () => {
     });
 
     it('should redirect to email verification for unverified email', async () => {
-      // Create user without verifying email - we need to manually create unverified email
-      const { hashPassword } = await import('#/modules/auth/passwords/helpers/argon2id');
-      const { mockPassword } = await import('../../mocks/basic');
-      const hashed = await hashPassword(signUpUser.password);
-      const userRecord = mockUser({ email: signUpUser.email });
-      const [user] = await db
-        .insert(usersTable)
-        .values(userRecord)
-        .returning();
-
-      // Create password record
-      const passwordRecord = mockPassword(user, hashed);
-      await db.insert(passwordsTable).values(passwordRecord);
-
-      // Create UNVERIFIED email record
-      await db
-        .insert(emailsTable)
-        .values({
-          email: user.email,
-          userId: user.id,
-          verified: false,
-          verifiedAt: null,
-          createdAt: pastIsoDate(),
-        });
+      // Create user without verifying email
+      await createPasswordUser(signUpUser.email, signUpUser.password, false);
 
       const res = await client['auth']['sign-in'].$post(
         { json: signUpUser },
         { headers: defaultHeaders },
       );
 
+
       expect(res.status).toBe(200);
-      const response = await res.json() as { shouldRedirect: boolean; redirectPath?: string };
+      const response = await parseResponse<AuthResponse>(res);
       expect(response.shouldRedirect).toBe(true);
       expect(response.redirectPath).toBe('/auth/email-verification/signin');
     });
 
     it('should redirect to MFA when user has MFA enabled', async () => {
       // Create user with MFA enabled
-      await createUser(signUpUser.email, signUpUser.password);
-      await db
-        .update(emailsTable)
-        .set({ verified: true })
-        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
-      
-      // Enable MFA for the user
-      const [user] = await getUserByEmail(signUpUser.email);
-      await db
-        .update(usersTable)
-        .set({ mfaRequired: true })
-        .where(eq(usersTable.id, user.id));
+      const user = await createPasswordUser(signUpUser.email, signUpUser.password);
+      await verifyUserEmail(signUpUser.email);
+      await enableMFAForUser(user.id);
 
       const res = await client['auth']['sign-in'].$post(
         { json: signUpUser },
@@ -137,18 +96,15 @@ describe('password sign-in tests', async () => {
       );
 
       expect(res.status).toBe(200);
-      const response = await res.json() as { shouldRedirect: boolean; redirectPath?: string };
+      const response = await parseResponse<AuthResponse>(res);
       expect(response.shouldRedirect).toBe(true);
       expect(response.redirectPath).toBe('/auth/mfa');
     });
 
     it('should handle case-insensitive email signin', async () => {
       // Create user with lowercase email
-      await createUser(signUpUser.email, signUpUser.password);
-      await db
-        .update(emailsTable)
-        .set({ verified: true })
-        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
+      await createPasswordUser(signUpUser.email, signUpUser.password);
+      await verifyUserEmail(signUpUser.email);
 
       // Try signin with uppercase email
       const uppercaseEmail = {
@@ -162,17 +118,14 @@ describe('password sign-in tests', async () => {
       );
 
       expect(res.status).toBe(200);
-      const response = await res.json() as { shouldRedirect: boolean; redirectPath?: string };
+      const response = await parseResponse<AuthResponse>(res);
       expect(response.shouldRedirect).toBe(false);
     });
 
     it('should handle email with leading/trailing spaces', async () => {
       // Create user
-      await createUser(signUpUser.email, signUpUser.password);
-      await db
-        .update(emailsTable)
-        .set({ verified: true })
-        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
+      await createPasswordUser(signUpUser.email, signUpUser.password);
+      await verifyUserEmail(signUpUser.email);
 
       // Try signin with spaces in email - this might fail due to email validation
       const emailWithSpaces = {
@@ -188,24 +141,21 @@ describe('password sign-in tests', async () => {
       // The email validation might reject spaces, so let's check what actually happens
       if (res.status === 403) {
         // This is expected if email validation is strict
-        const error = await res.json() as { type: string };
+        const error = await parseResponse<ErrorResponse>(res);
         expect(error.type).toBe('form.invalid_format');
       } else {
         // If it passes validation, it should work
         expect(res.status).toBe(200);
-        const response = await res.json() as { shouldRedirect: boolean; redirectPath?: string };
+        const response = await parseResponse<AuthResponse>(res);
         expect(response.shouldRedirect).toBe(false);
       }
     });
   });
 
-  describe('error scenarios', () => {
+  describe('Authentication Errors', () => {
     it('should reject signin with wrong password', async () => {
-      await createUser(signUpUser.email, signUpUser.password);
-      await db
-        .update(emailsTable)
-        .set({ verified: true })
-        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
+      await createPasswordUser(signUpUser.email, signUpUser.password);
+      await verifyUserEmail(signUpUser.email);
 
       const wrongPassword = {
         email: signUpUser.email,
@@ -218,7 +168,7 @@ describe('password sign-in tests', async () => {
       );
 
       expect(res.status).toBe(403);
-      const error = await res.json() as { type: string };
+      const error = await  parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('invalid_password');
     });
 
@@ -272,7 +222,7 @@ describe('password sign-in tests', async () => {
       );
 
       expect(res.status).toBe(403); // Zod validation errors return 403
-      const error = await res.json() as { type: string };
+      const error = await  parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('form.invalid_format');
     });
 
@@ -288,7 +238,7 @@ describe('password sign-in tests', async () => {
       );
 
       expect(res.status).toBe(403); // Zod validation errors return 403
-      const error = await res.json() as { type: string };
+      const error = await  parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('form.too_small');
     });
 
@@ -307,7 +257,7 @@ describe('password sign-in tests', async () => {
     });
   });
 
-  describe('security scenarios', () => {
+  describe('Security & Input Validation', () => {
     it('should handle XSS attempt in email field', async () => {
       const xssAttempt = {
         email: '<script>alert("xss")</script>@cella.com',
@@ -367,7 +317,7 @@ describe('password sign-in tests', async () => {
     });
   });
 
-  describe('configuration scenarios', () => {
+  describe('Configuration & Feature Flags', () => {
     it('should reject signin when password strategy is disabled', async () => {
       // Temporarily disable password strategy
       setTestConfig({ enabledAuthStrategies: [] });
@@ -389,7 +339,7 @@ describe('password sign-in tests', async () => {
     });
   });
 
-  describe('integration scenarios', () => {
+  describe('Integration & Edge Cases', () => {
     it('should handle signin after email verification', async () => {
       // Create unverified user
       const { hashPassword } = await import('#/modules/auth/passwords/helpers/argon2id');
@@ -445,11 +395,8 @@ describe('password sign-in tests', async () => {
 
     it('should maintain session integrity across multiple requests', async () => {
       // Create and verify user
-      await createUser(signUpUser.email, signUpUser.password);
-      await db
-        .update(emailsTable)
-        .set({ verified: true })
-        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
+      await createPasswordUser(signUpUser.email, signUpUser.password);
+      await verifyUserEmail(signUpUser.email);
 
       // Sign in
       const signinRes = await client['auth']['sign-in'].$post(
