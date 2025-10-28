@@ -21,7 +21,6 @@ const mockCookies = new Map<string, string>();
 setTestConfig({
   enabledAuthStrategies: ['oauth'],
   enabledOAuthProviders: ['github', 'google', 'microsoft'],
-  registrationEnabled: true,
 });
 
 beforeAll(async () => {
@@ -203,31 +202,6 @@ describe('OAuth Authentication', async () => {
       expect(location).toContain('error=unsupported_oaut');
 
       setTestConfig({ enabledOAuthProviders: ['github', 'google', 'microsoft'] });
-    });
-  });
-
-  describe('OAuth Callback - New User Registration', () => {
-    it('should reject OAuth when registration is disabled', async () => {
-      // Disable registration
-      setTestConfig({ registrationEnabled: false });
-
-      // First initiate OAuth to set up the state cookie
-      const initiateRes = await client['auth']['github'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
-      expect(initiateRes.status).toBe(302);
-
-      // Extract state from the location URL or use a mock state
-      const state = 'mock-state-test';
-      // Set up the state cookie manually for the test
-      mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
-
-      const res = await client['auth']['github']['callback'].$get({ query: { state, code: 'mock-auth-code' } }, { headers: defaultHeaders });
-
-      expect(res.status).toBe(302);
-
-      const location = res.headers.get('location');
-      expect(location).toContain('error=sign_up_restricted');
-
-      setTestConfig({ registrationEnabled: true });
     });
   });
 

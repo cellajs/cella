@@ -27,7 +27,7 @@ import { usersTable } from '#/db/schema/users';
 /**
  * Types
  */
-type AuthStrategy = 'password' | 'passkey' | 'oauth';
+type AuthStrategy = 'password' | 'passkey' | 'oauth' | 'totp';
 
 type ConfigOverride = {
   enabledAuthStrategies?: AuthStrategy[];
@@ -130,6 +130,17 @@ export function mockRateLimiter() {
       duration: 60 * 60 * 24,
       blockDuration: 60 * 60 * 3,
     },
+  }));
+}
+
+/**
+ * Mock CSRF middleware to avoid CSRF errors in tests.
+ */
+export function mockCsrf() {
+  vi.mock('hono/csrf', () => ({
+    csrf: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
+      await next();
+    }),
   }));
 }
 

@@ -24,10 +24,7 @@ const newPasskeyRecord = (userId: string, nameOnDevice = 'Test Device') => ({
   createdAt: pastIsoDate(),
 });
 
-setTestConfig({
-  enabledAuthStrategies: ['passkey'],
-  registrationEnabled: true,
-});
+setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 beforeAll(async () => {
   mockFetchRequest();

@@ -12,10 +12,7 @@ import { defaultHeaders, signUpUser } from '../fixtures';
 import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 import { AuthResponse, createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../test-utils';
 
-setTestConfig({
-  enabledAuthStrategies: ['password'],
-  registrationEnabled: true,
-});
+setTestConfig({ enabledAuthStrategies: ['password'] });
 
 beforeAll(async () => {
   mockFetchRequest();
