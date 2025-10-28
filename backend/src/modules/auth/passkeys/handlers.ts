@@ -20,8 +20,6 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authPasskeysRouteHandlers = app
@@ -131,7 +129,7 @@ const authPasskeysRouteHandlers = app
     // Define strategy and session type for metadata/logging purposes
     const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
-    if (type === 'authentication' && !enabledStrategies.includes(meta.strategy)) {
+    if (type === 'authentication' && !appConfig.enabledAuthStrategies.includes(meta.strategy)) {
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta });
     }
 

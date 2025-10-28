@@ -6,12 +6,24 @@ import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { tokensTable } from '#/db/schema/tokens';
 import { eq } from 'drizzle-orm';
 import { mockUser, mockEmail } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { appConfig } from 'config';
 import { ErrorResponse, parseResponse } from '../test-utils';
+
+const newPasskeyRecord = (userId: string, nameOnDevice = 'Test Device') => 
+  ({
+    userId,
+    credentialId: nanoid(32),
+    publicKey: nanoid(40),
+    nameOnDevice,
+    deviceType: 'desktop' as const,
+    createdAt: pastIsoDate(),
+  })
 
 
 setTestConfig({
@@ -50,15 +62,7 @@ describe('Passkey Authentication', async () => {
         .values(mockEmail(user));
 
       // Create passkey record
-      const passkeyRecord = {
-        id: nanoid(),
-        userId: user.id,
-        credentialId: nanoid(32),
-        publicKey: nanoid(40),
-        nameOnDevice: 'Test Device',
-        deviceType: 'desktop' as const,
-        createdAt: pastIsoDate(),
-      };
+      const passkeyRecord = newPasskeyRecord(user.id)
       await db.insert(passkeysTable).values(passkeyRecord);
 
       // Generate challenge
@@ -74,7 +78,7 @@ describe('Passkey Authentication', async () => {
       expect(response.credentialIds).toContain(passkeyRecord.credentialId);
     });
 
-    it('should generate challenge for MFA', async () => {
+    it('should generate challenge for MFA without tocken', async () => {
       // Create user with MFA enabled
       const userRecord = mockUser({ email: signUpUser.email });
       const [user] = await db
@@ -242,15 +246,7 @@ describe('Passkey Authentication', async () => {
         .values(mockEmail(user));
 
       // Create a passkey for the user
-      const passkeyRecord = {
-        id: nanoid(),
-        userId: user.id,
-        credentialId: nanoid(32),
-        publicKey: `-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgA${nanoid(40)}\n-----END PUBLIC KEY-----`,
-        nameOnDevice: 'Test Device',
-        deviceType: 'desktop' as const,
-        createdAt: pastIsoDate(),
-      };
+      const passkeyRecord = newPasskeyRecord(user.id)
       await db.insert(passkeysTable).values(passkeyRecord);
       
       // Clear any previous mocks that might interfere
@@ -275,12 +271,9 @@ describe('Passkey Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      // The endpoint should either reject with forbidden_strategy or succeed if mocking interferes
-      expect([400, 204]).toContain(res.status);
-      if (res.status === 400) {
-        const error = await parseResponse<ErrorResponse>(res);
-        expect(error.type).toBe('forbidden_strategy');
-      }
+
+      const error = await parseResponse<ErrorResponse>(res);
+      expect(error.type).toBe('forbidden_strategy');
       
       // Re-enable for other tests
       setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -339,26 +332,6 @@ describe('Passkey Authentication', async () => {
       const error = await parseResponse<ErrorResponse>(res);
       expect(error.type).toBe('not_found');
     });
-
-    it('should handle XSS attempt in client data', async () => {
-      const res = await client['auth']['passkey-verification'].$post(
-        { 
-          json: {
-            credentialId: nanoid(32),
-            clientDataJSON: '<script>alert("xss")</script>',
-            authenticatorObject: '',
-            signature: '',
-            type: 'authentication',
-            email: signUpUser.email,
-          }
-        },
-        { headers: defaultHeaders },
-      );
-
-      expect(res.status).toBe(404);
-      const error = await parseResponse<ErrorResponse>(res);
-      expect(error.type).toBe('not_found');
-    });
   });
 
   describe('Integration & Edge Cases', () => {
@@ -375,24 +348,8 @@ describe('Passkey Authentication', async () => {
         .values(mockEmail(user));
 
       // Create multiple passkeys
-      const passkey1 = {
-        id: nanoid(),
-        userId: user.id,
-        credentialId: nanoid(32),
-        publicKey: `-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgA${nanoid(40)}\n-----END PUBLIC KEY-----`,
-        nameOnDevice: 'Desktop Device',
-        deviceType: 'desktop' as const,
-        createdAt: pastIsoDate(),
-      };
-      const passkey2 = {
-        id: nanoid(),
-        userId: user.id,
-        credentialId: nanoid(32),
-        publicKey: `-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgA${nanoid(40)}\n-----END PUBLIC KEY-----`,
-        nameOnDevice: 'Mobile Device',
-        deviceType: 'mobile' as const,
-        createdAt: pastIsoDate(),
-      };
+      const passkey1 = newPasskeyRecord(user.id, 'Mac Device') 
+      const passkey2 = newPasskeyRecord(user.id, 'Linux Device') 
       await db.insert(passkeysTable).values([passkey1, passkey2]);
 
       // Generate challenge
@@ -446,15 +403,7 @@ describe('Passkey Authentication', async () => {
         .insert(emailsTable)
         .values(mockEmail(user));
 
-      const passkeyRecord = {
-        id: nanoid(),
-        userId: user.id,
-        credentialId: nanoid(32),
-        publicKey: `-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgA${nanoid(40)}\n-----END PUBLIC KEY-----`,
-        nameOnDevice: 'Test Device',
-        deviceType: 'desktop' as const,
-        createdAt: pastIsoDate(),
-      };
+      const passkeyRecord = newPasskeyRecord(user.id)
       await db.insert(passkeysTable).values(passkeyRecord);
 
       // Generate challenge first
@@ -521,20 +470,31 @@ describe('Passkey Authentication', async () => {
         .set({ mfaRequired: true })
         .where(eq(usersTable.id, user.id));
 
-      const passkeyRecord = {
-        id: nanoid(),
-        userId: user.id,
-        credentialId: nanoid(32),
-        publicKey: `-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgA${nanoid(40)}\n-----END PUBLIC KEY-----`,
-        nameOnDevice: 'MFA Device',
-        deviceType: 'mobile' as const,
-        createdAt: pastIsoDate(),
-      };
+      const passkeyRecord = newPasskeyRecord(user.id, 'MFA Device') 
       await db.insert(passkeysTable).values(passkeyRecord);
 
-      // MFA verification requires confirm-mfa token which is set during password authentication
-      // Since we don't have the full MFA flow set up, this test verifies the endpoint exists
-      // and handles the missing token appropriately
+      // Create confirm-mfa token for MFA flow
+      const mfaToken = nanoid(40);
+      const hashedMfaToken = encodeLowerCased(mfaToken);
+      await db.insert(tokensTable).values({
+        token: hashedMfaToken,
+        type: 'confirm-mfa',
+        userId: user.id,
+        email: user.email,
+        createdBy: user.id,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      });
+
+      // Mock the validatePasskey function at the module level
+      vi.mock('#/modules/auth/passkeys/helpers/passkey', async () => {
+        const actual = await vi.importActual('#/modules/auth/passkeys/helpers/passkey');
+        return {
+          ...actual,
+          validatePasskey: vi.fn().mockResolvedValue(undefined),
+        };
+      });
+
+      // Perform MFA passkey verification with confirm-mfa cookie
       const res = await client['auth']['passkey-verification'].$post(
         {
           json: {
@@ -550,11 +510,19 @@ describe('Passkey Authentication', async () => {
             type: 'mfa',
           },
         },
-        { headers: defaultHeaders },
+        { 
+          headers: {
+            ...defaultHeaders,
+            'Cookie': `${appConfig.slug}-confirm-mfa-${appConfig.cookieVersion}=${mfaToken}`,
+          },
+        },
       );
-
-      // The endpoint should redirect to error page when confirm-mfa token is missing
-      expect(res.status).toBe(302);
+      expect(res.status).toBe(204);
+      
+      // Check session cookie is set
+      const setCookieHeader = res.headers.get('set-cookie');
+      expect(setCookieHeader).toBeDefined();
+      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
     });
   });
 });

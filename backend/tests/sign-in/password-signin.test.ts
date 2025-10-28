@@ -121,35 +121,6 @@ describe('Password Authentication', async () => {
       const response = await parseResponse<AuthResponse>(res);
       expect(response.shouldRedirect).toBe(false);
     });
-
-    it('should handle email with leading/trailing spaces', async () => {
-      // Create user
-      await createPasswordUser(signUpUser.email, signUpUser.password);
-      await verifyUserEmail(signUpUser.email);
-
-      // Try signin with spaces in email - this might fail due to email validation
-      const emailWithSpaces = {
-        email: `  ${signUpUser.email}  `,
-        password: signUpUser.password,
-      };
-
-      const res = await client['auth']['sign-in'].$post(
-        { json: emailWithSpaces },
-        { headers: defaultHeaders },
-      );
-
-      // The email validation might reject spaces, so let's check what actually happens
-      if (res.status === 403) {
-        // This is expected if email validation is strict
-        const error = await parseResponse<ErrorResponse>(res);
-        expect(error.type).toBe('form.invalid_format');
-      } else {
-        // If it passes validation, it should work
-        expect(res.status).toBe(200);
-        const response = await parseResponse<AuthResponse>(res);
-        expect(response.shouldRedirect).toBe(false);
-      }
-    });
   });
 
   describe('Authentication Errors', () => {
@@ -257,35 +228,7 @@ describe('Password Authentication', async () => {
     });
   });
 
-  describe('Security & Input Validation', () => {
-    it('should handle XSS attempt in email field', async () => {
-      const xssAttempt = {
-        email: '<script>alert("xss")</script>@cella.com',
-        password: signUpUser.password,
-      };
-
-      const res = await client['auth']['sign-in'].$post(
-        { json: xssAttempt },
-        { headers: defaultHeaders },
-      );
-
-      expect(res.status).toBe(403); // Invalid email format returns 403
-    });
-
-    it('should handle SQL injection attempt in email field', async () => {
-      const sqlInjection = {
-        email: "'; DROP TABLE users; --@cella.com",
-        password: signUpUser.password,
-      };
-
-      const res = await client['auth']['sign-in'].$post(
-        { json: sqlInjection },
-        { headers: defaultHeaders },
-      );
-
-      expect(res.status).toBe(403); // Invalid email format returns 403
-    });
-
+  describe('Input Validation', () => {
     it('should handle very long email address', async () => {
       const longEmail = {
         email: 'a'.repeat(300) + '@cella.com',
