@@ -1,30 +1,27 @@
+import { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { usersTable } from '#/db/schema/users';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
-import { eq } from 'drizzle-orm';
-import { mockUser, mockPassword } from '../mocks/basic';
-import { pastIsoDate } from '../mocks/utils';
+import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { z } from '@hono/zod-openapi';
 import { apiErrorSchema } from '#/utils/schema/error';
 import { redirectResponseSchema } from '#/utils/schema/responses';
+import { mockPassword, mockUser } from '../mocks/basic';
+import { pastIsoDate } from '../mocks/utils';
 
 /**
  * Types for test responses
  */
-export type AuthResponse = z.infer<typeof redirectResponseSchema>
-export type ErrorResponse = z.infer<typeof apiErrorSchema>
+export type AuthResponse = z.infer<typeof redirectResponseSchema>;
+export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 
 /**
  * Create a user with password authentication
  */
 export async function createPasswordUser(email: string, password: string, verified: boolean = true) {
   const userRecord = mockUser({ email });
-  const [user] = await db
-    .insert(usersTable)
-    .values(userRecord)
-    .returning();
+  const [user] = await db.insert(usersTable).values(userRecord).returning();
 
   const hashed = await hashPassword(password);
   const passwordRecord = mockPassword(user, hashed);
@@ -46,22 +43,15 @@ export async function createPasswordUser(email: string, password: string, verifi
  * Enable MFA for a user
  */
 export async function enableMFAForUser(userId: string) {
-  await db
-    .update(usersTable)
-    .set({ mfaRequired: true })
-    .where(eq(usersTable.id, userId));
+  await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, userId));
 }
 
 /**
  * Verify email for a user
  */
 export async function verifyUserEmail(email: string) {
-  await db
-    .update(emailsTable)
-    .set({ verified: true, verifiedAt: pastIsoDate() })
-    .where(eq(emailsTable.email, email.toLowerCase()));
+  await db.update(emailsTable).set({ verified: true, verifiedAt: pastIsoDate() }).where(eq(emailsTable.email, email.toLowerCase()));
 }
-
 
 /**
  * Helper to parse auth response from API response

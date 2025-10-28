@@ -1,20 +1,19 @@
+import { generateCodeVerifier, generateState } from 'arctic';
+import { appConfig } from 'config';
+import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { defaultHeaders, signUpUser } from '../fixtures';
-import { clearDatabase, getAuthApp, migrateDatabase, mockArcticLibrary, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { usersTable } from '#/db/schema/users';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { eq } from 'drizzle-orm';
-import { mockUser, mockEmail } from '../../mocks/basic';
-import { pastIsoDate } from '../../mocks/utils';
-import { appConfig } from 'config';
+import { usersTable } from '#/db/schema/users';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
-import { generateCodeVerifier, generateState } from 'arctic';
+import { mockEmail, mockUser } from '../../mocks/basic';
+import { pastIsoDate } from '../../mocks/utils';
+import { defaultHeaders, signUpUser } from '../fixtures';
+import { clearDatabase, getAuthApp, migrateDatabase, mockArcticLibrary, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 
-
-mockArcticLibrary()
+mockArcticLibrary();
 
 // Mock cookies storage for OAuth state handling
 const mockCookies = new Map<string, string>();
@@ -28,12 +27,9 @@ setTestConfig({
 beforeAll(async () => {
   mockFetchRequest();
   await migrateDatabase();
-  
+
   // Mock rate limiter to avoid 429 errors in tests
   mockRateLimiter();
-
-
-
 
   // Mock OAuth providers
   vi.mock('#/modules/auth/oauth/helpers/providers', () => ({
@@ -80,7 +76,7 @@ beforeAll(async () => {
     setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
       mockCookies.set(name, stringValue);
-      
+
       // Simulate setting cookie header on response with proper naming
       const existingCookies = ctx.res.headers.get('set-cookie') || '';
       // Use the same naming convention as the real cookie helper
@@ -93,7 +89,7 @@ beforeAll(async () => {
     }),
     deleteAuthCookie: vi.fn().mockImplementation(async (ctx, name) => {
       mockCookies.delete(name);
-      
+
       // Simulate deleting cookie by setting expired cookie
       const existingCookies = ctx.res.headers.get('set-cookie') || '';
       const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
@@ -102,7 +98,7 @@ beforeAll(async () => {
     }),
   }));
 
-// Mock the session helper to set session cookies
+  // Mock the session helper to set session cookies
   vi.mock('#/modules/auth/general/helpers/session', () => ({
     setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
       const sessionToken = 'mock-session-token';
@@ -119,7 +115,7 @@ beforeAll(async () => {
 afterEach(async () => {
   await clearDatabase();
   vi.clearAllMocks();
-  
+
   // Clear mock cookies
   mockCookies.clear();
 });
@@ -130,13 +126,10 @@ describe('OAuth Authentication', async () => {
 
   describe('OAuth Flow Initiation', () => {
     it('should initiate GitHub OAuth flow', async () => {
-      const res = await client['auth']['github'].$get(
-        { query: { type: 'auth' } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['github'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
 
       const state = generateState();
-      const url = githubAuth.createAuthorizationURL(state,  ['user:email']);
+      const url = githubAuth.createAuthorizationURL(state, ['user:email']);
 
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
@@ -144,10 +137,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it('should initiate Google OAuth flow', async () => {
-      const res = await client['auth']['google'].$get(
-        { query: { type: 'auth' } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['google'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
 
       const state = generateState();
       const codeVerifier = generateCodeVerifier();
@@ -159,10 +149,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it('should initiate Microsoft OAuth flow', async () => {
-      const res = await client['auth']['microsoft'].$get(
-        { query: { type: 'auth' } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['microsoft'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
 
       const state = generateState();
       const codeVerifier = generateCodeVerifier();
@@ -175,10 +162,7 @@ describe('OAuth Authentication', async () => {
 
     it('should handle OAuth flow with redirect parameter', async () => {
       const redirectPath = '/dashboard';
-      const res = await client['auth']['github'].$get(
-        { query: { type: 'auth', redirect: redirectPath } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirect: redirectPath } }, { headers: defaultHeaders });
 
       expect(res.status).toBe(302);
       // Should set oauth-redirect cookie
@@ -193,10 +177,7 @@ describe('OAuth Authentication', async () => {
 
       // Note: Due to module caching, config changes during tests don't affect the handlers
       // This test verifies the current behavior - OAuth still initiates but may fail later
-      const res = await client['auth']['github'].$get(
-        { query: { type: 'auth' } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['github'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
 
       // Currently returns 302 as the config is cached at module load time
       expect(res.status).toBe(302);
@@ -207,16 +188,13 @@ describe('OAuth Authentication', async () => {
       setTestConfig({ enabledAuthStrategies: ['oauth'] });
     });
 
-     it('should reject OAuth when provider is disabled', async () => {
+    it('should reject OAuth when provider is disabled', async () => {
       // Disable oauth strategy
       setTestConfig({ enabledOAuthProviders: ['github'] });
 
       // Note: Due to module caching, config changes during tests don't affect the handlers
       // This test verifies the current behavior - OAuth still initiates but may fail later
-      const res = await client['auth']['google'].$get(
-        { query: { type: 'auth' } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['google'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
 
       // Currently returns 302 as the config is cached at module load time
       expect(res.status).toBe(302);
@@ -229,15 +207,12 @@ describe('OAuth Authentication', async () => {
   });
 
   describe('OAuth Callback - New User Registration', () => {
-     it('should reject OAuth when registration is disabled', async () => {
+    it('should reject OAuth when registration is disabled', async () => {
       // Disable registration
       setTestConfig({ registrationEnabled: false });
 
       // First initiate OAuth to set up the state cookie
-      const initiateRes = await client['auth']['github'].$get(
-        { query: { type: 'auth' } },
-        { headers: defaultHeaders },
-      );
+      const initiateRes = await client['auth']['github'].$get({ query: { type: 'auth' } }, { headers: defaultHeaders });
       expect(initiateRes.status).toBe(302);
 
       // Extract state from the location URL or use a mock state
@@ -245,17 +220,14 @@ describe('OAuth Authentication', async () => {
       // Set up the state cookie manually for the test
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
-      const res = await client['auth']['github']['callback'].$get(
-        { query: { state, code: 'mock-auth-code', }}, 
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['github']['callback'].$get({ query: { state, code: 'mock-auth-code' } }, { headers: defaultHeaders });
 
       expect(res.status).toBe(302);
 
       const location = res.headers.get('location');
       expect(location).toContain('error=sign_up_restricted');
 
-      setTestConfig({ registrationEnabled: true });  
+      setTestConfig({ registrationEnabled: true });
     });
   });
 
@@ -264,14 +236,9 @@ describe('OAuth Authentication', async () => {
       // Create user with the same email that the OAuth mock returns
       const userEmail = 'github-user@cella.com';
       const userRecord = mockUser({ email: userEmail });
-      const [user] = await db
-        .insert(usersTable)
-        .values(userRecord)
-        .returning();
+      const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-      await db
-        .insert(emailsTable)
-        .values(mockEmail(user));
+      await db.insert(emailsTable).values(mockEmail(user));
 
       // Create linked OAuth account
       const oauthAccount = {
@@ -289,11 +256,11 @@ describe('OAuth Authentication', async () => {
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
       const res = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state,
             code: 'mock-auth-code',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -307,14 +274,9 @@ describe('OAuth Authentication', async () => {
     it('should redirect to email verification for unverified OAuth account', async () => {
       // Create user
       const userRecord = mockUser({ email: signUpUser.email });
-      const [user] = await db
-        .insert(usersTable)
-        .values(userRecord)
-        .returning();
+      const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-      await db
-        .insert(emailsTable)
-        .values(mockEmail(user));
+      await db.insert(emailsTable).values(mockEmail(user));
 
       // Create unverified OAuth account
       const oauthAccount = {
@@ -331,10 +293,7 @@ describe('OAuth Authentication', async () => {
       // Set up the state cookie manually for the test
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
-      const res = await client['auth']['github']['callback'].$get(
-        { query: { state, code: 'mock-auth-code',} },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['github']['callback'].$get({ query: { state, code: 'mock-auth-code' } }, { headers: defaultHeaders });
 
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
@@ -345,11 +304,11 @@ describe('OAuth Authentication', async () => {
   describe('OAuth Callback Error Handling', () => {
     it('should reject callback with invalid state', async () => {
       const res = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state: 'invalid-state',
             code: 'mock-auth-code',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -366,13 +325,13 @@ describe('OAuth Authentication', async () => {
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
       const res = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state,
             code: 'error-code',
             error: 'access_denied',
             error_description: 'User denied access',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -389,11 +348,11 @@ describe('OAuth Authentication', async () => {
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
       const res = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state,
             code: '',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -407,12 +366,9 @@ describe('OAuth Authentication', async () => {
   });
 
   describe('Security & Input Validation', () => {
-   it('should handle very long redirect URL', async () => {
+    it('should handle very long redirect URL', async () => {
       const longRedirect = 'a'.repeat(2000);
-      const res = await client['auth']['github'].$get(
-        { query: { type: 'auth', redirect: longRedirect } },
-        { headers: defaultHeaders },
-      );
+      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirect: longRedirect } }, { headers: defaultHeaders });
 
       expect(res.status).toBe(302);
     });
@@ -420,11 +376,11 @@ describe('OAuth Authentication', async () => {
     it('should handle malformed state parameter', async () => {
       const malformedState = '../../etc/passwd';
       const res = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state: malformedState,
             code: 'mock-auth-code',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -442,19 +398,11 @@ describe('OAuth Authentication', async () => {
       // Create user with MFA enabled
       const userEmail = 'github-user@cella.com';
       const userRecord = mockUser({ email: userEmail });
-      const [user] = await db
-        .insert(usersTable)
-        .values(userRecord)
-        .returning();
+      const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-      await db
-        .insert(emailsTable)
-        .values(mockEmail(user));
+      await db.insert(emailsTable).values(mockEmail(user));
 
-      await db
-        .update(usersTable)
-        .set({ mfaRequired: true })
-        .where(eq(usersTable.id, user.id));
+      await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
       // Create linked OAuth account
       const oauthAccount = {
@@ -471,11 +419,11 @@ describe('OAuth Authentication', async () => {
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
       const res = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state,
             code: 'mock-auth-code',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -490,14 +438,9 @@ describe('OAuth Authentication', async () => {
       // Use the same email as the mock transformGithubUserData returns
       const userEmail = 'github-user@cella.com';
       const userRecord = mockUser({ email: userEmail });
-      const [user] = await db
-        .insert(usersTable)
-        .values(userRecord)
-        .returning();
+      const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-      await db
-        .insert(emailsTable)
-        .values(mockEmail(user));
+      await db.insert(emailsTable).values(mockEmail(user));
 
       // Create verified OAuth account with matching data
       const oauthAccount = {
@@ -515,11 +458,11 @@ describe('OAuth Authentication', async () => {
 
       // Sign in with OAuth
       const signinRes = await client['auth']['github']['callback'].$get(
-        { 
-          query: { 
+        {
+          query: {
             state,
             code: 'mock-auth-code',
-          } 
+          },
         },
         { headers: defaultHeaders },
       );
@@ -532,10 +475,7 @@ describe('OAuth Authentication', async () => {
       expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
 
       // Make authenticated request (sign-out to test session)
-      const protectedRes = await client['auth']['sign-out'].$post(
-        {},
-        { headers: {...defaultHeaders, 'Cookie': setCookieHeader || '' }},
-      );
+      const protectedRes = await client['auth']['sign-out'].$post({}, { headers: { ...defaultHeaders, Cookie: setCookieHeader || '' } });
 
       // Should succeed if session is valid (sign-out returns 204)
       expect(protectedRes.status).toBe(204);

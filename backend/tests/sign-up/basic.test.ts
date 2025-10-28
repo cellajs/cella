@@ -14,9 +14,9 @@ beforeAll(async () => {
   await migrateDatabase();
 
   // Tmp solution: Mock the sendVerificationEmail function to avoid background running tasks...
-  // Later we should only mock the email sending part, not the whole function. 
+  // Later we should only mock the email sending part, not the whole function.
   vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-    sendVerificationEmail: vi.fn().mockResolvedValue(undefined)
+    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
   }));
 });
 
@@ -29,12 +29,8 @@ describe('sign-up', async () => {
   const client = testClient(app);
 
   it('should sign up a user', async () => {
-
     // Make simple sing-up request
-    const res = await client['auth']['sign-up'].$post(
-      { json: signUpUser },
-      { headers: defaultHeaders },
-    );
+    const res = await client['auth']['sign-up'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
     // Check the response status
     expect(res.status).toBe(201);
@@ -45,10 +41,7 @@ describe('sign-up', async () => {
   });
 
   it('should fail the email check for unregistered email', async () => {
-    const res = await client['auth']['check-email'].$post(
-      { json: signUpUser },
-      { headers: defaultHeaders },
-    );
+    const res = await client['auth']['check-email'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
     expect(res.status).toBe(404);
   });
@@ -57,10 +50,7 @@ describe('sign-up', async () => {
     // Create a user with the same email
     await createUser(signUpUser.email, signUpUser.password);
 
-    const res = await client['auth']['check-email'].$post(
-      { json: signUpUser },
-      { headers: defaultHeaders },
-    );
+    const res = await client['auth']['check-email'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
     expect(res.status).toBe(204);
   });
@@ -70,10 +60,7 @@ describe('sign-up', async () => {
     await createUser(signUpUser.email, signUpUser.password);
 
     // Try to sign up again with the same email
-    const res = await client['auth']['sign-up'].$post(
-      { json: signUpUser },
-      { headers: defaultHeaders },
-    );
+    const res = await client['auth']['sign-up'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
     // Check the response status
     expect(res.status).toBe(409);

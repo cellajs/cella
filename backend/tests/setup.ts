@@ -9,19 +9,20 @@
  *
  * These functions are intended to be used in test files to keep setup DRY and consistent.
  */
-import { vi } from 'vitest';
+
 import path from 'node:path';
-import { migrate } from 'drizzle-orm/pglite/migrator';
-import { usersTable } from '#/db/schema/users';
-import { emailsTable } from '#/db/schema/emails';
-import { tokensTable } from '#/db/schema/tokens';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { passwordsTable } from '#/db/schema/passwords';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { sessionsTable } from '#/db/schema/sessions';
-import { db } from '#/db/db';
 import { appConfig } from 'config';
+import { migrate } from 'drizzle-orm/pglite/migrator';
 import { Context, Next } from 'hono';
+import { vi } from 'vitest';
+import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
+import { passkeysTable } from '#/db/schema/passkeys';
+import { passwordsTable } from '#/db/schema/passwords';
+import { sessionsTable } from '#/db/schema/sessions';
+import { tokensTable } from '#/db/schema/tokens';
+import { usersTable } from '#/db/schema/users';
 
 /**
  * Types
@@ -44,13 +45,12 @@ export async function getAuthApp() {
   const { default: authOAuthRouteHandlers } = await import('#/modules/auth/oauth/handlers');
 
   return baseApp
-  .route('/auth', authGeneralRouteHandlers)
-  .route('/auth/totps', authTotpsRouteHandlers)
-  .route('/auth', authPasswordsRouteHandlers)
-  .route('/auth', authPasskeysRouteHandlers)
-  .route('/auth', authOAuthRouteHandlers)
+    .route('/auth', authGeneralRouteHandlers)
+    .route('/auth/totps', authTotpsRouteHandlers)
+    .route('/auth', authPasswordsRouteHandlers)
+    .route('/auth', authPasskeysRouteHandlers)
+    .route('/auth', authOAuthRouteHandlers);
 }
-
 
 /**
  * Mock the global fetch request to avoid actual network calls during tests.
@@ -73,7 +73,7 @@ export function mockFetchRequest() {
         clone: () => input.clone(),
       });
     }
-    
+
     return Promise.resolve({
       ok: true,
       status: 200,
@@ -132,9 +132,6 @@ export function mockRateLimiter() {
     },
   }));
 }
-
-
-
 
 /**
  * Mock Arctic library functions

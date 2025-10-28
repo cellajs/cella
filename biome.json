@@ -2,6 +2,7 @@
   "files": {
     "includes": [
       "backend/src/**",
+      "backend/tests/**",
       "frontend/src/**",
       "frontend/storybook/**",
       "frontend/vite/**",
