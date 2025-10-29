@@ -1,7 +1,10 @@
+import { eq } from 'drizzle-orm';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { db } from '#/db/db';
+import { usersTable } from '#/db/schema/users';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createUser, getUserByEmail } from '../helpers';
+import { createPasswordUser } from '../helpers';
 import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
 
 setTestConfig({
@@ -36,7 +39,7 @@ describe('sign-up', async () => {
     expect(res.status).toBe(201);
 
     // Check if the user was created in the database
-    const [user] = await getUserByEmail(signUpUser.email);
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, signUpUser.email));
     expect(user).toBeDefined();
   });
 
@@ -48,7 +51,7 @@ describe('sign-up', async () => {
 
   it('should pass email check for an already registered email', async () => {
     // Create a user with the same email
-    await createUser(signUpUser.email, signUpUser.password);
+    await createPasswordUser(signUpUser.email, signUpUser.password);
 
     const res = await client['auth']['check-email'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
@@ -57,7 +60,7 @@ describe('sign-up', async () => {
 
   it('should not allow duplicate emails', async () => {
     // Create a user with the same email
-    await createUser(signUpUser.email, signUpUser.password);
+    await createPasswordUser(signUpUser.email, signUpUser.password);
 
     // Try to sign up again with the same email
     const res = await client['auth']['sign-up'].$post({ json: signUpUser }, { headers: defaultHeaders });

@@ -134,17 +134,6 @@ export function mockRateLimiter() {
 }
 
 /**
- * Mock CSRF middleware to avoid CSRF errors in tests.
- */
-export function mockCsrf() {
-  vi.mock('hono/csrf', () => ({
-    csrf: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
-      await next();
-    }),
-  }));
-}
-
-/**
  * Mock Arctic library functions
  */
 export function mockArcticLibrary() {

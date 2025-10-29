@@ -9,8 +9,8 @@ import { usersTable } from '#/db/schema/users';
 import { mockEmail, mockPassword, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
+import { AuthResponse, createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
 import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
-import { AuthResponse, createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['password'] });
 

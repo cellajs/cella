@@ -9,8 +9,8 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
+import { createPasswordUser, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
 import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
-import { createPasswordUser, enableMFAForUser, parseResponse, verifyUserEmail } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['password', 'totp'] });
 

@@ -12,8 +12,8 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { mockEmail, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
+import { ErrorResponse, parseResponse } from '../helpers';
 import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
-import { ErrorResponse, parseResponse } from '../test-utils';
 
 const newPasskeyRecord = (userId: string, nameOnDevice = 'Test Device') => ({
   userId,
