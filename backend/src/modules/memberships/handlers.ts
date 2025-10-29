@@ -243,6 +243,15 @@ const membershipRouteHandlers = app
         user.email,
       );
     }
+    // // Check create restrictions
+    // const [{ currentOrgMemberships }] = await db
+    //   .select({ currentOrgMemberships: count() })
+    //   .from(membershipsTable)
+    //   .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+    // const membersRestrictions = organization.restrictions.user;
+    // if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
+    //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
+    // }
 
     // Step 9: Compute and return outcome
     const invitesSentCount = noTokenRecipients.length + withTokenRecipients.length; // excludes already members
