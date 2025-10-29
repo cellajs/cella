@@ -4,13 +4,19 @@ import { appConfig } from 'config';
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type ContextEntityBaseSchema, deleteMyMembership } from '~/api.gen';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
-export type LeaveEntityButtonProps = { entity: ContextEntityBaseSchema; redirectPath?: string; buttonProps?: ButtonProps; callback?: () => void };
+export type LeaveEntityButtonProps = {
+  entity: ContextEntityBaseSchema;
+  redirectPath?: string;
+  buttonProps?: ButtonProps;
+  callback?: (args: CallbackArgs) => void;
+};
 
 export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfig.defaultRedirectPath, callback }: LeaveEntityButtonProps) => {
   const { t } = useTranslation();
@@ -32,7 +38,7 @@ export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfi
       });
 
       deleteMenuItem(entity.id);
-      callback?.();
+      callback?.({ status: 'success' });
     },
   });
 

@@ -7,7 +7,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
-import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import DeleteUsers from '~/modules/users/delete-users';
@@ -69,9 +69,7 @@ export const useColumns = () => {
               icon: TrashIcon,
               onSelect: (row) => {
                 const { update } = useDropdowner.getState();
-                const callback = ({ status }: CallbackArgs<User[]>) => {
-                  if (status) useDropdowner.getState().remove();
-                };
+                const callback = () => useDropdowner.getState().remove();
 
                 update({
                   content: (

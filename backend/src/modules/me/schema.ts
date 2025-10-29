@@ -4,10 +4,12 @@ import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/schema';
 import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
-import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
+import { contextEntityBaseSchema } from '../entities/schema-base';
+import { membershipBaseSchema } from '../memberships/schema';
+import { userBaseSchema } from '../users/schema-base';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
@@ -66,11 +68,14 @@ export const toggleMfaBodySchema = z.object({
   mfaRequired: z.boolean(),
 });
 
-export const meInvitationsSchema = z.array(
-  z.object({
-    entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
-    invitedBy: z.object({ ...userBaseSchema.shape }).nullable(),
-    membership: membershipBaseSchema,
-    expiresAt: z.string(),
-  }),
-);
+export const mePendingInvitationSchema = z.object({
+  entity: contextEntityBaseSchema,
+  membership: membershipBaseSchema.nullable(),
+  createdByUser: userBaseSchema.nullable(),
+});
+
+export const pendingMembershipSchema = z.object({
+  user: userBaseSchema.nullable(),
+  membership: membershipBaseSchema.nullable(),
+  createdByUser: userBaseSchema.nullable(),
+});

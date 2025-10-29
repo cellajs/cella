@@ -116,6 +116,7 @@
     "lucide-react": "^0.542.0",
     "motion": "^12.23.24",
     "nanoid": "^5.1.6",
+    "onedollarstats": "^0.0.9",
     "pdfjs-dist": "4.8.69",
     "player.style": "^0.3.0",
     "qrcode.react": "^4.2.0",

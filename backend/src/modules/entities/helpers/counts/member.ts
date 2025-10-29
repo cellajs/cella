@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'config';
-import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, isNotNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
@@ -25,7 +25,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
       invites: count().as('invites'),
     })
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNull(tokensTable.invokedAt)))
+    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType)))
     .groupBy(tokensTable[targetEntityIdField])
     .as('invites');
 
@@ -43,7 +43,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
     })
     .from(membershipsTable)
     .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
-    .where(and(eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
+    .where(and(eq(membershipsTable.contextType, entityType)))
     .groupBy(entityIdColumn, inviteCountSubquery.invites)
     .as('membership_counts');
 };

@@ -11,8 +11,8 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/counts';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
-import { getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
-import { insertMembership } from '#/modules/memberships/helpers';
+import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
+import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
@@ -62,10 +62,10 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
+    const [createdMembership] = await insertMemberships([{ userId: user.id, role: 'admin', entity: createdOrganization, activate: true }]);
 
     // Get default linked entities
-    const validEntities = getRelatedEntities(createdOrganization.entityType);
+    const validEntities = getAssociatedEntities(createdOrganization.entityType);
     const entitiesCountsArray = validEntities.map((entityType) => [entityType, 0]);
     const entitiesCounts = Object.fromEntries(entitiesCountsArray) as Record<(typeof validEntities)[number], number>;
     // Default member counts
@@ -113,7 +113,7 @@ const organizationRouteHandlers = app
     const membershipCountsQuery = getMemberCountsQuery(entityType);
     const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
-    const validEntities = getRelatedEntities(entityType);
+    const validEntities = getAssociatedEntities(entityType);
     const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
 
     const organizations = await db

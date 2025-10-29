@@ -17,6 +17,9 @@ export interface EmailVerificationEmailProps extends BasicTemplateType {
   email: string;
 }
 
+/**
+ * Email template for users to verify ownership of this email address.
+ */
 export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: EmailVerificationEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>

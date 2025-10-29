@@ -24,6 +24,7 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
@@ -121,9 +122,13 @@ const systemRouteHandlers = app
       return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
     }
 
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
     // 5) Create new tokens for recipients
     const tokens = recipientEmails.map((email) => ({
-      token: nanoid(40),
+      token: hashedToken,
       type: 'invitation' as const,
       email,
       createdBy: user.id,
@@ -144,11 +149,11 @@ const systemRouteHandlers = app
     );
 
     // 7) Prepare & send emails
-    const recipients = insertedTokens.map(({ email, token, type }) => ({
+    const recipients = insertedTokens.map(({ email, type }) => ({
       email,
       lng,
       name: slugFromEmail(email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${token}`,
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
     }));
     type Recipient = (typeof recipients)[number];
 
@@ -281,6 +286,7 @@ const systemRouteHandlers = app
     const replacements = new Map<string, string>();
 
     // For each unique src, fetch its signed URL
+    // TODO can we put all this in a helper folder?
     await Promise.all(
       srcs.map(async (src) => {
         try {

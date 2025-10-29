@@ -2,15 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import { tokensTable } from '#/db/schema/tokens';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
+import { userBaseSchema } from '../users/schema-base';
 
-export const membershipSchema = z.object({
-  ...createSelectSchema(membershipsTable).omit({
-    activatedAt: true,
-    tokenId: true,
-  }).shape,
-});
+export const membershipSchema = createSelectSchema(membershipsTable).openapi('MembershipSchema');
 
 export const membershipBaseSchema = membershipSchema
   .omit({
@@ -40,18 +35,18 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   role: z.enum(appConfig.roles.entityRoles).optional(),
 });
 
-export const pendingInvitationListQuerySchema = paginationQuerySchema.extend({
+export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
-  sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
+  sort: z.enum(['createdAt']).default('createdAt').optional(),
 });
 
-export const pendingInvitationSchema = createSelectSchema(tokensTable)
-  .pick({
-    id: true,
-    email: true,
-    createdAt: true,
-    createdBy: true,
-    role: true,
-  })
-  .extend({ expiresAt: z.string(), name: z.string().nullable() });
+export const pendingMembershipSchema = z.object({
+  membershipId: z.string().nullable(),
+  tokenId: z.string().nullable(),
+  email: userBaseSchema.shape.email,
+  thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
+  role: membershipSchema.shape.role.nullable(),
+  createdAt: membershipSchema.shape.createdAt,
+  createdBy: membershipSchema.shape.createdBy.nullable(),
+});

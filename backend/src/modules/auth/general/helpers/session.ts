@@ -47,7 +47,7 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
   // Get device information
   const device = deviceInfo(ctx);
 
-  // Generate session token and store the hashed version in db
+  // Generate token and store hashed
   const sessionToken = nanoid(40);
   const hashedSessionToken = encodeLowerCased(sessionToken);
 

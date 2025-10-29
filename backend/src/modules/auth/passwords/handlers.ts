@@ -22,6 +22,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
@@ -101,11 +102,7 @@ const authPasswordsRouteHandlers = app
     if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
 
     // If membership invitation, get membership to forward
-    const [invitationMembership] = await db
-      .select({ id: membershipsTable.id })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.tokenId, validToken.id))
-      .limit(1);
+    const [invitationMembership] = await db.select({ id: membershipsTable.id }).from(membershipsTable).limit(1);
 
     if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
 
@@ -131,11 +128,14 @@ const authPasswordsRouteHandlers = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password-reset')));
 
-    // TODO hash token
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: nanoid(40),
+        token: hashedToken,
         type: 'password-reset',
         userId: user.id,
         email,
@@ -146,7 +146,7 @@ const authPasswordsRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
+    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];

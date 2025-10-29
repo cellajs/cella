@@ -9,8 +9,8 @@ import { useUserDeleteMutation } from '~/modules/users/query';
 
 interface Props {
   users: User[];
-  callback?: (args: CallbackArgs<User[]>) => void;
   dialog?: boolean;
+  callback?: (args: CallbackArgs<User[]>) => void;
 }
 
 const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {

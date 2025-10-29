@@ -18,7 +18,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { UserCell } from '~/modules/users/user-cell';
 import { queryClient } from '~/query/query-client';
 import { getEntityRoute } from '~/routes-resolver';
-import { dateShort } from '~/utils/date-short';
 
 /**
  * Component to show a list of pending entity invitations for the current user
@@ -35,40 +34,33 @@ export const EntityInvitations = () => {
       await getAndSetMenu();
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
-        return oldData.filter((invite) => invite.entity.id !== settledEntity.id);
+        return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
       });
 
       toaster(t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
     },
   });
 
-  if (!invites?.length) return null;
+  if (!invites?.items.length) return null;
 
   return (
     <Card className="mt-6">
-      <CardHeader className="p-4 border-b">
+      <CardHeader>
         <CardTitle>{t('common:pending_invitations')}</CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent>
         <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-4 font-medium text-sm p-2 border-b">
-            <span>{t('common:entity')}</span>
-            <span>{t('common:invited_by')}</span>
-            <span>{t('common:expires_at')}</span>
-            <span className="ml-auto">{t('common:action')}</span>
-          </div>
           <ExpandableList
-            items={invites}
-            renderItem={({ entity, invitedBy, expiresAt, membership }) => {
+            items={invites.items}
+            renderItem={({ entity, createdByUser, membership }) => {
               const { to, params, search } = getEntityRoute({ ...entity, membership: null });
               const actionButtons = [
                 { label: t('common:accept'), variant: 'darkSuccess', action: 'accept' },
                 { label: t('common:reject'), variant: 'destructive', action: 'reject' },
               ] as const;
 
-              const isExpired = new Date(expiresAt) < new Date();
               return (
-                <div className="grid grid-cols-4 col-end- items-center gap-4 py-2">
+                <div className="flex items-center max-sm:flex-col justify-between gap-4 py-2">
                   <Link to={to} params={params} search={search} draggable="false" className="flex space-x-2 items-center outline-0 ring-0 group">
                     <AvatarWrap
                       type="organization"
@@ -81,15 +73,12 @@ export const EntityInvitations = () => {
                       {entity.name}
                     </span>
                   </Link>
-                  {invitedBy ? <UserCell user={invitedBy} tabIndex={0} /> : '-'}
-                  <span>{isExpired ? 'Expired' : dateShort(expiresAt)}</span>
+                  {createdByUser ? <UserCell user={createdByUser} tabIndex={0} /> : '-'}
 
-                  <div className="flex flex-col sm:flex-row gap-2 items-end justify-end">
-                    {/* TODO disable on expired it will auto clean by DB, or add button request invite? */}
+                  <div className="flex gap-2 w-full max-w-50">
                     {actionButtons.map(({ label, variant, action }) => (
                       <Button
-                        disabled={isExpired}
-                        className="w-[40%]"
+                        className="w-full"
                         key={action}
                         size="xs"
                         variant={variant}

@@ -6,6 +6,7 @@ import { Trans, useTranslation } from 'react-i18next';
 // import Subscription from '~/modules/organizations/subscription';
 import type { Organization } from '~/api.gen';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
@@ -36,9 +37,11 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
       <DeleteOrganizations
         dialog
         organizations={[organization]}
-        callback={() => {
-          toaster(t('common:success.delete_resource', { resource: t('common:organization') }), 'success');
-          navigate({ to: appConfig.defaultRedirectPath, replace: true });
+        callback={({ status }: CallbackArgs<Organization[]>) => {
+          if (status === 'success') {
+            toaster(t('common:success.delete_resource', { resource: t('common:organization') }), 'success');
+            navigate({ to: appConfig.defaultRedirectPath, replace: true });
+          }
         }}
       />,
       {
@@ -49,6 +52,16 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         description: t('common:confirm.delete_resource', { name: organization.name, resource: t('common:organization').toLowerCase() }),
       },
     );
+  };
+
+  const callback = (args: CallbackArgs<Organization>) => {
+    if (args.status === 'success' && idOrSlug !== args.data.slug) {
+      navigate({
+        to: '/organizations/$idOrSlug/settings',
+        params: { idOrSlug: organization.slug },
+        replace: true,
+      });
+    }
   };
 
   return (
@@ -68,18 +81,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <UpdateOrganizationForm
-                organization={organization}
-                callback={(organization) => {
-                  if (idOrSlug !== organization.slug) {
-                    navigate({
-                      to: '/organizations/$idOrSlug/settings',
-                      params: { idOrSlug: organization.slug },
-                      replace: true,
-                    });
-                  }
-                }}
-              />
+              <UpdateOrganizationForm organization={organization} callback={callback} />
             </CardContent>
           </Card>
         </AsideAnchor>
@@ -90,18 +92,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               <CardTitle>{t('common:details')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <UpdateOrganizationDetailsForm
-                organization={organization}
-                callback={(organization) => {
-                  if (idOrSlug !== organization.slug) {
-                    navigate({
-                      to: '/organizations/$idOrSlug/settings',
-                      params: { idOrSlug: organization.slug },
-                      replace: true,
-                    });
-                  }
-                }}
-              />
+              <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
             </CardContent>
           </Card>
         </AsideAnchor>

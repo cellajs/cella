@@ -20,6 +20,9 @@ export interface MemberInviteEmailProps extends BasicTemplateType {
 
 const appName = appConfig.name;
 
+/**
+ * Email template for existing users that receive a new membership invitation.
+ */
 export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, memberInviteLink }: MemberInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, entityName, appName })}>
@@ -43,10 +46,6 @@ export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, mem
         </Text>
 
         <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={memberInviteLink} />
-
-        <Text style={{ fontSize: '.85rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
-          {i18n.t('backend:email.invite_expires', { lng })}
-        </Text>
       </EmailBody>
 
       <AppLogo />
