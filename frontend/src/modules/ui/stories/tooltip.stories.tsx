@@ -87,12 +87,27 @@ export const ShouldShowOnHover: Story = {
 
     await step('hover over trigger', async () => {
       await userEvent.hover(triggerBtn);
-      await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]')).toBeVisible());
+      // Wait for tooltip to appear and be visible
+      await waitFor(
+        () => {
+          const tooltip = canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]');
+          expect(tooltip).toBeInTheDocument();
+          expect(tooltip).toBeVisible();
+        },
+        { timeout: 1000 },
+      );
     });
 
     await step('unhover trigger', async () => {
       await userEvent.unhover(triggerBtn);
-      await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]')).not.toBeVisible());
+      // Wait for tooltip to disappear (be removed from DOM or hidden)
+      await waitFor(
+        () => {
+          const tooltip = canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]');
+          expect(tooltip).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };

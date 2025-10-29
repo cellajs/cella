@@ -79,7 +79,6 @@ const viteConfig = {
       template: './index.html',
       inject: {
         data: {
-          debugDomain: process.env.NODE_ENV === 'development' && appConfig.debug ? appConfig.domain : null,
           title: appConfig.name,
           description: appConfig.description,
           keywords: appConfig.keywords,

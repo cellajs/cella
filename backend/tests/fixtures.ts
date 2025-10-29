@@ -13,4 +13,4 @@ export const defaultHeaders = {
 export const signUpUser = {
   email: 'test-user@cella.com',
   password: 'aStrongPassword123!',
-}
+};

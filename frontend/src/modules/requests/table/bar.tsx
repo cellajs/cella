@@ -10,7 +10,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster/service';
@@ -51,13 +51,15 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
   };
 
   const openDeleteDialog = () => {
-    const callback = (requests: Request[]) => {
+    const callback = (args: CallbackArgs<Request[]>) => {
       mutateQuery.remove(selected);
-      const message =
-        requests.length === 1
-          ? t('common:success.delete_resource', { resource: t('common:request') })
-          : t('common:success.delete_counted_resources', { count: requests.length, resources: t('common:requests').toLowerCase() });
-      toaster(message, 'success');
+      if (args.status === 'success') {
+        const message =
+          args.data.length === 1
+            ? t('common:success.delete_resource', { resource: t('common:request') })
+            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:requests').toLowerCase() });
+        toaster(message, 'success');
+      }
       clearSelection();
     };
 

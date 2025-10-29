@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
@@ -9,7 +9,6 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';

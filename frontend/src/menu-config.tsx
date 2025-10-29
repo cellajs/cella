@@ -3,6 +3,7 @@ import i18n from 'i18next';
 import type { RefObject } from 'react';
 import type { Organization } from '~/api.gen';
 import router from '~/lib/router';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -12,9 +13,9 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
  * Create new organization from the menu.
  */
 const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
-  const callback = (createdOrganization: Organization) => {
+  const callback = (args: CallbackArgs<Organization>) => {
     useDialoger.getState().remove('create-organization');
-    router.navigate({ to: '/organizations/$idOrSlug/members', params: { idOrSlug: createdOrganization.slug } });
+    if (args.status === 'success') router.navigate({ to: '/organizations/$idOrSlug/members', params: { idOrSlug: args.data.slug } });
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {

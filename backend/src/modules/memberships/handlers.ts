@@ -4,7 +4,7 @@ import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
+import { MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -489,8 +489,7 @@ const membershipRouteHandlers = app
           eq(table[entityIdField], entity.id),
           eq(table.organizationId, organization.id),
         ),
-      )
-      .orderBy(orderColumn);
+      );
 
     const items = await pendingMembershipsQuery.limit(limit).offset(offset);
 

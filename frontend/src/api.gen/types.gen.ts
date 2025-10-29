@@ -28,6 +28,7 @@ export type MembershipBaseSchema = {
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
+  activatedAt: string | null;
   archived: boolean;
   muted: boolean;
   order: number;
@@ -90,6 +91,7 @@ export type Organization = {
     contextType: 'organization';
     userId: string;
     role: 'member' | 'admin';
+    activatedAt: string | null;
     archived: boolean;
     muted: boolean;
     order: number;
@@ -114,6 +116,7 @@ export type Membership = {
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
+  activatedAt: string | null;
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
@@ -168,46 +171,46 @@ export type ApiError = {
   message: string;
   type: string;
   status:
-    | 400
-    | 401
-    | 402
-    | 403
-    | 404
-    | 405
-    | 406
-    | 407
-    | 408
-    | 409
-    | 410
-    | 411
-    | 412
-    | 413
-    | 414
-    | 415
-    | 416
-    | 417
-    | 418
-    | 421
-    | 422
-    | 423
-    | 424
-    | 425
-    | 426
-    | 428
-    | 429
-    | 431
-    | 451
-    | 500
-    | 501
-    | 502
-    | 503
-    | 504
-    | 505
-    | 506
-    | 507
-    | 508
-    | 510
-    | 511;
+  | 400
+  | 401
+  | 402
+  | 403
+  | 404
+  | 405
+  | 406
+  | 407
+  | 408
+  | 409
+  | 410
+  | 411
+  | 412
+  | 413
+  | 414
+  | 415
+  | 416
+  | 417
+  | 418
+  | 421
+  | 422
+  | 423
+  | 424
+  | 425
+  | 426
+  | 428
+  | 429
+  | 431
+  | 451
+  | 500
+  | 501
+  | 502
+  | 503
+  | 504
+  | 505
+  | 506
+  | 507
+  | 508
+  | 510
+  | 511;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   logId?: string;
@@ -224,6 +227,7 @@ export type MembershipSchema = {
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
+  activatedAt: string | null;
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
@@ -494,14 +498,14 @@ export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImp
 
 export type ResendInvitationWithTokenData = {
   body:
-    | {
-        email: string;
-        tokenId?: string;
-      }
-    | {
-        email?: string;
-        tokenId: string;
-      };
+  | {
+    email: string;
+    tokenId?: string;
+  }
+  | {
+    email?: string;
+    tokenId: string;
+  };
   path?: never;
   query?: never;
   url: '/auth/resend-invitation';
@@ -1998,13 +2002,13 @@ export type GetMyInvitationsResponses = {
     items: Array<{
       entity: ContextEntityBaseSchema;
       membership: MembershipBaseSchema &
-        ({
-          [key: string]: unknown;
-        } | null);
+      ({
+        [key: string]: unknown;
+      } | null);
       createdByUser: UserBaseSchema &
-        ({
-          [key: string]: unknown;
-        } | null);
+      ({
+        [key: string]: unknown;
+      } | null);
     }>;
     total: number;
   };
@@ -2183,11 +2187,11 @@ export type GetUploadTokenResponses = {
         expires?: string;
       };
       [key: string]:
-        | unknown
-        | {
-            key: string;
-            expires?: string;
-          };
+      | unknown
+      | {
+        key: string;
+        expires?: string;
+      };
     };
   };
 };
@@ -2647,6 +2651,7 @@ export type CreateOrganizationResponses = {
       contextType: 'organization';
       userId: string;
       role: 'member' | 'admin';
+      activatedAt: string | null;
       archived: boolean;
       muted: boolean;
       order: number;
@@ -2847,6 +2852,7 @@ export type GetContextEntitiesResponses = {
           contextType: 'organization';
           userId: string;
           role: 'member' | 'admin';
+          activatedAt: string | null;
           archived: boolean;
           muted: boolean;
           order: number;
@@ -4275,7 +4281,7 @@ export type GetPendingMembershipsResponses = {
    */
   200: {
     items: Array<{
-      id: string;
+      membershipId: string | null;
       tokenId: string | null;
       email: string;
       thumbnailUrl?: string | null;

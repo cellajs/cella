@@ -1052,7 +1052,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  * Get list of invitations
  * 🛡️ Requires authentication
  *
- * Returns a list of pending memberships with entity data.
+ * Returns a list of pending memberships with entity data - meaning activatedAt is still null.
  *
  * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
  *

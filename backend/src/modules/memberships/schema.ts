@@ -4,10 +4,8 @@ import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
 import { userBaseSchema } from '../users/schema-base';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 export const membershipSchema = createSelectSchema(membershipsTable).openapi('MembershipSchema');
-export const inactiveMembershipSchema = createSelectSchema(inactiveMembershipsTable).openapi('InactiveMembershipSchema');
 
 export const membershipBaseSchema = membershipSchema
   .omit({
