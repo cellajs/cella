@@ -59,7 +59,20 @@ export const rateLimiter = (
 
   return createMiddleware<Env>(async (ctx, next) => {
     const ipAddr = getIp(ctx);
-    const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as { email?: string }) : undefined;
+    let body: { email?: string } | undefined;
+
+    // Only try to parse JSON if there's actually a body
+    if (ctx.req.header('content-type') === 'application/json') {
+      try {
+        const contentLength = ctx.req.header('content-length');
+        if (contentLength && contentLength !== '0') {
+          body = (await ctx.req.raw.clone().json()) as { email?: string };
+        }
+      } catch {
+        // Ignore JSON parsing errors - body will remain undefined
+        body = undefined;
+      }
+    }
 
     // Stop if ip is an identifier and not available
     if (!ipAddr && identifiers.includes('ip')) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });

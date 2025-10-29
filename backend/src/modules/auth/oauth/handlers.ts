@@ -20,9 +20,6 @@ import { transformGithubUserData, transformSocialUserData } from '#/modules/auth
 import authOAuthRoutes from '#/modules/auth/oauth/routes';
 import { defaultHook } from '#/utils/default-hook';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
-
 // Scopes for OAuth providers
 const githubScopes = ['user:email'];
 const googleScopes = ['profile', 'email'];
@@ -33,12 +30,6 @@ if (!env.MICROSOFT_TENANT_ID) {
   microsoftScopes.push('openid');
 }
 
-// Check if oauth provider is enabled by appConfig
-function isOAuthEnabled(provider: EnabledOAuthProvider): boolean {
-  if (!enabledStrategies.includes('oauth')) return false;
-  return enabledOAuthProviders.includes(provider);
-}
-
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authOAuthRouteHandlers = app
@@ -47,6 +38,13 @@ const authOAuthRouteHandlers = app
    * Initiates GitHub OAuth authentication flow
    */
   .openapi(authOAuthRoutes.github, async (ctx) => {
+    // Check if Github OAuth is enabled
+    const strategy = 'github' as EnabledOAuthProvider;
+
+    if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+    }
+
     // Generate a `state` to prevent CSRF, and build URL with scope.
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
@@ -58,6 +56,12 @@ const authOAuthRouteHandlers = app
    * Initiates Google OAuth authentication flow
    */
   .openapi(authOAuthRoutes.google, async (ctx) => {
+    // Check if Google OAuth is enabled
+    const strategy = 'google' as EnabledOAuthProvider;
+    if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+    }
+
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -70,6 +74,12 @@ const authOAuthRouteHandlers = app
    * Initiates Microsoft OAuth authentication flow
    */
   .openapi(authOAuthRoutes.microsoft, async (ctx) => {
+    // Check if Microsoft OAuth is enabled
+    const strategy = 'microsoft' as EnabledOAuthProvider;
+    if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+    }
+
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -102,12 +112,7 @@ const authOAuthRouteHandlers = app
       throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath: '/auth/authenticate' });
     }
 
-    // Check if Github OAuth is enabled
     const strategy = 'github' as EnabledOAuthProvider;
-
-    if (!isOAuthEnabled(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
-    }
 
     // Verify cookie by `state` (CSRF protection)
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
@@ -156,12 +161,7 @@ const authOAuthRouteHandlers = app
    */
   .openapi(authOAuthRoutes.googleCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
-
-    // Check if Google OAuth is enabled
     const strategy = 'google' as EnabledOAuthProvider;
-    if (!isOAuthEnabled(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
-    }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
@@ -204,12 +204,7 @@ const authOAuthRouteHandlers = app
    */
   .openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
-
-    // Check if Microsoft OAuth is enabled
     const strategy = 'microsoft' as EnabledOAuthProvider;
-    if (!isOAuthEnabled(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
-    }
 
     // Verify cookie by `state` (CSRF protection) & PKCE validation
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
