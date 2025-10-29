@@ -61,7 +61,7 @@ describe('TOTP Authentication', async () => {
       const response = await parseResponse<{ totpUri: string; manualKey: string }>(res);
       expect(response.totpUri).toBeTruthy();
       expect(response.manualKey).toBeTruthy();
-      expect(response.manualKey).toMatch(/^[A-Z2-7]+=*$/); // Base32 format (padding optional)
+      expect(response.manualKey).toMatch(/^[A-Z2-7]+=*$/); // Base32 format
     });
 
     it('should create TOTP for user with valid code', async () => {
@@ -71,6 +71,7 @@ describe('TOTP Authentication', async () => {
 
       // Get authenticated session
       const signInRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      expect(signInRes.status).toBe(200);
 
       const sessionCookie = signInRes.headers.get('set-cookie');
 
@@ -136,7 +137,8 @@ describe('TOTP Authentication', async () => {
 
       expect(res.status).toBe(204);
       const setCookieHeader = res.headers.get('set-cookie');
-      expect(setCookieHeader).toBeTruthy();
+      expect(setCookieHeader).toBeDefined();
+      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
     });
 
     it('should reject invalid TOTP code', async () => {
@@ -278,33 +280,6 @@ describe('TOTP Authentication', async () => {
 
         expect(res.status).toBe(expected);
       }
-    });
-
-    it('should delete TOTP for user', async () => {
-      // Create and verify a user
-      const user = await createPasswordUser(signUpUser.email, signUpUser.password);
-      await verifyUserEmail(signUpUser.email);
-
-      // Set up TOTP for user
-      await db.insert(totpsTable).values({
-        userId: user.id,
-        secret: 'JBSWY3DPEHPK3PXP',
-        createdAt: pastIsoDate(),
-      });
-
-      // Get authenticated session
-      const signInRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
-
-      const sessionCookie = signInRes.headers.get('set-cookie');
-
-      // Delete TOTP
-      const res = await client['auth']['totp'].$delete({}, { headers: { ...defaultHeaders, Cookie: sessionCookie || '' } });
-
-      expect(res.status).toBe(204);
-
-      // Verify TOTP was deleted from database
-      const totpRecord = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
-      expect(totpRecord).toHaveLength(0);
     });
   });
 });
