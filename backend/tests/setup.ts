@@ -46,7 +46,7 @@ export async function getAuthApp() {
 
   return baseApp
     .route('/auth', authGeneralRouteHandlers)
-    .route('/auth/totps', authTotpsRouteHandlers)
+    .route('/auth', authTotpsRouteHandlers)
     .route('/auth', authPasswordsRouteHandlers)
     .route('/auth', authPasskeysRouteHandlers)
     .route('/auth', authOAuthRouteHandlers);
