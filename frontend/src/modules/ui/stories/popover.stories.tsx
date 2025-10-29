@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
 /**
@@ -39,12 +39,20 @@ export const ShouldOpenClose: Story = {
 
     await step('click the trigger to open the popover', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
-      expect(await canvasBody.findByRole('dialog')).toBeInTheDocument();
+      const dialog = await canvasBody.findByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveAttribute('data-state', 'open');
     });
 
     await step('click the trigger to close the popover', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /open/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the dialog to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };
