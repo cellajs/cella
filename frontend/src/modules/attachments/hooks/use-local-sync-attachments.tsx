@@ -82,7 +82,11 @@ export const useLocalSyncAttachments = (organizationId: string) => {
             isSyncingRef.current = false;
           });
 
-        for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
+        for (const file of files) {
+          // TODO Ensure `data` is non-null to satisfy Uppy types: fall back to a size-only object when missing.
+          const data = file.data ?? { size: file.size ?? null };
+          localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}`, data });
+        }
 
         await localUppy.upload();
       } catch (err) {

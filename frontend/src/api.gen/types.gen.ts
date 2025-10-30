@@ -4079,6 +4079,7 @@ export type HandleMembershipInvitationData = {
   path: {
     id: string;
     acceptOrReject: 'accept' | 'reject';
+    orgIdOrSlug: string;
   };
   query?: never;
   url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
@@ -4130,8 +4131,8 @@ export type HandleMembershipInvitationResponse = HandleMembershipInvitationRespo
 
 export type GetMembersData = {
   body?: never;
-  path?: {
-    orgIdOrSlug?: string;
+  path: {
+    orgIdOrSlug: string;
   };
   query: {
     q?: string;

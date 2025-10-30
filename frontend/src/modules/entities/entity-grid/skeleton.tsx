@@ -24,10 +24,10 @@ const GridSkeletonItem = ({ membersCount }: { membersCount: number }) => {
   return (
     <Skeleton className="overflow-hidden py-6 px-4">
       <div className="w-full relative group">
-        <div className="relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-[3/1] bg-opacity-80 bg-gray-500">
+        <div className="relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-3/1 bg-gray-600/50">
           <div className="grow" />
-          <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 bg-background/40 group-hover:bg-background/60 transition-colors">
-            <div className="h-10 w-10 bg-gray-500 rounded-md" />
+          <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 bg-background/40 transition-colors">
+            <div className="h-10 w-10 bg-gray-500 rounded-md invisible" />
           </div>
         </div>
       </div>
@@ -35,7 +35,7 @@ const GridSkeletonItem = ({ membersCount }: { membersCount: number }) => {
         <div className="grow" />
         {Array.from({ length: membersCount }).map((_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
-          <div key={index} className="h-8 w-8 bg-gray-600 border-2 border-secondary -ml-6 rounded-full" />
+          <div key={index} className="h-8 w-8 invisible bg-gray-600 border-2 border-secondary -ml-6 rounded-full" />
         ))}
       </div>
     </Skeleton>

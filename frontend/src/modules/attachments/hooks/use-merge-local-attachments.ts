@@ -30,7 +30,7 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
       // TODO(DAVID)(IMPROVE)local file info(add createdAt/By, groupId into the file?)
       const localAttachments: Attachment[] = files.map(({ size, preview, id, type, data, name, meta }) => ({
         id,
-        size: String(size || data.size),
+        size: String(size || data?.size || 0),
         url: preview || '',
         thumbnailUrl: null,
         convertedUrl: null,

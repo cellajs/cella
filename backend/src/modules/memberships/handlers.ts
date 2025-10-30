@@ -209,6 +209,21 @@ const membershipRouteHandlers = app
       }),
     ];
 
+
+    // Step 4: Prepare inactive memberships for new users and generate tokens
+    const membershipsToInsert = newUserTokenEmails.map((email) => ({
+      email,
+      id: nanoid(),
+      role,
+      entity,
+      createdBy: user.id,
+      contextType: entityType,
+      organizationId: organization.id,
+      ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
+    }));
+
+    await db.insert(inactiveMembershipsTable).values(membershipsToInsert).returning();
+
     // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (new users)
     const rawTokens: Array<{ email: string; raw: string }> = [];
     const tokensToInsert = newUserTokenEmails.map((email) => {
@@ -223,6 +238,7 @@ const membershipRouteHandlers = app
         token: hashed,
         type: 'invitation' as const,
         email,
+        inactiveMembershipId: membershipsToInsert.find((m) => m.email === email)!.id,
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
         role,
@@ -241,6 +257,7 @@ const membershipRouteHandlers = app
         .returning({ id: tokensTable.id, email: tokensTable.email, token: tokensTable.token, type: tokensTable.type });
 
       // Step 5b: Link waitlist requests to new tokens (if any)
+      // TODO consider dropping this to simplify
       await Promise.all(
         insertedTokens.map(({ id, email }) =>
           db
@@ -527,7 +544,7 @@ const membershipRouteHandlers = app
         createdBy: table.createdBy,
       })
       .from(table)
-      .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
+      .innerJoin(usersTable, eq(usersTable.id, table.userId))
       .where(
         and(
           eq(table[entityIdField], entity.id),

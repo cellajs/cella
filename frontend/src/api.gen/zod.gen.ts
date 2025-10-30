@@ -1436,6 +1436,7 @@ export const zHandleMembershipInvitationData = z.object({
   path: z.object({
     id: z.string(),
     acceptOrReject: z.enum(['accept', 'reject']),
+    orgIdOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1447,11 +1448,9 @@ export const zHandleMembershipInvitationResponse = zContextEntityBase;
 
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),
-  path: z.optional(
-    z.object({
-      orgIdOrSlug: z.optional(z.string()),
-    }),
-  ),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
   query: z.object({
     q: z.optional(z.string()),
     sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),

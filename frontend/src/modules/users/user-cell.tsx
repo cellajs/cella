@@ -26,7 +26,7 @@ export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: Us
   return (
     <Link
       ref={cellRef}
-      to={orgIdOrSlug ? '/$orgIdOrSlug/users/$idOrSlug' : '/users/$idOrSlug'}
+      to={orgIdOrSlug ? '/$orgIdOrSlug/user/$idOrSlug' : '/user/$idOrSlug'}
       tabIndex={tabIndex}
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
       className="flex space-x-2 items-center outline-0 ring-0 group truncate py-0.5"

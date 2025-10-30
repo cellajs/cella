@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'config';
-import type { MembershipBaseSchema } from '~/api.gen';
+import type { MembershipBase } from '~/api.gen';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -101,7 +101,7 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
  * @param entityIdOrSlug - ID or slug of entity.
  * @param entityType - Context entity type
  */
-export const updateMenuItemMembership = (membershipData: Partial<MembershipBaseSchema>, entityIdOrSlug: string, entityType: ContextEntityType) => {
+export const updateMenuItemMembership = (membershipData: Partial<MembershipBase>, entityIdOrSlug: string, entityType: ContextEntityType) => {
   // Get the current menu state from the navigation store (without using hooks)
   const menu = useNavigationStore.getState().menu;
 

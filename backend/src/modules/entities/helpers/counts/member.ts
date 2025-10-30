@@ -21,9 +21,11 @@ function getEntityIdColumn(entityType: ContextEntityType) {
  * @returns Query object that can be executed
  */
 export const getMemberCountsQuery = (entityType: ContextEntityType) => {
+  const entityIdColumn = getEntityIdColumn(entityType);
+
   return db
     .select({
-      id: getEntityIdColumn(entityType),
+      id: entityIdColumn,
       admin: count(sql`CASE WHEN ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
       member: count(sql`CASE WHEN ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
       pending: count(sql`CASE WHEN ${inactiveMembershipsTable.rejectedAt} IS NULL THEN 1 END`).as('pending'),
@@ -32,6 +34,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
     .from(membershipsTable)
     .leftJoin(inactiveMembershipsTable, eq(membershipsTable.contextType, entityType))
     .where(eq(membershipsTable.contextType, entityType))
+    .groupBy(entityIdColumn)
     .as('membership_counts');
 };
 

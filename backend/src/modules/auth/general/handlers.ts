@@ -26,10 +26,9 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
-import { resolveEntity } from '#/lib/entity';
-import { inactiveMembershipSchema } from '#/modules/memberships/schema';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
+import { resolveEntity } from '#/lib/entity';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -207,7 +206,7 @@ const authGeneralRouteHandlers = app
     };
 
     // Prepare email props, default is system invite
-    const emailProps = {
+    const defaultEmailProps = {
       senderName: 'System',
       senderThumbnailUrl: null as string | null,
       subject: i18n.t('backend:email.system_invite.subject', {
@@ -219,19 +218,25 @@ const authGeneralRouteHandlers = app
     // Get original sender
     if (oldToken.createdBy) {
       const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
-
-      emailProps.senderName = sender.name;
-      emailProps.senderThumbnailUrl = sender.thumbnailUrl;
+      defaultEmailProps.senderName = sender.name;
+      defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
     }
 
     // Get entity info
     if (oldToken.inactiveMembershipId) {
       const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId))
 
+      const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
+      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
+      if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+
+      defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', { entityName: entity.name, lng: appConfig.defaultLanguage });
+      const emailProps = { ...defaultEmailProps, entityName: entity.name, role: inactiveMembership.role, lng: entity.defaultLanguage || appConfig.defaultLanguage };
+
       await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
       logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });
     } else {
-      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, emailProps, [recipient], userEmail);
+      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
       logEvent('info', 'System invitation has been resent');
     }
 

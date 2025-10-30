@@ -2222,7 +2222,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
 /**
  * Respond to membership invitation
  *
- * 🛡️ Requires authentication (org access)
+ * 🛡️ Requires authentication
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
@@ -2231,6 +2231,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
  * @param {enum} options.path.acceptorreject - `enum`
+ * @param {string | string} options.path.orgidorslug - `string | string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(options: Options<HandleMembershipInvitationData, ThrowOnError>) => {
@@ -2258,7 +2259,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
  *
  * @param {getMembersData} options
- * @param {string | string=} options.path.orgidorslug - `string | string` (optional)
+ * @param {string | string} options.path.orgidorslug - `string | string`
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)

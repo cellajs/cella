@@ -96,11 +96,11 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    guard: [isAuthenticated, hasOrgAccess],
+    guard: [isAuthenticated],
     tags: ['membership'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
-    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
+    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }) },
     responses: {
       200: {
         description: 'Invitation was accepted',
@@ -119,7 +119,7 @@ const membershipRoutes = {
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
+      params: inOrgParamSchema,
       query: memberListQuerySchema,
     },
     responses: {

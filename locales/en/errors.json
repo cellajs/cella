@@ -104,6 +104,8 @@
   "maybe_bot.text": "We have detected unusual activity. Please try again or contact support.",
   "membership_already_active": "Membership active",
   "membership_already_active.text": "This membership has already been activated.",
+  "inactive_membership_not_found": "Inactive membership not found",
+  "inactive_membership_not_found.text": "The inactive membership you are trying to access does not exist or has been deleted.",
   "membership_not_found": "Membership not found",
   "membership_not_found.text": "The membership you are trying to access does not exist or has been deleted.",
   "membership_without_token": "Membership cannot be activated",
