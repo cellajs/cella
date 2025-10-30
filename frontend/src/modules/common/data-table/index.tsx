@@ -3,7 +3,7 @@ import { type Key, type ReactNode, useRef } from 'react';
 import { type CellMouseArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
+import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
 import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';

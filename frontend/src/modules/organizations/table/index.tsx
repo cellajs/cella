@@ -23,6 +23,7 @@ const LIMIT = appConfig.requestLimits.organizations;
 const OrganizationsTable = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+
   const updateMemberMembership = useMemberUpdateMutation();
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
 
@@ -55,6 +56,7 @@ const OrganizationsTable = () => {
       return;
     }
 
+    // If role is changed, update the membership
     for (const index of indexes) {
       const organization = changedRows[index];
       const membership = organization.membership;
@@ -63,10 +65,7 @@ const OrganizationsTable = () => {
 
       const newRole = membership.role;
       const partOfOrganization = !!membership.id;
-      const mutationVariables = {
-        idOrSlug: organization.slug,
-        entityType: organization.entityType,
-      };
+      const mutationVariables = { idOrSlug: organization.slug, entityType: organization.entityType };
       const orgIdOrSlug = organization.id;
 
       try {

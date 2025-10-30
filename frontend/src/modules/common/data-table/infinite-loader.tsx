@@ -36,7 +36,7 @@ export const InfiniteLoader = ({ hasNextPage, isFetching, measureStyle, isFetchM
       <div ref={measureRef} className="h-4 w-0 bg-red-700 absolute bottom-0 z-200" style={measureStyle} />
 
       {isFetching && hasNextPage && <Loading />}
-      {!isFetching && !hasNextPage && <AllLoaded />}
+      {fetchMore && !isFetching && !hasNextPage && <AllLoaded />}
     </>
   );
 };

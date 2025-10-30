@@ -4,8 +4,6 @@ import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { membershipsTable } from '#/db/schema/memberships';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';

@@ -1,4 +1,4 @@
-import type { GetMyAuthResponse, GetUploadTokenData, Menu, User } from '~/api.gen';
+import type { GetMyAuthResponse, GetMyInvitationsResponse, GetUploadTokenData, Menu, User } from '~/api.gen';
 
 export type MeAuthData = GetMyAuthResponse;
 export type Session = MeAuthData['sessions'][number];
@@ -9,3 +9,5 @@ export type UserMenu = Menu;
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
 export type UploadTokenQuery = GetUploadTokenData['query'] & { public: boolean };
+
+export type Invitation = GetMyInvitationsResponse['items'][number];
