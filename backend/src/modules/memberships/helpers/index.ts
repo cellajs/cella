@@ -34,11 +34,11 @@ interface Props<T> {
   userId: string;
   role: MembershipModel['role'];
   entity: T;
-  createdBy?: string;
+  createdBy: string;
 }
 
 /**
- * Batch insert memberships for existing users.
+ * Batch insert direct memberships for existing users.
  *
  * - Ensures organization membership exists for non-organization entities.
  * - Ensures associated parent membership exists when applicable.

@@ -19,12 +19,12 @@ const baseColumns = {
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull().default('member'),
   rejectedAt: timestamp({ mode: 'string' }),
-  createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
+  createdBy: varchar().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   organizationId: varchar().notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
 };
 
 // Generate entity id columns based on entity-config
 export const inactiveMembershipsTable = generateTable('inactive_memberships', baseColumns, otherEntityIdColumns);
 
-export type MembershipModel = typeof inactiveMembershipsTable.$inferSelect;
-export type InsertMembershipModel = typeof inactiveMembershipsTable.$inferInsert;
+export type InactiveMembershipModel = typeof inactiveMembershipsTable.$inferSelect;
+export type InsertInactiveMembershipModel = typeof inactiveMembershipsTable.$inferInsert;

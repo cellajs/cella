@@ -114,7 +114,7 @@ export type Membership = {
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
-  createdBy: string | null;
+  createdBy: string;
   modifiedAt: string | null;
   modifiedBy: string | null;
   archived: boolean;
@@ -130,7 +130,7 @@ export type InactiveMembership = {
   userId: string | null;
   role: 'member' | 'admin';
   rejectedAt: string | null;
-  createdBy: string | null;
+  createdBy: string;
   organizationId: string;
 };
 

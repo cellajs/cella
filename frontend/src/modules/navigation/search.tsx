@@ -4,7 +4,7 @@ import { appConfig, ContextEntityType } from 'config';
 import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBaseSchema, GetContextEntitiesResponse, UserBaseSchema } from '~/api.gen';
+import type { ContextEntityBase, GetContextEntitiesResponse, UserBase } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -84,7 +84,7 @@ export const AppSearch = () => {
     },
   });
 
-  const onSelectItem = (item: ContextEntityBaseSchema | UserBaseSchema) => {
+  const onSelectItem = (item: ContextEntityBase | UserBase) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 

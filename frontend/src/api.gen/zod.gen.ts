@@ -115,7 +115,7 @@ export const zMembership = z.object({
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['member', 'admin']),
-  createdBy: z.union([z.string(), z.null()]),
+  createdBy: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
   archived: z.boolean(),
@@ -131,7 +131,7 @@ export const zInactiveMembership = z.object({
   userId: z.union([z.string(), z.null()]),
   role: z.enum(['member', 'admin']),
   rejectedAt: z.union([z.string(), z.null()]),
-  createdBy: z.union([z.string(), z.null()]),
+  createdBy: z.string(),
   organizationId: z.string(),
 });
 

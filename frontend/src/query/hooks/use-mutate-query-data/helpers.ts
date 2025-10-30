@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { EntityType } from 'config';
-import type { ContextEntityBaseSchema } from '~/api.gen';
+import type { ContextEntityBase } from '~/api.gen';
 import type {
   ArbitraryEntityQueryData,
   EntityData,
@@ -93,7 +93,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
-  items: EntityData[] | ContextEntityBaseSchema[],
+  items: EntityData[] | ContextEntityBase[],
   action: QueryDataActions,
   entityType: EntityType,
   keyToOperateIn?: string,

@@ -18,7 +18,7 @@ const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 export const OrganizationRoute = createRoute({
-  path: '/organizations/$idOrSlug',
+  path: '/organization/$idOrSlug',
   staticData: { isAuth: true },
   beforeLoad: async ({ params: { idOrSlug } }) => {
     noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);

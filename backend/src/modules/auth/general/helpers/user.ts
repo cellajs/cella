@@ -2,22 +2,18 @@ import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
-import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { insertMemberships } from '#/modules/memberships/helpers';
 import { getIsoDate } from '#/utils/iso-date';
-import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 interface HandleCreateUserProps {
   newUser: InsertUserModel;
-  membershipInviteTokenId?: string | null;
+  inactiveMembershipId?: string | null;
   emailVerified?: boolean;
 }
 
@@ -31,7 +27,7 @@ interface HandleCreateUserProps {
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ newUser, membershipInviteTokenId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
+export const handleCreateUser = async ({ newUser, inactiveMembershipId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -52,8 +48,8 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
 
     await db.insert(unsubscribeTokensTable).values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
-    // If signing up with token, update it with new user id and insert membership if applicable
-    if (membershipInviteTokenId) await handleMembershipTokenUpdate(user.id, membershipInviteTokenId);
+    // If signing up with token with an inactive membership, update it with new user id
+    if (inactiveMembershipId) await handleSetUserOnInactiveMembership(user.id, inactiveMembershipId);
 
     // If email is verified, create verified email record
     if (emailVerified) {
@@ -76,27 +72,14 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
   }
 };
 
-export const handleMembershipTokenUpdate = async (userId: string, tokenId: string) => {
-  try {
-    // Update the token with the new userId
-    const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();
-    if (!token || !token.inactiveMembershipId) throw new Error('No token found for membership invitation.');
 
-    const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, token.inactiveMembershipId));
-    if (!inactiveMembership) throw new Error('No inactive memberships found for token.');
-
-    const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
-    // Validate if the token contains the required entity ID field
-    if (!inactiveMembership[entityIdField]) throw new Error(`Token is missing entity ID field for ${inactiveMembership.contextType}.`);
-
-    const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
-    // If the entity cannot be found, throw an error
-    if (!entity) throw new Error(`Unable to resolve entity (${inactiveMembership.contextType}) using the token's entity ID.`);
-
-    // Insert membership for user into entity, but not yet activated
-    await insertMemberships([{ userId, role: inactiveMembership.role, entity }]);
-  } catch (error) {
-    logError('Error inserting membership from token data', error);
-    throw error;
-  }
+/**
+ * Handles updating an inactive membership with the new user ID upon user creation.
+ *
+ * @param userId - The ID of the newly created user.
+ * @param inactiveMembershipId - The ID of the inactive membership to update.
+ */
+export const handleSetUserOnInactiveMembership = async (userId: string, inactiveMembershipId: string) => {
+  const [inactiveMembership] = await db.update(inactiveMembershipsTable).set({ userId }).where(eq(inactiveMembershipsTable.id, inactiveMembershipId)).returning();
+  if (!inactiveMembership) throw new Error('No inactive membership found for token.');
 };

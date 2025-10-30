@@ -2222,7 +2222,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
 /**
  * Respond to membership invitation
  *
- * 🛡️ Requires authentication
+ * 🛡️ Requires authentication (org access)
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *

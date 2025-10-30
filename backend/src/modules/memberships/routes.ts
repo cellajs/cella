@@ -96,7 +96,7 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    guard: isAuthenticated,
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['membership'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',

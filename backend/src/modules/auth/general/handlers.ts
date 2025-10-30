@@ -26,6 +26,10 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
+import { resolveEntity } from '#/lib/entity';
+import { inactiveMembershipSchema } from '#/modules/memberships/schema';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
+import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -202,32 +206,34 @@ const authGeneralRouteHandlers = app
       memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
     };
 
-    let senderName = 'System';
-    let senderThumbnailUrl: null | string = null;
+    // Prepare email props, default is system invite
+    const emailProps = {
+      senderName: 'System',
+      senderThumbnailUrl: null as string | null,
+      subject: i18n.t('backend:email.system_invite.subject', {
+        lng: appConfig.defaultLanguage,
+      }),
+      lng: appConfig.defaultLanguage,
+    };
 
     // Get original sender
     if (oldToken.createdBy) {
       const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
 
-      senderName = sender.name;
-      senderThumbnailUrl = sender.thumbnailUrl;
+      emailProps.senderName = sender.name;
+      emailProps.senderThumbnailUrl = sender.thumbnailUrl;
     }
 
-    const emailProps = {
-      senderName,
-      senderThumbnailUrl,
-      entityName: entity.name,
-      role,
-      subject: i18n.t('backend:email.member_invite.subject', {
-        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
-        entityName: entity.name,
-      }),
-      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
-    };
+    // Get entity info
+    if (oldToken.inactiveMembershipId) {
+      const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId))
 
-    await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
-
-    logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
+      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
+      logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });
+    } else {
+      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, emailProps, [recipient], userEmail);
+      logEvent('info', 'System invitation has been resent');
+    }
 
     return ctx.body(null, 204);
   })

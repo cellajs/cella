@@ -62,7 +62,7 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
-    const [createdMembership] = await insertMemberships([{ userId: user.id, role: 'admin', entity: createdOrganization }]);
+    const [createdMembership] = await insertMemberships([{ userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization }]);
 
     // Get default linked entities
     const validEntities = getAssociatedEntities(createdOrganization.entityType);

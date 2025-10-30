@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type ContextEntityBaseSchema, deleteMyMembership } from '~/api.gen';
+import { type ContextEntityBase, deleteMyMembership } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
@@ -12,7 +12,7 @@ import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = {
-  entity: ContextEntityBaseSchema;
+  entity: ContextEntityBase;
   redirectPath?: string;
   buttonProps?: ButtonProps;
   callback?: (args: CallbackArgs) => void;

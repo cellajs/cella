@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ContextEntityType, EntityType, ProductEntityType } from 'config';
-import type { ContextEntityBaseSchema } from '~/api.gen';
+import type { ContextEntityBase } from '~/api.gen';
 import {
   changeArbitraryQueryData,
   changeInfiniteQueryData,
@@ -38,7 +38,7 @@ export function useMutateQueryData(
 ): UseMutateQueryDataReturn {
   // mutation function
   function dataMutation(
-    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    items: ItemData[] | EntityData[] | ContextEntityBase[],
     action: QueryDataActions,
     entity?: EntityType,
     keyToOperateIn?: string,
@@ -67,10 +67,10 @@ export function useMutateQueryData(
 
   // Overload functions for action
   function create(items: ItemData[]): void;
-  function create(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function create(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function create(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
   function create(
-    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    items: ItemData[] | EntityData[] | ContextEntityBase[],
     entity?: ProductEntityType | ContextEntityType,
     keyToOperateIn?: string,
   ) {
@@ -78,10 +78,10 @@ export function useMutateQueryData(
   }
 
   function update(items: ItemData[]): void;
-  function update(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function update(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function update(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
   function update(
-    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    items: ItemData[] | EntityData[] | ContextEntityBase[],
     entity?: ProductEntityType | ContextEntityType,
     keyToOperateIn?: string,
   ) {
@@ -89,16 +89,16 @@ export function useMutateQueryData(
   }
 
   function updateMembership(items: ItemData[]): void;
-  function updateMembership(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function updateMembership(items: ItemData[] | ContextEntityBaseSchema[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function updateMembership(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function updateMembership(items: ItemData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'updateMembership', entity, keyToOperateIn);
   }
 
   function remove(items: ItemData[]): void;
-  function remove(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function remove(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function remove(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
   function remove(
-    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    items: ItemData[] | EntityData[] | ContextEntityBase[],
     entity?: ProductEntityType | ContextEntityType,
     keyToOperateIn?: string,
   ) {

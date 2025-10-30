@@ -83,13 +83,12 @@ const authPasswordsRouteHandlers = app
     }
 
     // add token if it's membership invitation
-    const membershipInviteTokenId = isMembershipInvite ? validToken.id : undefined;
+    const inactiveMembershipId = validToken.inactiveMembershipId || null;
     const slug = slugFromEmail(validToken.email);
 
-    // Create user & send verification email
+    // Create user
     const newUser = { slug, name: slug, email: validToken.email };
-
-    const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
+    const user = await handleCreateUser({ newUser, inactiveMembershipId, emailVerified: true });
 
     // Separately insert password
     const hashedPassword = await hashPassword(password);
@@ -101,7 +100,7 @@ const authPasswordsRouteHandlers = app
     // If no membership invitation, we are done
     if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
 
-    // If membership invitation, get membership to forward
+    // TODO If membership invitation, get membership to forward
     const [invitationMembership] = await db.select({ id: membershipsTable.id }).from(membershipsTable).limit(1);
 
     if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });

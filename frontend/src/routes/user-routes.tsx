@@ -12,7 +12,7 @@ const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 const UserAccountPage = lazy(() => import('~/modules/me/account-page'));
 
 export const UserProfileRoute = createRoute({
-  path: '/users/$idOrSlug',
+  path: '/user/$idOrSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   loader: async ({ params: { idOrSlug } }) => {
@@ -26,7 +26,7 @@ export const UserProfileRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const { idOrSlug } = useParams({ from: '/appLayout/users/$idOrSlug' });
+    const { idOrSlug } = useParams({ from: '/appLayout/user/$idOrSlug' });
     return (
       <Suspense>
         <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} />
@@ -36,7 +36,7 @@ export const UserProfileRoute = createRoute({
 });
 
 export const UserInOrganizationProfileRoute = createRoute({
-  path: '/$orgIdOrSlug/users/$idOrSlug',
+  path: '/$orgIdOrSlug/user/$idOrSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   loader: async ({ params: { idOrSlug } }) => {
@@ -50,7 +50,7 @@ export const UserInOrganizationProfileRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const { idOrSlug, orgIdOrSlug } = useParams({ from: '/appLayout/$orgIdOrSlug/users/$idOrSlug' });
+    const { idOrSlug, orgIdOrSlug } = useParams({ from: '/appLayout/$orgIdOrSlug/user/$idOrSlug' });
     return (
       <Suspense>
         <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} />

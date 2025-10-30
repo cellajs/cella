@@ -80,11 +80,7 @@ export const handleOAuthCallback = async (
   }
 
   // No user match → create a new user and OAuth account
-  const user = await handleCreateUser({
-    newUser: providerUser,
-    membershipInviteTokenId: null,
-    emailVerified: false,
-  });
+  const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
 
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
 
@@ -178,11 +174,8 @@ const inviteCallbackFlow = async (
   // TODO User already signed up meanwhile?
 
   // No user match → create a new user
-  const user = await handleCreateUser({
-    newUser: providerUser,
-    membershipInviteTokenId: invitationToken.inactiveMembershipId ? invitationToken.id : null,
-    emailVerified: false,
-  });
+  const inactiveMembershipId = invitationToken.inactiveMembershipId || null;
+  const user = await handleCreateUser({ newUser: providerUser, inactiveMembershipId, emailVerified: false });
 
   // link user to new OAuth account and prompt email verification
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
