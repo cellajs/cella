@@ -7,11 +7,11 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
+import { userSelect } from '#/modules/users/helpers/select';
 
 interface Props {
   userId: string;
@@ -22,7 +22,7 @@ interface Props {
  * Send a verification email to user.
  */
 export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => {
-  const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });

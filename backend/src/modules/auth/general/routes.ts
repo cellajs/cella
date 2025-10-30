@@ -3,7 +3,7 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses } from '#/utils/schema/responses';
@@ -67,8 +67,7 @@ const authGeneralRoutes = {
     method: 'get',
     path: '/invoke-token/{type}/{token}',
     guard: isPublicAccess,
-    // TODO add brute rate limiter,
-    middleware: isNoBot,
+    middleware: [isNoBot, tokenLimiter('token')],
     tags: ['auth'],
     summary: 'Invoke token session',
     description:
@@ -90,8 +89,7 @@ const authGeneralRoutes = {
     method: 'get',
     path: '/token/{type}/{id}',
     guard: isPublicAccess,
-    // TODO add brute rate limiter
-    middleware: isNoBot,
+    middleware: [isNoBot, tokenLimiter('token')],
     tags: ['auth'],
     summary: 'Get token data',
     description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',

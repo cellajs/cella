@@ -8,14 +8,14 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
-import { userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { membershipBaseSelect } from '../memberships/helpers/select';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -60,14 +60,14 @@ const usersRouteHandlers = app
     const baseUsersQuery =
       mode === 'shared'
         ? db
-            .selectDistinct({ ...userSelect })
-            .from(usersTable)
-            .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
-            .innerJoin(
-              requesterMembership,
-              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
-            )
-        : usersBaseQuery();
+          .selectDistinct({ ...userSelect })
+          .from(usersTable)
+          .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
+          .innerJoin(
+            requesterMembership,
+            and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
+          )
+        : db.select(userSelect).from(usersTable);
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
 
@@ -88,7 +88,7 @@ const usersRouteHandlers = app
       membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(membershipsTable[entityFieldId], targetEntityId));
     }
 
-    const memberships = await membershipBaseQuery().where(and(...membershipFilters));
+    const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(and(...membershipFilters));
 
     // Group memberships by userId in a type-safe way
     const membershipsByUser = memberships.reduce<Record<string, typeof memberships>>((acc, m) => {
@@ -118,7 +118,7 @@ const usersRouteHandlers = app
 
     // Fetch users by IDs
 
-    const targets = await usersBaseQuery().where(inArray(usersTable.id, toDeleteIds));
+    const targets = await db.select(userSelect).from(usersTable).where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
@@ -156,7 +156,7 @@ const usersRouteHandlers = app
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
-    const [targetUser] = await usersBaseQuery()
+    const [targetUser] = await db.select(userSelect).from(usersTable)
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 
@@ -196,7 +196,7 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    const [targetUser] = await usersBaseQuery()
+    const [targetUser] = await db.select(userSelect).from(usersTable)
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 

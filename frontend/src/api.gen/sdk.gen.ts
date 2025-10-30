@@ -252,6 +252,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Invoke token session
  * 🌐 Public access
+ * ⏳ token_token (10/h)
  *
  * Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
  *
@@ -273,6 +274,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Get token data
  * 🌐 Public access
+ * ⏳ token_token (10/h)
  *
  * Get basic token data from single-use token session, It returns basic data if the session is still valid.
  *

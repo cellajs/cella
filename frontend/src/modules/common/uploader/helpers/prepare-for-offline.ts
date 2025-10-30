@@ -61,7 +61,7 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
     };
   }) satisfies UploadedFile[];
 
-  // TODO review type assertion or can we do this in another way?
+  // TODO(DAVID) review type assertion or can we do this in another way?
   return {
     ok: 'OFFLINE_UPLOAD',
     results: {

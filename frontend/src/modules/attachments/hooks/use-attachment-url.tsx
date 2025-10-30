@@ -56,7 +56,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
         }
 
         if (isMounted.current) {
-          // TODO: type assertion necessary after uppy update, can be avoided?
+          // TODO(DAVID): type assertion necessary after uppy update, can be avoided?
           const blobData = file.data as BlobPart;
           const blob = new Blob([blobData], { type: type || 'application/octet-stream' });
           const objectUrl = URL.createObjectURL(blob);

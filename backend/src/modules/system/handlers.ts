@@ -18,7 +18,6 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
 import systemRoutes from '#/modules/system/routes';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -29,6 +28,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
+import { membershipBaseSelect } from '../memberships/helpers/select';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -186,7 +186,7 @@ const systemRouteHandlers = app
       const { user } = await validateSession(sessionToken);
 
       if (attachment) {
-        const memberships = await membershipBaseQuery().where(eq(membershipsTable.userId, user.id));
+        const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = user.role === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);

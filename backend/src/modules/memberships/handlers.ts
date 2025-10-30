@@ -17,7 +17,7 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { getAssociatedEntityDetails, insertMemberships } from '#/modules/memberships/helpers';
-import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
 import { memberSelect, userBaseSelect } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -330,7 +330,7 @@ const membershipRouteHandlers = app
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     // Get target memberships
-    const targets = await membershipBaseQuery().where(
+    const targets = await db.select(membershipBaseSelect).from(membershipsTable).where(
       and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)),
     );
 
@@ -374,7 +374,7 @@ const membershipRouteHandlers = app
     let orderToUpdate = order;
 
     // Get the membership in valid organization
-    const [membershipToUpdate] = await membershipBaseQuery()
+    const [membershipToUpdate] = await db.select(membershipBaseSelect).from(membershipsTable)
       .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
       .limit(1);
 

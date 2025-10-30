@@ -18,7 +18,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import authGeneralRoutes from '#/modules/auth/general/routes';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
@@ -42,7 +42,7 @@ const authGeneralRouteHandlers = app
     const normalizedEmail = email.toLowerCase().trim();
 
     // User not found, go to sign up if registration is enabled
-    const [user] = await usersBaseQuery()
+    const [user] = await db.select(userSelect).from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -105,7 +105,7 @@ const authGeneralRouteHandlers = app
     if (!tokenRecord.inactiveMembershipId) return ctx.json(data, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
+    const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
       data.userId = existingUser.id;
@@ -119,7 +119,7 @@ const authGeneralRouteHandlers = app
   .openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, targetUserId)).limit(1);
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
@@ -160,7 +160,6 @@ const authGeneralRouteHandlers = app
   })
   /**
    * Resend invitation email with token for entity invites and system invites.
-   * TODO system invites not yet implemented, move entire sending email logic to helper
    */
   .openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
     const { email, tokenId } = ctx.req.valid('json');
@@ -217,7 +216,7 @@ const authGeneralRouteHandlers = app
 
     // Get original sender
     if (oldToken.createdBy) {
-      const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+      const [sender] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oldToken.createdBy)).limit(1);
       defaultEmailProps.senderName = sender.name;
       defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
     }

@@ -13,7 +13,7 @@ import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
 import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMemberships } from '#/modules/memberships/helpers';
-import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -94,7 +94,7 @@ const organizationRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
-    const memberships = membershipBaseQuery()
+    const memberships = db.select(membershipBaseSelect).from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
       .as('memberships');
 
@@ -184,7 +184,7 @@ const organizationRouteHandlers = app
       .returning();
 
     // notify members (unchanged)
-    const organizationMemberships = await membershipBaseQuery().where(
+    const organizationMemberships = await db.select(membershipBaseSelect).from(membershipsTable).where(
       and(
         eq(membershipsTable.contextType, 'organization'),
         eq(membershipsTable.organizationId, organization.id),

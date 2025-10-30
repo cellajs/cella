@@ -27,7 +27,7 @@ import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuSchema } from '#/modules/me/schema';
-import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import { userBaseSelect, userSelect } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -319,7 +319,7 @@ const meRouteHandlers = app
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
-    const [user] = await usersBaseQuery()
+    const [user] = await db.select(userSelect).from(usersTable)
       .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
       .where(eq(unsubscribeTokensTable.token, token))
       .limit(1);

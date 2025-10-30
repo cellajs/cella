@@ -51,7 +51,7 @@ export const SignInStep = () => {
     mutationFn: (body) => signIn({ body }),
     onSuccess: ({ redirectPath: apiRedirectPath }) => {
       if (apiRedirectPath) {
-        // TODO refactor conditional like this
+        // TODO(DAVID) refactor conditional like this, not very safe to use path matching, is there a better way?
         if (apiRedirectPath === '/auth/mfa') setLastUser({ email, mfaRequired: true });
         navigate({ to: apiRedirectPath, replace: true });
         return;
@@ -142,7 +142,7 @@ export const SignInStep = () => {
                 {t('common:sign_in')}
                 <ArrowRightIcon size={16} className="ml-2" />
               </SubmitButton>
-              {/* TODO: add callback to reset auth steps forgot email is different from current email state */}
+              {/* TODO(DAVID): add callback to reset auth steps if forgot email is different from current email state */}
               <RequestPasswordDialog email={email}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
                   {t('common:forgot_password')}

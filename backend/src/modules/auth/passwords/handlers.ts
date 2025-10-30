@@ -17,7 +17,6 @@ import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -26,6 +25,7 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
+import { userSelect } from '#/modules/users/helpers/select';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
@@ -118,7 +118,7 @@ const authPasswordsRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const [user] = await usersBaseQuery()
+    const [user] = await db.select(userSelect).from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -174,7 +174,7 @@ const authPasswordsRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
     if (!user) {
