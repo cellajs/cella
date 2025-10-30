@@ -8,6 +8,13 @@
       "when": 1761745933020,
       "tag": "0000_married_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761823828184,
+      "tag": "0001_furry_zombie",
+      "breakpoints": true
     }
   ]
 }

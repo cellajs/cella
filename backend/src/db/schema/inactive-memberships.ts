@@ -1,6 +1,5 @@
 import { appConfig } from 'config';
 import { timestamp, varchar } from 'drizzle-orm/pg-core';
-import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
 import { generateTable } from '#/db/utils/generate-table';
@@ -21,9 +20,7 @@ const baseColumns = {
   createdBy: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  organizationId: varchar()
-    .notNull()
-    .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  organizationId: organizationId.notNull(),
 };
 
 // Generate entity id columns based on entity-config
