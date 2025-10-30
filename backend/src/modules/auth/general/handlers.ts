@@ -249,10 +249,10 @@ const authGeneralRouteHandlers = app
       entityName: entity.name,
       role,
       subject: i18n.t('backend:email.member_invite.subject', {
-        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
         entityName: entity.name,
       }),
-      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
     };
 
     await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);

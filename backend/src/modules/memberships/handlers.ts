@@ -91,7 +91,7 @@ const membershipRouteHandlers = app
       .select({
         email: emailsTable.email, // email identifier
         userId: usersTable.id, // nullable if no user
-        language: usersTable.language || entity.defaultLanguage, // use user's language or entity's default
+        language: usersTable.language || ('defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage), // use user's language or entity's or app default
         membershipId: membershipsTable.id, // nullable if no membership
         activatedAt: membershipsTable.activatedAt, // nullable if not activated
       })
