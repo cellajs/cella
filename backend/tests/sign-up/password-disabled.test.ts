@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
+import { clearDatabase, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
 
 setTestConfig({
   enabledAuthStrategies: [],
@@ -18,7 +18,7 @@ afterEach(async () => {
 });
 
 describe('sign-up when "password" strategy is disabled', async () => {
-  const app = await getAuthApp();
+  const { default: app } = await import('#/routes');
   const client = testClient(app);
 
   it('should not allow sign-up when "password" is disabled in config', async () => {

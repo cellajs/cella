@@ -10,7 +10,7 @@ import { mockEmail, mockPassword, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { AuthResponse, createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
-import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 
 setTestConfig({ enabledAuthStrategies: ['password'] });
 
@@ -32,7 +32,7 @@ afterEach(async () => {
 });
 
 describe('Password Authentication', async () => {
-  const app = await getAuthApp();
+  const { default: app } = await import('#/routes');
   const client = testClient(app);
 
   describe('Successful Authentication', () => {

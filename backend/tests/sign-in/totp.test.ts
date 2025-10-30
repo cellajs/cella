@@ -10,7 +10,7 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
-import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 
 setTestConfig({ enabledAuthStrategies: ['password', 'totp'] });
 
@@ -39,7 +39,7 @@ afterEach(async () => {
 });
 
 describe('TOTP Authentication', async () => {
-  const app = await getAuthApp();
+  const { default: app } = await import('#/routes');
   const client = testClient(app);
 
   describe('TOTP Setup', () => {

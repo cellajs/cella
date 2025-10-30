@@ -35,23 +35,6 @@ type ConfigOverride = {
   registrationEnabled?: boolean;
 };
 
-// TODO this seems not very scalable/maintainable? why not get the actual app from server.ts?
-export async function getAuthApp() {
-  const { default: baseApp } = await import('#/server');
-  const { default: authGeneralRouteHandlers } = await import('#/modules/auth/general/handlers');
-  const { default: authTotpsRouteHandlers } = await import('#/modules/auth/totps/handlers');
-  const { default: authPasswordsRouteHandlers } = await import('#/modules/auth/passwords/handlers');
-  const { default: authPasskeysRouteHandlers } = await import('#/modules/auth/passkeys/handlers');
-  const { default: authOAuthRouteHandlers } = await import('#/modules/auth/oauth/handlers');
-
-  return baseApp
-    .route('/auth', authGeneralRouteHandlers)
-    .route('/auth', authTotpsRouteHandlers)
-    .route('/auth', authPasswordsRouteHandlers)
-    .route('/auth', authPasskeysRouteHandlers)
-    .route('/auth', authOAuthRouteHandlers);
-}
-
 /**
  * Mock the global fetch request to avoid actual network calls during tests.
  */
