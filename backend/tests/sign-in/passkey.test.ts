@@ -13,7 +13,7 @@ import { mockEmail, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { ErrorResponse, parseResponse } from '../helpers';
-import { clearDatabase, getAuthApp, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 
 const newPasskeyRecord = (userId: string, nameOnDevice = 'Test Device') => ({
   userId,
@@ -40,7 +40,7 @@ afterEach(async () => {
 });
 
 describe('Passkey Authentication', async () => {
-  const app = await getAuthApp();
+  const { default: app } = await import('#/routes');
   const client = testClient(app);
 
   describe('Challenge Generation', () => {

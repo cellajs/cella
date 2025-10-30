@@ -10,8 +10,8 @@ import { usersTable } from '#/db/schema/users';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { mockEmail, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
-import { defaultHeaders, signUpUser } from '../fixtures';
-import { clearDatabase, getAuthApp, migrateDatabase, mockArcticLibrary, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { defaultHeaders } from '../fixtures';
+import { clearDatabase, migrateDatabase, mockArcticLibrary, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 
 mockArcticLibrary();
 
@@ -21,6 +21,7 @@ const mockCookies = new Map<string, string>();
 setTestConfig({
   enabledAuthStrategies: ['oauth'],
   enabledOAuthProviders: ['github', 'google', 'microsoft'],
+  registrationEnabled: true,
 });
 
 beforeAll(async () => {
@@ -120,7 +121,7 @@ afterEach(async () => {
 });
 
 describe('OAuth Authentication', async () => {
-  const app = await getAuthApp();
+  const { default: app } = await import('#/routes');
   const client = testClient(app);
 
   describe('OAuth Flow Initiation', () => {
@@ -246,8 +247,14 @@ describe('OAuth Authentication', async () => {
     });
 
     it('should redirect to email verification for unverified OAuth account', async () => {
+      // Temporarily disable registration to test existing user behavior
+      setTestConfig({ registrationEnabled: false });
+
+      // Use the same email as the OAuth mock returns
+      const userEmail = 'github-user@cella.com';
+
       // Create user
-      const userRecord = mockUser({ email: signUpUser.email });
+      const userRecord = mockUser({ email: userEmail });
       const [user] = await db.insert(usersTable).values(userRecord).returning();
 
       await db.insert(emailsTable).values(mockEmail(user));
@@ -257,7 +264,7 @@ describe('OAuth Authentication', async () => {
         userId: user.id,
         provider: 'github' as const,
         providerUserId: 'github-user-id',
-        email: signUpUser.email,
+        email: userEmail,
         verified: false,
         createdAt: pastIsoDate(),
       };
@@ -272,6 +279,9 @@ describe('OAuth Authentication', async () => {
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
       expect(location).toContain('/auth/email-verification');
+
+      // Restore original config
+      setTestConfig({ registrationEnabled: true });
     });
   });
 
