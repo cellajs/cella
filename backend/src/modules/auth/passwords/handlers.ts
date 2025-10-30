@@ -74,7 +74,7 @@ const authPasswordsRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const isMembershipInvite = !!validToken.organizationId;
+    const isMembershipInvite = validToken.type === 'invitation' && validToken.inactiveMembershipId;
 
     // Verify if strategy allowed
     const strategy = 'password';

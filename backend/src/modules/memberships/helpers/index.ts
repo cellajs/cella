@@ -42,7 +42,7 @@ interface Props<T> {
  *
  * - Ensures organization membership exists for non-organization entities.
  * - Ensures associated parent membership exists when applicable.
- * - Inserts the target entity membership
+ * - Inserts the target entity memberships.
  * - Computes per-user 'order' in a single grouped query and increments by 10.
  *
  * @param items - membership requests for existing users

@@ -13,4 +13,4 @@ export const contextEntityBaseSchema = z
     thumbnailUrl: imageUrlSchema.nullable().optional(),
     bannerUrl: imageUrlSchema.nullable().optional(),
   })
-  .openapi('ContextEntityBaseSchema');
+  .openapi('ContextEntityBase');

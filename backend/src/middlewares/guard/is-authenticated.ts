@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/node';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
@@ -47,7 +47,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
     const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id)));
+      .where(eq(membershipsTable.userId, user.id));
 
     ctx.set('memberships', memberships);
   } catch (err) {

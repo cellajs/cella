@@ -17,7 +17,7 @@ const AuthErrorPage = () => {
   const { email, error } = useAuthStore();
 
   // Show a resend invitation button if necessary
-  const showResendButton = error?.type === 'invite_takes_priority' || errorType === 'invitation_expired';
+  const showResendButton = errorType === 'invitation_expired';
   const resendData = tokenId ? { tokenId } : email ? { email } : false;
 
   return (

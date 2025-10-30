@@ -25,5 +25,5 @@ export const getUserMenuEntities = async (entityType: ContextEntityType, userId:
     .from(table)
     .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, entityType)))
     .orderBy(asc(membershipsTable.order))
-    .innerJoin(membershipsTable, and(eq(membershipsTable[entityIdField], table.id)));
+    .innerJoin(membershipsTable, eq(membershipsTable[entityIdField], table.id));
 };

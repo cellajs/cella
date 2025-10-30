@@ -4,8 +4,11 @@ import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
 import { userBaseSchema } from '../users/schema-base';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
-export const membershipSchema = createSelectSchema(membershipsTable).openapi('MembershipSchema');
+export const membershipSchema = createSelectSchema(membershipsTable).openapi('Membership');
+
+export const inactiveMembershipSchema = createSelectSchema(inactiveMembershipsTable).openapi('InactiveMembership');
 
 export const membershipBaseSchema = membershipSchema
   .omit({
@@ -14,7 +17,7 @@ export const membershipBaseSchema = membershipSchema
     modifiedAt: true,
     modifiedBy: true,
   })
-  .openapi('MembershipBaseSchema');
+  .openapi('MembershipBase');
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),
@@ -43,7 +46,6 @@ export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
 
 export const pendingMembershipSchema = z.object({
   id: z.string(),
-  tokenId: z.string().nullable(),
   email: userBaseSchema.shape.email,
   thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),

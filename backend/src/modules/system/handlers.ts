@@ -78,6 +78,7 @@ const systemRouteHandlers = app
         and(
           inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
+          isNull(tokensTable.inactiveMembershipId), // system invite
           isNull(tokensTable.invokedAt), // pending (not used)
         ),
       );
@@ -185,7 +186,7 @@ const systemRouteHandlers = app
       const { user } = await validateSession(sessionToken);
 
       if (attachment) {
-        const memberships = await membershipBaseQuery().where(and(eq(membershipsTable.userId, user.id)));
+        const memberships = await membershipBaseQuery().where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = user.role === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);

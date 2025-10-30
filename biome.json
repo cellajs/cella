@@ -11,6 +11,11 @@
       "frontend/openapi-ts.config.ts"
     ]
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "linter": {
     "includes": ["!frontend/src/api.gen/**"],
     "enabled": true,

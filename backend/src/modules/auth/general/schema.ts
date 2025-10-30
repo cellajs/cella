@@ -6,5 +6,6 @@ export const emailBodySchema = z.object({
 });
 export const tokenWithDataSchema = z.object({
   email: z.email(),
-  organizationId: z.string().optional(),
+  userId: z.string().optional(),
+  inactiveMembershipId: z.string().optional(),
 });

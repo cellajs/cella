@@ -1,5 +1,5 @@
 {
-  "id": "eb63c351-3bd9-470d-a7ae-afb456ca323a",
+  "id": "8a332f0d-f606-44c9-8981-c48b11cdb1b4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -277,6 +277,109 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.inactive_memberships": {
+      "name": "inactive_memberships",
+      "schema": "",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "context_type": {
+          "name": "context_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "rejected_at": {
+          "name": "rejected_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "inactive_memberships_user_id_users_id_fk": {
+          "name": "inactive_memberships_user_id_users_id_fk",
+          "tableFrom": "inactive_memberships",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "inactive_memberships_created_by_users_id_fk": {
+          "name": "inactive_memberships_created_by_users_id_fk",
+          "tableFrom": "inactive_memberships",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "inactive_memberships_organization_id_organizations_id_fk": {
+          "name": "inactive_memberships_organization_id_organizations_id_fk",
+          "tableFrom": "inactive_memberships",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.memberships": {
       "name": "memberships",
       "schema": "",
@@ -312,18 +415,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'member'"
-        },
-        "token_id": {
-          "name": "token_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "activated_at": {
-          "name": "activated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -378,19 +469,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "memberships_token_id_tokens_id_fk": {
-          "name": "memberships_token_id_tokens_id_fk",
-          "tableFrom": "memberships",
-          "tableTo": "tokens",
-          "columnsFrom": [
-            "token_id"
           ],
           "columnsTo": [
             "id"
@@ -1155,18 +1233,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entity_type": {
-          "name": "entity_type",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "role": {
-          "name": "role",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "user_id": {
           "name": "user_id",
           "type": "varchar",
@@ -1175,6 +1241,12 @@
         },
         "oauth_account_id": {
           "name": "oauth_account_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inactive_membership_id": {
+          "name": "inactive_membership_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -1194,12 +1266,6 @@
         "invoked_at": {
           "name": "invoked_at",
           "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "varchar",
           "primaryKey": false,
           "notNull": false
         }
@@ -1229,7 +1295,20 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tokens_inactive_membership_id_inactive_memberships_id_fk": {
+          "name": "tokens_inactive_membership_id_inactive_memberships_id_fk",
+          "tableFrom": "tokens",
+          "tableTo": "inactive_memberships",
+          "columnsFrom": [
+            "inactive_membership_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "tokens_created_by_users_id_fk": {
@@ -1238,19 +1317,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "tokens_organization_id_organizations_id_fk": {
-          "name": "tokens_organization_id_organizations_id_fk",
-          "tableFrom": "tokens",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
           ],
           "columnsTo": [
             "id"

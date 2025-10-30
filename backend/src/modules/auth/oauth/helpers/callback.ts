@@ -180,7 +180,7 @@ const inviteCallbackFlow = async (
   // No user match → create a new user
   const user = await handleCreateUser({
     newUser: providerUser,
-    membershipInviteTokenId: invitationToken.entityType ? invitationToken.id : null,
+    membershipInviteTokenId: invitationToken.inactiveMembershipId ? invitationToken.id : null,
     emailVerified: false,
   });
 

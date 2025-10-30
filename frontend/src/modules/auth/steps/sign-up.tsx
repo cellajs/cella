@@ -73,7 +73,7 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData?.organizationId
+        {tokenData?.inactiveMembershipId
           ? t('common:invite_accept_proceed')
           : tokenData
             ? t('common:invite_create_account')

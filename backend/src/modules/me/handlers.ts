@@ -32,7 +32,6 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { contextEntityBaseSelect } from '../entities/helpers/select';
-import { membershipBaseSelect } from '../memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 type UserMenu = z.infer<typeof menuSchema>;
@@ -168,7 +167,7 @@ const meRouteHandlers = app
           .select({
             entity: contextEntityBaseSelect,
             createdByUser: userBaseSelect,
-            membership: membershipBaseSelect,
+            inactiveMembership: inactiveMembershipsTable,
           })
           .from(inactiveMembershipsTable)
           .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))

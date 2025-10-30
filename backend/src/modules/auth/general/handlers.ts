@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
@@ -37,22 +37,6 @@ const authGeneralRouteHandlers = app
     const { email } = ctx.req.valid('json');
 
     const normalizedEmail = email.toLowerCase().trim();
-
-    // If entering while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
-    const [inviteToken] = await db
-      .select()
-      .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.email, normalizedEmail),
-          eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.userId),
-          isNull(tokensTable.invokedAt),
-        ),
-      )
-      .limit(1);
-
-    if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
     // User not found, go to sign up if registration is enabled
     const [user] = await usersBaseQuery()
@@ -110,8 +94,19 @@ const authGeneralRouteHandlers = app
 
     const data = {
       email: tokenRecord.email,
-      organizationId: tokenRecord.organizationId || '',
+      userId: tokenRecord.userId || '',
+      inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
     };
+
+    // If its NOT an membership invitation, return base data
+    if (!tokenRecord.inactiveMembershipId) return ctx.json(data, 200);
+
+    // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
+    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
+    if (!tokenRecord.userId && existingUser) {
+      await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
+      data.userId = existingUser.id;
+    }
 
     return ctx.json(data, 200);
   })

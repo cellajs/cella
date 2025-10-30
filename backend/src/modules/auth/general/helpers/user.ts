@@ -80,15 +80,16 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
   try {
     // Update the token with the new userId
     const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();
+    if (!token || !token.inactiveMembershipId) throw new Error('No token found for membership invitation.');
 
-    const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.tokenId, tokenId));
+    const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, token.inactiveMembershipId));
     if (!inactiveMembership) throw new Error('No inactive memberships found for token.');
 
     const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
     // Validate if the token contains the required entity ID field
-    if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${inactiveMembership.contextType}.`);
+    if (!inactiveMembership[entityIdField]) throw new Error(`Token is missing entity ID field for ${inactiveMembership.contextType}.`);
 
-    const entity = await resolveEntity(inactiveMembership.contextType, token[entityIdField]);
+    const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
     // If the entity cannot be found, throw an error
     if (!entity) throw new Error(`Unable to resolve entity (${inactiveMembership.contextType}) using the token's entity ID.`);
 

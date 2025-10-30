@@ -4,7 +4,7 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});
 };
 
-export type UserBaseSchema = {
+export type UserBase = {
   id: string;
   slug: string;
   name: string;
@@ -14,7 +14,7 @@ export type UserBaseSchema = {
   entityType: 'user';
 };
 
-export type ContextEntityBaseSchema = {
+export type ContextEntityBase = {
   id: string;
   entityType: 'organization';
   slug: string;
@@ -23,12 +23,11 @@ export type ContextEntityBaseSchema = {
   bannerUrl?: string | null;
 };
 
-export type MembershipBaseSchema = {
+export type MembershipBase = {
   id: string;
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
-  activatedAt: string | null;
   archived: boolean;
   muted: boolean;
   order: number;
@@ -91,7 +90,6 @@ export type Organization = {
     contextType: 'organization';
     userId: string;
     role: 'member' | 'admin';
-    activatedAt: string | null;
     archived: boolean;
     muted: boolean;
     order: number;
@@ -116,13 +114,23 @@ export type Membership = {
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
-  activatedAt: string | null;
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
   archived: boolean;
   muted: boolean;
   order: number;
+  organizationId: string;
+};
+
+export type InactiveMembership = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  userId: string | null;
+  role: 'member' | 'admin';
+  rejectedAt: string | null;
+  createdBy: string | null;
   organizationId: string;
 };
 
@@ -147,7 +155,7 @@ export type Attachment = {
   convertedUrl: string | null;
 };
 
-export type MenuSchema = {
+export type Menu = {
   organization: Array<{
     id: string;
     entityType: 'organization';
@@ -155,11 +163,11 @@ export type MenuSchema = {
     name: string;
     thumbnailUrl?: string | null;
     bannerUrl?: string | null;
-    membership: MembershipBaseSchema;
+    membership: MembershipBase;
     createdAt: string;
     submenu?: Array<
-      ContextEntityBaseSchema & {
-        membership: MembershipBaseSchema;
+      ContextEntityBase & {
+        membership: MembershipBase;
         createdAt: string;
       }
     >;
@@ -171,46 +179,46 @@ export type ApiError = {
   message: string;
   type: string;
   status:
-  | 400
-  | 401
-  | 402
-  | 403
-  | 404
-  | 405
-  | 406
-  | 407
-  | 408
-  | 409
-  | 410
-  | 411
-  | 412
-  | 413
-  | 414
-  | 415
-  | 416
-  | 417
-  | 418
-  | 421
-  | 422
-  | 423
-  | 424
-  | 425
-  | 426
-  | 428
-  | 429
-  | 431
-  | 451
-  | 500
-  | 501
-  | 502
-  | 503
-  | 504
-  | 505
-  | 506
-  | 507
-  | 508
-  | 510
-  | 511;
+    | 400
+    | 401
+    | 402
+    | 403
+    | 404
+    | 405
+    | 406
+    | 407
+    | 408
+    | 409
+    | 410
+    | 411
+    | 412
+    | 413
+    | 414
+    | 415
+    | 416
+    | 417
+    | 418
+    | 421
+    | 422
+    | 423
+    | 424
+    | 425
+    | 426
+    | 428
+    | 429
+    | 431
+    | 451
+    | 500
+    | 501
+    | 502
+    | 503
+    | 504
+    | 505
+    | 506
+    | 507
+    | 508
+    | 510
+    | 511;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   logId?: string;
@@ -219,22 +227,6 @@ export type ApiError = {
   timestamp?: string;
   userId?: string;
   organizationId?: string;
-};
-
-export type MembershipSchema = {
-  createdAt: string;
-  id: string;
-  contextType: 'organization';
-  userId: string;
-  role: 'member' | 'admin';
-  activatedAt: string | null;
-  createdBy: string | null;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
-  archived: boolean;
-  muted: boolean;
-  order: number;
-  organizationId: string;
 };
 
 export type CheckEmailData = {
@@ -386,7 +378,8 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
-    organizationId?: string;
+    userId?: string;
+    inactiveMembershipId?: string;
   };
 };
 
@@ -498,14 +491,14 @@ export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImp
 
 export type ResendInvitationWithTokenData = {
   body:
-  | {
-    email: string;
-    tokenId?: string;
-  }
-  | {
-    email?: string;
-    tokenId: string;
-  };
+    | {
+        email: string;
+        tokenId?: string;
+      }
+    | {
+        email?: string;
+        tokenId: string;
+      };
   path?: never;
   query?: never;
   url: '/auth/resend-invitation';
@@ -1947,7 +1940,7 @@ export type GetMyMenuResponses = {
   /**
    * Menu of user
    */
-  200: MenuSchema;
+  200: Menu;
 };
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
@@ -2000,15 +1993,15 @@ export type GetMyInvitationsResponses = {
    */
   200: {
     items: Array<{
-      entity: ContextEntityBaseSchema;
-      membership: MembershipBaseSchema &
-      ({
-        [key: string]: unknown;
-      } | null);
-      createdByUser: UserBaseSchema &
-      ({
-        [key: string]: unknown;
-      } | null);
+      entity: ContextEntityBase;
+      inactiveMembership: InactiveMembership &
+        ({
+          [key: string]: unknown;
+        } | null);
+      createdByUser: UserBase &
+        ({
+          [key: string]: unknown;
+        } | null);
     }>;
     total: number;
   };
@@ -2187,11 +2180,11 @@ export type GetUploadTokenResponses = {
         expires?: string;
       };
       [key: string]:
-      | unknown
-      | {
-        key: string;
-        expires?: string;
-      };
+        | unknown
+        | {
+            key: string;
+            expires?: string;
+          };
     };
   };
 };
@@ -2357,7 +2350,7 @@ export type GetUsersResponses = {
   200: {
     items: Array<
       User & {
-        memberships: Array<MembershipBaseSchema>;
+        memberships: Array<MembershipBase>;
       }
     >;
     total: number;
@@ -2651,7 +2644,6 @@ export type CreateOrganizationResponses = {
       contextType: 'organization';
       userId: string;
       role: 'member' | 'admin';
-      activatedAt: string | null;
       archived: boolean;
       muted: boolean;
       order: number;
@@ -2846,13 +2838,12 @@ export type GetContextEntitiesResponses = {
    */
   200: {
     items: Array<
-      ContextEntityBaseSchema & {
+      ContextEntityBase & {
         membership: {
           id: string;
           contextType: 'organization';
           userId: string;
           role: 'member' | 'admin';
-          activatedAt: string | null;
           archived: boolean;
           muted: boolean;
           order: number;
@@ -2923,7 +2914,7 @@ export type GetContextEntityResponses = {
   /**
    * Context entities
    */
-  200: ContextEntityBaseSchema;
+  200: ContextEntityBase;
 };
 
 export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
@@ -4078,7 +4069,7 @@ export type UpdateMembershipResponses = {
   /**
    * Membership updated
    */
-  200: MembershipSchema;
+  200: Membership;
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
@@ -4132,7 +4123,7 @@ export type HandleMembershipInvitationResponses = {
   /**
    * Invitation was accepted
    */
-  200: ContextEntityBaseSchema;
+  200: ContextEntityBase;
 };
 
 export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
@@ -4215,7 +4206,7 @@ export type GetMembersResponses = {
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
-      membership: MembershipBaseSchema;
+      membership: MembershipBase;
     }>;
     total: number;
   };
@@ -4281,8 +4272,7 @@ export type GetPendingMembershipsResponses = {
    */
   200: {
     items: Array<{
-      membershipId: string | null;
-      tokenId: string | null;
+      id: string;
       email: string;
       thumbnailUrl?: string | null;
       role: 'member' | 'admin';

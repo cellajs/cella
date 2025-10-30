@@ -4,7 +4,7 @@ import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -37,7 +37,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const membershipRouteHandlers = app
   /**
    * Create memberships (invite members) for an entity such as an organization, by list of emails
-   * 1. email exists in membershipsTable for this entity with activatedAt -> user is already is member of entity so we remove it from recipients.
+   * 1. email exists in membershipsTable for this entity with activatedAt -> user already is member of entity so we remove it from recipients.
    * 1b. email exists in membershipsTable, but no activatedAt -> user will receive a reminder email invitation.
    * 2. email exists in emailsTable -> user is already active in system so no token invitation but create inactive membership send a email invitation with a link to the entity.
    * 3. add to recipients and create another token with email and an inactive membership.
@@ -476,7 +476,6 @@ const membershipRouteHandlers = app
         id: table.id,
         role: table.role,
         userId: table.userId,
-        tokenId: table.tokenId,
         email: userBaseSelect.email,
         thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
         createdAt: table.createdAt,
@@ -489,7 +488,8 @@ const membershipRouteHandlers = app
           eq(table[entityIdField], entity.id),
           eq(table.organizationId, organization.id),
         ),
-      );
+      )
+      .orderBy(orderColumn);
 
     const items = await pendingMembershipsQuery.limit(limit).offset(offset);
 
