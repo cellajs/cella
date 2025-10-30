@@ -38,7 +38,7 @@ export const handleOAuthInitiation = async (
 ) => {
   const { type } = ctx.req.valid('query');
 
-  // TODO redirect should be passed from frontend here
+  // TODO redirect should be passed from frontend here?
   const redirectPath = await prepareOAuthByContext(ctx, type, null);
   const cookieContent = JSON.stringify({ codeVerifier, type });
 
@@ -86,8 +86,7 @@ const prepareOAuthByContext = async (ctx: Context, type: OAuthFlowType, redirect
 
     case 'verify': {
       const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: safeRedirect });
-
-      if (tokenRecord) return `${appConfig.frontendUrl}/home?invitationTokenId=${tokenRecord.id}&skipWelcome=true`;
+      if (tokenRecord) return `${appConfig.frontendUrl}/home?&skipWelcome=true`;
 
       return safeRedirect;
     }

@@ -458,7 +458,7 @@ const membershipRouteHandlers = app
 
     if (acceptOrReject === 'accept') {
       // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
-      // TODO test this in raak for projects and edge cases
+      // TODO(DAVID) test this in raak for projects and edge cases
       const entity = await resolveEntity('organization', inactiveMembership.organizationId);
       if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
 
@@ -468,7 +468,7 @@ const membershipRouteHandlers = app
 
       await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      // TODO eventManager.emit('acceptedMembership', membership);
+      // TODO(DAVID) eventManager.emit('acceptedMembership', membership);
 
       logEvent('info', 'Accepted memberships', { ids: activatedMemberships.map((m) => m.id) });
     }

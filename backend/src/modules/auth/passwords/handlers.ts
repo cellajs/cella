@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
@@ -17,6 +18,7 @@ import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/routes';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -25,7 +27,6 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
-import { userSelect } from '#/modules/users/helpers/select';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
@@ -100,13 +101,8 @@ const authPasswordsRouteHandlers = app
     // If no membership invitation, we are done
     if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
 
-    // TODO If membership invitation, get membership to forward
-    const [invitationMembership] = await db.select({ id: membershipsTable.id }).from(membershipsTable).limit(1);
-
-    if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
-
     // Redirect to accept invitation if membership invite
-    const redirectPath = `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`;
+    const redirectPath = `/home?skipWelcome=true`;
 
     return ctx.json({ shouldRedirect: true, redirectPath }, 201);
   })
@@ -118,7 +114,9 @@ const authPasswordsRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const [user] = await db.select(userSelect).from(usersTable)
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);

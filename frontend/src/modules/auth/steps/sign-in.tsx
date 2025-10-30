@@ -57,12 +57,8 @@ export const SignInStep = () => {
         return;
       }
 
-      // Go to invitation if token is provided, otherwise use provided redirect or default path
-      const redirectPath = tokenId
-        ? `/home?invitationTokenId=${tokenId}&skipWelcome=true`
-        : redirect?.startsWith('/')
-          ? redirect
-          : appConfig.defaultRedirectPath;
+      // Go to pending invitation in home if token is provided, otherwise use provided redirect or default path
+      const redirectPath = tokenId ? `/home?skipWelcome=true` : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,
