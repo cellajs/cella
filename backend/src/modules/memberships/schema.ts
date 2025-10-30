@@ -3,8 +3,8 @@ import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { userBaseSchema } from '#/modules/users/schema-base';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
-import { userBaseSchema } from '../users/schema-base';
 
 export const membershipSchema = createSelectSchema(membershipsTable).openapi('Membership');
 

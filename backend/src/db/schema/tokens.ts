@@ -1,10 +1,10 @@
 import { appConfig } from 'config';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { inactiveMembershipsTable } from './inactive-memberships';
 
 const tokenTypeEnum = appConfig.tokenTypes;
 

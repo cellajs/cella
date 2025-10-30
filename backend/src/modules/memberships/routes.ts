@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import {
   memberListQuerySchema,
   membershipCreateBodySchema,
@@ -12,7 +13,6 @@ import {
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { contextEntityBaseSchema } from '../entities/schema-base';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({

@@ -21,6 +21,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { contextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -32,7 +33,6 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { contextEntityBaseSelect } from '../entities/helpers/select';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;

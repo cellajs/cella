@@ -8,8 +8,8 @@ import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { encodeLowerCased } from './oslo';
 
 type BaseProps = {
   ctx: Context<Env>;

@@ -5,11 +5,11 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/schema';
 import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
+import { inactiveMembershipSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
+import { userBaseSchema } from '#/modules/users/schema-base';
 import { booleanTransformSchema } from '#/utils/schema/common';
-import { contextEntityBaseSchema } from '../entities/schema-base';
-import { inactiveMembershipSchema } from '../memberships/schema';
-import { userBaseSchema } from '../users/schema-base';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
