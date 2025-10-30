@@ -196,11 +196,11 @@ const membershipRouteHandlers = app
     const memberInviteNoTokenLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
 
     const noTokenRecipients = [
-      // Step 3a: Scenario 2 invitations for existing users (inactive memberships were created)
+      // Scenario 2 invitations for existing users (inactive memberships were created)
       ...existingUsersToActivate.map(({ email }) => {
         return { email, lng, name: slugFromEmail(email), memberInviteLink: memberInviteNoTokenLink };
       }),
-      // Step 3b: Scenario 1b reminders for pending members
+      // Scenario 1b reminders for pending members
       ...reminderEmails.map((email) => {
         return { email, lng, name: slugFromEmail(email), memberInviteLink: memberInviteNoTokenLink };
       }),
@@ -218,7 +218,7 @@ const membershipRouteHandlers = app
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
     }));
 
-    await db.insert(inactiveMembershipsTable).values(membershipsToInsert).returning();
+    if (newUserTokenEmails.length > 0) await db.insert(inactiveMembershipsTable).values(membershipsToInsert).returning();
 
     // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (new users)
     const rawTokens: Array<{ email: string; raw: string }> = [];
@@ -330,9 +330,10 @@ const membershipRouteHandlers = app
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     // Get target memberships
-    const targets = await db.select(membershipBaseSelect).from(membershipsTable).where(
-      and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)),
-    );
+    const targets = await db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
+      .where(and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id)));
 
     // Check if membership exist
     const rejectedItems: string[] = [];
@@ -374,7 +375,9 @@ const membershipRouteHandlers = app
     let orderToUpdate = order;
 
     // Get the membership in valid organization
-    const [membershipToUpdate] = await db.select(membershipBaseSelect).from(membershipsTable)
+    const [membershipToUpdate] = await db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
       .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
       .limit(1);
 
