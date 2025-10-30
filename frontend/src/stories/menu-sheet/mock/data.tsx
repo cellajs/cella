@@ -1,4 +1,5 @@
 import { ContextEntityType } from 'config';
+import { Membership } from '~/api.gen';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 
 export const mockUser = {
@@ -46,7 +47,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-1',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -67,7 +68,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-2',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -88,7 +89,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: true,
       organizationId: 'org-3',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -109,7 +110,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: true,
       organizationId: 'org-4',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -130,7 +131,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-5',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -151,7 +152,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-6',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -172,7 +173,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: true,
       organizationId: 'org-7',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -193,7 +194,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-8',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -214,7 +215,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-9',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -235,7 +236,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: true,
       organizationId: 'org-10',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -256,7 +257,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-11',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -277,7 +278,7 @@ export const mockOrganizations: UserMenuItem[] = [
       muted: true,
       organizationId: 'org-12',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
 ];
@@ -302,7 +303,7 @@ export const mockTeams: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-1',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [
       {
         id: 'subteam-1',
@@ -322,7 +323,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-1',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
       {
         id: 'subteam-2',
@@ -342,7 +343,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-1',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
       {
         id: 'subteam-3',
@@ -362,7 +363,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-1',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
     ],
   },
@@ -384,7 +385,7 @@ export const mockTeams: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-1',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [
       {
         id: 'subteam-4',
@@ -404,7 +405,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-2',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
       {
         id: 'subteam-5',
@@ -424,7 +425,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-2',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
     ],
   },
@@ -446,7 +447,7 @@ export const mockTeams: UserMenuItem[] = [
       muted: true,
       organizationId: 'org-1',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [],
   },
   {
@@ -467,7 +468,7 @@ export const mockTeams: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-2',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: [
       {
         id: 'subteam-6',
@@ -487,7 +488,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-4',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
       {
         id: 'subteam-7',
@@ -507,7 +508,7 @@ export const mockTeams: UserMenuItem[] = [
           muted: false,
           organizationId: 'team-4',
           activatedAt: '2024-01-01T00:00:00Z',
-        },
+        } as Membership,
       },
     ],
   },
@@ -533,7 +534,7 @@ export const mockOrganizationsWithTeams: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-1',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: mockTeams.slice(0, 3), // Engineering, Design, Product teams
   },
   {
@@ -554,7 +555,7 @@ export const mockOrganizationsWithTeams: UserMenuItem[] = [
       muted: false,
       organizationId: 'org-2',
       activatedAt: '2024-01-01T00:00:00Z',
-    },
+    } as Membership,
     submenu: mockTeams.slice(3, 4), // Marketing team (archived)
   },
 ];
@@ -562,16 +563,16 @@ export const mockOrganizationsWithTeams: UserMenuItem[] = [
 // Menu configurations
 export const mockMenu: UserMenu = {
   organization: mockOrganizations,
-};
+} as unknown as UserMenu;
 
 export const mockOrganizationsAndTeamsMenu: UserMenu = {
   organization: mockOrganizations,
   teams: mockTeams,
-} as UserMenu;
+} as unknown as UserMenu;
 
 export const mockFullMenuWithSubteams: UserMenu = {
   organization: mockOrganizationsWithTeams,
-};
+} as unknown as UserMenu;
 
 export const mockSearchResults: UserMenuItem[] = [mockOrganizations[0], mockOrganizations[1]];
 
