@@ -48,7 +48,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true,
   try {
     const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: redirectPath });
     existingSessionToken = sessionToken;
-  } catch (err) { }
+  } catch (err) {}
   if (existingSessionToken) {
     // Get user from valid session
     const { user } = await validateSession(existingSessionToken);

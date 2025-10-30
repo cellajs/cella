@@ -68,7 +68,6 @@ export const handleOAuthInitiation = async (
  */
 // TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
 const prepareOAuthByContext = async (ctx: Context, type: OAuthFlowType, redirect: string | null): Promise<string> => {
-
   // Helper to resolve safe default redirect
   const safeRedirect = redirect ? isValidRedirectPath(decodeURIComponent(redirect)) || appConfig.defaultRedirectPath : appConfig.defaultRedirectPath;
 

@@ -4,6 +4,7 @@ import { appConfig } from 'config';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
@@ -32,7 +33,6 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { contextEntityBaseSelect } from '../entities/helpers/select';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
@@ -172,7 +172,13 @@ const meRouteHandlers = app
           .from(inactiveMembershipsTable)
           .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
           .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdField]))
-          .where(and(eq(inactiveMembershipsTable.contextType, entityType), eq(inactiveMembershipsTable.userId, user.id), isNull(inactiveMembershipsTable.rejectedAt)));
+          .where(
+            and(
+              eq(inactiveMembershipsTable.contextType, entityType),
+              eq(inactiveMembershipsTable.userId, user.id),
+              isNull(inactiveMembershipsTable.rejectedAt),
+            ),
+          );
       }),
     );
 

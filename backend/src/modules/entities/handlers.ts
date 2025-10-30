@@ -106,13 +106,13 @@ const entityRouteHandlers = app
         ? entityType !== 'organization' && 'organizationId' in table
           ? membershipQuery.innerJoin(orgMembershipsSubquery, eq(table.organizationId as SQLWrapper, orgMembershipsSubquery.orgId))
           : membershipQuery.innerJoin(
-            orgMembershipsAlias,
-            and(
-              eq(orgMembershipsAlias.userId, userId),
-              eq(table.id, orgMembershipsAlias.organizationId),
-              eq(orgMembershipsAlias.contextType, 'organization'),
-            ),
-          )
+              orgMembershipsAlias,
+              and(
+                eq(orgMembershipsAlias.userId, userId),
+                eq(table.id, orgMembershipsAlias.organizationId),
+                eq(orgMembershipsAlias.contextType, 'organization'),
+              ),
+            )
         : membershipQuery;
 
       // Apply query filters (search, role, excludeArchived)

@@ -8,8 +8,8 @@ import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
 import { contextEntityBaseSchema } from '../entities/schema-base';
-import { userBaseSchema } from '../users/schema-base';
 import { inactiveMembershipSchema } from '../memberships/schema';
+import { userBaseSchema } from '../users/schema-base';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 

@@ -44,7 +44,7 @@ export const EntityInvitations = () => {
   if (!invites?.items.length) return null;
 
   return (
-    <div className='container'>
+    <div className="container">
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>{t('common:pending_invitations')}</CardTitle>

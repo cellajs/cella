@@ -1,8 +1,8 @@
 import { appConfig, type ContextEntityType } from 'config';
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
 

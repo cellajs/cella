@@ -60,13 +60,13 @@ const usersRouteHandlers = app
     const baseUsersQuery =
       mode === 'shared'
         ? db
-          .selectDistinct({ ...userSelect })
-          .from(usersTable)
-          .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
-          .innerJoin(
-            requesterMembership,
-            and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
-          )
+            .selectDistinct({ ...userSelect })
+            .from(usersTable)
+            .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
+            .innerJoin(
+              requesterMembership,
+              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
+            )
         : usersBaseQuery();
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);

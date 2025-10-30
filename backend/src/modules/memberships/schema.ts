@@ -1,10 +1,10 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
 import { userBaseSchema } from '../users/schema-base';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 export const membershipSchema = createSelectSchema(membershipsTable).openapi('Membership');
 

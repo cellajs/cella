@@ -45,7 +45,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-1',
-
     },
     submenu: [],
   },
@@ -66,7 +65,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-2',
-
     },
     submenu: [],
   },
@@ -87,7 +85,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: true,
       organizationId: 'org-3',
-
     },
     submenu: [],
   },
@@ -108,7 +105,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: true,
       organizationId: 'org-4',
-
     },
     submenu: [],
   },
@@ -129,7 +125,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-5',
-
     },
     submenu: [],
   },
@@ -150,7 +145,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-6',
-
     },
     submenu: [],
   },
@@ -171,7 +165,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: true,
       organizationId: 'org-7',
-
     },
     submenu: [],
   },
@@ -192,7 +185,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-8',
-
     },
     submenu: [],
   },
@@ -213,7 +205,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: true,
       muted: false,
       organizationId: 'org-9',
-
     },
     submenu: [],
   },
@@ -234,7 +225,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: true,
       muted: true,
       organizationId: 'org-10',
-
     },
     submenu: [],
   },
@@ -255,7 +245,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: true,
       muted: false,
       organizationId: 'org-11',
-
     },
     submenu: [],
   },
@@ -276,7 +265,6 @@ export const mockOrganizations: UserMenuItem[] = [
       archived: false,
       muted: true,
       organizationId: 'org-12',
-
     },
     submenu: [],
   },
@@ -301,7 +289,6 @@ export const mockTeams: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-1',
-
     },
     submenu: [
       {
@@ -321,7 +308,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-1',
-
         },
       },
       {
@@ -341,7 +327,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-1',
-
         },
       },
       {
@@ -361,7 +346,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-1',
-
         },
       },
     ],
@@ -383,7 +367,6 @@ export const mockTeams: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-1',
-
     },
     submenu: [
       {
@@ -403,7 +386,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-2',
-
         },
       },
       {
@@ -423,7 +405,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-2',
-
         },
       },
     ],
@@ -445,7 +426,6 @@ export const mockTeams: UserMenuItem[] = [
       archived: false,
       muted: true,
       organizationId: 'org-1',
-
     },
     submenu: [],
   },
@@ -466,7 +446,6 @@ export const mockTeams: UserMenuItem[] = [
       archived: true,
       muted: false,
       organizationId: 'org-2',
-
     },
     submenu: [
       {
@@ -486,7 +465,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-4',
-
         },
       },
       {
@@ -506,7 +484,6 @@ export const mockTeams: UserMenuItem[] = [
           archived: false,
           muted: false,
           organizationId: 'team-4',
-
         },
       },
     ],
@@ -532,7 +509,6 @@ export const mockOrganizationsWithTeams: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-1',
-
     },
     submenu: mockTeams.slice(0, 3), // Engineering, Design, Product teams
   },
@@ -553,7 +529,6 @@ export const mockOrganizationsWithTeams: UserMenuItem[] = [
       archived: false,
       muted: false,
       organizationId: 'org-2',
-
     },
     submenu: mockTeams.slice(3, 4), // Marketing team (archived)
   },

@@ -69,22 +69,14 @@ export function useMutateQueryData(
   function create(items: ItemData[]): void;
   function create(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function create(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function create(
-    items: ItemData[] | EntityData[] | ContextEntityBase[],
-    entity?: ProductEntityType | ContextEntityType,
-    keyToOperateIn?: string,
-  ) {
+  function create(items: ItemData[] | EntityData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'create', entity, keyToOperateIn);
   }
 
   function update(items: ItemData[]): void;
   function update(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function update(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function update(
-    items: ItemData[] | EntityData[] | ContextEntityBase[],
-    entity?: ProductEntityType | ContextEntityType,
-    keyToOperateIn?: string,
-  ) {
+  function update(items: ItemData[] | EntityData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'update', entity, keyToOperateIn);
   }
 
@@ -97,11 +89,7 @@ export function useMutateQueryData(
   function remove(items: ItemData[]): void;
   function remove(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function remove(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function remove(
-    items: ItemData[] | EntityData[] | ContextEntityBase[],
-    entity?: ProductEntityType | ContextEntityType,
-    keyToOperateIn?: string,
-  ) {
+  function remove(items: ItemData[] | EntityData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'remove', entity, keyToOperateIn);
   }
 

@@ -14,21 +14,19 @@ const tokenTypeEnum = appConfig.tokenTypes;
  *
  * @link http://localhost:4000/docs#tag/tokens
  */
-export const tokensTable = pgTable(
-  'tokens',
-  {
-    createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    token: varchar().notNull(),
-    singleUseToken: varchar(),
-    type: varchar({ enum: tokenTypeEnum }).notNull(),
-    email: varchar().notNull(),
-    userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-    oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
-    inactiveMembershipId: varchar().references(() => inactiveMembershipsTable.id, { onDelete: 'cascade' }),
-    createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-    expiresAt: timestampColumns.expiresAt,
-    invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
-  });
+export const tokensTable = pgTable('tokens', {
+  createdAt: timestampColumns.createdAt,
+  id: varchar().primaryKey().$defaultFn(nanoid),
+  token: varchar().notNull(),
+  singleUseToken: varchar(),
+  type: varchar({ enum: tokenTypeEnum }).notNull(),
+  email: varchar().notNull(),
+  userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+  oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+  inactiveMembershipId: varchar().references(() => inactiveMembershipsTable.id, { onDelete: 'cascade' }),
+  createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+  expiresAt: timestampColumns.expiresAt,
+  invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
+});
 
 export type TokenModel = typeof tokensTable.$inferSelect;

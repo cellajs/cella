@@ -59,13 +59,13 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
   const maxOrderRows =
     userIds.length > 0
       ? await db
-        .select({
-          userId: membershipsTable.userId,
-          maxOrder: max(membershipsTable.order),
-        })
-        .from(membershipsTable)
-        .where(inArray(membershipsTable.userId, userIds))
-        .groupBy(membershipsTable.userId)
+          .select({
+            userId: membershipsTable.userId,
+            maxOrder: max(membershipsTable.order),
+          })
+          .from(membershipsTable)
+          .where(inArray(membershipsTable.userId, userIds))
+          .groupBy(membershipsTable.userId)
       : [];
 
   // Map userId -> current max(order) (default 0 if none)

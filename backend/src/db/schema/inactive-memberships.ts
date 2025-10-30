@@ -15,12 +15,15 @@ const baseColumns = {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
-  userId: varchar()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull().default('member'),
   rejectedAt: timestamp({ mode: 'string' }),
-  createdBy: varchar().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
-  organizationId: varchar().notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  createdBy: varchar()
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  organizationId: varchar()
+    .notNull()
+    .references(() => organizationsTable.id, { onDelete: 'cascade' }),
 };
 
 // Generate entity id columns based on entity-config

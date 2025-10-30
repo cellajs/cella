@@ -226,7 +226,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 
 /**
  * Check if email exists
- *
  * 🌐 Public access
  * ⏳ Email (5/h)
  *
@@ -252,7 +251,6 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Invoke token session
- *
  * 🌐 Public access
  *
  * Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
@@ -274,7 +272,6 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
 
 /**
  * Get token data
- *
  * 🌐 Public access
  *
  * Get basic token data from single-use token session, It returns basic data if the session is still valid.
@@ -296,7 +293,6 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
 
 /**
  * Start impersonating
- *
  * 🛡️ Requires authentication (system access)
  *
  * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
@@ -324,7 +320,6 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Stop impersonating
- *
  * 🛡️ Requires authentication
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
@@ -351,7 +346,6 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
 
 /**
  * Resend invitation
- *
  * 🌐 Public access
  * ⏳ Spam (10/h)
  *
@@ -376,7 +370,6 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(o
 
 /**
  * Sign out
- *
  * 🌐 Public access
  *
  * Signs out the *current user* and clears the active session.
@@ -396,7 +389,6 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
 
 /**
  * Generate TOTP key
- *
  * 🛡️ Requires authentication
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
@@ -423,7 +415,6 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
 
 /**
  * Delete TOTP
- *
  * 🛡️ Requires authentication
  *
  * Delete TOTP credential for current user.
@@ -450,7 +441,6 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
 
 /**
  * Set TOTP
- *
  * 🛡️ Requires authentication
  *
  * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
@@ -482,7 +472,6 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Verify TOTP
- *
  * 🌐 Public access
  * ⏳ Spam (10/h)
  *
@@ -508,7 +497,6 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Sign up with password
- *
  * 🌐 Public access
  * ⏳ Spam (10/h), Email (5/h)
  *
@@ -535,7 +523,6 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 
 /**
  * Sign up to accept invite
- *
  * 🌐 Public access
  * ⏳ token_signup_invitation (10/h), Email (5/h)
  *
@@ -563,7 +550,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Request new password
- *
  * 🌐 Public access
  * ⏳ Spam (10/h), Email (5/h)
  *
@@ -589,7 +575,6 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Create password
- *
  * 🌐 Public access
  * ⏳ token_password-reset (10/h)
  *
@@ -616,7 +601,6 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Sign in with password
- *
  * 🌐 Public access
  * ⏳ Password (5/h)
  *
@@ -643,7 +627,6 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
 
 /**
  * Create passkey
- *
  * 🛡️ Requires authentication
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
@@ -677,7 +660,6 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Delete passkey
- *
  * 🛡️ Requires authentication
  *
  * Delete a passkey by id from the *current user*.
@@ -705,7 +687,6 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Generate passkey challenge
- *
  * 🌐 Public access
  * ⏳ Spam (10/h)
  *
@@ -732,7 +713,6 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
 
 /**
  * Verify passkey
- *
  * 🌐 Public access
  * ⏳ token_passkey (10/h)
  *
@@ -763,7 +743,6 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: 
 
 /**
  * Authenticate with GitHub
- *
  * 🌐 Public access
  *
  * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
@@ -785,7 +764,6 @@ export const github = <ThrowOnError extends boolean = true>(options?: Options<Gi
 
 /**
  * Authenticate with Google
- *
  * 🌐 Public access
  *
  * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
@@ -807,7 +785,6 @@ export const google = <ThrowOnError extends boolean = true>(options?: Options<Go
 
 /**
  * Authenticate with Microsoft
- *
  * 🌐 Public access
  *
  * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
@@ -829,7 +806,6 @@ export const microsoft = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Callback for GitHub
- *
  * 🌐 Public access
  * ⏳ token_github (10/h)
  *
@@ -855,7 +831,6 @@ export const githubCallback = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Callback for Google
- *
  * 🌐 Public access
  * ⏳ token_google (10/h)
  *
@@ -878,7 +853,6 @@ export const googleCallback = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Callback for Microsoft
- *
  * 🌐 Public access
  * ⏳ token_microsoft (10/h)
  *
@@ -901,7 +875,6 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
 
 /**
  * Delete self
- *
  * 🛡️ Requires authentication
  *
  * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
@@ -928,7 +901,6 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
 
 /**
  * Get self
- *
  * 🛡️ Requires authentication
  *
  * Returns the *current user*.
@@ -955,7 +927,6 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
 
 /**
  * Update self
- *
  * 🛡️ Requires authentication
  *
  * Updates the *current user*.
@@ -994,7 +965,6 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
 
 /**
  * Toggle MFA
- *
  * 🛡️ Requires authentication
  *
  * Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.
@@ -1028,7 +998,6 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Get auth data
- *
  * 🛡️ Requires authentication
  *
  * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
@@ -1055,7 +1024,6 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Get menu
- *
  * 🛡️ Requires authentication
  *
  * Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
@@ -1082,7 +1050,6 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Get list of invitations
- *
  * 🛡️ Requires authentication
  *
  * Returns a list of pending memberships with entity data.
@@ -1109,7 +1076,6 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
 
 /**
  * Terminate sessions
- *
  * 🛡️ Requires authentication
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
@@ -1141,7 +1107,6 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
 
 /**
  * Leave entity
- *
  * 🛡️ Requires authentication
  *
  * Removes the *current user* from an entity they are a member of.
@@ -1170,7 +1135,6 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Get upload token
- *
  * 🛡️ Requires authentication
  *
  * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
@@ -1200,7 +1164,6 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Unsubscribe
- *
  * 🌐 Public access
  * ⏳ token_unsubscribe (10/h)
  *
@@ -1222,7 +1185,6 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Delete users
- *
  * 🛡️ Requires authentication (system access)
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
@@ -1254,7 +1216,6 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
 
 /**
  * Get list of users
- *
  * 🛡️ Requires authentication
  *
  * Returns a list of *users* at the system level.
@@ -1290,7 +1251,6 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
 
 /**
  * Get user
- *
  * 🛡️ Requires authentication
  *
  * Retrieves a *user* by ID or slug.
@@ -1318,7 +1278,6 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
 
 /**
  * Update user
- *
  * 🛡️ Requires authentication (system access)
  *
  * Updates a *user* identified by ID or slug.
@@ -1357,7 +1316,6 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Delete organizations
- *
  * 🛡️ Requires authentication
  *
  * Deletes one or more *organizations* by ID.
@@ -1389,7 +1347,6 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
 
 /**
  * Get list of organizations
- *
  * 🛡️ Requires authentication (system access)
  *
  * Returns a list of *organizations* at the system level.
@@ -1421,7 +1378,6 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
 
 /**
  * Create organization
- *
  * 🛡️ Requires authentication
  *
  * Creates a new *organization*.
@@ -1454,7 +1410,6 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Get organization
- *
  * 🛡️ Requires authentication
  *
  * Retrieves an *organization* by ID or slug.
@@ -1482,7 +1437,6 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Update organization
- *
  * 🛡️ Requires authentication
  *
  * Updates an *organization* by ID or slug.
@@ -1531,7 +1485,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Get list of context entities
- *
  * 🛡️ Requires authentication
  *
  * Returns a paginated list of *context entities* (e.g. *users*, *organizations*) the current user has access to.
@@ -1572,7 +1525,6 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
 
 /**
  * Get a context entity
- *
  * 🛡️ Requires authentication
  *
  * Retrieve detailed information about a single context entity by its ID or slug.
@@ -1602,7 +1554,6 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Check slug availability
- *
  * 🛡️ Requires authentication
  *
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
@@ -1636,7 +1587,6 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
 
 /**
  * Invite to system
- *
  * 🛡️ Requires authentication (system access)
  *
  * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
@@ -1668,7 +1618,6 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
 
 /**
  * Get presigned URL
- *
  * 🌐 Public access
  *
  * Generates and returns a presigned URL for uploading files to an S3 bucket.
@@ -1690,7 +1639,6 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Paddle webhook (WIP)
- *
  * 🌐 Public access
  * ⏳ token_paddle (10/h)
  *
@@ -1715,7 +1663,6 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
 
 /**
  * Newsletter to members
- *
  * 🛡️ Requires authentication (system access)
  *
  * Sends a newsletter to members of one or more specified organizations.
@@ -1751,7 +1698,6 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Delete requests
- *
  * 🛡️ Requires authentication (system access)
  *
  * Deletes one or more *requests* from the system by their IDs.
@@ -1783,7 +1729,6 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Get list of requests
- *
  * 🛡️ Requires authentication (system access)
  *
  * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
@@ -1815,7 +1760,6 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
 
 /**
  * Create request
- *
  * 🌐 Public access
  * ⏳ Email (5/h), Spam (10/h)
  *
@@ -1843,7 +1787,6 @@ export const createRequest = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Get metrics
- *
  * 🛡️ Requires authentication (system access)
  *
  * EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
@@ -1871,7 +1814,6 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
 
 /**
  * Get public counts
- *
  * 🌐 Public access
  *
  * Returns basic count metrics for entity types such as `users` and `organizations`.
@@ -1892,7 +1834,6 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
 
 /**
  * Shape proxy
- *
  * 🛡️ Requires authentication (org access)
  *
  * Proxies requests to ElectricSQL's shape endpoint for the `attachments` table.
@@ -1928,7 +1869,6 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Delete attachments
- *
  * 🛡️ Requires authentication (org access)
  *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
@@ -1961,7 +1901,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
 
 /**
  * Get list of attachments
- *
  * 🛡️ Requires authentication (org access)
  *
  * Retrieves all *attachments* associated with a specific entity, such as an organization.
@@ -1995,7 +1934,6 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Create attachments
- *
  * 🛡️ Requires authentication (org access)
  *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
@@ -2027,7 +1965,6 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Get attachment
- *
  * 🛡️ Requires authentication (org access)
  *
  * Fetches metadata and access details for a single *attachment* by ID.
@@ -2056,7 +1993,6 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Update attachment
- *
  * 🛡️ Requires authentication (org access)
  *
  * Updates metadata of an *attachment*, such as its name or associated entity.
@@ -2091,7 +2027,6 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Redirect to attachment
- *
  * 🌐 Public access
  * ⏳ token_attachment_redirect (10/h)
  *
@@ -2113,7 +2048,6 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
 
 /**
  * Delete memberships
- *
  * 🛡️ Requires authentication (org access)
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
@@ -2148,7 +2082,6 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
 
 /**
  * Create memberships
- *
  * 🛡️ Requires authentication (org access)
  *
  * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
@@ -2184,7 +2117,6 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Update membership
- *
  * 🛡️ Requires authentication (org access)
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
@@ -2221,7 +2153,6 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Respond to membership invitation
- *
  * 🛡️ Requires authentication
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
@@ -2251,7 +2182,6 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
 
 /**
  * Get list of members
- *
  * 🛡️ Requires authentication (org access)
  *
  * Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.
@@ -2287,7 +2217,6 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Get list of pending memberships
- *
  * 🛡️ Requires authentication (org access)
  *
  * Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.

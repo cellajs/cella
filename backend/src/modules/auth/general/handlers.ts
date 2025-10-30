@@ -5,10 +5,12 @@ import i18n from 'i18next';
 import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -26,9 +28,7 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
-import { resolveEntity } from '#/lib/entity';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -224,14 +224,22 @@ const authGeneralRouteHandlers = app
 
     // Get entity info
     if (oldToken.inactiveMembershipId) {
-      const [inactiveMembership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId))
+      const [inactiveMembership] = await db
+        .select()
+        .from(inactiveMembershipsTable)
+        .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
 
       const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
       const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
       if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
       defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', { entityName: entity.name, lng: appConfig.defaultLanguage });
-      const emailProps = { ...defaultEmailProps, entityName: entity.name, role: inactiveMembership.role, lng: entity.defaultLanguage || appConfig.defaultLanguage };
+      const emailProps = {
+        ...defaultEmailProps,
+        entityName: entity.name,
+        role: inactiveMembership.role,
+        lng: entity.defaultLanguage || appConfig.defaultLanguage,
+      };
 
       await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
       logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });

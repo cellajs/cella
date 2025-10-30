@@ -2,6 +2,7 @@ import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
@@ -9,7 +10,6 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 
 interface HandleCreateUserProps {
   newUser: InsertUserModel;
@@ -72,7 +72,6 @@ export const handleCreateUser = async ({ newUser, inactiveMembershipId, emailVer
   }
 };
 
-
 /**
  * Handles updating an inactive membership with the new user ID upon user creation.
  *
@@ -80,6 +79,10 @@ export const handleCreateUser = async ({ newUser, inactiveMembershipId, emailVer
  * @param inactiveMembershipId - The ID of the inactive membership to update.
  */
 export const handleSetUserOnInactiveMembership = async (userId: string, inactiveMembershipId: string) => {
-  const [inactiveMembership] = await db.update(inactiveMembershipsTable).set({ userId }).where(eq(inactiveMembershipsTable.id, inactiveMembershipId)).returning();
+  const [inactiveMembership] = await db
+    .update(inactiveMembershipsTable)
+    .set({ userId })
+    .where(eq(inactiveMembershipsTable.id, inactiveMembershipId))
+    .returning();
   if (!inactiveMembership) throw new Error('No inactive membership found for token.');
 };

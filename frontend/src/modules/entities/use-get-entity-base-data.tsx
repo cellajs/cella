@@ -16,11 +16,7 @@ function isContextEntityType(t: ContextEntityType | 'user'): t is ContextEntityT
 type WithIdSlug = { id?: string | null; slug?: string | null };
 
 // user overload
-export function useGetEntityBaseData(args: {
-  idOrSlug: string;
-  entityType: ContextEntityType | 'user';
-  cacheOnly?: boolean;
-}): UserBase | undefined;
+export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user'; cacheOnly?: boolean }): UserBase | undefined;
 
 // TODO can we batch this using getContextEntities, so that it waits 100ms and batches multiple calls into one API request?
 

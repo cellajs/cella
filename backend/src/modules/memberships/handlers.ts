@@ -1,9 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
@@ -30,8 +32,6 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../emails/member-invite-with-token';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -96,7 +96,7 @@ const membershipRouteHandlers = app
         language: usersTable.language || entity.defaultLanguage, // use user's language or entity's default
         membershipId: membershipsTable.id, // nullable if no membership
         inactiveMembershipId: inactiveMembershipsTable.id, // nullable if no inactive membership
-        orgMembershipId: orgMemberships.id
+        orgMembershipId: orgMemberships.id,
       })
       .from(emailsTable)
       .leftJoin(usersTable, eq(usersTable.id, emailsTable.userId))
@@ -122,7 +122,7 @@ const membershipRouteHandlers = app
           eq(orgMemberships.userId, usersTable.id),
           eq(orgMemberships.contextType, 'organization'),
           eq(orgMemberships.organizationId, organization.id),
-        )
+        ),
       )
       .where(and(inArray(emailsTable.email, normalizedEmails)));
 
@@ -150,11 +150,8 @@ const membershipRouteHandlers = app
       // If we have a user (but no membership), Scenario 2
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
-
         // User could still have an active organization membership
-        const hasActiveOrgMembership =
-          entityType !== 'organization' &&
-          !!rows.find((r) => r.orgMembershipId);
+        const hasActiveOrgMembership = entityType !== 'organization' && !!rows.find((r) => r.orgMembershipId);
 
         if (hasActiveOrgMembership) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Scenario 2b
@@ -209,7 +206,6 @@ const membershipRouteHandlers = app
       }),
     ];
 
-
     // Step 4: Prepare inactive memberships for new users and generate tokens
     const membershipsToInsert = newUserTokenEmails.map((email) => ({
       email,
@@ -227,7 +223,6 @@ const membershipRouteHandlers = app
     // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (new users)
     const rawTokens: Array<{ email: string; raw: string }> = [];
     const tokensToInsert = newUserTokenEmails.map((email) => {
-
       // Step 4a: Generate raw + hashed token
       const raw = nanoid(40);
       const hashed = encodeLowerCased(raw);
@@ -371,9 +366,7 @@ const membershipRouteHandlers = app
 
     // Get the membership in valid organization
     const [membershipToUpdate] = await membershipBaseQuery()
-      .where(
-        and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)),
-      )
+      .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
       .limit(1);
 
     if (!membershipToUpdate) {
@@ -439,10 +432,17 @@ const membershipRouteHandlers = app
     const [inactiveMembership] = await db
       .select()
       .from(inactiveMembershipsTable)
-      .where(and(eq(inactiveMembershipsTable.id, inactiveMembershipId), eq(inactiveMembershipsTable.userId, user.id), eq(inactiveMembershipsTable.contextType, 'organization')))
+      .where(
+        and(
+          eq(inactiveMembershipsTable.id, inactiveMembershipId),
+          eq(inactiveMembershipsTable.userId, user.id),
+          eq(inactiveMembershipsTable.contextType, 'organization'),
+        ),
+      )
       .limit(1);
 
-    if (!inactiveMembership) throw new AppError({ status: 404, type: 'inactive_membership_not_found', severity: 'error', meta: { id: inactiveMembershipId } });
+    if (!inactiveMembership)
+      throw new AppError({ status: 404, type: 'inactive_membership_not_found', severity: 'error', meta: { id: inactiveMembershipId } });
 
     if (acceptOrReject === 'accept') {
       // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
@@ -450,7 +450,9 @@ const membershipRouteHandlers = app
       const entity = await resolveEntity('organization', inactiveMembership.organizationId);
       if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
 
-      const activatedMemberships = await insertMemberships([{ entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy }]);
+      const activatedMemberships = await insertMemberships([
+        { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },
+      ]);
 
       await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
@@ -530,7 +532,7 @@ const membershipRouteHandlers = app
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
     const entityIdField = appConfig.entityIdFields[entity.entityType];
 
-    const table = inactiveMembershipsTable
+    const table = inactiveMembershipsTable;
     const orderColumn = getOrderColumn({ createdAt: table.createdAt }, sort, table.createdAt, order);
 
     const pendingMembershipsQuery = db
@@ -545,12 +547,7 @@ const membershipRouteHandlers = app
       })
       .from(table)
       .innerJoin(usersTable, eq(usersTable.id, table.userId))
-      .where(
-        and(
-          eq(table[entityIdField], entity.id),
-          eq(table.organizationId, organization.id),
-        ),
-      )
+      .where(and(eq(table[entityIdField], entity.id), eq(table.organizationId, organization.id)))
       .orderBy(orderColumn);
 
     const items = await pendingMembershipsQuery.limit(limit).offset(offset);

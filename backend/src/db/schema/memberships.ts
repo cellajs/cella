@@ -18,7 +18,9 @@ const baseColumns = {
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull().default('member'),
-  createdBy: varchar().notNull().references(() => usersTable.id, { onDelete: 'set null' }),
+  createdBy: varchar()
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'set null' }),
   modifiedAt: timestampColumns.modifiedAt,
   modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   archived: boolean().default(false).notNull(),
