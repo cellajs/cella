@@ -31,6 +31,7 @@ interface InsertSingleProps<T> {
  * @param info.tokenId - Optional, Id of a token if it's and invite membership (default: null).
  * @returns Inserted target membership.
  */
+// TODO not used anywhere
 export const insertMembership = async <T extends BaseEntityModel>({
   userId,
   role,
