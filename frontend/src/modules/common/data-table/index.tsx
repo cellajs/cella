@@ -76,7 +76,7 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className="grid rdg-wrapper relative pb-8" ref={gridRef}>
+            <div className="grid rdg-wrapper relative" ref={gridRef}>
               <DataGrid
                 rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
                 enableVirtualization={enableVirtualization}
