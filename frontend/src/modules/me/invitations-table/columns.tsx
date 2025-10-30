@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ApiError, GetMyInvitationsResponse, handleMembershipInvitation, HandleMembershipInvitationData, HandleMembershipInvitationResponse, type Attachment } from '~/api.gen';
+import { ApiError, GetMyInvitationsResponse, handleMembershipInvitation, HandleMembershipInvitationData, HandleMembershipInvitationResponse } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

@@ -1,9 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { useColumns } from '~/modules/me/invitations-table/columns';
 import { DataTable } from '~/modules/common/data-table';
-import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import useSearchParams from '~/hooks/use-search-params';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertWrap } from '~/modules/common/alert-wrap';
@@ -15,14 +12,8 @@ import { Invitation } from '../types';
 const InvitationsTable = () => {
   const { t } = useTranslation();
 
-  const { search, setSearch } = useSearchParams({ saveDataInSearch: false });
-
-  // Table state
-  const { sort, order } = search;
-
   // Build columns
-  const [columns, setColumns] = useState(useColumns());
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+  const columns = useColumns();
 
   const queryOptions = meInvitationsQueryOptions();
   const {
@@ -85,8 +76,6 @@ const InvitationsTable = () => {
             error,
             isLoading,
             isFetching,
-            sortColumns,
-            onSortColumnsChange,
             hasNextPage: false,
             NoRowsComponent: (<></>),
           }}
