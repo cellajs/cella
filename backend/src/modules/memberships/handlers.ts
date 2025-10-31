@@ -152,7 +152,7 @@ const membershipRouteHandlers = app
       if (userRow?.userId) {
         // Check if admin is inviting themselves
         const isAdminInvitingSelf = user.email === email && user.role === 'admin';
-        
+
         if (isAdminInvitingSelf) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Direct add for admin self-invite
         } else {
@@ -481,7 +481,12 @@ const membershipRouteHandlers = app
     }
 
     // Reject membership simply deletes the membership
-    if (acceptOrReject === 'reject') await db.delete(membershipsTable).where(and(eq(membershipsTable.id, inactiveMembership.id)));
+    if (acceptOrReject === 'reject') {
+      await db
+        .update(inactiveMembershipsTable)
+        .set({ rejectedAt: getIsoDate() })
+        .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
+    }
 
     const entity = await resolveEntity('organization', inactiveMembership.organizationId);
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
