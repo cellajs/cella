@@ -149,7 +149,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.2",
-    "@hey-api/openapi-ts": "^0.86.8",
+    "@hey-api/openapi-ts": "^0.86.11",
     "@react-scan/vite-plugin-react-scan": "^0.1.8",
     "@rollup/plugin-terser": "^0.4.4",
     "@sentry/vite-plugin": "^4.6.0",
