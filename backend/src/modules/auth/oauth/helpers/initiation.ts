@@ -30,16 +30,15 @@ export interface OAuthCookiePayload {
  * @returns redirect response
  */
 export const handleOAuthInitiation = async (
-  ctx: Context<Env, any, { out: { query: { type: OAuthFlowType } } }>,
+  ctx: Context<Env, any, { out: { query: { type: OAuthFlowType; redirect?: string } } }>,
   provider: string,
   url: URL,
   state: string,
   codeVerifier?: string,
 ) => {
-  const { type } = ctx.req.valid('query');
+  const { type, redirect } = ctx.req.valid('query');
 
-  // TODO redirect should be passed from frontend here?
-  const redirectPath = await prepareOAuthByContext(ctx, type, null);
+  const redirectPath = await prepareOAuthByContext(ctx, type, redirect);
   const cookieContent = JSON.stringify({ codeVerifier, type });
 
   await Promise.all([
@@ -67,7 +66,7 @@ export const handleOAuthInitiation = async (
  *
  */
 // TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
-const prepareOAuthByContext = async (ctx: Context, type: OAuthFlowType, redirect: string | null): Promise<string> => {
+const prepareOAuthByContext = async (ctx: Context, type: OAuthFlowType, redirect?: string): Promise<string> => {
   // Helper to resolve safe default redirect
   const safeRedirect = redirect ? isValidRedirectPath(decodeURIComponent(redirect)) || appConfig.defaultRedirectPath : appConfig.defaultRedirectPath;
 
