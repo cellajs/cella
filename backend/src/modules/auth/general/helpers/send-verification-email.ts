@@ -7,11 +7,11 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
+import { userSelect } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
-import { userSelect } from '#/modules/users/helpers/select';
 
 interface Props {
   userId: string;

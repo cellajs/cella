@@ -9,8 +9,8 @@ import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { getIsoDate } from '#/utils/iso-date';
 import { userSelect } from '#/modules/users/helpers/select';
+import { getIsoDate } from '#/utils/iso-date';
 
 export const handleEmailVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId

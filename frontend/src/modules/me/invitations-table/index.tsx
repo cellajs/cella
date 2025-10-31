@@ -1,13 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useColumns } from '~/modules/me/invitations-table/columns';
-import { DataTable } from '~/modules/common/data-table';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useTranslation } from 'react-i18next';
-import { meInvitationsQueryOptions } from '../query';
-import { Invitation } from '../types';
-
+import { AlertWrap } from '~/modules/common/alert-wrap';
+import { DataTable } from '~/modules/common/data-table';
+import { useColumns } from '~/modules/me/invitations-table/columns';
+import { meInvitationsQueryOptions } from '~/modules/me/query';
+import { Invitation } from '~/modules/me/types';
 
 const InvitationsTable = () => {
   const { t } = useTranslation();
@@ -16,12 +15,7 @@ const InvitationsTable = () => {
   const columns = useColumns();
 
   const queryOptions = meInvitationsQueryOptions();
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-  } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     ...queryOptions,
   });
 
@@ -77,7 +71,7 @@ const InvitationsTable = () => {
             isLoading,
             isFetching,
             hasNextPage: false,
-            NoRowsComponent: (<></>),
+            NoRowsComponent: <></>,
           }}
         />
       </div>

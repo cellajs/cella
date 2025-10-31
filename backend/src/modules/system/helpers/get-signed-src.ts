@@ -1,7 +1,7 @@
-import { getSignedUrlFromKey } from "#/lib/signed-url";
-import { appConfig } from "config";
+import { appConfig } from 'config';
+import { getSignedUrlFromKey } from '#/lib/signed-url';
 
-export const replaceSignedSrcs= async (content: string): Promise<string>  => {
+export const replaceSignedSrcs = async (content: string): Promise<string> => {
   // Regex to match src="..." or src='...'
   // Captures quote type in g1 and actual URL in g2
   const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
@@ -25,12 +25,9 @@ export const replaceSignedSrcs= async (content: string): Promise<string>  => {
         // fallback to original if signing fails
         replacements.set(src, src);
       }
-    })
+    }),
   );
 
   // Replace all src attributes in content
-  return content.replace(
-    srcRegex,
-    (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`
-  );
-}
+  return content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
+};

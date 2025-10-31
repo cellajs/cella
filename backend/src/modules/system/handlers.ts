@@ -18,6 +18,8 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/routes';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -28,8 +30,6 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
-import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -275,9 +275,8 @@ const systemRouteHandlers = app
         },
       ];
 
-
     // Replace all src attributes in content
-    const newContent = await replaceSignedSrcs(content)
+    const newContent = await replaceSignedSrcs(content);
 
     type Recipient = (typeof recipients)[number];
 

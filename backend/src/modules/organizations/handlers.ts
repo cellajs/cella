@@ -94,7 +94,9 @@ const organizationRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
-    const memberships = db.select(membershipBaseSelect).from(membershipsTable)
+    const memberships = db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
       .as('memberships');
 
@@ -184,13 +186,16 @@ const organizationRouteHandlers = app
       .returning();
 
     // notify members (unchanged)
-    const organizationMemberships = await db.select(membershipBaseSelect).from(membershipsTable).where(
-      and(
-        eq(membershipsTable.contextType, 'organization'),
-        eq(membershipsTable.organizationId, organization.id),
-        eq(membershipsTable.archived, false),
-      ),
-    );
+    const organizationMemberships = await db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.contextType, 'organization'),
+          eq(membershipsTable.organizationId, organization.id),
+          eq(membershipsTable.archived, false),
+        ),
+      );
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });

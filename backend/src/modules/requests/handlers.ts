@@ -12,11 +12,11 @@ import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import { sendSlackMessage } from '#/lib/notifications/send-slack-message';
 import requestRoutes from '#/modules/requests/routes';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { RequestResponseEmail, RequestResponseEmailProps } from '../../../emails/request-was-sent';
-import { userSelect } from '../users/helpers/select';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
@@ -33,7 +33,9 @@ const requestRouteHandlers = app
     const normalizedEmail = email.toLowerCase().trim();
 
     if (type === 'waitlist') {
-      const [existingUser] = await db.select(userSelect).from(usersTable)
+      const [existingUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);

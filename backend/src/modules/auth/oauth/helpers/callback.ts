@@ -15,10 +15,10 @@ import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { OAuthFlowType } from '#/modules/auth/oauth/schema';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
-import { userSelect } from '#/modules/users/helpers/select';
 
 /**
  * Handles the default OAuth authentication/signup flow.
@@ -130,7 +130,11 @@ const connectCallbackFlow = async (
   }
 
   // New OAuth account connection → validate email isn't used by another user
-  const users = await db.select(userSelect).from(usersTable).leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await db
+    .select(userSelect)
+    .from(usersTable)
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
     throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
   }
@@ -168,7 +172,11 @@ const inviteCallbackFlow = async (
   if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
 
   // No linked OAuth account and email already in use by an existing user
-  const users = await db.select(userSelect).from(usersTable).leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await db
+    .select(userSelect)
+    .from(usersTable)
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(eq(emailsTable.email, providerUser.email));
   if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', redirectPath });
 
   // TODO User already signed up meanwhile?

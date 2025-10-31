@@ -42,7 +42,9 @@ const authGeneralRouteHandlers = app
     const normalizedEmail = email.toLowerCase().trim();
 
     // User not found, go to sign up if registration is enabled
-    const [user] = await db.select(userSelect).from(usersTable)
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);

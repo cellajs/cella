@@ -1,18 +1,24 @@
 import { useTranslation } from 'react-i18next';
-import { ApiError, GetMyInvitationsResponse, handleMembershipInvitation, HandleMembershipInvitationData, HandleMembershipInvitationResponse } from '~/api.gen';
+import {
+  ApiError,
+  GetMyInvitationsResponse,
+  HandleMembershipInvitationData,
+  HandleMembershipInvitationResponse,
+  handleMembershipInvitation,
+} from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
+import { getAndSetMenu } from '~/modules/me/helpers';
+import { meKeys } from '~/modules/me/query';
+import { Invitation } from '~/modules/me/types';
+import { Button } from '~/modules/ui/button';
 import { UserCellById } from '~/modules/users/user-cell';
 import { queryClient } from '~/query/query-client';
 import { dateShort } from '~/utils/date-short';
-import { getAndSetMenu } from '../helpers';
-import { meKeys } from '../query';
-import { Button } from '~/modules/ui/button';
-import { Invitation } from '../types';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -46,16 +52,8 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
-          <AvatarWrap
-            type="organization"
-            className="h-8 w-8"
-            id={row.entity.id}
-            name={row.entity.name}
-            url={row.entity.thumbnailUrl}
-          />
-          <span className="ml-2 truncate font-medium">
-            {row.entity.name || '-'}
-          </span>
+          <AvatarWrap type="organization" className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
+          <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
         </>
       ),
     },
@@ -79,7 +77,8 @@ export const useColumns = () => {
       visible: !isMobile,
       minWidth: 160,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (row.inactiveMembership.createdAt ? dateShort(row.inactiveMembership.createdAt) : <span className="text-muted">-</span>),
+      renderCell: ({ row }) =>
+        row.inactiveMembership.createdAt ? dateShort(row.inactiveMembership.createdAt) : <span className="text-muted">-</span>,
     },
     {
       key: 'createdBy',
@@ -105,14 +104,16 @@ export const useColumns = () => {
               key={action}
               size="xs"
               variant={variant}
-              onClick={() => handleInvitation({ id: row.inactiveMembership.id, acceptOrReject: action, orgIdOrSlug: row.inactiveMembership.organizationId })}
+              onClick={() =>
+                handleInvitation({ id: row.inactiveMembership.id, acceptOrReject: action, orgIdOrSlug: row.inactiveMembership.organizationId })
+              }
             >
               {label}
             </Button>
           ))}
         </div>
       ),
-    }
+    },
   ];
 
   return columns;

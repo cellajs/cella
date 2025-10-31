@@ -38,4 +38,3 @@ export const userBaseSelect = (() => {
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pickColumns(cols, keys);
 })() satisfies UserBaseSelect;
-

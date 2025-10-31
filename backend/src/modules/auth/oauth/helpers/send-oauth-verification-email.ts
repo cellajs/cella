@@ -9,11 +9,11 @@ import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
+import { userSelect } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../../emails/oauth-verification';
-import { userSelect } from '#/modules/users/helpers/select';
 
 interface Props {
   userId: string;

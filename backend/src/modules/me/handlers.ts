@@ -319,7 +319,9 @@ const meRouteHandlers = app
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
-    const [user] = await db.select(userSelect).from(usersTable)
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
       .where(eq(unsubscribeTokensTable.token, token))
       .limit(1);

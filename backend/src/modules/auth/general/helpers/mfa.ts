@@ -6,11 +6,11 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { userSelect } from '#/modules/users/helpers/select';
 
 /**
  * Starts a two-factor authentication challenge for a user.
