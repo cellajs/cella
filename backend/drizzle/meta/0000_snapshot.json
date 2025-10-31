@@ -1,5 +1,5 @@
 {
-  "id": "8a332f0d-f606-44c9-8981-c48b11cdb1b4",
+  "id": "75889fe0-7d35-4d97-8fda-974acbbaaaa2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -323,7 +323,7 @@
           "name": "created_by",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "organization_id": {
           "name": "organization_id",
@@ -357,7 +357,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "inactive_memberships_organization_id_organizations_id_fk": {
@@ -420,7 +420,7 @@
           "name": "created_by",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "modified_at": {
           "name": "modified_at",

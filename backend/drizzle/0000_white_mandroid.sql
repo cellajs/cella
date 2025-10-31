@@ -37,7 +37,7 @@ CREATE TABLE "inactive_memberships" (
 	"user_id" varchar,
 	"role" varchar DEFAULT 'member' NOT NULL,
 	"rejected_at" timestamp,
-	"created_by" varchar,
+	"created_by" varchar NOT NULL,
 	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
@@ -47,7 +47,7 @@ CREATE TABLE "memberships" (
 	"context_type" varchar NOT NULL,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
-	"created_by" varchar,
+	"created_by" varchar NOT NULL,
 	"modified_at" timestamp,
 	"modified_by" varchar,
 	"archived" boolean DEFAULT false NOT NULL,
@@ -205,7 +205,7 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizati
 ALTER TABLE "emails" ADD CONSTRAINT "emails_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "emails" ADD CONSTRAINT "emails_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint

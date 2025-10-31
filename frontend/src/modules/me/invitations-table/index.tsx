@@ -57,8 +57,8 @@ const InvitationsTable = () => {
             }}
             style={{ overflow: 'hidden' }}
           >
-            <AlertWrap id="edit_attachment" variant="plain" icon={InfoIcon}>
-              {t('common:edit_attachment.text')}
+            <AlertWrap id="accept_invitations" variant="plain" icon={InfoIcon}>
+              {t('common:accept_invitations.text')}
             </AlertWrap>
           </motion.div>
         }

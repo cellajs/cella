@@ -4,9 +4,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-// import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-// import { PopConfirm } from '~/modules/common/popconfirm';
 import { toaster } from '~/modules/common/toaster/service';
 import { UserCellById } from '~/modules/users/user-cell';
 import { queryClient } from '~/query/query-client';
@@ -42,7 +40,7 @@ export const useColumns = () => {
   const columns: ColumnOrColumnGroup<Invitation>[] = [
     {
       key: 'name',
-      name: t('common:name'),
+      name: t('common:organization'),
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
@@ -61,39 +59,22 @@ export const useColumns = () => {
         </>
       ),
     },
-    // {
-    //   key: 'ellipsis',
-    //   name: '',
-    //   visible: isMobile,
-    //   sortable: false,
-    //   width: 32,
-    //   renderCell: ({ row, tabIndex }) => {
-
-    //     const ellipsisOptions: EllipsisOption<Invitation>[] = [
-    //       {
-    //         label: i18n.t('common:delete'),
-    //         icon: TrashIcon,
-    //         onSelect: (row) => {
-    //           const { update } = useDropdowner.getState();
-    //           const callback = () => useDropdowner.getState().remove();
-
-    //           update({
-    //             content: (
-    //               <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-    //                 klk
-    //               </PopConfirm>
-    //             ),
-    //           });
-    //         },
-    //       },
-    //     ];
-
-    //     return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
-    //   },
-    // },
+    {
+      key: 'role',
+      name: t('common:role'),
+      sortable: false,
+      visible: true,
+      minWidth: 100,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (
+        <div className="inline-flex items-center gap-1 relative group h-full w-full">
+          {row.inactiveMembership.role ? t(row.inactiveMembership.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
+        </div>
+      ),
+    },
     {
       key: 'createdAt',
-      name: t('common:created_at'),
+      name: t('common:invited_at'),
       sortable: false,
       visible: !isMobile,
       minWidth: 160,
@@ -102,12 +83,12 @@ export const useColumns = () => {
     },
     {
       key: 'createdBy',
-      name: t('common:created_by'),
+      name: t('common:invited_by'),
       sortable: false,
-      visible: false,
+      visible: !isMobile,
       minWidth: 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={true} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
     },
     {
       key: 'actions',
