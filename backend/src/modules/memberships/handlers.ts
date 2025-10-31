@@ -150,13 +150,20 @@ const membershipRouteHandlers = app
       // If we have a user (but no membership), Scenario 2
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
-        // User could still have an active organization membership
-        const hasActiveOrgMembership = entityType !== 'organization' && !!rows.find((r) => r.orgMembershipId);
-
-        if (hasActiveOrgMembership) {
-          existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Scenario 2b
+        // Check if admin is inviting themselves
+        const isAdminInvitingSelf = user.email === email && user.role === 'admin';
+        
+        if (isAdminInvitingSelf) {
+          existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Direct add for admin self-invite
         } else {
-          existingUsersToActivate.push({ userId: userRow.userId, email }); // Scenario 2a
+          // User could still have an active organization membership
+          const hasActiveOrgMembership = entityType !== 'organization' && !!rows.find((r) => r.orgMembershipId);
+
+          if (hasActiveOrgMembership) {
+            existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Scenario 2b
+          } else {
+            existingUsersToActivate.push({ userId: userRow.userId, email }); // Scenario 2a
+          }
         }
         continue;
       }
