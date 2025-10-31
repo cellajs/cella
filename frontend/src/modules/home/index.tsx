@@ -27,7 +27,6 @@ const Home = () => {
           </CardHeader>
           <CardContent>
             <InvitationsTable />
-
           </CardContent>
         </Card>
       </div>

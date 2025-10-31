@@ -28,7 +28,8 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
-import { membershipBaseSelect } from '../memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -274,30 +275,9 @@ const systemRouteHandlers = app
         },
       ];
 
-    // Regex to match src="..." or src='...'
-    // Captures quote type in g 1 and actual URL in g 2
-    const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
-
-    const srcs = [...content.matchAll(srcRegex)].map(([_, src]) => src);
-
-    // Map to hold original -> signed URL replacements
-    const replacements = new Map<string, string>();
-
-    // For each unique src, fetch its signed URL
-    // TODO(DAVID) can we put all this content parsing in a helper folder?
-    await Promise.all(
-      srcs.map(async (src) => {
-        try {
-          const signed = await getSignedUrlFromKey(src, { isPublic: true, bucketName: appConfig.s3PublicBucket });
-          replacements.set(src, signed);
-        } catch (e) {
-          replacements.set(src, src);
-        }
-      }),
-    );
 
     // Replace all src attributes in content
-    const newContent = content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
+    const newContent = await replaceSignedSrcs(content)
 
     type Recipient = (typeof recipients)[number];
 
