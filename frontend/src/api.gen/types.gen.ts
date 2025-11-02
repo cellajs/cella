@@ -4,7 +4,17 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});
 };
 
-export type ContextEntityBaseSchema = {
+export type UserBase = {
+  id: string;
+  slug: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+  email: string;
+  entityType: 'user';
+};
+
+export type ContextEntityBase = {
   id: string;
   entityType: 'organization';
   slug: string;
@@ -13,7 +23,7 @@ export type ContextEntityBaseSchema = {
   bannerUrl?: string | null;
 };
 
-export type MembershipBaseSchema = {
+export type MembershipBase = {
   id: string;
   contextType: 'organization';
   userId: string;
@@ -22,16 +32,6 @@ export type MembershipBaseSchema = {
   muted: boolean;
   order: number;
   organizationId: string;
-};
-
-export type UserBaseSchema = {
-  id: string;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-  email: string;
-  entityType: 'user';
 };
 
 export type User = {
@@ -108,6 +108,32 @@ export type Organization = {
   };
 };
 
+export type Membership = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  userId: string;
+  role: 'member' | 'admin';
+  createdBy: string;
+  modifiedAt: string | null;
+  modifiedBy: string | null;
+  archived: boolean;
+  muted: boolean;
+  order: number;
+  organizationId: string;
+};
+
+export type InactiveMembership = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  userId: string | null;
+  role: 'member' | 'admin';
+  rejectedAt: string | null;
+  createdBy: string;
+  organizationId: string;
+};
+
 export type Attachment = {
   createdAt: string;
   id: string;
@@ -129,7 +155,7 @@ export type Attachment = {
   convertedUrl: string | null;
 };
 
-export type MenuSchema = {
+export type Menu = {
   organization: Array<{
     id: string;
     entityType: 'organization';
@@ -137,11 +163,11 @@ export type MenuSchema = {
     name: string;
     thumbnailUrl?: string | null;
     bannerUrl?: string | null;
-    membership: MembershipBaseSchema;
+    membership: MembershipBase;
     createdAt: string;
     submenu?: Array<
-      ContextEntityBaseSchema & {
-        membership: MembershipBaseSchema;
+      ContextEntityBase & {
+        membership: MembershipBase;
         createdAt: string;
       }
     >;
@@ -262,9 +288,7 @@ export type InvokeTokenData = {
     type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
     token: string;
   };
-  query: {
-    tokenId: string;
-  };
+  query?: never;
   url: '/auth/invoke-token/{type}/{token}';
 };
 
@@ -306,12 +330,11 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    tokenId: string;
-  };
-  query: {
     type: 'email-verification' | 'oauth-verification' | 'password-reset' | 'invitation' | 'confirm-mfa';
+    id: string;
   };
-  url: '/auth/token/{tokenId}';
+  query?: never;
+  url: '/auth/token/{type}/{id}';
 };
 
 export type GetTokenDataErrors = {
@@ -355,11 +378,8 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
-    role: 'member' | 'admin' | null;
     userId?: string;
-    organizationName?: string;
-    organizationSlug?: string;
-    organizationId?: string;
+    inactiveMembershipId?: string;
   };
 };
 
@@ -468,6 +488,65 @@ export type StopImpersonationResponses = {
 };
 
 export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImpersonationResponses];
+
+export type ResendInvitationWithTokenData = {
+  body:
+    | {
+        email: string;
+        tokenId?: string;
+      }
+    | {
+        email?: string;
+        tokenId: string;
+      };
+  path?: never;
+  query?: never;
+  url: '/auth/resend-invitation';
+};
+
+export type ResendInvitationWithTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type ResendInvitationWithTokenError = ResendInvitationWithTokenErrors[keyof ResendInvitationWithTokenErrors];
+
+export type ResendInvitationWithTokenResponses = {
+  /**
+   * Invitation email sent
+   */
+  204: void;
+};
+
+export type ResendInvitationWithTokenResponse = ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
 
 export type SignOutData = {
   body?: never;
@@ -1861,7 +1940,7 @@ export type GetMyMenuResponses = {
   /**
    * Menu of user
    */
-  200: MenuSchema;
+  200: Menu;
 };
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
@@ -1910,24 +1989,22 @@ export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitation
 
 export type GetMyInvitationsResponses = {
   /**
-   * Entity memberships pending
+   * Invitations pending
    */
-  200: Array<{
-    entity: ContextEntityBaseSchema & {
-      organizationId?: string;
-    };
-    invitedBy: {
-      id: string;
-      slug: string;
-      name: string;
-      thumbnailUrl?: string | null;
-      bannerUrl?: string | null;
-      email: string;
-      entityType: 'user';
-    } | null;
-    membership: MembershipBaseSchema;
-    expiresAt: string;
-  }>;
+  200: {
+    items: Array<{
+      entity: ContextEntityBase;
+      inactiveMembership: InactiveMembership &
+        ({
+          [key: string]: unknown;
+        } | null);
+      createdByUser: UserBase &
+        ({
+          [key: string]: unknown;
+        } | null);
+    }>;
+    total: number;
+  };
 };
 
 export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
@@ -2273,7 +2350,7 @@ export type GetUsersResponses = {
   200: {
     items: Array<
       User & {
-        memberships: Array<MembershipBaseSchema>;
+        memberships: Array<MembershipBase>;
       }
     >;
     total: number;
@@ -2761,7 +2838,7 @@ export type GetContextEntitiesResponses = {
    */
   200: {
     items: Array<
-      ContextEntityBaseSchema & {
+      ContextEntityBase & {
         membership: {
           id: string;
           contextType: 'organization';
@@ -2837,7 +2914,7 @@ export type GetContextEntityResponses = {
   /**
    * Context entities
    */
-  200: ContextEntityBaseSchema;
+  200: ContextEntityBase;
 };
 
 export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
@@ -3992,20 +4069,7 @@ export type UpdateMembershipResponses = {
   /**
    * Membership updated
    */
-  200: {
-    createdAt: string;
-    id: string;
-    contextType: 'organization';
-    userId: string;
-    role: 'member' | 'admin';
-    createdBy: string | null;
-    modifiedAt: string | null;
-    modifiedBy: string | null;
-    archived: boolean;
-    muted: boolean;
-    order: number;
-    organizationId: string;
-  };
+  200: Membership;
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
@@ -4015,6 +4079,7 @@ export type HandleMembershipInvitationData = {
   path: {
     id: string;
     acceptOrReject: 'accept' | 'reject';
+    orgIdOrSlug: string;
   };
   query?: never;
   url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
@@ -4059,15 +4124,15 @@ export type HandleMembershipInvitationResponses = {
   /**
    * Invitation was accepted
    */
-  200: ContextEntityBaseSchema;
+  200: ContextEntityBase;
 };
 
 export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;
-  path?: {
-    orgIdOrSlug?: string;
+  path: {
+    orgIdOrSlug: string;
   };
   query: {
     q?: string;
@@ -4142,7 +4207,7 @@ export type GetMembersResponses = {
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
-      membership: MembershipBaseSchema;
+      membership: MembershipBase;
     }>;
     total: number;
   };
@@ -4150,14 +4215,14 @@ export type GetMembersResponses = {
 
 export type GetMembersResponse = GetMembersResponses[keyof GetMembersResponses];
 
-export type GetPendingInvitationsData = {
+export type GetPendingMembershipsData = {
   body?: never;
   path: {
     orgIdOrSlug: string;
   };
   query: {
     q?: string;
-    sort?: 'email' | 'role' | 'expiresAt' | 'createdAt' | 'createdBy';
+    sort?: 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -4167,7 +4232,7 @@ export type GetPendingInvitationsData = {
   url: '/{orgIdOrSlug}/memberships/pending';
 };
 
-export type GetPendingInvitationsErrors = {
+export type GetPendingMembershipsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -4200,83 +4265,23 @@ export type GetPendingInvitationsErrors = {
   };
 };
 
-export type GetPendingInvitationsError = GetPendingInvitationsErrors[keyof GetPendingInvitationsErrors];
+export type GetPendingMembershipsError = GetPendingMembershipsErrors[keyof GetPendingMembershipsErrors];
 
-export type GetPendingInvitationsResponses = {
+export type GetPendingMembershipsResponses = {
   /**
-   * Invited members
+   * Pending memberships
    */
   200: {
     items: Array<{
       id: string;
       email: string;
+      thumbnailUrl?: string | null;
+      role: 'member' | 'admin';
       createdAt: string;
       createdBy: string | null;
-      role: 'member' | 'admin';
-      expiresAt: string;
-      name: string | null;
     }>;
     total: number;
   };
 };
 
-export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof GetPendingInvitationsResponses];
-
-export type ResendInvitationData = {
-  body:
-    | {
-        email: string;
-        tokenId?: string;
-      }
-    | {
-        email?: string;
-        tokenId: string;
-      };
-  path?: never;
-  query?: never;
-  url: '/{orgIdOrSlug}/memberships/resend-invitation';
-};
-
-export type ResendInvitationErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
-
-export type ResendInvitationResponses = {
-  /**
-   * Invitation email sent
-   */
-  204: void;
-};
-
-export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
+export type GetPendingMembershipsResponse = GetPendingMembershipsResponses[keyof GetPendingMembershipsResponses];

@@ -7,6 +7,7 @@ import type { Organization } from '~/api.gen';
 import { zUpdateOrganizationData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import DomainsFormField from '~/modules/common/form-fields/domains';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -27,8 +28,8 @@ const formSchema = zUpdateOrganizationData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
   organization: Organization | Organization;
-  callback?: (organization: Organization) => void;
   sheet?: boolean;
+  callback?: (args: CallbackArgs<Organization>) => void;
 }
 
 const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Props) => {
@@ -66,7 +67,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
           toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
-          callback?.(updatedOrganization);
+          callback?.({ data: updatedOrganization, status: 'success' });
         },
       },
     );

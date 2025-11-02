@@ -49,13 +49,16 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
     const fetchLocal = async () => {
       try {
         const file = await LocalFileStorage.getFile(id);
-        if (!file) {
+        if (!file || !file.data) {
           setError(i18n.t('error:local_file_not_found'));
           setUrl(null); // Make sure URL is null if file not found
           return;
         }
 
         if (isMounted.current) {
+          if (!(file.data instanceof Blob) && !(file.data instanceof File)) {
+            throw Error('Invalid file data: expected Blob or File');
+          }
           const blob = new Blob([file.data], { type: type || 'application/octet-stream' });
           const objectUrl = URL.createObjectURL(blob);
           useBlobStore.getState().setBlobUrl(id, objectUrl);

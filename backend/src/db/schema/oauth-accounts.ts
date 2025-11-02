@@ -5,6 +5,10 @@ import { nanoid } from '#/utils/nanoid';
 
 export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
 
+/**
+ * OAuth accounts table to store third-party authentication details.
+ * Users can link multiple an OAuth accounts to their profile.
+ */
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',
   {

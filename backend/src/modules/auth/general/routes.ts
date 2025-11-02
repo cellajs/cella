@@ -3,9 +3,9 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
+import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
-import { cookieSchema, locationSchema } from '#/utils/schema/common';
+import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses } from '#/utils/schema/responses';
 
 const authGeneralRoutes = {
@@ -67,14 +67,13 @@ const authGeneralRoutes = {
     method: 'get',
     path: '/invoke-token/{type}/{token}',
     guard: isPublicAccess,
-    middleware: isNoBot,
+    middleware: [isNoBot, tokenLimiter('token')],
     tags: ['auth'],
     summary: 'Invoke token session',
     description:
       'Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
     request: {
       params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
-      query: z.object({ tokenId: z.string() }),
     },
     responses: {
       302: {
@@ -88,21 +87,39 @@ const authGeneralRoutes = {
   getTokenData: createCustomRoute({
     operationId: 'getTokenData',
     method: 'get',
-    path: '/token/{tokenId}',
+    path: '/token/{type}/{id}',
     guard: isPublicAccess,
-    middleware: isNoBot,
+    middleware: [isNoBot, tokenLimiter('token')],
     tags: ['auth'],
     summary: 'Get token data',
-    description:
-      'Get basic token data by id, for password reset and invitation. It returns if the token is still valid and returns basic data if valid.',
+    description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
-      params: z.object({ tokenId: z.string() }),
-      query: z.object({ type: z.enum(appConfig.tokenTypes) }),
+      params: z.object({ type: z.enum(appConfig.tokenTypes), id: idSchema }),
     },
     responses: {
       200: {
         description: 'Token is valid',
         content: { 'application/json': { schema: tokenWithDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  resendInvitationWithToken: createCustomRoute({
+    operationId: 'resendInvitationWithToken',
+    method: 'post',
+    path: '/resend-invitation',
+    guard: isPublicAccess,
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Resend invitation',
+    description: 'Resends an invitation email with token to a new user using the provided email address and token ID.',
+    request: {
+      body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
+    },
+    responses: {
+      204: {
+        description: 'Invitation email sent',
       },
       ...errorResponses,
     },

@@ -1,26 +1,17 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
-import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
-import { contextEntityBaseSchema } from '#/modules/entities/schema';
+import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import {
   memberListQuerySchema,
   membershipCreateBodySchema,
   membershipSchema,
   membershipUpdateBodySchema,
-  pendingInvitationListQuerySchema,
-  pendingInvitationSchema,
+  pendingMembershipListQuerySchema,
+  pendingMembershipSchema,
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
-import {
-  emailOrTokenIdQuerySchema,
-  entityWithTypeQuerySchema,
-  idInOrgParamSchema,
-  idOrSlugSchema,
-  idSchema,
-  idsBodySchema,
-  inOrgParamSchema,
-} from '#/utils/schema/common';
+import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
@@ -105,11 +96,11 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    guard: isAuthenticated,
+    guard: [isAuthenticated],
     tags: ['membership'],
     summary: 'Respond to membership invitation',
-    description: 'Accepting activates the associated membership. Rejecting adds a rejectedAt timestamp.',
-    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
+    description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
+    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }) },
     responses: {
       200: {
         description: 'Invitation was accepted',
@@ -128,7 +119,7 @@ const membershipRoutes = {
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
+      params: inOrgParamSchema,
       query: memberListQuerySchema,
     },
     responses: {
@@ -143,46 +134,27 @@ const membershipRoutes = {
       ...errorResponses,
     },
   }),
-  getPendingInvitations: createCustomRoute({
-    operationId: 'getPendingInvitations',
+  getPendingMemberships: createCustomRoute({
+    operationId: 'getPendingMemberships',
     method: 'get',
     path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
-    summary: 'Get list of invitations',
-    description: 'Returns pending *membership* invitations for a context entity, identified by ID or slug.',
+    summary: 'Get list of pending memberships',
+    description:
+      'Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.',
     request: {
       params: inOrgParamSchema,
-      query: pendingInvitationListQuerySchema,
+      query: pendingMembershipListQuerySchema,
     },
     responses: {
       200: {
-        description: 'Invited members',
+        description: 'Pending memberships',
         content: {
           'application/json': {
-            schema: paginationSchema(pendingInvitationSchema),
+            schema: paginationSchema(pendingMembershipSchema),
           },
         },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  resendInvitation: createCustomRoute({
-    operationId: 'resendInvitation',
-    method: 'post',
-    path: '/resend-invitation',
-    guard: isPublicAccess,
-    middleware: [spamLimiter],
-    tags: ['memberships'],
-    summary: 'Resend invitation',
-    description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
-    request: {
-      body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
-    },
-    responses: {
-      204: {
-        description: 'Invitation email sent',
       },
       ...errorResponses,
     },

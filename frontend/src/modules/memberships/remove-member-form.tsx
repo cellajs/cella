@@ -1,4 +1,5 @@
 import type { ContextEntityType } from 'config';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useMembersDeleteMutation } from '~/modules/memberships/query-mutations';
@@ -10,7 +11,7 @@ interface Props {
   members: Member[];
   entityType?: ContextEntityType;
   dialog?: boolean;
-  callback?: (members: Member[]) => void;
+  callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
 const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization', organizationId, callback, dialog: isDialog }: Props) => {
@@ -21,7 +22,7 @@ const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization
     removeMembers({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, members });
 
     if (isDialog) removeDialog();
-    callback?.(members);
+    callback?.({ data: members, status: 'success' });
   };
 
   return <DeleteForm allowOfflineDelete={true} onDelete={onRemoveMember} onCancel={() => removeDialog()} pending={isPending} />;

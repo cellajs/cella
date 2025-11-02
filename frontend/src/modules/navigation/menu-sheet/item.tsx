@@ -52,7 +52,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
       <AvatarWrap
-        className="z-1 items-center m-2 mx-3 group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs h-8 w-8 group-data-[subitem=true]/menuItem:h-6 group-data-[subitem=true]/menuItem:w-6"
+        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:size-6"
         type={item.entityType}
         id={item.id}
         icon={Icon}
@@ -81,7 +81,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
           )}
           <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
-              ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? `${item.submenu[0].entityType}s` : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
+              ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
               : item.membership.role
                 ? t(item.membership.role, { ns: ['app', 'common'] })
                 : ''}

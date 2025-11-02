@@ -9,7 +9,7 @@ import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -26,7 +26,7 @@ interface Props {
  * This is done to be sure that the oauth account holder also owns the email address.
  */
 export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
-  const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
@@ -84,7 +84,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));

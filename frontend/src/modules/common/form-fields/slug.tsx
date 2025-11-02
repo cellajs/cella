@@ -37,7 +37,7 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
 
-  const prefix = `${appConfig.frontendUrl.replace(/^https?:\/\//, '')}/${entityType === 'organization' ? '' : `${entityType}s/`}`;
+  const prefix = `${appConfig.frontendUrl.replace(/^https?:\/\//, '')}/${entityType}/`;
 
   const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 sm:focus-visible:ring-2'}
                           ${isSlugAvailable === 'available' && 'ring-green-500 focus-visible:ring-green-500'}

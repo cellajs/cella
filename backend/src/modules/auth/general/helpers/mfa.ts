@@ -5,10 +5,11 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
@@ -25,11 +26,16 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   if (!user.mfaRequired) return null;
 
   const timespan = new TimeSpan(10, 'm');
+
+  // Generate token and store hashed
+  const newToken = nanoid(40);
+  const hashedToken = encodeLowerCased(newToken);
+
   // Generate a new random token and insert it
-  const [{ token: generatedToken }] = await db
+  await db
     .insert(tokensTable)
     .values({
-      token: nanoid(40),
+      token: hashedToken,
       type: 'confirm-mfa',
       userId: user.id,
       email: user.email,
@@ -39,7 +45,7 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
     .returning({ token: tokensTable.token });
 
   // Set a temporary auth cookie to track confirm MFA session
-  await setAuthCookie(ctx, 'confirm-mfa', generatedToken, timespan);
+  await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);
 
   // Return the path to redirect the user to MFA authentication page
   return '/auth/mfa';
@@ -62,23 +68,8 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   // Sanity check
   if (!tokenRecord.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-  const [user] = await usersBaseQuery().where(eq(usersTable.id, tokenRecord.userId)).limit(1);
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, tokenRecord.userId)).limit(1);
   if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
 
   return user;
-};
-
-/**
- * Consumes the MFA token stored in the 'confirm-mfa' cookie.
- * Marks it as used in the database and deletes the cookie.
- */
-export const consumeMfaToken = async (ctx: Context<Env>): Promise<void> => {
-  const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
-  if (!tokenFromCookie) return;
-
-  // Fetch token record and associated user
-  await getValidToken({ ctx, token: tokenFromCookie, tokenType: 'confirm-mfa' });
-
-  // Delete cookie
-  deleteAuthCookie(ctx, 'confirm-mfa');
 };

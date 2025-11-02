@@ -1,10 +1,17 @@
 import { appConfig, type ContextEntityType } from 'config';
-import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { count, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { tokensTable } from '#/db/schema/tokens';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
+
+function getEntityIdColumn(entityType: ContextEntityType) {
+  const targetEntityIdField = appConfig.entityIdFields[entityType];
+  const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
+  if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);
+  return entityIdColumn;
+}
 
 /**
  * Generates a query to count the number of admins and members for a specific entity.
@@ -15,36 +22,32 @@ type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
  */
 export const getMemberCountsQuery = (entityType: ContextEntityType) => {
   const targetEntityIdField = appConfig.entityIdFields[entityType];
-  const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
+  const entityIdColumn = getEntityIdColumn(entityType);
+
   if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);
 
-  // Subquery to count pending invitations
   const inviteCountSubquery = db
     .select({
-      id: tokensTable[targetEntityIdField],
+      id: inactiveMembershipsTable[targetEntityIdField],
       invites: count().as('invites'),
     })
-    .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNull(tokensTable.invokedAt)))
-    .groupBy(tokensTable[targetEntityIdField])
+    .from(inactiveMembershipsTable)
+    .where(isNull(inactiveMembershipsTable.rejectedAt))
+    .groupBy(inactiveMembershipsTable[targetEntityIdField])
     .as('invites');
 
   return db
     .select({
       id: entityIdColumn,
-      admin: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
-      member: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
-      pending:
-        sql<number>`CAST(${count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`)} + COALESCE(${inviteCountSubquery.invites}, 0) AS INTEGER)`.as(
-          'pending',
-        ),
-
-      total: count().as('total'), // Fixed alias to avoid confusion
+      admin: count(sql`CASE WHEN ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
+      member: count(sql`CASE WHEN ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
+      pending: sql<number>`CAST(COALESCE(MAX(${inviteCountSubquery.invites}), 0) AS INTEGER)`.as('pending'),
+      total: count().as('total'),
     })
     .from(membershipsTable)
     .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
-    .where(and(eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
-    .groupBy(entityIdColumn, inviteCountSubquery.invites)
+    .where(eq(membershipsTable.contextType, entityType))
+    .groupBy(entityIdColumn)
     .as('membership_counts');
 };
 
@@ -66,7 +69,7 @@ export function getMemberCounts(entityType: ContextEntityType, id: string) {
       total: query.total,
     })
     .from(query)
-    .where(eq(query.id, id))
+    .where(eq(getEntityIdColumn(entityType), id))
     .limit(1)
     .then((rows) => rows[0] || { admin: 0, member: 0, pending: 0, total: 0 });
 }

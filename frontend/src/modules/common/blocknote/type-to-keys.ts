@@ -16,4 +16,5 @@ export const baseBlocknoteTypeToKeys = {
   audio: ['audio'],
   emoji: ['emoji'],
   toggleListItem: ['toggle_list'],
+  divider: ['divider'],
 } satisfies Record<CustomBlockTypes, SlashItemKeys[]>;

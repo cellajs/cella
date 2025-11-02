@@ -4,7 +4,7 @@
 @import "./gradients.css" layer(base);
 @import "../modules/common/blocknote/styles.css" layer(base);
 
-@config '../../tailwind.config.ts';
+@config "../../tailwind.config.ts";
 
 @layer base {
   *,

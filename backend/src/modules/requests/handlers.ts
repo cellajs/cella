@@ -12,7 +12,7 @@ import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import { sendSlackMessage } from '#/lib/notifications/send-slack-message';
 import requestRoutes from '#/modules/requests/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -33,7 +33,9 @@ const requestRouteHandlers = app
     const normalizedEmail = email.toLowerCase().trim();
 
     if (type === 'waitlist') {
-      const [existingUser] = await usersBaseQuery()
+      const [existingUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);

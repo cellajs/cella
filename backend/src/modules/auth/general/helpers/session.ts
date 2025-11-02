@@ -32,22 +32,10 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
     if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
 
-  // TODO why is this commented out? // Delete previous session (skip if impersonation)
-  // if (type !== 'impersonation') {
-  //   const existingSession = deleteAuthCookie(ctx, 'session');
-
-  //   if (existingSession) {
-  //     const [existingSessionToken] = existingSession.split('.');
-
-  //     // Remove previous session from DB
-  //     await db.delete(sessionsTable).where(eq(sessionsTable.token, existingSessionToken));
-  //   }
-  // }
-
   // Get device information
   const device = deviceInfo(ctx);
 
-  // Generate session token and store the hashed version in db
+  // Generate token and store hashed
   const sessionToken = nanoid(40);
   const hashedSessionToken = encodeLowerCased(sessionToken);
 

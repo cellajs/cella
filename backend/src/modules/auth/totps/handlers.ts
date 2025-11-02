@@ -9,8 +9,8 @@ import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { default as authTotpRoutes, default as authTotpsRoutes } from '#/modules/auth/totps/routes';
@@ -113,6 +113,7 @@ const authTotpsRouteHandlers = app
 
     // Validate MFA token and retrieve user
     const user = await validateConfirmMfaToken(ctx);
+
     try {
       await validateTOTP({ code, userId: user.id });
     } catch (error) {
@@ -127,8 +128,8 @@ const authTotpsRouteHandlers = app
       });
     }
 
-    // Consume the MFA token now that TOTP verification succeeded
-    await consumeMfaToken(ctx);
+    // Revoke single use token by deleting cookie
+    deleteAuthCookie(ctx, 'confirm-mfa');
 
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);

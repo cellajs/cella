@@ -29,7 +29,7 @@ import { cn } from '~/utils/cn';
 
 const pwaEnabled = appConfig.has.pwa;
 
-// TODO can we merge this into one component and is memo necessary since we have react compiler?
+// TODO(DAVID) can we merge this into one component and is memo necessary since we have react compiler?
 export const MenuSheet = memo(() => {
   const menu = useNavigationStore((state) => state.menu);
 

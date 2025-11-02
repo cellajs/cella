@@ -9,7 +9,10 @@ export type ValidEntities<T extends (typeof appConfig.entityIdFields)[ContextEnt
   string
 >;
 
-export const getRelatedEntities = (entityType: ContextEntityType) => {
+/**
+ * Get an array of associated entity types for a given context entity type.
+ */
+export const getAssociatedEntities = (entityType: ContextEntityType) => {
   const entityIdField = appConfig.entityIdFields[entityType];
 
   const allEntities = [...appConfig.productEntityTypes, ...appConfig.contextEntityTypes];

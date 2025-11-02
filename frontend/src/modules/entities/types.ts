@@ -1,7 +1,7 @@
-import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema, Organization } from '~/api.gen';
+import type { ContextEntityBase, GetContextEntitiesResponse, MembershipBase, Organization } from '~/api.gen';
 
-export type EntityPage = ContextEntityBaseSchema & {
-  membership?: MembershipBaseSchema | null;
+export type EntityPage = ContextEntityBase & {
+  membership?: MembershipBase | null;
   organizationId?: string | null;
   counts?: Organization['counts'];
 };

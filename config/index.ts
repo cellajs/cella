@@ -1,4 +1,5 @@
-import _default, { Config } from './default';
+import type { Config } from './types';
+import _default from './default';
 import development from './development';
 import production from './production';
 import staging from './staging';
@@ -75,5 +76,5 @@ const configModes = {
 export type ConfigMode = Config['mode']
 
 
-const mode  = (process.env.NODE_ENV || 'development') as Config['mode'];
+const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 export const appConfig = mergeDeep(_default, configModes[mode]);

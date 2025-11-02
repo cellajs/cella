@@ -10,7 +10,7 @@ import { SignInStep } from '~/modules/auth/steps/sign-in';
 import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { AuthStep } from '~/modules/auth/types';
-import { useGetTokenData } from '~/modules/auth/use-token-check';
+import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import Spinner from '~/modules/common/spinner';
 import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
@@ -50,7 +50,7 @@ const AuthenticatePage = () => {
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
     if (!tokenData?.email) return;
-    setStep(tokenData.userId ? 'signIn' : 'signUp', tokenData.email);
+    setStep('signUp', tokenData.email);
   }, [tokenData, lastUser]);
 
   // Loading invitation token

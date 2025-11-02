@@ -4,7 +4,7 @@ import { BirdIcon, SearchIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import type { GetContextEntitiesData } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
+import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';

@@ -8,7 +8,7 @@ import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
-// TODO(improvement) make uploaded attachment naming right, if it was changed during offline update it on upload
+// TODO(DAVID)(improvement) make uploaded attachment naming right, if it was changed during offline update it on upload
 export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { mutate: createAttachments } = useAttachmentCreateMutation();
@@ -82,7 +82,11 @@ export const useLocalSyncAttachments = (organizationId: string) => {
             isSyncingRef.current = false;
           });
 
-        for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
+        for (const file of files) {
+          // TODO(DAVID) all types around file/custom uppy file look a bit confusing. can we do something about it? Ensure `data` is non-null to satisfy Uppy types: fall back to a size-only object when missing.
+          const data = file.data ?? { size: file.size ?? null };
+          localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}`, data });
+        }
 
         await localUppy.upload();
       } catch (err) {

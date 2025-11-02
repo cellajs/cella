@@ -4,9 +4,10 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword, User } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
@@ -67,8 +68,8 @@ const UserAccountPage = () => {
     useDialoger.getState().create(
       <DeleteSelf
         dialog
-        callback={() => {
-          toaster(t('common:success.delete_resource', { resource: t('common:account') }), 'success');
+        callback={({ status }: CallbackArgs<User>) => {
+          if (status === 'success') toaster(t('common:success.delete_resource', { resource: t('common:account') }), 'success');
         }}
       />,
       {

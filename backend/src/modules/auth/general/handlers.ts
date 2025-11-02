@@ -1,24 +1,34 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
+import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
+import { mailer } from '#/lib/mailer';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import authGeneralRoutes from '#/modules/auth/general/routes';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
+import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { logEvent } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
+import { encodeLowerCased } from '#/utils/oslo';
+import { slugFromEmail } from '#/utils/slug-from-email';
+import { createDate, TimeSpan } from '#/utils/time-span';
+import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
+import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -31,26 +41,10 @@ const authGeneralRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // If entering while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
-    const [inviteToken] = await db
-      .select()
-      .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.email, normalizedEmail),
-          eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.userId),
-          isNotNull(tokensTable.entityType),
-          isNotNull(tokensTable.role),
-          isNull(tokensTable.invokedAt),
-        ),
-      )
-      .limit(1);
-
-    if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
-
     // User not found, go to sign up if registration is enabled
-    const [user] = await usersBaseQuery()
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -81,8 +75,10 @@ const authGeneralRouteHandlers = app
     // Determine redirect URL based on token type
     let redirectUrl = appConfig.defaultRedirectPath;
 
+    // If invitation, redirect to auth page with tokenId param
     if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
+    // If password reset, redirect to create password page with tokenId param
     if (tokenRecord.type === 'password-reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
     logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
@@ -90,32 +86,28 @@ const authGeneralRouteHandlers = app
     return ctx.redirect(redirectUrl, 302);
   })
   /**
-   * Get token data by id (without invoking it)
+   * Get token data by single use token in cookie
    */
   .openapi(authGeneralRoutes.getTokenData, async (ctx) => {
-    // Find token in request
-    const { tokenId } = ctx.req.valid('param');
-    const { type: tokenType } = ctx.req.valid('query');
+    const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
-    // Get token
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, tokenId), eq(tokensTable.type, tokenType)))
-      .limit(1);
-    if (!tokenRecord) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
+    // Check if token session is valid
+    const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
+
+    // Check if tokenId matches the one being requested
+    if (tokenRecord.id !== tokenId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
 
     const data = {
       email: tokenRecord.email,
-      role: tokenRecord.role,
       userId: tokenRecord.userId || '',
+      inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
     };
 
-    // If its NOT an organization invitation, return base data
-    if (!tokenRecord.organizationId) return ctx.json(data, 200);
+    // If its NOT an membership invitation, return base data
+    if (!tokenRecord.inactiveMembershipId) return ctx.json(data, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
+    const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
       data.userId = existingUser.id;
@@ -129,7 +121,7 @@ const authGeneralRouteHandlers = app
   .openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, targetUserId)).limit(1);
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
@@ -165,6 +157,97 @@ const authGeneralRouteHandlers = app
     await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
 
     logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
+
+    return ctx.body(null, 204);
+  })
+  /**
+   * Resend invitation email with token for entity invites and system invites.
+   */
+  .openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
+    const { email, tokenId } = ctx.req.valid('json');
+
+    const normalizedEmail = email?.toLowerCase().trim();
+
+    const filters = [eq(tokensTable.type, 'invitation')];
+
+    if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
+    else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
+    else throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+
+    // Retrieve token
+    const [oldToken] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(...filters))
+      .orderBy(desc(tokensTable.createdAt))
+      .limit(1);
+
+    if (!oldToken) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
+
+    const { email: userEmail } = oldToken;
+
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
+    // Insert token first
+    await db.insert(tokensTable).values({
+      ...oldToken,
+      token: hashedToken,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+      invokedAt: null,
+      singleUseToken: null,
+    });
+
+    // Prepare and send invitation email
+    const recipient = {
+      email: userEmail,
+      name: slugFromEmail(userEmail),
+      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+    };
+
+    // Prepare email props, default is system invite
+    const defaultEmailProps = {
+      senderName: 'System',
+      senderThumbnailUrl: null as string | null,
+      subject: i18n.t('backend:email.system_invite.subject', {
+        lng: appConfig.defaultLanguage,
+      }),
+      lng: appConfig.defaultLanguage,
+    };
+
+    // Get original sender
+    if (oldToken.createdBy) {
+      const [sender] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+      defaultEmailProps.senderName = sender.name;
+      defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
+    }
+
+    // Get entity info
+    if (oldToken.inactiveMembershipId) {
+      const [inactiveMembership] = await db
+        .select()
+        .from(inactiveMembershipsTable)
+        .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
+
+      const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
+      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
+      if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+
+      defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', { entityName: entity.name, lng: appConfig.defaultLanguage });
+      const emailProps = {
+        ...defaultEmailProps,
+        entityName: entity.name,
+        role: inactiveMembership.role,
+        lng: entity.defaultLanguage || appConfig.defaultLanguage,
+      };
+
+      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
+      logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });
+    } else {
+      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
+      logEvent('info', 'System invitation has been resent');
+    }
 
     return ctx.body(null, 204);
   })

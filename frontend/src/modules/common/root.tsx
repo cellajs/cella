@@ -1,6 +1,7 @@
 import { HeadContent, Outlet } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Suspense } from 'react';
+import { configure } from 'onedollarstats';
+import { Suspense, useEffect } from 'react';
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ToastManager } from '~/modules/common//toaster';
@@ -19,6 +20,11 @@ function Root() {
         : new Promise<{ default: () => null }>((res) => res({ default: () => null })),
     5000,
   ); // 5 seconds delay
+
+  useEffect(() => {
+    const trackLocalhostAs = appConfig.mode === 'development' && appConfig.debug ? appConfig.domain : null;
+    configure({ trackLocalhostAs });
+  }, []);
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>

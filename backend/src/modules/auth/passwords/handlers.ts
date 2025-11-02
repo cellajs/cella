@@ -4,7 +4,6 @@ import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -17,11 +16,12 @@ import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
@@ -73,7 +73,7 @@ const authPasswordsRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const isMembershipInvite = validToken.type === 'invitation' && validToken.entityType;
+    const isMembershipInvite = validToken.type === 'invitation' && validToken.inactiveMembershipId;
 
     // Verify if strategy allowed
     const strategy = 'password';
@@ -82,13 +82,12 @@ const authPasswordsRouteHandlers = app
     }
 
     // add token if it's membership invitation
-    const membershipInviteTokenId = isMembershipInvite ? validToken.id : undefined;
+    const inactiveMembershipId = validToken.inactiveMembershipId || null;
     const slug = slugFromEmail(validToken.email);
 
-    // Create user & send verification email
+    // Create user
     const newUser = { slug, name: slug, email: validToken.email };
-
-    const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
+    const user = await handleCreateUser({ newUser, inactiveMembershipId, emailVerified: true });
 
     // Separately insert password
     const hashedPassword = await hashPassword(password);
@@ -100,17 +99,8 @@ const authPasswordsRouteHandlers = app
     // If no membership invitation, we are done
     if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
 
-    // If membership invitation, get membership to forward
-    const [invitationMembership] = await db
-      .select({ id: membershipsTable.id })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.tokenId, validToken.id))
-      .limit(1);
-
-    if (!invitationMembership) throw new AppError({ status: 400, type: 'membership_not_found', severity: 'error' });
-
     // Redirect to accept invitation if membership invite
-    const redirectPath = `/home?invitationMembershipId=${invitationMembership.id}&skipWelcome=true`;
+    const redirectPath = `/home?skipWelcome=true`;
 
     return ctx.json({ shouldRedirect: true, redirectPath }, 201);
   })
@@ -122,7 +112,9 @@ const authPasswordsRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const [user] = await usersBaseQuery()
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -131,11 +123,14 @@ const authPasswordsRouteHandlers = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password-reset')));
 
-    // TODO hash token
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: nanoid(40),
+        token: hashedToken,
         type: 'password-reset',
         userId: user.id,
         email,
@@ -146,7 +141,7 @@ const authPasswordsRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${tokenRecord.token}?tokenId${tokenRecord.id}`;
+    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
@@ -175,7 +170,7 @@ const authPasswordsRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
     if (!user) {

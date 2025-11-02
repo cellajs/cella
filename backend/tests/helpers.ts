@@ -1,56 +1,76 @@
+import { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { eq } from 'drizzle-orm';
-import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/basic';
+import { apiErrorSchema } from '#/utils/schema/error';
+import { redirectResponseSchema } from '#/utils/schema/responses';
+import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/basic';
+import { pastIsoDate } from '../mocks/utils';
 
 /**
- * Helper function to create a user in the database.
- * @param firstName - The first name of the user.
- * @param lastName - The last name of the user.
- * @param email - The email of the user.
- * @param password - The password of the user.
- * @returns 
+ * Types for test responses
  */
-export async function createUser(email: string, password: string) {
-  const hashed = await hashPassword(password);
+export type AuthResponse = z.infer<typeof redirectResponseSchema>;
+export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 
+/**
+ * Create a user with password authentication
+ */
+export async function createPasswordUser(email: string, password: string, verified: boolean = true) {
   // Make user record → Insert into the database
   const userRecord = mockUser({ email });
-  const [user] = await db
-    .insert(usersTable)
-    .values(userRecord)
-    .returning()
-    .onConflictDoNothing();
+  const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-  // Make password record for each user → Insert into the database
+  const hashed = await hashPassword(password);
   const passwordRecord = mockPassword(user, hashed);
-  await db.insert(passwordsTable).values(passwordRecord).onConflictDoNothing();
+  await db.insert(passwordsTable).values(passwordRecord);
 
   // Make unsubscribeToken record → Insert into the database
   const unsubscribeTokenRecord = mockUnsubscribeToken(user);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
-    
 
   // Make email record for user → Insert into the database
-  const emailRecord = mockEmail(user);
-  await db
-    .insert(emailsTable)
-    .values(emailRecord)
-    .onConflictDoNothing();
-};
+  const emailRecord = {
+    email: user.email,
+    userId: user.id,
+    verified,
+    verifiedAt: verified ? pastIsoDate() : null,
+  };
+  await db.insert(emailsTable).values(emailRecord);
+
+  return user;
+}
 
 /**
  * Helper function to retrieve a user by email from the database.
  * @param email - The email of the user to retrieve.
- * @returns 
+ * @returns
  */
 export async function getUserByEmail(email: string): Promise<UserModel[]> {
-  return await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.email, email))
+  return await db.select().from(usersTable).where(eq(usersTable.email, email));
+}
+
+/**
+ * Enable MFA for a user
+ */
+export async function enableMFAForUser(userId: string) {
+  await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, userId));
+}
+
+/**
+ * Verify email for a user
+ */
+export async function verifyUserEmail(email: string) {
+  await db.update(emailsTable).set({ verified: true, verifiedAt: pastIsoDate() }).where(eq(emailsTable.email, email.toLowerCase()));
+}
+
+/**
+ * Helper to parse auth response from API response
+ */
+export async function parseResponse<T>(response: Response): Promise<T> {
+  return response.json() as Promise<T>;
 }

@@ -58,7 +58,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
         </div>
       )}
       <AvatarWrap
-        className="m-2 mx-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
+        className="m-2 mx-3 text-sm group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
             h-8 w-8 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entityType}
         id={item.id}

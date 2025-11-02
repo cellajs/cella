@@ -486,5 +486,6 @@
   "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account.",
   "reject": "Reject",
   "my_account": "My account",
-  "chat_with_us": "Chat with us"
+  "chat_with_us": "Chat with us",
+  "accept_invitations.text": "Here you can accept or reject invitations to new organizations."
 }

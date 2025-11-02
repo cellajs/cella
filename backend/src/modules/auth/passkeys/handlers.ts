@@ -12,15 +12,13 @@ import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { consumeMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import authPasskeysRoutes from '#/modules/auth/passkeys/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -100,7 +98,9 @@ const authPasskeysRouteHandlers = app
     if (email && type === 'authentication') {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const [tableUser] = await usersBaseQuery()
+      const [tableUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
@@ -124,14 +124,14 @@ const authPasskeysRouteHandlers = app
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /**
-   * Signin using passkey
+   * Sign in using passkey
    */
   .openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
     const { email, type, ...passkeyData } = ctx.req.valid('json');
     // Define strategy and session type for metadata/logging purposes
     const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
-    if (type === 'authentication' && !enabledStrategies.includes(meta.strategy)) {
+    if (type === 'authentication' && !appConfig.enabledAuthStrategies.includes(meta.strategy)) {
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta });
     }
 
@@ -141,7 +141,9 @@ const authPasskeysRouteHandlers = app
     if (email) {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const [tableUser] = await usersBaseQuery()
+      const [tableUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
@@ -172,8 +174,8 @@ const authPasskeysRouteHandlers = app
       });
     }
 
-    // Consume the MFA token now that TOTP verification succeeded
-    await consumeMfaToken(ctx);
+    // Revoke single use token by deleting cookie
+    deleteAuthCookie(ctx, 'confirm-mfa');
 
     // Set user session after successful verification
     await setUserSession(ctx, user, meta.strategy, meta.sessionType);

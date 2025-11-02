@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -22,6 +22,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const entityRouteHandlers = app
   /**
    * Get all users' context entities with members counts
+   * TODO make getting counts optional with a query param?
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
     const { q, sort, types, role, offset, limit, targetUserId, targetOrgId, excludeArchived, orgAffiliated } = ctx.req.valid('query');
@@ -34,11 +35,7 @@ const entityRouteHandlers = app
     const selectedTypes = new Set(types ?? appConfig.contextEntityTypes);
 
     // Shared filters for active memberships (used across entity types)
-    const baseMembershipQueryFilters = [
-      eq(membershipsTable.userId, userId),
-      isNotNull(membershipsTable.activatedAt),
-      isNull(membershipsTable.tokenId),
-    ];
+    const baseMembershipQueryFilters = [eq(membershipsTable.userId, userId)];
 
     // Subquery to get all organizations the user is a member of (optionally narrowed down if `targetOrgId` is passed)
     const orgMembershipsSubquery = db
@@ -112,8 +109,6 @@ const entityRouteHandlers = app
               orgMembershipsAlias,
               and(
                 eq(orgMembershipsAlias.userId, userId),
-                isNotNull(orgMembershipsAlias.activatedAt),
-                isNull(orgMembershipsAlias.tokenId),
                 eq(table.id, orgMembershipsAlias.organizationId),
                 eq(orgMembershipsAlias.contextType, 'organization'),
               ),

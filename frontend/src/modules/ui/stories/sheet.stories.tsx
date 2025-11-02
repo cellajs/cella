@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '~/modules/ui/sheet';
 
 /**
@@ -67,7 +67,13 @@ export const ShouldOpenCloseWithSubmit: Story = {
 
     await step('close the sheet', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /submit/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the sheet to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };
@@ -87,7 +93,13 @@ export const ShouldOpenCloseWithCancel: Story = {
 
     await step('close the sheet', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /cancel/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the sheet to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };
@@ -107,7 +119,13 @@ export const ShouldOpenCloseWithClose: Story = {
 
     await step('close the sheet', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /close/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the sheet to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };

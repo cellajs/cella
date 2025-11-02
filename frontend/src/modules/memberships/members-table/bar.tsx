@@ -17,7 +17,7 @@ import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
-import { PendingInvitations } from '~/modules/memberships/pending-table/pending-invitations';
+import { PendingMemberships } from '~/modules/memberships/pending-table/pending-memberships';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
@@ -154,7 +154,7 @@ export const MembersTableBar = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {isAdmin && !isFiltered && <PendingInvitations entity={entity} />}
+                {isAdmin && !isFiltered && <PendingMemberships entity={entity} />}
               </TableCount>
             )}
           </FilterBarActions>

@@ -6,7 +6,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 // import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig, type UserConfig } from 'vite';
+import { defineConfig, Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -61,11 +61,11 @@ const viteConfig = {
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? sentryVitePlugin({
-          disable: appConfig.mode === 'development',
-          org: appConfig.slug,
-          project: appConfig.slug,
-          authToken: process.env.SENTRY_AUTH_TOKEN,
-        })
+        disable: appConfig.mode === 'development',
+        org: appConfig.slug,
+        project: appConfig.slug,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      })
       : undefined,
     viteStaticCopy({
       targets: [
@@ -79,7 +79,6 @@ const viteConfig = {
       template: './index.html',
       inject: {
         data: {
-          debugDomain: process.env.NODE_ENV === 'development' && appConfig.debug ? appConfig.domain : null,
           title: appConfig.name,
           description: appConfig.description,
           keywords: appConfig.keywords,
@@ -94,7 +93,7 @@ const viteConfig = {
       compress: {
         pure_funcs: ['console.debug'], // Removes console.debug
       },
-    }),
+    }) as Plugin,
     // visualizer({ open: true, gzipSize: true }),
   ],
   resolve: {

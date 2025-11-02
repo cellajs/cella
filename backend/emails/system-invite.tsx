@@ -17,6 +17,9 @@ export interface SystemInviteEmailProps extends BasicTemplateType {
 
 const appName = appConfig.name;
 
+/**
+ * Email template for new users that receive a system-level invitation.
+ */
 export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: SystemInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>

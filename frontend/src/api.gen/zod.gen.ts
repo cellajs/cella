@@ -2,7 +2,17 @@
 
 import { z } from 'zod';
 
-export const zContextEntityBaseSchema = z.object({
+export const zUserBase = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+  bannerUrl: z.optional(z.union([z.string(), z.null()])),
+  email: z.email(),
+  entityType: z.enum(['user']),
+});
+
+export const zContextEntityBase = z.object({
   id: z.string(),
   entityType: z.enum(['organization']),
   slug: z.string(),
@@ -11,7 +21,7 @@ export const zContextEntityBaseSchema = z.object({
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
 });
 
-export const zMembershipBaseSchema = z.object({
+export const zMembershipBase = z.object({
   id: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
@@ -20,16 +30,6 @@ export const zMembershipBaseSchema = z.object({
   muted: z.boolean(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
-});
-
-export const zUserBaseSchema = z.object({
-  id: z.string(),
-  slug: z.string(),
-  name: z.string(),
-  thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-  bannerUrl: z.optional(z.union([z.string(), z.null()])),
-  email: z.email(),
-  entityType: z.enum(['user']),
 });
 
 export const zUser = z.object({
@@ -109,6 +109,32 @@ export const zOrganization = z.object({
   }),
 });
 
+export const zMembership = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  contextType: z.enum(['organization']),
+  userId: z.string(),
+  role: z.enum(['member', 'admin']),
+  createdBy: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  archived: z.boolean(),
+  muted: z.boolean(),
+  order: z.number().gte(-140737488355328).lte(140737488355327),
+  organizationId: z.string(),
+});
+
+export const zInactiveMembership = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  contextType: z.enum(['organization']),
+  userId: z.union([z.string(), z.null()]),
+  role: z.enum(['member', 'admin']),
+  rejectedAt: z.union([z.string(), z.null()]),
+  createdBy: z.string(),
+  organizationId: z.string(),
+});
+
 export const zAttachment = z.object({
   createdAt: z.string(),
   id: z.string(),
@@ -130,7 +156,7 @@ export const zAttachment = z.object({
   convertedUrl: z.union([z.string(), z.null()]),
 });
 
-export const zMenuSchema = z.object({
+export const zMenu = z.object({
   organization: z.array(
     z.object({
       id: z.string(),
@@ -139,17 +165,16 @@ export const zMenuSchema = z.object({
       name: z.string(),
       thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      membership: zMembershipBaseSchema,
+      membership: zMembershipBase,
       createdAt: z.string(),
       submenu: z.optional(
         z.array(
-          z.union([
-            zContextEntityBaseSchema,
+          zContextEntityBase.and(
             z.object({
-              membership: zMembershipBaseSchema,
+              membership: zMembershipBase,
               createdAt: z.string(),
             }),
-          ]),
+          ),
         ),
       ),
     }),
@@ -231,19 +256,16 @@ export const zInvokeTokenData = z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
     token: z.string(),
   }),
-  query: z.object({
-    tokenId: z.string(),
-  }),
+  query: z.optional(z.never()),
 });
 
 export const zGetTokenDataData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    tokenId: z.string(),
-  }),
-  query: z.object({
     type: z.enum(['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa']),
+    id: z.string(),
   }),
+  query: z.optional(z.never()),
 });
 
 /**
@@ -251,11 +273,8 @@ export const zGetTokenDataData = z.object({
  */
 export const zGetTokenDataResponse = z.object({
   email: z.email(),
-  role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
-  organizationName: z.optional(z.string()),
-  organizationSlug: z.optional(z.string()),
-  organizationId: z.optional(z.string()),
+  inactiveMembershipId: z.optional(z.string()),
 });
 
 export const zStartImpersonationData = z.object({
@@ -281,6 +300,26 @@ export const zStopImpersonationData = z.object({
  * Stopped impersonating
  */
 export const zStopImpersonationResponse = z.void();
+
+export const zResendInvitationWithTokenData = z.object({
+  body: z.union([
+    z.object({
+      email: z.email(),
+      tokenId: z.optional(z.string()),
+    }),
+    z.object({
+      email: z.optional(z.email()),
+      tokenId: z.string(),
+    }),
+  ]),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invitation email sent
+ */
+export const zResendInvitationWithTokenResponse = z.void();
 
 export const zSignOutData = z.object({
   body: z.optional(z.never()),
@@ -673,7 +712,7 @@ export const zGetMyMenuData = z.object({
 /**
  * Menu of user
  */
-export const zGetMyMenuResponse = zMenuSchema;
+export const zGetMyMenuResponse = zMenu;
 
 export const zGetMyInvitationsData = z.object({
   body: z.optional(z.never()),
@@ -682,31 +721,18 @@ export const zGetMyInvitationsData = z.object({
 });
 
 /**
- * Entity memberships pending
+ * Invitations pending
  */
-export const zGetMyInvitationsResponse = z.array(
-  z.object({
-    entity: zContextEntityBaseSchema.and(
-      z.object({
-        organizationId: z.optional(z.string()),
-      }),
-    ),
-    invitedBy: z.union([
-      z.object({
-        id: z.string(),
-        slug: z.string(),
-        name: z.string(),
-        thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-        bannerUrl: z.optional(z.union([z.string(), z.null()])),
-        email: z.email(),
-        entityType: z.enum(['user']),
-      }),
-      z.null(),
-    ]),
-    membership: zMembershipBaseSchema,
-    expiresAt: z.string(),
-  }),
-);
+export const zGetMyInvitationsResponse = z.object({
+  items: z.array(
+    z.object({
+      entity: zContextEntityBase,
+      inactiveMembership: zInactiveMembership.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
+      createdByUser: zUserBase.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
+    }),
+  ),
+  total: z.number(),
+});
 
 export const zDeleteMySessionsData = z.object({
   body: z.optional(
@@ -813,12 +839,11 @@ export const zGetUsersData = z.object({
  */
 export const zGetUsersResponse = z.object({
   items: z.array(
-    z.union([
-      zUser,
+    zUser.and(
       z.object({
-        memberships: z.array(zMembershipBaseSchema),
+        memberships: z.array(zMembershipBase),
       }),
-    ]),
+    ),
   ),
   total: z.number(),
 });
@@ -997,8 +1022,7 @@ export const zGetContextEntitiesData = z.object({
  */
 export const zGetContextEntitiesResponse = z.object({
   items: z.array(
-    z.union([
-      zContextEntityBaseSchema,
+    zContextEntityBase.and(
       z.object({
         membership: z.union([
           z.object({
@@ -1021,7 +1045,7 @@ export const zGetContextEntitiesResponse = z.object({
           total: z.number(),
         }),
       }),
-    ]),
+    ),
   ),
   total: z.number(),
 });
@@ -1039,7 +1063,7 @@ export const zGetContextEntityData = z.object({
 /**
  * Context entities
  */
-export const zGetContextEntityResponse = zContextEntityBaseSchema;
+export const zGetContextEntityResponse = zContextEntityBase;
 
 export const zCheckSlugData = z.object({
   body: z.object({
@@ -1405,26 +1429,14 @@ export const zUpdateMembershipData = z.object({
 /**
  * Membership updated
  */
-export const zUpdateMembershipResponse = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  contextType: z.enum(['organization']),
-  userId: z.string(),
-  role: z.enum(['member', 'admin']),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
-  archived: z.boolean(),
-  muted: z.boolean(),
-  order: z.number().gte(-140737488355328).lte(140737488355327),
-  organizationId: z.string(),
-});
+export const zUpdateMembershipResponse = zMembership;
 
 export const zHandleMembershipInvitationData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     id: z.string(),
     acceptOrReject: z.enum(['accept', 'reject']),
+    orgIdOrSlug: z.string(),
   }),
   query: z.optional(z.never()),
 });
@@ -1432,15 +1444,13 @@ export const zHandleMembershipInvitationData = z.object({
 /**
  * Invitation was accepted
  */
-export const zHandleMembershipInvitationResponse = zContextEntityBaseSchema;
+export const zHandleMembershipInvitationResponse = zContextEntityBase;
 
 export const zGetMembersData = z.object({
   body: z.optional(z.never()),
-  path: z.optional(
-    z.object({
-      orgIdOrSlug: z.optional(z.string()),
-    }),
-  ),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
   query: z.object({
     q: z.optional(z.string()),
     sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
@@ -1478,20 +1488,20 @@ export const zGetMembersResponse = z.object({
       lastStartedAt: z.union([z.string(), z.null()]),
       lastSignInAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
-      membership: zMembershipBaseSchema,
+      membership: zMembershipBase,
     }),
   ),
   total: z.number(),
 });
 
-export const zGetPendingInvitationsData = z.object({
+export const zGetPendingMembershipsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
   query: z.object({
     q: z.optional(z.string()),
-    sort: z.optional(z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy'])),
+    sort: z.optional(z.enum(['createdAt'])),
     order: z.optional(z.enum(['asc', 'desc'])),
     offset: z.optional(z.string()),
     limit: z.optional(z.string()),
@@ -1501,39 +1511,18 @@ export const zGetPendingInvitationsData = z.object({
 });
 
 /**
- * Invited members
+ * Pending memberships
  */
-export const zGetPendingInvitationsResponse = z.object({
+export const zGetPendingMembershipsResponse = z.object({
   items: z.array(
     z.object({
       id: z.string(),
-      email: z.string(),
+      email: z.email(),
+      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+      role: z.enum(['member', 'admin']),
       createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),
-      role: z.enum(['member', 'admin']),
-      expiresAt: z.string(),
-      name: z.union([z.string(), z.null()]),
     }),
   ),
   total: z.number(),
 });
-
-export const zResendInvitationData = z.object({
-  body: z.union([
-    z.object({
-      email: z.email(),
-      tokenId: z.optional(z.string()),
-    }),
-    z.object({
-      email: z.optional(z.email()),
-      tokenId: z.string(),
-    }),
-  ]),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Invitation email sent
- */
-export const zResendInvitationResponse = z.void();

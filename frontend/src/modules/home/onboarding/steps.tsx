@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
 import useMounted from '~/hooks/use-mounted';
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper';
 import StepperFooter from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
@@ -68,8 +69,8 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
                       )}
                       {id === 'organization' && !organization && (
                         <CreateOrganizationForm
-                          callback={(newOrganization: Organization) => {
-                            setOrganization(newOrganization);
+                          callback={(args: CallbackArgs<Organization>) => {
+                            if (args.status === 'success') setOrganization(args.data);
                           }}
                         >
                           <StepperFooter setOnboardingState={setOnboardingState} />

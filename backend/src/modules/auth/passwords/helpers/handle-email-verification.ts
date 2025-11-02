@@ -9,7 +9,7 @@ import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 
 export const handleEmailVerification = async (ctx: Context<Env>, token: TokenModel) => {
@@ -17,7 +17,7 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
   if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   // Get user
-  const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'user', meta: { userId: token.userId } });
 
   // Set email verified if it exists

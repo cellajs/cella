@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '~/modules/ui/dialog';
 
 /**
@@ -57,7 +57,13 @@ export const ShouldOpenCloseWithContinue: Story = {
 
     await step('Close the dialog', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /continue/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the dialog to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };
@@ -77,7 +83,13 @@ export const ShouldOpenCloseWithCancel: Story = {
 
     await step('Close the dialog', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /cancel/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the dialog to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };
@@ -97,7 +109,13 @@ export const ShouldOpenCloseCross: Story = {
 
     await step('Close the dialog', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /close/i }));
-      expect(await canvasBody.findByRole('dialog')).toHaveAttribute('data-state', 'closed');
+      // Wait for the dialog to be removed from DOM after closing animation
+      await waitFor(
+        () => {
+          expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };

@@ -4,15 +4,15 @@ import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
-  meInvitationsSchema,
   menuSchema,
+  mePendingInvitationSchema,
   toggleMfaBodySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
 } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
-import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -56,12 +56,12 @@ const meRoutes = {
     path: '/invitations',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get invitations',
-    description: 'Returns a list of entities with pending memberships - meaning activatedAt is still null.',
+    summary: 'Get list of invitations',
+    description: 'Returns a list of pending memberships with entity data.',
     responses: {
       200: {
-        description: 'Entity memberships pending',
-        content: { 'application/json': { schema: meInvitationsSchema } },
+        description: 'Invitations pending',
+        content: { 'application/json': { schema: paginationSchema(mePendingInvitationSchema) } },
       },
       ...errorResponses,
     },

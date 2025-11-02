@@ -3,7 +3,7 @@ import { appConfig, ContextEntityType } from 'config';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserBaseSchema } from '~/api.gen';
+import type { UserBase } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
@@ -14,7 +14,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbS
 import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: EntityPage | UserBaseSchema;
+  entity: EntityPage | UserBase;
   panel?: React.ReactNode;
   parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
@@ -26,6 +26,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   const parentData = parent ? useGetEntityBaseData(parent) : null;
+
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
