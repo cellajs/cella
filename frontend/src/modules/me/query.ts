@@ -34,28 +34,28 @@ export const meKeys = {
 };
 
 /**
- * Query options for fetching the current authenticated user's data.
+ * Query options for fetching the current user's data.
  *
  * @returns Query options.
  */
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
 
 /**
- * Query options for fetching the authentication information of the current authenticated user.
+ * Query options for fetching the auth information of the current user.
  *
  * @returns Query options.
  */
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
 /**
- * Query options for fetching the current authenticated user's menu.
+ * Query options for fetching the current user's menu.
  *
  * @returns Query options.
  */
 export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, queryFn: getAndSetMenu });
 
 /**
- * Query options for fetching the current authenticated user's invites.
+ * Query options for fetching the current user's invites.
  *
  * @returns Query options.
  */

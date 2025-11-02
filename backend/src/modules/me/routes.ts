@@ -57,7 +57,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get list of invitations',
-    description: 'Returns a list of pending memberships with entity data - meaning activatedAt is still null.',
+    description: 'Returns a list of pending memberships with entity data.',
     responses: {
       200: {
         description: 'Invitations pending',

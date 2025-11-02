@@ -15,7 +15,7 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
   const callback = (args: CallbackArgs<Organization>) => {
     useDialoger.getState().remove('create-organization');
-    if (args.status === 'success') router.navigate({ to: '/organizations/$idOrSlug/members', params: { idOrSlug: args.data.slug } });
+    if (args.status === 'success') router.navigate({ to: '/organization/$idOrSlug/members', params: { idOrSlug: args.data.slug } });
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {

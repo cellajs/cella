@@ -1,11 +1,11 @@
 import { appConfig, type EntityType } from 'config';
 import { Building2Icon, CloudIcon, type LucideIcon, UsersIcon } from 'lucide-react';
+import { ElementIcon } from '~/modules/icons/elemet';
 import { GithubIcon } from '~/modules/icons/github';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { nanoid } from '~/utils/nanoid';
-import { ElementIcon } from '../icons/elemet';
 
 /*************************************************************************************************
  * Nav

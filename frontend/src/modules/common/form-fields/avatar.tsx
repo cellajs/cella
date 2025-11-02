@@ -63,7 +63,7 @@ const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
           <FormLabel>{label}</FormLabel>
           <FormControl>
             <div className="flex gap-4">
-              <AvatarWrap type={type} className="h-16 w-16 text-3xl" id={entity.id} name={name} url={url} />
+              <AvatarWrap type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
 
               <div className="flex flex-col gap-2">
                 {appConfig.has.uploadEnabled ? (

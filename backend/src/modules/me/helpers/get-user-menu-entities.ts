@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'config';
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -25,5 +25,5 @@ export const getUserMenuEntities = async (entityType: ContextEntityType, userId:
     .from(table)
     .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, entityType)))
     .orderBy(asc(membershipsTable.order))
-    .innerJoin(membershipsTable, and(eq(membershipsTable[entityIdField], table.id), isNotNull(membershipsTable.activatedAt)));
+    .innerJoin(membershipsTable, eq(membershipsTable[entityIdField], table.id));
 };

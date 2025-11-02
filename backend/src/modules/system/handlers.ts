@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -18,7 +18,8 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { membershipBaseQuery } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/routes';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -78,7 +79,7 @@ const systemRouteHandlers = app
         and(
           inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.entityType), // system invite
+          isNull(tokensTable.inactiveMembershipId), // system invite
           isNull(tokensTable.invokedAt), // pending (not used)
         ),
       );
@@ -133,7 +134,6 @@ const systemRouteHandlers = app
       email,
       createdBy: user.id,
       expiresAt: createDate(new TimeSpan(7, 'd')),
-      // entityType stays NULL => system-level
     }));
 
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
@@ -187,7 +187,7 @@ const systemRouteHandlers = app
       const { user } = await validateSession(sessionToken);
 
       if (attachment) {
-        const memberships = await membershipBaseQuery().where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+        const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = user.role === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
@@ -251,7 +251,6 @@ const systemRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
-          isNotNull(membershipsTable.activatedAt),
           eq(usersTable.newsletter, true),
         ),
       );
@@ -276,30 +275,8 @@ const systemRouteHandlers = app
         },
       ];
 
-    // Regex to match src="..." or src='...'
-    // Captures quote type in g 1 and actual URL in g 2
-    const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
-
-    const srcs = [...content.matchAll(srcRegex)].map(([_, src]) => src);
-
-    // Map to hold original -> signed URL replacements
-    const replacements = new Map<string, string>();
-
-    // For each unique src, fetch its signed URL
-    // TODO can we put all this in a helper folder?
-    await Promise.all(
-      srcs.map(async (src) => {
-        try {
-          const signed = await getSignedUrlFromKey(src, { isPublic: true, bucketName: appConfig.s3PublicBucket });
-          replacements.set(src, signed);
-        } catch (e) {
-          replacements.set(src, src);
-        }
-      }),
-    );
-
     // Replace all src attributes in content
-    const newContent = content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
+    const newContent = await replaceSignedSrcs(content);
 
     type Recipient = (typeof recipients)[number];
 

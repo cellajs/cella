@@ -124,7 +124,7 @@ const Combobox = ({
               <ScrollArea className="h-[30vh]" viewportRef={scrollViewportRef}>
                 <ScrollBar />
 
-                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={2}>
+                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef}>
                   {filteredOptions.map((option, index) => (
                     <CommandItem
                       key={`${option.value}-${index}`}

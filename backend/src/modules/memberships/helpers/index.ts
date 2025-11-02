@@ -11,7 +11,7 @@ type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
 };
 
-interface Props<T> {
+interface InsertSingleProps<T> {
   userId: string;
   role: MembershipModel['role'];
   entity: T;
@@ -31,7 +31,14 @@ interface Props<T> {
  * @param info.tokenId - Optional, Id of a token if it's and invite membership (default: null).
  * @returns Inserted target membership.
  */
-export const insertMembership = async <T extends BaseEntityModel>({ userId, role, entity, createdBy = userId, tokenId = null }: Props<T>) => {
+// TODO not used anywhere
+export const insertMembership = async <T extends BaseEntityModel>({
+  userId,
+  role,
+  entity,
+  createdBy = userId,
+  tokenId = null,
+}: InsertSingleProps<T>) => {
   // Get max order number
   const [{ maxOrder }] = await db
     .select({ maxOrder: max(membershipsTable.order) })
@@ -120,26 +127,25 @@ export const getAssociatedEntityDetails = <T extends ContextEntityType>(entity: 
   return { id, type, field };
 };
 
-interface Props<T> {
+interface InsertMultipleProps<T> {
   userId: string;
   role: MembershipModel['role'];
   entity: T;
-  activate: boolean;
-  createdBy?: string;
+  createdBy: string;
 }
 
 /**
- * Batch insert memberships for existing users.
+ * Batch insert direct memberships for existing users.
  *
  * - Ensures organization membership exists for non-organization entities.
  * - Ensures associated parent membership exists when applicable.
- * - Inserts the target entity membership (inactive if activate=false).
+ * - Inserts the target entity memberships.
  * - Computes per-user 'order' in a single grouped query and increments by 10.
  *
  * @param items - membership requests for existing users
  * @returns inserted target memberships (MembershipBaseModel)
  */
-export const insertMemberships = async <T extends BaseEntityModel>(items: Array<Props<T>>): Promise<Array<MembershipBaseModel>> => {
+export const insertMemberships = async <T extends BaseEntityModel>(items: Array<InsertMultipleProps<T>>): Promise<Array<MembershipBaseModel>> => {
   // Early exit: nothing to insert
   if (!items.length) return [];
 
@@ -168,7 +174,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
   // Precompute per-item resolved details (entity fields, associated relation, base row)
   const prepared = items.map((info) => {
     // Resolve defaults and contextual fields
-    const { userId, role, entity, activate } = info;
+    const { userId, role, entity } = info;
     const createdBy = info.createdBy ?? userId;
     const entityIdField = appConfig.entityIdFields[entity.entityType];
     const associatedEntity = getAssociatedEntityDetails(entity);
@@ -188,7 +194,6 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
       userId,
       role,
       createdBy,
-      activatedAt: activate ? getIsoDate() : null,
       order: nextOrder,
     };
 

@@ -4,7 +4,7 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});
 };
 
-export type UserBaseSchema = {
+export type UserBase = {
   id: string;
   slug: string;
   name: string;
@@ -14,7 +14,7 @@ export type UserBaseSchema = {
   entityType: 'user';
 };
 
-export type ContextEntityBaseSchema = {
+export type ContextEntityBase = {
   id: string;
   entityType: 'organization';
   slug: string;
@@ -23,12 +23,11 @@ export type ContextEntityBaseSchema = {
   bannerUrl?: string | null;
 };
 
-export type MembershipBaseSchema = {
+export type MembershipBase = {
   id: string;
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
-  activatedAt: string | null;
   archived: boolean;
   muted: boolean;
   order: number;
@@ -91,7 +90,6 @@ export type Organization = {
     contextType: 'organization';
     userId: string;
     role: 'member' | 'admin';
-    activatedAt: string | null;
     archived: boolean;
     muted: boolean;
     order: number;
@@ -116,13 +114,23 @@ export type Membership = {
   contextType: 'organization';
   userId: string;
   role: 'member' | 'admin';
-  activatedAt: string | null;
-  createdBy: string | null;
+  createdBy: string;
   modifiedAt: string | null;
   modifiedBy: string | null;
   archived: boolean;
   muted: boolean;
   order: number;
+  organizationId: string;
+};
+
+export type InactiveMembership = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  userId: string | null;
+  role: 'member' | 'admin';
+  rejectedAt: string | null;
+  createdBy: string;
   organizationId: string;
 };
 
@@ -147,7 +155,7 @@ export type Attachment = {
   convertedUrl: string | null;
 };
 
-export type MenuSchema = {
+export type Menu = {
   organization: Array<{
     id: string;
     entityType: 'organization';
@@ -155,11 +163,11 @@ export type MenuSchema = {
     name: string;
     thumbnailUrl?: string | null;
     bannerUrl?: string | null;
-    membership: MembershipBaseSchema;
+    membership: MembershipBase;
     createdAt: string;
     submenu?: Array<
-      ContextEntityBaseSchema & {
-        membership: MembershipBaseSchema;
+      ContextEntityBase & {
+        membership: MembershipBase;
         createdAt: string;
       }
     >;
@@ -219,22 +227,6 @@ export type ApiError = {
   timestamp?: string;
   userId?: string;
   organizationId?: string;
-};
-
-export type MembershipSchema = {
-  createdAt: string;
-  id: string;
-  contextType: 'organization';
-  userId: string;
-  role: 'member' | 'admin';
-  activatedAt: string | null;
-  createdBy: string | null;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
-  archived: boolean;
-  muted: boolean;
-  order: number;
-  organizationId: string;
 };
 
 export type CheckEmailData = {
@@ -386,9 +378,8 @@ export type GetTokenDataResponses = {
    */
   200: {
     email: string;
-    role: 'member' | 'admin' | null;
     userId?: string;
-    organizationId?: string;
+    inactiveMembershipId?: string;
   };
 };
 
@@ -1949,7 +1940,7 @@ export type GetMyMenuResponses = {
   /**
    * Menu of user
    */
-  200: MenuSchema;
+  200: Menu;
 };
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
@@ -2002,12 +1993,12 @@ export type GetMyInvitationsResponses = {
    */
   200: {
     items: Array<{
-      entity: ContextEntityBaseSchema;
-      membership: MembershipBaseSchema &
+      entity: ContextEntityBase;
+      inactiveMembership: InactiveMembership &
         ({
           [key: string]: unknown;
         } | null);
-      createdByUser: UserBaseSchema &
+      createdByUser: UserBase &
         ({
           [key: string]: unknown;
         } | null);
@@ -2359,7 +2350,7 @@ export type GetUsersResponses = {
   200: {
     items: Array<
       User & {
-        memberships: Array<MembershipBaseSchema>;
+        memberships: Array<MembershipBase>;
       }
     >;
     total: number;
@@ -2653,7 +2644,6 @@ export type CreateOrganizationResponses = {
       contextType: 'organization';
       userId: string;
       role: 'member' | 'admin';
-      activatedAt: string | null;
       archived: boolean;
       muted: boolean;
       order: number;
@@ -2848,13 +2838,12 @@ export type GetContextEntitiesResponses = {
    */
   200: {
     items: Array<
-      ContextEntityBaseSchema & {
+      ContextEntityBase & {
         membership: {
           id: string;
           contextType: 'organization';
           userId: string;
           role: 'member' | 'admin';
-          activatedAt: string | null;
           archived: boolean;
           muted: boolean;
           order: number;
@@ -2925,7 +2914,7 @@ export type GetContextEntityResponses = {
   /**
    * Context entities
    */
-  200: ContextEntityBaseSchema;
+  200: ContextEntityBase;
 };
 
 export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
@@ -4080,7 +4069,7 @@ export type UpdateMembershipResponses = {
   /**
    * Membership updated
    */
-  200: MembershipSchema;
+  200: Membership;
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
@@ -4090,6 +4079,7 @@ export type HandleMembershipInvitationData = {
   path: {
     id: string;
     acceptOrReject: 'accept' | 'reject';
+    orgIdOrSlug: string;
   };
   query?: never;
   url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}';
@@ -4134,15 +4124,15 @@ export type HandleMembershipInvitationResponses = {
   /**
    * Invitation was accepted
    */
-  200: ContextEntityBaseSchema;
+  200: ContextEntityBase;
 };
 
 export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;
-  path?: {
-    orgIdOrSlug?: string;
+  path: {
+    orgIdOrSlug: string;
   };
   query: {
     q?: string;
@@ -4217,7 +4207,7 @@ export type GetMembersResponses = {
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
-      membership: MembershipBaseSchema;
+      membership: MembershipBase;
     }>;
     total: number;
   };
@@ -4283,8 +4273,7 @@ export type GetPendingMembershipsResponses = {
    */
   200: {
     items: Array<{
-      membershipId: string | null;
-      tokenId: string | null;
+      id: string;
       email: string;
       thumbnailUrl?: string | null;
       role: 'member' | 'admin';

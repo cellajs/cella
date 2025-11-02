@@ -28,7 +28,7 @@ const tabs = [
 const OrganizationSettings = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { idOrSlug } = useParams({ from: '/appLayout/organizations/$idOrSlug/settings' });
+  const { idOrSlug } = useParams({ from: '/appLayout/organization/$idOrSlug/settings' });
 
   const deleteButtonRef = useRef(null);
 
@@ -57,7 +57,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   const callback = (args: CallbackArgs<Organization>) => {
     if (args.status === 'success' && idOrSlug !== args.data.slug) {
       navigate({
-        to: '/organizations/$idOrSlug/settings',
+        to: '/organization/$idOrSlug/settings',
         params: { idOrSlug: organization.slug },
         replace: true,
       });

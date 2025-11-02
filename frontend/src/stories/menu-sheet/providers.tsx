@@ -3,7 +3,7 @@ import { appConfig } from 'config';
 import { ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import type { UserMenu } from '~/modules/me/types';
-import { createMockNavigationStore, createMockSheeterStore, createMockUIStore, createMockUserStore } from './stores';
+import { createMockNavigationStore, createMockSheeterStore, createMockUIStore, createMockUserStore } from '~/stories/menu-sheet/stores';
 
 // Mock i18n
 const mockI18n = {

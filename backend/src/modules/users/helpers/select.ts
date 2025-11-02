@@ -1,6 +1,5 @@
 import { appConfig, type UserFlags } from 'config';
 import { getTableColumns, sql } from 'drizzle-orm';
-import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { pickColumns } from '#/db/utils/pick-columns';
 import { userBaseSchema } from '#/modules/users/schema-base';
@@ -39,15 +38,3 @@ export const userBaseSelect = (() => {
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pickColumns(cols, keys);
 })() satisfies UserBaseSelect;
-
-// TODO perhaps remove since it it an uncommon pattern to export a base query in our codebase?
-
-/**
- * Base query for selecting users.
- *
- * - Always selects from `usersTable` using the predefined `userSelect` shape.
- *
- * This query is meant to be extended (e.g., with additional joins or filters)
- * wherever user data needs to be fetched consistently.
- */
-export const usersBaseQuery = () => db.select(userSelect).from(usersTable);

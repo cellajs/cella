@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, isNotNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -35,7 +35,7 @@ const entityRouteHandlers = app
     const selectedTypes = new Set(types ?? appConfig.contextEntityTypes);
 
     // Shared filters for active memberships (used across entity types)
-    const baseMembershipQueryFilters = [eq(membershipsTable.userId, userId), isNotNull(membershipsTable.activatedAt)];
+    const baseMembershipQueryFilters = [eq(membershipsTable.userId, userId)];
 
     // Subquery to get all organizations the user is a member of (optionally narrowed down if `targetOrgId` is passed)
     const orgMembershipsSubquery = db
@@ -109,7 +109,6 @@ const entityRouteHandlers = app
               orgMembershipsAlias,
               and(
                 eq(orgMembershipsAlias.userId, userId),
-                isNotNull(orgMembershipsAlias.activatedAt),
                 eq(table.id, orgMembershipsAlias.organizationId),
                 eq(orgMembershipsAlias.contextType, 'organization'),
               ),

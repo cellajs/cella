@@ -4,6 +4,7 @@ import { appConfig } from 'config';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
@@ -20,19 +21,18 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { contextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuSchema } from '#/modules/me/schema';
-import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import { userBaseSelect, userSelect } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { contextEntityBaseSelect } from '../entities/helpers/select';
-import { membershipBaseSelect } from '../memberships/helpers/select';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
@@ -167,12 +167,18 @@ const meRouteHandlers = app
           .select({
             entity: contextEntityBaseSelect,
             createdByUser: userBaseSelect,
-            membership: membershipBaseSelect,
+            inactiveMembership: inactiveMembershipsTable,
           })
-          .from(membershipsTable)
-          .leftJoin(usersTable, eq(usersTable.id, membershipsTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, membershipsTable[entityIdField]))
-          .where(and(eq(membershipsTable.contextType, entityType), eq(membershipsTable.userId, user.id), isNull(membershipsTable.activatedAt)));
+          .from(inactiveMembershipsTable)
+          .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
+          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdField]))
+          .where(
+            and(
+              eq(inactiveMembershipsTable.contextType, entityType),
+              eq(inactiveMembershipsTable.userId, user.id),
+              isNull(inactiveMembershipsTable.rejectedAt),
+            ),
+          );
       }),
     );
 
@@ -313,7 +319,9 @@ const meRouteHandlers = app
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
-    const [user] = await usersBaseQuery()
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
       .where(eq(unsubscribeTokensTable.token, token))
       .limit(1);

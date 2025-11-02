@@ -1,10 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -17,7 +18,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import authGeneralRoutes from '#/modules/auth/general/routes';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
@@ -27,6 +28,7 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
+import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -39,26 +41,10 @@ const authGeneralRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // If entering while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
-    const [inviteToken] = await db
-      .select()
-      .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.email, normalizedEmail),
-          eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.userId),
-          isNotNull(tokensTable.entityType),
-          isNotNull(tokensTable.role),
-          isNull(tokensTable.invokedAt),
-        ),
-      )
-      .limit(1);
-
-    if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
-
     // User not found, go to sign up if registration is enabled
-    const [user] = await usersBaseQuery()
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -103,7 +89,6 @@ const authGeneralRouteHandlers = app
    * Get token data by single use token in cookie
    */
   .openapi(authGeneralRoutes.getTokenData, async (ctx) => {
-    // Find token in request
     const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
     // Check if token session is valid
@@ -114,16 +99,15 @@ const authGeneralRouteHandlers = app
 
     const data = {
       email: tokenRecord.email,
-      role: tokenRecord.role,
       userId: tokenRecord.userId || '',
-      organizationId: tokenRecord.organizationId || '',
+      inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
     };
 
-    // If its NOT an organization invitation, return base data
-    if (!tokenRecord.organizationId) return ctx.json(data, 200);
+    // If its NOT an membership invitation, return base data
+    if (!tokenRecord.inactiveMembershipId) return ctx.json(data, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
+    const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
       data.userId = existingUser.id;
@@ -137,7 +121,7 @@ const authGeneralRouteHandlers = app
   .openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, targetUserId)).limit(1);
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
@@ -178,14 +162,13 @@ const authGeneralRouteHandlers = app
   })
   /**
    * Resend invitation email with token for entity invites and system invites.
-   * TODO system invites not yet implemented, move entire sending email logic to helper
    */
   .openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
     const { email, tokenId } = ctx.req.valid('json');
 
     const normalizedEmail = email?.toLowerCase().trim();
 
-    const filters = [eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType), isNotNull(tokensTable.role)];
+    const filters = [eq(tokensTable.type, 'invitation')];
 
     if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
     else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
@@ -201,16 +184,7 @@ const authGeneralRouteHandlers = app
 
     if (!oldToken) throw new AppError({ status: 404, type: 'token_not_found', severity: 'error' });
 
-    const { entityType, role, email: userEmail } = oldToken;
-
-    if (!entityType || !role) throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
-
-    const entityIdField = appConfig.entityIdFields[entityType];
-    const entityId = oldToken[entityIdField];
-    if (!entityId) throw new AppError({ status: 500, type: 'server_error', entityType, severity: 'error' });
-
-    const entity = await resolveEntity(entityType, entityId);
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType });
+    const { email: userEmail } = oldToken;
 
     // Generate token and store hashed
     const newToken = nanoid(40);
@@ -232,32 +206,48 @@ const authGeneralRouteHandlers = app
       memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
     };
 
-    let senderName = 'System';
-    let senderThumbnailUrl: null | string = null;
+    // Prepare email props, default is system invite
+    const defaultEmailProps = {
+      senderName: 'System',
+      senderThumbnailUrl: null as string | null,
+      subject: i18n.t('backend:email.system_invite.subject', {
+        lng: appConfig.defaultLanguage,
+      }),
+      lng: appConfig.defaultLanguage,
+    };
 
     // Get original sender
     if (oldToken.createdBy) {
-      const [sender] = await usersBaseQuery().where(eq(usersTable.id, oldToken.createdBy)).limit(1);
-
-      senderName = sender.name;
-      senderThumbnailUrl = sender.thumbnailUrl;
+      const [sender] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+      defaultEmailProps.senderName = sender.name;
+      defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
     }
 
-    const emailProps = {
-      senderName,
-      senderThumbnailUrl,
-      entityName: entity.name,
-      role,
-      subject: i18n.t('backend:email.member_invite.subject', {
-        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
+    // Get entity info
+    if (oldToken.inactiveMembershipId) {
+      const [inactiveMembership] = await db
+        .select()
+        .from(inactiveMembershipsTable)
+        .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
+
+      const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
+      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
+      if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+
+      defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', { entityName: entity.name, lng: appConfig.defaultLanguage });
+      const emailProps = {
+        ...defaultEmailProps,
         entityName: entity.name,
-      }),
-      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
-    };
+        role: inactiveMembership.role,
+        lng: entity.defaultLanguage || appConfig.defaultLanguage,
+      };
 
-    await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
-
-    logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
+      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
+      logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });
+    } else {
+      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
+      logEvent('info', 'System invitation has been resent');
+    }
 
     return ctx.body(null, 204);
   })

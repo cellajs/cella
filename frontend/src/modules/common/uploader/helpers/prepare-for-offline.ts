@@ -10,7 +10,7 @@ import type { UploadTokenQuery } from '~/modules/me/types';
  * @param files - Fle object containing metadata and upload details.
  * @returns An array of files that were successfully prepared for offline storage.
  */
-export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery) => {
+export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<AssemblyResponse> => {
   console.warn('Files will be stored offline in indexedDB.');
 
   const template = uploadTemplates.attachment;
@@ -52,7 +52,7 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
       execTime: 0,
       queueTime: 0,
       localId: el.id,
-      size: el.size || el.data.size,
+      size: el.size || el.data?.size || 0,
       url: el.preview!,
       ssl_url: el.preview!,
       tus_upload_url: '',
@@ -61,6 +61,7 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
     };
   }) satisfies UploadedFile[];
 
+  // TODO(DAVID) review type assertion or can we do this in another way?
   return {
     ok: 'OFFLINE_UPLOAD',
     results: {

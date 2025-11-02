@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -13,7 +13,7 @@ import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
 import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMemberships } from '#/modules/memberships/helpers';
-import { membershipBaseQuery, membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -62,7 +62,7 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
-    const [createdMembership] = await insertMemberships([{ userId: user.id, role: 'admin', entity: createdOrganization, activate: true }]);
+    const [createdMembership] = await insertMemberships([{ userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization }]);
 
     // Get default linked entities
     const validEntities = getAssociatedEntities(createdOrganization.entityType);
@@ -94,8 +94,10 @@ const organizationRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
-    const memberships = membershipBaseQuery()
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
+    const memberships = db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -184,14 +186,16 @@ const organizationRouteHandlers = app
       .returning();
 
     // notify members (unchanged)
-    const organizationMemberships = await membershipBaseQuery().where(
-      and(
-        eq(membershipsTable.contextType, 'organization'),
-        eq(membershipsTable.organizationId, organization.id),
-        eq(membershipsTable.archived, false),
-        isNotNull(membershipsTable.activatedAt),
-      ),
-    );
+    const organizationMemberships = await db
+      .select(membershipBaseSelect)
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.contextType, 'organization'),
+          eq(membershipsTable.organizationId, organization.id),
+          eq(membershipsTable.archived, false),
+        ),
+      );
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
@@ -226,7 +230,6 @@ const organizationRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, allowedIds),
           eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
         ),
       );
 

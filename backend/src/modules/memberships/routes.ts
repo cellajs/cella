@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import {
   memberListQuerySchema,
   membershipCreateBodySchema,
@@ -12,7 +13,6 @@ import {
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { contextEntityBaseSchema } from '../entities/schema-base';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -96,11 +96,11 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    guard: isAuthenticated,
+    guard: [isAuthenticated],
     tags: ['membership'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
-    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
+    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }) },
     responses: {
       200: {
         description: 'Invitation was accepted',
@@ -119,7 +119,7 @@ const membershipRoutes = {
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
+      params: inOrgParamSchema,
       query: memberListQuerySchema,
     },
     responses: {

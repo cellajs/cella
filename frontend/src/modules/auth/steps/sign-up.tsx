@@ -73,18 +73,16 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData?.organizationId
+        {tokenData?.inactiveMembershipId
           ? t('common:invite_accept_proceed')
           : tokenData
             ? t('common:invite_create_account')
             : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
         <br />
-        {!tokenData && (
-          <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
-            <span className="truncate">{email}</span>
-            <ChevronDownIcon size={16} className="ml-1" />
-          </Button>
-        )}
+        <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
+          <span className="truncate">{email}</span>
+          <ChevronDownIcon size={16} className="ml-1" />
+        </Button>
       </h1>
 
       <LegalNotice email={email} mode="signup" />

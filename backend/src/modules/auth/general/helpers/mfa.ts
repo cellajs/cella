@@ -6,7 +6,7 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
@@ -68,7 +68,7 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   // Sanity check
   if (!tokenRecord.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-  const [user] = await usersBaseQuery().where(eq(usersTable.id, tokenRecord.userId)).limit(1);
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, tokenRecord.userId)).limit(1);
   if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
 
   return user;

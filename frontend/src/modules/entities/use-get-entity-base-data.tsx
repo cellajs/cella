@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { appConfig, type ContextEntityType } from 'config';
 import { useMemo } from 'react';
-import { type ContextEntityBaseSchema, getContextEntity, getUser, type UserBaseSchema } from '~/api.gen';
+import { type ContextEntityBase, getContextEntity, getUser, type UserBase } from '~/api.gen';
 import { entitiesKeys } from '~/modules/entities/query';
 import { queryClient } from '~/query/query-client';
 import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
@@ -16,11 +16,7 @@ function isContextEntityType(t: ContextEntityType | 'user'): t is ContextEntityT
 type WithIdSlug = { id?: string | null; slug?: string | null };
 
 // user overload
-export function useGetEntityBaseData(args: {
-  idOrSlug: string;
-  entityType: ContextEntityType | 'user';
-  cacheOnly?: boolean;
-}): UserBaseSchema | undefined;
+export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user'; cacheOnly?: boolean }): UserBase | undefined;
 
 // TODO can we batch this using getContextEntities, so that it waits 100ms and batches multiple calls into one API request?
 
@@ -29,7 +25,7 @@ export function useGetEntityBaseData<T extends ContextEntityType>(args: {
   idOrSlug: string;
   entityType: T;
   cacheOnly?: boolean;
-}): ContextEntityBaseSchema | undefined;
+}): ContextEntityBase | undefined;
 
 // ——— implementation ———
 export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user'; cacheOnly?: boolean }) {
@@ -73,7 +69,7 @@ export function useGetEntityBaseData(args: { idOrSlug: string; entityType: Conte
     if (!isContext) return undefined;
     const menuItems = Object.values(menu).flat();
     const submenuItems = menuItems.flatMap(({ submenu }) => submenu ?? []);
-    return (menuItems.find(matchEntity) || submenuItems.find(matchEntity)) as ContextEntityBaseSchema | undefined;
+    return (menuItems.find(matchEntity) || submenuItems.find(matchEntity)) as ContextEntityBase | undefined;
   };
 
   const cachedEntity = useMemo(() => {
@@ -85,7 +81,7 @@ export function useGetEntityBaseData(args: { idOrSlug: string; entityType: Conte
     return undefined;
   }, [entityType, idOrSlug, menu]);
 
-  if (cacheOnly) return cachedEntity as UserBaseSchema | ContextEntityBaseSchema | undefined;
+  if (cacheOnly) return cachedEntity as UserBase | ContextEntityBase | undefined;
 
   const { data } = useQuery({
     queryKey: entitiesKeys.single(idOrSlug, entityType),

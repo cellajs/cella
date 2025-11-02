@@ -39,35 +39,38 @@ type ConfigOverride = {
  * Mock the global fetch request to avoid actual network calls during tests.
  */
 export function mockFetchRequest() {
-  globalThis.fetch = vi.fn().mockImplementation((input) => {
-    // Handle Request objects (like those from rate limiter)
-    if (input instanceof Request) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation((input) => {
+      // Handle Request objects (like those from rate limiter)
+      if (input instanceof Request) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => {
+            try {
+              return await input.clone().json();
+            } catch {
+              return {};
+            }
+          },
+          text: async () => '',
+          clone: () => input.clone(),
+        });
+      }
+
       return Promise.resolve({
         ok: true,
         status: 200,
-        json: async () => {
-          try {
-            return await input.clone().json();
-          } catch {
-            return {};
-          }
-        },
-        text: async () => '',
-        clone: () => input.clone(),
-      });
-    }
-
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      json: async () => ({}),
-      text: async () => '',
-      clone: () => ({
         json: async () => ({}),
         text: async () => '',
-      }),
-    });
-  });
+        clone: () => ({
+          json: async () => ({}),
+          text: async () => '',
+        }),
+      });
+    }),
+  );
 }
 
 /**

@@ -23,13 +23,11 @@ function RequestsPerMinute() {
 
   return (
     <Card className="mt-4">
-      <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
-          <CardTitle>{t('common:requests')}</CardTitle>
-          <CardDescription>{t('common:requests.text')}</CardDescription>
-        </div>
+      <CardHeader>
+        <CardTitle>{t('common:requests')}</CardTitle>
+        <CardDescription>{t('common:requests.text')}</CardDescription>
       </CardHeader>
-      <CardContent className="px-2 sm:p-6">
+      <CardContent>
         <ChartContainer config={chartConfig} className="h-[400px] w-full">
           <BarChart accessibilityLayer data={metrics}>
             <CartesianGrid vertical={false} />

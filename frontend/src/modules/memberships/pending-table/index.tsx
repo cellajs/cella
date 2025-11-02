@@ -71,8 +71,7 @@ export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps
         {...{
           rows,
           rowHeight: 52,
-          // Its either a membershipId or tokenId
-          rowKeyGetter: (row) => row.membershipId || (row.tokenId as string),
+          rowKeyGetter: (row) => row.id,
           columns: columns.filter((column) => column.visible),
           enableVirtualization: false,
           limit,

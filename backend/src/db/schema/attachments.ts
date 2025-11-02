@@ -4,6 +4,9 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
+/**
+ * Attachments table to store file metadata and relations.
+ */
 export const attachmentsTable = pgTable(
   'attachments',
   {

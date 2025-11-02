@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { membershipCountSchema } from '#/modules/organizations/schema';
 import { contextEntityTypeSchema, idSchema, paginationQuerySchema } from '#/utils/schema/common';
-import { contextEntityBaseSchema } from './schema-base';
 
 // Extend base entity schema with membership base data
 export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend({

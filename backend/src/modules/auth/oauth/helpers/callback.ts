@@ -15,7 +15,7 @@ import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { OAuthFlowType } from '#/modules/auth/oauth/schema';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
@@ -49,13 +49,13 @@ export const handleOAuthCallback = async (
 
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
     return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
   }
 
   // User has an unverified OAuth account → prompt oauth (re-)verification
   if (oauthAccount) {
-    const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
     const type = user.lastSignInAt ? 'connect' : 'signup';
     return await handleUnverifiedOAuthAccount(ctx, oauthAccount, type);
   }
@@ -80,11 +80,7 @@ export const handleOAuthCallback = async (
   }
 
   // No user match → create a new user and OAuth account
-  const user = await handleCreateUser({
-    newUser: providerUser,
-    membershipInviteTokenId: null,
-    emailVerified: false,
-  });
+  const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
 
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
 
@@ -134,7 +130,11 @@ const connectCallbackFlow = async (
   }
 
   // New OAuth account connection → validate email isn't used by another user
-  const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await db
+    .select(userSelect)
+    .from(usersTable)
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
     throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
   }
@@ -172,17 +172,18 @@ const inviteCallbackFlow = async (
   if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
 
   // No linked OAuth account and email already in use by an existing user
-  const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await db
+    .select(userSelect)
+    .from(usersTable)
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(eq(emailsTable.email, providerUser.email));
   if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', redirectPath });
 
   // TODO User already signed up meanwhile?
 
   // No user match → create a new user
-  const user = await handleCreateUser({
-    newUser: providerUser,
-    membershipInviteTokenId: invitationToken.entityType ? invitationToken.id : null,
-    emailVerified: false,
-  });
+  const inactiveMembershipId = invitationToken.inactiveMembershipId || null;
+  const user = await handleCreateUser({ newUser: providerUser, inactiveMembershipId, emailVerified: false });
 
   // link user to new OAuth account and prompt email verification
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
@@ -211,7 +212,7 @@ const verifyCallbackFlow = async (
     throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
   }
 
-  const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
 
   // Somehow already linked + verified → log in the user
   if (oauthAccount.verified) {

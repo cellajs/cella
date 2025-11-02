@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserBaseSchema } from '~/api.gen';
+import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
@@ -16,7 +16,7 @@ type BaseProps = {
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserBaseSchema }) => {
+export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLAnchorElement | null>(null);
@@ -26,7 +26,7 @@ export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: Us
   return (
     <Link
       ref={cellRef}
-      to={orgIdOrSlug ? '/$orgIdOrSlug/users/$idOrSlug' : '/users/$idOrSlug'}
+      to={orgIdOrSlug ? '/$orgIdOrSlug/user/$idOrSlug' : '/user/$idOrSlug'}
       tabIndex={tabIndex}
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
       className="flex space-x-2 items-center outline-0 ring-0 group truncate py-0.5"

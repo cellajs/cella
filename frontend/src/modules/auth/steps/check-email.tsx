@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -29,9 +28,8 @@ type FormValues = z.infer<typeof formSchema>;
  */
 export const CheckEmailStep = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
-  const { setStep, setError } = useAuthStore();
+  const { setStep } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
@@ -47,11 +45,6 @@ export const CheckEmailStep = () => {
     onError: (error: ApiError) => {
       let nextStep: AuthStep = 'inviteOnly';
 
-      // If there is an unclaimed invitation token, redirect to auth error page
-      if (error.type === 'invite_takes_priority') {
-        setError(error);
-        navigate({ to: '/auth/error' });
-      }
       // If registration is enabled or user has a token, proceed to sign up
       if (appConfig.has.registrationEnabled) nextStep = 'signUp';
       // If registration is disabled and user has no token, proceed to waitlist

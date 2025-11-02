@@ -1,11 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { userBaseSchema } from '#/modules/users/schema-base';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
-import { userBaseSchema } from '../users/schema-base';
 
-export const membershipSchema = createSelectSchema(membershipsTable).openapi('MembershipSchema');
+export const membershipSchema = createSelectSchema(membershipsTable).openapi('Membership');
+
+export const inactiveMembershipSchema = createSelectSchema(inactiveMembershipsTable).openapi('InactiveMembership');
 
 export const membershipBaseSchema = membershipSchema
   .omit({
@@ -14,7 +17,7 @@ export const membershipBaseSchema = membershipSchema
     modifiedAt: true,
     modifiedBy: true,
   })
-  .openapi('MembershipBaseSchema');
+  .openapi('MembershipBase');
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),
@@ -42,8 +45,7 @@ export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
 });
 
 export const pendingMembershipSchema = z.object({
-  membershipId: z.string().nullable(),
-  tokenId: z.string().nullable(),
+  id: z.string(),
   email: userBaseSchema.shape.email,
   thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),

@@ -4,6 +4,9 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
+/**
+ * Emails table. Users can have multiple emails, each needing verification. They can be linked to tokens for verification purposes.
+ */
 export const emailsTable = pgTable('emails', {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),

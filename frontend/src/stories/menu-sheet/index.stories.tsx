@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { UserMenu } from '~/modules/me/types';
-import { MockMenuSheet } from './mock';
-import { mockFullMenuWithSubteams, mockMenu, mockOrganizationsAndTeamsMenu } from './mock/data';
+import { MockMenuSheet } from '~/stories/menu-sheet/mock';
+import { mockFullMenuWithSubteams, mockMenu, mockOrganizationsAndTeamsMenu } from '~/stories/menu-sheet/mock/data';
 
 const meta: Meta<typeof MockMenuSheet> = {
   title: 'Navigation/MenuSheet',

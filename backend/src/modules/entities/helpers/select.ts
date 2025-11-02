@@ -1,7 +1,7 @@
 import { getTableColumns } from 'drizzle-orm';
 import { organizationsTable } from '#/db/schema/organizations';
 import { pickColumns } from '#/db/utils/pick-columns';
-import { contextEntityBaseSchema } from '../schema-base';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 
 // Infer types of context entity base columns
 type TableColumns = (typeof organizationsTable)['_']['columns'];

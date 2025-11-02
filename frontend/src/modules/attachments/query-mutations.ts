@@ -166,7 +166,7 @@ export const useAttachmentUpdateMutation = () =>
         // TODO(IMPROVE)offline update responce(add createdAt/By, groupId into the file?)
         const localAttachment: Attachment = {
           id: file.id,
-          size: String(file.data.size ?? 0),
+          size: String(file.data?.size ?? 0),
           url: file.preview || '',
           thumbnailUrl: null,
           convertedUrl: null,

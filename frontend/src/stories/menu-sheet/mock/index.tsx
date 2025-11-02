@@ -393,7 +393,7 @@ function MockMenuItem({
             )}
             <span>
               {item.submenu?.length
-                ? `${item.submenu?.length} ${item.submenu?.length > 1 ? `${item.submenu[0].entityType}s` : item.submenu[0].entityType}`
+                ? `${item.submenu?.length} ${item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType}`
                 : item.membership.role
                   ? item.membership.role
                   : ''}

@@ -16,7 +16,7 @@ import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import authPasskeysRoutes from '#/modules/auth/passkeys/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -98,7 +98,9 @@ const authPasskeysRouteHandlers = app
     if (email && type === 'authentication') {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const [tableUser] = await usersBaseQuery()
+      const [tableUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
@@ -139,7 +141,9 @@ const authPasskeysRouteHandlers = app
     if (email) {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const [tableUser] = await usersBaseQuery()
+      const [tableUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
