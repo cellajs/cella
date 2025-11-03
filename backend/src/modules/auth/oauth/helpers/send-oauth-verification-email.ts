@@ -12,6 +12,7 @@ import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-ve
 import { userSelect } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../../emails/oauth-verification';
 
@@ -48,14 +49,15 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   // Delete previous token
   await deleteVerificationTokens(user.id, 'oauth-verification', oauthAccountId);
 
-  const token = nanoid(40);
+  const newToken = nanoid(40);
+  const hashedToken = encodeLowerCased(newToken);
   const email = oauthAccount?.email ?? user.email;
 
   // Create new token
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
-      token,
+      token: hashedToken,
       type: 'oauth-verification',
       userId: user.id,
       email,
@@ -84,7 +86,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
+  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${newToken}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));

@@ -22,7 +22,7 @@
   "homepage": "https://cellajs.com",
   "type": "module",
   "engines": {
-    "node": ">=24.5.0"
+    "node": "24.x"
   },
   "publishConfig": {
     "access": "public"
@@ -59,8 +59,8 @@
     "@evilmartians/lefthook": "^1.13.6",
     "@typescript/native-preview": "7.0.0-dev.20250910.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.66.4",
-    "rimraf": "^6.0.1",
+    "knip": "^5.67.0",
+    "rimraf": "^6.1.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

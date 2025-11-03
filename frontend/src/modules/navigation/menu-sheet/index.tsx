@@ -5,7 +5,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowLeftIcon, InfoIcon, SearchIcon } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
@@ -29,11 +29,23 @@ import { cn } from '~/utils/cn';
 
 const pwaEnabled = appConfig.has.pwa;
 
-// TODO(DAVID) can we merge this into one component and is memo necessary since we have react compiler?
-export const MenuSheet = memo(() => {
+export const MenuSheet = () => {
+  const { t } = useTranslation();
+  const { user } = useUserStore();
+
   const menu = useNavigationStore((state) => state.menu);
+  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
+  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
+  const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
+  const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
 
   const { mutateAsync } = useMemberUpdateMutation();
+
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
+
+  const accountButtonRef = useRef(null);
 
   // monitoring drop event
   useEffect(() => {
@@ -76,25 +88,6 @@ export const MenuSheet = memo(() => {
       }),
     );
   }, [menu]);
-
-  return <MenuContent />;
-});
-
-const MenuContent = memo(() => {
-  const { t } = useTranslation();
-  const { user } = useUserStore();
-
-  const menu = useNavigationStore((state) => state.menu);
-  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
-  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
-  const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
-  const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
-
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
-
-  const accountButtonRef = useRef(null);
 
   const searchResultsListItems = useCallback(() => {
     return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />) : [];
@@ -194,4 +187,4 @@ const MenuContent = memo(() => {
       )}
     </div>
   );
-});
+};

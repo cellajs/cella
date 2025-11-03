@@ -231,7 +231,9 @@ const authGeneralRouteHandlers = app
         .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
 
       const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
+      if (!inactiveMembership[entityIdField]) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
       const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
+
       if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
       defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', { entityName: entity.name, lng: appConfig.defaultLanguage });
@@ -239,7 +241,7 @@ const authGeneralRouteHandlers = app
         ...defaultEmailProps,
         entityName: entity.name,
         role: inactiveMembership.role,
-        lng: entity.defaultLanguage || appConfig.defaultLanguage,
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
       };
 
       await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
