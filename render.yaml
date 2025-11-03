@@ -27,6 +27,9 @@ services:
         sync: false
       - key: ELECTRIC_API_SECRET
         sync: false
+      - key: NODE_VERSION
+        sync: true
+        value: 24
     buildFilter:
       paths:
         - backend/**/*.?s
@@ -75,7 +78,7 @@ services:
         value: true
       - key: NODE_VERSION
         sync: true
-        value: 22
+        value: 24
     buildFilter:
       paths:
         - frontend/**/*.?s

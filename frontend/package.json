@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "engines": {
-    "node": ">=24.5.0"
+    "node": "24.x"
   },
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
