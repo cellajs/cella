@@ -61,11 +61,18 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
     };
   }) satisfies UploadedFile[];
 
-  // TODO(DAVID) review type assertion or can we do this in another way?
   return {
-    ok: 'OFFLINE_UPLOAD',
+    ok: 'ASSEMBLY_COMPLETED',
+    assembly_id: `offline_${Date.now()}`,
+    assembly_url: '',
+    assembly_ssl_url: '',
+    start_date: new Date().toISOString(),
+    execution_duration: 0,
+    bytes_received: localFiles.reduce((total, file) => total + (file.size || 0), 0),
+    bytes_expected: localFiles.reduce((total, file) => total + (file.size || 0), 0),
+    uploads: localFiles,
     results: {
       [templateKey]: localFiles,
     },
-  } as unknown as AssemblyResponse;
+  } satisfies AssemblyResponse;
 };
