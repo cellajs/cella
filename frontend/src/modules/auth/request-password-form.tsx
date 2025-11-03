@@ -9,7 +9,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
-export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
+export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: string; onEmailChange?: () => void }) => {
   const { t } = useTranslation();
 
   const isMobile = window.innerWidth < 640;
@@ -26,6 +26,13 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
     onError: () => document.getElementById('reset-email-field')?.focus(),
   });
 
+  const handleEmailChange = (newEmail: string) => {
+    setEmailValue(newEmail);
+    if (onEmailChange && newEmail !== email) {
+      onEmailChange();
+    }
+  };
+
   return (
     <div>
       <Input
@@ -35,7 +42,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
         className="mb-4"
         placeholder={t('common:email')}
         value={emailValue} // Set the default value instead of value
-        onChange={(e) => setEmailValue(e.target.value)}
+        onChange={(e) => handleEmailChange(e.target.value)}
         required
       />
       <div className="flex flex-col gap-2">

@@ -138,8 +138,7 @@ export const SignInStep = () => {
                 {t('common:sign_in')}
                 <ArrowRightIcon size={16} className="ml-2" />
               </SubmitButton>
-              {/* TODO(DAVID): add callback to reset auth steps if forgot email is different from current email state */}
-              <RequestPasswordDialog email={email}>
+              <RequestPasswordDialog email={email} onEmailChange={resetSteps}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
                   {t('common:forgot_password')}
                 </Button>
