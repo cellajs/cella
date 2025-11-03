@@ -7,6 +7,7 @@ import { type ApiError, type CreateTotpData, type CreateTotpResponses, createTot
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
@@ -24,6 +25,7 @@ export const SetupTotp = () => {
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
       useUserStore.getState().setMeAuthData({ hasTotp: true });
+      toaster(t('common:success.totp_added'), 'success');
     },
     onError: () => {
       // Reset form component to force re-entry of TOTP verify code

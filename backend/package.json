@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "type": "module",
   "engines": {
-    "node": ">=24.5.0"
+    "node": "24.x"
   },
   "scripts": {
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",

@@ -32,7 +32,7 @@ export const LegalPage = () => {
     <MarketingLayout title={t('common:legal')}>
       <div className="container md:flex md:flex-row mt-4 md:mt-8 mx-auto gap-4">
         <div className="mx-auto md:min-w-48 md:w-[30%] md:mt-3">
-          <StickyBox className="z-10 max-md:block!">
+          <StickyBox className="z-10 max-md:block!" offsetTop={12}>
             <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} />
             <PageAside tabs={tabs} className="py-2" setFocus />
           </StickyBox>

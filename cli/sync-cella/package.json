@@ -12,7 +12,7 @@
   "homepage": "https://cellajs.com",
   "author": "CellaJS <info@cellajs.com>",
   "engines": {
-    "node": ">=24.5.0"
+    "node": "24.x"
   },
   "type": "module",
   "main": "index.ts",

@@ -46,7 +46,7 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: P
           name="code"
           render={({ field: { value, ...rest } }) => (
             <FormItem name="code" className="mb-6">
-              {label && <FormLabel className="mb-1 text-center">{label}</FormLabel>}
+              {label && <FormLabel className="mb-1 text-center justify-center">{label}</FormLabel>}
               <FormControl>
                 <InputOTP
                   value={value || ''}
@@ -60,7 +60,7 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: P
                   <InputOTPGroup>
                     {Array.from({ length: appConfig.totpConfig.digits }).map((_, index) => (
                       // biome-ignore lint/suspicious/noArrayIndexKey: static list
-                      <InputOTPSlot key={index} inputMode="numeric" index={index} className="sm:h-12 sm:w-10 text-lg" />
+                      <InputOTPSlot key={index} inputMode="numeric" index={index} className="sm:h-12 bg-background sm:w-10 text-lg" />
                     ))}
                   </InputOTPGroup>
                 </InputOTP>
