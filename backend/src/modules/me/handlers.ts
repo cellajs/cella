@@ -21,7 +21,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { contextEntityBaseSelect } from '#/modules/entities/helpers/select';
+import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -162,6 +162,8 @@ const meRouteHandlers = app
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
         const entityIdField = appConfig.entityIdFields[entityType];
+
+        const contextEntityBaseSelect = makeContextEntityBaseSelect(entityType);
 
         return db
           .select({
