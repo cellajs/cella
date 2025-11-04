@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/react';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor';
-import { Dashboard } from '@uppy/react';
+import Dashboard from '@uppy/react/dashboard';
 import ScreenCapture from '@uppy/screen-capture';
 import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
 import Url from '@uppy/url';

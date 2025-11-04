@@ -1,5 +1,5 @@
 import { Dialog } from '@radix-ui/react-dialog';
-import { Dashboard } from '@uppy/react';
+import Dashboard from '@uppy/react/dashboard';
 import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
