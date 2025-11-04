@@ -404,8 +404,7 @@ export const zSignUpWithTokenData = z.object({
  * User signed up
  */
 export const zSignUpWithTokenResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
+  membershipInvite: z.boolean(),
 });
 
 export const zRequestPasswordData = z.object({

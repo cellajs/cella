@@ -912,8 +912,7 @@ export type SignUpWithTokenResponses = {
    * User signed up
    */
   201: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
+    membershipInvite: boolean;
   };
 };
 

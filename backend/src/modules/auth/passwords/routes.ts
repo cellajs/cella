@@ -57,7 +57,7 @@ const authPasswordsRoutes = {
       201: {
         description: 'User signed up',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
-        content: { 'application/json': { schema: redirectResponseSchema } },
+        content: { 'application/json': { schema: z.object({ membershipInvite: z.boolean() }) } },
       },
       ...errorResponses,
     },

@@ -73,8 +73,6 @@ const authPasswordsRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const isMembershipInvite = validToken.type === 'invitation' && validToken.inactiveMembershipId;
-
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -96,13 +94,9 @@ const authPasswordsRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user, strategy);
 
-    // If no membership invitation, we are done
-    if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
+    const membershipInvite = !!(validToken.type === 'invitation' && validToken.inactiveMembershipId);
 
-    // Redirect to accept invitation if membership invite
-    const redirectPath = `/home?skipWelcome=true`;
-
-    return ctx.json({ shouldRedirect: true, redirectPath }, 201);
+    return ctx.json({ membershipInvite }, 201);
   })
   /**
    * Request reset password email

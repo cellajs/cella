@@ -52,9 +52,10 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
     NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
   >({
     mutationFn: ({ tokenId, ...body }) => signUpWithToken({ body, path: { tokenId } }),
-    onSuccess: ({ redirectPath }) => {
-      const to = redirectPath ?? appConfig.defaultRedirectPath;
-      return navigate({ to, replace: true });
+    onSuccess: ({ membershipInvite }) => {
+      const to = appConfig.defaultRedirectPath;
+      const search = membershipInvite ? { skipWelcome: true } : {};
+      return navigate({ to, search, replace: true });
     },
   });
 
