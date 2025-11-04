@@ -28,9 +28,7 @@ interface InsertMultipleProps<T> {
  * @param entity - The entity object to extract membership ID information from.
  * @returns An object mapping base membership entity IDs for the given entity.
  */
-export const getBaseMembershipEntityId = <T extends ContextEntityType>(
-  entity: EntityModel<T>,
-): Partial<Record<(typeof appConfig.entityIdFields)[keyof typeof appConfig.entityIdFields], string>> & { organizationId: string } => {
+export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: EntityModel<T>) => {
   return appConfig.contextEntityTypes.reduce(
     (acc, contextEntityType) => {
       const entityFieldIdName = appConfig.entityIdFields[contextEntityType];
@@ -40,7 +38,7 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(
         acc[entityFieldIdName] = entity.id;
       }
       if (entityFieldIdName in entity) {
-        acc[entityFieldIdName] = entity[entityFieldIdName] as string;
+        acc[entityFieldIdName] = entity[entityFieldIdName as keyof typeof entity] as string;
       }
 
       return acc;
