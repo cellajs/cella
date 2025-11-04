@@ -1079,8 +1079,8 @@ export type SignInResponses = {
    * User signed in
    */
   200: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
+    emailVerified: boolean;
+    mfa?: boolean;
   };
 };
 

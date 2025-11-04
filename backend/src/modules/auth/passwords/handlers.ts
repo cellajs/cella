@@ -230,13 +230,13 @@ const authPasswordsRouteHandlers = app
     // If email is not verified, send verification email
     if (!emailVerified) {
       sendVerificationEmail({ userId: user.id });
-      return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
+      return ctx.json({ emailVerified: false }, 200);
     }
 
-    const redirectPath = await initiateMfa(ctx, user);
-    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    const mfaInitiated = await initiateMfa(ctx, user);
+    if (mfaInitiated) return ctx.json({ mfa: true, emailVerified: true }, 200);
 
     await setUserSession(ctx, user, 'password');
-    return ctx.json({ shouldRedirect: false }, 200);
+    return ctx.json({ emailVerified: true }, 200);
   });
 export default authPasswordsRouteHandlers;

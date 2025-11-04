@@ -451,8 +451,8 @@ export const zSignInData = z.object({
  * User signed in
  */
 export const zSignInResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
+  emailVerified: z.boolean(),
+  mfa: z.optional(z.boolean()),
 });
 
 export const zCreatePasskeyData = z.object({

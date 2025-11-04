@@ -130,7 +130,11 @@ const authPasswordsRoutes = {
       200: {
         description: 'User signed in',
         headers: z.object({ 'Set-Cookie': cookieSchema.optional() }),
-        content: { 'application/json': { schema: redirectResponseSchema } },
+        content: {
+          'application/json': {
+            schema: z.object({ emailVerified: z.boolean(), mfa: z.boolean().optional() }),
+          },
+        },
       },
       ...errorResponses,
     },
