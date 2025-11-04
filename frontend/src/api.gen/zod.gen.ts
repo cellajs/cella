@@ -434,8 +434,7 @@ export const zCreatePasswordData = z.object({
  * Password created
  */
 export const zCreatePasswordResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
+  mfa: z.boolean(),
 });
 
 export const zSignInData = z.object({

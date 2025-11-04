@@ -7,7 +7,7 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import { emailBodySchema } from '#/modules/auth/general/schema';
 import { emailPasswordBodySchema } from '#/modules/auth/passwords/schema';
 import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/common';
-import { errorResponses, redirectResponseSchema } from '#/utils/schema/responses';
+import { errorResponses } from '#/utils/schema/responses';
 
 const authPasswordsRoutes = {
   signUp: createCustomRoute({
@@ -105,7 +105,7 @@ const authPasswordsRoutes = {
     responses: {
       201: {
         description: 'Password created',
-        content: { 'application/json': { schema: redirectResponseSchema } },
+        content: { 'application/json': { schema: z.object({ mfa: z.boolean() }) } },
       },
       ...errorResponses,
     },

@@ -17,6 +17,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { MfaRoute } from '~/routes/auth-routes';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
@@ -42,9 +43,10 @@ const CreatePasswordPage = () => {
     error: resetPasswordError,
   } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
     mutationFn: ({ tokenId, password }) => createPassword({ path: { tokenId }, body: { password } }),
-    onSuccess: ({ redirectPath }) => {
+    onSuccess: ({ mfa }) => {
       toaster(t('common:success.password_reset'), 'success');
-      navigate({ to: redirectPath ?? appConfig.defaultRedirectPath });
+      const navigateInfo = mfa ? { to: MfaRoute.to, search: { fromRoot: true } } : { to: appConfig.defaultRedirectPath };
+      navigate(navigateInfo);
     },
   });
 

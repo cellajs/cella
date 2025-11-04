@@ -1022,8 +1022,7 @@ export type CreatePasswordResponses = {
    * Password created
    */
   201: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
+    mfa: boolean;
   };
 };
 

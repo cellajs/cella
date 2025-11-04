@@ -183,15 +183,10 @@ const authPasswordsRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    const mfaRedirectPath = await initiateMfa(ctx, user);
-    if (mfaRedirectPath) {
-      // Append fromRoot to avoid redirecting to FE homepage
-      const redirectPath = `${mfaRedirectPath}?fromRoot=true`;
-      return ctx.json({ shouldRedirect: true, redirectPath }, 201);
-    }
+    const mfaInitiated = await initiateMfa(ctx, user);
 
     await setUserSession(ctx, user, strategy);
-    return ctx.json({ shouldRedirect: false }, 201);
+    return ctx.json({ mfa: !!mfaInitiated }, 201);
   })
   /**
    * Sign in with email and password
