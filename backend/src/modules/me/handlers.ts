@@ -27,7 +27,7 @@ import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuSchema } from '#/modules/me/schema';
-import { userBaseSelect, userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -168,7 +168,6 @@ const meRouteHandlers = app
         return db
           .select({
             entity: contextEntityBaseSelect,
-            createdByUser: userBaseSelect,
             inactiveMembership: inactiveMembershipsTable,
           })
           .from(inactiveMembershipsTable)

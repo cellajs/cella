@@ -8,7 +8,6 @@ import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { inactiveMembershipSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
-import { userBaseSchema } from '#/modules/users/schema-base';
 import { booleanTransformSchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
@@ -71,5 +70,4 @@ export const toggleMfaBodySchema = z.object({
 export const mePendingInvitationSchema = z.object({
   entity: contextEntityBaseSchema,
   inactiveMembership: inactiveMembershipSchema.nullable(),
-  createdByUser: userBaseSchema.nullable(),
 });

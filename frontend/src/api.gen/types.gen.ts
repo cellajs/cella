@@ -1998,10 +1998,6 @@ export type GetMyInvitationsResponses = {
         ({
           [key: string]: unknown;
         } | null);
-      createdByUser: UserBase &
-        ({
-          [key: string]: unknown;
-        } | null);
     }>;
     total: number;
   };

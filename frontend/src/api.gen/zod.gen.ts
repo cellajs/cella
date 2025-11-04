@@ -728,7 +728,6 @@ export const zGetMyInvitationsResponse = z.object({
     z.object({
       entity: zContextEntityBase,
       inactiveMembership: zInactiveMembership.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
-      createdByUser: zUserBase.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
     }),
   ),
   total: z.number(),
