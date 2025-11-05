@@ -1992,10 +1992,7 @@ export type GetMyInvitationsResponses = {
   200: {
     items: Array<{
       entity: ContextEntityBase;
-      inactiveMembership: InactiveMembership &
-        ({
-          [key: string]: unknown;
-        } | null);
+      inactiveMembership: InactiveMembership;
     }>;
     total: number;
   };

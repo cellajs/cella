@@ -22,7 +22,7 @@
     "preview": "vite preview --port 3000",
     "preview:dev": "cross-env NODE_ENV=development vite preview --port 3000",
     "stop": "tsx vite/stop-vite.ts",
-    "generate-client": "openapi-ts && pnpm dlx @biomejs/biome check --write ./src/api.gen",
+    "generate-client": "openapi-ts && pnpm biome check --write ./src/api.gen",
     "storybook": "cross-env STORYBOOK=true storybook dev -p 6006 --quiet --no-open",
     "build-storybook": "storybook build"
   },

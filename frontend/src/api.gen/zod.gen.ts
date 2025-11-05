@@ -725,7 +725,7 @@ export const zGetMyInvitationsResponse = z.object({
   items: z.array(
     z.object({
       entity: zContextEntityBase,
-      inactiveMembership: zInactiveMembership.and(z.union([z.record(z.string(), z.unknown()), z.null()])),
+      inactiveMembership: zInactiveMembership,
     }),
   ),
   total: z.number(),

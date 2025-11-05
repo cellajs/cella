@@ -69,5 +69,5 @@ export const toggleMfaBodySchema = z.object({
 
 export const mePendingInvitationSchema = z.object({
   entity: contextEntityBaseSchema,
-  inactiveMembership: inactiveMembershipSchema.nullable(),
+  inactiveMembership: inactiveMembershipSchema,
 });
