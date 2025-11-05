@@ -14,6 +14,7 @@ import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { EmailVerificationRoute, MfaRoute } from '~/routes/auth-routes';
 import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -49,11 +50,11 @@ export const SignInStep = () => {
   // Handle sign in
   const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
     mutationFn: (body) => signIn({ body }),
-    onSuccess: ({ redirectPath: apiRedirectPath }) => {
-      if (apiRedirectPath) {
-        // TODO(DAVID) refactor conditional like this, not very safe to use path matching, is there a better way?
-        if (apiRedirectPath === '/auth/mfa') setLastUser({ email, mfaRequired: true });
-        navigate({ to: apiRedirectPath, replace: true });
+    onSuccess: ({ emailVerified, mfa }) => {
+      if (mfa || !emailVerified) {
+        if (mfa) setLastUser({ email, mfaRequired: true });
+        const navigateInfo = !emailVerified ? { to: EmailVerificationRoute.to, params: { reason: 'signin' } } : { to: MfaRoute.to };
+        navigate({ ...navigateInfo, replace: true });
         return;
       }
 

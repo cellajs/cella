@@ -404,8 +404,7 @@ export const zSignUpWithTokenData = z.object({
  * User signed up
  */
 export const zSignUpWithTokenResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
+  membershipInvite: z.boolean(),
 });
 
 export const zRequestPasswordData = z.object({
@@ -435,8 +434,7 @@ export const zCreatePasswordData = z.object({
  * Password created
  */
 export const zCreatePasswordResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
+  mfa: z.boolean(),
 });
 
 export const zSignInData = z.object({
@@ -452,8 +450,8 @@ export const zSignInData = z.object({
  * User signed in
  */
 export const zSignInResponse = z.object({
-  shouldRedirect: z.boolean(),
-  redirectPath: z.optional(z.string()),
+  emailVerified: z.boolean(),
+  mfa: z.optional(z.boolean()),
 });
 
 export const zCreatePasskeyData = z.object({

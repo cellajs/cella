@@ -912,8 +912,7 @@ export type SignUpWithTokenResponses = {
    * User signed up
    */
   201: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
+    membershipInvite: boolean;
   };
 };
 
@@ -1023,8 +1022,7 @@ export type CreatePasswordResponses = {
    * Password created
    */
   201: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
+    mfa: boolean;
   };
 };
 
@@ -1080,8 +1078,8 @@ export type SignInResponses = {
    * User signed in
    */
   200: {
-    shouldRedirect: boolean;
-    redirectPath?: string;
+    emailVerified: boolean;
+    mfa?: boolean;
   };
 };
 

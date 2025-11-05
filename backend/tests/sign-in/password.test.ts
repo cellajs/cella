@@ -9,7 +9,7 @@ import { usersTable } from '#/db/schema/users';
 import { mockEmail, mockPassword, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { AuthResponse, createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
+import { createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
 import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
 
 setTestConfig({ enabledAuthStrategies: ['password'] });
@@ -44,8 +44,8 @@ describe('Password Authentication', async () => {
       const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<AuthResponse>(res);
-      expect(response.shouldRedirect).toBe(false);
+      const response = await parseResponse<{ emailVerified: boolean }>(res);
+      expect(response.emailVerified).toBe(true);
 
       // Check session cookie is set
       const setCookieHeader = res.headers.get('set-cookie');
@@ -60,9 +60,8 @@ describe('Password Authentication', async () => {
       const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<AuthResponse>(res);
-      expect(response.shouldRedirect).toBe(true);
-      expect(response.redirectPath).toBe('/auth/email-verification/signin');
+      const response = await parseResponse<{ emailVerified: boolean }>(res);
+      expect(response.emailVerified).toBe(false);
     });
 
     it('should redirect to MFA when user has MFA enabled', async () => {
@@ -74,9 +73,9 @@ describe('Password Authentication', async () => {
       const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<AuthResponse>(res);
-      expect(response.shouldRedirect).toBe(true);
-      expect(response.redirectPath).toBe('/auth/mfa');
+      const response = await parseResponse<{ emailVerified: boolean; mfa: boolean }>(res);
+      expect(response.emailVerified).toBe(true);
+      expect(response.mfa).toBe(true);
     });
 
     it('should handle case-insensitive email signin', async () => {
@@ -93,8 +92,8 @@ describe('Password Authentication', async () => {
       const res = await client['auth']['sign-in'].$post({ json: uppercaseEmail }, { headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<AuthResponse>(res);
-      expect(response.shouldRedirect).toBe(false);
+      const response = await parseResponse<{ emailVerified: boolean }>(res);
+      expect(response.emailVerified).toBe(true);
     });
   });
 
@@ -250,9 +249,8 @@ describe('Password Authentication', async () => {
       const firstRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
       expect(firstRes.status).toBe(200);
-      const firstResponse = (await firstRes.json()) as { shouldRedirect: boolean; redirectPath?: string };
-      expect(firstResponse.shouldRedirect).toBe(true);
-      expect(firstResponse.redirectPath).toBe('/auth/email-verification/signin');
+      const firstResponse = await parseResponse<{ emailVerified: boolean }>(firstRes);
+      expect(firstResponse.emailVerified).toBe(false);
 
       // Verify the email
       await db.update(emailsTable).set({ verified: true, verifiedAt: pastIsoDate() }).where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
@@ -261,8 +259,8 @@ describe('Password Authentication', async () => {
       const secondRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
 
       expect(secondRes.status).toBe(200);
-      const secondResponse = (await secondRes.json()) as { shouldRedirect: boolean; redirectPath?: string };
-      expect(secondResponse.shouldRedirect).toBe(false);
+      const secondResponse = await parseResponse<{ emailVerified: boolean }>(secondRes);
+      expect(secondResponse.emailVerified).toBe(true);
     });
 
     it('should maintain session integrity across multiple requests', async () => {
