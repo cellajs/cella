@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastSyncedAt": "2025-10-09T14:50:07.137Z",
+  "lastSyncedAt": "2025-11-07T13:15:29.483Z",
   "entries": {
     "backend/.env.example": {
       "filePath": "backend/.env.example",
@@ -1846,6 +1846,497 @@
       "lastSwizzledAt": "2025-10-08T16:45:02.884Z",
       "boilerplateLastCommitSha": "417e92dd1b66864c7133a4381224ebdc4b48ad26",
       "boilerplateBlobSha": "edef29db64ba3e72592c55a75e6065faf9013f3d"
+    },
+    "frontend/src/modules/attachments/table/preview/placeholder.tsx": {
+      "filePath": "frontend/src/modules/attachments/table/preview/placeholder.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "24c6d850d074feb64ed9ebf736a6a65fb278e35d",
+      "lastCommitSha": "24c6d850d074feb64ed9ebf736a6a65fb278e35d",
+      "commitAfterSwizzle": "24c6d850d074feb64ed9ebf736a6a65fb278e35d",
+      "lastSwizzledAt": "2025-11-07T10:57:42.758Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "4d61bd94f110fd321fac79605741d520426779a1"
+    },
+    "frontend/src/modules/common/blocknote/custom-elements/notify/notify-options.tsx": {
+      "filePath": "frontend/src/modules/common/blocknote/custom-elements/notify/notify-options.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "04e47e94325f1f5b9e6a872f31b49394baf14a03",
+      "lastCommitSha": "f0d05fed098aef579695d5fdf3af70709e3e271d",
+      "commitAfterSwizzle": "04e47e94325f1f5b9e6a872f31b49394baf14a03",
+      "lastSwizzledAt": "2025-11-07T10:57:42.968Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "0ce2247921d3a2d3ed8e3d25ecdae9431c9be1af"
+    },
+    "frontend/src/modules/common/blocknote/custom-formatting-toolbar/custom-align-change.tsx": {
+      "filePath": "frontend/src/modules/common/blocknote/custom-formatting-toolbar/custom-align-change.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastCommitSha": "9cdf0d22e489b55cb55f8b5c838718ab2ca1e7b0",
+      "commitAfterSwizzle": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastSwizzledAt": "2025-11-07T10:57:42.983Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "b053d3892fb18be09ade8dd8cf0d1772fde7e95c"
+    },
+    "frontend/src/modules/common/data-table/header-cell.tsx": {
+      "filePath": "frontend/src/modules/common/data-table/header-cell.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastCommitSha": "9cdf0d22e489b55cb55f8b5c838718ab2ca1e7b0",
+      "commitAfterSwizzle": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastSwizzledAt": "2025-11-07T10:57:43.118Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "792ff44b0979ee3157ac770c0977f5ffd505bc26"
+    },
+    "frontend/src/modules/common/spinner.tsx": {
+      "filePath": "frontend/src/modules/common/spinner.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "5e582e861d712c7874649bab831e294ebdaf5bb3",
+      "lastCommitSha": "f0d05fed098aef579695d5fdf3af70709e3e271d",
+      "commitAfterSwizzle": "5e582e861d712c7874649bab831e294ebdaf5bb3",
+      "lastSwizzledAt": "2025-11-07T10:57:43.485Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "850e46954b386e26e028eeabe6ce71000f66b19b"
+    },
+    "frontend/src/modules/common/stepper/step-icon.tsx": {
+      "filePath": "frontend/src/modules/common/stepper/step-icon.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastCommitSha": "9cdf0d22e489b55cb55f8b5c838718ab2ca1e7b0",
+      "commitAfterSwizzle": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastSwizzledAt": "2025-11-07T10:57:43.520Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "f0cbbf2a1a4621a189111c11027f60faf0c113dd"
+    },
+    "frontend/src/modules/ui/calendar.tsx": {
+      "filePath": "frontend/src/modules/ui/calendar.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastCommitSha": "9cdf0d22e489b55cb55f8b5c838718ab2ca1e7b0",
+      "commitAfterSwizzle": "bdafc8b114e5cc83b7581c0f6ca6f9e3fabfba26",
+      "lastSwizzledAt": "2025-11-07T10:57:44.355Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "adc304a7e2997f9592abd5e23231977cc814b414"
+    },
+    "frontend/src/modules/ui/checkbox.tsx": {
+      "filePath": "frontend/src/modules/ui/checkbox.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "dfdf5dec0a8fee845cb26f7de75b2164a77a03b4",
+      "lastCommitSha": "cd8e10f34f95ce0b595c974ed712ba04c45e3b93",
+      "commitAfterSwizzle": "dfdf5dec0a8fee845cb26f7de75b2164a77a03b4",
+      "lastSwizzledAt": "2025-11-07T10:57:44.375Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "ed0afbb96b5e6c90165c3bec00ce4c400e66db51"
+    },
+    "frontend/src/modules/ui/radio-group.tsx": {
+      "filePath": "frontend/src/modules/ui/radio-group.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "48cc60b34eae76822fe8312064abd23bb4aa112d",
+      "lastCommitSha": "f0d05fed098aef579695d5fdf3af70709e3e271d",
+      "commitAfterSwizzle": "48cc60b34eae76822fe8312064abd23bb4aa112d",
+      "lastSwizzledAt": "2025-11-07T10:57:44.438Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "4d4ec790185fd0eed306accb78022cf19c4c8bfd"
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "47e0812c09967a0aaab6a8434204e5060ffadce5",
+      "lastCommitSha": "8944513ff3ca0403d72248368b0f7ee251bda107",
+      "commitAfterSwizzle": "47e0812c09967a0aaab6a8434204e5060ffadce5",
+      "lastSwizzledAt": "2025-11-07T13:15:22.704Z",
+      "boilerplateLastCommitSha": "47e0812c09967a0aaab6a8434204e5060ffadce5",
+      "boilerplateBlobSha": "b3898a9f1d77c7c5c69ad443fdcfdd360c3d29db"
+    },
+    "backend/drizzle/0000_modern_black_queen.sql": {
+      "filePath": "backend/drizzle/0000_modern_black_queen.sql",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "2602deb8c9aef65d2c1f7b973e6df903be25ecdd",
+      "commitAfterSwizzle": "2602deb8c9aef65d2c1f7b973e6df903be25ecdd",
+      "lastSwizzledAt": "2025-11-07T13:15:22.796Z",
+      "boilerplateLastCommitSha": "2602deb8c9aef65d2c1f7b973e6df903be25ecdd",
+      "boilerplateBlobSha": "b286388730d9b6d84e4fe46a7f1f2db42b31162d"
+    },
+    "backend/package.json": {
+      "filePath": "backend/package.json",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "lastCommitSha": "860b00059d0a2d1ae441601701d4f2df6a2c44f5",
+      "commitAfterSwizzle": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "lastSwizzledAt": "2025-11-07T13:15:22.815Z",
+      "boilerplateLastCommitSha": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "boilerplateBlobSha": "467f9ec306ab34fda8e4324695ff73f102d0b704"
+    },
+    "config/default.ts": {
+      "filePath": "config/default.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "2a1e2e0ad41ebd26b8ce7f40ad3307817ef539eb",
+      "lastCommitSha": "b780a57d1fc01059e45e3376fc1795973055f03b",
+      "commitAfterSwizzle": "2a1e2e0ad41ebd26b8ce7f40ad3307817ef539eb",
+      "lastSwizzledAt": "2025-11-07T13:15:23.900Z",
+      "boilerplateLastCommitSha": "2a1e2e0ad41ebd26b8ce7f40ad3307817ef539eb",
+      "boilerplateBlobSha": "956081535c77448dc60fa8a14ac94c38b735a005"
+    },
+    "frontend/package.json": {
+      "filePath": "frontend/package.json",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "1641ed6caabe87266d9c87e6dc91ebbc24f0734a",
+      "lastCommitSha": "860b00059d0a2d1ae441601701d4f2df6a2c44f5",
+      "commitAfterSwizzle": "1641ed6caabe87266d9c87e6dc91ebbc24f0734a",
+      "lastSwizzledAt": "2025-11-07T13:15:23.967Z",
+      "boilerplateLastCommitSha": "1641ed6caabe87266d9c87e6dc91ebbc24f0734a",
+      "boilerplateBlobSha": "bb0f332c73a777cb6401aabbfefd69df0e52b3e3"
+    },
+    "frontend/public/static/icons/icon-64x64.png": {
+      "filePath": "frontend/public/static/icons/icon-64x64.png",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "68dcd6a419ee7cadd153734f63675bce86fde606",
+      "commitAfterSwizzle": "68dcd6a419ee7cadd153734f63675bce86fde606",
+      "lastSwizzledAt": "2025-11-07T13:15:25.779Z",
+      "boilerplateLastCommitSha": "68dcd6a419ee7cadd153734f63675bce86fde606",
+      "boilerplateBlobSha": "18767b5a798154b4a6d53613984ae2f9a7859d08"
+    },
+    "frontend/public/static/images/integrations/one-dollar-stats.svg": {
+      "filePath": "frontend/public/static/images/integrations/one-dollar-stats.svg",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "509b93b1e682fa6a0fab85f2e52d386fc6d65e33",
+      "commitAfterSwizzle": "509b93b1e682fa6a0fab85f2e52d386fc6d65e33",
+      "lastSwizzledAt": "2025-11-07T13:15:25.854Z",
+      "boilerplateLastCommitSha": "509b93b1e682fa6a0fab85f2e52d386fc6d65e33",
+      "boilerplateBlobSha": "15c5c0bae37bebe3f254eb694b3602891ed5ec57"
+    },
+    "frontend/src/api.gen/client.gen.ts": {
+      "filePath": "frontend/src/api.gen/client.gen.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "lastCommitSha": "b780a57d1fc01059e45e3376fc1795973055f03b",
+      "commitAfterSwizzle": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "lastSwizzledAt": "2025-11-07T13:15:25.974Z",
+      "boilerplateLastCommitSha": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "boilerplateBlobSha": "71590bf9ff975474b932c9eb9d7b7589746927ce"
+    },
+    "frontend/src/api.gen/client/client.gen.ts": {
+      "filePath": "frontend/src/api.gen/client/client.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.004Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "7d6aff70b79476b7146c96574c61cf28c489f846"
+    },
+    "frontend/src/api.gen/client/index.ts": {
+      "filePath": "frontend/src/api.gen/client/index.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "42165796fa5ad93dc0098487b2345c7f67fc8b2c",
+      "lastCommitSha": "b1bdad40b4debdd61673d3805244d60989746cbd",
+      "commitAfterSwizzle": "42165796fa5ad93dc0098487b2345c7f67fc8b2c",
+      "lastSwizzledAt": "2025-11-07T13:15:25.961Z",
+      "boilerplateLastCommitSha": "42165796fa5ad93dc0098487b2345c7f67fc8b2c",
+      "boilerplateBlobSha": "318a84b6a800b7d691d95cdd9cb15e042bed5742"
+    },
+    "frontend/src/api.gen/client/types.gen.ts": {
+      "filePath": "frontend/src/api.gen/client/types.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:25.994Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "0c4a5885f09ad11ccff679145a9bbc3fd9ecaa00"
+    },
+    "frontend/src/api.gen/client/utils.gen.ts": {
+      "filePath": "frontend/src/api.gen/client/utils.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:25.998Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "71d8160ae34e6af7005e857b1885d7678d4e7e80"
+    },
+    "frontend/src/api.gen/core/auth.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/auth.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.001Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "3ebf9947883f3c4b2433bdec0527c46f38b2d54d"
+    },
+    "frontend/src/api.gen/core/bodySerializer.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/bodySerializer.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.036Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "96aa3d9889500bc9f1fc409287442ca47d50202c"
+    },
+    "frontend/src/api.gen/core/params.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/params.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.040Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "32d58c12a7e869e315670657ecd7a41ea262edf8"
+    },
+    "frontend/src/api.gen/core/pathSerializer.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/pathSerializer.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.048Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "cc4b0c50ff751ea0f6a85b28f29b04efcfe82c28"
+    },
+    "frontend/src/api.gen/core/serverSentEvents.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/serverSentEvents.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.011Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "95d36d5b0ac6733100a335143697abfae84641ac"
+    },
+    "frontend/src/api.gen/core/types.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/types.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.051Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "5119589db55e64d88c1c3bb39117bbabbfa0490b"
+    },
+    "frontend/src/api.gen/core/utils.gen.ts": {
+      "filePath": "frontend/src/api.gen/core/utils.gen.ts",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "commitAfterSwizzle": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "lastSwizzledAt": "2025-11-07T13:15:26.030Z",
+      "boilerplateLastCommitSha": "94b140446f2ea19a4ac79b7b0a414a687ee92656",
+      "boilerplateBlobSha": "124b1f956fd282ba3990f2afa60a8d4480e784aa"
+    },
+    "frontend/src/api.gen/index.ts": {
+      "filePath": "frontend/src/api.gen/index.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "lastCommitSha": "b780a57d1fc01059e45e3376fc1795973055f03b",
+      "commitAfterSwizzle": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "lastSwizzledAt": "2025-11-07T13:15:26.033Z",
+      "boilerplateLastCommitSha": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "boilerplateBlobSha": "57ed02bf5f21cf8d73e6820c426984b7d033ef5f"
+    },
+    "frontend/src/api.gen/sdk.gen.ts": {
+      "filePath": "frontend/src/api.gen/sdk.gen.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "lastCommitSha": "209bfc453001236bf5192058525d44502b681ce0",
+      "commitAfterSwizzle": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "lastSwizzledAt": "2025-11-07T13:15:26.057Z",
+      "boilerplateLastCommitSha": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "boilerplateBlobSha": "acb2a766e0cc48ff400b042b29c56dfd22631afd"
+    },
+    "frontend/src/api.gen/types.gen.ts": {
+      "filePath": "frontend/src/api.gen/types.gen.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "lastCommitSha": "558eed413f3a83e8fdd14a844e03e1ac0e8f6b91",
+      "commitAfterSwizzle": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "lastSwizzledAt": "2025-11-07T13:15:26.054Z",
+      "boilerplateLastCommitSha": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "boilerplateBlobSha": "d5028b9c74d0df1a50cf0ec86c735b4697c25ea4"
+    },
+    "frontend/src/api.gen/zod.gen.ts": {
+      "filePath": "frontend/src/api.gen/zod.gen.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "lastCommitSha": "558eed413f3a83e8fdd14a844e03e1ac0e8f6b91",
+      "commitAfterSwizzle": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "lastSwizzledAt": "2025-11-07T13:15:26.061Z",
+      "boilerplateLastCommitSha": "05ee7643469078c79875938a81d89bde2a7aabf4",
+      "boilerplateBlobSha": "1a8dc5497de2c5bd4e436735d756156987ba15d3"
+    },
+    "frontend/src/menu-config.tsx": {
+      "filePath": "frontend/src/menu-config.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "9cfdd629c88b071b1edd9fe4001a36bc6306645b",
+      "lastCommitSha": "c05b6254fb7958349b962589c2f3c28bd574aa91",
+      "commitAfterSwizzle": "9cfdd629c88b071b1edd9fe4001a36bc6306645b",
+      "lastSwizzledAt": "2025-11-07T13:15:26.217Z",
+      "boilerplateLastCommitSha": "9cfdd629c88b071b1edd9fe4001a36bc6306645b",
+      "boilerplateBlobSha": "73b20235354d7874b35239b0d91742b279d4a63f"
+    },
+    "frontend/src/modules/attachments/hooks/use-merge-local-attachments.ts": {
+      "filePath": "frontend/src/modules/attachments/hooks/use-merge-local-attachments.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "4d5eeb86c2c5168621aa92920f27a3611eade1f7",
+      "lastCommitSha": "166a0eb286dbaccf4b5e8b61f20076accfec1c6e",
+      "commitAfterSwizzle": "4d5eeb86c2c5168621aa92920f27a3611eade1f7",
+      "lastSwizzledAt": "2025-11-07T13:15:26.344Z",
+      "boilerplateLastCommitSha": "4d5eeb86c2c5168621aa92920f27a3611eade1f7",
+      "boilerplateBlobSha": "afcebd6771991a487a1154f6bd9269c8d62ad856"
+    },
+    "frontend/src/modules/common/app/sheets.tsx": {
+      "filePath": "frontend/src/modules/common/app/sheets.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "6c54797a2c4a9788a4f031434d2324672628f2e2",
+      "lastCommitSha": "166a0eb286dbaccf4b5e8b61f20076accfec1c6e",
+      "commitAfterSwizzle": "6c54797a2c4a9788a4f031434d2324672628f2e2",
+      "lastSwizzledAt": "2025-11-07T13:15:26.651Z",
+      "boilerplateLastCommitSha": "6c54797a2c4a9788a4f031434d2324672628f2e2",
+      "boilerplateBlobSha": "50f3d63f75a5ac55d18421340f1e810427b619a2"
+    },
+    "frontend/src/modules/home/index.tsx": {
+      "filePath": "frontend/src/modules/home/index.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "lastCommitSha": "166a0eb286dbaccf4b5e8b61f20076accfec1c6e",
+      "commitAfterSwizzle": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "lastSwizzledAt": "2025-11-07T13:15:27.503Z",
+      "boilerplateLastCommitSha": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "boilerplateBlobSha": "ca1de40cb6f270f4108381b261e08a0053bc23eb"
+    },
+    "frontend/src/modules/marketing/about/about-page.tsx": {
+      "filePath": "frontend/src/modules/marketing/about/about-page.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastCommitSha": "f8832bcc3f771a341ac4d2762dce501a503318eb",
+      "commitAfterSwizzle": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastSwizzledAt": "2025-11-07T13:15:27.577Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "29480e8e8fe23c9bce64a035de53a217ddeb7cef"
+    },
+    "frontend/src/modules/marketing/marketing-config.tsx": {
+      "filePath": "frontend/src/modules/marketing/marketing-config.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastCommitSha": "360e797498d8691fead4e937317e43991d3eea59",
+      "commitAfterSwizzle": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastSwizzledAt": "2025-11-07T13:15:27.686Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "352d817e59b9f823d0e45f6d111cf4639f295ae9"
+    },
+    "frontend/src/modules/navigation/menu-sheet/index.tsx": {
+      "filePath": "frontend/src/modules/navigation/menu-sheet/index.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastCommitSha": "166a0eb286dbaccf4b5e8b61f20076accfec1c6e",
+      "commitAfterSwizzle": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastSwizzledAt": "2025-11-07T13:15:27.999Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "46334c1cce34d0a89ba732263ee02b6ae4565473"
+    },
+    "frontend/src/modules/users/profile-page-content.tsx": {
+      "filePath": "frontend/src/modules/users/profile-page-content.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastCommitSha": "465d624a97315fe2bb676a60cff82ee0467828e0",
+      "commitAfterSwizzle": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastSwizzledAt": "2025-11-07T13:15:28.699Z",
+      "boilerplateLastCommitSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "boilerplateBlobSha": "28f29b743b16eb441eb2fac0af82c5cf183bacdf"
+    },
+    "frontend/src/routes/marketing-routes.tsx": {
+      "filePath": "frontend/src/routes/marketing-routes.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "a5f50fc9e68d391f4f9a970cbe9434949080c36d",
+      "lastCommitSha": "166a0eb286dbaccf4b5e8b61f20076accfec1c6e",
+      "commitAfterSwizzle": "a5f50fc9e68d391f4f9a970cbe9434949080c36d",
+      "lastSwizzledAt": "2025-11-07T13:15:28.961Z",
+      "boilerplateLastCommitSha": "a5f50fc9e68d391f4f9a970cbe9434949080c36d",
+      "boilerplateBlobSha": "5f28f4eeb213b95681d72f1626bb2168bf7d9734"
+    },
+    "frontend/src/routes/organization-routes.tsx": {
+      "filePath": "frontend/src/routes/organization-routes.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "0bccbc65f1bc1b7613af7903794f8cde6fe0700e",
+      "lastCommitSha": "166a0eb286dbaccf4b5e8b61f20076accfec1c6e",
+      "commitAfterSwizzle": "0bccbc65f1bc1b7613af7903794f8cde6fe0700e",
+      "lastSwizzledAt": "2025-11-07T13:15:28.964Z",
+      "boilerplateLastCommitSha": "0bccbc65f1bc1b7613af7903794f8cde6fe0700e",
+      "boilerplateBlobSha": "3aaff55dba4bb7407768d9b1e66aa33500584c58"
+    },
+    "frontend/tsconfig.json": {
+      "filePath": "frontend/tsconfig.json",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "9171b4d962afbce86dd325204fd7ed01e3db861e",
+      "lastCommitSha": "f0abcab50cb183d680c2fc5f871eeed03f5f6011",
+      "commitAfterSwizzle": "9171b4d962afbce86dd325204fd7ed01e3db861e",
+      "lastSwizzledAt": "2025-11-07T13:15:29.297Z",
+      "boilerplateLastCommitSha": "9171b4d962afbce86dd325204fd7ed01e3db861e",
+      "boilerplateBlobSha": "19e7634589f7603ddce7d554a2036f9dce4e34a8"
+    },
+    "info/RELEASES.md": {
+      "filePath": "info/RELEASES.md",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "2602deb8c9aef65d2c1f7b973e6df903be25ecdd",
+      "commitAfterSwizzle": "2602deb8c9aef65d2c1f7b973e6df903be25ecdd",
+      "lastSwizzledAt": "2025-11-07T13:15:29.353Z",
+      "boilerplateLastCommitSha": "2602deb8c9aef65d2c1f7b973e6df903be25ecdd",
+      "boilerplateBlobSha": "12034265e7ae2c7ecdc3e6b7cf21f6a16e024f9a"
+    },
+    "info/STATISTICS.md": {
+      "filePath": "info/STATISTICS.md",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "509b93b1e682fa6a0fab85f2e52d386fc6d65e33",
+      "commitAfterSwizzle": "509b93b1e682fa6a0fab85f2e52d386fc6d65e33",
+      "lastSwizzledAt": "2025-11-07T13:15:29.377Z",
+      "boilerplateLastCommitSha": "509b93b1e682fa6a0fab85f2e52d386fc6d65e33",
+      "boilerplateBlobSha": "5c869aa49e812cfb023f9e7cb006d39938d86c0d"
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "lastCommitSha": "860b00059d0a2d1ae441601701d4f2df6a2c44f5",
+      "commitAfterSwizzle": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "lastSwizzledAt": "2025-11-07T13:15:29.464Z",
+      "boilerplateLastCommitSha": "19b83a5068388dcedfdcf05b9d5df17bc4d265db",
+      "boilerplateBlobSha": "732475c272feb677188e687d297c98a4225f37d5"
     }
   }
 }

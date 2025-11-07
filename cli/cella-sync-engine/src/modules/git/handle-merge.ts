@@ -1,5 +1,5 @@
 import { RepoConfig } from '../../config';
-import { gitCleanUntrackedFile, gitMerge, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile, isMergeInProgress, gitCommit } from '../../utils/git/command';
+import { gitCleanUntrackedFile, gitMerge, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile, isMergeInProgress, gitCommit, gitPush } from '../../utils/git/command';
 import { FileAnalysis, MergeResult } from '../../types';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';
@@ -25,8 +25,11 @@ export async function handleMerge(
     // Cleanup all untracked files
     await gitCleanAllUntrackedFiles(forkConfig.repoPath);
 
-    // 3. Finalize merge
+    // Finalize merge
     await gitCommit(forkConfig.repoPath, `Merge ${boilerplateConfig.branch} into ${forkConfig.branch}`, { noVerify: true });
+
+    // Push merge result
+    // await gitPush(forkConfig.repoPath, 'origin', forkConfig.branch, { setUpstream: true });
 
     return { status: 'success', isMerging: false };
   } catch (err) {

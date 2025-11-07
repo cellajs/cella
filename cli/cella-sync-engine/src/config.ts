@@ -15,6 +15,7 @@ import { config } from "dotenv";
 export type RepoConfig = {
   use: "local" | "remote";
   branch: string;
+  targetBranch?: string;     // branch to apply resolved commits (squashed) INTO
   addAsRemoteName: string; // optional name to add the remote as
   repoPath: string;  // required if use === 'local'
   owner: string;     // required if use === 'remote'
@@ -81,7 +82,8 @@ export const boilerplateConfig: RepoConfig = {
  */
 export const forkConfig: RepoConfig = {
   use: 'local',
-  branch: "sync-branch",
+  branch: "sync-branch-test",
+  targetBranch: "development-test",
   repoPath: "/home/gino/Github/raak",
   addAsRemoteName: 'raak-remote',
   owner: "",  // Only used if use === 'remote'

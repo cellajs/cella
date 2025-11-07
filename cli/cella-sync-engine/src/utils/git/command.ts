@@ -65,19 +65,23 @@ export async function gitFetch(repoPath: string, remoteName: string): Promise<st
  * @param options - Optional flags for the merge command
  *   - noCommit: If true, adds the --no-commit flag (merge staged but not committed)
  *   - noEdit: If true, adds the --no-edit flag (use default commit message)
+ *   - squash: If true, perform a squash merge
  * @returns The stdout from the git merge command
  *
  * @example
- * await gitMerge('/path/to/repo', 'upstream/main', { noCommit: true, noEdit: true });
+ * await gitMerge('/path/to/repo', 'upstream/main', { squash: true, noEdit: true });
  */
 export async function gitMerge(
   repoPath: string,
   branchName: string,
-  options: { noCommit?: boolean, noEdit?: boolean } = {},
+  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean } = {}
 ): Promise<string> {
   const noCommitFlag = options.noCommit ? '--no-commit' : '';
   const noEditFlag = options.noEdit ? '--no-edit' : '';
-  return runGitCommand(`merge ${branchName} ${noEditFlag} ${noCommitFlag}`, repoPath);
+  const squashFlag = options.squash ? '--squash' : '';
+
+  const cmd = `merge ${branchName} ${squashFlag} ${noEditFlag} ${noCommitFlag}`;
+  return runGitCommand(cmd, repoPath);
 }
 
 /**
@@ -93,6 +97,16 @@ export async function gitMerge(
  */
 export async function gitAdd(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(`add "${filePath}"`, repoPath);
+}
+
+/**
+ * Stages all files for commit in the given repository.
+ * 
+ * @param repoPath - The file system path to the git repository
+ * @returns The stdout from the git add command
+ */
+export async function gitAddAll(repoPath: string): Promise<string> {
+  return runGitCommand(`add -A`, repoPath);
 }
 
 /**
@@ -352,4 +366,49 @@ export async function gitCleanAllUntrackedFiles(repoPath: string): Promise<strin
  */
 export async function gitRestoreStagedFile(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(`restore --staged --source=HEAD --worktree -- "${filePath}"`, repoPath);
+}
+
+/**
+ * Pushes commits to a remote branch.
+ *
+ * @param repoPath   The file system path of the git repository.
+ * @param remote     The remote name to push to (e.g. "origin")
+ * @param branch     The branch to push.
+ * @param options
+ *    - force       If true -> --force-with-lease
+ *    - setUpstream If true -> --set-upstream
+ */
+export async function gitPush(
+  repoPath: string,
+  remote: string,
+  branch: string,
+  options?: { force?: boolean; setUpstream?: boolean }
+): Promise<string> {
+  const forceFlag = options?.force ? '--force-with-lease' : '';
+  const upstreamFlag = options?.setUpstream ? '--set-upstream' : '';
+
+  return runGitCommand(`push ${forceFlag} ${upstreamFlag} ${remote} ${branch}`, repoPath);
+}
+
+
+/**
+ * Executes `git rev-list --count` to get the number of commits
+ * that are in `sourceBranch` but not in `baseBranch`.
+ * 
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @param sourceBranch - The branch to compare (e.g., feature branch)
+ * @param baseBranch - The branch to compare against (e.g., main or development)
+ * @returns The raw string output of `git rev-list --count`
+ * @throws If the Git command fails
+ *
+ * @example
+ * const countStr = await gitRevListCount('/repo', 'feature', 'main');
+ * console.log(countStr); // e.g., "5"
+ */
+export async function gitRevListCount(
+  repoPath: string,
+  sourceBranch: string,
+  baseBranch: string
+): Promise<string> {
+  return runGitCommand(`rev-list --count ${baseBranch}..${sourceBranch}`, repoPath);
 }
