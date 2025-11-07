@@ -1,5 +1,5 @@
 import { RepoConfig } from '../../config';
-import { gitCheckout, gitRebase } from '../../utils/git/command';
+import { gitCheckout, gitCommit, gitRebase, isRebaseInProgress } from '../../utils/git/command';
 import { getUnmergedFiles } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';
 import { MergeResult } from '../../types';
@@ -17,15 +17,11 @@ import { MergeResult } from '../../types';
  */
 export async function handleRebase(forkConfig: RepoConfig): Promise<MergeResult> {
   try {
-    if (!forkConfig.targetBranch) {
-      throw new Error('forkConfig.targetBranch is not defined');
-    }
-
     // Checkout the sync branch
     await gitCheckout(forkConfig.repoPath, forkConfig.branch);
 
-    // Start rebase from target branch into sync branch
-    await gitRebase(forkConfig.repoPath, forkConfig.targetBranch);
+    // Start the rebase process
+    await startRebase(forkConfig);
 
     // Handle conflicts manually
     await waitForManualConflictResolution(forkConfig);
@@ -38,6 +34,27 @@ export async function handleRebase(forkConfig: RepoConfig): Promise<MergeResult>
 }
 
 /**
+ * Starts the merge process between the fork and boilerplate repositories.
+ * @param forkConfig - RepoConfig of the forked repo
+ * @param boilerplateConfig - RepoConfig of the boilerplate repo
+ */
+async function startRebase(forkConfig: RepoConfig) {
+  try {
+    if (!forkConfig.targetBranch) {
+      throw new Error('forkConfig.targetBranch is not defined');
+    }
+
+    // Start rebase from target branch into sync branch
+    await gitRebase(forkConfig.repoPath, forkConfig.targetBranch);
+  } catch (err) {
+    // Check if merge is in conflict state (rethrow if not)
+    if (!isRebaseInProgress(forkConfig.repoPath)) {
+      throw err;
+    }
+  }
+}
+
+/**
  * Checks for unmerged files and prompts the user to resolve them manually.
  * Recursively waits until all conflicts are resolved.
  *
@@ -46,7 +63,19 @@ export async function handleRebase(forkConfig: RepoConfig): Promise<MergeResult>
 async function waitForManualConflictResolution(forkConfig: RepoConfig): Promise<void> {
   let conflicts = await getUnmergedFiles(forkConfig.repoPath);
 
-  if (conflicts.length === 0) return;
+  if (conflicts.length === 0) {
+    if (isRebaseInProgress(forkConfig.repoPath)) {
+      if (!forkConfig.targetBranch) {
+        throw new Error('forkConfig.targetBranch is not defined');
+      }
+
+      // Continue the rebase process
+      await gitRebase(forkConfig.repoPath, forkConfig.targetBranch, { continue: true, skipEditor: true });
+      await waitForManualConflictResolution(forkConfig);
+    }
+
+    return;
+  }
 
   const proceed = await confirm({
     message: `Please resolve ${conflicts.length} Rebase conflicts manually (In another terminal). Once resolved, press "y" to continue.`,

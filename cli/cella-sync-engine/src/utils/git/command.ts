@@ -1,6 +1,7 @@
 import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 import { existsSync } from 'fs';
+import { join } from 'path';
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
@@ -22,8 +23,14 @@ const execAsync = promisify(exec);
  * // On branch main
  * // Your branch is up to date with 'origin/main'.
  */
-export async function runGitCommand(command: string, repoPath: string): Promise<string> {
-  const { stdout } = await execAsync(`git -C ${repoPath} ${command}`);
+export async function runGitCommand(command: string, repoPath: string, options: { skipEditor?: boolean } = {}): Promise<string> {
+  let gitCommand = `git -C ${repoPath} ${command}`
+
+  if (options.skipEditor) {
+    gitCommand = `GIT_EDITOR=true ${gitCommand}`;
+  }
+
+  const { stdout } = await execAsync(gitCommand);
   return stdout.trim();
 }
 
@@ -94,6 +101,7 @@ export async function gitMerge(
  *   - continue: If true, continues a paused rebase
  *   - skip: If true, skips the current patch in a paused rebase
  *   - abort: If true, aborts the current rebase
+ *   - noEdit: If true, adds the --no-edit flag (use default commit messages)
  * @returns The stdout from the git rebase command
  *
  * @example
@@ -102,7 +110,7 @@ export async function gitMerge(
 export async function gitRebase(
   repoPath: string,
   upstreamBranch: string,
-  options: { interactive?: boolean; continue?: boolean; skip?: boolean; abort?: boolean } = {}
+  options: { interactive?: boolean; continue?: boolean; skip?: boolean; abort?: boolean; skipEditor?: boolean } = {}
 ): Promise<string> {
   let cmd = 'rebase';
 
@@ -112,11 +120,12 @@ export async function gitRebase(
   if (options.abort) cmd += ' --abort';
 
   // Only add upstream branch if it's a normal rebase (not continue/skip/abort)
-  if (!options.continue && !options.skip && !options.abort) {
+  const normalRebase = !options.continue && !options.skip && !options.abort;
+  if (normalRebase) {
     cmd += ` ${upstreamBranch}`;
   }
 
-  return runGitCommand(cmd, repoPath);
+  return runGitCommand(cmd, repoPath, { skipEditor: !normalRebase && options.skipEditor });
 }
 
 /**
@@ -311,6 +320,23 @@ export async function gitMergeFile(oursPath: string, basePath: string, theirsPat
  */
 export function isMergeInProgress(repoPath: string): boolean {
   return existsSync(`${repoPath}/.git/MERGE_HEAD`);
+}
+
+/**
+ * Checks if a rebase is currently in progress within the given repository.
+ * 
+ * @param repoPath - The file system path to the git repository
+ * @returns `true` if a rebase is in progress (i.e., `.git/rebase-apply` or `.git/rebase-merge` exists), otherwise `false`
+ * 
+ * @example
+ * if (isRebaseInProgress('/path/to/repo')) {
+ *   console.log('Rebase in progress...');
+ * }
+ */
+export function isRebaseInProgress(repoPath: string): boolean {
+  const rebaseApply = join(repoPath, '.git/rebase-apply');
+  const rebaseMerge = join(repoPath, '.git/rebase-merge');
+  return existsSync(rebaseApply) || existsSync(rebaseMerge);
 }
 
 /**
