@@ -49,7 +49,7 @@ async function waitForManualConflictResolution(forkConfig: RepoConfig): Promise<
   if (conflicts.length === 0) return;
 
   const proceed = await confirm({
-    message: `Please resolve ${conflicts.length} nRebase conflicts manually (In another terminal). Once resolved, press "y" to continue.`,
+    message: `Please resolve ${conflicts.length} Rebase conflicts manually (In another terminal). Once resolved, press "y" to continue.`,
     default: true,
   });
 

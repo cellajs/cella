@@ -2,7 +2,6 @@ import { RepoConfig } from '../../config';
 import { gitCheckout, gitMerge, gitCommit, gitAddAll } from '../../utils/git/command';
 import { MergeResult } from '../../types';
 import { getCommitCount } from '../../utils/git/helpers';
-import { confirm } from '@inquirer/prompts';
 
 /**
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch
