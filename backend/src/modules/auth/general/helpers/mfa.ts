@@ -47,7 +47,6 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   // Set a temporary auth cookie to track confirm MFA session
   await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);
 
-  // TODO(REFACTOR)find way to not hardcode path
   // Return the path to redirect the user to MFA authentication page
   return '/auth/mfa';
 };

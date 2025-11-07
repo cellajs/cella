@@ -4,7 +4,8 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { contextEntitiesQuerySchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema } from '#/utils/schema/success-responses';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
@@ -26,7 +27,7 @@ const entityRoutes = {
       204: {
         description: 'Slug is available',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getContextEntities: createCustomRoute({
@@ -46,7 +47,7 @@ const entityRoutes = {
         description: 'Context entities',
         content: { 'application/json': { schema: paginationSchema(contextEntityWithCountsSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getContextEntity: createCustomRoute({
@@ -64,7 +65,7 @@ const entityRoutes = {
         description: 'Context entities',
         content: { 'application/json': { schema: contextEntityBaseSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

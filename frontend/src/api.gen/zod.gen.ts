@@ -83,19 +83,7 @@ export const zOrganization = z.object({
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  membership: z.union([
-    z.object({
-      id: z.string(),
-      contextType: z.enum(['organization']),
-      userId: z.string(),
-      role: z.enum(['member', 'admin']),
-      archived: z.boolean(),
-      muted: z.boolean(),
-      order: z.number().gte(-140737488355328).lte(140737488355327),
-      organizationId: z.string(),
-    }),
-    z.null(),
-  ]),
+  membership: z.union([zMembershipBase, z.null()]),
   counts: z.object({
     membership: z.object({
       admin: z.number(),
@@ -236,6 +224,36 @@ export const zApiError = z.object({
   userId: z.optional(z.string()),
   organizationId: z.optional(z.string()),
 });
+
+export const zBadRequestError = zApiError.and(
+  z.object({
+    status: z.optional(z.literal(400)),
+  }),
+);
+
+export const zUnauthorizedError = zApiError.and(
+  z.object({
+    status: z.optional(z.literal(401)),
+  }),
+);
+
+export const zForbiddenError = zApiError.and(
+  z.object({
+    status: z.optional(z.literal(403)),
+  }),
+);
+
+export const zNotFoundError = zApiError.and(
+  z.object({
+    status: z.optional(z.literal(404)),
+  }),
+);
+
+export const zTooManyRequestsError = zApiError.and(
+  z.object({
+    status: z.optional(z.literal(429)),
+  }),
+);
 
 export const zCheckEmailData = z.object({
   body: z.object({
@@ -933,18 +951,7 @@ export const zCreateOrganizationData = z.object({
  */
 export const zCreateOrganizationResponse = zOrganization.and(
   z.object({
-    membership: z.optional(
-      z.object({
-        id: z.string(),
-        contextType: z.enum(['organization']),
-        userId: z.string(),
-        role: z.enum(['member', 'admin']),
-        archived: z.boolean(),
-        muted: z.boolean(),
-        order: z.number().gte(-140737488355328).lte(140737488355327),
-        organizationId: z.string(),
-      }),
-    ),
+    membership: z.optional(zMembershipBase),
   }),
 );
 
@@ -1021,19 +1028,7 @@ export const zGetContextEntitiesResponse = z.object({
   items: z.array(
     zContextEntityBase.and(
       z.object({
-        membership: z.union([
-          z.object({
-            id: z.string(),
-            contextType: z.enum(['organization']),
-            userId: z.string(),
-            role: z.enum(['member', 'admin']),
-            archived: z.boolean(),
-            muted: z.boolean(),
-            order: z.number().gte(-140737488355328).lte(140737488355327),
-            organizationId: z.string(),
-          }),
-          z.null(),
-        ]),
+        membership: z.union([zMembershipBase, z.null()]),
         createdAt: z.string(),
         membershipCounts: z.object({
           admin: z.number(),

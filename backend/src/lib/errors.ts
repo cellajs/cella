@@ -7,7 +7,7 @@ import { type Env, getContextOrganization, getContextUser } from '#/lib/context'
 import type locales from '#/lib/i18n-locales';
 import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
-import type { apiErrorSchema } from '#/utils/schema/error';
+import type { apiErrorSchema } from '#/utils/schema/api-error';
 
 const isProduction = appConfig.mode === 'production';
 

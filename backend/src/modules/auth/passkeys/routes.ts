@@ -10,7 +10,7 @@ import {
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/schema';
 import { cookieSchema, idSchema } from '#/utils/schema/common';
-import { errorResponses } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authPasskeysRoutes = {
   generatePasskeyChallenge: createCustomRoute({
@@ -34,7 +34,7 @@ const authPasskeysRoutes = {
         description: 'Challenge generated',
         content: { 'application/json': { schema: passkeyChallengeSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -58,7 +58,7 @@ const authPasskeysRoutes = {
         description: 'Passkey created',
         content: { 'application/json': { schema: passkeySchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -75,7 +75,7 @@ const authPasskeysRoutes = {
       204: {
         description: 'Passkey deleted',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -99,7 +99,7 @@ const authPasskeysRoutes = {
         description: 'Passkey verified',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

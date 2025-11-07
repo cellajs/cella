@@ -12,7 +12,8 @@ import {
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -36,7 +37,7 @@ const membershipRoutes = {
         description: 'Number of sent invitations',
         content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -65,7 +66,7 @@ const membershipRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -88,7 +89,7 @@ const membershipRoutes = {
         description: 'Membership updated',
         content: { 'application/json': { schema: membershipSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -106,7 +107,7 @@ const membershipRoutes = {
         description: 'Invitation was accepted',
         content: { 'application/json': { schema: contextEntityBaseSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -131,7 +132,7 @@ const membershipRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getPendingMemberships: createCustomRoute({
@@ -156,7 +157,7 @@ const membershipRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

@@ -12,7 +12,8 @@ import {
 } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -28,7 +29,7 @@ const meRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -46,7 +47,7 @@ const meRoutes = {
         description: 'Menu of user',
         content: { 'application/json': { schema: menuSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -63,7 +64,7 @@ const meRoutes = {
         description: 'Invitations pending',
         content: { 'application/json': { schema: paginationSchema(mePendingInvitationSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -88,7 +89,7 @@ const meRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -103,7 +104,7 @@ const meRoutes = {
       "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     responses: {
       204: { description: 'User deleted' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -120,7 +121,7 @@ const meRoutes = {
         description: 'User sign-up info',
         content: { 'application/json': { schema: meAuthDataSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -144,7 +145,7 @@ const meRoutes = {
         description: 'Success',
         content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -161,7 +162,7 @@ const meRoutes = {
       204: {
         description: 'Membership removed',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -181,7 +182,7 @@ const meRoutes = {
         description: 'Redirect to FE',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -200,7 +201,7 @@ const meRoutes = {
         description: 'Upload token with a scope for a user or organization',
         content: { 'application/json': { schema: uploadTokenSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -221,7 +222,7 @@ const meRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

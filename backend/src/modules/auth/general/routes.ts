@@ -6,7 +6,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
-import { errorResponses } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authGeneralRoutes = {
   startImpersonation: createCustomRoute({
@@ -23,7 +23,7 @@ const authGeneralRoutes = {
         description: 'Impersonating',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -37,7 +37,7 @@ const authGeneralRoutes = {
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
     responses: {
       204: { description: 'Stopped impersonating' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -58,7 +58,7 @@ const authGeneralRoutes = {
     },
     responses: {
       204: { description: 'Email exists' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -80,7 +80,7 @@ const authGeneralRoutes = {
         description: 'Redirect with token session',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -101,7 +101,7 @@ const authGeneralRoutes = {
         description: 'Token is valid',
         content: { 'application/json': { schema: tokenWithDataSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -121,7 +121,7 @@ const authGeneralRoutes = {
       204: {
         description: 'Invitation email sent',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -135,7 +135,7 @@ const authGeneralRoutes = {
     description: 'Signs out the *current user* and clears the active session.',
     responses: {
       204: { description: 'User signed out' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

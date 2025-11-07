@@ -4,7 +4,7 @@ import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
 import { cookieSchema } from '#/utils/schema/common';
-import { errorResponses } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authTotpsRoutes = {
   generateTotpKey: createCustomRoute({
@@ -20,7 +20,7 @@ const authTotpsRoutes = {
         description: 'Challenge created',
         content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -44,7 +44,7 @@ const authTotpsRoutes = {
       201: {
         description: 'TOTP created',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -58,7 +58,7 @@ const authTotpsRoutes = {
     description: 'Delete TOTP credential for current user.',
     responses: {
       204: { description: 'TOTP deleted' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -83,7 +83,7 @@ const authTotpsRoutes = {
         description: 'TOTP verified',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

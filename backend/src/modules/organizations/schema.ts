@@ -43,14 +43,12 @@ export const organizationSchema = z
     languages: z.array(languageSchema).min(1),
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
-    // TODO(blocking) is required to prevent the $ref MembershipBaseSchema itself from becoming nullable
-    // https://github.com/asteasolutions/zod-to-openapi/issues/258
-    membership: z.object({ ...membershipBaseSchema.shape }).nullable(),
+    membership: z.union([membershipBaseSchema, z.null()]),
     counts: fullCountsSchema,
   })
   .openapi('Organization');
 
-export const organizationWithMembershipSchema = organizationSchema.extend({ membership: z.object({ ...membershipBaseSchema.shape }) });
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
 
 export const organizationCreateBodySchema = z.object({
   name: validNameSchema,

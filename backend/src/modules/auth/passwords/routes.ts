@@ -7,7 +7,7 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import { emailBodySchema } from '#/modules/auth/general/schema';
 import { emailPasswordBodySchema } from '#/modules/auth/passwords/schema';
 import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/common';
-import { errorResponses } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authPasswordsRoutes = {
   signUp: createCustomRoute({
@@ -33,7 +33,7 @@ const authPasswordsRoutes = {
         headers: locationSchema,
         description: 'Redirect to frontend',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -59,7 +59,7 @@ const authPasswordsRoutes = {
         headers: z.object({ 'Set-Cookie': cookieSchema }),
         content: { 'application/json': { schema: z.object({ membershipInvite: z.boolean() }) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -82,7 +82,7 @@ const authPasswordsRoutes = {
       204: {
         description: 'Password reset email sent',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -107,7 +107,7 @@ const authPasswordsRoutes = {
         description: 'Password created',
         content: { 'application/json': { schema: z.object({ mfa: z.boolean() }) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -136,7 +136,7 @@ const authPasswordsRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

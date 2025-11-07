@@ -12,7 +12,7 @@ export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend(
 });
 
 export const contextEntityWithCountsSchema = contextEntityBaseSchema.extend({
-  membership: z.object({ ...membershipBaseSchema.shape }).nullable(),
+  membership: z.union([membershipBaseSchema, z.null()]),
   createdAt: z.string(),
   membershipCounts: membershipCountSchema,
 });
