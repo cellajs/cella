@@ -2,11 +2,12 @@ import { RepoConfig } from '../../config';
 import { gitCheckout, gitMerge, gitCommit, gitAddAll } from '../../utils/git/command';
 import { MergeResult } from '../../types';
 import { getCommitCount } from '../../utils/git/helpers';
+import { confirm } from '@inquirer/prompts';
 
 /**
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch
  */
-export async function squashSyncCommits(
+export async function handleSquashMerge(
   boilerplateConfig: RepoConfig,
   forkConfig: RepoConfig,
 ): Promise<MergeResult> {
@@ -15,23 +16,22 @@ export async function squashSyncCommits(
       throw new Error('forkConfig.targetBranch is not defined');
     }
 
-    const syncBranch = forkConfig.branch;       // the working sync-branch
-    const targetBranch = forkConfig.targetBranch; // the main branch to squash into
-
     // Checkout the target branch
-    await gitCheckout(forkConfig.repoPath, targetBranch);
+    await gitCheckout(forkConfig.repoPath, forkConfig.targetBranch);
 
     // Get the number of commits to squash
-    const commitCount = await getCommitCount(forkConfig.repoPath, syncBranch, targetBranch);
+    const commitCount = await getCommitCount(forkConfig.repoPath, forkConfig.branch, forkConfig.targetBranch);
+
+    console.log(`Squashing ${commitCount} commits from '${forkConfig.branch}' into '${forkConfig.targetBranch}'`);
 
     // Squash-merge sync-branch into target branch
-    await gitMerge(forkConfig.repoPath, syncBranch, { squash: true, noEdit: true, noCommit: true });
+    await gitMerge(forkConfig.repoPath, forkConfig.branch, { squash: true });
 
     // Add all changes to staging
     await gitAddAll(forkConfig.repoPath);
 
     // Commit the squashed changes
-    const commitMessage = `Squash ${commitCount} commits from '${syncBranch}' (boilerplate '${boilerplateConfig.branch}') into '${targetBranch}'`;
+    const commitMessage = `Squash ${commitCount} commits from '${forkConfig.branch}' (boilerplate '${boilerplateConfig.branch}') into '${forkConfig.targetBranch}'`;
     await gitCommit(forkConfig.repoPath, commitMessage, { noVerify: true });
 
     return {
@@ -40,6 +40,8 @@ export async function squashSyncCommits(
     };
   } catch (err: any) {
     console.error('Error squashing sync commits:', err.message || err);
+
+    console.log(err)
     return { status: 'error', isMerging: false };
   }
 }

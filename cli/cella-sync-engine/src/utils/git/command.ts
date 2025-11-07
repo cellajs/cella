@@ -85,6 +85,41 @@ export async function gitMerge(
 }
 
 /**
+ * Rebases the current branch onto the specified upstream branch.
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param upstreamBranch - The branch to rebase onto
+ * @param options - Optional flags for the rebase command
+ *   - interactive: If true, starts an interactive rebase
+ *   - continue: If true, continues a paused rebase
+ *   - skip: If true, skips the current patch in a paused rebase
+ *   - abort: If true, aborts the current rebase
+ * @returns The stdout from the git rebase command
+ *
+ * @example
+ * await gitRebase('/path/to/repo', 'main', { interactive: true });
+ */
+export async function gitRebase(
+  repoPath: string,
+  upstreamBranch: string,
+  options: { interactive?: boolean; continue?: boolean; skip?: boolean; abort?: boolean } = {}
+): Promise<string> {
+  let cmd = 'rebase';
+
+  if (options.interactive) cmd += ' -i';
+  if (options.continue) cmd += ' --continue';
+  if (options.skip) cmd += ' --skip';
+  if (options.abort) cmd += ' --abort';
+
+  // Only add upstream branch if it's a normal rebase (not continue/skip/abort)
+  if (!options.continue && !options.skip && !options.abort) {
+    cmd += ` ${upstreamBranch}`;
+  }
+
+  return runGitCommand(cmd, repoPath);
+}
+
+/**
  * Stages a file for commit in the given repository.
  * Throws an error if the file does not exist or cannot be added.
  * 
