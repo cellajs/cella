@@ -118,56 +118,46 @@ export const AppSearch = () => {
       />
       <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         <CommandList className="h-full">
-          {notFound && (
-            <>
-              {!!searchValue.length && !isFetching && (
-                <CommandEmpty className="h-full sm:h-[36vh]">
-                  <ContentPlaceholder
-                    icon={SearchIcon}
-                    title={t('common:no_resource_found', {
+          <CommandEmpty className="h-full sm:h-[36vh]">
+            <ContentPlaceholder
+              icon={SearchIcon}
+              title={
+                searchValue.length
+                  ? t('common:no_resource_found', {
                       resource: t('common:results').toLowerCase(),
-                    })}
-                  />
-                </CommandEmpty>
-              )}
-              {searchValue.length === 0 && (
-                <CommandEmpty className="h-full sm:h-[36vh]">
-                  <ContentPlaceholder
-                    icon={SearchIcon}
-                    title={t('common:global_search.text', {
+                    })
+                  : t('common:global_search.text', {
                       appName: appConfig.name,
-                    })}
-                  />
-                </CommandEmpty>
-              )}
-              {!searchValue.length && !!recentSearches.length && (
-                <CommandGroup>
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
-                  {recentSearches.map((search, index) => (
-                    <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
-                      <div className="flex gap-2 items-center outline-0 ring-0 group">
-                        <HistoryIcon className="h-5 w-5" />
-                        <span className="underline-offset-4 truncate font-medium">{search}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="p-0 h-6 w-6"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            deleteItemFromList(search);
-                          }}
-                        >
-                          <XIcon className="h-5 w-5 opacity-70 hover:opacity-100" />
-                        </Button>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </>
+                    })
+              }
+            />
+          </CommandEmpty>
+          {notFound && !searchValue.length && !!recentSearches.length && (
+            <CommandGroup>
+              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
+              {recentSearches.map((search, index) => (
+                <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
+                  <div className="flex gap-2 items-center outline-0 ring-0 group">
+                    <HistoryIcon className="h-5 w-5" />
+                    <span className="underline-offset-4 truncate font-medium">{search}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="p-0 h-6 w-6"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        deleteItemFromList(search);
+                      }}
+                    >
+                      <XIcon className="h-5 w-5 opacity-70 hover:opacity-100" />
+                    </Button>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
           )}
           {appConfig.pageEntityTypes.map((entityType) => (
             <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} onSelect={onSelectItem} />
