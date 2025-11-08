@@ -15,7 +15,7 @@ export const config = {
   welcomeRedirectPath: '/welcome',
 
   legal: {
-    pages: ['terms', 'privacy'],
+    pages: ['terms', 'privacy'] satisfies ('privacy' | 'terms')[],
   },
 
   aboutUrl: 'https://cellajs.com/about',
