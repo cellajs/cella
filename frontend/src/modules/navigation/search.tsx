@@ -140,7 +140,7 @@ export const AppSearch = () => {
                   />
                 </CommandEmpty>
               )}
-              {!!recentSearches.length && (
+              {!searchValue.length && !!recentSearches.length && (
                 <CommandGroup>
                   <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
                   {recentSearches.map((search, index) => (
