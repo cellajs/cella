@@ -250,11 +250,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',
+    supportEmail: 'support@cellajs.com',
     postcode: '90210 JS',
     tel: '+31 6 12345678',
     streetAddress: 'Drizzle Road 42',
     city: 'Hono City',
     country: 'TypeScript Rock',
+    registration: 'Chamber of Commerce (KvK): 578 25 920', //
+    bankAccount: 'NL07 RABO 0309 4430 24', //
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',
