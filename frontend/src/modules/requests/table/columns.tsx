@@ -21,6 +21,7 @@ export const useColumns = () => {
         name: t('common:request_type'),
         sortable: true,
         visible: true,
+        resizable: true,
         width: 160,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row: { type, wasInvited } }) => (
@@ -39,6 +40,7 @@ export const useColumns = () => {
         name: t('common:email'),
         visible: true,
         sortable: false,
+        resizable: true,
         minWidth: 120,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
@@ -54,6 +56,7 @@ export const useColumns = () => {
         name: t('common:message'),
         visible: !isMobile,
         sortable: false,
+        resizable: true,
         minWidth: 200,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) =>
@@ -64,6 +67,7 @@ export const useColumns = () => {
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
+        resizable: true,
         width: 180,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),

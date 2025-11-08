@@ -29,6 +29,7 @@ export const useColumns = () => {
         name: t('common:name'),
         visible: true,
         sortable: true,
+        resizable: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} />,
       },
@@ -88,8 +89,9 @@ export const useColumns = () => {
       {
         key: 'email',
         name: t('common:email'),
-        sortable: true,
+        sortable: false,
         visible: !isMobile,
+        resizable: true,
         minWidth: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
@@ -105,6 +107,8 @@ export const useColumns = () => {
         name: t('common:role'),
         sortable: true,
         visible: !isMobile,
+        resizable: true,
+
         width: 100,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <div>{t(row.role, { ns: ['app', 'common'] })}</div>,
@@ -114,6 +118,7 @@ export const useColumns = () => {
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
+        resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
@@ -123,6 +128,7 @@ export const useColumns = () => {
         name: t('common:last_seen_at'),
         sortable: true,
         visible: !isMobile,
+        resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
