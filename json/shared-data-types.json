@@ -1,0 +1,12 @@
+[
+  {
+    "slug": "user_uploads",
+    "name": "User file uploads",
+    "purpose": "Store and deliver user-uploaded files within the workspace.",
+    "legalBasis": "contract",
+    "dataCategories": ["user files", "file metadata (names, timestamps, owner ID)"],
+    "dataSubjects": ["end users", "organization members"],
+    "storageLocation": "Scaleway Object Storage, Paris (France, EU)",
+    "retentionPeriod": "Files retained until deleted by the user or up to 90 days after account deletion."
+  }
+]
