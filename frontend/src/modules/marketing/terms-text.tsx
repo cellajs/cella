@@ -64,7 +64,7 @@ const TermsText = (props: TermsTextProps) => {
         </p>
         <p>
           These Terms include the provisions in this document and in the
-          <Link className="ml-1" to="/legal">
+          <Link className="ml-1" to="/legal" hash="privacy">
             Privacy policy
           </Link>
           .
@@ -74,7 +74,7 @@ const TermsText = (props: TermsTextProps) => {
           If they do change, {companyShort} will do our best to tell you in advance by placing a notification on the {appName} website, or{' '}
           {companyShort} might send you an email. In certain situations (for example, where a change to the Terms is necessary to comply with legal
           requirements), {companyShort} may not be able to give you advance notice. Changes to the
-          <Link className="mx-1" to="/legal">
+          <Link className="mx-1" to="/legal" hash="privacy">
             Privacy policy
           </Link>
           will be provided in advance.
@@ -93,7 +93,7 @@ const TermsText = (props: TermsTextProps) => {
         <h3 className="font-medium">Privacy</h3>
         <p>
           {companyShort} takes the privacy of its users very seriously. For the entire current {companyShort} Privacy policy, please click
-          <Link className="ml-1" to="/legal">
+          <Link className="ml-1" to="/legal" hash="privacy">
             here
           </Link>
           .
@@ -154,7 +154,7 @@ const TermsText = (props: TermsTextProps) => {
           viewable by other users and some are submissions done as a group of users. In order to display your User Submissions on the Services, and to
           allow other users to enjoy them (where applicable), you grant us certain rights in those User Submissions. Please note that all of the
           following licenses are subject to our
-          <Link className="mx-1" to="/legal">
+          <Link className="mx-1" to="/legal" hash="privacy">
             Privacy policy
           </Link>
           to the extent they relate to User Submissions that are also your personally-identifiable information.
@@ -219,7 +219,7 @@ const TermsText = (props: TermsTextProps) => {
         <h3 className="font-medium">Delete Account</h3>
         <p>
           You’re free to delete your account at any time; please refer to our
-          <Link className="ml-1" to="/legal">
+          <Link className="ml-1" to="/legal" hash="privacy">
             Privacy policy
           </Link>
           , as well as the licenses above, to understand how we treat information you provide to us after you have stopped using our Services.

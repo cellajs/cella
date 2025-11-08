@@ -44,7 +44,7 @@ const PrivacyText = (props: PrivacyTextProps) => {
         <p>
           {companyFull}, the owner and provider of {appName} (“{companyShort}”, “we”, “us”, “our”) takes your privacy very serious. By accessing or
           using the Services, you acknowledge that you accept the practices and policies outlined in the
-          <Link className="ml-1" to="/legal">
+          <Link className="ml-1" to="/legal" hash="terms">
             Terms of use
           </Link>
           , which incorporates this Privacy policy.
@@ -118,8 +118,8 @@ const PrivacyText = (props: PrivacyTextProps) => {
           If not unsubscribed, we will send you email notifications for activities such as{' '}
           <span className="italic ml-1">being mentioned in a task</span>. If somehow opting out of receiving emails from us is not working using the
           unsubscribe link in any email, please contact us at
-          <a className="ml-1" href="mailto:support@shareworks.nl" target="_blank" rel="noreferrer">
-            support@shareworks.nl
+          <a className="ml-1" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+            {supportEmail}
           </a>
           .
         </p>
@@ -174,8 +174,8 @@ const PrivacyText = (props: PrivacyTextProps) => {
           {companyShort} endeavors to keep your information private; however, we cannot guarantee security. Unauthorized entry or use, hardware or
           software failure, and other actionors may compromise the security of user information. For additional information about the security
           measures we use in connection with the Services, please contact us at
-          <a className="ml-1" href="mailto:support@shareworks.nl" target="_blank" rel="noreferrer">
-            support@shareworks.nl
+          <a className="ml-1" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+            {supportEmail}
           </a>
           .
         </p>
