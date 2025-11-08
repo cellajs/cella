@@ -14,6 +14,10 @@ export const config = {
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',
 
+  legal: {
+    pages: ['terms', 'privacy'],
+  },
+
   aboutUrl: 'https://cellajs.com/about',
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
