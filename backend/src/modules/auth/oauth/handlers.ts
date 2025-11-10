@@ -42,7 +42,7 @@ const authOAuthRouteHandlers = app
     const strategy = 'github' as EnabledOAuthProvider;
 
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
     }
 
     // Generate a `state` to prevent CSRF, and build URL with scope.
@@ -59,7 +59,7 @@ const authOAuthRouteHandlers = app
     // Check if Google OAuth is enabled
     const strategy = 'google' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
     }
 
     // Generate a `state`, PKCE, and scoped URL.
@@ -77,7 +77,7 @@ const authOAuthRouteHandlers = app
     // Check if Microsoft OAuth is enabled
     const strategy = 'microsoft' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
     }
 
     // Generate a `state`, PKCE, and scoped URL.
@@ -108,7 +108,7 @@ const authOAuthRouteHandlers = app
 
     // When something went wrong during Github OAuth, fail early.
     if (error || !code) {
-      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath: '/auth/error' });
     }
 
     const strategy = 'github' as EnabledOAuthProvider;
@@ -118,10 +118,8 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
     }
-
-    const callbackType = cookiePayload.type;
 
     try {
       // Exchange authorization code for access token and fetch Github user info
@@ -138,7 +136,7 @@ const authOAuthRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
+      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -149,7 +147,7 @@ const authOAuthRouteHandlers = app
         type,
         severity: 'error',
         meta: { strategy },
-        redirectPath: '/auth/authenticate',
+        redirectPath: '/auth/error',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -167,10 +165,8 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
     }
-
-    const callbackType = cookiePayload.type;
 
     try {
       // Exchange authorization code for access token and fetch Google user info
@@ -182,7 +178,7 @@ const authOAuthRouteHandlers = app
       const googleUser = (await response.json()) as GoogleUserProps;
       const providerUser = transformSocialUserData(googleUser);
 
-      return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
+      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -193,7 +189,7 @@ const authOAuthRouteHandlers = app
         type,
         severity: 'error',
         meta: { strategy },
-        redirectPath: '/auth/authenticate',
+        redirectPath: '/auth/error',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -210,10 +206,8 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/authenticate' });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
     }
-
-    const callbackType = cookiePayload.type;
 
     try {
       // Exchange authorization code for access token and fetch Microsoft user info
@@ -225,7 +219,7 @@ const authOAuthRouteHandlers = app
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const providerUser = transformSocialUserData(microsoftUser);
 
-      return await handleOAuthCallback(ctx, callbackType, providerUser, strategy);
+      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -236,7 +230,7 @@ const authOAuthRouteHandlers = app
         type,
         severity: 'error',
         meta: { strategy },
-        redirectPath: '/auth/authenticate',
+        redirectPath: '/auth/error',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }

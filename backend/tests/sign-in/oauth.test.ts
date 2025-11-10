@@ -161,14 +161,14 @@ describe('OAuth Authentication', async () => {
     });
 
     it('should handle OAuth flow with redirect parameter', async () => {
-      const redirectPath = '/dashboard';
-      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirect: redirectPath } }, { headers: defaultHeaders });
+      const redirectAfter = '/dashboard';
+      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirectAfter } }, { headers: defaultHeaders });
 
       expect(res.status).toBe(302);
       // Should set oauth-redirect cookie
       const setCookieHeader = res.headers.get('set-cookie');
       expect(setCookieHeader).toBeTruthy();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-oauth-redirect-${appConfig.cookieVersion}=${redirectPath}`);
+      expect(setCookieHeader).toContain(`${appConfig.slug}-oauth-redirect-${appConfig.cookieVersion}=${redirectAfter}`);
     });
 
     it('should reject OAuth when strategy is disabled', async () => {
@@ -352,7 +352,7 @@ describe('OAuth Authentication', async () => {
   describe('Security & Input Validation', () => {
     it('should handle very long redirect URL', async () => {
       const longRedirect = 'a'.repeat(2000);
-      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirect: longRedirect } }, { headers: defaultHeaders });
+      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirectAfter: longRedirect } }, { headers: defaultHeaders });
 
       expect(res.status).toBe(302);
     });

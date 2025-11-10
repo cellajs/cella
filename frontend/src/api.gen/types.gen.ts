@@ -1133,7 +1133,7 @@ export type GithubData = {
   path?: never;
   query?: {
     type?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirect?: string;
+    redirectAfter?: string;
   };
   url: '/auth/github';
 };
@@ -1168,7 +1168,7 @@ export type GoogleData = {
   path?: never;
   query?: {
     type?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirect?: string;
+    redirectAfter?: string;
   };
   url: '/auth/google';
 };
@@ -1203,7 +1203,7 @@ export type MicrosoftData = {
   path?: never;
   query?: {
     type?: 'auth' | 'connect' | 'invite' | 'verify';
-    redirect?: string;
+    redirectAfter?: string;
   };
   url: '/auth/microsoft';
 };
