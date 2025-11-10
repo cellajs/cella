@@ -56,6 +56,11 @@ export async function addRemote(repoPath: string, remoteName: string, remoteUrl:
   await runGitCommand(`remote add ${remoteName} ${remoteUrl}`, repoPath);
 }
 
+export async function setRemoteUrl(repoPath: string, remoteName: string, remoteUrl: string): Promise<void> {
+  await runGitCommand(`remote set-url ${remoteName} ${remoteUrl}`, repoPath);
+}
+
+
 /**
  * Adds a new remote only if it does not already exist.
  * 

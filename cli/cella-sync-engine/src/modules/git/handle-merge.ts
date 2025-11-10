@@ -46,7 +46,7 @@ export async function handleMerge(
  */
 async function startMerge(forkConfig: RepoConfig, boilerplateConfig: RepoConfig) {
   try {
-    await gitMerge(forkConfig.repoPath, `${boilerplateConfig.addAsRemoteName}/${boilerplateConfig.branch}`, { noEdit: true, noCommit: true });
+    await gitMerge(forkConfig.repoPath, `${boilerplateConfig.remoteName}/${boilerplateConfig.branch}`, { noEdit: true, noCommit: true });
   } catch (err) {
     // Check if merge is in conflict state (rethrow if not)
     if (!isMergeInProgress(forkConfig.repoPath)) {

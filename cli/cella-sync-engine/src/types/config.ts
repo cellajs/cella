@@ -12,27 +12,38 @@ export type RepoConfig = {
   use: "local" | "remote";
 
   /**
-   * The branch name
-   */
-  branch: string;
-
-  /**
-   * (Optional) The target branch to apply resolved (squashed) commits into.
-   */
-  targetBranch?: string;
-
-  /**
-   * Optional name to add the remote as
-   */
-  addAsRemoteName: string;
-
-  /**
    * The absolute path to the local repository on disk.
    * Required if `use` is `"local"`.
    */
   repoPath: string;
 
+  /**
+   * The remote URL
+   * Required if `use` is `"remote"`. 
+   */
+  remoteUrl?: string;
+
+  /**
+   * The branch name
+   * - In the boilerplate, this is the branch to sync from.
+   * - In the fork, this is the branch to sync into.
+   */
+  branch: string;
+
+  /**
+   * (Optional) The target branch to apply resolved (squashed) commits into.
+   * - Only used in the fork configuration, where after syncing into the `branch`,
+   *   the changes will be squashed and merged into this `targetBranch`.
+   */
+  targetBranch?: string;
+
+  /**
+   * Name to add the remote as
+   */
+  remoteName: string;
+
   /** 
+   * @todo: I think we can remove this, but for now keep it
    * GitHub owner or organization name 
    * Required if `use` is `"remote"`.
    * 
@@ -40,16 +51,11 @@ export type RepoConfig = {
   owner: string;
 
   /** 
+   * @todo: I think we can remove this, but for now keep it
    * GitHub repository name
    * Required if `use` is `"remote"`.
    */
   repo: string;
-
-  /**
-   * The remote URL
-   * Required if `use` is `"remote"`. 
-   */
-  remoteUrl?: string;
 };
 
 /**
@@ -99,3 +105,16 @@ export type Log = {
     swizzled?: boolean;
   }
 }
+
+/**
+ * Configuration for specifying behavior during sync operations
+ * - e.g., how to handle certain edge cases?
+ */
+export type BehaviorConfig = {
+  /**
+   * Behavior when the remote repository already exists but has a different URL than expected.
+   * - 'overwrite': Update the remote URL to the expected one.
+   * - 'error': Throw an error and halt the operation.
+   */
+  onRemoteWrongUrl?: 'overwrite' | 'error'; 
+};

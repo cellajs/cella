@@ -31,7 +31,7 @@ export const forkConfig: RepoConfig = {
   /**
    * The name to use when adding the forked repository as a remote to the boilerplate repository (for when we want to sync from fork to boilerplate).
    */
-  addAsRemoteName: '',
+  remoteName: '',
 
   /**
    * Owner of the remote repository (only used if use === 'remote')

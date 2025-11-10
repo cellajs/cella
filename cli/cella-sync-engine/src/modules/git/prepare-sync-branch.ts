@@ -15,10 +15,10 @@ import { addRemoteIfMissing } from '../../utils/git/remotes';
  */
 export async function prepareSyncBranch(boilerplateConfig: RepoConfig, forkConfig: RepoConfig) {
   // Ensure boilerplate repo is added as a remote in fork
-  await addRemoteIfMissing(forkConfig.repoPath, boilerplateConfig.addAsRemoteName, boilerplateConfig.repoPath);
+  await addRemoteIfMissing(forkConfig.repoPath, boilerplateConfig.remoteName, boilerplateConfig.repoPath);
 
   // Fetch latest commits from the boilerplate
-  await gitFetch(forkConfig.repoPath, boilerplateConfig.addAsRemoteName);
+  await gitFetch(forkConfig.repoPath, boilerplateConfig.remoteName);
 
   // Checkout the sync branch in the fork repository
   await gitCheckout(forkConfig.repoPath, forkConfig.branch);

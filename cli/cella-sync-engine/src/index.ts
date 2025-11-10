@@ -17,8 +17,6 @@ async function main(): Promise<void> {
 
   console.log(pc.cyan("↻ Starting git-sync..."));
 
-  throw new Error("Git sync is temporarily disabled while we improve the sync engine.");
-
   const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
   spinner.start();
 
@@ -39,6 +37,8 @@ async function main(): Promise<void> {
   );
 
   spinner.stop();
+
+  throw new Error("Stop here for testing");
 
   spinner.start("Update swizzle...");
   

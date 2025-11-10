@@ -1,11 +1,11 @@
 import path from "node:path";
 import pc from "picocolors";
 
-import { boilerplateConfig, forkConfig } from "./config/index";
+import { boilerplateConfig, forkConfig, behaviorConfig } from "./config/index";
 import { RepoConfig } from "./types/config";
 import { isDirectory } from "./utils/files";
 import { gitCheckout, gitLsRemote, gitRevParseIsInsideWorkTree, isMergeInProgress, isRebaseInProgress } from "./utils/git/command";
-import { addRemote, getRemoteUrl, hasRemote } from "./utils/git/remotes";
+import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from "./utils/git/remotes";
 import { createBranchIfMissing, hasLocalBranch } from "./utils/git/branches";
 import { isRepoClean } from "./utils/git/helpers";
 
@@ -43,9 +43,9 @@ function checkBoilerplateRepo() {
     throw new Error("Boilerplate `branch` is not set.");
   }
 
-  // `addAsRemoteName` must be set
-  if (!boilerplateConfig.addAsRemoteName) {
-    throw new Error("Boilerplate `addAsRemoteName` is not set.");
+  // `remoteName` must be set
+  if (!boilerplateConfig.remoteName) {
+    throw new Error("Boilerplate `remoteName` is not set.");
   }
 
   if (boilerplateConfig.use === 'local') {
@@ -196,15 +196,20 @@ async function prepareRepositories() {
   const remoteUrl = boilerplateConfig.use === 'remote' ? boilerplateConfig.remoteUrl! : boilerplateConfig.repoPath!;
 
   // Check if boilerplate is added as remote to fork
-  if (await hasRemote(forkConfig.repoPath, boilerplateConfig.addAsRemoteName)) {
+  if (await hasRemote(forkConfig.repoPath, boilerplateConfig.remoteName)) {
     // Verify remote URL matches configuration
-    const currentUrl = await getRemoteUrl(forkConfig.repoPath, boilerplateConfig.addAsRemoteName);
+    const currentUrl = await getRemoteUrl(forkConfig.repoPath, boilerplateConfig.remoteName);
     if (currentUrl !== remoteUrl) {
-      throw new Error(`Remote URL for '${boilerplateConfig.addAsRemoteName}' in fork does not match boilerplate configuration.`);
+      if (behaviorConfig.onRemoteWrongUrl === 'overwrite') {
+        // Update remote URL to match configuration
+        await setRemoteUrl(forkConfig.repoPath, boilerplateConfig.remoteName, remoteUrl!);
+      } else {
+        throw new Error(`Remote URL for '${boilerplateConfig.remoteName}' in fork does not match boilerplate configuration.`);
+      }
     }
   } else {
     // Add boilerplate as remote to fork
-    await addRemote(forkConfig.repoPath, boilerplateConfig.addAsRemoteName, remoteUrl!);
+    await addRemote(forkConfig.repoPath, boilerplateConfig.remoteName, remoteUrl!);
   }
 
   // Check if current stage of fork is clean
