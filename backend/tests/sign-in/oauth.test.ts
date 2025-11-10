@@ -168,7 +168,7 @@ describe('OAuth Authentication', async () => {
       // Should set oauth-redirect cookie
       const setCookieHeader = res.headers.get('set-cookie');
       expect(setCookieHeader).toBeTruthy();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-oauth-redirect-${appConfig.cookieVersion}=${redirectAfter}`);
+      expect(setCookieHeader).toContain(`"redirectAfter":"${redirectAfter}"`);
     });
 
     it('should reject OAuth when strategy is disabled', async () => {
@@ -300,7 +300,7 @@ describe('OAuth Authentication', async () => {
       // When state is invalid, AppError with redirectPath causes 302 redirect
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
-      expect(location).toContain('/auth/authenticate');
+      expect(location).toContain('/auth/error');
       expect(location).toContain('error=invalid_state');
     });
 
@@ -323,7 +323,7 @@ describe('OAuth Authentication', async () => {
       // When OAuth error occurs, AppError with redirectPath causes 302 redirect
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
-      expect(location).toContain('/auth/authenticate');
+      expect(location).toContain('/auth/error');
       expect(location).toContain('error=oauth_failed');
     });
 
@@ -344,7 +344,7 @@ describe('OAuth Authentication', async () => {
       // When code is missing/empty, AppError with redirectPath causes 302 redirect
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
-      expect(location).toContain('/auth/authenticate');
+      expect(location).toContain('/auth/error');
       expect(location).toContain('error=oauth_failed');
     });
   });
@@ -372,7 +372,7 @@ describe('OAuth Authentication', async () => {
       // When state is invalid/malformed, AppError with redirectPath causes 302 redirect
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
-      expect(location).toContain('/auth/authenticate');
+      expect(location).toContain('/auth/error');
       expect(location).toContain('error=invalid_state');
     });
   });
