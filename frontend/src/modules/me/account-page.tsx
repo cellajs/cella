@@ -90,7 +90,7 @@ const UserAccountPage = () => {
       setLoadingProvider(provider);
 
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams({ type: 'connect', redirectAfter: encodeURIComponent(window.location.pathname) });
+      const params = new URLSearchParams({ type: 'connect', redirectAfter: window.location.pathname });
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);

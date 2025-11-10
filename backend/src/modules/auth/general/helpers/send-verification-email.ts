@@ -78,7 +78,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
-  if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
+  if (redirectPath) verificationURL.searchParams.set('redirect', redirectPath);
 
   // Prepare & send email
   const subjectText = 'backend:email.email_verification.subject';
