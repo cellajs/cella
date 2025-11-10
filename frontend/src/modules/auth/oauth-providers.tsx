@@ -37,7 +37,7 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams();
 
-      params.set('redirect', encodeURIComponent(redirectPath));
+      params.set('redirectAfter', encodeURIComponent(redirectPath));
       if (tokenId) {
         params.set('tokenId', tokenId);
         params.set('type', 'invite');
