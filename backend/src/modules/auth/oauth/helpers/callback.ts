@@ -37,7 +37,7 @@ export const handleOAuthCallback = async (
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
 ): Promise<Response> => {
-  const redirectPath = '/auth/authenticate';
+  const redirectPath = '/auth/error';
   const oauthAccount = await getOAuthAccount(providerUser.id, provider, providerUser.email);
 
   // Handle OAuth callback flows based on cookie
