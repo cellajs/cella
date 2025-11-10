@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import { FileAnalysis } from "../types";
-import { logConfig } from "../config";
+import { logConfig } from "../config/index";
 
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const status = '🗎';

@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { FileAnalysis } from "../../types";
-import { RepoConfig } from '../../config';
+import { RepoConfig } from '../../types/config';
 import { createTempDir, isBinaryFile, removeDir } from '../../utils/files';
 import { writeGitFileAtCommit } from '../../utils/git/files';
 import { gitMergeFile } from '../../utils/git/command';

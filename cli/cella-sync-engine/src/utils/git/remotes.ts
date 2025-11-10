@@ -73,3 +73,22 @@ export async function addRemoteIfMissing(repoPath: string, remoteName: string, r
     await addRemote(repoPath, remoteName, remoteUrl);
   }
 }
+
+/**
+ * Retrieves the URL of a specific remote in the given Git repository.
+ * 
+ * @param repoPath - The file system path to the Git repository
+ * @param remoteName - The name of the remote (e.g., 'origin')
+ * @returns The remote URL as a string, or `null` if the remote does not exist
+ * 
+ * @example
+ * const url = await getRemoteUrl('/repo', 'origin');
+ * console.log(url); // 'https://github.com/user/project.git'
+ */
+export async function getRemoteUrl(repoPath: string, remoteName: string): Promise<string | null> {
+  const exists = await hasRemote(repoPath, remoteName);
+  if (!exists) return null;
+
+  const url = await runGitCommand(`remote get-url ${remoteName}`, repoPath);
+  return url.trim();
+}

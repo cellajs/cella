@@ -1,4 +1,4 @@
-import { RepoConfig } from '../../config';
+import { RepoConfig } from '../../types/config';
 import { gitFetch, gitCheckout } from '../../utils/git/command';
 import { addRemoteIfMissing } from '../../utils/git/remotes';
 

@@ -1,6 +1,6 @@
 import pc from "picocolors";
 
-import { boilerplateConfig, forkConfig } from "./config";
+import { boilerplateConfig, forkConfig } from ".//config/index";
 
 import { prepareSyncBranch } from "./modules/git/prepare-sync-branch";
 import { handleMerge } from "./modules/git/handle-merge";

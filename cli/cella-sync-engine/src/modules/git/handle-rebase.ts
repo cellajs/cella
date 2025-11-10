@@ -1,4 +1,4 @@
-import { RepoConfig } from '../../config';
+import { RepoConfig } from '../../types/config';
 import { gitCheckout, gitCommit, gitRebase, isRebaseInProgress } from '../../utils/git/command';
 import { getUnmergedFiles } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';

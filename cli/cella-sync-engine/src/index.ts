@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import yoctoSpinner from 'yocto-spinner';
-import { boilerplateConfig, forkConfig } from "./config";
+import { boilerplateConfig, forkConfig } from "./config/index";
 import { getGitFileHashes } from "./utils/git/files";
 import { analyzeManyFiles } from "./modules/analyze-file";
 import { analyzedFileLine, logAnalyzedFileLine } from "./log/analyzed-file";
@@ -10,9 +10,14 @@ import { extractSwizzleEntries } from "./modules/swizzle/analyze";
 import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
 
 import { runSync } from "./run-sync";
+import { preflight } from "./preflight";
 
 async function main(): Promise<void> {
+  await preflight();
+
   console.log(pc.cyan("↻ Starting git-sync..."));
+
+  throw new Error("Git sync is temporarily disabled while we improve the sync engine.");
 
   const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
   spinner.start();

@@ -1,4 +1,4 @@
-import type { RepoConfig } from "../../config";
+import type { RepoConfig } from "../../types/config";
 import { CommitSummary, CommitEntry } from "../../types";
 import { getFileCommitHistory } from "../../utils/git/files";
 

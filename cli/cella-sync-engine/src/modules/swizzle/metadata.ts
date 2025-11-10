@@ -1,5 +1,5 @@
 import { SwizzleEntry, SwizzleMetadata } from '../../types';
-import { swizzleConfig } from '../../config';
+import { swizzleConfig } from '../../config/index';
 import { readJsonFile, writeJsonFile, resolvePath } from '../../utils/files';
 
 let cachedMetadata: SwizzleMetadata | null = null;

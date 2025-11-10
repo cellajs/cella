@@ -1,4 +1,4 @@
-import { gitRevListCount } from './command';
+import { gitRevListCount, gitStatusPorcelain } from './command';
 
 /**
  * Get the number of commits that are in `sourceBranch` but not in `baseBranch`.
@@ -22,4 +22,14 @@ export async function getCommitCount(
 ): Promise<number> {
   const countStr = await gitRevListCount(repoPath, sourceBranch, baseBranch);
   return parseInt(countStr, 10);
+}
+
+/**
+ * Checks if the repository has no uncommitted changes.
+ * @param repoPath - The Absolute or relative path to the Git repository
+ * @returns True if the repository has no uncommitted changes, false otherwise
+ */
+export async function isRepoClean(repoPath: string): Promise<boolean> {
+  const status = await gitStatusPorcelain(repoPath);
+  return status.trim().length === 0;
 }

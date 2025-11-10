@@ -24,7 +24,7 @@ const execAsync = promisify(exec);
  * // Your branch is up to date with 'origin/main'.
  */
 export async function runGitCommand(command: string, repoPath: string, options: { skipEditor?: boolean } = {}): Promise<string> {
-  let gitCommand = `git -C ${repoPath} ${command}`
+  let gitCommand = repoPath ? `git -C ${repoPath} ${command}` : `git ${command}`;
 
   if (options.skipEditor) {
     gitCommand = `GIT_EDITOR=true ${gitCommand}`;
@@ -472,4 +472,33 @@ export async function gitRevListCount(
   baseBranch: string
 ): Promise<string> {
   return runGitCommand(`rev-list --count ${baseBranch}..${sourceBranch}`, repoPath);
+}
+
+/**
+ * Executes `git rev-parse --is-inside-work-tree` to check if the given repository path
+ * 
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @returns The raw string output of `git rev-parse`
+ */
+export async function gitRevParseIsInsideWorkTree(repoPath: string): Promise<string> {
+  return runGitCommand(`rev-parse --is-inside-work-tree`, repoPath);
+}
+
+/**
+ * Connects to a remote repository and lists references using `git ls-remote`.
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @param remotePath - The path or URL of the remote to query (e.g., 'origin' or a URL)
+ * @returns The raw string output of `git ls-remote`
+ */
+export async function gitLsRemote(repoPath: string, remotePath: string): Promise<string> {
+  return runGitCommand(`ls-remote ${remotePath}`, repoPath);
+}
+
+/**
+ * Executes `git status --porcelain` to get the status of the working tree.
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @returns The raw string output of `git status --porcelain`
+ */
+export async function gitStatusPorcelain(repoPath: string): Promise<string> {
+  return runGitCommand(`status --porcelain`, repoPath);
 }

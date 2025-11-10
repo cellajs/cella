@@ -1,4 +1,4 @@
-import { RepoConfig } from '../../config';
+import { RepoConfig } from '../../types/config';
 import { gitCleanUntrackedFile, gitMerge, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile, isMergeInProgress, gitCommit, gitPush } from '../../utils/git/command';
 import { FileAnalysis, MergeResult } from '../../types';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';

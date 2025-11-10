@@ -1,5 +1,5 @@
 import { SwizzleSettings, SwizzleAnalysis } from '../../types';
-import { swizzleConfig } from '../../config';
+import { swizzleConfig } from '../../config/index';
 import { matchPathPattern, readJsonFile, resolvePath } from '../../utils/files';
 
 let cachedSettings: SwizzleSettings | null = null;

@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import { FileAnalysis } from "../types";
-import { logConfig } from "../config";
+import { logConfig } from "../config/index";
 
 /**
  * Generates a formatted log line for Swizzle analysis of a file.

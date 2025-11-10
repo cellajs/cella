@@ -1,5 +1,5 @@
 // Dependencies
-import { mkdtemp, rm } from 'fs/promises';
+import { mkdtemp, rm, stat } from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
@@ -169,4 +169,19 @@ export async function removeFileIfExists(filePath: string): Promise<void> {
     console.log('Removing file:', filePath);
     await rm(filePath, { force: true });
   }
+}
+
+/**
+ * Checks if the specified path is a directory.
+ * 
+ * @param dirPath - The path to check
+ * @returns `true` if the path is a directory, otherwise `false`
+ */
+export async function isDirectory(dirPath: string): Promise<boolean> {
+  if (!existsSync(dirPath)) {
+    return false;
+  }
+
+  const stats = await stat(dirPath);
+  return stats.isDirectory();
 }

@@ -1,4 +1,4 @@
-import { RepoConfig } from '../../config';
+import { RepoConfig } from '../../types/config';
 import { gitCheckout, gitMerge, gitCommit, gitAddAll } from '../../utils/git/command';
 import { MergeResult } from '../../types';
 import { getCommitCount } from '../../utils/git/helpers';
