@@ -55,42 +55,43 @@ export const handleOAuthInitiation = async (
  * Stores OAuth context (invite/connect/verify/auth) so that the callback
  * can resume the correct flow. Called at the start of an OAuth process.
  *
- * - invite → validates invitation token, sets invite cookie, stores redirect
- * - connect → validates connecting user, sets connection cookie
- * - verify → validates email verification token, sets verify cookie, stores redirect
+ * - invite → sets invite redirect
+ * - connect → validates connecting user session, sets connection redirect
+ * - verify → validates email verification token, sets verify redirect
  * - auth (default) → sets default redirect
  *
- * Always returns a normalized payload describing the flow.
- *
- * @param ctx - Hono request/response context.
- *
+ * @param ctx - Hono request/response context
+ * @param type - OAuth flow type
+ * @param redirect - Optional redirect URL parameter
+ * @returns normalized redirect URL for the OAuth flow
  */
-// TODO this doesnt look very clean in the cookie when inspecting it in devtools, maybe hash it or encode it?
 const prepareOAuthByContext = async (ctx: Context, type: OAuthFlowType, redirect?: string): Promise<string> => {
-  // Helper to resolve safe default redirect
-  const safeRedirect = redirect ? isValidRedirectPath(decodeURIComponent(redirect)) || appConfig.defaultRedirectPath : appConfig.defaultRedirectPath;
+  const safeRedirectPath = redirect
+    ? isValidRedirectPath(decodeURIComponent(redirect)) || appConfig.defaultRedirectPath
+    : appConfig.defaultRedirectPath;
 
   switch (type) {
-    case 'invite': {
-      return safeRedirect;
-    }
+    case 'invite':
+      return safeRedirectPath;
 
     case 'connect': {
       const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/error' });
       const { user } = await validateSession(sessionToken);
       if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/error' });
 
-      return '/settings#authentication';
+      return safeRedirectPath;
     }
 
     case 'verify': {
-      const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: safeRedirect });
-      if (tokenRecord) return `${appConfig.frontendUrl}/home?&skipWelcome=true`;
+      const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification', redirectPath: safeRedirectPath });
+      if (tokenRecord && safeRedirectPath === appConfig.defaultRedirectPath) {
+        return `${safeRedirectPath}?skipWelcome=true`;
+      }
 
-      return safeRedirect;
+      return safeRedirectPath;
     }
 
     default:
-      return safeRedirect;
+      return safeRedirectPath;
   }
 };

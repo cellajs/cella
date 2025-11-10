@@ -19,5 +19,9 @@ export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenMod
 
   verificationURL.searchParams.set('tokenId', token.id);
   verificationURL.searchParams.set('type', 'verify');
+
+  const reqRedirect = ctx.req.query('redirect');
+  if (reqRedirect) verificationURL.searchParams.set('redirect', reqRedirect);
+
   return ctx.redirect(verificationURL, 302);
 };
