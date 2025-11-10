@@ -1,5 +1,8 @@
 import type { CustomBlockTypes, SlashItemKeys } from '~/modules/common/blocknote/types';
 
+/**
+ * Mapping of base Blocknote types to their corresponding SlashItemKeys.
+ */
 export const baseBlocknoteTypeToKeys = {
   table: ['table'],
   notify: ['notify'],

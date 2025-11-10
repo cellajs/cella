@@ -1,17 +1,17 @@
-import { appConfig } from '../../../config';
-import type { TsdocEnhancer } from './types';
+import { appConfig } from 'config';
+import type { TsdocPlugin } from './types';
 
 /**
- * Handler function for the `tsdoc-enhancer` plugin.
+ * Handler function for the `tsdoc-plugin` plugin.
  *
  * Enhances OpenAPI operations with rich TSDoc comments:
  * - Adds `@function`, `@param`, `@returns`, `@remarks`, and `@see` tags
  * - Improves editor integration and autocomplete for SDK developers
  * - Processes path, query, and body parameters, as well as response codes
  *
- * @param plugin - The TSDoc Enhancer plugin instance
+ * @param plugin - The TSDoc Plugin instance
  */
-export const handler: TsdocEnhancer['Handler'] = ({ plugin }) => {
+export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
   plugin.forEach('operation', (op) => {
     const operation = op.operation;
 

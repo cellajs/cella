@@ -13,8 +13,6 @@ import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
  * @returns Error response or undefined if the token is valid.
  *
  */
-// TODO how to provide additional security against CSRF for endpoints using the cookie with hasValidSingleUseToken middleware?
-// Can this middleware be used to directly check a CRSF token?
 export const hasValidSingleUseToken = (tokenType: TokenType): MiddlewareHandler<Env> =>
   createMiddleware<Env>(async (ctx, next) => {
     if (ctx.req.method !== 'POST') throw new AppError({ status: 400, type: 'insecure_request', severity: 'error' });
