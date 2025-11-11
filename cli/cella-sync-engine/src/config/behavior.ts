@@ -5,5 +5,15 @@ import { BehaviorConfig } from "../types/config";
  * - e.g., how to handle certain edge cases?
  */
 export const behaviorConfig: BehaviorConfig = {
+  /**
+   * Module: run-preflight
+   * Description: Behavior when remote is pointing to a different URL than expected.
+   */
   onRemoteWrongUrl: 'overwrite',
+
+  /**
+   * Module: run-preflight
+   * Description: Behavior when the upstream remote is missing.
+   */
+  onMissingUpstream: 'skip',
 }

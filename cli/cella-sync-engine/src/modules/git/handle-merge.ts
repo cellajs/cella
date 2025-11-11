@@ -1,35 +1,43 @@
-import { RepoConfig } from '../../types/config';
-import { gitCleanUntrackedFile, gitMerge, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile, isMergeInProgress, gitCommit, gitPush } from '../../utils/git/command';
-import { FileAnalysis, MergeResult } from '../../types';
-import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
+import { gitMerge, isMergeInProgress, gitCommit, gitCheckout, gitPush } from '../../utils/git/command';
+import { MergeResult } from '../../types';
+import { getUnmergedFiles } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';
+import { hasAnythingToCommit, isRepoClean } from '../../utils/git/helpers';
+import { hasRemoteBranch } from '../../utils/git/branches';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
  */
 export async function handleMerge(
-  boilerplateConfig: RepoConfig,
-  forkConfig: RepoConfig,
-  analyzedFiles: FileAnalysis[],
+  mergeIntoPath: string,
+  mergeIntoBranch: string,
+  mergeFromBranch: string,
+  resolveConflicts: (() => Promise<void>) | null,
 ): Promise<MergeResult> {
   try {
-    // Start merge
-    await startMerge(forkConfig, boilerplateConfig);
+    // Checkout to the branch to merge into
+    await gitCheckout(mergeIntoPath, mergeIntoBranch);
 
-    // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
-    await cleanupNonConflictedFiles(forkConfig.repoPath, analyzedFiles);
+    // Start merge
+    await startMerge(mergeIntoPath, mergeFromBranch);
 
     // Resolve any remaining conflicts
-    await resolveMergeConflicts(forkConfig, analyzedFiles);
+    if (resolveConflicts) {
+      await resolveConflicts();
+    } 
 
-    // Cleanup all untracked files
-    await gitCleanAllUntrackedFiles(forkConfig.repoPath);
+    // Wait for any manual conflict resolution
+    await waitForManualConflictResolution(mergeIntoPath);
 
     // Finalize merge
-    await gitCommit(forkConfig.repoPath, `Merge ${boilerplateConfig.branch} into ${forkConfig.branch}`, { noVerify: true });
+    if (await hasAnythingToCommit(mergeIntoPath)) {
+      await gitCommit(mergeIntoPath, `Merge ${mergeFromBranch} into ${mergeIntoBranch}`, { noVerify: true });
+    }
 
     // Push merge result
-    // await gitPush(forkConfig.repoPath, 'origin', forkConfig.branch, { setUpstream: true });
+    if (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+      await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
+    }
 
     return { status: 'success', isMerging: false };
   } catch (err) {
@@ -44,44 +52,13 @@ export async function handleMerge(
  * @param forkConfig - RepoConfig of the forked repo
  * @param boilerplateConfig - RepoConfig of the boilerplate repo
  */
-async function startMerge(forkConfig: RepoConfig, boilerplateConfig: RepoConfig) {
+async function startMerge(mergeIntoPath: string, mergeFromBranch: string) {
   try {
-    await gitMerge(forkConfig.repoPath, `${boilerplateConfig.remoteName}/${boilerplateConfig.branch}`, { noEdit: true, noCommit: true });
+    await gitMerge(mergeIntoPath, mergeFromBranch, { noEdit: true, noCommit: true });
   } catch (err) {
     // Check if merge is in conflict state (rethrow if not)
-    if (!isMergeInProgress(forkConfig.repoPath)) {
+    if (!isMergeInProgress(mergeIntoPath)) {
       throw err;
-    }
-  }
-}
-
-/** 
- * Cleans up non-conflicted files based on their merge strategies.
- * 
- * @param forkConfig - Path to the forked repo
- * @param analyzedFiles - List of analyzed files
- */
-async function cleanupNonConflictedFiles(forkConfig: string, analyzedFiles: FileAnalysis[]) {
-  const cached = await getCachedFiles(forkConfig);
-
-  if (cached.length === 0) {
-    return;
-  }
-
-  const analysisMap = new Map(
-    analyzedFiles.map((a) => [a.filePath, a])
-  );
-
-  for (const filePath of cached) {
-    const file = analysisMap.get(filePath);
-
-    if (file?.mergeStrategy?.strategy === 'keep-fork') {
-      await gitRestoreStagedFile(forkConfig, filePath);
-    }
-
-    if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
-      await gitRemoveFilePathFromCache(forkConfig, filePath);
-      await gitCleanUntrackedFile(forkConfig, filePath);
     }
   }
 }
@@ -92,33 +69,10 @@ async function cleanupNonConflictedFiles(forkConfig: string, analyzedFiles: File
  * @param forkConfig - RepoConfig of the forked repo
  * @param analyzedFiles - List of analyzed files
  */
-async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: FileAnalysis[]) {
-  let conflicts = await getUnmergedFiles(forkConfig.repoPath);
+async function waitForManualConflictResolution(mergeIntoPath: string) {
+  let conflicts = await getUnmergedFiles(mergeIntoPath);
 
   if (conflicts.length === 0) return;
-
-  // Map analyses by file path for quick access
-  const analysisMap = new Map(
-    analyzedFiles.map((a) => [a.filePath, a])
-  );
-
-  for (const filePath of conflicts) {
-    const file = analysisMap.get(filePath);
-
-    if (file?.mergeStrategy?.strategy === 'keep-fork') {
-      await resolveConflictAsOurs(forkConfig.repoPath, filePath);
-      continue;
-    }
-
-    if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
-      await gitRemoveFilePathFromCache(forkConfig.repoPath, filePath);
-      await gitCleanUntrackedFile(forkConfig.repoPath, filePath);
-      continue;
-    }
-  }
-
-  // Recheck for any remaining conflicts
-  conflicts = await getUnmergedFiles(forkConfig.repoPath);
 
   // When there are still conflicts, notify user to resolve them
   if (conflicts.length > 0) {
@@ -131,6 +85,6 @@ async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: File
       throw new Error('Merge process aborted by user.');
     }
 
-    return resolveMergeConflicts(forkConfig, analyzedFiles);
+    return waitForManualConflictResolution(mergeIntoPath);
   }
 }

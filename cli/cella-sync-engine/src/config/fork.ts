@@ -34,16 +34,6 @@ export const forkConfig: RepoConfig = {
   remoteName: '',
 
   /**
-   * Owner of the remote repository (only used if use === 'remote')
-   */
-  owner: "",
-
-  /**
-   * Name of the remote repository (only used if use === 'remote')
-   */
-  repo: "",
-
-  /**
    * The remote URL of the boilerplate repository (only used if use === 'remote').
    */
   remoteUrl: '',

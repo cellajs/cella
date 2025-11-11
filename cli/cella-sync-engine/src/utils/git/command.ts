@@ -81,13 +81,14 @@ export async function gitFetch(repoPath: string, remoteName: string): Promise<st
 export async function gitMerge(
   repoPath: string,
   branchName: string,
-  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean } = {}
+  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean; acceptTheirs?: boolean } = {}
 ): Promise<string> {
   const noCommitFlag = options.noCommit ? '--no-commit' : '';
   const noEditFlag = options.noEdit ? '--no-edit' : '';
   const squashFlag = options.squash ? '--squash' : '';
+  const acceptTheirsFlag = options.acceptTheirs ? '--strategy-option=theirs' : '';
 
-  const cmd = `merge ${branchName} ${squashFlag} ${noEditFlag} ${noCommitFlag}`;
+  const cmd = `merge ${branchName} ${squashFlag} ${noEditFlag} ${noCommitFlag} ${acceptTheirsFlag}`;
   return runGitCommand(cmd, repoPath);
 }
 
@@ -501,4 +502,17 @@ export async function gitLsRemote(repoPath: string, remotePath: string): Promise
  */
 export async function gitStatusPorcelain(repoPath: string): Promise<string> {
   return runGitCommand(`status --porcelain`, repoPath);
+}
+
+/**
+ * Pulls the latest changes from the specified branch of the origin remote.
+ * @param repoPath - The file system path to the git repository
+ * @param branchName - The name of the branch to pull from
+ * @returns The stdout from the git pull command
+ *
+ * @example
+ * await gitPull('/path/to/repo', 'development');
+ */
+export async function gitPull(repoPath: string, branchName: string): Promise<string> {
+  return runGitCommand(`pull origin ${branchName}`, repoPath);
 }

@@ -17,9 +17,9 @@ export const boilerplateConfig: RepoConfig = {
 
   /**
    * The local file system path to the boilerplate repository.
-   * Make sure this path is correct on your machine (only used if use === 'local').
+   * - For `remote` repos, this is the path where the repo was cloned to (fork path)
    */
-  repoPath: "/home/gino/Github/cella",
+  repoPath: "/home/gino/Github/raak",
 
   /**
    * The remote URL of the boilerplate repository (only used if use === 'remote').
@@ -33,19 +33,12 @@ export const boilerplateConfig: RepoConfig = {
   branch: "development",
 
   /**
+   * The target branch to apply resolved (squashed) commits into.
+   */
+  targetBranch: "",
+
+  /**
    * The name to use when adding the boilerplate repository as a remote (only used if use === 'remote').
    */
   remoteName: 'cella-remote',
-
-  /**
-   * @todo: I think we can remove this, but for now keep it
-   * The owner of the boilerplate repository (only used if use === 'remote').
-   */
-  owner: "cellajs",
-
-  /**
-   * @todo: I think we can remove this, but for now keep it
-   * The name of the boilerplate repository (only used if use === 'remote').
-   */
-  repo: "cella",
 }

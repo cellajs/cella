@@ -7,21 +7,22 @@ export type RepoConfig = {
   /**
    * Determines whether the repository is local or remote.
    * - If `use` is `"local"`, you must provide a valid `filePath`.
-   * - If `use` is `"remote"`, you must specify `owner`, `repo` and `remoteUrl`.
+   * - If `use` is `"remote"`, you must specify `remoteUrl`.
    */
   use: "local" | "remote";
 
   /**
    * The absolute path to the local repository on disk.
-   * Required if `use` is `"local"`.
+   * - For `local` repos, this is the direct path to the repo
+   * - For `remote` repos, this is the path where the repo was cloned to (fork path)
    */
   repoPath: string;
 
   /**
    * The remote URL
-   * Required if `use` is `"remote"`. 
+   * - Required if `use` is `"remote"`. 
    */
-  remoteUrl?: string;
+  remoteUrl: string;
 
   /**
    * The branch name
@@ -31,31 +32,16 @@ export type RepoConfig = {
   branch: string;
 
   /**
-   * (Optional) The target branch to apply resolved (squashed) commits into.
+   * The target branch to apply resolved (squashed) commits into.
    * - Only used in the fork configuration, where after syncing into the `branch`,
    *   the changes will be squashed and merged into this `targetBranch`.
    */
-  targetBranch?: string;
+  targetBranch: string;
 
   /**
    * Name to add the remote as
    */
   remoteName: string;
-
-  /** 
-   * @todo: I think we can remove this, but for now keep it
-   * GitHub owner or organization name 
-   * Required if `use` is `"remote"`.
-   * 
-   */
-  owner: string;
-
-  /** 
-   * @todo: I think we can remove this, but for now keep it
-   * GitHub repository name
-   * Required if `use` is `"remote"`.
-   */
-  repo: string;
 };
 
 /**
@@ -112,9 +98,19 @@ export type Log = {
  */
 export type BehaviorConfig = {
   /**
+   * Module: run-preflight
    * Behavior when the remote repository already exists but has a different URL than expected.
    * - 'overwrite': Update the remote URL to the expected one.
    * - 'error': Throw an error and halt the operation.
    */
-  onRemoteWrongUrl?: 'overwrite' | 'error'; 
+  onRemoteWrongUrl?: 'overwrite' | 'error';
+
+  /**
+   * Module: run-preflight
+   * Behavior when the upstream remote is missing and some commands require it (for example a `git pull`)
+   * Options:
+   * - 'skip': Skip operations that require the upstream remote.
+   * - 'error': Throw an error and halt the operation.
+   */
+  onMissingUpstream?: 'skip' | 'error';
 };

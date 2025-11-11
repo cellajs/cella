@@ -10,12 +10,10 @@ import { extractSwizzleEntries } from "./modules/swizzle/analyze";
 import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
 
 import { runSync } from "./run-sync";
-import { preflight } from "./preflight";
+import { runPreflight } from "./run-preflight";
 
 async function main(): Promise<void> {
-  await preflight();
-
-  console.log(pc.cyan("↻ Starting git-sync..."));
+  await runPreflight();
 
   const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
   spinner.start();
@@ -38,7 +36,7 @@ async function main(): Promise<void> {
 
   spinner.stop();
 
-  throw new Error("Stop here for testing");
+  console.log(pc.green("✔ File analysis complete."));
 
   spinner.start("Update swizzle...");
   
@@ -46,6 +44,7 @@ async function main(): Promise<void> {
   writeSwizzleMetadata(swizzleEntries);
 
   spinner.stop();
+  console.log(pc.green("✔ Swizzle update complete."));
 
   // Log the analyzed files
   console.log(pc.bold("\nFile analysis:"));
@@ -65,6 +64,7 @@ async function main(): Promise<void> {
   console.log(pc.bold(`\nSummary:`));
   const summaryLines = analyzedSummaryLines(analyzedFiles);
   logAnalyzedSummaryLines(summaryLines);
+
 
   await runSync(analyzedFiles);
 }

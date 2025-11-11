@@ -33,3 +33,33 @@ export async function isRepoClean(repoPath: string): Promise<boolean> {
   const status = await gitStatusPorcelain(repoPath);
   return status.trim().length === 0;
 }
+
+/**
+ * Checks if there is anything to commit in the repository.
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @returns True if there are staged changes or uncommitted changes to commit, false otherwise
+ */
+export async function hasAnythingToCommit(repoPath: string): Promise<boolean> {
+  const status = await gitStatusPorcelain(repoPath);
+  // `git status --porcelain` output:
+  //   empty string -> nothing to commit
+  //   non-empty -> something staged/unstaged
+  return status.trim().length > 0;
+}
+
+/**
+ * Checks if the branch has commits that need to be pushed.
+ * @param repoPath - Path to the repository
+ * @param branch - Local branch name
+ * @param remote - Remote name, default 'origin'
+ * @returns True if there are commits to push
+ */
+export async function hasAnythingToPush(
+  repoPath: string,
+  branch: string,
+  remote = 'origin'
+): Promise<boolean> {
+  const countStr = await gitRevListCount(repoPath, branch, `${remote}/${branch}`);
+  const count = parseInt(countStr, 10);
+  return count > 0;
+}
