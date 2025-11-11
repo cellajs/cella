@@ -550,7 +550,7 @@ export const zGithubData = z.object({
   query: z.optional(
     z.object({
       type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
-      redirect: z.optional(z.string()),
+      redirectAfter: z.optional(z.string()),
     }),
   ),
 });
@@ -561,7 +561,7 @@ export const zGoogleData = z.object({
   query: z.optional(
     z.object({
       type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
-      redirect: z.optional(z.string()),
+      redirectAfter: z.optional(z.string()),
     }),
   ),
 });
@@ -572,7 +572,7 @@ export const zMicrosoftData = z.object({
   query: z.optional(
     z.object({
       type: z.optional(z.enum(['auth', 'connect', 'invite', 'verify'])),
-      redirect: z.optional(z.string()),
+      redirectAfter: z.optional(z.string()),
     }),
   ),
 });

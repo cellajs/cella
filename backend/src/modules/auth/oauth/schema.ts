@@ -5,7 +5,7 @@ export type OAuthFlowType = (typeof oauthFlowTypes)[number];
 
 export const oauthQuerySchema = z.object({
   type: z.enum(oauthFlowTypes).default('auth'),
-  redirect: z.string().optional(),
+  redirectAfter: z.string().optional(),
 });
 
 export const oauthCallbackQuerySchema = z.object({

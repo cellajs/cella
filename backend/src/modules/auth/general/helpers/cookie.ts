@@ -8,7 +8,7 @@ import { env } from '../../../../env';
 
 const isProduction = appConfig.mode === 'production';
 
-type CookieName = TokenType | 'session' | 'totp-challenge' | 'passkey-challenge' | `oauth-state-${string}` | 'oauth-redirect';
+type CookieName = TokenType | 'session' | 'totp-challenge' | 'passkey-challenge' | `oauth-state-${string}`;
 
 /**
  * Sets an authentication cookie.
