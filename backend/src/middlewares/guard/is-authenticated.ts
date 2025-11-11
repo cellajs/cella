@@ -44,13 +44,15 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
       username: user.slug,
     });
 
-    // Fetch user's memberships from the database
+    // Fetch the user's memberships and system role in parallel
     const [memberships, [userRoleRecord]] = await Promise.all([
       db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
       db.select({ role: systemRolesTable.role }).from(systemRolesTable).where(eq(systemRolesTable.userId, user.id)).limit(1),
     ]);
+
+    // Store values in context for downstream use
     ctx.set('memberships', memberships);
-    ctx.set('userRole', userRoleRecord.role);
+    ctx.set('userRole', userRoleRecord?.role || 'user'); // Fallback to 'user' if no system role is assigned
   } catch (err) {
     // If session validation fails, remove cookie
     if (err instanceof AppError) deleteAuthCookie(ctx, 'session');
