@@ -4,6 +4,7 @@ import { and, count, eq, ilike, inArray, ne, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
@@ -24,13 +25,14 @@ const usersRouteHandlers = app
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, mode, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
+    const { q, sort, order, offset, mode, limit, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
     const user = getContextUser();
 
     const filters = [
       // Filter by role if provided
-      ...(role ? [eq(usersTable.role, role)] : []),
+      //TODO(DAVID) fix
+      // ...(role ? [eq(usersTable.role, role)] : []),
 
       // Exclude self when fetching shared memberships
       ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
@@ -47,7 +49,7 @@ const usersRouteHandlers = app
         email: usersTable.email,
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
-        role: usersTable.role,
+        role: systemRolesTable.role,
       },
       sort,
       usersTable.id,
