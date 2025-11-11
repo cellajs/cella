@@ -1,23 +1,18 @@
 import type { DefinePlugin } from '@hey-api/openapi-ts';
 
 /**
- * Configuration options for the `tsdoc-enhancer` plugin.
+ * Configuration options for the `tsdoc-plugin` plugin.
  */
 export type Config = {
   /**
    * Plugin name (must be unique across plugins).
    */
-  name: 'tsdoc-enhancer';
+  name: 'tsdoc-plugin';
 
   /**
    * Output file name, without `.gen.ts` extension.
    */
   output?: string;
-
-  /**
-   * Custom flag or option for future plugin logic.
-   */
-  myOption?: boolean;
 };
 
-export type TsdocEnhancer = DefinePlugin<Config>;
+export type TsdocPlugin = DefinePlugin<Config>;

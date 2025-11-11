@@ -97,7 +97,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
       <AttachmentsTableBar
         entity={entity}
         queryKey={queryOptions.queryKey}
@@ -112,32 +112,30 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         isCompact={isCompact}
         setIsCompact={setIsCompact}
       />
-      <div className={(isCompact && 'isCompact') || ''}>
-        <DataTable<Attachment>
-          {...{
-            rows,
-            rowHeight: 52,
-            onRowsChange,
-            rowKeyGetter: (row) => row.id,
-            columns: columns.filter((column) => column.visible),
-            enableVirtualization: false,
-            limit,
-            error,
-            isLoading,
-            isFetching,
-            isFiltered: !!q,
-            hasNextPage,
-            fetchMore,
-            selectedRows: new Set(selected.map((s) => s.id)),
-            onSelectedRowsChange,
-            sortColumns,
-            onSortColumnsChange,
-            NoRowsComponent: (
-              <ContentPlaceholder icon={PaperclipIcon} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
-            ),
-          }}
-        />
-      </div>
+      <DataTable<Attachment>
+        {...{
+          rows,
+          rowHeight: 52,
+          onRowsChange,
+          rowKeyGetter: (row) => row.id,
+          columns: columns.filter((column) => column.visible),
+          enableVirtualization: false,
+          limit,
+          error,
+          isLoading,
+          isFetching,
+          isFiltered: !!q,
+          hasNextPage,
+          fetchMore,
+          selectedRows: new Set(selected.map((s) => s.id)),
+          onSelectedRowsChange,
+          sortColumns,
+          onSortColumnsChange,
+          NoRowsComponent: (
+            <ContentPlaceholder icon={PaperclipIcon} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+          ),
+        }}
+      />
     </div>
   );
 };

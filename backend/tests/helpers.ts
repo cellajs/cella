@@ -6,15 +6,13 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { apiErrorSchema } from '#/utils/schema/error';
-import { redirectResponseSchema } from '#/utils/schema/responses';
+import { apiErrorSchema } from '#/utils/schema/api-error';
 import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/basic';
 import { pastIsoDate } from '../mocks/utils';
 
 /**
  * Types for test responses
  */
-export type AuthResponse = z.infer<typeof redirectResponseSchema>;
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 
 /**

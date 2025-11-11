@@ -1,4 +1,4 @@
-import config from "./default";
+import type config from "./default";
 
 export type DeepPartial<T> = T extends object
   ? {

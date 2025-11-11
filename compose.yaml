@@ -1,3 +1,5 @@
+name: cella
+
 volumes:
   pg_data:
 

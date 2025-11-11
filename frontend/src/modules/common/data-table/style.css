@@ -80,3 +80,13 @@
   outline: none !important;
   background: none !important;
 }
+
+.rdg-cell-resizable::after {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  right: 0;
+  pointer-events: none;
+  border-right: 2px solid hsl(var(--accent));
+}

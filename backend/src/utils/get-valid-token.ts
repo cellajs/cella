@@ -16,7 +16,6 @@ type BaseProps = {
   token: string;
   tokenType: TokenModel['type'];
   invokeToken?: boolean;
-  redirectPath?: string;
 };
 /**
  * Validates a token by its value, ensuring it matches the required type and is neither expired nor invoked.
@@ -26,11 +25,10 @@ type BaseProps = {
  * @param token The token string to validate.
  * @param invokeToken (optional) Whether to create a single-use token after invoking/consuming the primary `token`.
  * @param tokenType The required type of the token (e.g., 'password-reset', 'email-verification').
- * @param isRedirect - Whether error requests should be redirects.
  * @returns The valid token record from the database.
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
-export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true, redirectPath }: BaseProps): Promise<TokenModel> => {
+export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true }: BaseProps): Promise<TokenModel> => {
   // Hash token
   const hashedToken = encodeLowerCased(token);
 
@@ -41,30 +39,30 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true,
     .where(and(eq(tokensTable.token, hashedToken), eq(tokensTable.type, tokenType)))
     .limit(1);
 
-  if (!tokenRecord) throw new AppError({ status: 401, type: `${tokenType}_not_found`, severity: 'warn', redirectPath });
+  if (!tokenRecord) throw new AppError({ status: 401, type: `${tokenType}_not_found`, severity: 'warn' });
 
   // If token doesn't match a possible existing auth session, abort
   let existingSessionToken: string | null = null;
   try {
-    const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: redirectPath });
+    const { sessionToken } = await getParsedSessionCookie(ctx);
     existingSessionToken = sessionToken;
   } catch (err) {}
   if (existingSessionToken) {
     // Get user from valid session
     const { user } = await validateSession(existingSessionToken);
-    if (user?.id && tokenRecord.userId !== user.id) throw new AppError({ status: 400, type: 'user_mismatch', severity: 'warn', redirectPath });
+    if (user?.id && tokenRecord.userId !== user.id) throw new AppError({ status: 400, type: 'user_mismatch', severity: 'warn' });
   }
 
   // Token expired
   if (isExpiredDate(tokenRecord.expiresAt)) {
-    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', redirectPath });
+    throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn' });
   }
 
   // If token already invoked but not expired, last resort is to check if user still has the single use token session
   // If that isnt present anymore, we consider the token expired anyways
   if (tokenRecord.invokedAt) {
     const singleUseToken = await getAuthCookie(ctx, tokenType);
-    if (!singleUseToken) throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn', redirectPath });
+    if (!singleUseToken) throw new AppError({ status: 401, type: `${tokenRecord.type}_expired`, severity: 'warn' });
   }
 
   // Create single use session token, mark token as invoked, and update expiresAt to 5 min from now

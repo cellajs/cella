@@ -12,7 +12,8 @@ import { inactiveMembershipSchema, membershipBaseSchema, membershipSchema } from
 import { organizationSchema } from '#/modules/organizations/schema';
 import { userSchema } from '#/modules/users/schema';
 import { userBaseSchema } from '#/modules/users/schema-base';
-import { apiErrorSchema } from '#/utils/schema/error';
+import { apiErrorSchema } from '#/utils/schema/api-error';
+import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
 
 // OpenAPI configuration
 const openApiConfig = {
@@ -61,6 +62,10 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('Menu', menuSchema);
   registry.register('ApiError', apiErrorSchema);
 
+  // Register error responses
+  registerAllErrorResponses(registry, errorResponses);
+
+  // Register application-specific schemas
   registerAppSchema(registry);
 
   // Review all existing schemas

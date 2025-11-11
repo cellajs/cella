@@ -8,9 +8,9 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
 import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
-import { UsersTableBar } from '~/modules/users/table/bar';
-import { useColumns } from '~/modules/users/table/columns';
 import type { UsersRouteSearchParams, UserWithMemberships } from '~/modules/users/types';
+import { UsersTableBar } from './bar';
+import { useColumns } from './columns';
 
 const LIMIT = appConfig.requestLimits.users;
 

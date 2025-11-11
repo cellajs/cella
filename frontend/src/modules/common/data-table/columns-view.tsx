@@ -1,4 +1,5 @@
-import { FoldHorizontalIcon, SlidersHorizontalIcon, UnfoldHorizontalIcon } from 'lucide-react';
+import { DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
+import { SlidersHorizontalIcon } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -65,12 +66,19 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
             {column.name}
           </DropdownMenuCheckboxItem>
         ))}
-        {/* Not finished, therefore hidden */}
+        <DropdownMenuSeparator className="border-t my-1" />
+
+        {/* Enabled a more compacted view */}
         {setIsCompact && isCompact !== undefined && (
-          <Button variant="outline" onClick={() => setIsCompact(!isCompact)} className="hidden w-full mt-3 gap-2" size="sm">
-            {isCompact ? <UnfoldHorizontalIcon size={16} /> : <FoldHorizontalIcon size={16} />}
-            <span>{isCompact ? t('common:normal_density') : t('common:high_density')}</span>
-          </Button>
+          <DropdownMenuCheckboxItem
+            className="min-h-8"
+            onSelect={(e) => e.preventDefault()}
+            checked={isCompact}
+            onCheckedChange={() => setIsCompact(!isCompact)}
+            aria-label={t('common:detailed_menu')}
+          >
+            {t('common:compact_view')}
+          </DropdownMenuCheckboxItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

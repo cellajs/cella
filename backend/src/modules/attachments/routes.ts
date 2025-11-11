@@ -4,7 +4,8 @@ import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/gua
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { baseElectrycSyncQuery, idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -31,7 +32,7 @@ const attachmentRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -52,7 +53,7 @@ const attachmentRoutes = {
         description: 'Attachments',
         content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -74,7 +75,7 @@ const attachmentRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -102,7 +103,7 @@ const attachmentRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -130,7 +131,7 @@ const attachmentRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -147,7 +148,7 @@ const attachmentRoutes = {
     request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
     responses: {
       200: { description: 'Success' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -163,7 +164,7 @@ const attachmentRoutes = {
     request: { params: z.object({ id: idSchema }) },
     responses: {
       200: { description: 'Success' },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

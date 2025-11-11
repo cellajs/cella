@@ -24,7 +24,10 @@ import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsRouteSearchParams>;
+type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsRouteSearchParams> & {
+  isCompact: boolean;
+  setIsCompact: (isCompact: boolean) => void;
+};
 
 export const OrganizationsTableBar = ({
   selected,
@@ -34,6 +37,8 @@ export const OrganizationsTableBar = ({
   columns,
   setColumns,
   clearSelection,
+  isCompact,
+  setIsCompact,
 }: OrganizationsTableBarProps) => {
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
@@ -168,7 +173,7 @@ export const OrganizationsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
 
       {/* Export */}
       <Export

@@ -4,7 +4,7 @@ import { isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/schema';
 import { locationSchema } from '#/utils/schema/common';
-import { errorResponses } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authOAuthRoutes = {
   github: createCustomRoute({
@@ -22,7 +22,7 @@ const authOAuthRoutes = {
         description: 'Redirect to GitHub',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -47,7 +47,7 @@ const authOAuthRoutes = {
         description: 'Redirect to frontend',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -66,7 +66,7 @@ const authOAuthRoutes = {
         description: 'Redirect to Google',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -85,7 +85,7 @@ const authOAuthRoutes = {
         description: 'Redirect to frontend',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -104,7 +104,7 @@ const authOAuthRoutes = {
         description: 'Redirect to Microsoft',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -123,7 +123,7 @@ const authOAuthRoutes = {
         description: 'Redirect to frontend',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

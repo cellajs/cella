@@ -38,7 +38,7 @@ export default function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
         id={String(id)}
         showCloseButton={showCloseButton}
         container={containerElement}
-        className={cn(className, containerElement && 'z-40 [.sheeter-open_&]:z-40')}
+        className={cn(className, containerElement && 'z-40 in-[.sheeter-open]:z-40')}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();

@@ -3,7 +3,8 @@ import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const userRoutes = {
   getUsers: createCustomRoute({
@@ -31,7 +32,7 @@ const userRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   deleteUsers: createCustomRoute({
@@ -54,7 +55,7 @@ const userRoutes = {
         description: 'Success',
         content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getUser: createCustomRoute({
@@ -71,7 +72,7 @@ const userRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   updateUser: createCustomRoute({
@@ -93,7 +94,7 @@ const userRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

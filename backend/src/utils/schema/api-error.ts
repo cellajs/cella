@@ -47,6 +47,7 @@ const ServerErrorStatusCodeEnum = z.union([
   z.literal(510),
   z.literal(511),
 ]);
+
 /**
  * Schema for errors in a response.
  */

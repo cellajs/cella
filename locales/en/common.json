@@ -135,7 +135,6 @@
   "hide": "Hide",
   "hide_advanced_settings": "Hide advanced settings",
   "hide_details": "Hide details",
-  "high_density": "High density",
   "history": "History",
   "home": "Home",
   "home.text": "An overview of your activity on {{appName}}",
@@ -224,7 +223,6 @@
   "no_resource_found": "No {{resource}} found",
   "no_resource_yet": "No {{resource}} yet",
   "no_selection": "None selected",
-  "normal_density": "Normal density",
   "not_processed": "Not processed",
   "notification_email": "Notification email",
   "notification_email.text": "Receive announcements and product updates through this email address.",
@@ -487,5 +485,6 @@
   "reject": "Reject",
   "my_account": "My account",
   "chat_with_us": "Chat with us",
-  "accept_invitations.text": "Here you can accept or reject invitations to new organizations."
+  "accept_invitations.text": "Here you can accept or reject invitations to new entities.",
+  "compact_view": "Compact view"
 }

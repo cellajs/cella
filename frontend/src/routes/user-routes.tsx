@@ -1,11 +1,13 @@
-import { createRoute, useParams } from '@tanstack/react-router';
+import { createRoute, redirect, useParams } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import ErrorNotice from '~/modules/common/error-notice';
+import ErrorNotice, { getErrorInfo } from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
+import { ToastSeverity } from '~/modules/common/toaster/service';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { userQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
-import { AppLayoutRoute } from '~/routes/base-routes';
+import { AppLayoutRoute, errorSearchSchema } from '~/routes/base-routes';
+import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
@@ -62,8 +64,20 @@ export const UserInOrganizationProfileRoute = createRoute({
 export const UserAccountRoute = createRoute({
   path: '/account',
   staticData: { isAuth: true },
+  validateSearch: errorSearchSchema,
   head: () => ({ meta: [{ title: appTitle('My account') }] }),
   getParentRoute: () => AppLayoutRoute,
+  beforeLoad: ({ search }) => {
+    if (search.error) {
+      const { message } = getErrorInfo({ errorFromQuery: search.error });
+
+      const severityMap: Record<string, ToastSeverity> = { error: 'error', warn: 'warning', fatal: 'error' };
+
+      const toastSeverity = severityMap[search.severity || 'warning'];
+      useToastStore.getState().showToast(message, toastSeverity);
+      throw redirect({ to: '/account', replace: true });
+    }
+  },
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();
     const options = { ...userAuthOptions, revalidateIfStale: true };

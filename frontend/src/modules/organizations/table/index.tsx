@@ -31,9 +31,11 @@ const OrganizationsTable = () => {
   const { q, sort, order } = search;
   const limit = LIMIT;
 
+  const [isCompact, setIsCompact] = useState(false);
+
   // Build columns
   const [selected, setSelected] = useState<Organization[]>([]);
-  const [columns, setColumns] = useColumns();
+  const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = organizationsQueryOptions({ ...search, limit });
@@ -94,7 +96,7 @@ const OrganizationsTable = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
       <OrganizationsTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
@@ -103,6 +105,8 @@ const OrganizationsTable = () => {
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
       />
       <DataTable<Organization>
         {...{

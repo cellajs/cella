@@ -108,7 +108,7 @@ export const MenuSheet = () => {
   return (
     <div data-search={!!searchTerm} className="group/menu w-full py-3 px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
       {/* Only visible when floating nav is present. To return to home */}
-      <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
+      <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2 pt-3">
         <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
           <ArrowLeftIcon size={16} strokeWidth={1.5} />
           <span className="ml-2 font-normal">Home</span>

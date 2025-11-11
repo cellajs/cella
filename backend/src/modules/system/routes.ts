@@ -4,7 +4,8 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
-import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -26,7 +27,7 @@ const systemRoutes = {
         description: 'Invitations are sent',
         content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -49,7 +50,7 @@ const systemRoutes = {
       204: {
         description: 'Newsletter sent',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -68,7 +69,7 @@ const systemRoutes = {
         description: 'Presigned URL',
         content: { 'application/json': { schema: z.string() } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -88,7 +89,7 @@ const systemRoutes = {
       204: {
         description: 'Paddle webhook received',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

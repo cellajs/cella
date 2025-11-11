@@ -8,7 +8,8 @@ import {
   organizationWithMembershipSchema,
 } from '#/modules/organizations/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const organizationRoutes = {
   createOrganization: createCustomRoute({
@@ -30,7 +31,7 @@ const organizationRoutes = {
         description: 'Organization was created',
         content: { 'application/json': { schema: organizationWithMembershipSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getOrganizations: createCustomRoute({
@@ -47,7 +48,7 @@ const organizationRoutes = {
         description: 'Organizations',
         content: { 'application/json': { schema: paginationSchema(organizationSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   updateOrganization: createCustomRoute({
@@ -69,7 +70,7 @@ const organizationRoutes = {
         description: 'Organization was updated',
         content: { 'application/json': { schema: organizationSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getOrganization: createCustomRoute({
@@ -86,7 +87,7 @@ const organizationRoutes = {
         description: 'Organization',
         content: { 'application/json': { schema: organizationSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   deleteOrganizations: createCustomRoute({
@@ -112,7 +113,7 @@ const organizationRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

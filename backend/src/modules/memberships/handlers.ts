@@ -16,7 +16,7 @@ import { AppError } from '#/lib/errors';
 // import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
-import { getAssociatedEntityDetails, insertMemberships } from '#/modules/memberships/helpers';
+import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
 import { memberSelect, userBaseSelect } from '#/modules/users/helpers/select';
@@ -68,9 +68,6 @@ const membershipRouteHandlers = app
     // Step 0: Contextual user and organization
     const user = getContextUser();
     const organization = getContextOrganization();
-
-    // Step 0: Associated entity (optional hierarchy metadata)
-    const associatedEntity = getAssociatedEntityDetails(entity);
 
     // Step 0: Scenario buckets
     const rejectedItems: string[] = []; // Scenario 1: already active members
@@ -181,8 +178,7 @@ const membershipRouteHandlers = app
         entity,
         createdBy: user.id,
         contextType: entityType,
-        organizationId: organization.id,
-        ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
+        ...getBaseMembershipEntityId(entity),
       }));
 
       await db.insert(inactiveMembershipsTable).values(membershipsToInsert);
@@ -221,8 +217,7 @@ const membershipRouteHandlers = app
       entity,
       createdBy: user.id,
       contextType: entityType,
-      organizationId: organization.id,
-      ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
+      ...getBaseMembershipEntityId(entity),
     }));
 
     if (newUserTokenEmails.length > 0) await db.insert(inactiveMembershipsTable).values(membershipsToInsert).returning();
@@ -245,8 +240,7 @@ const membershipRouteHandlers = app
         expiresAt: createDate(new TimeSpan(7, 'd')),
         role,
         entityType,
-        [targetEntityIdField]: entityId,
-        ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
+        ...getBaseMembershipEntityId(entity),
       };
     });
 
@@ -451,13 +445,7 @@ const membershipRouteHandlers = app
     const [inactiveMembership] = await db
       .select()
       .from(inactiveMembershipsTable)
-      .where(
-        and(
-          eq(inactiveMembershipsTable.id, inactiveMembershipId),
-          eq(inactiveMembershipsTable.userId, user.id),
-          eq(inactiveMembershipsTable.contextType, 'organization'),
-        ),
-      )
+      .where(and(eq(inactiveMembershipsTable.id, inactiveMembershipId), eq(inactiveMembershipsTable.userId, user.id)))
       .limit(1);
 
     if (!inactiveMembership)
@@ -465,9 +453,12 @@ const membershipRouteHandlers = app
 
     if (acceptOrReject === 'accept') {
       // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
-      // TODO(DAVID) test this in raak for projects and edge cases
-      const entity = await resolveEntity('organization', inactiveMembership.organizationId);
-      if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
+      const entityFieldIdName = appConfig.entityIdFields[inactiveMembership.contextType];
+      const entityFieldId = inactiveMembership[entityFieldIdName];
+      if (!entityFieldId) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: inactiveMembership.contextType });
+
+      const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId);
+      if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: inactiveMembership.contextType });
 
       const activatedMemberships = await insertMemberships([
         { entity, userId: user.id, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy },

@@ -10,7 +10,7 @@ function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
   return (
     <div className="flex flex-row gap-2 items-center">
       {typeof title === 'string' ? <span>{title}</span> : title}
-      <Badge size="sm" variant="plain" className="w-fit [.unsaved-changes_&]:flex hidden gap-2">
+      <Badge size="sm" variant="plain" className="w-fit in-[.unsaved-changes]:flex hidden gap-2">
         <SquarePenIcon size={12} />
         <span className="max-sm:hidden">{t('common:unsaved_changes')}</span>
       </Badge>

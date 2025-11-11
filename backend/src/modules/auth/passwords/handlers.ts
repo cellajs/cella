@@ -73,8 +73,6 @@ const authPasswordsRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-    const isMembershipInvite = validToken.type === 'invitation' && validToken.inactiveMembershipId;
-
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -96,13 +94,9 @@ const authPasswordsRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user, strategy);
 
-    // If no membership invitation, we are done
-    if (!isMembershipInvite) return ctx.json({ shouldRedirect: true, redirectPath: appConfig.defaultRedirectPath }, 201);
+    const membershipInvite = !!(validToken.type === 'invitation' && validToken.inactiveMembershipId);
 
-    // Redirect to accept invitation if membership invite
-    const redirectPath = `/home?skipWelcome=true`;
-
-    return ctx.json({ shouldRedirect: true, redirectPath }, 201);
+    return ctx.json({ membershipInvite }, 201);
   })
   /**
    * Request reset password email
@@ -189,15 +183,10 @@ const authPasswordsRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    const mfaRedirectPath = await initiateMfa(ctx, user);
-    if (mfaRedirectPath) {
-      // Append fromRoot to avoid redirecting to FE homepage
-      const redirectPath = `${mfaRedirectPath}?fromRoot=true`;
-      return ctx.json({ shouldRedirect: true, redirectPath }, 201);
-    }
+    const mfaInitiated = await initiateMfa(ctx, user);
 
     await setUserSession(ctx, user, strategy);
-    return ctx.json({ shouldRedirect: false }, 201);
+    return ctx.json({ mfa: !!mfaInitiated }, 201);
   })
   /**
    * Sign in with email and password
@@ -236,13 +225,13 @@ const authPasswordsRouteHandlers = app
     // If email is not verified, send verification email
     if (!emailVerified) {
       sendVerificationEmail({ userId: user.id });
-      return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
+      return ctx.json({ emailVerified: false }, 200);
     }
 
-    const redirectPath = await initiateMfa(ctx, user);
-    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+    const mfaInitiated = await initiateMfa(ctx, user);
+    if (mfaInitiated) return ctx.json({ mfa: true, emailVerified: true }, 200);
 
     await setUserSession(ctx, user, 'password');
-    return ctx.json({ shouldRedirect: false }, 200);
+    return ctx.json({ emailVerified: true }, 200);
   });
 export default authPasswordsRouteHandlers;

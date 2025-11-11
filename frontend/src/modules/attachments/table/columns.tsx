@@ -88,6 +88,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       editable: true,
       visible: true,
       sortable: true,
+      resizable: true,
       minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
@@ -121,6 +122,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       name: '',
       visible: !isMobile,
       sortable: false,
+      resizable: true,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
@@ -256,7 +258,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={true} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
     },
     {
       key: 'modifiedAt',

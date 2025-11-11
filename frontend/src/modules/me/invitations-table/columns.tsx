@@ -46,13 +46,13 @@ export const useColumns = () => {
   const columns: ColumnOrColumnGroup<Invitation>[] = [
     {
       key: 'name',
-      name: t('common:organization'),
+      name: t('common:entity'),
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
-          <AvatarWrap type="organization" className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
+          <AvatarWrap type={row.entity.entityType} className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
           <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
         </>
       ),

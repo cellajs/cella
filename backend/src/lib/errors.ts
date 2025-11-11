@@ -7,12 +7,12 @@ import { type Env, getContextOrganization, getContextUser } from '#/lib/context'
 import type locales from '#/lib/i18n-locales';
 import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
-import type { apiErrorSchema } from '#/utils/schema/error';
+import type { apiErrorSchema } from '#/utils/schema/api-error';
 
 const isProduction = appConfig.mode === 'production';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
-type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null };
+type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & { errorPagePath?: string };
 
 type CellaErrorKeys = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
 type AppSpecificErrorKeys = Exclude<keyof (typeof locales)['en']['appError'], `${string}.text`>;
@@ -27,7 +27,7 @@ export type ConstructedError = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
-  redirectPath?: string;
+  shouldRedirect?: boolean;
 };
 
 // Custom error class to handle App errors
@@ -36,7 +36,7 @@ export class AppError extends Error {
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
   severity: ErrorSchemaType['severity'];
-  redirectPath: string | null;
+  shouldRedirect: boolean;
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
@@ -50,7 +50,7 @@ export class AppError extends Error {
     this.type = error.type;
     this.entityType = error.entityType;
     this.severity = error.severity || 'info';
-    this.redirectPath = error.redirectPath || null;
+    this.shouldRedirect = error.shouldRedirect || false;
     this.meta = error.meta;
     this.originalError = error.originalError;
 
@@ -80,7 +80,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   // Get non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
-  const { redirectPath, originalError, message, cause, stack, ...error } = normalizedError;
+  const { shouldRedirect, originalError, message, cause, stack, ...error } = normalizedError;
   const { severity, type, meta } = error;
 
   // Get the current user and organization from context
@@ -113,7 +113,9 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   else eventLogger[severity]({ ...(meta ?? {}), ...(detailsRequired ? { ...detailedError } : {}) });
 
   // Redirect to the frontend error page with query parameters for error details
-  if (redirectPath) {
+  if (shouldRedirect) {
+    // TODO add to config base error path?
+    const redirectPath = meta?.errorPagePath || '/error';
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
     redirectUrl.searchParams.set('error', type);

@@ -4,7 +4,8 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema } from '#/utils/schema/success-responses';
 
 const requestRoutes = {
   createRequest: createCustomRoute({
@@ -27,7 +28,7 @@ const requestRoutes = {
         description: 'Requests',
         content: { 'application/json': { schema: requestSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getRequests: createCustomRoute({
@@ -48,7 +49,7 @@ const requestRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   deleteRequests: createCustomRoute({
@@ -69,7 +70,7 @@ const requestRoutes = {
       204: {
         description: 'Requests deleted',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

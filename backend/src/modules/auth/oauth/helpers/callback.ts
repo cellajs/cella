@@ -6,58 +6,129 @@ import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { AppError, ConstructedError } from '#/lib/errors';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
+import { OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
-import { OAuthFlowType } from '#/modules/auth/oauth/schema';
 import { userSelect } from '#/modules/users/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 
+type OAuthFlowResult =
+  | {
+      type: 'verified';
+      user: UserModel;
+      oauthAccount: OAuthAccountModel;
+    }
+  | {
+      type: 'unverified';
+      oauthAccount: OAuthAccountModel;
+      reason: 'signup' | 'signin' | 'connect' | 'invite';
+    };
+
+interface BaseCallbackProps {
+  providerUser: TransformedUser;
+  provider: EnabledOAuthProvider;
+  oauthAccount?: OAuthAccountModel | null;
+}
+
 /**
- * Handles the default OAuth authentication/signup flow.
- * Determines if the user has an existing verified/unverified account or needs to register.
+ * Handles the OAuth provider callback for authentication, account linking, or invitation flows.
  *
- * @param ctx - The request context.
- * @param callbackType - type of callback, ie 'invite', 'connect'.
- * @param providerUser - The transformed user data from the OAuth provider.
- * @param provider - The OAuth provider (e.g., 'google', 'github').
+ * This function determines the appropriate flow based on `type` from OAuth payload:
+ * - 'connect' → link an existing account with the OAuth provider
+ * - 'invite'  → handle invited users completing OAuth signup
+ * - 'verify'  → verify an existing OAuth account
+ * - 'auth'    → standard authentication/signup flow
  *
- * @returns A redirect response.
+ * It fetches any existing OAuth account, executes corresponding flow handler,
+ * and then processes OAuth account to handle session setup, MFA, or verification email,
+ * ultimately redirecting user to correct client page.
+ *
+ * @param ctx - Request context containing request and environment info.
+ * @param oauthPayload - Payload from OAuth flow, including type and optional redirect.
+ * @param providerUser - Transformed user data returned by OAuth provider.
+ * @param provider - OAuth provider identifier (e.g., 'google', 'github').
+ * @returns A redirect response to appropriate client page.
  */
 export const handleOAuthCallback = async (
   ctx: Context<Env>,
-  callbackType: OAuthFlowType,
+  oauthPayload: OAuthCookiePayload,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
 ): Promise<Response> => {
-  const redirectPath = '/auth/authenticate';
-  const oauthAccount = await getOAuthAccount(providerUser.id, provider, providerUser.email);
+  const { type, redirectAfter } = oauthPayload;
 
-  // Handle OAuth callback flows based on cookie
-  if (callbackType === 'connect') return await connectCallbackFlow(ctx, providerUser, provider, oauthAccount);
-  if (callbackType === 'invite') return await inviteCallbackFlow(ctx, providerUser, provider, oauthAccount);
-  if (callbackType === 'verify') return await verifyCallbackFlow(ctx, providerUser, provider, oauthAccount);
+  // Fetch any existing OAuth account for this provider/user
+  const [oauthAccount] = await db
+    .select()
+    .from(oauthAccountsTable)
+    .where(
+      and(
+        eq(oauthAccountsTable.providerUserId, providerUser.id),
+        eq(oauthAccountsTable.provider, provider),
+        eq(oauthAccountsTable.email, providerUser.email),
+      ),
+    );
 
-  // If not any of the above, proceed with basic authentication (sign in / sign up) flow
+  const baseCallbackProps = { providerUser, provider, oauthAccount };
 
+  let result: OAuthFlowResult;
+
+  try {
+    switch (type) {
+      case 'connect':
+        result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
+        break;
+      case 'invite':
+        result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
+        break;
+      case 'verify':
+        result = await verifyCallbackFlow({ ctx, ...baseCallbackProps });
+
+        break;
+      case 'auth':
+        result = await authCallbackFlow(baseCallbackProps);
+
+        break;
+    }
+  } catch (err) {
+    if (err instanceof AppError) {
+      const errorPagePath = type === 'connect' ? '/account' : '/auth/error';
+      throw new AppError({
+        ...err,
+        type: err.type as ConstructedError['type'],
+        shouldRedirect: true,
+        meta: { ...err.meta, errorPagePath },
+      });
+    }
+    throw err;
+  }
+
+  return await processOAuthAccount({ ctx, redirectAfter, ...result });
+};
+
+/**
+ * Handles the basic OAuth authentication/signup flow.
+ * Determines if the user has an existing verified/unverified account or needs to register.
+ */
+const authCallbackFlow = async ({ providerUser, provider, oauthAccount = null }: BaseCallbackProps): Promise<OAuthFlowResult> => {
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
-    return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
+    return { type: 'verified', user, oauthAccount };
   }
 
   // User has an unverified OAuth account → prompt oauth (re-)verification
   if (oauthAccount) {
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
     const type = user.lastSignInAt ? 'connect' : 'signup';
-    return await handleUnverifiedOAuthAccount(ctx, oauthAccount, type);
+    return { type: 'unverified', oauthAccount, reason: type };
   }
 
   // Get users with the same email
@@ -69,22 +140,21 @@ export const handleOAuthCallback = async (
     .limit(2);
 
   // Multiple users with the same email → conflict
-  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
 
   // Existing user (by email) found -> suggest sign in and connect
-  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn', redirectPath });
+  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn' });
 
   // No user found and registration is disabled
   if (!appConfig.has.registrationEnabled) {
-    throw new AppError({ status: 403, type: 'sign_up_restricted', redirectPath });
+    throw new AppError({ status: 403, type: 'sign_up_restricted' });
   }
 
   // No user match → create a new user and OAuth account
   const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
-
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
 
-  return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'signup');
+  return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'signup' };
 };
 
 /**
@@ -95,38 +165,34 @@ export const handleOAuthCallback = async (
  * @param provider - The OAuth provider (e.g., 'google', 'github').
  * @param connectUserId - The ID of the user who is attempting to connect an OAuth account.
  * @param oauthAccount - The existing OAuth account, if one exists.
+ * @param redirectAfter - OAuth query redirect path, if one exists.
  * @returns A redirect response.
  */
-const connectCallbackFlow = async (
-  ctx: Context<Env>,
-  providerUser: TransformedUser,
-  provider: EnabledOAuthProvider,
-  oauthAccount: OAuthAccountModel | null = null,
-): Promise<Response> => {
-  const redirectPath = `/settings#authentication`;
-
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: redirectPath });
+const connectCallbackFlow = async ({
+  ctx,
+  providerUser,
+  provider,
+  oauthAccount = null,
+}: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
+  const { sessionToken } = await getParsedSessionCookie(ctx);
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
 
   const connectUserId = user.id;
 
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
     }
 
-    // Already linked + verified → log in the user
-    if (oauthAccount.verified) {
-      const user = ctx.get('user') as UserModel;
-      return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
-    }
+    // Already linked + verified → return verified result
+    if (oauthAccount.verified) return { type: 'verified', user, oauthAccount };
 
-    // Linked but unverified → prompt verification
-    return await handleUnverifiedOAuthAccount(ctx, oauthAccount, 'connect');
+    // Linked but unverified → return unverified result
+    return { type: 'unverified', oauthAccount, reason: 'connect' };
   }
 
   // New OAuth account connection → validate email isn't used by another user
@@ -136,12 +202,12 @@ const connectCallbackFlow = async (
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
   }
 
   // Safe to connect → create and link OAuth account to current user
   const newOAuthAccount = await createOAuthAccount(connectUserId, providerUser.id, provider, providerUser.email);
-  return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'connect');
+  return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'connect' };
 };
 
 /**
@@ -152,24 +218,24 @@ const connectCallbackFlow = async (
  * @param providerUser - The transformed user data from the OAuth provider.
  * @param provider - The OAuth provider (e.g., 'google', 'github').
  * @param oauthAccount - The linked OAuth account, if one exists.
+ * @param redirectAfter - OAuth query redirect path, if one exists.
  * @returns A redirect response.
  */
-const inviteCallbackFlow = async (
-  ctx: Context<Env>,
-  providerUser: TransformedUser,
-  provider: EnabledOAuthProvider,
-  oauthAccount: OAuthAccountModel | null = null,
-): Promise<Response> => {
-  const redirectPath = '/auth/authenticate';
-  const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation', redirectPath });
+const inviteCallbackFlow = async ({
+  ctx,
+  providerUser,
+  provider,
+  oauthAccount = null,
+}: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
+  const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
-    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error', redirectPath });
+    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error' });
   }
 
   // OAuth account already linked
-  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
 
   // No linked OAuth account and email already in use by an existing user
   const users = await db
@@ -177,7 +243,7 @@ const inviteCallbackFlow = async (
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', redirectPath });
+  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error' });
 
   // TODO User already signed up meanwhile?
 
@@ -187,20 +253,19 @@ const inviteCallbackFlow = async (
 
   // link user to new OAuth account and prompt email verification
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
-  return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'invite');
+  return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'invite' };
 };
 
-const verifyCallbackFlow = async (
-  ctx: Context<Env>,
-  providerUser: TransformedUser,
-  provider: EnabledOAuthProvider,
-  oauthAccount: OAuthAccountModel | null = null,
-): Promise<Response> => {
-  const redirectPath = '/auth/authenticate';
+const verifyCallbackFlow = async ({
+  ctx,
+  providerUser,
+  provider,
+  oauthAccount = null,
+}: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   const verifyToken = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
 
   // No OauthAccount → invalid verification
-  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
+  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error' });
 
   // Invalid token settings → invalid verification
   if (
@@ -209,15 +274,13 @@ const verifyCallbackFlow = async (
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.provider !== provider
   ) {
-    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
+    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error' });
   }
 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
 
-  // Somehow already linked + verified → log in the user
-  if (oauthAccount.verified) {
-    return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
-  }
+  // Somehow already linked + verified → return verified result
+  if (oauthAccount.verified) return { type: 'verified', user, oauthAccount };
 
   // Verify oauthAccount
   await db
@@ -247,35 +310,8 @@ const verifyCallbackFlow = async (
       ),
     );
 
-  // Verification successful → redirect to the verified OAuth account handler
-  return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
-};
-
-/**
- * Retrieves an OAuth account based on provider user ID, provider ID, and email.
- *
- * @param providerUserId - Unique user ID provided by the OAuth provider.
- * @param provider - Identifier for the OAuth provider (e.g., "google", "github").
- * @param providerUserEmail - Email address associated with the OAuth account.
- * @returns The matched OAuth account or null if not found.
- */
-const getOAuthAccount = async (
-  providerUserId: Provider['userId'],
-  provider: Provider['id'],
-  providerUserEmail: UserModel['email'],
-): Promise<OAuthAccountModel | null> => {
-  const [oauthAccount] = await db
-    .select()
-    .from(oauthAccountsTable)
-    .where(
-      and(
-        eq(oauthAccountsTable.providerUserId, providerUserId),
-        eq(oauthAccountsTable.provider, provider),
-        eq(oauthAccountsTable.email, providerUserEmail),
-      ),
-    );
-
-  return oauthAccount ?? null;
+  // Verification successful → return verified OAuth account result
+  return { type: 'verified', user, oauthAccount };
 };
 
 /**
@@ -308,57 +344,39 @@ const createOAuthAccount = async (
 };
 
 /**
- * Sets up the user session and redirects to the specified URL
- * for verified OAuth accounts.
+ * Processes an OAuth account after provider callback.
  *
- * @param ctx - The request context.
- * @param user - The authenticated user.
- * @param oauthAccount - The verified OAuth account.
- * @returns A redirect response.
- */
-const handleVerifiedOAuthAccount = async (ctx: Context<Env>, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
-  // Start MFA challenge if the user has MFA enabled
-  const mfaRedirectPath = await initiateMfa(ctx, user);
-
-  // Determine final redirect path
-  const redirectPath = mfaRedirectPath || (await getOAuthRedirectPath(ctx));
-  const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
-
-  // If MFA is not required, set  user session immediately
-  if (!mfaRedirectPath) await setUserSession(ctx, user, oauthAccount.provider);
-
-  return ctx.redirect(redirectUrl, 302);
-};
-
-/**
- * Sends a verification email and redirects to  page to explain the next step.
+ * This function handles both verified and unverified OAuth accounts:
+ * - Verified, it may initiate MFA and/or set user session, then redirects to appropriate post-login path.
+ * - Unverified, it sends a verification email and redirects  user to an email verification page with context.
  *
- * @param ctx - The request context.
- * @param oauthAccount - The unverified OAuth account.
- * @returns A redirect response.
+ * @param info - Contains OAuth flow result, request context, optional redirect path
+ * @returns A redirect response to appropriate client page.
  */
-const handleUnverifiedOAuthAccount = async (
-  ctx: Context<Env>,
-  oauthAccount: OAuthAccountModel,
-  reason: 'signup' | 'signin' | 'connect' | 'invite',
-): Promise<Response> => {
-  const redirectPath = await getOAuthRedirectPath(ctx);
+const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; redirectAfter?: string }) => {
+  const { ctx, type, oauthAccount, redirectAfter } = info;
+  const redirectAfterPath = isValidRedirectPath(redirectAfter) || appConfig.defaultRedirectPath;
 
-  sendOAuthVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath });
+  if (type === 'verified') {
+    // Start MFA challenge if the user has MFA enabled
+    const mfaRedirectPath = await initiateMfa(ctx, info.user);
 
-  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${oauthAccount.provider}`, appConfig.frontendUrl);
+    // Build full URL for redirect
+    const redirectPath = mfaRedirectPath || redirectAfterPath;
+    const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
-  return ctx.redirect(redirectUrl, 302);
-};
+    // If MFA is not required, set session immediately
+    if (!mfaRedirectPath) await setUserSession(ctx, info.user, oauthAccount.provider);
 
-/**
- * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
- *
- * @param ctx - The request context.
- * @returns A validated redirect path string.
- */
-const getOAuthRedirectPath = async (ctx: Context<Env>): Promise<string> => {
-  const redirect = await getAuthCookie(ctx, 'oauth-redirect');
+    // Redirect to determined URL
+    return ctx.redirect(redirectUrl, 302);
+  } else {
+    // For unverified accounts, send an OAuth verification email
+    sendOAuthVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath: redirectAfterPath });
 
-  return isValidRedirectPath(redirect) || appConfig.defaultRedirectPath;
+    // Redirect to client explaining next step for email verification
+    const redirectUrl = new URL(`/auth/email-verification/${info.reason}?provider=${oauthAccount.provider}`, appConfig.frontendUrl);
+
+    return ctx.redirect(redirectUrl, 302);
+  }
 };
