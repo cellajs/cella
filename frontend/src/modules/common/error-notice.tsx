@@ -43,7 +43,7 @@ const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): s
 /**
  * Returns localized error info (title and message) for a given error.
  */
-export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) => {
+export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeError; errorFromQuery?: string }) => {
   const localeKey = getErrorLocaleKey(error, errorFromQuery);
 
   const translationOptions = {
@@ -85,7 +85,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
   const [showError, setShowError] = useState(false);
   const severity = error && 'severity' in error ? error.severity : severityFromQuery;
 
-  const { title, message } = getErrorInfo(error, errorFromQuery);
+  const { title, message } = getErrorInfo({ error, errorFromQuery });
 
   const dateNow = new Date().toUTCString();
 
