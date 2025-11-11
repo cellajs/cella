@@ -2,6 +2,7 @@ type CompanyContactProps = {
   companyFull: string;
   streetAddress: string;
   city: string;
+  postcode: string;
   country: string;
   supportEmail: string;
   registration: string;
@@ -9,7 +10,7 @@ type CompanyContactProps = {
 };
 
 const CompanyContact = (props: CompanyContactProps) => {
-  const { companyFull, streetAddress, city, country, supportEmail, registration, bankAccount } = props;
+  const { companyFull, streetAddress, city, postcode, country, supportEmail, registration, bankAccount } = props;
 
   return (
     <ul className="mt-8 mb-8 italic list-none">
@@ -17,7 +18,9 @@ const CompanyContact = (props: CompanyContactProps) => {
         <strong>{companyFull}</strong>
       </li>
       <li>{streetAddress}</li>
-      <li>{city}</li>
+      <li>
+        {city} {postcode}{' '}
+      </li>
       <li>{country}</li>
       <li>
         <a className="ml-1" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">

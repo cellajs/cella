@@ -5,8 +5,9 @@ import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import MarketingLayout from '~/modules/marketing/layout';
-import PrivacyText from './privacy-text';
-import TermsText from './terms-text';
+import LegalText from '~/modules/marketing/legal-text';
+
+const slugs = ['terms', 'privacy'] as const;
 
 const tabLabels = {
   terms: 'common:terms_of_use',
@@ -16,23 +17,10 @@ const tabLabels = {
 export const LegalPage = () => {
   const { t } = useTranslation();
 
-  const tabs = appConfig.legal.pages.map((slug) => ({
+  const tabs = [...slugs, ...appConfig.legal.pages].map((slug) => ({
     id: slug,
     label: tabLabels[slug],
   }));
-
-  const data = {
-    appName: appConfig.name,
-    companyFull: appConfig.company.name,
-    companyShort: appConfig.company.name,
-    frontendUrl: appConfig.frontendUrl,
-    streetAddress: appConfig.company.streetAddress,
-    city: appConfig.company.city,
-    country: appConfig.company.country,
-    supportEmail: appConfig.company.supportEmail,
-    registration: appConfig.company.registration,
-    bankAccount: appConfig.company.bankAccount,
-  };
 
   return (
     <MarketingLayout title={t('common:legal')}>
@@ -44,18 +32,11 @@ export const LegalPage = () => {
           </StickyBox>
         </div>
         <div className="md:w-[70%] flex flex-col gap-8">
-          {tabs.map(({ id: slug }) => (
-            <AsideAnchor key={slug} id={slug} className="mb-40">
+          {tabs.map(({ id: subject }) => (
+            <AsideAnchor key={subject} id={subject} className="mb-40">
               <section className="bg-background">
                 <div className="mx-auto max-w-[48rem] pt-8 font-light px-4 md:px-8 min-h-screen">
-                  {(() => {
-                    switch (slug) {
-                      case 'privacy':
-                        return <PrivacyText key={slug} {...data} />;
-                      case 'terms':
-                        return <TermsText key={slug} {...data} />;
-                    }
-                  })()}
+                  <LegalText key={subject} subject={subject} />
                 </div>
               </section>
             </AsideAnchor>

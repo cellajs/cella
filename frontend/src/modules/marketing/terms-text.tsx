@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import CompanyContact from './company-contact';
+import CompanyContact from '~/modules/marketing/company-contact';
 
 type TermsTextProps = {
   appName: string;
@@ -8,15 +8,26 @@ type TermsTextProps = {
   frontendUrl: string;
   streetAddress: string;
   city: string;
+  postcode: string;
   country: string;
   supportEmail: string;
   registration: string;
   bankAccount: string;
 };
 
-const TermsText = (props: TermsTextProps) => {
-  const { appName, companyFull, companyShort, frontendUrl, streetAddress, city, country, supportEmail, registration, bankAccount } = props;
-
+const TermsText = ({
+  appName,
+  companyFull,
+  companyShort,
+  frontendUrl,
+  streetAddress,
+  city,
+  postcode,
+  country,
+  supportEmail,
+  registration,
+  bankAccount,
+}: TermsTextProps) => {
   const lastUpdated = 'September 23, 2024';
 
   return (
@@ -29,6 +40,7 @@ const TermsText = (props: TermsTextProps) => {
         companyFull={companyFull}
         streetAddress={streetAddress}
         city={city}
+        postcode={postcode}
         country={country}
         supportEmail={supportEmail}
         registration={registration}

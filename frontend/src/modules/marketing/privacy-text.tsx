@@ -1,10 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import CompanyContact from './company-contact';
-
-// ip addresses are stored in order manage traffic (block or limit IPs)
-// used to ensure fairness, accessibility, security
-// aren't mapped to individual users
-// could be hashed or whatever
+import sharedDataTypes from '#json/shared-data-types.json';
+import subprocessors from '#json/subprocessors.json';
+import CompanyContact from '~/modules/marketing/company-contact';
+import SharedDataTypes from '~/modules/marketing/shared-data-types';
+import Subprocessors from '~/modules/marketing/subprocessors';
 
 type PrivacyTextProps = {
   appName: string;
@@ -12,15 +11,25 @@ type PrivacyTextProps = {
   companyShort: string;
   streetAddress: string;
   city: string;
+  postcode: string;
   country: string;
   supportEmail: string;
   registration: string;
   bankAccount: string;
 };
 
-const PrivacyText = (props: PrivacyTextProps) => {
-  const { appName, companyFull, companyShort, streetAddress, city, country, supportEmail, registration, bankAccount } = props;
-
+const PrivacyText = ({
+  appName,
+  companyFull,
+  companyShort,
+  streetAddress,
+  city,
+  postcode,
+  country,
+  supportEmail,
+  registration,
+  bankAccount,
+}: PrivacyTextProps) => {
   const lastUpdated = 'September 23, 2024';
 
   return (
@@ -33,6 +42,7 @@ const PrivacyText = (props: PrivacyTextProps) => {
         companyFull={companyFull}
         streetAddress={streetAddress}
         city={city}
+        postcode={postcode}
         country={country}
         supportEmail={supportEmail}
         registration={registration}
@@ -91,6 +101,7 @@ const PrivacyText = (props: PrivacyTextProps) => {
           <strong className="ml-1">your email, your browser version, and the pages you are visiting on {appName}</strong>. This information is only
           used to help you and advise you in using the Service.
         </p>
+        <p>We store anonymous IP address records to rate limit or block traffic, ensuring a fair and secure experience for all users.</p>
       </section>
 
       <section className="mb-4" id="use-of-information">
@@ -212,7 +223,7 @@ const PrivacyText = (props: PrivacyTextProps) => {
       </section>
 
       <section className="mb-4" id="changes-privacy-policy">
-        <h3 className="font-medium">Changes Privacy policy</h3>
+        <h3 className="font-medium">Privacy Policy changes</h3>
         <p>
           We may make changes to this Privacy policy from time to time for any reason. Use of information we collect is subject to the Privacy policy
           in effect at the time such information is collected. If we make changes in the way we use Personal Information or Children&#39;s Personal
@@ -222,6 +233,18 @@ const PrivacyText = (props: PrivacyTextProps) => {
           situations to provide advance notice of other changes to the Terms of use (for example, where a change to the Terms is necessary to comply
           with legal requirements).
         </p>
+      </section>
+
+      <section className="mb-4" id="subprocessors">
+        <h3 className="font-medium">Subprocessors</h3>
+
+        <Subprocessors subprocessors={subprocessors} />
+      </section>
+
+      <section className="mb-4" id="shared-data-types">
+        <h3 className="font-medium">Shared Data</h3>
+
+        <SharedDataTypes sharedDataTypes={sharedDataTypes} />
       </section>
     </div>
   );

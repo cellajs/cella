@@ -15,7 +15,7 @@ export const config = {
   welcomeRedirectPath: '/welcome',
 
   legal: {
-    pages: ['terms', 'privacy'] satisfies ('privacy' | 'terms')[],
+    pages: [] satisfies ('accessibility')[],
   },
 
   aboutUrl: 'https://cellajs.com/about',
@@ -251,9 +251,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
     shortName: 'Cella',
     email: 'info@cellajs.com',
     supportEmail: 'support@cellajs.com',
-    postcode: '90210 JS',
     tel: '+31 6 12345678',
     streetAddress: 'Drizzle Road 42',
+    // streetB
+    postcode: '90210 JS',
     city: 'Hono City',
     country: 'TypeScript Rock',
     registration: 'Chamber of Commerce (KvK): 578 25 920', //

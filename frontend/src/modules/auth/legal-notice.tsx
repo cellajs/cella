@@ -5,7 +5,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
-const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
+const LegalText = lazy(() => import('~/modules/marketing/legal-text'));
 
 export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; mode?: 'waitlist' | 'signup' | 'verify' }) => {
   const { t } = useTranslation();
@@ -17,7 +17,7 @@ export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; m
   const openDialog = (legalSubject: 'terms' | 'privacy', triggerRef: RefObject<HTMLButtonElement | null>) => () => {
     const dialogComponent = (
       <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-        <LegalText textFor={legalSubject} />
+        <LegalText subject={legalSubject} />
       </Suspense>
     );
 
