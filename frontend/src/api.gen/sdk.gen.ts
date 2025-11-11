@@ -232,7 +232,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  *
  * Checks if a user with the specified email address exists in the system.
  *
- * **POST /auth/check-email** ·· [checkEmail](http://localhost:4000/docs#tag/auth/post/auth/check-email) ·· _auth_
+ * **POST /auth/check-email** ·· [checkEmail](https://api.cellajs.com/docs#tag/auth/post/auth/check-email) ·· _auth_
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -258,7 +258,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
  *
  * Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
  *
- * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](http://localhost:4000/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· _auth_
+ * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://api.cellajs.com/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· _auth_
  *
  * @param {invokeTokenData} options
  * @param {enum} options.path.type - `enum`
@@ -281,7 +281,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
  *
  * Get basic token data from single-use token session, It returns basic data if the session is still valid.
  *
- * **GET /auth/token/{type}/{id}** ·· [getTokenData](http://localhost:4000/docs#tag/auth/get/auth/token/{type}/{id}) ·· _auth_
+ * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://api.cellajs.com/docs#tag/auth/get/auth/token/{type}/{id}) ·· _auth_
  *
  * @param {getTokenDataData} options
  * @param {enum} options.path.type - `enum`
@@ -303,7 +303,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
  *
  * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
  *
- * **GET /auth/impersonation/start** ·· [startImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/start) ·· _auth_
+ * **GET /auth/impersonation/start** ·· [startImpersonation](https://api.cellajs.com/docs#tag/auth/get/auth/impersonation/start) ·· _auth_
  *
  * @param {startImpersonationData} options
  * @param {string} options.query.targetuserid - `string`
@@ -331,7 +331,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
- * **GET /auth/impersonation/stop** ·· [stopImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
+ * **GET /auth/impersonation/stop** ·· [stopImpersonation](https://api.cellajs.com/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
  *
  * @param {stopImpersonationData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
@@ -359,7 +359,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
  *
  * Resends an invitation email with token to a new user using the provided email address and token ID.
  *
- * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](http://localhost:4000/docs#tag/auth/post/auth/resend-invitation) ·· _auth_
+ * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](https://api.cellajs.com/docs#tag/auth/post/auth/resend-invitation) ·· _auth_
  *
  * @param {resendInvitationWithTokenData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
@@ -383,7 +383,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(o
  *
  * Signs out the *current user* and clears the active session.
  *
- * **POST /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/post/auth/sign-out) ·· _auth_
+ * **POST /auth/sign-out** ·· [signOut](https://api.cellajs.com/docs#tag/auth/post/auth/sign-out) ·· _auth_
  *
  * @param {signOutData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
@@ -403,7 +403,7 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
  *
- * **POST /auth/totp/generate-key** ·· [generateTotpKey](http://localhost:4000/docs#tag/auth/post/auth/totp/generate-key) ·· _auth_
+ * **POST /auth/totp/generate-key** ·· [generateTotpKey](https://api.cellajs.com/docs#tag/auth/post/auth/totp/generate-key) ·· _auth_
  *
  * @param {generateTotpKeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -430,7 +430,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
  *
  * Delete TOTP credential for current user.
  *
- * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/auth/delete/auth/totp) ·· _auth_
+ * **DELETE /auth/totp** ·· [deleteTotp](https://api.cellajs.com/docs#tag/auth/delete/auth/totp) ·· _auth_
  *
  * @param {deleteTotpData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
@@ -457,7 +457,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
  *
  * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
  *
- * **POST /auth/totp** ·· [createTotp](http://localhost:4000/docs#tag/auth/post/auth/totp) ·· _auth_
+ * **POST /auth/totp** ·· [createTotp](https://api.cellajs.com/docs#tag/auth/post/auth/totp) ·· _auth_
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -490,7 +490,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
  *
  * Validates the TOTP code and completes TOTP based authentication.
  *
- * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
+ * **POST /auth/totp-verification** ·· [signInWithTotp](https://api.cellajs.com/docs#tag/auth/post/auth/totp-verification) ·· _auth_
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -516,7 +516,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Registers a new user using an email and password. Sends a verification email upon successful sign up.
  *
- * **POST /auth/sign-up** ·· [signUp](http://localhost:4000/docs#tag/auth/post/auth/sign-up) ·· _auth_
+ * **POST /auth/sign-up** ·· [signUp](https://api.cellajs.com/docs#tag/auth/post/auth/sign-up) ·· _auth_
  *
  * @param {signUpData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -543,7 +543,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  *
  * Registers a user using an email and password in response to a system or organization invitation.
  *
- * **POST /auth/sign-up/{tokenId}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{tokenId}) ·· _auth_
+ * **POST /auth/sign-up/{tokenId}** ·· [signUpWithToken](https://api.cellajs.com/docs#tag/auth/post/auth/sign-up/{tokenId}) ·· _auth_
  *
  * @param {signUpWithTokenData} options
  * @param {string} options.path.tokenid - `string`
@@ -571,7 +571,7 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  *
  * Sends an email with a link to reset the user's password.
  *
- * **POST /auth/request-password** ·· [requestPassword](http://localhost:4000/docs#tag/auth/post/auth/request-password) ·· _auth_
+ * **POST /auth/request-password** ·· [requestPassword](https://api.cellajs.com/docs#tag/auth/post/auth/request-password) ·· _auth_
  *
  * @param {requestPasswordData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -597,7 +597,7 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options: Op
  *
  * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
- * **POST /auth/create-password/{tokenId}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{tokenId}) ·· _auth_
+ * **POST /auth/create-password/{tokenId}** ·· [createPassword](https://api.cellajs.com/docs#tag/auth/post/auth/create-password/{tokenId}) ·· _auth_
  *
  * @param {createPasswordData} options
  * @param {string} options.path.tokenid - `string`
@@ -624,7 +624,7 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Authenticates an existing user using their email and password.
  *
- * **POST /auth/sign-in** ·· [signIn](http://localhost:4000/docs#tag/auth/post/auth/sign-in) ·· _auth_
+ * **POST /auth/sign-in** ·· [signIn](https://api.cellajs.com/docs#tag/auth/post/auth/sign-in) ·· _auth_
  *
  * @param {signInData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -650,7 +650,7 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
- * **POST /auth/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey) ·· _auth_
+ * **POST /auth/passkey** ·· [createPasskey](https://api.cellajs.com/docs#tag/auth/post/auth/passkey) ·· _auth_
  *
  * @param {createPasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
@@ -684,7 +684,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Delete a passkey by id from the *current user*.
  *
- * **DELETE /auth/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/auth/delete/auth/passkey/{id}) ·· _auth_
+ * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://api.cellajs.com/docs#tag/auth/delete/auth/passkey/{id}) ·· _auth_
  *
  * @param {deletePasskeyData} options
  * @param {string} options.path.id - `string`
@@ -713,7 +713,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
- * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](http://localhost:4000/docs#tag/auth/post/auth/passkey/generate-challenge) ·· _auth_
+ * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://api.cellajs.com/docs#tag/auth/post/auth/passkey/generate-challenge) ·· _auth_
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
@@ -740,7 +740,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
  *
  * Validates the signed challenge and completes passkey based authentication.
  *
- * **POST /auth/passkey-verification** ·· [signInWithPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
+ * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://api.cellajs.com/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
  *
  * @param {signInWithPasskeyData} options
  * @param {string=} options.body.credentialId - `string` (optional)
@@ -770,7 +770,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: 
  *
  * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/github** ·· [github](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
+ * **GET /auth/github** ·· [github](https://api.cellajs.com/docs#tag/auth/get/auth/github) ·· _auth_
  *
  * @param {githubData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -792,7 +792,7 @@ export const github = <ThrowOnError extends boolean = true>(options?: Options<Gi
  *
  * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/google** ·· [google](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
+ * **GET /auth/google** ·· [google](https://api.cellajs.com/docs#tag/auth/get/auth/google) ·· _auth_
  *
  * @param {googleData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -814,7 +814,7 @@ export const google = <ThrowOnError extends boolean = true>(options?: Options<Go
  *
  * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/microsoft** ·· [microsoft](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
+ * **GET /auth/microsoft** ·· [microsoft](https://api.cellajs.com/docs#tag/auth/get/auth/microsoft) ·· _auth_
  *
  * @param {microsoftData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -837,7 +837,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(options?: Options
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/github/callback** ·· [githubCallback](http://localhost:4000/docs#tag/auth/get/auth/github/callback) ·· _auth_
+ * **GET /auth/github/callback** ·· [githubCallback](https://api.cellajs.com/docs#tag/auth/get/auth/github/callback) ·· _auth_
  *
  * @param {githubCallbackData} options
  * @param {string} options.query.code - `string`
@@ -863,7 +863,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/google/callback** ·· [googleCallback](http://localhost:4000/docs#tag/auth/get/auth/google/callback) ·· _auth_
+ * **GET /auth/google/callback** ·· [googleCallback](https://api.cellajs.com/docs#tag/auth/get/auth/google/callback) ·· _auth_
  *
  * @param {googleCallbackData} options
  * @param {string} options.query.code - `string`
@@ -886,7 +886,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/microsoft/callback** ·· [microsoftCallback](http://localhost:4000/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
+ * **GET /auth/microsoft/callback** ·· [microsoftCallback](https://api.cellajs.com/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
  *
  * @param {microsoftCallbackData} options
  * @param {string} options.query.code - `string`
@@ -908,7 +908,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
  *
  * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **DELETE /me** ·· [deleteMe](http://localhost:4000/docs#tag/me/delete/me) ·· _me_
+ * **DELETE /me** ·· [deleteMe](https://api.cellajs.com/docs#tag/me/delete/me) ·· _me_
  *
  * @param {deleteMeData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
@@ -935,7 +935,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
  *
  * Returns the *current user*.
  *
- * **GET /me** ·· [getMe](http://localhost:4000/docs#tag/me/get/me) ·· _me_
+ * **GET /me** ·· [getMe](https://api.cellajs.com/docs#tag/me/get/me) ·· _me_
  *
  * @param {getMeData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -962,7 +962,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  *
  * Updates the *current user*.
  *
- * **PUT /me** ·· [updateMe](http://localhost:4000/docs#tag/me/put/me) ·· _me_
+ * **PUT /me** ·· [updateMe](https://api.cellajs.com/docs#tag/me/put/me) ·· _me_
  *
  * @param {updateMeData} options
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
@@ -1001,7 +1001,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
  *
  * Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.
  *
- * **PUT /me/mfa** ·· [toggleMfa](http://localhost:4000/docs#tag/me/put/me/mfa) ·· _me_
+ * **PUT /me/mfa** ·· [toggleMfa](https://api.cellajs.com/docs#tag/me/put/me/mfa) ·· _me_
  *
  * @param {toggleMfaData} options
  * @param {object} options.body.passkeyData - `object`
@@ -1035,7 +1035,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
  *
  * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
  *
- * **GET /me/auth** ·· [getMyAuth](http://localhost:4000/docs#tag/me/get/me/auth) ·· _me_
+ * **GET /me/auth** ·· [getMyAuth](https://api.cellajs.com/docs#tag/me/get/me/auth) ·· _me_
  *
  * @param {getMyAuthData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -1062,7 +1062,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
  *
  * Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
  *
- * **GET /me/menu** ·· [getMyMenu](http://localhost:4000/docs#tag/me/get/me/menu) ·· _me_
+ * **GET /me/menu** ·· [getMyMenu](https://api.cellajs.com/docs#tag/me/get/me/menu) ·· _me_
  *
  * @param {getMyMenuData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -1089,7 +1089,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  *
  * Returns a list of pending memberships with entity data.
  *
- * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
+ * **GET /me/invitations** ·· [getMyInvitations](https://api.cellajs.com/docs#tag/me/get/me/invitations) ·· _me_
  *
  * @param {getMyInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -1116,7 +1116,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
  *
- * **DELETE /me/sessions** ·· [deleteMySessions](http://localhost:4000/docs#tag/me/delete/me/sessions) ·· _me_
+ * **DELETE /me/sessions** ·· [deleteMySessions](https://api.cellajs.com/docs#tag/me/delete/me/sessions) ·· _me_
  *
  * @param {deleteMySessionsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1148,7 +1148,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
  *
  * Removes the *current user* from an entity they are a member of.
  *
- * **DELETE /me/leave** ·· [deleteMyMembership](http://localhost:4000/docs#tag/me/delete/me/leave) ·· _me_
+ * **DELETE /me/leave** ·· [deleteMyMembership](https://api.cellajs.com/docs#tag/me/delete/me/leave) ·· _me_
  *
  * @param {deleteMyMembershipData} options
  * @param {string | string} options.query.idorslug - `string | string`
@@ -1177,7 +1177,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
  *
  * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
  *
- * **GET /me/upload-token** ·· [getUploadToken](http://localhost:4000/docs#tag/me/get/me/upload-token) ·· _me_
+ * **GET /me/upload-token** ·· [getUploadToken](https://api.cellajs.com/docs#tag/me/get/me/upload-token) ·· _me_
  *
  * @param {getUploadTokenData} options
  * @param {string | boolean=} options.query.public - `string | boolean` (optional)
@@ -1208,7 +1208,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
- * **GET /me/unsubscribe** ·· [unsubscribeMe](http://localhost:4000/docs#tag/me/get/me/unsubscribe) ·· _me_
+ * **GET /me/unsubscribe** ·· [unsubscribeMe](https://api.cellajs.com/docs#tag/me/get/me/unsubscribe) ·· _me_
  *
  * @param {unsubscribeMeData} options
  * @param {string} options.query.token - `string`
@@ -1229,7 +1229,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **DELETE /users** ·· [deleteUsers](http://localhost:4000/docs#tag/users/delete/users) ·· _users_
+ * **DELETE /users** ·· [deleteUsers](https://api.cellajs.com/docs#tag/users/delete/users) ·· _users_
  *
  * @param {deleteUsersData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1261,7 +1261,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
  *
  * Returns a list of *users* at the system level.
  *
- * **GET /users** ·· [getUsers](http://localhost:4000/docs#tag/users/get/users) ·· _users_
+ * **GET /users** ·· [getUsers](https://api.cellajs.com/docs#tag/users/get/users) ·· _users_
  *
  * @param {getUsersData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -1297,7 +1297,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
  *
  * Retrieves a *user* by ID or slug.
  *
- * **GET /users/{idOrSlug}** ·· [getUser](http://localhost:4000/docs#tag/users/get/users/{idOrSlug}) ·· _users_
+ * **GET /users/{idOrSlug}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{idOrSlug}) ·· _users_
  *
  * @param {getUserData} options
  * @param {string | string} options.path.idorslug - `string | string`
@@ -1325,7 +1325,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
  *
  * Updates a *user* identified by ID or slug.
  *
- * **PUT /users/{idOrSlug}** ·· [updateUser](http://localhost:4000/docs#tag/users/put/users/{idOrSlug}) ·· _users_
+ * **PUT /users/{idOrSlug}** ·· [updateUser](https://api.cellajs.com/docs#tag/users/put/users/{idOrSlug}) ·· _users_
  *
  * @param {updateUserData} options
  * @param {string | string} options.path.idorslug - `string | string`
@@ -1364,7 +1364,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
  *
  * Deletes one or more *organizations* by ID.
  *
- * **DELETE /organizations** ·· [deleteOrganizations](http://localhost:4000/docs#tag/organizations/delete/organizations) ·· _organizations_
+ * **DELETE /organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/organizations) ·· _organizations_
  *
  * @param {deleteOrganizationsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1396,7 +1396,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
  *
  * Returns a list of *organizations* at the system level.
  *
- * **GET /organizations** ·· [getOrganizations](http://localhost:4000/docs#tag/organizations/get/organizations) ·· _organizations_
+ * **GET /organizations** ·· [getOrganizations](https://api.cellajs.com/docs#tag/organizations/get/organizations) ·· _organizations_
  *
  * @param {getOrganizationsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -1428,7 +1428,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
  *
  * Creates a new *organization*.
  *
- * **POST /organizations** ·· [createOrganization](http://localhost:4000/docs#tag/organizations/post/organizations) ·· _organizations_
+ * **POST /organizations** ·· [createOrganization](https://api.cellajs.com/docs#tag/organizations/post/organizations) ·· _organizations_
  *
  * @param {createOrganizationData} options
  * @param {string=} options.body.name - `string` (optional)
@@ -1461,7 +1461,7 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
  *
  * Retrieves an *organization* by ID or slug.
  *
- * **GET /organizations/{idOrSlug}** ·· [getOrganization](http://localhost:4000/docs#tag/organizations/get/organizations/{idOrSlug}) ·· _organizations_
+ * **GET /organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/organizations/{idOrSlug}) ·· _organizations_
  *
  * @param {getOrganizationData} options
  * @param {string | string} options.path.idorslug - `string | string`
@@ -1489,7 +1489,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
  *
  * Updates an *organization* by ID or slug.
  *
- * **PUT /organizations/{idOrSlug}** ·· [updateOrganization](http://localhost:4000/docs#tag/organizations/put/organizations/{idOrSlug}) ·· _organizations_
+ * **PUT /organizations/{idOrSlug}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/organizations/{idOrSlug}) ·· _organizations_
  *
  * @param {updateOrganizationData} options
  * @param {string | string} options.path.idorslug - `string | string`
@@ -1541,7 +1541,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
  * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
  *
- * **GET /entities/context-entities** ·· [getContextEntities](http://localhost:4000/docs#tag/entities/get/entities/context-entities) ·· _entities_
+ * **GET /entities/context-entities** ·· [getContextEntities](https://api.cellajs.com/docs#tag/entities/get/entities/context-entities) ·· _entities_
  *
  * @param {getContextEntitiesData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -1580,7 +1580,7 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
  * Retrieve detailed information about a single context entity by its ID or slug.
  * Supports all context entity types configured in the system. Returns only table fields for the entity type.
  *
- * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](http://localhost:4000/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
+ * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](https://api.cellajs.com/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
  *
  * @param {getContextEntityData} options
  * @param {string | string} options.path.idorslug - `string | string`
@@ -1610,7 +1610,7 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
  * Primarily used to prevent slug collisions before creating or updating an entity.
  *
- * **POST /entities/check-slug** ·· [checkSlug](http://localhost:4000/docs#tag/entities/post/entities/check-slug) ·· _entities_
+ * **POST /entities/check-slug** ·· [checkSlug](https://api.cellajs.com/docs#tag/entities/post/entities/check-slug) ·· _entities_
  *
  * @param {checkSlugData} options
  * @param {string=} options.body.slug - `string` (optional)
@@ -1643,7 +1643,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
  *
  * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
  *
- * **POST /system/invite** ·· [systemInvite](http://localhost:4000/docs#tag/system/post/system/invite) ·· _system_
+ * **POST /system/invite** ·· [systemInvite](https://api.cellajs.com/docs#tag/system/post/system/invite) ·· _system_
  *
  * @param {systemInviteData} options
  * @param {any[]=} options.body.emails - `any[]` (optional)
@@ -1675,7 +1675,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
  *
  * Generates and returns a presigned URL for uploading files to an S3 bucket.
  *
- * **GET /system/presigned-url** ·· [getPresignedUrl](http://localhost:4000/docs#tag/system/get/system/presigned-url) ·· _system_
+ * **GET /system/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/system/get/system/presigned-url) ·· _system_
  *
  * @param {getPresignedUrlData} options
  * @param {string} options.query.key - `string`
@@ -1698,7 +1698,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
  *
  * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  *
- * **POST /system/paddle-webhook** ·· [paddleWebhook](http://localhost:4000/docs#tag/system/post/system/paddle-webhook) ·· _system_
+ * **POST /system/paddle-webhook** ·· [paddleWebhook](https://api.cellajs.com/docs#tag/system/post/system/paddle-webhook) ·· _system_
  *
  * @param {paddleWebhookData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
@@ -1722,7 +1722,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
  *
  * Sends a newsletter to members of one or more specified organizations.
  *
- * **POST /system/newsletter** ·· [sendNewsletter](http://localhost:4000/docs#tag/system/post/system/newsletter) ·· _system_
+ * **POST /system/newsletter** ·· [sendNewsletter](https://api.cellajs.com/docs#tag/system/post/system/newsletter) ·· _system_
  *
  * @param {sendNewsletterData} options
  * @param {string | boolean=} options.query.toself - `string | boolean` (optional)
@@ -1758,7 +1758,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Deletes one or more *requests* from the system by their IDs.
  *
- * **DELETE /requests** ·· [deleteRequests](http://localhost:4000/docs#tag/requests/delete/requests) ·· _requests_
+ * **DELETE /requests** ·· [deleteRequests](https://api.cellajs.com/docs#tag/requests/delete/requests) ·· _requests_
  *
  * @param {deleteRequestsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1790,7 +1790,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
  *
- * **GET /requests** ·· [getRequests](http://localhost:4000/docs#tag/requests/get/requests) ·· _requests_
+ * **GET /requests** ·· [getRequests](https://api.cellajs.com/docs#tag/requests/get/requests) ·· _requests_
  *
  * @param {getRequestsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -1823,7 +1823,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
  *
  * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  *
- * **POST /requests** ·· [createRequest](http://localhost:4000/docs#tag/requests/post/requests) ·· _requests_
+ * **POST /requests** ·· [createRequest](https://api.cellajs.com/docs#tag/requests/post/requests) ·· _requests_
  *
  * @param {createRequestData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -1851,7 +1851,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(options: Opti
  * EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
  * Primarily intended for internal monitoring and diagnostics.
  *
- * **GET /metrics** ·· [getMetrics](http://localhost:4000/docs#tag/metrics/get/metrics) ·· _metrics_
+ * **GET /metrics** ·· [getMetrics](https://api.cellajs.com/docs#tag/metrics/get/metrics) ·· _metrics_
  *
  * @param {getMetricsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -1879,7 +1879,7 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
  * Returns basic count metrics for entity types such as `users` and `organizations`.
  * This endpoint is public and uses a 1 minute in memory cache for performance.
  *
- * **GET /metrics/public** ·· [getPublicCounts](http://localhost:4000/docs#tag/metrics/get/metrics/public) ·· _metrics_
+ * **GET /metrics/public** ·· [getPublicCounts](https://api.cellajs.com/docs#tag/metrics/get/metrics/public) ·· _metrics_
  *
  * @param {getPublicCountsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -1901,7 +1901,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * Used by clients to synchronize local data with server state via the shape log system.
  * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
  *
- * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
  *
  * @param {shapeProxyData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -1935,7 +1935,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
  *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
  *
- * **DELETE /{orgIdOrSlug}/attachments** ·· [deleteAttachments](http://localhost:4000/docs#tag/attachments/delete/{orgIdOrSlug}/attachments) ·· _attachments_
+ * **DELETE /{orgIdOrSlug}/attachments** ·· [deleteAttachments](https://api.cellajs.com/docs#tag/attachments/delete/{orgIdOrSlug}/attachments) ·· _attachments_
  *
  * @param {deleteAttachmentsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -1968,7 +1968,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
  *
  * Retrieves all *attachments* associated with a specific entity, such as an organization.
  *
- * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
  *
  * @param {getAttachmentsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -2002,7 +2002,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
  *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  *
- * **POST /{orgIdOrSlug}/attachments** ·· [createAttachment](http://localhost:4000/docs#tag/attachments/post/{orgIdOrSlug}/attachments) ·· _attachments_
+ * **POST /{orgIdOrSlug}/attachments** ·· [createAttachment](https://api.cellajs.com/docs#tag/attachments/post/{orgIdOrSlug}/attachments) ·· _attachments_
  *
  * @param {createAttachmentData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -2034,7 +2034,7 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
  *
  * Fetches metadata and access details for a single *attachment* by ID.
  *
- * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
  *
  * @param {getAttachmentData} options
  * @param {string} options.path.id - `string`
@@ -2063,7 +2063,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  *
  * Updates metadata of an *attachment*, such as its name or associated entity.
  *
- * **PUT /{orgIdOrSlug}/attachments/{id}** ·· [updateAttachment](http://localhost:4000/docs#tag/attachments/put/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ * **PUT /{orgIdOrSlug}/attachments/{id}** ·· [updateAttachment](https://api.cellajs.com/docs#tag/attachments/put/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
  *
  * @param {updateAttachmentData} options
  * @param {string} options.path.id - `string`
@@ -2099,7 +2099,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
  *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *
- * **GET /{orgIdOrSlug}/attachments/{id}/link** ·· [redirectToAttachment](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}/link) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments/{id}/link** ·· [redirectToAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}/link) ·· _attachments_
  *
  * @param {redirectToAttachmentData} options
  * @param {string} options.path.id - `string`
@@ -2120,7 +2120,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
  *
- * **DELETE /{orgIdOrSlug}/memberships** ·· [deleteMemberships](http://localhost:4000/docs#tag/memberships/delete/{orgIdOrSlug}/memberships) ·· _memberships_
+ * **DELETE /{orgIdOrSlug}/memberships** ·· [deleteMemberships](https://api.cellajs.com/docs#tag/memberships/delete/{orgIdOrSlug}/memberships) ·· _memberships_
  *
  * @param {deleteMembershipsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -2155,7 +2155,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
  *
  * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
- * **POST /{orgIdOrSlug}/memberships** ·· [membershipInvite](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships) ·· _memberships_
+ * **POST /{orgIdOrSlug}/memberships** ·· [membershipInvite](https://api.cellajs.com/docs#tag/memberships/post/{orgIdOrSlug}/memberships) ·· _memberships_
  *
  * @param {membershipInviteData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -2191,7 +2191,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
  *
- * **PUT /{orgIdOrSlug}/memberships/{id}** ·· [updateMembership](http://localhost:4000/docs#tag/memberships/put/{orgIdOrSlug}/memberships/{id}) ·· _memberships_
+ * **PUT /{orgIdOrSlug}/memberships/{id}** ·· [updateMembership](https://api.cellajs.com/docs#tag/memberships/put/{orgIdOrSlug}/memberships/{id}) ·· _memberships_
  *
  * @param {updateMembershipData} options
  * @param {string} options.path.id - `string`
@@ -2228,7 +2228,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
- * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](http://localhost:4000/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
  *
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
@@ -2258,7 +2258,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  *
  * Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.
  *
- * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
+ * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](https://api.cellajs.com/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
  *
  * @param {getMembersData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
@@ -2294,7 +2294,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  *
  * Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.
  *
- * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingMemberships](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
+ * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingMemberships](https://api.cellajs.com/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
  *
  * @param {getPendingMembershipsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
