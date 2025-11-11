@@ -20,14 +20,14 @@ interface MenuSheetItemProps {
 export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: MenuSheetItemProps) => {
   const { t } = useTranslation();
 
-  // Build route path for the entity
-  const { to, params, search } = useMemo(() => getEntityRoute(item), [item]);
-
   const isOnline = onlineManager.isOnline();
   const offlineAccess = useUIStore((state) => state.offlineAccess);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !searchResults && !item.submenu;
+
+  // Build route path for the entity
+  const { to, params, search } = useMemo(() => getEntityRoute(item, isSubitem), [item]);
 
   return (
     <Link
