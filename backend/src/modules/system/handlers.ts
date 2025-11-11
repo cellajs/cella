@@ -13,7 +13,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
@@ -185,11 +185,12 @@ const systemRouteHandlers = app
       // Get session id from cookie
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
+      const userSytemRole = getContextUserSystemRole();
 
       if (attachment) {
         const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-        const isSystemAdmin = user.role === 'admin';
+        const isSystemAdmin = userSytemRole === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
 
         if (!isSystemAdmin || !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });

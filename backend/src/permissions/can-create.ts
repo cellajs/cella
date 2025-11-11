@@ -1,5 +1,5 @@
 import type { ContextEntityType, ProductEntityType } from 'config';
-import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import permissionManager from '#/permissions/permissions-config';
@@ -12,11 +12,11 @@ import permissionManager from '#/permissions/permissions-config';
  * @param entity - Entity that user wants to create.
  */
 export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(entity: EntityModel<K>) => {
-  const { role } = getContextUser();
+  const userSytemRole = getContextUserSystemRole();
   const memberships = getContextMemberships();
 
   const { entityType } = entity;
-  const isSystemAdmin = role === 'admin';
+  const isSystemAdmin = userSytemRole === 'admin';
 
   // Step 1: Permission check
   const isAllowed = permissionManager.isPermissionAllowed(memberships, 'create', entity);

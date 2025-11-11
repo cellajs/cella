@@ -236,7 +236,6 @@ The documentation is generated from source code using \`zod\` schemas, converted
   roles: {
     systemRoles: ['admin'] as const,
     entityRoles: ['member', 'admin'] as const,
-    allRoles: ['member', 'admin'] as const,
   },
 
   /**

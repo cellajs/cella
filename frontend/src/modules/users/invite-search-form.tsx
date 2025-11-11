@@ -67,7 +67,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
             <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
-                <SelectRoleRadio entityType={entity.entityType} value={value} onChange={onChange} />
+                <SelectRoleRadio value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
