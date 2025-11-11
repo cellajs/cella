@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import type { Context } from 'hono';
 import z from 'zod';
 import { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError, ConstructedError } from '#/lib/errors';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { oauthQuerySchema } from '#/modules/auth/oauth/schema';
@@ -40,9 +40,21 @@ export const handleOAuthInitiation = async (
   const cookieContent = { codeVerifier, type, redirectAfter };
 
   if (type === 'connect') {
-    const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: '/auth/error' });
-    const { user } = await validateSession(sessionToken);
-    if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath: '/auth/error' });
+    try {
+      const { sessionToken } = await getParsedSessionCookie(ctx);
+      const { user } = await validateSession(sessionToken);
+      if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
+    } catch (err) {
+      if (err instanceof AppError) {
+        throw new AppError({
+          ...err,
+          type: err.type as ConstructedError['type'],
+          shouldRedirect: true,
+          meta: { ...err.meta, errorPagePath: '/auth/error' },
+        });
+      }
+      throw err;
+    }
   }
 
   if (type === 'verify') {

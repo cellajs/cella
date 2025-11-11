@@ -6,7 +6,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError, ConstructedError } from '#/lib/errors';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
@@ -80,19 +80,34 @@ export const handleOAuthCallback = async (
 
   let result: OAuthFlowResult;
 
-  switch (type) {
-    case 'connect':
-      result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
-      break;
-    case 'invite':
-      result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
-      break;
-    case 'verify':
-      result = await verifyCallbackFlow({ ctx, ...baseCallbackProps });
-      break;
-    case 'auth':
-      result = await authCallbackFlow(baseCallbackProps);
-      break;
+  try {
+    switch (type) {
+      case 'connect':
+        result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
+        break;
+      case 'invite':
+        result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
+        break;
+      case 'verify':
+        result = await verifyCallbackFlow({ ctx, ...baseCallbackProps });
+
+        break;
+      case 'auth':
+        result = await authCallbackFlow(baseCallbackProps);
+
+        break;
+    }
+  } catch (err) {
+    if (err instanceof AppError) {
+      const errorPagePath = type === 'connect' ? '/account' : '/auth/error';
+      throw new AppError({
+        ...err,
+        type: err.type as ConstructedError['type'],
+        shouldRedirect: true,
+        meta: { ...err.meta, errorPagePath },
+      });
+    }
+    throw err;
   }
 
   return await processOAuthAccount({ ctx, redirectAfter, ...result });
@@ -103,8 +118,6 @@ export const handleOAuthCallback = async (
  * Determines if the user has an existing verified/unverified account or needs to register.
  */
 const authCallbackFlow = async ({ providerUser, provider, oauthAccount = null }: BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const redirectPath = '/auth/error';
-
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
@@ -127,14 +140,14 @@ const authCallbackFlow = async ({ providerUser, provider, oauthAccount = null }:
     .limit(2);
 
   // Multiple users with the same email → conflict
-  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
 
   // Existing user (by email) found -> suggest sign in and connect
-  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn', redirectPath });
+  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn' });
 
   // No user found and registration is disabled
   if (!appConfig.has.registrationEnabled) {
-    throw new AppError({ status: 403, type: 'sign_up_restricted', redirectPath });
+    throw new AppError({ status: 403, type: 'sign_up_restricted' });
   }
 
   // No user match → create a new user and OAuth account
@@ -161,20 +174,18 @@ const connectCallbackFlow = async ({
   provider,
   oauthAccount = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const redirectPath = `/account`;
-
-  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: redirectPath });
+  const { sessionToken } = await getParsedSessionCookie(ctx);
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error', redirectPath });
+  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
 
   const connectUserId = user.id;
 
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
     }
 
     // Already linked + verified → return verified result
@@ -191,7 +202,7 @@ const connectCallbackFlow = async ({
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
   }
 
   // Safe to connect → create and link OAuth account to current user
@@ -216,16 +227,15 @@ const inviteCallbackFlow = async ({
   provider,
   oauthAccount = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const redirectPath = '/auth/error';
-  const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation', redirectPath });
+  const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
-    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error', redirectPath });
+    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error' });
   }
 
   // OAuth account already linked
-  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error', redirectPath });
+  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
 
   // No linked OAuth account and email already in use by an existing user
   const users = await db
@@ -233,7 +243,7 @@ const inviteCallbackFlow = async ({
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error', redirectPath });
+  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error' });
 
   // TODO User already signed up meanwhile?
 
@@ -252,11 +262,10 @@ const verifyCallbackFlow = async ({
   provider,
   oauthAccount = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const redirectPath = '/auth/error';
   const verifyToken = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
 
   // No OauthAccount → invalid verification
-  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
+  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error' });
 
   // Invalid token settings → invalid verification
   if (
@@ -265,7 +274,7 @@ const verifyCallbackFlow = async ({
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.provider !== provider
   ) {
-    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath });
+    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error' });
   }
 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));

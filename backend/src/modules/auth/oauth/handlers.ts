@@ -42,7 +42,13 @@ const authOAuthRouteHandlers = app
     const strategy = 'github' as EnabledOAuthProvider;
 
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 400,
+        type: 'unsupported_oauth',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
 
     // Generate a `state` to prevent CSRF, and build URL with scope.
@@ -59,7 +65,13 @@ const authOAuthRouteHandlers = app
     // Check if Google OAuth is enabled
     const strategy = 'google' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 400,
+        type: 'unsupported_oauth',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
 
     // Generate a `state`, PKCE, and scoped URL.
@@ -77,7 +89,13 @@ const authOAuthRouteHandlers = app
     // Check if Microsoft OAuth is enabled
     const strategy = 'microsoft' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 400,
+        type: 'unsupported_oauth',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
 
     // Generate a `state`, PKCE, and scoped URL.
@@ -105,20 +123,31 @@ const authOAuthRouteHandlers = app
     } catch (_) {
       // Ignore parsing errors; continue with standard OAuth handling
     }
+    const strategy = 'github' as EnabledOAuthProvider;
 
     // When something went wrong during Github OAuth, fail early.
     if (error || !code) {
-      throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error', redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 400,
+        type: 'oauth_failed',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
-
-    const strategy = 'github' as EnabledOAuthProvider;
 
     // Verify cookie by `state` (CSRF protection)
     const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!state || !cookiePayload) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 401,
+        type: 'invalid_state',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
 
     try {
@@ -146,8 +175,8 @@ const authOAuthRouteHandlers = app
         status: 401,
         type,
         severity: 'error',
-        meta: { strategy },
-        redirectPath: '/auth/error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -165,7 +194,13 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 401,
+        type: 'invalid_state',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
 
     try {
@@ -188,8 +223,8 @@ const authOAuthRouteHandlers = app
         status: 401,
         type,
         severity: 'error',
-        meta: { strategy },
-        redirectPath: '/auth/error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -206,7 +241,13 @@ const authOAuthRouteHandlers = app
     const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError({ status: 401, type: 'invalid_state', severity: 'error', meta: { strategy }, redirectPath: '/auth/error' });
+      throw new AppError({
+        status: 401,
+        type: 'invalid_state',
+        severity: 'error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
+      });
     }
 
     try {
@@ -229,8 +270,8 @@ const authOAuthRouteHandlers = app
         status: 401,
         type,
         severity: 'error',
-        meta: { strategy },
-        redirectPath: '/auth/error',
+        shouldRedirect: true,
+        meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }

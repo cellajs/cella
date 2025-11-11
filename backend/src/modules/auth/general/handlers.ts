@@ -11,7 +11,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
+import { AppError, ConstructedError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -59,31 +59,44 @@ const authGeneralRouteHandlers = app
   .openapi(authGeneralRoutes.invokeToken, async (ctx) => {
     const { token, type: tokenType } = ctx.req.valid('param');
 
-    // Check if token exists and create a new single use token session
-    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true, redirectPath: '/auth/error' });
-    if (!tokenRecord.singleUseToken) throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', redirectPath: '/auth/error' });
+    try {
+      // Check if token exists and create a new single use token session
+      const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
+      if (!tokenRecord.singleUseToken)
+        throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', shouldRedirect: true, meta: { errorPagePath: '/auth/error' } });
 
-    // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
-    await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
+      // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
+      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
 
-    // If verification email, we process it immediately and redirect to app
-    if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
+      // If verification email, we process it immediately and redirect to app
+      if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
 
-    // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
-    if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
+      // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
+      if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
 
-    // Determine redirect URL based on token type
-    let redirectUrl = appConfig.defaultRedirectPath;
+      // Determine redirect URL based on token type
+      let redirectUrl = appConfig.defaultRedirectPath;
 
-    // If invitation, redirect to auth page with tokenId param
-    if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
+      // If invitation, redirect to auth page with tokenId param
+      if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
-    // If password reset, redirect to create password page with tokenId param
-    if (tokenRecord.type === 'password-reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
+      // If password reset, redirect to create password page with tokenId param
+      if (tokenRecord.type === 'password-reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
-    logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
+      logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
 
-    return ctx.redirect(redirectUrl, 302);
+      return ctx.redirect(redirectUrl, 302);
+    } catch (err) {
+      if (err instanceof AppError) {
+        throw new AppError({
+          ...err,
+          type: err.type as ConstructedError['type'],
+          shouldRedirect: true,
+          meta: { ...err.meta, errorPagePath: '/auth/error' },
+        });
+      }
+      throw err;
+    }
   })
   /**
    * Get token data by single use token in cookie
