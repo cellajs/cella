@@ -16,4 +16,10 @@ export const behaviorConfig: BehaviorConfig = {
    * Description: Behavior when the upstream remote is missing.
    */
   onMissingUpstream: 'skip',
+
+  /**
+   * Module: all
+   * Description: Whether to skip all git push operations during sync.
+   */
+  skipAllPushes: true,
 }

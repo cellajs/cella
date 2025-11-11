@@ -113,4 +113,10 @@ export type BehaviorConfig = {
    * - 'error': Throw an error and halt the operation.
    */
   onMissingUpstream?: 'skip' | 'error';
+
+  /**
+   * Module: all
+   * Whether to skip all git push operations.
+   */
+  skipAllPushes?: boolean;
 };

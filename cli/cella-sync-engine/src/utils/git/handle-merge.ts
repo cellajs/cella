@@ -1,9 +1,12 @@
-import { gitMerge, isMergeInProgress, gitCommit, gitCheckout, gitPush } from '../../utils/git/command';
-import { MergeResult } from '../../types';
-import { getUnmergedFiles } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';
-import { hasAnythingToCommit, isRepoClean } from '../../utils/git/helpers';
-import { hasRemoteBranch } from '../../utils/git/branches';
+
+import { behaviorConfig } from '../../config';
+
+import { gitMerge, isMergeInProgress, gitCommit, gitCheckout, gitPush } from './command';
+import { MergeResult } from '../../types';
+import { getUnmergedFiles } from './files';
+import { hasAnythingToCommit } from './helpers';
+import { hasRemoteBranch } from './branches';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
@@ -35,7 +38,7 @@ export async function handleMerge(
     }
 
     // Push merge result
-    if (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+    if (!behaviorConfig.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
       await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
     }
 

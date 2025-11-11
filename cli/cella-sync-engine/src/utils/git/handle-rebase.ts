@@ -1,5 +1,4 @@
-import { RepoConfig } from '../../types/config';
-import { gitCheckout, gitCommit, gitRebase, isRebaseInProgress } from '../../utils/git/command';
+import { gitCheckout, gitRebase, isRebaseInProgress } from '../../utils/git/command';
 import { getUnmergedFiles } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';
 import { MergeResult } from '../../types';
@@ -15,16 +14,20 @@ import { MergeResult } from '../../types';
  * @example
  * await handleRebase(forkConfig);
  */
-export async function handleRebase(forkConfig: RepoConfig): Promise<MergeResult> {
+export async function handleRebase(
+  rebaseIntoPath: string,
+  rebaseIntoBranch: string,
+  rebaseFromBranch: string,
+): Promise<MergeResult> {
   try {
     // Checkout the sync branch
-    await gitCheckout(forkConfig.repoPath, forkConfig.branch);
+    await gitCheckout(rebaseIntoPath, rebaseIntoBranch);
 
     // Start the rebase process
-    await startRebase(forkConfig);
+    await startRebase(rebaseIntoPath, rebaseFromBranch);
 
     // Handle conflicts manually
-    await waitForManualConflictResolution(forkConfig);
+    await waitForManualConflictResolution(rebaseIntoPath, rebaseFromBranch);
 
     return { status: 'success', isMerging: false };
   } catch (err: any) {
@@ -38,17 +41,13 @@ export async function handleRebase(forkConfig: RepoConfig): Promise<MergeResult>
  * @param forkConfig - RepoConfig of the forked repo
  * @param boilerplateConfig - RepoConfig of the boilerplate repo
  */
-async function startRebase(forkConfig: RepoConfig) {
+async function startRebase(rebaseIntoPath: string, rebaseFromBranch: string) {
   try {
-    if (!forkConfig.targetBranch) {
-      throw new Error('forkConfig.targetBranch is not defined');
-    }
-
     // Start rebase from target branch into sync branch
-    await gitRebase(forkConfig.repoPath, forkConfig.targetBranch);
+    await gitRebase(rebaseIntoPath, rebaseFromBranch);
   } catch (err) {
     // Check if merge is in conflict state (rethrow if not)
-    if (!isRebaseInProgress(forkConfig.repoPath)) {
+    if (!isRebaseInProgress(rebaseIntoPath)) {
       throw err;
     }
   }
@@ -60,18 +59,14 @@ async function startRebase(forkConfig: RepoConfig) {
  *
  * @param forkConfig - Configuration of the fork repository.
  */
-async function waitForManualConflictResolution(forkConfig: RepoConfig): Promise<void> {
-  let conflicts = await getUnmergedFiles(forkConfig.repoPath);
+async function waitForManualConflictResolution(rebaseIntoPath: string, rebaseFromBranch: string): Promise<void> {
+  let conflicts = await getUnmergedFiles(rebaseIntoPath);
 
   if (conflicts.length === 0) {
-    if (isRebaseInProgress(forkConfig.repoPath)) {
-      if (!forkConfig.targetBranch) {
-        throw new Error('forkConfig.targetBranch is not defined');
-      }
-
+    if (isRebaseInProgress(rebaseIntoPath)) {
       // Continue the rebase process
-      await gitRebase(forkConfig.repoPath, forkConfig.targetBranch, { continue: true, skipEditor: true });
-      await waitForManualConflictResolution(forkConfig);
+      await gitRebase(rebaseIntoPath, rebaseFromBranch, { continue: true, skipEditor: true });
+      await waitForManualConflictResolution(rebaseIntoPath, rebaseFromBranch);
     }
 
     return;
@@ -87,5 +82,5 @@ async function waitForManualConflictResolution(forkConfig: RepoConfig): Promise<
   }
 
   // Recursively check until no conflicts remain
-  await waitForManualConflictResolution(forkConfig);
+  await waitForManualConflictResolution(rebaseIntoPath, rebaseFromBranch);
 }

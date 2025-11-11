@@ -1,9 +1,10 @@
+import { confirm } from '@inquirer/prompts';
+
 import { RepoConfig } from '../../types/config';
-import { gitCleanUntrackedFile, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile, gitCommit } from '../../utils/git/command';
+import { gitCleanUntrackedFile, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile } from '../../utils/git/command';
 import { FileAnalysis, MergeResult } from '../../types';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
-import { confirm } from '@inquirer/prompts';
-import { handleMerge } from './handle-merge';
+import { handleMerge } from '../../utils/git/handle-merge';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
