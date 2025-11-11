@@ -123,7 +123,7 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="basic-use">
-        <h3 className="font-medium">Basic Use</h3>
+        <h3 className="font-medium">Basic use</h3>
         <p>
           You represent and warrant that you are of legal age to form a binding contract (or if not, you’ve received your parent’s or guardian’s
           permission to use the Services and gotten your parent or guardian to agree to these Terms on your behalf). If you’re agreeing to these Terms
@@ -138,9 +138,9 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="intellectual-property">
-        <h3 className="font-medium">Intellectual Property</h3>
+        <h3 className="font-medium">Intellectual property</h3>
 
-        <h4 className="font-medium">The Content</h4>
+        <h4 className="font-medium">Content</h4>
         <p>
           The materials displayed or performed on the Services (including, but not limited to, text, graphics, articles, photos, images,
           illustrations, User Submissions (defined below), and so forth) (the “Content”) are protected by copyright and other intellectual property
@@ -160,7 +160,7 @@ const TermsText = ({
           that all the restrictions above don’t apply.
         </p>
 
-        <h4 className="font-medium">User Submissions</h4>
+        <h4 className="font-medium">User submissions</h4>
         <p>
           Anything you post, upload, share, store, or otherwise provide through the Services is your “User Submission.” Some User Submissions are
           viewable by other users and some are submissions done as a group of users. In order to display your User Submissions on the Services, and to
@@ -217,7 +217,7 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="change-of-the-services">
-        <h3 className="font-medium">Change of the Services</h3>
+        <h3 className="font-medium">Service changes</h3>
         <p>
           {appName} is a dynamic application, so the Services will change over time. We may change, suspend, or discontinue any part of the Services,
           or we may introduce new features or impose limits on certain features or restrict access to parts or all of the Services. We’ll try to give
@@ -228,7 +228,7 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="delete-account">
-        <h3 className="font-medium">Delete Account</h3>
+        <h3 className="font-medium">Account deletion</h3>
         <p>
           You’re free to delete your account at any time; please refer to our
           <Link className="ml-1" to="/legal" hash="privacy">
@@ -262,7 +262,7 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="warranty-disclaimer">
-        <h3 className="font-medium">Warranty Disclaimer</h3>
+        <h3 className="font-medium">Warranty disclaimer</h3>
         <p>
           {companyShort} does not make any representations or warranties concerning any context contained in or accessed through the services, and
           will not be responsible or liable for the accuracy, copyright compliance, legality, or decency of material contained in or accessed through
@@ -277,7 +277,7 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="limitation-of-liability">
-        <h3 className="font-medium">Limitation of Liability</h3>
+        <h3 className="font-medium">Limitation of liability</h3>
         <p>
           To the fullest extent allowed by applicable law, under no circumstances and under no legal theory (including, without limitation, tort,
           contract, strict liability, or otherwise) shall {companyShort} be liable to you or to any other person for (a) any indirect, special,
@@ -310,7 +310,7 @@ const TermsText = ({
       </section>
 
       <section className="mb-4" id="choice-of-law-arbitration">
-        <h3 className="font-medium">Choice of Law; Arbitration</h3>
+        <h3 className="font-medium">Choice of law, arbitration</h3>
         <p>
           These Terms are governed by and will be construed under the laws of the Netherlands, without regard to the conflicts of laws provisions
           thereof. Any dispute arising from or relating to the subject matter of these Terms shall be finally settled in Rotterdam, The Netherlands,

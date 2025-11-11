@@ -79,14 +79,14 @@ const PrivacyText = ({
           <li>Minimum amount of user information such as name, email, last activity date</li>
         </ul>
 
-        <h4 className="font-medium">Information You or your Peers Provide</h4>
+        <h4 className="font-medium">Information you or your peers share</h4>
         <p>
           We receive and securely store data you - or the peers in your group - knowingly enter on the Services, whether via computer, mobile phone,
           other wireless device. This information may include Personal Information such as your
           <strong className="ml-1">name, user name, email address, profile picture</strong>.
         </p>
 
-        <h4 className="font-medium">Information Collected Automatically</h4>
+        <h4 className="font-medium">Information collected automatically</h4>
         <p>
           We receive and store certain types of usage information whenever you interact with the Services; this information is not Personal
           Information. For example, {companyShort} automatically receives and records information on our server logs from your browser including your
@@ -105,9 +105,9 @@ const PrivacyText = ({
       </section>
 
       <section className="mb-4" id="use-of-information">
-        <h3 className="font-medium">Use of Information</h3>
+        <h3 className="font-medium">Information use</h3>
 
-        <h4 className="font-medium">Generally</h4>
+        <h4 className="font-medium">General</h4>
         <p>
           When you use the Services, you may
           <span className="ml-1 italic">set up your personal profile, create workspaces, projects, and add tasks and todos in those projects</span>,
@@ -116,7 +116,7 @@ const PrivacyText = ({
           through the Services.
         </p>
 
-        <h4 className="font-medium">Personal Information</h4>
+        <h4 className="font-medium">Personal information</h4>
         <p>
           The Personal Information you provide is used for such purposes as responding to your requests for certain information and services,
           customizing your experience, and communicating with you about the Services. We will not sell or distribute Personal Information to be used
@@ -137,14 +137,14 @@ const PrivacyText = ({
       </section>
 
       <section className="mb-4" id="personal-information-sharing">
-        <h3 className="font-medium">Personal Information Sharing</h3>
+        <h3 className="font-medium">Personal information sharing</h3>
 
         <p>
           We neither rent nor sell your Personal Information; we may share your Personal Information in personally identifiable form only as described
           below.
         </p>
 
-        <h4 className="font-medium">User Profiles</h4>
+        <h4 className="font-medium">User profiles</h4>
         <p>
           You may choose to populate your user profile on the Services with your name, photograph, biography. This user profile information can be
           displayed to other users to facilitate user interaction within the Services or facilitate interaction with {companyShort}. Any images,
@@ -154,12 +154,12 @@ const PrivacyText = ({
           after you have disclosed it.
         </p>
 
-        <h4 className="font-medium">Business Transfers</h4>
+        <h4 className="font-medium">Business transfers</h4>
         <p>
           If {companyShort}, or some all of its assets were acquired or otherwise transferred, or in the unlikely event that {companyShort} goes out
           of business or enters bankruptcy, user information may be transferred to or acquired by a third party.
         </p>
-        <h4 className="font-medium">Protection of {companyShort} and Others</h4>
+        <h4 className="font-medium">Protecting you and {companyShort}</h4>
 
         <p>
           We may release Personal Information when we believe in good faith that release is necessary to comply with the law (such as to comply with a
@@ -198,7 +198,7 @@ const PrivacyText = ({
       </section>
 
       <section className="mb-4" id="information-access">
-        <h3 className="font-medium">Information Access</h3>
+        <h3 className="font-medium">Information access</h3>
         <p>
           We allow you to access the following information about you for the purpose of viewing, and in certain situations, updating or deleting that
           information. This list may change as the Services change. You can currently access the following information:
@@ -223,7 +223,7 @@ const PrivacyText = ({
       </section>
 
       <section className="mb-4" id="changes-privacy-policy">
-        <h3 className="font-medium">Privacy Policy changes</h3>
+        <h3 className="font-medium">Privacy policy changes</h3>
         <p>
           We may make changes to this Privacy policy from time to time for any reason. Use of information we collect is subject to the Privacy policy
           in effect at the time such information is collected. If we make changes in the way we use Personal Information or Children&#39;s Personal
