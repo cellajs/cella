@@ -5,9 +5,9 @@ import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { usersQueryOptions } from '~/modules/users/query';
-import type { UsersRouteSearchParams, UserWithRole } from '~/modules/users/types';
-import { UsersTableBar } from './bar';
-import { useColumns } from './columns';
+import { UsersTableBar } from '~/modules/users/table/bar';
+import { useColumns } from '~/modules/users/table/columns';
+import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modules/users/types';
 
 const LIMIT = appConfig.requestLimits.users;
 
@@ -19,7 +19,7 @@ const UsersTable = () => {
   const limit = LIMIT;
 
   // Build columns
-  const [selected, setSelected] = useState<UserWithRole[]>([]);
+  const [selected, setSelected] = useState<UserWithRoleAndMemberships[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -57,7 +57,7 @@ const UsersTable = () => {
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
       />
-      <DataTable<UserWithRole>
+      <DataTable<UserWithRoleAndMemberships>
         {...{
           rows,
           rowHeight: 52,
