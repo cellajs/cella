@@ -5,11 +5,11 @@ import { checkRepository } from "./modules/setup/check-repository";
 import { checkCleanState } from "./modules/setup/check-clean-state";
 import { fetchLatestChanges } from "./modules/setup/fetch-latest-changes";
 
-import { boilerplateConfig, forkConfig } from "./config/index";
-import { RepoConfig } from "./types/config";
 import { createBranchIfMissing } from "./utils/git/branches";
 import { handleMerge } from "./utils/git/handle-merge";
 import { addAsRemote } from "./modules/setup/add-as-remote";
+
+import { config, type RepoConfig } from "./config";
 
 /**
  * Setup checks config and repositories before running any scripts.
@@ -28,49 +28,42 @@ export async function runSetup() {
   console.log(pc.cyan("\nRunning Setup"));
 
   // Basic configuration checks
-  checkConfig(boilerplateConfig, [
+  checkConfig(config.boilerplate, [
     { prop: 'branch', required: true },
-    { prop: 'remoteName', required: true },
-    { prop: 'use', required: true },
-    { prop: 'repoPath', required: true },
-    { prop: 'remoteUrl', requiredIf: (config: RepoConfig) => config.use === 'remote' },
+    { prop: 'remoteName', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'remote' },
+    { prop: 'remoteUrl', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'remote' },
   ]);
 
-  checkConfig(forkConfig, [
+  checkConfig(config.fork, [
     { prop: 'branch', required: true },
-    { prop: 'targetBranch', required: true },
-    { prop: 'use', required: true, allowedValues: ['local'] },
-    { prop: 'repoPath', requiredIf: (config: RepoConfig) => config.use === 'local' },
+    { prop: 'remoteName', requiredIf: (fork: RepoConfig) => fork.use === 'remote' },
+    { prop: 'remoteUrl', requiredIf: (fork: RepoConfig) => fork.use === 'remote' },
+    { prop: 'syncBranch', requiredIf: (fork: RepoConfig) => fork.use === 'local' && config.syncService === 'boilerplate-fork' },
+    { prop: 'localPath', requiredIf: (fork: RepoConfig) => fork.use === 'local' },
   ]);
 
   // Check if repositories are accessible
-  await checkRepository(boilerplateConfig);
-  await checkRepository(forkConfig);
+  await checkRepository(config.boilerplate);
+  await checkRepository(config.fork);
 
   // Ensure boilerplate remote is added to fork
-  await addAsRemote(boilerplateConfig, forkConfig);
+  await addAsRemote(config.boilerplate, config.fork);
 
   // Ensure fork repository is clean (both working directory and target branch)
-  await checkCleanState(forkConfig.repoPath);
-  await checkCleanState(forkConfig.repoPath, forkConfig.targetBranch);
+  await checkCleanState(config.fork.workingDirectory);
+  await checkCleanState(config.fork.workingDirectory, config.fork.branch);
 
   // Check if sync-branch exists in fork, if not create it, then ensure it's clean
-  await createBranchIfMissing(forkConfig.repoPath, forkConfig.branch);
-  await checkCleanState(forkConfig.repoPath, forkConfig.branch);
-
-  // If boilerplate is local, also ensure working directory is clean
-  if (boilerplateConfig.use === 'local') {
-    await checkCleanState(boilerplateConfig.repoPath);
-    await checkCleanState(boilerplateConfig.repoPath, boilerplateConfig.branch);
-  }
+  await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranch);
+  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranch);
 
   // Ensure latest changes are fetched for both repositories and left behind in a clean state
-  await fetchLatestChanges(boilerplateConfig);
-  await fetchLatestChanges(forkConfig);
+  await fetchLatestChanges(config.boilerplate);
+  await fetchLatestChanges(config.fork);
 
-  // Merge fork target branch into sync branch to ensure it's up to date
-  await handleMerge(forkConfig.repoPath, forkConfig.branch, forkConfig.targetBranch, null);
-  await checkCleanState(forkConfig.repoPath, forkConfig.branch, { skipCheckout: true });
+  // Merge fork branch into sync branch to ensure it's up to date
+  await handleMerge(config.fork.workingDirectory, config.fork.syncBranch, config.fork.branch, null);
+  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranch, { skipCheckout: true });
 
   console.log(pc.green("✔ Setup complete.\n"));
 }

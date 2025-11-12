@@ -2,7 +2,7 @@ import { behaviorConfig } from "../../config";
 
 import { gitCheckout, gitFetch, gitPull } from "../../utils/git/command";
 import { hasRemoteBranch } from "../../utils/git/branches";
-import { RepoConfig } from "../../types/config";
+import { RepoConfig } from "../../config";
 import { checkCleanState } from "./check-clean-state";
 
 /**
@@ -15,15 +15,15 @@ import { checkCleanState } from "./check-clean-state";
 export async function fetchLatestChanges(repoConfig: RepoConfig) {
   // For remote repositories, ensure latest changes are fetched
   if (repoConfig.use === 'remote') {
-    await gitFetch(repoConfig.repoPath, repoConfig.remoteName);
+    await gitFetch(repoConfig.workingDirectory, repoConfig.remoteName);
   }
 
   // For local repositories, pull changes
   if (repoConfig.use === 'local') {
-    await pullLatestChanges(repoConfig.repoPath, repoConfig.branch);
+    await pullLatestChanges(repoConfig.workingDirectory, repoConfig.branch);
 
-    if (repoConfig.targetBranch) {
-      await pullLatestChanges(repoConfig.repoPath, repoConfig.targetBranch);
+    if (repoConfig.branch) {
+      await pullLatestChanges(repoConfig.workingDirectory, repoConfig.branch);
     }
   }
 }

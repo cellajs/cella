@@ -1,4 +1,4 @@
-import type { RepoConfig } from "../../types/config";
+import type { RepoConfig } from "../../config";
 import { CommitSummary, CommitEntry } from "../../types";
 import { getFileCommitHistory } from "../../utils/git/files";
 
@@ -26,8 +26,8 @@ export async function analyzeFileCommits(
   filePath: string,
 ): Promise<CommitSummary> {
   const [boilerplateCommits, forkCommits] = await Promise.all([
-    getFileCommitHistory(boilerplate.repoPath, boilerplate.branch, filePath),
-    getFileCommitHistory(fork.repoPath, fork.branch, filePath),
+    getFileCommitHistory(boilerplate.workingDirectory, boilerplate.branch, filePath),
+    getFileCommitHistory(fork.workingDirectory, fork.branch, filePath),
   ]);
 
   const boilerplateLookup = toCommitLookup(boilerplateCommits);

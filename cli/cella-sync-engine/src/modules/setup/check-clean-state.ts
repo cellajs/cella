@@ -15,16 +15,16 @@ import { isRepoClean } from "../../utils/git/helpers";
  * @example
  * await checkCleanState('/path/to/repo', 'main');
  */
-export async function checkCleanState(repoPath: string, targetBranch?: string, options?: { skipCheckout?: boolean }) {
+export async function checkCleanState(repoPath: string, branch?: string, options?: { skipCheckout?: boolean }) {
   // Determine the location description for error messages
-  const locationDescription = targetBranch ? `Branch '${targetBranch}' in repository at ${repoPath}` : `repository at ${repoPath}`;
+  const locationDescription = branch ? `Branch '${branch}' in repository at ${repoPath}` : `repository at ${repoPath}`;
 
-  if (targetBranch && !options?.skipCheckout) {
-    if (!await hasLocalBranch(repoPath, targetBranch)) {
+  if (branch && !options?.skipCheckout) {
+    if (!await hasLocalBranch(repoPath, branch)) {
       throw new Error(`${locationDescription} does not exist.`);
     }
 
-    await gitCheckout(repoPath, targetBranch);
+    await gitCheckout(repoPath, branch);
   }
 
   // Check for uncommitted changes

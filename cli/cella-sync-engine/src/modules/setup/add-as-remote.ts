@@ -1,6 +1,6 @@
 import { behaviorConfig } from "../../config";
 
-import { RepoConfig } from "../../types/config";
+import { RepoConfig } from "../../config";
 import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from "../../utils/git/remotes";
 
 /**
@@ -13,23 +13,23 @@ export async function addAsRemote(
     addAsRemote: RepoConfig,
     addTo: RepoConfig,
 ) {
-  const remoteUrl = addAsRemote.use === 'remote' ? addAsRemote.remoteUrl! : addAsRemote.repoPath!;
+  const remoteUrl = addAsRemote.use === 'remote' ? addAsRemote.remoteUrl! : addAsRemote.localPath!;
 
   // If boilerplate is not added as remote to fork, add it
-  if (!await hasRemote(addTo.repoPath, addAsRemote.remoteName)) {
-    await addRemote(addTo.repoPath, addAsRemote.remoteName, remoteUrl!);
+  if (!await hasRemote(addTo.workingDirectory, addAsRemote.remoteName)) {
+    await addRemote(addTo.workingDirectory, addAsRemote.remoteName, remoteUrl!);
     return;
   }
 
   // Check remote URL matches configuration
-  const currentUrl = await getRemoteUrl(addTo.repoPath, addAsRemote.remoteName);
+  const currentUrl = await getRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName);
   if (currentUrl === remoteUrl) {
     return;
   }
 
   // Update remote URL to match configuration
   if (behaviorConfig.onRemoteWrongUrl === 'overwrite') {
-    await setRemoteUrl(addTo.repoPath, addAsRemote.remoteName, remoteUrl!);
+    await setRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName, remoteUrl!);
     return;
   }
 

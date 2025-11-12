@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { RepoConfig } from "../../types/config";
+import { RepoConfig } from "../../config";
 import { isDirectory } from "../../utils/files";
 import { gitLsRemote, gitRevParseIsInsideWorkTree } from "../../utils/git/command";
 
@@ -14,31 +14,31 @@ import { gitLsRemote, gitRevParseIsInsideWorkTree } from "../../utils/git/comman
  */
 export async function checkRepository(repoConfig: RepoConfig) {
   // Folder must be a directory
-  if (!(await isDirectory(repoConfig.repoPath))) {
-    throw new Error(`${repoConfig.repoPath} is not a directory`);
+  if (!(await isDirectory(repoConfig.workingDirectory))) {
+    throw new Error(`${repoConfig.workingDirectory} is not a directory`);
   }
 
   // Directory must contain a .git folder
-  if (!(await isDirectory(path.join(repoConfig.repoPath, ".git")))) {
-    throw new Error(`.git directory missing in: ${repoConfig.repoPath}`);
+  if (!(await isDirectory(path.join(repoConfig.workingDirectory, ".git")))) {
+    throw new Error(`.git directory missing in: ${repoConfig.workingDirectory}`);
   }
 
   // Check readablity with git plumbing
   try {
     // Cheap query → returns nothing but fails when repo is corrupted
-    await gitRevParseIsInsideWorkTree(repoConfig.repoPath);
+    await gitRevParseIsInsideWorkTree(repoConfig.workingDirectory);
   } catch (e) {
-    throw new Error(`Git repo looks corrupted in ${repoConfig.repoPath}`);
+    throw new Error(`Git repo looks corrupted in ${repoConfig.workingDirectory}`);
   }
 
   // When remote repository, check if we can access it (e.g., via GitHub API)
   if (repoConfig.use === 'remote') {
     if (!repoConfig.remoteUrl) {
-      throw new Error(`Remote URL is not defined for repository at ${repoConfig.repoPath}`);
+      throw new Error(`Remote URL is not defined for repository at ${repoConfig.workingDirectory}`);
     }
 
     try {
-      await gitLsRemote(repoConfig.repoPath, repoConfig.remoteUrl);
+      await gitLsRemote(repoConfig.workingDirectory, repoConfig.remoteUrl);
     } catch (e) {
       throw new Error(`Failed to access remote repository at ${repoConfig.remoteUrl}`);
     }

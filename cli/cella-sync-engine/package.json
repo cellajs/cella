@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": false,
   "license": "MIT",
-  "description": "Use git sync to keep your Cella fork up to date with the upstream repository.",
+  "description": "Use cella-sync-engine to keep your Cella fork up-to-date with Calla.",
   "repository": {
     "type": "git",
     "url": "https://github.com/cellajs/cella",

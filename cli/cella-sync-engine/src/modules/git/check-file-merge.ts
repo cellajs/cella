@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { FileAnalysis } from "../../types";
-import { RepoConfig } from '../../types/config';
+import { RepoConfig } from '../../config';
 import { createTempDir, isBinaryFile, removeDir } from '../../utils/files';
 import { writeGitFileAtCommit } from '../../utils/git/files';
 import { gitMergeFile } from '../../utils/git/command';
@@ -47,9 +47,9 @@ export async function checkFileAutomerge(
   try {
     // Write content from each commit to temporary files
     await Promise.all([
-      writeGitFileAtCommit(fork.repoPath, commitSummary.sharedAncestorSha, filePath, baseFile),
-      writeGitFileAtCommit(fork.repoPath, forkFile.lastCommitSha, filePath, oursFile),
-      writeGitFileAtCommit(boilerplate.repoPath, boilerplateFile.lastCommitSha, filePath, theirsFile),
+      writeGitFileAtCommit(fork.workingDirectory, commitSummary.sharedAncestorSha, filePath, baseFile),
+      writeGitFileAtCommit(fork.workingDirectory, forkFile.lastCommitSha, filePath, oursFile),
+      writeGitFileAtCommit(boilerplate.workingDirectory, boilerplateFile.lastCommitSha, filePath, theirsFile),
     ]);
 
     await gitMergeFile(oursFile, baseFile, theirsFile);

@@ -1,6 +1,6 @@
 import pLimit from 'p-limit';
 
-import { RepoConfig } from '../types/config';
+import { RepoConfig } from '../config';
 import { FileAnalysis, FileEntry } from '../types';
 import { analyzeFileCommits } from './git/analyze-file-commits';
 import { analyzeFileBlob } from './git/analyze-file-blob';

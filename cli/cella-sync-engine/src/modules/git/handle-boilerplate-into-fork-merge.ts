@@ -1,6 +1,6 @@
 import { confirm } from '@inquirer/prompts';
 
-import { RepoConfig } from '../../types/config';
+import { RepoConfig } from '../../config';
 import { gitCleanUntrackedFile, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile } from '../../utils/git/command';
 import { FileAnalysis, MergeResult } from '../../types';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
@@ -17,18 +17,18 @@ export async function handleBoilerplateIntoForkMerge(
   try {
     // Start merge
     await handleMerge(
-      forkConfig.repoPath,
-      forkConfig.branch,
+      forkConfig.workingDirectory,
+      forkConfig.syncBranch,
       `${boilerplateConfig.remoteName}/${boilerplateConfig.branch}`,
       async function resolveConflicts() {
         // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
-        await cleanupNonConflictedFiles(forkConfig.repoPath, analyzedFiles);
+        await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);
 
         // Resolve any remaining conflicts
-        await resolveMergeConflicts(forkConfig.repoPath, analyzedFiles);
+        await resolveMergeConflicts(forkConfig.workingDirectory, analyzedFiles);
 
         // Cleanup all untracked files
-        await gitCleanAllUntrackedFiles(forkConfig.repoPath);
+        await gitCleanAllUntrackedFiles(forkConfig.workingDirectory);
       }
     );
 

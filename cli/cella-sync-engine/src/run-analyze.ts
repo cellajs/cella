@@ -1,7 +1,6 @@
 import pc from "picocolors";
 import yoctoSpinner from 'yocto-spinner';
 
-import { boilerplateConfig, forkConfig } from "./config/index";
 import { getGitFileHashes } from "./utils/git/files";
 import { analyzeManyFiles } from "./modules/analyze-file";
 import { analyzedFileLine, logAnalyzedFileLine } from "./log/analyzed-file";
@@ -10,6 +9,7 @@ import { analyzedSwizzleLine, logAnalyzedSwizzleLine } from "./log/analyzed-swiz
 import { extractSwizzleEntries } from "./modules/swizzle/analyze";
 import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
 import { FileAnalysis } from "./types";
+import { config } from "./config";
 
 export async function runAnalyze(): Promise<FileAnalysis[]>  {
   console.log(pc.cyan("\nRunning file analysis"));
@@ -18,8 +18,8 @@ export async function runAnalyze(): Promise<FileAnalysis[]>  {
   spinner.start();
 
   const [boilerplateFiles, forkFiles] = await Promise.all([
-    getGitFileHashes(boilerplateConfig.repoPath, boilerplateConfig.branch),
-    getGitFileHashes(forkConfig.repoPath, forkConfig.branch),
+    getGitFileHashes(config.boilerplate.workingDirectory, config.boilerplate.branch),
+    getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranch),
   ]);
 
   spinner.stop();
@@ -27,8 +27,8 @@ export async function runAnalyze(): Promise<FileAnalysis[]>  {
   spinner.start("Analyzing file histories...");
 
   const analyzedFiles = await analyzeManyFiles(
-    boilerplateConfig,
-    forkConfig,
+    config.boilerplate,
+    config.fork,
     boilerplateFiles,
     forkFiles
   );
