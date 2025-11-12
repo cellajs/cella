@@ -1,5 +1,5 @@
 {
-  "id": "75889fe0-7d35-4d97-8fda-974acbbaaaa2",
+  "id": "37f065cd-ee1e-4e1a-b82b-95d25a001fb6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1192,6 +1192,72 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.system_roles": {
+      "name": "system_roles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "modified_at": {
+          "name": "modified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "system_roles_user_id_users_id_fk": {
+          "name": "system_roles_user_id_users_id_fk",
+          "tableFrom": "system_roles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "system_roles_userId_unique": {
+          "name": "system_roles_userId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.tokens": {
       "name": "tokens",
       "schema": "",
@@ -1558,13 +1624,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "role": {
-          "name": "role",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'user'"
         },
         "user_flags": {
           "name": "user_flags",
