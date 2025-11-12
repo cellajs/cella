@@ -1,31 +1,52 @@
 # Error Tracking with Bugsink
 
-If you do **not want to expose errors directly** during development or want a local error tracking solution, you can use **Bugsink**. This setup works in conjunction with **Sentry**, so all your error tracking configuration is based on the usual Sentry workflow.
+You can use **Bugsink** for flexible error tracking — either **locally** during development or want a local error tracking solution or
+**remotely**.
 
----
+Bugsink integrates seamlessly with the standard **Sentry** workflow, so all your error tracking configuration is based on the usual
+Sentry workflow.
 
-### Local Setup for Bugsink
+- **Local mode:** Keep errors private and track them on your own machine or local environment.
+- **Remote mode:** Send errors to a shared or hosted Bugsink instance for team-wide visibility and centralized monitoring.
 
-1. **Start Bugsink locally**:
+## ⚙️ Setup for Bugsink
 
-By default, the Bugsink container is configured with:
+### 1. **Bugsink Setup**
 
-- `CREATE_SUPERUSER: admin:admin`
-- `PORT: 8000`
+- **Local mode:**
 
-```bash
-pnpm docker:up:bugsink
-```
+  1. **Start Bugsink locally**
 
-This will start the Bugsink container along with its required PostgreSQL database.
+  ```bash
+  pnpm docker:up:bugsink
+  ```
 
-2. **Follow Bugsink Quickstart:**:
+  By default, the container starts with the following environment variables:
 
-Visit the official documentation and set up your project:
+  - `CREATE_SUPERUSER: admin:admin`
+  - `PORT: 8000`
 
-[Bugsink Quickstart Guide](https://www.bugsink.com/docs/quickstart/)
+  Once running, you can access the local Bugsink instance in your browser at **http://localhost:8000**.
 
-3. **Configure your application:**:
+  2. **Follow the Bugsink Quickstart**
+
+  Complete your local setup by following the official documentation:
+
+  👉 [Bugsink Quickstart Guide](https://www.bugsink.com/docs/quickstart/)
+
+- **Remote mode:**
+
+  1. **Register a Bugsink Account**
+
+  - Go to [Bugsink.com](https://www.bugsink.com/).
+  - Create an account and set up a new project for your application.
+
+  2. **Obtain Your DSN**
+
+  - After creating the project, copy the generated **DSN** (Data Source Name).
+  - Use this DSN in your application’s configuration to connect it to your Bugsink project.
+
+### 2. **Configure your application:**:
 
 Add your new Bugsink project DSN to the application config:
 
@@ -33,7 +54,7 @@ Add your new Bugsink project DSN to the application config:
 appConfig.errorTrackerDsn = "<YOUR_BUGSINK_PROJECT_DSN>";
 ```
 
-4. **Run your application:**
+### 3. **Run your application:**
 
 - Run with [pglite](https://pglite.dev/)
 
