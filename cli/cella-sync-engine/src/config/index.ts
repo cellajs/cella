@@ -2,9 +2,10 @@ export { logConfig } from "./log";
 export { swizzleConfig } from "./swizzle";
 export { behaviorConfig } from "./behavior";
 
-import type { AppConfig, MinimalRepoConfig } from "./types";
+import type { AppConfig, MinimalRepoConfig, MinimalLogConfig } from "./types";
 import { forkDefaultConfig } from "./fork.default";
 import { boilerplateDefaultConfig } from "./boilerplate.default";
+import { logDefaultConfig, logDivergedConfig } from "./log.default";
 
 export type RepoConfig = MinimalRepoConfig & { use: 'local' | 'remote', type: 'fork' | 'boilerplate', workingDirectory: string };
 
@@ -15,6 +16,7 @@ export class Config {
     this.state = {
       fork: forkDefaultConfig,
       boilerplate: boilerplateDefaultConfig,
+      log: logDefaultConfig,
       syncService: 'boilerplate-fork',
       ...initial
     };
@@ -37,12 +39,20 @@ export class Config {
       workingDirectory: this.workingDirectory
     };
   }
+
+  get log(): MinimalLogConfig {
+    return this.state.log;
+  }
   
   get syncService(): AppConfig['syncService'] {
     return this.state.syncService;
   }
 
   set syncService(value: AppConfig['syncService']) {
+    if (value === 'diverged') {
+      this.state.log = logDivergedConfig;
+    }
+    
     this.state.syncService = value;
   }
 
@@ -50,21 +60,21 @@ export class Config {
    * Dynamically computed "use" property for fork
    */
   get forkUse(): 'local' | 'remote' {
-    return this.state.syncService === 'boilerplate-fork' ? 'local' : 'remote';
+    return ['boilerplate-fork', 'diverged'].includes(this.state.syncService) ? 'local' : 'remote';
   }
 
   /**
    * Dynamically computed "use" property for boilerplate
    */
   get boilerplateUse(): 'local' | 'remote' {
-    return this.state.syncService === 'boilerplate-fork' ? 'remote' : 'local';
+    return ['boilerplate-fork', 'diverged'].includes(this.state.syncService) ? 'remote' : 'local';
   }
 
   /**
    * Determines the working directory dynamically 
    */
   get workingDirectory(): string {
-    if (this.state.syncService === 'boilerplate-fork') {
+    if (['boilerplate-fork', 'diverged'].includes(this.state.syncService)) {
       return this.state.fork.localPath;
     } else {
       return "";

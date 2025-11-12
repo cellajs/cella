@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import { FileAnalysis } from "../types";
-import { logConfig } from "../config/index";
+import { config } from "../config";
 
 /**
  * Generates a formatted log line for Swizzle analysis of a file.
@@ -24,12 +24,18 @@ export function analyzedSwizzleLine(analyzedFile: FileAnalysis): string {
   return parts.join(' ').trim();
 }
 
-export function logAnalyzedSwizzleLine(analyzedFile: FileAnalysis, line: string): void {
-  const logModulesConfigured = 'modules' in logConfig;
-  const swizzledConfigured = 'swizzled' in logConfig.analyzedSwizzle;
+export function shouldLogAnalyzedSwizzleModule(): boolean {
+  const logModulesConfigured = 'modules' in config.log;
+  if (!logModulesConfigured) return true;
+  return config.log.modules?.includes('analyzedSwizzle') || false;
+}
 
-  const includesModule = logConfig.modules?.includes('analyzedSwizzle');
-  const swizzledEqual = logConfig.analyzedSwizzle.swizzled === (analyzedFile.swizzle?.existingMetadata?.swizzled || analyzedFile.swizzle?.newMetadata?.swizzled);
+export function logAnalyzedSwizzleLine(analyzedFile: FileAnalysis, line: string): void {
+  const logModulesConfigured = 'modules' in config.log;
+  const swizzledConfigured = 'swizzled' in config.log.analyzedSwizzle;
+
+  const includesModule = config.log.modules?.includes('analyzedSwizzle');
+  const swizzledEqual = config.log.analyzedSwizzle.swizzled === (analyzedFile.swizzle?.existingMetadata?.swizzled || analyzedFile.swizzle?.newMetadata?.swizzled);
 
   const shouldLog = [
     !logModulesConfigured || includesModule,

@@ -4,6 +4,7 @@ import { runCli } from "./run-cli";
 import { runSetup } from "./run-setup";
 import { runSync } from "./run-sync";
 import { runAnalyze } from "./run-analyze";
+import { config } from "./config";
 
 
 async function main(): Promise<void> {
@@ -16,8 +17,11 @@ async function main(): Promise<void> {
   // Analyze files
   const analyzedFiles = await runAnalyze();
   
+
   // Sync files
-  await runSync(analyzedFiles);
+  if (['boilerplate-fork', 'boilerplate-fork+packages'].includes(config.syncService)) {
+    await runSync(analyzedFiles);
+  }
 }
 
 main().catch((err) => {

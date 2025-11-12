@@ -44,7 +44,7 @@ export type CommitSummary = {
    * - `'diverged'` - Both the branch and upstream have unique commits.
    * - `'unrelated'` - The branches have no common history.
    */
-  status: 'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated';
+  status: 'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated' | 'unknown';
 
   /** Number of commits this branch is ahead of the upstream/target branch */
   commitsAhead: number;

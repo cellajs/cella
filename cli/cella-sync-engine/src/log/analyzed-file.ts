@@ -1,6 +1,6 @@
 import pc from "picocolors";
 import { FileAnalysis } from "../types";
-import { logConfig } from "../config/index";
+import { config } from "../config";
 
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const status = '🗎';
@@ -26,16 +26,25 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   return parts.join(' ').trim();
 }
 
-export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
-  const logModulesConfigured = 'modules' in logConfig;
-  const commitSummaryStateConfigured = 'commitSummaryState' in logConfig.analyzedFile;
-  const filePathConfigured = 'filePath' in logConfig.analyzedFile;
-  const mergeStrategyConfigured = 'mergeStrategyStrategy' in logConfig.analyzedFile;
+export function shouldLogAnalyzedFileModule(): boolean {
+  console.log(config.log)
 
-  const includesModule = logConfig.modules?.includes('analyzedFile');
-  const commitSummaryStateEqual = logConfig.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
-  const filePathEqual = logConfig.analyzedFile.filePath?.includes(analyzedFile.filePath);
-  const mergeStrategyEqual = logConfig.analyzedFile.mergeStrategyStrategy?.includes(analyzedFile.mergeStrategy?.strategy || 'unknown');
+
+  const logModulesConfigured = 'modules' in config.log;
+  if (!logModulesConfigured) return true;
+  return config.log.modules?.includes('analyzedFile') || false;
+}
+
+export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
+  const logModulesConfigured = 'modules' in config.log;
+  const commitSummaryStateConfigured = 'commitSummaryState' in config.log.analyzedFile;
+  const filePathConfigured = 'filePath' in config.log.analyzedFile;
+  const mergeStrategyConfigured = 'mergeStrategyStrategy' in config.log.analyzedFile;
+
+  const includesModule = config.log.modules?.includes('analyzedFile');
+  const commitSummaryStateEqual = config.log.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
+  const filePathEqual = config.log.analyzedFile.filePath?.includes(analyzedFile.filePath);
+  const mergeStrategyEqual = config.log.analyzedFile.mergeStrategyStrategy?.includes(analyzedFile.mergeStrategy?.strategy || 'unknown');
 
   const shouldLog = [
     !logModulesConfigured || includesModule,

@@ -1,10 +1,10 @@
-import { RepoConfig } from "./types";
+import { MinimalRepoConfig } from "./types";
 
 /**
  * Default configuration for the boilerplate repository.
  * The boilerplate repository contains the base files and structure
  */
-export const boilerplateDefaultConfig: RepoConfig = {
+export const boilerplateDefaultConfig: MinimalRepoConfig = {
   /**
    * Local file system path to the boilerplate repository (empty because differ per user).
    */

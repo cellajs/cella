@@ -1,10 +1,10 @@
-import { RepoConfig } from "./types";
+import { MinimalRepoConfig } from "./types";
 
 /**
  * Default configuration for the fork repository.
  * The fork repository contains the user's fork of the boilerplate repository.
  */
-export const forkDefaultConfig: RepoConfig = {
+export const forkDefaultConfig: MinimalRepoConfig = {
   /**
    * Local file system path to the fork repository (empty because differ per user).
    */

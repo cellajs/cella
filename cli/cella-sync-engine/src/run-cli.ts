@@ -20,7 +20,7 @@ interface CLIConfig {
 const availableSyncServices = [
   { name: 'Boilerplate → fork (+packages)', value: 'boilerplate-fork+packages', disabled: true },
   { name: 'Boilerplate → fork', value: 'boilerplate-fork' },
-  { name: 'Diverged files', value: 'diverged', disabled: true },
+  { name: 'Diverged files', value: 'diverged' },
   { name: 'Packages', value: 'packages', disabled: true }
 ];
 
@@ -79,6 +79,9 @@ export async function runCli(): Promise<void> {
     console.info(`Using sync service: ${pc.cyan(`${cli.syncService}\n`)}`);
   }
 
+  // @TODO: Improve this to allow configuration customization
+  config.syncService = cli.syncService;
+
   console.info(`\nThe next configuration will be used to run ${cli.syncService}:`);
   showConfig(cli);
 
@@ -86,8 +89,8 @@ export async function runCli(): Promise<void> {
     message: 'What do you want to do next?',
     choices: [
       { name: 'continue', value: 'continue' },
-      { name: 'Customize configuration', value: 'customize' },
-      { name: 'Show full configuration', value: 'show-full-config' },
+      { name: 'Customize configuration', value: 'customize', disabled: true },
+      { name: 'Show full configuration', value: 'show-full-config', disabled: true },
       { name: 'Cancel', value: 'cancel' },
     ],
   });
@@ -116,10 +119,8 @@ function showConfig(cliConfig: CLIConfig) {
     console.info(`Fork: ${pc.cyan(config.fork.remoteUrl)} <${pc.bold(pc.cyan(config.fork.branch))}>`);
   }
 
-  if (config.syncService === 'boilerplate-fork') {
-    console.info(`Sync branch: ${pc.bold(pc.cyan(config.fork.branch))}`);
-    console.info(`Upstream: ${pc.bold(pc.cyan(config.boilerplate.remoteName))}`);
-  }
+  console.info(`Sync branch: ${pc.bold(pc.cyan(config.fork.branch))}`);
+  console.info(`Upstream: ${pc.bold(pc.cyan(config.boilerplate.remoteName))}`);
 
   console.info();
 }
