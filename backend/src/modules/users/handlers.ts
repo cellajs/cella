@@ -25,14 +25,13 @@ const usersRouteHandlers = app
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, mode, limit, targetEntityId, targetEntityType } = ctx.req.valid('query');
+    const { q, sort, order, offset, mode, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
     const user = getContextUser();
 
     const filters = [
       // Filter by role if provided
-      //TODO(DAVID) fix
-      // ...(role ? [eq(usersTable.role, role)] : []),
+      ...(role ? [eq(systemRolesTable.role, role)] : []),
 
       // Exclude self when fetching shared memberships
       ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
@@ -59,19 +58,23 @@ const usersRouteHandlers = app
     const targetMembership = alias(membershipsTable, 'targetMembership'); // memberships of users being queried
     const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
 
+    const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
     const baseUsersQuery =
       mode === 'shared'
         ? db
-            .selectDistinct({ ...userSelect })
+            .selectDistinct(usersQuerySelect)
             .from(usersTable)
             .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
             .innerJoin(
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
             )
-        : db.select(userSelect).from(usersTable);
+        : db.select(usersQuerySelect).from(usersTable);
 
-    const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
+    const usersQuery = baseUsersQuery
+      .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
+      .where(and(...filters))
+      .orderBy(orderColumn);
 
     // Total count
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));

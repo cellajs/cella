@@ -13,7 +13,7 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import DeleteUsers from '~/modules/users/delete-users';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
-import type { UserWithMemberships } from '~/modules/users/types';
+import type { UserWithRole } from '~/modules/users/types';
 import { UserCell } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -22,7 +22,7 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<UserWithMemberships>[] = [
+    const cols: ColumnOrColumnGroup<UserWithRole>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -110,7 +110,7 @@ export const useColumns = () => {
         resizable: true,
         width: 100,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <div>{t(row.role, { ns: ['app', 'common'] })}</div>,
+        renderCell: ({ row }) => <div>{row.role ? t(row.role, { ns: ['app', 'common'] }) : t('common:user')}</div>,
       },
       {
         key: 'createdAt',
@@ -137,5 +137,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<UserWithMemberships>[]>(columns);
+  return useState<ColumnOrColumnGroup<UserWithRole>[]>(columns);
 };
