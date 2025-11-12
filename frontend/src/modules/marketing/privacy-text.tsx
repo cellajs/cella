@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import sharedDataTypes from '#json/shared-data-types.json';
 import subprocessors from '#json/subprocessors.json';
-import CompanyContact from '~/modules/marketing/company-contact';
+import LegalContact from '~/modules/marketing/legal-contact';
 import SharedDataTypes from '~/modules/marketing/shared-data-types';
 import Subprocessors from '~/modules/marketing/subprocessors';
 
@@ -38,7 +38,7 @@ const PrivacyText = ({
       <p className="italic mb-2">Last updated: {lastUpdated}</p>
       <p>Here you can read our privacy policy. If you have questions or comments about them, feel free to contact us.</p>
 
-      <CompanyContact
+      <LegalContact
         companyFull={companyFull}
         streetAddress={streetAddress}
         city={city}

@@ -1,8 +1,9 @@
 import { appConfig } from 'config';
+import { LegalSubject } from '~/modules/marketing/legal-config';
 import PrivacyText from '~/modules/marketing/privacy-text';
 import TermsText from '~/modules/marketing/terms-text';
 
-const LegalText = ({ subject }: { subject: 'privacy' | 'terms' }) => {
+const LegalText = ({ subject }: { subject: LegalSubject }) => {
   const data = {
     appName: appConfig.name,
     companyFull: appConfig.company.name,

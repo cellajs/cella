@@ -1,25 +1,21 @@
 import { appConfig } from 'config';
+import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import MarketingLayout from '~/modules/marketing/layout';
-import LegalText from '~/modules/marketing/legal-text';
+import { defaultSubjects, subjectLabels } from '~/modules/marketing/legal-config';
 
-const slugs = ['terms', 'privacy'] as const;
-
-const tabLabels = {
-  terms: 'common:terms_of_use',
-  privacy: 'common:privacy_policy',
-};
+const LegalText = lazy(() => import('~/modules/marketing/legal-text'));
 
 export const LegalPage = () => {
   const { t } = useTranslation();
 
-  const tabs = [...slugs, ...appConfig.legal.pages].map((slug) => ({
+  const tabs = [...defaultSubjects, ...appConfig.legal.pages].map((slug) => ({
     id: slug,
-    label: tabLabels[slug],
+    label: subjectLabels[slug],
   }));
 
   return (
@@ -35,7 +31,7 @@ export const LegalPage = () => {
           {tabs.map(({ id: subject }) => (
             <AsideAnchor key={subject} id={subject} className="mb-40">
               <section className="bg-background">
-                <div className="mx-auto max-w-[48rem] pt-8 font-light px-4 md:px-8 min-h-screen">
+                <div className="mx-auto max-w-3xl pt-8 font-light px-4 md:px-8 min-h-screen">
                   <LegalText key={subject} subject={subject} />
                 </div>
               </section>

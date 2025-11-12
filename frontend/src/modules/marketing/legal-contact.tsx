@@ -1,4 +1,4 @@
-type CompanyContactProps = {
+type LegalContactProps = {
   companyFull: string;
   streetAddress: string;
   city: string;
@@ -9,9 +9,7 @@ type CompanyContactProps = {
   bankAccount: string;
 };
 
-const CompanyContact = (props: CompanyContactProps) => {
-  const { companyFull, streetAddress, city, postcode, country, supportEmail, registration, bankAccount } = props;
-
+const LegalContact = ({ companyFull, streetAddress, city, postcode, country, supportEmail, registration, bankAccount }: LegalContactProps) => {
   return (
     <ul className="mt-8 mb-8 italic list-none">
       <li>
@@ -19,7 +17,7 @@ const CompanyContact = (props: CompanyContactProps) => {
       </li>
       <li>{streetAddress}</li>
       <li>
-        {city} {postcode}{' '}
+        {city}, {postcode}
       </li>
       <li>{country}</li>
       <li>
@@ -33,4 +31,4 @@ const CompanyContact = (props: CompanyContactProps) => {
   );
 };
 
-export default CompanyContact;
+export default LegalContact;
