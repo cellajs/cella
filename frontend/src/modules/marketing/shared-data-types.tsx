@@ -5,7 +5,7 @@ type _SharedDataTypes = typeof sharedDataTypes;
 
 const SharedDataTypes = ({ sharedDataTypes }: { sharedDataTypes: _SharedDataTypes }) => {
   return (
-    <Table title="Shared Data Types">
+    <Table title="Shared Data Types" className="mt-2">
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>

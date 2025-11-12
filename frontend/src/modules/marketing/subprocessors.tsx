@@ -5,7 +5,7 @@ type _Subprocessors = typeof subprocessors;
 
 const Subprocessors = ({ subprocessors }: { subprocessors: _Subprocessors }) => {
   return (
-    <Table title="Subprocessors">
+    <Table title="Subprocessors" className="mt-2">
       <TableHeader>
         <TableRow>
           <TableHead>Company</TableHead>
