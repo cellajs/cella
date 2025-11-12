@@ -5,7 +5,7 @@ import LegalContact from '~/modules/marketing/legal-contact';
 import SharedDataTypes from '~/modules/marketing/shared-data-types';
 import Subprocessors from '~/modules/marketing/subprocessors';
 
-type PrivacyTextProps = {
+interface PrivacyTextProps {
   appName: string;
   companyFull: string;
   companyShort: string;
@@ -16,7 +16,7 @@ type PrivacyTextProps = {
   supportEmail: string;
   registration: string;
   bankAccount: string;
-};
+}
 
 const PrivacyText = ({
   appName,

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import LegalContact from '~/modules/marketing/legal-contact';
 
-type TermsTextProps = {
+interface TermsTextProps {
   appName: string;
   companyFull: string;
   companyShort: string;
@@ -13,7 +13,7 @@ type TermsTextProps = {
   supportEmail: string;
   registration: string;
   bankAccount: string;
-};
+}
 
 const TermsText = ({
   appName,
