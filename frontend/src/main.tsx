@@ -25,8 +25,8 @@ renderAscii();
 // Add badge to favicon based on config mode
 addBadgeToFavicon(appConfig.mode as ConfigMode);
 
-// Initialize Error tracker if online
-if (navigator.onLine) initErrorTracker();
+// Initialize Error tracker
+initErrorTracker();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
