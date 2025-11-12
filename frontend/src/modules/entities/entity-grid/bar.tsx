@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import { ArrowDownAZ, Calendar } from 'lucide-react';
+import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -11,8 +11,8 @@ import type { EntitySearch } from '~/modules/entities/entity-grid/grid';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 const entityGridSortOptions = [
-  { name: 'common:alphabetical', icon: ArrowDownAZ, value: 'name' },
-  { name: 'common:created_at', icon: Calendar, value: 'createdAt' },
+  { name: 'common:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
+  { name: 'common:created_at', icon: CalendarIcon, value: 'createdAt' },
 ] as const;
 
 type Props = {

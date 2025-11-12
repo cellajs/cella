@@ -1,0 +1,80 @@
+import { appConfig } from 'config';
+import type { Context } from 'hono';
+import z from 'zod';
+import { Env } from '#/lib/context';
+import { AppError, ConstructedError } from '#/lib/errors';
+import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { oauthQuerySchema } from '#/modules/auth/oauth/schema';
+import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
+import { logEvent } from '#/utils/logger';
+import { TimeSpan } from '#/utils/time-span';
+
+type OAuthQueryParams = z.infer<typeof oauthQuerySchema>;
+export type OAuthCookiePayload = OAuthQueryParams & {
+  codeVerifier?: string;
+};
+
+/**
+ * Creates an OAuth session by setting the necessary cookies and redirecting to the provider.
+ *
+ * - Stores OAuth flow context (invite, connect, verify, or default)
+ * - Associates the context with the OAuth `state` to prevent CSRF
+ * - Optionally includes PKCE `codeVerifier`
+ *
+ * @param ctx - Hono context
+ * @param provider - OAuth provider name
+ * @param url - Provider’s authorization endpoint
+ * @param state - OAuth state param
+ * @param codeVerifier - PKCE code verifier (optional)
+ * @returns redirect response
+ */
+export const handleOAuthInitiation = async (
+  ctx: Context<Env, any, { out: { query: OAuthQueryParams } }>,
+  provider: string,
+  url: URL,
+  state: string,
+  codeVerifier?: string,
+) => {
+  const { type, redirectAfter } = ctx.req.valid('query');
+  const cookieContent = { codeVerifier, type, redirectAfter };
+
+  if (type === 'connect') {
+    try {
+      const { sessionToken } = await getParsedSessionCookie(ctx);
+      const { user } = await validateSession(sessionToken);
+      if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
+    } catch (err) {
+      if (err instanceof AppError) {
+        throw new AppError({
+          ...err,
+          type: err.type as ConstructedError['type'],
+          shouldRedirect: true,
+          meta: { ...err.meta, errorPagePath: '/auth/error' },
+        });
+      }
+      throw err;
+    }
+  }
+
+  if (type === 'verify') {
+    const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
+    if (tokenRecord && redirectAfter) {
+      try {
+        const redirectUrl = new URL(redirectAfter, appConfig.frontendUrl);
+        if (redirectUrl.pathname.includes('home')) {
+          redirectUrl.searchParams.set('skipWelcome', 'true');
+          cookieContent.redirectAfter = redirectUrl.pathname + redirectUrl.search + redirectUrl.hash;
+        }
+      } catch (_) {} // fallback if redirectAfter is not a valid URL
+    }
+  }
+
+  const stringifiedContent = JSON.stringify(cookieContent);
+
+  await setAuthCookie(ctx, `oauth-state-${state}`, stringifiedContent, new TimeSpan(5, 'm'));
+
+  logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
+
+  return ctx.redirect(url.toString(), 302);
+};

@@ -1,18 +1,12 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32UpperCase } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { passwordsTable } from '#/db/schema/passwords';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
-import { totpsTable } from '#/db/schema/totps';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
@@ -22,33 +16,33 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { deviceInfo } from '#/modules/auth/helpers/device-info';
-import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
-import { verifyTotp } from '#/modules/auth/helpers/totps';
+import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
+import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getUserSessions } from '#/modules/me/helpers/get-sessions';
+import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
+import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
+import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
-import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
-import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import type { menuSchema } from '#/modules/me/schema';
+import { userSelect } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 type UserMenu = z.infer<typeof menuSchema>;
-type MenuItem = z.infer<typeof menuItemSchema>;
+type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 export const streams = new Map<string, SSEStreamingApi>();
 
 const meRouteHandlers = app
-  /*
+  /**
    * Get me
    */
   .openapi(meRoutes.getMe, async (ctx) => {
@@ -59,7 +53,7 @@ const meRouteHandlers = app
 
     return ctx.json(user, 200);
   })
-  /*
+  /**
    * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMfa, async (ctx) => {
@@ -71,38 +65,10 @@ const meRouteHandlers = app
 
     try {
       // --- Passkey verification ---
-      if (passkeyData) {
-        const { credentialId, signature, authenticatorData, clientDataJSON } = passkeyData;
-
-        // Retrieve the passkey challenge stored in a secure cookie
-        const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-        if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
-
-        // Fetch passkey record for this user and credential ID
-        const [passkeyRecord] = await db
-          .select()
-          .from(passkeysTable)
-          .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
-          .limit(1);
-
-        if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
-
-        // Verify signature against public key and challenge
-        const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
-
-        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
-      }
+      if (passkeyData) await validatePasskey(ctx, { ...passkeyData, userId: user.id });
 
       // --- TOTP verification ---
-      if (totpCode) {
-        // Fetch  TOTP secret for this user
-        const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
-        if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-
-        // Verify  provided TOTP code
-        const isValid = verifyTotp(totpCode, credentials.secret);
-        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
-      }
+      if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -117,9 +83,9 @@ const meRouteHandlers = app
 
     const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
 
-    if (mfaRequired) {
+    if (updatedUser.mfaRequired) {
       // Invalidate all existing regular sessions
-      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, user.id), eq(sessionsTable.type, 'regular')));
+      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
 
       // Clear session cookie to enforce fresh login
       deleteAuthCookie(ctx, 'session');
@@ -130,50 +96,24 @@ const meRouteHandlers = app
 
     return ctx.json(updatedUser, 200);
   })
-  /*
+  /**
    * Get my auth data
    */
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
-    // Queries for user authentication factors
-    // Select passkey fields except for sensitive credential data
-    const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
-    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
+    // Get auth info + sessions in parallel
+    const [authInfo, sessions] = await Promise.all([getAuthInfo(user.id), getUserSessions(ctx, user.id)]);
 
-    const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, user.id)).limit(1);
-
-    const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-
-    // Run all queries + fetch user sessions in parallel
-    const [passkeys, password, totps, oauthAccounts, sessions] = await Promise.all([
-      getPasskeys,
-      getPassword,
-      getTotp,
-      getOAuth,
-      getUserSessions(ctx, user.id),
-    ]);
-
+    const { oauth, ...restInfo } = authInfo;
     // Filter only providers that are enabled in appConfig
-    const enabledOAuth = oauthAccounts
-      .map((el) => el.providerId)
+    const enabledOAuth = oauth
+      .map(({ provider }) => provider)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    // Return a consolidated JSON response with all relevant auth info
-    return ctx.json(
-      {
-        enabledOAuth,
-        hasTotp: !!totps.length,
-        hasPassword: !!password.length,
-        sessions,
-        passkeys,
-      },
-      200,
-    );
+    return ctx.json({ ...restInfo, enabledOAuth, sessions }, 200);
   })
-  /*
+  /**
    * Get my user menu
    */
   .openapi(meRoutes.getMyMenu, async (ctx) => {
@@ -212,8 +152,8 @@ const meRouteHandlers = app
 
     return ctx.json(menu, 200);
   })
-  /*
-   * Get my invites data
+  /**
+   * Get my invitations - a list with a combination of pending membership and entity data
    */
   .openapi(meRoutes.getMyInvitations, async (ctx) => {
     const user = getContextUser();
@@ -222,41 +162,33 @@ const meRouteHandlers = app
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
         const entityIdField = appConfig.entityIdFields[entityType];
-        const entitySelect = {
-          id: entityTable.id,
-          entityType: entityTable.entityType,
-          slug: entityTable.slug,
-          name: entityTable.name,
-          thumbnailUrl: entityTable.thumbnailUrl,
-          bannerUrl: entityTable.bannerUrl,
-        };
+
+        const contextEntityBaseSelect = makeContextEntityBaseSelect(entityType);
 
         return db
           .select({
-            entity: entitySelect,
-            invitedBy: userBaseSelect,
-            expiresAt: tokensTable.expiresAt,
-            token: tokensTable.token,
-            tokenId: tokensTable.id,
+            entity: contextEntityBaseSelect,
+            inactiveMembership: inactiveMembershipsTable,
           })
-          .from(tokensTable)
-          .leftJoin(usersTable, eq(usersTable.id, tokensTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, tokensTable[entityIdField]))
+          .from(inactiveMembershipsTable)
+          .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
+          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdField]))
           .where(
             and(
-              eq(tokensTable.type, 'invitation'),
-              eq(tokensTable.entityType, entityType),
-              eq(tokensTable.userId, user.id),
-              isNotNull(tokensTable.role),
-              isNull(tokensTable.consumedAt),
+              eq(inactiveMembershipsTable.contextType, entityType),
+              eq(inactiveMembershipsTable.userId, user.id),
+              isNull(inactiveMembershipsTable.rejectedAt),
             ),
           );
       }),
     );
 
-    return ctx.json(pendingInvites.flat(), 200);
+    const items = pendingInvites.flat();
+    const total = items.length;
+
+    return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Terminate one or more of my sessions
    */
   .openapi(meRoutes.deleteMySessions, async (ctx) => {
@@ -284,7 +216,7 @@ const meRouteHandlers = app
       return ctx.json({ success: false, rejectedItems: sessionIds }, 200);
     }
   })
-  /*
+  /**
    * Update current user (me)
    */
   .openapi(meRoutes.updateMe, async (ctx) => {
@@ -315,7 +247,7 @@ const meRouteHandlers = app
 
     return ctx.json(updatedUser, 200);
   })
-  /*
+  /**
    * Delete current user (me)
    */
   .openapi(meRoutes.deleteMe, async (ctx) => {
@@ -330,9 +262,9 @@ const meRouteHandlers = app
     deleteAuthCookie(ctx, 'session');
     logEvent('info', 'User deleted itself', { userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
-  /*
+  /**
    * Delete one of my entity memberships
    */
   .openapi(meRoutes.deleteMyMembership, async (ctx) => {
@@ -350,136 +282,9 @@ const meRouteHandlers = app
 
     logEvent('info', 'User left entity', { userId: user.id });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
-  /*
-   * Register passkey
-   */
-  .openapi(meRoutes.createPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
-    const user = getContextUser();
-
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
-
-    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
-
-    const device = deviceInfo(ctx);
-    const passkeyValue = {
-      userId: user.id,
-      credentialId,
-      publicKey,
-      nameOnDevice,
-      deviceName: device.name,
-      deviceType: device.type,
-      deviceOs: device.os,
-      browser: device.browser,
-    };
-
-    const { credentialId: _, publicKey: __, ...passkeySelect } = getTableColumns(passkeysTable);
-
-    // Save public key in database
-    const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);
-
-    return ctx.json(newPasskey, 200);
-  })
-  /*
-   * Delete passkey
-   */
-  .openapi(meRoutes.deletePasskey, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-    const user = getContextUser();
-
-    // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
-
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
-
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Register TOTP
-   */
-  .openapi(meRoutes.registerTotp, async (ctx) => {
-    const user = getContextUser();
-
-    // Generate a 20-byte random secret and encode it as Base32
-    const secretBytes = crypto.getRandomValues(new Uint8Array(20));
-
-    // Base32 → for authenticator app (manual entry or QR code)
-    const manualKey = encodeBase32UpperCase(secretBytes);
-
-    // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
-
-    // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
-
-    return ctx.json({ totpUri, manualKey }, 200);
-  })
-  /*
-   * Activate TOTP
-   */
-  .openapi(meRoutes.activateTotp, async (ctx) => {
-    const { code } = ctx.req.valid('json');
-    const user = getContextUser();
-
-    // Retrieve the encoded totp secret from cookie
-    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
-    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
-
-    // Verify TOTP code
-    try {
-      const isValid = verifyTotp(code, encodedSecret);
-      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      throw new AppError({
-        status: 500,
-        type: 'invalid_credentials',
-        severity: 'error',
-        ...(error instanceof Error ? { originalError: error } : {}),
-      });
-    }
-
-    // Save encoded secret key in database
-    await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
-
-    return ctx.json(true, 200);
-  })
-  /*
-   * Unlink TOTP
-   */
-  .openapi(meRoutes.deleteTotp, async (ctx) => {
-    const user = getContextUser();
-
-    // Remove all totps linked to this user's email
-    await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    // Check if the user still has any passkeys or TOTP entries registered
-    const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
-      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
-    ]);
-
-    // If no TOTP and Passkeys exists, disable MFA completely
-    if (!userPasskeys.length || !userTotps.length) {
-      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    }
-
-    return ctx.json(true, 200);
-  })
-  /*
+  /**
    * Get upload token
    */
   .openapi(meRoutes.getUploadToken, async (ctx) => {
@@ -502,20 +307,22 @@ const meRouteHandlers = app
 
       throw new AppError({
         status: 500,
-        type: 'missing_auth_key',
+        type: 'auth_key_not_found',
         severity: 'error',
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
   })
-  /*
+  /**
    * Unsubscribe myself by token from receiving newsletters
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
-    const [user] = await usersBaseQuery()
+    const [user] = await db
+      .select(userSelect)
+      .from(usersTable)
       .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
       .where(eq(unsubscribeTokensTable.token, token))
       .limit(1);
@@ -532,7 +339,7 @@ const meRouteHandlers = app
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
   })
-  /*
+  /**
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {

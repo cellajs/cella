@@ -19,6 +19,15 @@
   grid-template-rows: none !important;
 }
 
+.rdg-readonly .grid.rdg-wrapper > .rdg {
+  --rdg-background-color: none;
+  --rdg-header-background-color: none;
+  --rdg-header-draggable-background-color: none;
+  --rdg-row-hover-background-color: none;
+  --rdg-row-selected-background-color: none;
+  --rdg-row-selected-hover-background-color: none;
+}
+
 @media (max-width: 480px) {
   .rdg-cell[aria-selected="true"] {
     outline: none !important;
@@ -65,4 +74,19 @@
     top: 0.25rem;
     right: 0.5rem;
   }
+}
+
+.rdg-readonly .rdg-cell[aria-selected="true"] {
+  outline: none !important;
+  background: none !important;
+}
+
+.rdg-cell-resizable::after {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  right: 0;
+  pointer-events: none;
+  border-right: 2px solid hsl(var(--accent));
 }

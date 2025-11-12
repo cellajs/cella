@@ -2,6 +2,7 @@
   "files": {
     "includes": [
       "backend/src/**",
+      "backend/tests/**",
       "frontend/src/**",
       "frontend/storybook/**",
       "frontend/vite/**",
@@ -9,6 +10,11 @@
       "locales",
       "frontend/openapi-ts.config.ts"
     ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
   },
   "linter": {
     "includes": ["!frontend/src/api.gen/**"],
@@ -57,7 +63,8 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "lineWidth": 150
+    "lineWidth": 150,
+    "bracketSpacing": true
   },
   "javascript": {
     "formatter": {

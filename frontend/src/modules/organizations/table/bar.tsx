@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
+import { MailboxIcon, PlusIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getOrganizations, type Organization } from '~/api.gen';
@@ -10,7 +10,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
@@ -19,12 +19,15 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
-import type { OrganizationsRouteSearchParams } from '../types';
 
-type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsRouteSearchParams>;
+type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsRouteSearchParams> & {
+  isCompact: boolean;
+  setIsCompact: (isCompact: boolean) => void;
+};
 
 export const OrganizationsTableBar = ({
   selected,
@@ -34,6 +37,8 @@ export const OrganizationsTableBar = ({
   columns,
   setColumns,
   clearSelection,
+  isCompact,
+  setIsCompact,
 }: OrganizationsTableBarProps) => {
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
@@ -64,12 +69,14 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (organizations: Organization[]) => {
-      const message =
-        organizations.length === 1
-          ? t('common:success.delete_resource', { resource: t('common:organization') })
-          : t('common:success.delete_counted_resources', { count: organizations.length, resources: t('common:organizations').toLowerCase() });
-      toaster(message, 'success');
+    const callback = (args: CallbackArgs<Organization[]>) => {
+      if (args.status === 'success') {
+        const message =
+          args.data.length === 1
+            ? t('common:success.delete_resource', { resource: t('common:organization') })
+            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:organizations').toLowerCase() });
+        toaster(message, 'success');
+      }
       clearSelection();
     };
 
@@ -124,25 +131,25 @@ export const OrganizationsTableBar = ({
                 ref={newsletterButtonRef}
                 onClick={openNewsletterSheet}
                 label={t('common:newsletter')}
-                icon={Mailbox}
+                icon={MailboxIcon}
                 badge={selected.length}
                 className="relative"
               />
               <TableBarButton
                 variant="destructive"
                 label={t('common:remove')}
-                icon={Trash}
+                icon={TrashIcon}
                 className="relative"
                 badge={selected.length}
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
             </>
           ) : (
             !isFiltered && (
               <TableBarButton
                 label={t('common:create')}
-                icon={Plus}
+                icon={PlusIcon}
                 onClick={() => {
                   createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
                     id: 'create-organization',
@@ -166,7 +173,7 @@ export const OrganizationsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
 
       {/* Export */}
       <Export

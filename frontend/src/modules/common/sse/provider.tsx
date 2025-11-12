@@ -1,8 +1,8 @@
 import { appConfig } from 'config';
 import { createElement, type FC, useEffect, useState } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { SSEContext } from '~/modules/common/sse/use-sse';
 import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
-import { SSEContext } from './use-sse';
 
 type Props = React.PropsWithChildren;
 

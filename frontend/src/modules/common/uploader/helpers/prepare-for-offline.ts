@@ -10,7 +10,7 @@ import type { UploadTokenQuery } from '~/modules/me/types';
  * @param files - Fle object containing metadata and upload details.
  * @returns An array of files that were successfully prepared for offline storage.
  */
-export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery) => {
+export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<AssemblyResponse> => {
   console.warn('Files will be stored offline in indexedDB.');
 
   const template = uploadTemplates.attachment;
@@ -52,7 +52,7 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
       execTime: 0,
       queueTime: 0,
       localId: el.id,
-      size: el.size || el.data.size,
+      size: el.size || el.data?.size || 0,
       url: el.preview!,
       ssl_url: el.preview!,
       tus_upload_url: '',
@@ -62,9 +62,17 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
   }) satisfies UploadedFile[];
 
   return {
-    ok: 'OFFLINE_UPLOAD',
+    ok: 'ASSEMBLY_COMPLETED',
+    assembly_id: `offline_${Date.now()}`,
+    assembly_url: '',
+    assembly_ssl_url: '',
+    start_date: new Date().toISOString(),
+    execution_duration: 0,
+    bytes_received: localFiles.reduce((total, file) => total + (file.size || 0), 0),
+    bytes_expected: localFiles.reduce((total, file) => total + (file.size || 0), 0),
+    uploads: localFiles,
     results: {
       [templateKey]: localFiles,
     },
-  } as unknown as AssemblyResponse;
+  } satisfies AssemblyResponse;
 };

@@ -1,24 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
-const formSchema = zCheckEmailData.shape.body.unwrap();
+const formSchema = zCheckEmailData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
 /**
@@ -28,7 +28,8 @@ type FormValues = z.infer<typeof formSchema>;
  */
 export const CheckEmailStep = () => {
   const { t } = useTranslation();
-  const { setStep } = useAuthStepsContext();
+
+  const { setStep } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
@@ -43,9 +44,6 @@ export const CheckEmailStep = () => {
     onSuccess: () => setStep('signIn', form.getValues('email')),
     onError: (error: ApiError) => {
       let nextStep: AuthStep = 'inviteOnly';
-
-      // If there is an unclaimed invitation token, redirect to error page
-      if (error.type === 'invite_takes_priority') return setStep('error', form.getValues('email'), error);
 
       // If registration is enabled or user has a token, proceed to sign up
       if (appConfig.has.registrationEnabled) nextStep = 'signUp';
@@ -80,7 +78,7 @@ export const CheckEmailStep = () => {
           />
           <SubmitButton loading={isPending} className="w-full">
             {t('common:continue')}
-            <ArrowRight size={16} className="ml-2" />
+            <ArrowRightIcon size={16} className="ml-2" />
           </SubmitButton>
         </form>
       )}

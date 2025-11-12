@@ -15,6 +15,9 @@ const initOptions: InitOptions = {
   supportedLngs: appConfig.languages,
   load: 'languageOnly',
   fallbackLng: appConfig.defaultLanguage,
+  interpolation: {
+    escapeValue: false, // React escapes by default
+  },
   defaultNS: 'backend',
 };
 

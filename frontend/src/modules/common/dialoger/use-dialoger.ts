@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
 type DialogContainerOptions = {
-  id: string;
+  ref: RefObject<HTMLDivElement | null>;
   overlay?: boolean;
 };
 
@@ -15,7 +15,7 @@ export type DialogData = {
   drawerOnMobile?: boolean;
   className?: string;
   headerClassName?: string;
-  hideClose?: boolean;
+  showCloseButton?: boolean;
   container?: DialogContainerOptions;
   title?: string | ReactNode;
   titleContent?: string | ReactNode;
@@ -51,7 +51,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
 
   create: (content, data) => {
     // Add defaults and a key for reactivity
-    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now() };
+    const defaults = { drawerOnMobile: true, showCloseButton: true, open: true, modal: true, key: Date.now() };
 
     set((state) => ({
       dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],

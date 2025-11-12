@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Archive, ArchiveRestore, Bell, BellOff, type LucideIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
@@ -45,7 +45,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/optionsItem flex relative items-center h-12 w-full p-0 pr-2 justify-start rounded focus:outline-hidden
+      className="group/optionsItem flex relative items-center h-12 w-full p-0 pr-2 justify-start rounded-sm focus:outline-hidden
         ring-inset ring-muted/25 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 data-[archived=false]:cursor-grab
         group-data-[submenu=false]/menuOptions:h-12"
     >
@@ -58,7 +58,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
         </div>
       )}
       <AvatarWrap
-        className="m-2 mx-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
+        className="m-2 mx-3 text-sm group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
             h-8 w-8 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entityType}
         id={item.id}
@@ -71,15 +71,15 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
         <div className="truncate group-data-[subitem=true]/optionsItem:text-xs leading-5 text-md group-data-[archived=true]/optionsItem:opacity-70">
           {item.name} {env.VITE_DEBUG_UI && <span className="text-muted">#{item.membership.order}</span>}
         </div>
-        <div className="flex items-center gap-4 transition-opacity delay-500">
+        <div className="flex items-center gap-2 transition-opacity delay-500">
           <MenuItemEditButton
-            icon={item.membership.archived ? ArchiveRestore : Archive}
+            icon={item.membership.archived ? ArchiveRestoreIcon : ArchiveIcon}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
             onClick={() => handleUpdateMembershipKey('archived')}
             subitem={!item.submenu}
           />
           <MenuItemEditButton
-            icon={item.membership.muted ? Bell : BellOff}
+            icon={item.membership.muted ? BellIcon : BellOffIcon}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
             onClick={() => handleUpdateMembershipKey('muted')}
             subitem={!item.submenu}
@@ -100,11 +100,11 @@ const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: Men
   <Button
     variant="link"
     size="sm"
-    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 hover:underline underline-offset-1"
+    className="py-0 px-1 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:bg-accent/50 hover:underline underline-offset-1"
     aria-label={`Click ${title}`}
     onClick={onClick}
   >
-    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-2" />
+    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1.5" />
     {title}
   </Button>
 );

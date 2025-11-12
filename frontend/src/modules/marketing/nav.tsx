@@ -1,17 +1,18 @@
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import HamburgerButton from '~/modules/common/hamburger';
 import Logo from '~/modules/common/logo';
+import { GithubIcon } from '~/modules/icons/github';
 import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
 import UserLanguage from '~/modules/me/user-language';
 import UserTheme from '~/modules/me/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
-import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 
 export const MarketingNav = () => {
@@ -121,7 +122,7 @@ export const MarketingNav = () => {
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <Github strokeWidth={appConfig.theme.strokeWidth} />
+                <GithubIcon strokeWidth={appConfig.theme.strokeWidth} />
               </Button>
             )}
 
@@ -136,10 +137,12 @@ export const MarketingNav = () => {
         <SheetContent
           aria-describedby={undefined}
           side="top"
-          hideClose={true}
+          showCloseButton={false}
           className={`fixed z-120 border-none pb-8 ${activeSheet ? '' : 'delay-300'}`}
         >
-          <SheetHiddenTitle>Navigation</SheetHiddenTitle>
+          <VisuallyHidden>
+            <SheetTitle>Navigation</SheetTitle>
+          </VisuallyHidden>
           <div
             ref={ref}
             className={`flex mt-2 flex-col pt-14 gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
@@ -159,7 +162,7 @@ export const MarketingNav = () => {
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <Github className="mr-2" strokeWidth={appConfig.theme.strokeWidth} />
+                <GithubIcon className="mr-2" strokeWidth={appConfig.theme.strokeWidth} />
                 Github
               </Button>
             )}

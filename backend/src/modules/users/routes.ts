@@ -3,7 +3,8 @@ import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const userRoutes = {
   getUsers: createCustomRoute({
@@ -31,7 +32,7 @@ const userRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   deleteUsers: createCustomRoute({
@@ -45,19 +46,16 @@ const userRoutes = {
       "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     request: {
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {
       200: {
         description: 'Success',
-        content: {
-          'application/json': {
-            schema: successWithRejectedItemsSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getUser: createCustomRoute({
@@ -68,15 +66,13 @@ const userRoutes = {
     tags: ['users'],
     summary: 'Get user',
     description: 'Retrieves a *user* by ID or slug.',
-    request: {
-      params: entityParamSchema,
-    },
+    request: { params: entityParamSchema },
     responses: {
       200: {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   updateUser: createCustomRoute({
@@ -90,11 +86,7 @@ const userRoutes = {
     request: {
       params: entityParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: userUpdateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: userUpdateBodySchema } },
       },
     },
     responses: {
@@ -102,7 +94,7 @@ const userRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

@@ -17,6 +17,9 @@ export interface SystemInviteEmailProps extends BasicTemplateType {
 
 const appName = appConfig.name;
 
+/**
+ * Email template for new users that receive a system-level invitation.
+ */
 export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: SystemInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>
@@ -30,26 +33,15 @@ export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: S
 
       <EmailHeader
         headerText={
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.system_invite.title', { appName, lng }),
-            }}
-          />
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.system_invite.title', { appName, lng }) }} />
         }
       />
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }),
-            }}
-          />
+          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }) }} />
         </Text>
 
-        {/* User is sent to authenticate page, where this invitation token will be used to complete the sign up process */}
         <EmailButton ButtonText={i18n.t('common:join', { lng })} href={systemInviteLink} />
 
         <Text style={{ fontSize: '.85rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>{i18n.t('backend:email.invite_expires', { lng })}</Text>

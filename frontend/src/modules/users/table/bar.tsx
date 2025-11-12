@@ -1,4 +1,4 @@
-import { Mail, Trash, XSquare } from 'lucide-react';
+import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/api.gen';
@@ -29,6 +29,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
 
   const inviteButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
+  const inviteContainerRef = useRef(null);
 
   const { q, role } = searchVars;
 
@@ -50,14 +51,13 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
     clearSelection();
   };
 
-  // TODO: use a ref for container?
   const openInviteDialog = () => {
     createDialog(<InviteUsers mode={'email'} dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      container: { id: 'invite-users-container', overlay: true },
+      container: { ref: inviteContainerRef, overlay: true },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
@@ -102,14 +102,14 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
                   onClick={openDeleteDialog}
                   className="relative"
                   badge={selected.length}
-                  icon={Trash}
+                  icon={TrashIcon}
                   label={t('common:delete')}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
               </>
             ) : (
-              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={Mail} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && <TableCount count={total} label="common:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
@@ -130,7 +130,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
       </TableBarContainer>
 
       {/* Container for embedded dialog */}
-      <div id="invite-users-container" className="empty:hidden" />
+      <div ref={inviteContainerRef} className="empty:hidden" />
     </>
   );
 };

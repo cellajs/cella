@@ -34,14 +34,14 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
       key={url ? 'image' : 'fallback'}
       {...props}
       data-type={type}
-      className={cn('group bg-muted rounded-md data-[type=user]:rounded-full overflow-hidden', className)}
+      className={cn('group rounded-md data-[type=user]:rounded-full overflow-hidden', className)}
     >
       {url ? (
         <AvatarImage src={url} draggable="false" />
       ) : (
         <AvatarFallback className={avatarBackground}>
           <span className="sr-only">{name}</span>
-          <div className="text-black opacity-80 flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
+          <div className="text-black opacity-40 font-semibold flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>
       )}
     </Avatar>

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -11,10 +11,11 @@ import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { EmailVerificationRoute, MfaRoute } from '~/routes/auth-routes';
+import { useAuthStore } from '~/store/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -30,12 +31,12 @@ type FormValues = z.infer<typeof formSchema>;
 export const SignInStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, resetSteps } = useAuthStepsContext();
+  const { email, resetSteps } = useAuthStore();
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  const { lastUser, clearUserStore } = useUserStore();
-  const { redirect: encodedRedirect, token } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { lastUser, clearUserStore, setLastUser } = useUserStore();
+  const { redirect: encodedRedirect, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;
@@ -49,18 +50,21 @@ export const SignInStep = () => {
   // Handle sign in
   const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
     mutationFn: (body) => signIn({ body }),
-    onSuccess: ({ redirectPath: apiRedirectPath }) => {
-      if (apiRedirectPath) {
-        navigate({ to: apiRedirectPath, replace: true });
+    onSuccess: ({ emailVerified, mfa }) => {
+      if (mfa || !emailVerified) {
+        if (mfa) setLastUser({ email, mfaRequired: true });
+        const navigateInfo = !emailVerified ? { to: EmailVerificationRoute.to, params: { reason: 'signin' } } : { to: MfaRoute.to };
+        navigate({ ...navigateInfo, replace: true });
         return;
       }
 
-      const redirectPath = token ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+      // Go to pending invitation in home if token is provided, otherwise use provided redirect or default path
+      const redirectPath = tokenId ? `/home?skipWelcome=true` : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,
         replace: true,
-        ...(token && { params: { token } }),
+        ...(tokenId && { search: { tokenId } }),
       });
     },
     onError: (error: ApiError) => {
@@ -82,15 +86,15 @@ export const SignInStep = () => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        {tokenId ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
         <Button
           variant="ghost"
           onClick={resetAuth}
-          disabled={!!token}
+          disabled={!!tokenId}
           className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
         >
           <span className="truncate">{email}</span>
-          {!token && <ChevronDown size={16} className="ml-1" />}
+          {!tokenId && <ChevronDownIcon size={16} className="ml-1" />}
         </Button>
       </h1>
       {emailEnabled && (
@@ -133,9 +137,9 @@ export const SignInStep = () => {
 
               <SubmitButton loading={isPending} className="w-full">
                 {t('common:sign_in')}
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRightIcon size={16} className="ml-2" />
               </SubmitButton>
-              <RequestPasswordDialog email={email}>
+              <RequestPasswordDialog email={email} onEmailChange={resetSteps}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
                   {t('common:forgot_password')}
                 </Button>

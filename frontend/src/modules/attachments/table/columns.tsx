@@ -1,7 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
-import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download, Trash } from 'lucide-react';
+import { CloudIcon, CloudOffIcon, CopyCheckIcon, CopyIcon, DownloadIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
@@ -14,7 +14,7 @@ import AttachmentPreview from '~/modules/attachments/table/preview';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
-import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
@@ -88,6 +88,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       editable: true,
       visible: true,
       sortable: true,
+      resizable: true,
       minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
@@ -111,7 +112,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip="true"
             data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
           >
-            {isInCloud ? <Cloud className="text-success" size={16} /> : <CloudOff className="opacity-50" size={16} />}
+            {isInCloud ? <CloudIcon className="text-success" size={16} /> : <CloudOffIcon className="opacity-50" size={16} />}
           </div>
         );
       },
@@ -121,6 +122,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       name: '',
       visible: !isMobile,
       sortable: false,
+      resizable: true,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
@@ -165,7 +167,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip-content={t('common:download')}
             onClick={() => download(row.url, row.filename)}
           >
-            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
+            {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
           </Button>
         );
       },
@@ -184,12 +186,10 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         const ellipsisOptions: EllipsisOption<Attachment>[] = [
           {
             label: i18n.t('common:delete'),
-            icon: Trash,
+            icon: TrashIcon,
             onSelect: (row) => {
               const { update } = useDropdowner.getState();
-              const callback = ({ status }: CallbackArgs<Attachment[]>) => {
-                if (status) useDropdowner.getState().remove();
-              };
+              const callback = () => useDropdowner.getState().remove();
 
               update({
                 content: (
@@ -258,7 +258,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={true} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
     },
     {
       key: 'modifiedAt',

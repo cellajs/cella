@@ -5,16 +5,17 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 interface RequestPasswordDialogProps {
   email?: string;
+  onEmailChange?: () => void;
   ref: RefObject<HTMLButtonElement>;
   children: ReactElement<{ onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void }>;
 }
 
-export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswordDialogProps>(({ email, children }, ref) => {
+export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswordDialogProps>(({ email, onEmailChange, children }, ref) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
   const openDialog = () => {
-    createDialog(<RequestPasswordForm email={email} />, {
+    createDialog(<RequestPasswordForm email={email} onEmailChange={onEmailChange} />, {
       id: 'request-password',
       triggerRef: ref as RefObject<HTMLButtonElement>,
       className: 'md:max-w-xl',

@@ -1,6 +1,6 @@
 import type { UserConfig } from '@hey-api/openapi-ts';
 import { defineConfig } from '@hey-api/openapi-ts';
-import { defineConfig as TsdocEnhancer } from './vite/hey-api-tsdoc-enhancer';
+import { defineConfig as tsdocPlugin } from './vite/tsdoc-plugin';
 
 export const openApiConfig: UserConfig = {
   input: {
@@ -9,8 +9,8 @@ export const openApiConfig: UserConfig = {
   },
   output: {
     path: './src/api.gen',
-    lint: false,
-    format: false,
+    lint: null,
+    format: null,
   },
   parser: {
     transforms: {
@@ -18,7 +18,7 @@ export const openApiConfig: UserConfig = {
     },
   },
   plugins: [
-    TsdocEnhancer({ myOption: true }),
+    tsdocPlugin(),
     'zod',
     { name: '@hey-api/sdk', responseStyle: 'data' },
     {

@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Mail, Trash, XSquare } from 'lucide-react';
+import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api.gen';
@@ -17,7 +17,7 @@ import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
-import { PendingInvitations } from '~/modules/memberships/pending-table/pending-invitations';
+import { PendingMemberships } from '~/modules/memberships/pending-table/pending-memberships';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
@@ -43,6 +43,7 @@ export const MembersTableBar = ({
 
   const deleteButtonRef = useRef(null);
   const inviteButtonRef = useRef(null);
+  const inviteContainerRef = useRef(null);
 
   const { q, role, order, sort } = searchVars;
 
@@ -103,7 +104,7 @@ export const MembersTableBar = ({
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      container: { id: 'invite-members-container', overlay: !isSheet },
+      container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_members.text')}`,
@@ -141,19 +142,19 @@ export const MembersTableBar = ({
                   onClick={openDeleteDialog}
                   className="relative"
                   badge={selected.length}
-                  icon={Trash}
+                  icon={TrashIcon}
                   label={entity.id ? t('common:remove') : t('common:delete')}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
               </>
             ) : (
               !isFiltered &&
-              isAdmin && <TableBarButton ref={inviteButtonRef} icon={Mail} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              isAdmin && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {isAdmin && !isFiltered && <PendingInvitations entity={entity} />}
+                {isAdmin && !isFiltered && <PendingMemberships entity={entity} />}
               </TableCount>
             )}
           </FilterBarActions>
@@ -179,7 +180,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div id="invite-members-container" className="empty:hidden" />
+      <div ref={inviteContainerRef} className="empty:hidden" />
     </div>
   );
 };

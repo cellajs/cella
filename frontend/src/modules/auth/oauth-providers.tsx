@@ -23,7 +23,7 @@ type OAuthProvider = (typeof mapOAuthProviders)[number];
 const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
-  const { token, redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { tokenId, redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
@@ -35,11 +35,10 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
       setLoadingProvider(provider);
 
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ redirectAfter: redirectPath });
 
-      params.set('redirect', encodeURIComponent(redirectPath));
-      if (token) {
-        params.set('token', token);
+      if (tokenId) {
+        params.set('tokenId', tokenId);
         params.set('type', 'invite');
       } else params.set('type', 'auth');
 
@@ -74,7 +73,7 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
               data-provider={provider}
               src={`/static/images/${provider}-icon.svg`}
               alt={provider}
-              className="w-4 h-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
+              className="size-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
               loading="lazy"
             />
             <span>

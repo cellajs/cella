@@ -1,3 +1,4 @@
+import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDeleteRequestMutation } from '~/modules/requests/query';
@@ -5,8 +6,8 @@ import type { Request } from '~/modules/requests/types';
 
 interface Props {
   requests: Request[];
-  callback?: (requests: Request[]) => void;
   dialog?: boolean;
+  callback?: (args: CallbackArgs<Request[]>) => void;
 }
 
 const DeleteRequests = ({ requests, callback, dialog: isDialog }: Props) => {
@@ -18,7 +19,7 @@ const DeleteRequests = ({ requests, callback, dialog: isDialog }: Props) => {
     deleteRequests(requests, {
       onSuccess(_, requests) {
         if (isDialog) removeDialog();
-        callback?.(requests);
+        callback?.({ data: requests, status: 'success' });
       },
     });
   };

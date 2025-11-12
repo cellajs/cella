@@ -4,10 +4,9 @@ import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-sc
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { ArrowLeft, Info, Search } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeftIcon, InfoIcon, SearchIcon } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -16,13 +15,13 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
+import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-input';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { Button, buttonVariants } from '~/modules/ui/button';
-import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -30,20 +29,32 @@ import { cn } from '~/utils/cn';
 
 const pwaEnabled = appConfig.has.pwa;
 
-export const MenuSheet = memo(() => {
-  const isMobile = useBreakpoints('max', 'sm');
+export const MenuSheet = () => {
+  const { t } = useTranslation();
+  const { user } = useUserStore();
+
   const menu = useNavigationStore((state) => state.menu);
+  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
+  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
+  const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
+  const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
 
   const { mutateAsync } = useMemberUpdateMutation();
 
-  const scrollViewportRef = useRef(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
+
+  const accountButtonRef = useRef(null);
 
   // monitoring drop event
   useEffect(() => {
-    if (!scrollViewportRef.current) return;
+    const viewportEl = document.getElementById('nav-sheet-viewport');
+    if (!viewportEl) return;
+
     return combine(
       autoScrollForElements({
-        element: scrollViewportRef.current,
+        element: viewportEl,
         getAllowedAxis: () => 'vertical',
       }),
       monitorForElements({
@@ -68,7 +79,7 @@ export const MenuSheet = memo(() => {
           await mutateAsync({
             id: sourceItem.membership.id,
             order: newOrder,
-            orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
+            orgIdOrSlug: sourceItem.membership.organizationId || sourceItem.id,
             // Mutation variables
             idOrSlug: sourceItem.id,
             entityType: sourceItem.entityType,
@@ -77,35 +88,6 @@ export const MenuSheet = memo(() => {
       }),
     );
   }, [menu]);
-
-  const wrapperProps = { id: 'nav-sheet', className: 'h-full' };
-
-  return isMobile ? (
-    <div {...wrapperProps}>
-      <MenuContent />
-    </div>
-  ) : (
-    <ScrollArea {...wrapperProps} viewPortRef={scrollViewportRef}>
-      <MenuContent />
-    </ScrollArea>
-  );
-});
-
-const MenuContent = memo(() => {
-  const { t } = useTranslation();
-  const { user } = useUserStore();
-
-  const menu = useNavigationStore((state) => state.menu);
-  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
-  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
-  const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
-  const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
-
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
-
-  const accountButtonRef = useRef(null);
 
   const searchResultsListItems = useCallback(() => {
     return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />) : [];
@@ -124,11 +106,11 @@ const MenuContent = memo(() => {
   }, [menu]);
 
   return (
-    <div data-search={!!searchTerm} className="group/menu py-3 sm:px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
+    <div data-search={!!searchTerm} className="group/menu w-full py-3 px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
       {/* Only visible when floating nav is present. To return to home */}
-      <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
+      <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2 pt-3">
         <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
-          <ArrowLeft size={16} strokeWidth={1.5} />
+          <ArrowLeftIcon size={16} strokeWidth={1.5} />
           <span className="ml-2 font-normal">Home</span>
         </Link>
         <Button
@@ -142,10 +124,9 @@ const MenuContent = memo(() => {
               id: 'nav-sheet',
               triggerRef: accountButtonRef,
               side: 'left',
-              hideClose: true,
+              showCloseButton: false,
               modal: true,
-              className:
-                'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
+              className: navSheetClassName,
               onClose: () => {
                 setNavSheetOpen(null);
               },
@@ -168,7 +149,7 @@ const MenuContent = memo(() => {
         {searchResultsListItems().length > 0 ? (
           searchResultsListItems()
         ) : (
-          <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
         )}
       </div>
       {!searchTerm && (
@@ -178,7 +159,6 @@ const MenuContent = memo(() => {
           <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch
-                size="xs"
                 id="keepMenuOpen"
                 checked={keepOpenPreference}
                 onCheckedChange={toggleKeepOpenPreference}
@@ -191,20 +171,14 @@ const MenuContent = memo(() => {
             {pwaEnabled && <OfflineAccessSwitch />}
             {appConfig.menuStructure.some(({ subentityType }) => subentityType) && (
               <div className="flex items-center gap-4 ml-1">
-                <Switch
-                  size="xs"
-                  id="detailedMenu"
-                  checked={detailedMenu}
-                  onCheckedChange={toggleDetailedMenu}
-                  aria-label={t('common:detailed_menu')}
-                />
+                <Switch id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('common:detailed_menu')} />
                 <label htmlFor="detailedMenu" className="cursor-pointer select-none text-sm font-medium leading-none">
                   {t('common:detailed_menu')}
                 </label>
               </div>
             )}
             {pwaEnabled && (
-              <AlertWrap id="offline_access" variant="plain" icon={Info}>
+              <AlertWrap id="offline_access" variant="plain" icon={InfoIcon}>
                 {t('common:offline_access.text')}
               </AlertWrap>
             )}
@@ -213,4 +187,4 @@ const MenuContent = memo(() => {
       )}
     </div>
   );
-});
+};

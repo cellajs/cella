@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtualizer } from 'virtua';
@@ -101,9 +101,9 @@ const Combobox = ({
               {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate">{placeholders.trigger}</span>
+            <span className="truncate text-muted-foreground">{placeholders.trigger}</span>
           )}
-          <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
       {/* bounds.width + bounds.x * 2 to also include padding */}
@@ -115,16 +115,16 @@ const Combobox = ({
 
           <CommandList className="h-[30vh]">
             <CommandEmpty>
-              <ContentPlaceholder icon={Search} title={placeholders.notFound} />
+              <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} />
             </CommandEmpty>
 
             <CommandGroup>
               {/* To avoid conflicts between ScrollArea and Virtualizer, do not set a max-h value on ScrollArea. 
               As this will cause all list elements to render at once in Virtualizer*/}
-              <ScrollArea className="h-[30vh]" viewPortRef={scrollViewportRef}>
+              <ScrollArea className="h-[30vh]" viewportRef={scrollViewportRef}>
                 <ScrollBar />
 
-                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={2}>
+                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef}>
                   {filteredOptions.map((option, index) => (
                     <CommandItem
                       key={`${option.value}-${index}`}
@@ -137,7 +137,7 @@ const Combobox = ({
                         {renderAvatar && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
                         {renderOption(option)}
                       </div>
-                      <Check size={16} strokeWidth={3} className={`text-success ${value !== option.value && 'invisible'}`} />
+                      <CheckIcon size={16} strokeWidth={3} className={`text-success ${value !== option.value && 'invisible'}`} />
                     </CommandItem>
                   ))}
                 </Virtualizer>

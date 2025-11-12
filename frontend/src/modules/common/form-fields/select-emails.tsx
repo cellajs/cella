@@ -4,7 +4,7 @@
 // Removed autofocus
 // Use shadcn UI components and css
 
-import { X } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge } from '~/modules/ui/badge';
 import { inputClass } from '~/modules/ui/input';
@@ -39,6 +39,7 @@ export interface SelectEmailsProps {
   allowDuplicate?: boolean;
 }
 
+// TODO(FLIP) replace some of this with TagInput?
 export const SelectEmails = (props: SelectEmailsProps) => {
   const {
     id,
@@ -321,9 +322,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
               <span className="truncate">{email}</span>
               <button
                 type="button"
-                className={cn(
-                  'py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                )}
+                className={cn('py-1 m-[-.25rem] ml-1 rounded-full focus-effect')}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     removeEmail(index);
@@ -335,7 +334,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
                 }}
                 onClick={() => removeEmail(index)}
               >
-                <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+                <XIcon className="size-4 opacity-50 hover:opacity-100" />
               </button>
             </Badge>
           );

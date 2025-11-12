@@ -4,7 +4,7 @@
 @import "./gradients.css" layer(base);
 @import "../modules/common/blocknote/styles.css" layer(base);
 
-@config '../../tailwind.config.ts';
+@config "../../tailwind.config.ts";
 
 @layer base {
   *,
@@ -13,6 +13,54 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Light"),
+      local("OpenSans-Light"),
+      url(/static/fonts/OpenSans-Light.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Light.woff) format("woff");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans"),
+      local("OpenSans"),
+      url(/static/fonts/OpenSans-Regular.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Regular.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Semibold"),
+      local("OpenSans-Semibold"),
+      url(/static/fonts/OpenSans-SemiBold.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-SemiBold.woff) format("woff");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Bold"),
+      local("OpenSans-Bold"),
+      url(/static/fonts/OpenSans-Bold.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Bold.woff) format("woff");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
   }
 }
 
@@ -33,7 +81,7 @@
 
 @layer components {
   .focus-effect {
-    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
 
@@ -48,17 +96,17 @@
     --popover-foreground: 240 10% 0%;
     --primary: 240 6% 10%;
     --primary-foreground: 0 0% 95%;
-    --secondary: 240 5% 92%;
+    --secondary: 240 5% 94%;
     --secondary-foreground: 240 6% 20%;
     --muted: 240 5% 77.2%;
     --muted-foreground: 240 4% 40%;
-    --accent: 240 5% 92%;
-    --accent-foreground: 240 6% 10%;
+    --accent: 240 10% 92%;
+    --accent-foreground: 240 10% 10%;
     --destructive: 0 85% 40%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 92%;
-    --input: 240 6% 92%;
-    --ring: 240 6% 10%;
+    --border: 240 10% 92%;
+    --input: 240 10% 92%;
+    --ring: 240 10% 10%;
     --radius: 0.5rem;
     --success: 120 100% 30%;
   }
@@ -67,23 +115,23 @@
   .dark {
     --background: 240 10% 9%;
     --foreground: 0 0% 95%;
-    --card: 240 10% 14%;
+    --card: 240 6% 12%;
     --card-foreground: 0 0% 95%;
     --popover: 240 10% 9%;
     --popover-foreground: 0 0% 95%;
     --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 16%;
-    --secondary: 240 3.7% 15%;
+    --primary-foreground: 240 6% 15%;
+    --secondary: 240 6% 15%;
     --secondary-foreground: 0 0% 95%;
-    --muted: 240 3.7% 25%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 25%;
+    --muted: 240 6% 25%;
+    --muted-foreground: 240 6% 74.9%;
+    --accent: 240 6% 25%;
     --accent-foreground: 0 0% 95%;
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 95%;
-    --border: 240 3.7% 20%;
-    --input: 240 3.7% 25%;
-    --ring: 240 4.9% 83.9%;
+    --border: 240 6% 20%;
+    --input: 240 6% 25%;
+    --ring: 240 6% 83.9%;
     --success: 120 100% 40%;
   }
 
@@ -91,23 +139,23 @@
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    --accent: 240 4.8% 95.9%;
+    --accent: 240 6% 95.9%;
     --accent-foreground: 240 5.9% 10%;
   }
 
   .theme-base.dark {
     --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 240 3.7% 15%;
+    --secondary: 240 6% 15%;
     --secondary-foreground: 0 0% 98%;
-    --accent: 12 6.5% 15.1%;
+    --accent: 12 6% 15.1%;
     --accent-foreground: 0 0% 98%;
-    --muted-foreground: 240, 5%, 52.45%;
+    --muted-foreground: 240, 6%, 52.45%;
   }
 }
 
 @layer base {
   html {
-    @apply font-sans overscroll-x-none;
+    @apply font-sans overscroll-none;
   }
 
   * {
@@ -115,7 +163,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-x-none;
+    @apply bg-background text-foreground min-h-full overscroll-none;
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */

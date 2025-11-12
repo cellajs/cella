@@ -1,7 +1,10 @@
 import { appConfig, type EntityType } from 'config';
-import { Building2, Cloud, Github, type LucideIcon, Users } from 'lucide-react';
+import { Building2Icon, CloudIcon, type LucideIcon, UsersIcon } from 'lucide-react';
+import { ElementIcon } from '~/modules/icons/elemet';
+import { GithubIcon } from '~/modules/icons/github';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
+import { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { nanoid } from '~/utils/nanoid';
 
 /*************************************************************************************************
@@ -19,8 +22,9 @@ export const marketingNavConfig = [
  ************************************************************************************************/
 
 export const socials = [
-  { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: Cloud },
-  { title: 'GitHub', href: appConfig.company.githubUrl, icon: Github },
+  { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: CloudIcon },
+  { title: 'Element', href: appConfig.company.element, icon: ElementIcon },
+  { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
 ];
 
 export const footerSections = [
@@ -76,13 +80,13 @@ export const features = [
 
 export const cards: AboutCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
-  { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
-  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
+  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'onedollarstats' },
   { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
+  { name: 'Matrix', country: 'GB', url: 'matrix.org', id: 'matrix', invert: true },
   { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
+  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
-  // { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
 ];
 
 /*************************************************************************************************
@@ -111,8 +115,8 @@ export const faqsData = [
  ************************************************************************************************/
 
 export const counts = [
-  { id: 'user', title: 'common:users', icon: Users },
-  { id: 'organization', title: 'common:organizations', icon: Building2 },
+  { id: 'user', title: 'common:users', icon: UsersIcon },
+  { id: 'organization', title: 'common:organizations', icon: Building2Icon },
 ] as const satisfies readonly { id: EntityType; title: string; icon: LucideIcon }[];
 
 /*************************************************************************************************
@@ -136,7 +140,7 @@ export const whyDarkSlides = [
  * About - Showcase
  ************************************************************************************************/
 
-export const showcaseItems = [
+export const showcaseItems: ShowcaseItem[] = [
   {
     id: 'raak',
     url: 'https://raak.dev',

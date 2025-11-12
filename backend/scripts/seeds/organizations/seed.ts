@@ -8,7 +8,7 @@ import { OrganizationModel, organizationsTable } from '#/db/schema/organizations
 import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
-import { hashPassword } from '#/modules/auth/helpers/argon2id';
+import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/basic';
 import { defaultAdminUser } from '../fixtures';
 import { isOrganizationSeeded as isAlreadySeeded } from '../utils';

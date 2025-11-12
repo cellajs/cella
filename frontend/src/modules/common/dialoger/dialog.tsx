@@ -7,16 +7,13 @@ import { cn } from '~/utils/cn';
 
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
-export interface DialogProp {
-  dialog: InternalDialog;
-}
-export default function StandardDialog({ dialog }: DialogProp) {
-  const { id, content, open, triggerRef, description, title, titleContent = title, className, hideClose, headerClassName, container } = dialog;
+export default function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
+  const { id, content, open, triggerRef, description, title, titleContent = title, className, showCloseButton, headerClassName, container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
   const modal = !container;
-  const containerElement = useMemo(() => (container ? document.getElementById(container.id) : null), [container]);
+  const containerElement = useMemo(() => container?.ref?.current ?? null, [container?.ref?.current]);
 
   // onClose trigger handles by remove method
   const closeDialog = () => useDialoger.getState().remove(dialog.id);
@@ -39,9 +36,9 @@ export default function StandardDialog({ dialog }: DialogProp) {
       )}
       <DialogContent
         id={String(id)}
-        hideClose={hideClose}
+        showCloseButton={showCloseButton}
         container={containerElement}
-        className={cn(className, containerElement && 'z-40 [.sheeter-open_&]:z-40')}
+        className={cn(className, containerElement && 'z-40 in-[.sheeter-open]:z-40')}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
@@ -51,7 +48,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
         }}
       >
         <DialogHeader className={`${title || description ? headerClassName || '' : 'hidden'}`}>
-          <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
+          <DialogTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>
 

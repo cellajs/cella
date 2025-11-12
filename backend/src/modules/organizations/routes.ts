@@ -1,7 +1,6 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import {
-  fullCountsSchema,
   organizationCreateBodySchema,
   organizationListQuerySchema,
   organizationSchema,
@@ -9,7 +8,8 @@ import {
   organizationWithMembershipSchema,
 } from '#/modules/organizations/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const organizationRoutes = {
   createOrganization: createCustomRoute({
@@ -23,19 +23,15 @@ const organizationRoutes = {
     request: {
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: organizationCreateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: organizationCreateBodySchema } },
       },
     },
     responses: {
-      200: {
+      201: {
         description: 'Organization was created',
         content: { 'application/json': { schema: organizationWithMembershipSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getOrganizations: createCustomRoute({
@@ -46,19 +42,13 @@ const organizationRoutes = {
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Returns a list of *organizations* at the system level.',
-    request: {
-      query: organizationListQuerySchema,
-    },
+    request: { query: organizationListQuerySchema },
     responses: {
       200: {
         description: 'Organizations',
-        content: {
-          'application/json': {
-            schema: paginationSchema(organizationSchema.extend({ counts: fullCountsSchema })),
-          },
-        },
+        content: { 'application/json': { schema: paginationSchema(organizationSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   updateOrganization: createCustomRoute({
@@ -72,11 +62,7 @@ const organizationRoutes = {
     request: {
       params: entityParamSchema,
       body: {
-        content: {
-          'application/json': {
-            schema: organizationUpdateBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: organizationUpdateBodySchema } },
       },
     },
     responses: {
@@ -84,7 +70,7 @@ const organizationRoutes = {
         description: 'Organization was updated',
         content: { 'application/json': { schema: organizationSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getOrganization: createCustomRoute({
@@ -95,15 +81,13 @@ const organizationRoutes = {
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID or slug.',
-    request: {
-      params: entityParamSchema,
-    },
+    request: { params: entityParamSchema },
     responses: {
       200: {
         description: 'Organization',
         content: { 'application/json': { schema: organizationSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   deleteOrganizations: createCustomRoute({
@@ -116,6 +100,7 @@ const organizationRoutes = {
     description: 'Deletes one or more *organizations* by ID.',
     request: {
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
@@ -128,7 +113,7 @@ const organizationRoutes = {
           },
         },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

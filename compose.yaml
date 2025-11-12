@@ -1,10 +1,12 @@
+name: cella
+
 volumes:
   pg_data:
 
 services:
   db:
     container_name: cella_db
-    image: postgres:latest
+    image: postgres:17
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres

@@ -21,7 +21,7 @@ type CountsType = z.infer<typeof publicCountsSchema>;
 const publicCountsCache = new Map<string, { data: CountsType; expiresAt: number }>();
 
 const metricRouteHandlers = app
-  /*
+  /**
    * Get metrics
    */
   .openapi(metricRoutes.getMetrics, async (ctx) => {
@@ -36,7 +36,7 @@ const metricRouteHandlers = app
 
     return ctx.json(requestsPerMinute, 200);
   })
-  /*
+  /**
    * Get public counts with caching
    */
   .openapi(metricRoutes.getPublicCounts, async (ctx) => {

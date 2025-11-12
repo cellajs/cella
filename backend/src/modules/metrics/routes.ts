@@ -1,7 +1,8 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { isNoBot } from '#/middlewares/is-no-bot';
 import { metricListSchema, publicCountsSchema } from '#/modules/metrics/schema';
-import { errorResponses } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const metricRouteConfig = {
   getMetrics: createCustomRoute({
@@ -18,7 +19,7 @@ const metricRouteConfig = {
         description: 'Metrics',
         content: { 'application/json': { schema: metricListSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getPublicCounts: createCustomRoute({
@@ -26,6 +27,7 @@ const metricRouteConfig = {
     method: 'get',
     path: '/public',
     guard: isPublicAccess,
+    middleware: isNoBot,
     tags: ['metrics'],
     summary: 'Get public counts',
     description: `Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
@@ -35,7 +37,7 @@ const metricRouteConfig = {
         description: 'Public counts',
         content: { 'application/json': { schema: publicCountsSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

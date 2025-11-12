@@ -1,6 +1,5 @@
-import { checkBlockIsFileBlock } from '@blocknote/core';
 import { useBlockNoteEditor, useComponentsContext, useSelectedBlocks } from '@blocknote/react';
-import { Scaling } from 'lucide-react';
+import { ScalingIcon } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
@@ -18,7 +17,7 @@ export const FileOpenPreviewButton = () => {
 
     const block = selectedBlocks[0];
 
-    return checkBlockIsFileBlock(block, editor);
+    return block.type === 'file';
   }, [editor, selectedBlocks]);
 
   if (!showButton) return null;
@@ -28,7 +27,7 @@ export const FileOpenPreviewButton = () => {
       onClick={(event) => openAttachment(event, editor, ref)}
       mainTooltip={'Open attachment preview'}
       label={'Open attachment preview'}
-      icon={<Scaling size={14} />}
+      icon={<ScalingIcon size={14} />}
     />
   );
 };

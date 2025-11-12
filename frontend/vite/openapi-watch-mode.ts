@@ -2,7 +2,7 @@ import { exec } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs, { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
-import type { Plugin } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
 import { openApiConfig } from '../openapi-ts.config';
 
 const isValidUrl = (str: string) => {
@@ -41,10 +41,12 @@ const getConfigInputPath = (input: unknown) => {
 };
 
 export const watchBackendOpenApi = (): Plugin => {
-  const filePath = getConfigInputPath(openApiConfig.input);
+  const inputFilePath = getConfigInputPath(openApiConfig.input);
+  const outputPath = getConfigInputPath(openApiConfig.output);
+  let viteServer: ViteDevServer | null = null;
 
   const hashFile = () => {
-    const content = readFileSync(filePath);
+    const content = readFileSync(inputFilePath);
     return createHash('sha256').update(content).digest('hex');
   };
 
@@ -55,6 +57,9 @@ export const watchBackendOpenApi = (): Plugin => {
   return {
     name: 'watch-backend-openapi',
     apply: 'serve',
+    configureServer(server) {
+      viteServer = server;
+    },
 
     // Called when Vite starts or restarts plugin
     buildStart() {
@@ -64,7 +69,7 @@ export const watchBackendOpenApi = (): Plugin => {
         watcher = null;
       }
 
-      watcher = fs.watch(filePath, (eventType) => {
+      watcher = fs.watch(inputFilePath, (eventType) => {
         if (eventType === 'change') {
           // If a debounce timer exists, clear it to
           if (debounceTimer) clearTimeout(debounceTimer);
@@ -76,10 +81,18 @@ export const watchBackendOpenApi = (): Plugin => {
               if (newHash !== previousHash) {
                 previousHash = newHash;
 
+                //  Stop Vite from reacting to openapi-ts writes
+                const chokidarWatcher = viteServer?.watcher;
+                chokidarWatcher?.unwatch(outputPath);
+
                 // Run regeneration command
                 exec('pnpm generate-client', (err, stdout, stderr) => {
                   if (err) console.error('[openapi-ts] Error:', err);
                   else console.info('[openapi-ts] Regenerated typings:\n', stdout || stderr);
+
+                  chokidarWatcher?.add(outputPath);
+                  // One clean reload
+                  viteServer?.ws.send({ type: 'full-reload' });
                 });
               }
             } catch (e) {

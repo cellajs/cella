@@ -3,50 +3,38 @@ import { useSSE } from '~/modules/common/sse/use-sse';
 import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 
-const SSE = () => {
-  // Handle incoming event to add a new entity to the menu
-  const addEntity = (e: MessageEvent<string>) => {
+// TODO in future add is to shared?
+type SSEEventsMap = {
+  membership_created: { newItem: UserMenuItem; attachToIdOrSlug?: string };
+  membership_updated: UserMenuItem;
+  entity_updated: UserMenuItem;
+  membership_removed: { id: string };
+  entity_deleted: { id: string };
+};
+
+const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: (data: SSEEventsMap[T]) => void) => {
+  useSSE(type, (e: MessageEvent<string>) => {
     try {
-      const data = JSON.parse(e.data);
-      const { newItem, sectionName, parentSlug } = data;
-
-      // Add new menu item under correct section and parent(if exist)
-      addMenuItem(newItem as UserMenuItem, sectionName, parentSlug);
-    } catch (error) {
-      ErrorTracker.captureException(error);
-      console.error('Error parsing add menu item event', error);
-    }
-  };
-
-  // Handle updates to an existing menu item
-  const updateEntity = (e: MessageEvent<string>) => {
-    try {
-      const updatedItem = JSON.parse(e.data);
-
-      updateMenuItem(updatedItem as UserMenuItem);
+      const data = JSON.parse(e.data) as SSEEventsMap[T];
+      callback(data);
     } catch (error) {
       ErrorTracker.captureException(error);
       console.error('Error parsing update event', error);
     }
-  };
+  });
+};
 
-  // Handle removal of an entity from the menu
-  const removeEntity = (e: MessageEvent<string>) => {
-    try {
-      const deleteResponse = JSON.parse(e.data);
+const SSE = () => {
+  // Add menu item
+  useTypedSSE('membership_created', ({ newItem, attachToIdOrSlug }) => addMenuItem(newItem, attachToIdOrSlug));
 
-      // Remove item by ID
-      deleteMenuItem(deleteResponse.id);
-    } catch (error) {
-      ErrorTracker.captureException(error);
-      console.error('Error parsing remove event', error);
-    }
-  };
+  // Update menu item
+  useTypedSSE('entity_updated', (data) => updateMenuItem(data));
+  useTypedSSE('membership_updated', (data) => updateMenuItem(data));
 
-  // Register SSE listeners
-  useSSE('add_entity', (e) => addEntity(e));
-  useSSE('update_entity', (e) => updateEntity(e));
-  useSSE('remove_entity', (e) => removeEntity(e));
+  // Delete menu item
+  useTypedSSE('entity_deleted', ({ id }) => deleteMenuItem(id));
+  useTypedSSE('membership_removed', ({ id }) => deleteMenuItem(id));
 
   return null; // This component does not render any UI
 };

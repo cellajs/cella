@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from 'lucide-react';
+import { CalendarIcon, ChevronUpIcon, HomeIcon, InboxIcon, SearchIcon, SettingsIcon, User2Icon } from 'lucide-react';
 import { userEvent } from 'storybook/test';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import {
@@ -66,29 +66,29 @@ type Story = StoryObj<typeof Sidebar>;
 // Menu items.
 const items = [
   {
-    title: 'Home',
+    title: 'HomeIcon',
     url: '#',
-    icon: Home,
+    icon: HomeIcon,
   },
   {
-    title: 'Inbox',
+    title: 'InboxIcon',
     url: '#',
-    icon: Inbox,
+    icon: InboxIcon,
   },
   {
-    title: 'Calendar',
+    title: 'CalendarIcon',
     url: '#',
-    icon: Calendar,
+    icon: CalendarIcon,
   },
   {
-    title: 'Search',
+    title: 'SearchIcon',
     url: '#',
-    icon: Search,
+    icon: SearchIcon,
   },
   {
-    title: 'Settings',
+    title: 'SettingsIcon',
     url: '#',
-    icon: Settings,
+    icon: SettingsIcon,
   },
 ];
 
@@ -137,8 +137,8 @@ export const Footer: Story = {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> Username
-                  <ChevronUp className="ml-auto" />
+                  <User2Icon /> Username
+                  <ChevronUpIcon className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-(--radix-popper-anchor-width)">

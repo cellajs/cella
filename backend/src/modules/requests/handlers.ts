@@ -1,17 +1,22 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { sendSlackMessage } from '#/lib/notifications';
+import { mailer } from '#/lib/mailer';
+import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
+import { sendSlackMessage } from '#/lib/notifications/send-slack-message';
 import requestRoutes from '#/modules/requests/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { RequestResponseEmail, RequestResponseEmailProps } from '../../../emails/request-was-sent';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
@@ -19,7 +24,7 @@ const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const requestRouteHandlers = app
-  /*
+  /**
    *  Create request
    */
   .openapi(requestRoutes.createRequest, async (ctx) => {
@@ -28,7 +33,9 @@ const requestRouteHandlers = app
     const normalizedEmail = email.toLowerCase().trim();
 
     if (type === 'waitlist') {
-      const [existingUser] = await usersBaseQuery()
+      const [existingUser] = await db
+        .select(userSelect)
+        .from(usersTable)
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
@@ -51,19 +58,49 @@ const requestRouteHandlers = app
       .values({ email: normalizedEmail, type, message })
       .returning({ ...requestsSelect });
 
-    // Slack notifications
-    if (type === 'waitlist') await sendSlackMessage('Join waitlist request', normalizedEmail);
-    if (type === 'newsletter') await sendSlackMessage('Join newsletter request', normalizedEmail);
-    if (type === 'contact') await sendSlackMessage(`Request for contact with message: ${message},`, normalizedEmail);
+    // Determine message content based on notification type
+    let textMessage: string;
+    let slackTitle: string;
+
+    switch (type) {
+      case 'waitlist':
+        textMessage = `New Waitlist Request\nEmail: ${normalizedEmail}`;
+        slackTitle = 'Join waitlist request';
+        break;
+      case 'newsletter':
+        textMessage = `Newsletter Signup Request\nEmail: ${normalizedEmail}`;
+        slackTitle = 'Join newsletter request';
+        break;
+      case 'contact':
+        textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
+        slackTitle = `Request for contact with message: "${message}"`;
+        break;
+    }
+
+    // Send message to Matrix
+    await sendMatrixMessage({ msgtype: 'm.notice', textMessage });
+
+    // Send message to Slack
+    await sendSlackMessage(slackTitle, normalizedEmail);
+
+    // Send email
+    const lng = appConfig.defaultLanguage;
+    const subject = i18n.t('backend:email.request.subject', { lng, appName: appConfig.name, requestType: type });
+    const staticProps = { lng, subject, type, message };
+    const recipients = [{ email: normalizedEmail }];
+
+    type Recipient = { email: string };
+
+    mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestResponseEmail, staticProps, recipients);
 
     const data = {
       ...createdRequest,
       wasInvited: false,
     };
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
-  /*
+  /**
    *  Get list of requests for system admins
    */
   .openapi(requestRoutes.getRequests, async (ctx) => {
@@ -74,7 +111,7 @@ const requestRouteHandlers = app
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
     const requestsQuery = db
-      .select({ ...requestsSelect, wasInvited: sql`(${requestsTable.tokenId} IS NOT NULL)`.as('wasInvited') })
+      .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited') })
       .from(requestsTable)
       .where(filter);
 
@@ -96,7 +133,7 @@ const requestRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    *  Delete requests
    */
   .openapi(requestRoutes.deleteRequests, async (ctx) => {
@@ -109,7 +146,7 @@ const requestRouteHandlers = app
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default requestRouteHandlers;

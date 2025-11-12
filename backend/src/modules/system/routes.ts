@@ -3,8 +3,9 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
-import { booleanQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { booleanTransformSchema } from '#/utils/schema/common';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -17,11 +18,8 @@ const systemRoutes = {
     description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: inviteBodySchema,
-          },
-        },
+        required: true,
+        content: { 'application/json': { schema: inviteBodySchema } },
       },
     },
     responses: {
@@ -29,7 +27,7 @@ const systemRoutes = {
         description: 'Invitations are sent',
         content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -42,26 +40,17 @@ const systemRoutes = {
     summary: 'Newsletter to members',
     description: 'Sends a newsletter to members of one or more specified organizations.',
     request: {
-      query: z.object({ toSelf: booleanQuerySchema }),
+      query: z.object({ toSelf: booleanTransformSchema }),
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: sendNewsletterBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: sendNewsletterBodySchema } },
       },
     },
     responses: {
-      200: {
-        description: 'Organization',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+      204: {
+        description: 'Newsletter sent',
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -70,6 +59,7 @@ const systemRoutes = {
     method: 'get',
     path: '/presigned-url',
     guard: [isPublicAccess],
+    // TODO rate limiting this endpoint, try first authenticated users by id, fallback to ip address
     tags: ['system'],
     summary: 'Get presigned URL',
     description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',
@@ -79,7 +69,7 @@ const systemRoutes = {
         description: 'Presigned URL',
         content: { 'application/json': { schema: z.string() } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -93,24 +83,13 @@ const systemRoutes = {
     summary: 'Paddle webhook (WIP)',
     description: 'Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: z.unknown(),
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: z.unknown() } } },
     },
     responses: {
-      200: {
+      204: {
         description: 'Paddle webhook received',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

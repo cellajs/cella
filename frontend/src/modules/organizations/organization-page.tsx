@@ -12,14 +12,14 @@ import { useUserStore } from '~/store/user';
 const LeaveOrgButton = lazy(() => import('~/modules/organizations/leave-organization'));
 
 const organizationTabs: PageTab[] = [
-  { id: 'members', label: 'common:members', path: '/organizations/$idOrSlug/members' },
-  { id: 'attachments', label: 'common:attachments', path: '/organizations/$idOrSlug/attachments' },
-  { id: 'settings', label: 'common:settings', path: '/organizations/$idOrSlug/settings' },
+  { id: 'members', label: 'common:members', path: '/organization/$idOrSlug/members' },
+  { id: 'attachments', label: 'common:attachments', path: '/organization/$idOrSlug/attachments' },
+  { id: 'settings', label: 'common:settings', path: '/organization/$idOrSlug/settings' },
 ];
 
 const OrganizationPage = () => {
   const { t } = useTranslation();
-  const { idOrSlug } = useParams({ from: '/appLayout/organizations/$idOrSlug' });
+  const { idOrSlug } = useParams({ from: '/appLayout/organization/$idOrSlug' });
   const user = useUserStore((state) => state.user);
 
   const orgQueryOptions = organizationQueryOptions(idOrSlug);

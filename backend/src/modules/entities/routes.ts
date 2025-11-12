@@ -1,9 +1,11 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { contextEntitiesQuerySchema, contextEntitiesResponseSchema, contextEntityBaseSchema } from '#/modules/entities/schema';
+import { contextEntitiesQuerySchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema } from '#/utils/schema/success-responses';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
@@ -16,14 +18,16 @@ const entityRoutes = {
     description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
       Primarily used to prevent slug collisions before creating or updating an entity.`,
     request: {
-      body: { content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } } },
+      body: {
+        required: true,
+        content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } },
+      },
     },
     responses: {
-      200: {
+      204: {
         description: 'Slug is available',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getContextEntities: createCustomRoute({
@@ -41,9 +45,9 @@ const entityRoutes = {
     responses: {
       200: {
         description: 'Context entities',
-        content: { 'application/json': { schema: contextEntitiesResponseSchema } },
+        content: { 'application/json': { schema: paginationSchema(contextEntityWithCountsSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
   getContextEntity: createCustomRoute({
@@ -61,7 +65,7 @@ const entityRoutes = {
         description: 'Context entities',
         content: { 'application/json': { schema: contextEntityBaseSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

@@ -1,23 +1,23 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { tokensTable } from '#/db/schema/tokens';
+import { userBaseSchema } from '#/modules/users/schema-base';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
 
-export const membershipSchema = z.object({
-  ...createSelectSchema(membershipsTable).omit({
-    activatedAt: true,
-    tokenId: true,
-  }).shape,
-});
+export const membershipSchema = createSelectSchema(membershipsTable).openapi('Membership');
 
-export const membershipBaseSchema = membershipSchema.omit({
-  createdAt: true,
-  createdBy: true,
-  modifiedAt: true,
-  modifiedBy: true,
-});
+export const inactiveMembershipSchema = createSelectSchema(inactiveMembershipsTable).openapi('InactiveMembership');
+
+export const membershipBaseSchema = membershipSchema
+  .omit({
+    createdAt: true,
+    createdBy: true,
+    modifiedAt: true,
+    modifiedBy: true,
+  })
+  .openapi('MembershipBase');
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),
@@ -35,21 +35,20 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
+  role: z.enum(appConfig.roles.entityRoles).optional(),
 });
 
-export const pendingInvitationListQuerySchema = paginationQuerySchema.extend({
+export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
-  sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
+  sort: z.enum(['createdAt']).default('createdAt').optional(),
 });
 
-export const pendingInvitationSchema = createSelectSchema(tokensTable)
-  .pick({
-    id: true,
-    email: true,
-    createdAt: true,
-    createdBy: true,
-    role: true,
-  })
-  .extend({ expiresAt: z.string(), name: z.string().nullable() });
+export const pendingMembershipSchema = z.object({
+  id: z.string(),
+  email: userBaseSchema.shape.email,
+  thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
+  role: membershipSchema.shape.role.nullable(),
+  createdAt: membershipSchema.shape.createdAt,
+  createdBy: membershipSchema.shape.createdBy.nullable(),
+});

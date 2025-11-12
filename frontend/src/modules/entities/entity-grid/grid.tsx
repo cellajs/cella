@@ -1,14 +1,14 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { Bird, Search } from 'lucide-react';
+import { BirdIcon, SearchIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import type { GetContextEntitiesData } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
+import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid';
+import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import type { contextEntitiesQueryOptions } from '~/modules/entities/query';
-import { GridSkeleton } from './skeleton';
 
 export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 'sort' | 'q' | 'role'>;
 
@@ -25,9 +25,9 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
     error,
     hasNextPage,
     fetchNextPage,
-  } = useSuspenseInfiniteQuery({
+  } = useInfiniteQuery({
     ...queryOptions,
-    select: (data) => data.pages.flatMap(({ items }) => items[entityType]),
+    select: (data) => data.pages.flatMap(({ items }) => items.filter((e) => e.entityType === entityType)),
   });
 
   const isFiltered = !!searchVars.q;
@@ -43,9 +43,9 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
 
   if (!isFetching && !error && !entities.length) {
     return isFiltered ? (
-      <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />
+      <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />
     ) : (
-      <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />
+      <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />
     );
   }
 

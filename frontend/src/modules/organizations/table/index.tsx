@@ -1,6 +1,6 @@
 import { onlineManager, useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { Bird } from 'lucide-react';
+import { BirdIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -15,14 +15,15 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
+import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
 import { useUserStore } from '~/store/user';
-import type { OrganizationsRouteSearchParams } from '../types';
 
 const LIMIT = appConfig.requestLimits.organizations;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+
   const updateMemberMembership = useMemberUpdateMutation();
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
 
@@ -30,9 +31,11 @@ const OrganizationsTable = () => {
   const { q, sort, order } = search;
   const limit = LIMIT;
 
+  const [isCompact, setIsCompact] = useState(false);
+
   // Build columns
   const [selected, setSelected] = useState<Organization[]>([]);
-  const [columns, setColumns] = useColumns();
+  const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = organizationsQueryOptions({ ...search, limit });
@@ -55,6 +58,7 @@ const OrganizationsTable = () => {
       return;
     }
 
+    // If role is changed, update the membership
     for (const index of indexes) {
       const organization = changedRows[index];
       const membership = organization.membership;
@@ -63,10 +67,7 @@ const OrganizationsTable = () => {
 
       const newRole = membership.role;
       const partOfOrganization = !!membership.id;
-      const mutationVariables = {
-        idOrSlug: organization.slug,
-        entityType: organization.entityType,
-      };
+      const mutationVariables = { idOrSlug: organization.slug, entityType: organization.entityType };
       const orgIdOrSlug = organization.id;
 
       try {
@@ -74,6 +75,7 @@ const OrganizationsTable = () => {
           await updateMemberMembership.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
         } else {
           await membershipInvite({ query: mutationVariables, path: { orgIdOrSlug }, body: { emails: [user.email], role: newRole } });
+          // TODO add cache mutation for organization tables
           await getAndSetMenu();
           toaster(t('common:success.role_updated'), 'success');
         }
@@ -94,7 +96,7 @@ const OrganizationsTable = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
       <OrganizationsTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
@@ -103,6 +105,8 @@ const OrganizationsTable = () => {
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
       />
       <DataTable<Organization>
         {...{
@@ -124,7 +128,7 @@ const OrganizationsTable = () => {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
+            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),
         }}
       />

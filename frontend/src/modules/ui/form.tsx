@@ -1,8 +1,7 @@
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import { ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
 import * as React from 'react';
-import { useState } from 'react';
 import {
   Controller,
   type ControllerProps,
@@ -17,21 +16,21 @@ import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { cn } from '~/utils/cn';
 
+// === Label direction context ===
 export type LabelDirectionType = 'top' | 'left';
-const LabelDirectionContext = React.createContext<LabelDirectionType | string>('top');
+const LabelDirectionContext = React.createContext<LabelDirectionType>('top');
 
-// biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-type FormProps<TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<
+// === Form props with generics ===
+type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<
   TFieldValues,
   TContext,
   TTransformedValues
 > & {
   unsavedChanges?: boolean;
-  labelDirection?: string;
+  labelDirection?: LabelDirectionType;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: any is required here
-const Form = <TFieldValues extends FieldValues, TContext = any, TTransformedValues extends FieldValues = TFieldValues>({
+const Form = <TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues>({
   children,
   unsavedChanges,
   labelDirection = 'top',
@@ -66,24 +65,16 @@ const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
 
-  const { control } = useFormContext();
+  const { getFieldState } = useFormContext();
+  const formState = useFormState({ name: fieldContext.name });
+  const fieldState = getFieldState(fieldContext.name, formState);
 
   if (!fieldContext) {
     throw new Error('useFormField should be used within <FormField>');
   }
 
-  const { name } = fieldContext;
-
-  const { errors, touchedFields, dirtyFields } = useFormState({ control, name });
-
-  // TODO test out nested forms
-  // const error = getNestedValue(errors, name);
-  const error = errors[name];
-  const isTouched = touchedFields[name];
-  const isDirty = dirtyFields[name];
-  const invalid = !!error;
-
   const { id } = itemContext;
+  const { name } = fieldContext;
   const formItemId = `${id}-form-item`;
 
   return {
@@ -92,111 +83,90 @@ const useFormField = () => {
     formItemId,
     formDescriptionId: `${formItemId}-text`,
     formMessageId: `${formItemId}-message`,
-    error,
-    isTouched,
-    isDirty,
-    invalid,
+    ...fieldState,
   };
 };
 
-type FormItemContextValue = {
-  id: string;
-};
+type FormItemContextValue = { id: string };
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
 // INFO: added to support targeting the entire form item (for example to hide)
-type FormItemProps = React.HTMLAttributes<HTMLDivElement> & {
-  name?: string;
-};
-
-const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(({ className, name, ...props }, ref) => {
+function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & { name?: string }) {
   const id = React.useId();
   const labelDirection = React.useContext(LabelDirectionContext);
 
   return (
     <FormItemContext.Provider value={{ id }}>
       <div
-        ref={ref}
+        data-slot="form-item"
         id={`${(name || id).toLowerCase()}-form-item-container`}
         className={cn(`${labelDirection === 'top' ? 'flex-col' : 'flex-row items-center'} flex gap-2`, className)}
         {...props}
       />
     </FormItemContext.Provider>
   );
-});
-FormItem.displayName = 'FormItem';
+}
 
-const FormLabel = React.forwardRef<React.ComponentRef<typeof LabelPrimitive.Root>, React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>>(
-  ({ className, ...props }, ref) => {
-    const { formItemId } = useFormField();
+function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  const { error, formItemId } = useFormField();
+  return <Label data-slot="form-label" data-error={!!error} className={cn('', className)} htmlFor={formItemId} {...props} />;
+}
 
-    return <Label ref={ref} className={cn('', className)} htmlFor={formItemId} {...props} />;
-  },
-);
-FormLabel.displayName = 'FormLabel';
-
-const FormControl = React.forwardRef<React.ComponentRef<typeof Slot>, React.ComponentPropsWithoutRef<typeof Slot>>(({ ...props }, ref) => {
+function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
-
   return (
     <Slot
-      ref={ref}
+      data-slot="form-control"
       id={formItemId}
       aria-describedby={!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`}
       aria-invalid={!!error}
       {...props}
     />
   );
-});
-FormControl.displayName = 'FormControl';
+}
 
-const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ children, className, ...props }, ref) => {
-    const { formDescriptionId } = useFormField();
-    const [collapsed, setCollapsed] = useState(true);
+function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
+  const { formDescriptionId } = useFormField();
+  const [collapsed, setCollapsed] = React.useState(true);
 
-    const toggleCollapsed = (e: { preventDefault: () => void }) => {
-      setCollapsed(!collapsed);
-      e.preventDefault();
-    };
+  const toggleCollapsed = (e: { preventDefault: () => void }) => {
+    setCollapsed(!collapsed);
+    e.preventDefault();
+  };
 
-    // EDIT: This is customized to allow for collapsible descriptions
-    return (
-      <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)} {...props}>
-        <div className="flex justify-between">
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            onClick={toggleCollapsed}
-            className="right-1 -top-6 absolute text-regular ring-inset opacity-50 hover:opacity-100 p-2 h-auto"
-          >
-            {collapsed && <HelpCircle size={16} />}
-            {!collapsed && <ChevronUp size={16} />}
-          </Button>
-          {!collapsed && <span className="py-1">{children}</span>}
-        </div>
+  // EDIT: This is customized to allow for collapsible descriptions
+  return (
+    <div id={formDescriptionId} className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)} {...props}>
+      <div className="flex justify-between">
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          onClick={toggleCollapsed}
+          className="right-1 -top-6 absolute text-regular ring-inset opacity-50 hover:opacity-100 p-2 h-auto"
+        >
+          {collapsed && <HelpCircleIcon size={16} />}
+          {!collapsed && <ChevronUpIcon size={16} />}
+        </Button>
+        {!collapsed && <span className="py-1">{children}</span>}
       </div>
-    );
-  },
-);
-FormDescription.displayName = 'FormDescription';
+    </div>
+  );
+}
 
-const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ className, children, ...props }, ref) => {
+function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId, invalid } = useFormField();
-  const body = error ? String(Array.isArray(error) ? error.find((err) => err?.message)?.message : error?.message) : children;
+  const body = error ? String(error?.message ?? '') : props.children;
+  // const body = error ? String(Array.isArray(error) ? error.find((err) => err?.message)?.message : error?.message) : props.children;
 
-  if (!body || !invalid) {
-    return null;
-  }
+  if (!body || !invalid) return null;
 
   return (
-    <p ref={ref} id={formMessageId} className={cn('text-destructive text-sm', className)} {...props}>
+    <p data-slot="form-message" id={formMessageId} className={cn('text-destructive text-sm', className)} {...props}>
       {body}
     </p>
   );
-});
-FormMessage.displayName = 'FormMessage';
+}
 
 export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField };

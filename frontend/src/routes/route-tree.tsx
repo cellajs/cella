@@ -1,6 +1,6 @@
 import type { NavItemId } from '~/modules/navigation/types';
 import {
-  AcceptEntityInviteRoute,
+  AuthErrorRoute,
   AuthenticateRoute,
   AuthLayoutRoute,
   CreatePasswordWithTokenRoute,
@@ -9,13 +9,13 @@ import {
   RequestPasswordRoute,
   SignOutRoute,
   UnsubscribedRoute,
-} from '~/routes/auth';
-import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/base';
-import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
-import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
-import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
-import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
-import { UserInOrganizationProfileRoute, UserProfileRoute, UserSettingsRoute } from '~/routes/users';
+} from '~/routes/auth-routes';
+import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
+import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
+import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing-routes';
+import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organization-routes';
+import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system-routes';
+import { UserAccountRoute, UserInOrganizationProfileRoute, UserProfileRoute } from '~/routes/user-routes';
 
 //App-specific route imports here
 //...
@@ -23,31 +23,32 @@ import { UserInOrganizationProfileRoute, UserProfileRoute, UserSettingsRoute } f
 /**
  * The route tree for the entire app
  */
-export const routeTree = rootRoute.addChildren([
-  PublicRoute.addChildren([
+export const routeTree = RootRoute.addChildren([
+  PublicLayoutRoute.addChildren([
     AboutRoute,
     ContactRoute,
     LegalRoute,
     AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
-    AcceptEntityInviteRoute,
     AuthLayoutRoute.addChildren([
-      AuthenticateRoute.addChildren([MfaRoute]),
+      AuthenticateRoute,
+      MfaRoute,
       RequestPasswordRoute,
       CreatePasswordWithTokenRoute,
       EmailVerificationRoute,
       UnsubscribedRoute,
+      AuthErrorRoute,
     ]),
   ]),
-  AppRoute.addChildren([
+  AppLayoutRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,
     SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,
     UserInOrganizationProfileRoute,
-    UserSettingsRoute,
+    UserAccountRoute,
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
 
     // App-specific routes here

@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Check, Sparkles } from 'lucide-react';
+import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -36,7 +36,7 @@ const Pricing = () => {
       navigate({ to: '/auth/authenticate', replace: true });
     }
     if (action === 'waitlist_request') {
-      useDialoger.getState().create(<WaitlistForm className="p-4" buttonClassName="sm:max-w-50" dialog />, {
+      useDialoger.getState().create(<WaitlistForm buttonClassName="sm:max-w-50" dialog />, {
         id: 'waitlist-form',
         triggerRef: buttonRef,
         drawerOnMobile: true,
@@ -71,7 +71,7 @@ const Pricing = () => {
             <div className="mt-4">
               <h3 className="text-center text-2xl flex w-full justify-center font-bold">
                 {t(title)}
-                {popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />}
+                {popular && <SparklesIcon className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />}
               </h3>
               <div className="flex items-center justify-center mt-4 text-gray-600 dark:text-gray-400">
                 {discount && (
@@ -91,7 +91,7 @@ const Pricing = () => {
                 {Array.from({ length: featureCount }).map((_, featureIndex) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
                   <li key={`${id}-${featureIndex}`} className="flex text-sm font-light items-center">
-                    <Check className="mr-2 p-1 text-sm text-success" />
+                    <CheckIcon className="mr-2 p-1 text-sm text-success" />
                     {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}
                   </li>
                 ))}

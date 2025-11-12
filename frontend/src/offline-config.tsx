@@ -10,7 +10,7 @@ import { organizationQueryOptions } from '~/modules/organizations/query';
  * allowing the app to have entity and content data while offline.
  */
 export const queriesToMap = (item: UserMenuItem) => {
-  const orgIdOrSlug = item.organizationId ?? item.id;
+  const orgIdOrSlug = item.membership.organizationId ?? item.id;
 
   // The entity type will decide which queries should be returned for prefetching.
   switch (item.entityType) {

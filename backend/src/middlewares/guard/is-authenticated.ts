@@ -1,5 +1,5 @@
 import * as ErrorTracker from '@sentry/node';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
@@ -8,9 +8,8 @@ import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
-import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
-import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -45,10 +44,8 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
     });
 
     // Fetch user's memberships from the database
-    const memberships = await db
-      .select({ ...membershipBaseSelect, createdBy: membershipsTable.createdBy })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+
     ctx.set('memberships', memberships);
   } catch (err) {
     // If session validation fails, remove cookie

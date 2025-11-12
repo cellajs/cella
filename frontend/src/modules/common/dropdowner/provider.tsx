@@ -1,7 +1,7 @@
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import DropdownDrawer from '~/modules/common/dropdowner/drawer';
-import { DesktopDropdown } from '~/modules/common/dropdowner/dropdown';
+import DropdownerDrawer from '~/modules/common/dropdowner/drawer';
+import { DropdownerDropdown } from '~/modules/common/dropdowner/dropdown';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 
 export function Dropdowner() {
@@ -12,6 +12,6 @@ export function Dropdowner() {
   useBodyClass({ 'dropdowner-open': !!dropdown });
 
   if (!dropdown) return null;
-  if (isMobile) return <DropdownDrawer dropdown={dropdown} />;
-  return <DesktopDropdown dropdown={dropdown} />;
+  if (isMobile) return <DropdownerDrawer dropdown={dropdown} />;
+  return <DropdownerDropdown dropdown={dropdown} />;
 }

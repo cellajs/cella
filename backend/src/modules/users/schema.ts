@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
-import { contextEntityTypeSchema, paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import { contextEntityTypeSchema, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
@@ -33,8 +33,8 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),
   lastName: validNameSchema.nullable(),
   slug: validSlugSchema,
-  thumbnailUrl: validImageKeySchema.nullable(),
-  bannerUrl: validImageKeySchema.nullable(),
+  thumbnailUrl: validCDNUrlSchema.nullable(),
+  bannerUrl: validCDNUrlSchema.nullable(),
 })
   .pick({
     bannerUrl: true,
@@ -50,7 +50,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
 export const userListQuerySchema = paginationQuerySchema
   .extend({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
-    role: z.enum(appConfig.rolesByType.systemRoles).optional(),
+    role: z.enum(appConfig.roles.systemRoles).optional(),
     mode: z.enum(['all', 'shared']).default('shared'),
     targetEntityType: contextEntityTypeSchema.optional(),
     targetEntityId: z.string().optional(),

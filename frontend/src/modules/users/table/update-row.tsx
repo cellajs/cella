@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { Pencil } from 'lucide-react';
+import { PencilIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import type { User } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -18,11 +18,13 @@ export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonE
   const createSheet = useSheeter.getState().create;
 
   createSheet(
-    <Card className="mb-20">
-      <CardContent>
-        <UpdateUserForm user={user} sheet />
-      </CardContent>
-    </Card>,
+    <div className="container w-full">
+      <Card className="mb-20">
+        <CardContent>
+          <UpdateUserForm user={user} sheet />
+        </CardContent>
+      </Card>
+    </div>,
     {
       id: 'update-user',
       triggerRef: buttonRef,
@@ -49,7 +51,7 @@ const UpdateRow = ({ user, tabIndex }: Props) => {
       data-tooltip-content={i18n.t('common:edit')}
       onClick={() => openUpdateUserSheet(user, buttonRef)}
     >
-      <Pencil size={16} />
+      <PencilIcon size={16} />
     </Button>
   );
 };

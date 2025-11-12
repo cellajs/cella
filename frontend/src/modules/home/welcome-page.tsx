@@ -1,8 +1,10 @@
+import { DialogTitle } from '@radix-ui/react-dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { useState } from 'react';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import Onboarding from '~/modules/home/onboarding/steps';
-import { Dialog, DialogContent, DialogHiddenTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { useUserStore } from '~/store/user';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
@@ -32,7 +34,9 @@ const WelcomePage = () => {
           aria-describedby={undefined}
           className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
         >
-          <DialogHiddenTitle>Welcome</DialogHiddenTitle>
+          <VisuallyHidden>
+            <DialogTitle>Welcome</DialogTitle>
+          </VisuallyHidden>
           <Onboarding onboarding={onboarding} setOnboardingState={setOnboardingState} />
         </DialogContent>
       </Dialog>

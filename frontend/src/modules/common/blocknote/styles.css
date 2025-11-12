@@ -36,7 +36,7 @@
   outline: none !important;
 }
 
-/* To undable click on file buttons when editor not editable */
+/* To disable click on file buttons when editor not editable */
 .bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
   cursor: default !important;
 }
@@ -55,7 +55,7 @@
 
 .bn-shadcn p {
   font-size: 0.888rem;
-  font-weight: 350;
+  font-weight: 300;
   line-height: 1.3;
   min-height: 1.3rem;
   overflow-wrap: anywhere;
@@ -82,10 +82,12 @@
   border-radius: 0.25rem;
   color: #e8912d;
 }
+
 .bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
   background: hsl(var(--input) / 0.5);
   border: 0.05rem solid hsl(var(--ring) / 0.4);
 }
+
 .bn-block-content[data-content-type="codeBlock"] code {
   background: transparent;
   padding: 0;
@@ -93,6 +95,7 @@
   border-radius: none;
   color: #fff;
 }
+
 .bn-block-content[data-content-type="codeBlock"] > pre {
   padding: 1.2rem 1rem 1rem;
 }
@@ -166,6 +169,7 @@
 }
 
 @media (max-width: 639px) {
+  /* Hide side menu on small screens */
   .bn-shadcn .bn-side-menu {
     display: none !important;
   }
@@ -188,26 +192,11 @@
   width: 100%;
 }
 
-.bn-menu-dropdown {
-  background-color: hsl(var(--popover));
-  border: 0.05rem solid hsl(var(--border));
-  position: fixed;
-  z-index: 9999 !important;
-  width: 11rem;
-  max-height: 40vh !important;
-  overflow-y: auto;
-}
-
-.bn-toolbar.bn-formatting-toolbar {
-  padding: 0.25rem;
-  gap: 0.5rem;
-  background-color: hsl(var(--popover));
-  border: 0.05rem solid hsl(var(--border));
-}
-
 .bn-toolbar.bn-formatting-toolbar button {
-  height: 2rem;
-  width: 2rem;
+  height: 2.25rem;
+  width: 2.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .bn-toolbar.bn-formatting-toolbar button:hover {
@@ -369,4 +358,15 @@
   padding: 4px;
   border: 0.05rem solid hsl(var(--table-border));
   border-collapse: collapse;
+}
+
+/* Heading sizes - defaults from Blocknote are too big */
+[data-content-type="heading"] {
+  --level: 1.8rem;
+}
+[data-content-type="heading"][data-level="2"] {
+  --level: 1.4rem;
+}
+[data-content-type="heading"][data-level="3"] {
+  --level: 1.1rem;
 }

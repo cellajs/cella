@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -11,8 +11,8 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/counts';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
-import { getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
-import { insertMembership } from '#/modules/memberships/helpers';
+import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
+import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
@@ -28,7 +28,7 @@ import { defaultWelcomeText } from '#json/text-blocks.json';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const organizationRouteHandlers = app
-  /*
+  /**
    * Create organization
    */
   .openapi(organizationRoutes.createOrganization, async (ctx) => {
@@ -62,10 +62,10 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
+    const [createdMembership] = await insertMemberships([{ userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization }]);
 
     // Get default linked entities
-    const validEntities = getRelatedEntities(createdOrganization.entityType);
+    const validEntities = getAssociatedEntities(createdOrganization.entityType);
     const entitiesCountsArray = validEntities.map((entityType) => [entityType, 0]);
     const entitiesCounts = Object.fromEntries(entitiesCountsArray) as Record<(typeof validEntities)[number], number>;
     // Default member counts
@@ -77,9 +77,9 @@ const organizationRouteHandlers = app
       counts: { membership: memberCounts, entities: entitiesCounts },
     };
 
-    return ctx.json(data, 200);
+    return ctx.json(data, 201);
   })
-  /*
+  /**
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
@@ -95,9 +95,9 @@ const organizationRouteHandlers = app
     const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
 
     const memberships = db
-      .select()
+      .select(membershipBaseSelect)
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -115,7 +115,7 @@ const organizationRouteHandlers = app
     const membershipCountsQuery = getMemberCountsQuery(entityType);
     const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
-    const validEntities = getRelatedEntities(entityType);
+    const validEntities = getAssociatedEntities(entityType);
     const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
 
     const organizations = await db
@@ -143,7 +143,7 @@ const organizationRouteHandlers = app
 
     return ctx.json({ items: organizations, total }, 200);
   })
-  /*
+  /**
    * Get organization by id or slug
    */
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
@@ -156,7 +156,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Update an organization by id or slug
    */
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
@@ -172,6 +172,8 @@ const organizationRouteHandlers = app
       const slugAvailable = await checkSlugAvailable(slug);
       if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
     }
+
+    // TODO sanitize blocknote blocks for welcomeText? How to only allow  image urls from our own cdn plus a list from allowed domains?
 
     const [updatedOrganization] = await db
       .update(organizationsTable)
@@ -192,10 +194,9 @@ const organizationRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           eq(membershipsTable.organizationId, organization.id),
           eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
         ),
       );
-    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
+    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
@@ -204,7 +205,7 @@ const organizationRouteHandlers = app
 
     return ctx.json(data, 200);
   })
-  /*
+  /**
    * Delete organizations by ids
    */
   .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
@@ -229,7 +230,6 @@ const organizationRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, allowedIds),
           eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
         ),
       );
 
@@ -241,7 +241,7 @@ const organizationRouteHandlers = app
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
+      sendSSEToUsers(userIds, 'entity_deleted', { id, entityType: 'organization' });
     }
 
     logEvent('info', 'Organizations deleted', allowedIds);

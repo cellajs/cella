@@ -18,6 +18,9 @@ const baseUrl = appConfig.frontendUrl;
 const createPasswordUrl = `${baseUrl}/auth/request-password`;
 const appName = appConfig.name;
 
+/**
+ * Email template for users to create a password for their account.
+ */
 export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePasswordEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.create_password.preview', { appName, lng })}>
@@ -25,11 +28,7 @@ export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePas
       <EmailBody>
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.create_password.text', { appName, lng }),
-            }}
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.create_password.text', { appName, lng }) }}
           />
         </Text>
         <EmailButton ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })} href={createPasswordLink} />

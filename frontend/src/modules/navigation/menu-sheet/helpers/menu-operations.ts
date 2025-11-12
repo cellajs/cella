@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'config';
-import type { MembershipBaseSchema } from '~/api.gen';
+import type { MembershipBase } from '~/api.gen';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -18,33 +18,43 @@ const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuI
 
 /**
  * Adds a new menu item to the user's navigation menu.
- * If `parentIdOrSlug` is provided, new item will be added under parent menu item.
+ * If `attachToIdOrSlug` is provided, the new item will be added
+ * under the matching item by id/slug.
  *
- * @param newEntity - New menu item to be added.
- * @param sectionName - Name of section in  menu where  item will be added.
- * @param parentIdOrSlug -  ID or Slug of  parent item, if new item should be a submenu (optional).
+ * @param newItem - The new menu item to add.
+ * @param attachToIdOrSlug - ID or slug of the item to attach the new one under (optional).
  */
-export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu, parentIdOrSlug?: string) => {
-  const menu = useNavigationStore.getState().menu;
+export const addMenuItem = (newItem: UserMenuItem, attachToIdOrSlug?: string) => {
+  const { menu } = useNavigationStore.getState();
 
-  const add = (items: UserMenuItem[]): UserMenuItem[] => {
-    return items.map((item) => {
-      if (!parentIdOrSlug || (item.slug !== parentIdOrSlug && item.id !== parentIdOrSlug)) return item;
+  // Recursive helper to insert newItem under the correct item
+  const insertUnder = (items: UserMenuItem[]): UserMenuItem[] =>
+    items.map((item) => {
+      if (attachToIdOrSlug && (item.id === attachToIdOrSlug || item.slug === attachToIdOrSlug)) {
+        return {
+          ...item,
+          submenu: [...(item.submenu ?? []), newItem],
+        };
+      }
 
-      // If parent is found, add new entity to its submenu
       return {
         ...item,
-        submenu: item.submenu ? [...item.submenu, newEntity] : [newEntity],
+        submenu: item.submenu ? insertUnder(item.submenu) : item.submenu,
       };
     });
-  };
 
-  const updatedMenuSection = parentIdOrSlug ? add(menu[sectionName]) : [...menu[sectionName], { ...newEntity, submenu: [] }];
+  // Find the menu section based on entity type
+  const section = appConfig.menuStructure.find((el) => el.entityType === newItem.entityType || el.subentityType === newItem.entityType);
+  if (!section) return;
+
+  const { entityType: sectionName } = section;
+
+  const updatedSection = attachToIdOrSlug ? insertUnder(menu[sectionName]) : [...menu[sectionName], { ...newItem, submenu: [] }];
 
   useNavigationStore.setState({
     menu: {
       ...menu,
-      [sectionName]: updatedMenuSection,
+      [sectionName]: updatedSection,
     },
   });
 };
@@ -91,7 +101,7 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
  * @param entityIdOrSlug - ID or slug of entity.
  * @param entityType - Context entity type
  */
-export const updateMenuItemMembership = (membershipData: Partial<MembershipBaseSchema>, entityIdOrSlug: string, entityType: ContextEntityType) => {
+export const updateMenuItemMembership = (membershipData: Partial<MembershipBase>, entityIdOrSlug: string, entityType: ContextEntityType) => {
   // Get the current menu state from the navigation store (without using hooks)
   const menu = useNavigationStore.getState().menu;
 
@@ -136,7 +146,7 @@ export const updateMenuItemMembership = (membershipData: Partial<MembershipBaseS
 export const deleteMenuItem = (itemId: string) => {
   const remove = (items: UserMenuItem[]): UserMenuItem[] =>
     items
-      .filter((item) => item.id !== itemId && item.organizationId !== itemId)
+      .filter((item) => item.id !== itemId && item.membership.organizationId !== itemId)
       .map((item) => (item.submenu ? { ...item, submenu: remove(item.submenu) } : item));
 
   return useTransformOnMenuItems(remove); // Use remove on every menu item by storage type from menu config

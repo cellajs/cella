@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Plus } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modules/ui/tooltip';
 
@@ -33,7 +33,7 @@ const meta: Meta<typeof TooltipContent> = {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <Plus className="h-4 w-4" />
+          <PlusIcon className="size-4" />
           <span className="sr-only">Add</span>
         </TooltipTrigger>
         <TooltipContent {...args} />
@@ -87,12 +87,27 @@ export const ShouldShowOnHover: Story = {
 
     await step('hover over trigger', async () => {
       await userEvent.hover(triggerBtn);
-      await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]')).toBeVisible());
+      // Wait for tooltip to appear and be visible
+      await waitFor(
+        () => {
+          const tooltip = canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]');
+          expect(tooltip).toBeInTheDocument();
+          expect(tooltip).toBeVisible();
+        },
+        { timeout: 1000 },
+      );
     });
 
     await step('unhover trigger', async () => {
       await userEvent.unhover(triggerBtn);
-      await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]')).not.toBeVisible());
+      // Wait for tooltip to disappear (be removed from DOM or hidden)
+      await waitFor(
+        () => {
+          const tooltip = canvasElement.ownerDocument.body.querySelector('[data-slot="tooltip-content"]');
+          expect(tooltip).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
   },
 };

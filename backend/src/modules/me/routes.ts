@@ -2,20 +2,18 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { totpVerificationBodySchema } from '#/modules/auth/schema';
 import {
   meAuthDataSchema,
-  meInvitationsSchema,
   menuSchema,
-  passkeyRegistrationBodySchema,
-  passkeySchema,
-  toggleMfaStateBody,
+  mePendingInvitationSchema,
+  toggleMfaBodySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
 } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
-import { entityWithTypeQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
+import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -31,24 +29,7 @@ const meRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
-    },
-  }),
-
-  getMyAuth: createCustomRoute({
-    operationId: 'getMyAuth',
-    method: 'get',
-    path: '/auth',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get auth data',
-    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
-    responses: {
-      200: {
-        description: 'User sign-up info',
-        content: { 'application/json': { schema: meAuthDataSchema } },
-      },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -66,7 +47,7 @@ const meRoutes = {
         description: 'Menu of user',
         content: { 'application/json': { schema: menuSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -76,14 +57,14 @@ const meRoutes = {
     path: '/invitations',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get invitations',
-    description: 'Returns a list of pending entity invitations which *current user* received.',
+    summary: 'Get list of invitations',
+    description: 'Returns a list of pending memberships with entity data.',
     responses: {
       200: {
         description: 'Invitations pending',
-        content: { 'application/json': { schema: meInvitationsSchema } },
+        content: { 'application/json': { schema: paginationSchema(mePendingInvitationSchema) } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -97,6 +78,7 @@ const meRoutes = {
     description: 'Updates the *current user*.',
     request: {
       body: {
+        required: true,
         content: {
           'application/json': { schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }) },
         },
@@ -107,28 +89,7 @@ const meRoutes = {
         description: 'User',
         content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
-    },
-  }),
-
-  toggleMfa: createCustomRoute({
-    operationId: 'toggleMfa',
-    method: 'put',
-    path: '/mfa',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Toggle MFA',
-    description:
-      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.',
-    request: {
-      body: { content: { 'application/json': { schema: toggleMfaStateBody } } },
-    },
-    responses: {
-      200: {
-        description: 'User',
-        content: { 'application/json': { schema: userSchema } },
-      },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -142,11 +103,25 @@ const meRoutes = {
     description:
       "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     responses: {
+      204: { description: 'User deleted' },
+      ...errorResponseRefs,
+    },
+  }),
+
+  getMyAuth: createCustomRoute({
+    operationId: 'getMyAuth',
+    method: 'get',
+    path: '/auth',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get auth data',
+    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
+    responses: {
       200: {
-        description: 'User deleted',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
+        description: 'User sign-up info',
+        content: { 'application/json': { schema: meAuthDataSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -159,8 +134,9 @@ const meRoutes = {
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
     request: {
+      required: true,
       body: {
-        content: { 'application/json': { schema: z.object({ ids: z.array(z.string()).min(1, 'Add at least one item') }) } },
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
 
@@ -169,7 +145,7 @@ const meRoutes = {
         description: 'Success',
         content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -181,16 +157,12 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
-    security: [],
-    request: {
-      query: entityWithTypeQuerySchema,
-    },
+    request: { query: entityWithTypeQuerySchema },
     responses: {
-      200: {
+      204: {
         description: 'Membership removed',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -204,15 +176,13 @@ const meRoutes = {
     summary: 'Unsubscribe',
     description:
       'Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.',
-    request: {
-      query: z.object({ token: z.string() }),
-    },
+    request: { query: z.object({ token: z.string() }) },
     responses: {
       302: {
         description: 'Redirect to FE',
         headers: locationSchema,
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
@@ -231,116 +201,28 @@ const meRoutes = {
         description: 'Upload token with a scope for a user or organization',
         content: { 'application/json': { schema: uploadTokenSchema } },
       },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 
-  createPasskey: createCustomRoute({
-    operationId: 'createPasskey',
-    method: 'post',
-    path: '/passkey',
+  toggleMfa: createCustomRoute({
+    operationId: 'toggleMfa',
+    method: 'put',
+    path: '/mfa',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Create passkey',
+    summary: 'Toggle MFA',
     description:
-      'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.',
-    security: [],
+      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.',
     request: {
-      body: {
-        required: true,
-        content: { 'application/json': { schema: passkeyRegistrationBodySchema } },
-      },
+      body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },
     responses: {
       200: {
-        description: 'Passkey created',
-        content: { 'application/json': { schema: passkeySchema } },
+        description: 'User',
+        content: { 'application/json': { schema: userSchema } },
       },
-      ...errorResponses,
-    },
-  }),
-
-  deletePasskey: createCustomRoute({
-    operationId: 'deletePasskey',
-    method: 'delete',
-    path: '/passkey/{id}',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Delete passkey',
-    description: 'Delete a passkey by id from the *current user*.',
-    security: [],
-    request: {
-      params: z.object({ id: idSchema }),
-    },
-    responses: {
-      200: {
-        description: 'Passkey deleted',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  registerTotp: createCustomRoute({
-    operationId: 'registerTotp',
-    method: 'post',
-    path: '/totp/register',
-    guard: isAuthenticated,
-    // TODO look into rate limit customized for totp
-    tags: ['me'],
-    summary: 'Register TOTP',
-    description: 'Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.',
-    security: [],
-    responses: {
-      200: {
-        description: 'totpUri & manualKey',
-        content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  activateTotp: createCustomRoute({
-    operationId: 'activateTotp',
-    method: 'post',
-    path: '/totp/activate',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Activate TOTP',
-    description:
-      'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is activated for the account.',
-    security: [],
-    request: {
-      body: {
-        required: true,
-        content: { 'application/json': { schema: totpVerificationBodySchema.pick({ code: true }) } },
-      },
-    },
-
-    responses: {
-      200: {
-        description: 'TOTP activated',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  deleteTotp: createCustomRoute({
-    operationId: 'deleteTotp',
-    method: 'delete',
-    path: '/totp',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Delete TOTP',
-    description: 'Delete TOTP credential for current user.',
-    security: [],
-    responses: {
-      200: {
-        description: 'TOTP deleted',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
-      },
-      ...errorResponses,
+      ...errorResponseRefs,
     },
   }),
 };

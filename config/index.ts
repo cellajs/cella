@@ -1,3 +1,4 @@
+import type { Config } from './types';
 import _default from './default';
 import development from './development';
 import production from './production';
@@ -53,20 +54,27 @@ export type UserFlags = typeof appConfig.defaultUserFlags
  * Theme options
  */
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
+
 /**
  * Severity levels to be used in error handling
  */
 export type Severity = keyof typeof appConfig.severityLevels
 
-export const configModes = {
+/**
+ * All token types used in the app
+ */
+export type TokenType = (typeof appConfig.tokenTypes)[number];
+
+const configModes = {
   development,
   tunnel,
   staging,
   production,
   test,
-} as const;
+} satisfies Record<Config['mode'], unknown>
 
-export type ConfigMode = keyof typeof configModes;
+export type ConfigMode = Config['mode']
 
-const mode = (process.env.NODE_ENV || 'development') as ConfigMode;
+
+const mode = (process.env.NODE_ENV || 'development') as Config['mode'];
 export const appConfig = mergeDeep(_default, configModes[mode]);

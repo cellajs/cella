@@ -1,12 +1,13 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { CircleAlert, CopyCheckIcon, CopyIcon } from 'lucide-react';
+import { CircleAlertIcon, CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ActivateTotpData, type ActivateTotpResponse, type ApiError, activateTotp, registerTotp } from '~/api.gen';
+import { type ApiError, type CreateTotpData, type CreateTotpResponses, createTotp, generateTotpKey } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
@@ -19,11 +20,12 @@ export const SetupTotp = () => {
   const [formVersion, setFormVersion] = useState(0);
 
   // Mutation to validate and activate TOTP with provided code
-  const { mutate, isPending } = useMutation<ActivateTotpResponse, ApiError | Error, NonNullable<ActivateTotpData['body']>>({
-    mutationFn: async (body) => await activateTotp({ body }),
+  const { mutate, isPending } = useMutation<CreateTotpResponses[201], ApiError | Error, NonNullable<CreateTotpData['body']>>({
+    mutationFn: async (body) => await createTotp({ body }),
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
       useUserStore.getState().setMeAuthData({ hasTotp: true });
+      toaster(t('common:success.totp_added'), 'success');
     },
     onError: () => {
       // Reset form component to force re-entry of TOTP verify code
@@ -40,7 +42,7 @@ export const SetupTotp = () => {
   // Fetch TOTP registration data (URI and manual key)
   const { data } = useSuspenseQuery({
     queryKey: ['totp', 'uri'],
-    queryFn: async () => await registerTotp(),
+    queryFn: async () => await generateTotpKey(),
     staleTime: 0,
   });
 
@@ -51,14 +53,14 @@ export const SetupTotp = () => {
       title: t('common:totp_manual.title'),
       description: t('common:totp_manual.description'),
       className: 'sm:max-w-md',
-      hideClose: false,
+      showCloseButton: true,
     });
   };
 
   return (
     <div className="group flex flex-col space-y-2">
       <div className="flex gap-2 items-center justify-center">
-        <CircleAlert size={14} className="shrink-0 text-amber-500" />
+        <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
         <div className="text-sm text-muted-foreground">
           <span>{t('common:totp_manual.footer_description')}</span>
           <Button ref={triggerRef} variant="none" className="p-0 h-auto underline inline cursor-pointer" onClick={openManualKey}>

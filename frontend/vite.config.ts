@@ -6,26 +6,25 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 // import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig, type UserConfig } from 'vite';
+import { defineConfig, Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { watchBackendOpenApi } from './vite/openapi-watch-mode';
 import { swallowLocaleHMR } from './vite/swallow-locale-hmr';
-import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 
 const ReactCompilerConfig = {
   /* ... */
 };
 
 const isStorybook = process.env.STORYBOOK === 'true';
-
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
-  logLevel: 'info',
+  logLevel: 'warn',
   server: {
     host: '0.0.0.0',
     port: Number(frontendUrl.port),
@@ -94,7 +93,7 @@ const viteConfig = {
       compress: {
         pure_funcs: ['console.debug'], // Removes console.debug
       },
-    }),
+    }) as Plugin,
     // visualizer({ open: true, gzipSize: true }),
   ],
   resolve: {
@@ -137,7 +136,7 @@ viteConfig.plugins?.push(
           type: 'image/png',
           purpose: 'any',
         },
-          {
+        {
           src: '/static/icons/icon-512x512.svg',
           sizes: '512x512',
           type: 'image/svg+xml',
@@ -152,31 +151,34 @@ viteConfig.plugins?.push(
       ],
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
+      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
       globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
-  }),
+  })
 );
 
 // Enable HTTPS in development if the frontend URL uses it
-if (appConfig.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
+if (appConfig.frontendUrl.includes('https')) {
+  viteConfig.plugins?.push(basicSsl());
+}
 
 // Enable additional plugins only in development mode
-if (appConfig.mode === 'development' && !isStorybook)
-  viteConfig.plugins?.push([
-i18nextHMRPlugin({ localesDir: '../locales' }),
-swallowLocaleHMR(),
+if (appConfig.mode === 'development' && !isStorybook) {
+  viteConfig.plugins?.push(
+    i18nextHMRPlugin({ localesDir: '../locales' }),
+    swallowLocaleHMR(),
     watchBackendOpenApi(),
     reactScan({
       enable: false,
       scanOptions: {
         showToolbar: false,
       },
-    }),
-  ]);
+    })
+  );
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(viteConfig);

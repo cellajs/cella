@@ -3,7 +3,7 @@ import { boolean, foreignKey, index, jsonb, pgTable, timestamp, varchar } from '
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = appConfig.rolesByType.systemRoles;
+const roleEnum = appConfig.roles.systemRoles;
 const languagesEnum = appConfig.languages;
 
 /**

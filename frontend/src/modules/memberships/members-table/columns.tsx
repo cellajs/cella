@@ -23,14 +23,16 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         name: t('common:name'),
         visible: true,
         sortable: true,
+        resizable: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} orgIdOrSlug={row.membership.organizationId} />,
       },
       {
         key: 'email',
         name: t('common:email'),
-        sortable: true,
+        sortable: false,
         visible: !isMobile,
+        resizable: true,
         renderHeaderCell: HeaderCell,
         minWidth: 140,
         renderCell: ({ row, tabIndex }) => {
@@ -47,6 +49,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         name: t('common:role'),
         sortable: true,
         visible: true,
+        resizable: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative group h-full w-full">
@@ -66,7 +69,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             renderSelect({
               row,
               onRowChange,
-              options: appConfig.rolesByType.entityRoles,
+              options: appConfig.roles.entityRoles,
             }),
         }),
       },
@@ -76,6 +79,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         sortable: true,
         visible: !isSheet && !isMobile,
         minWidth: 160,
+        resizable: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
       },
@@ -84,6 +88,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         name: t('common:last_seen_at'),
         sortable: true,
         visible: !isMobile,
+        resizable: true,
         minWidth: 160,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),

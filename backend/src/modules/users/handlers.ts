@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, ne, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -8,7 +8,8 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { userSelect } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -19,7 +20,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const usersRouteHandlers = app
-  /*
+  /**
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
@@ -61,15 +62,12 @@ const usersRouteHandlers = app
         ? db
             .selectDistinct({ ...userSelect })
             .from(usersTable)
-            .innerJoin(
-              targetMembership,
-              and(eq(usersTable.id, targetMembership.userId), isNotNull(targetMembership.activatedAt), isNull(targetMembership.tokenId)),
-            )
+            .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
             .innerJoin(
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
             )
-        : usersBaseQuery();
+        : db.select(userSelect).from(usersTable);
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
 
@@ -91,7 +89,7 @@ const usersRouteHandlers = app
     }
 
     const memberships = await db
-      .select()
+      .select(membershipBaseSelect)
       .from(membershipsTable)
       .where(and(...membershipFilters));
 
@@ -110,7 +108,7 @@ const usersRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-  /*
+  /**
    * Delete users
    */
   .openapi(userRoutes.deleteUsers, async (ctx) => {
@@ -123,7 +121,7 @@ const usersRouteHandlers = app
 
     // Fetch users by IDs
 
-    const targets = await usersBaseQuery().where(inArray(usersTable.id, toDeleteIds));
+    const targets = await db.select(userSelect).from(usersTable).where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
@@ -151,7 +149,7 @@ const usersRouteHandlers = app
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
-  /*
+  /**
    * Get a user by id or slug
    */
   .openapi(userRoutes.getUser, async (ctx) => {
@@ -161,7 +159,9 @@ const usersRouteHandlers = app
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
-    const [targetUser] = await usersBaseQuery()
+    const [targetUser] = await db
+      .select(userSelect)
+      .from(usersTable)
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 
@@ -170,13 +170,12 @@ const usersRouteHandlers = app
     const requesterOrgIds = requesterMemberships.filter((m) => m.contextType === 'organization').map((m) => m.organizationId);
 
     const [sharedMembership] = await db
-      .select()
+      .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(
         and(
           eq(membershipsTable.userId, targetUser.id),
           eq(membershipsTable.contextType, 'organization'),
-          isNotNull(membershipsTable.activatedAt),
           inArray(membershipsTable.organizationId, requesterOrgIds),
         ),
       )
@@ -194,7 +193,7 @@ const usersRouteHandlers = app
 
     return ctx.json(targetUser, 200);
   })
-  /*
+  /**
    * Update a user by id or slug
    */
   .openapi(userRoutes.updateUser, async (ctx) => {
@@ -202,7 +201,9 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    const [targetUser] = await usersBaseQuery()
+    const [targetUser] = await db
+      .select(userSelect)
+      .from(usersTable)
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 

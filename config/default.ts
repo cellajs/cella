@@ -1,3 +1,5 @@
+import type { BaseConfigType } from "./types";
+
 export const config = {
   mode: 'development' satisfies BaseConfigType['mode'],
   name: 'Cella',
@@ -18,7 +20,7 @@ export const config = {
 
   description: 'Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
   keywords:
-    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant§ updates, realtime data, sync engine',
 
   supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
@@ -61,7 +63,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with s3 on Scaleway
-  s3BucketPrefix: 'cella' satisfies BaseConfigType['s3BucketPrefix'], // Prefix to namespace files when sharing a bucket across apps or envs
+  s3BucketPrefix: 'cella' satisfies BaseConfigType['s3BucketPrefix'] as BaseConfigType['s3BucketPrefix'], // Prefix to namespace files when sharing a bucket across apps or envs
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
@@ -71,6 +73,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
 
   // Upload templates using Transloadit
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
+
+
+  // If you are using a different Matrix server (self-hosted or private), replace this URL with your server's base URL.
+  matrixURL: 'https://matrix-client.matrix.org',
 
   // Theme settings
   themeColor: '#26262b',
@@ -111,43 +117,43 @@ The documentation is generated from source code using \`zod\` schemas, converted
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
   defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
-/**
- * Enabled authentication strategies.
- * Currently available: 'password', 'passkey' and 'oauth'.
- * TODO: Should we add 'totp' here? Only when both totp and passkey are enabled, should we show in UI the totp and mfa options. Otherwise its not possible to benefit from mfa or totp.
- */
-enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
+  /**
+   * Enabled authentication strategies.
+   * Currently available: 'password', 'passkey', 'oauth' and 'totp'.
+   * Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
+   */
+  enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
 
-/**
- * Enabled OAuth providers.
- * Currently supported: 'github', 'google', 'microsoft'.
- * Only these providers can be selected in enabledAuthStrategies when 'oauth' is enabled.
- */
-enabledOAuthProviders: ['github'] as const,
+  /**
+   * Enabled OAuth providers.
+   * Currently supported: 'github', 'google', 'microsoft'.
+   * Only these providers can be selected in enabledAuthStrategies when 'oauth' is enabled.
+   */
+  enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
+  tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
 
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: true, // Realtime updates and sync using Electric Sync
-    registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
+    registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
 
   // TOTP configuration
-  totpConfig: { 
-    intervalInSeconds: 60,
+  totpConfig: {
+    intervalInSeconds: 30,
     gracePeriodInSeconds: 60,
     digits: 6
   },
 
   // Default user flags
-  defaultUserFlags: { 
-    finishedOnboarding: false 
+  defaultUserFlags: {
+    finishedOnboarding: false
   },
 
   /**
@@ -222,12 +228,12 @@ enabledOAuthProviders: ['github'] as const,
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pendingInvitations: 20,
+    pendingMemberships: 20,
   },
   /**
    * Roles on system and entity level
    */
-  rolesByType: {
+  roles: {
     systemRoles: ['user', 'admin'] as const,
     entityRoles: ['member', 'admin'] as const,
     allRoles: ['user', 'member', 'admin'] as const,
@@ -249,6 +255,7 @@ enabledOAuthProviders: ['github'] as const,
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',
     blueskyHandle: '@flipvh.bsky.social',
+    element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
     githubUrl: 'https://github.com/cellajs/cella',
     mapZoom: 4,
     coordinates: {
@@ -299,18 +306,4 @@ enabledOAuthProviders: ['github'] as const,
 }
 export default config;
 
-export type DeepPartial<T> = T extends object
-  ? {
-    [P in keyof T]?: DeepPartial<T[P]>;
-  }
-  : T;
-
-type BaseConfigType = {
-  mode: 'development' | 'production' | 'tunnel' | 'test' | 'staging',
-  s3BucketPrefix?: string
-}
-
-type ConfigType = DeepPartial<typeof config> 
-
-export type Config = Omit<ConfigType, keyof BaseConfigType> & BaseConfigType;
 

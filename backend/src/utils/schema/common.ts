@@ -1,6 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { isCDNUrl } from '#/utils/is-cdn-url';
+
+/** Schema to use boolean parameters (transform string to boolean) */
+export const booleanTransformSchema = z
+  .union([z.string(), z.boolean()])
+  .default('false')
+  .transform((v) => v === true || v === 'true')
+  .pipe(z.boolean());
 
 /*************************************************************************************************
  * Entity schemas
@@ -50,9 +58,6 @@ export const languageSchema = z.enum(appConfig.languages);
  * Common param schemas
  ************************************************************************************************/
 
-/** Schema for authentication token parameter (token string) */
-export const tokenParamSchema = z.object({ token: z.string() });
-
 /** Schema for entity identifier idOrSlug */
 export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
 
@@ -71,13 +76,6 @@ export const idInOrgParamSchema = z.object({ id: idSchema, orgIdOrSlug: idOrSlug
 
 /** Schema for idOrSlug that must be a specific entity type */
 export const entityWithTypeQuerySchema = z.object({ idOrSlug: idOrSlugSchema, entityType: contextEntityTypeSchema });
-
-/** Schema to use boolean query parameters (transform string to boolean) */
-export const booleanQuerySchema = z
-  .union([z.string(), z.boolean()])
-  .default('false')
-  .transform((v) => v === true || v === 'true')
-  .pipe(z.boolean());
 
 const offsetRefine = (value: number) => value >= 0;
 const limitMax = 1000;
@@ -101,6 +99,11 @@ export const paginationQuerySchema = z.object({
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('invalid_limit', { max: limitMax })),
 });
+
+export const emailOrTokenIdQuerySchema = z.union([
+  z.object({ email: z.email(), tokenId: z.string().optional() }),
+  z.object({ email: z.email().optional(), tokenId: z.string() }),
+]);
 
 /*************************************************************************************************
  * Common body schemas
@@ -157,7 +160,10 @@ export const validSlugSchema = z
   .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), t('invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
-export const validImageKeySchema = z.string();
+export const validCDNUrlSchema = z
+  .string()
+  .refine((url: string) => isCDNUrl(url), t('invalid_cdn_url'))
+  .transform((str) => str.trim());
 
 /** Schema for an array of valid domains */
 export const validDomainsSchema = z

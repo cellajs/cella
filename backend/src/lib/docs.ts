@@ -6,12 +6,14 @@ import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { attachmentSchema } from '#/modules/attachments/schema';
-import { contextEntityBaseSchema, userBaseSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { menuSchema } from '#/modules/me/schema';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { inactiveMembershipSchema, membershipBaseSchema, membershipSchema } from '#/modules/memberships/schema';
 import { organizationSchema } from '#/modules/organizations/schema';
 import { userSchema } from '#/modules/users/schema';
-import { apiErrorSchema } from '#/utils/schema/error';
+import { userBaseSchema } from '#/modules/users/schema-base';
+import { apiErrorSchema } from '#/utils/schema/api-error';
+import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
 
 // OpenAPI configuration
 const openApiConfig = {
@@ -23,7 +25,6 @@ const openApiConfig = {
   },
   openapi: '3.1.0',
   tags: apiModulesList,
-  security: [{ cookieAuth: [] }],
 };
 
 /**
@@ -46,21 +47,25 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
+  // Register lower-level (base) schemas
+  registry.register('UserBase', userBaseSchema);
+  registry.register('ContextEntityBase', contextEntityBaseSchema);
+  registry.register('MembershipBase', membershipBaseSchema);
+
   // Register entity schemas
   registry.register('User', userSchema);
   registry.register('Organization', organizationSchema);
+  registry.register('Membership', membershipSchema);
+  registry.register('InactiveMembership', inactiveMembershipSchema);
   registry.register('Attachment', attachmentSchema);
 
-  // Register lower-level (base) schemas
-  registry.register('UserBaseSchema', userBaseSchema);
-  // TODO: MembershipBaseSchema is currently not really referenced in openapi because the schema is not connected using .openapi('MembershipBaseSchema')
-  // This is because if we do, somehow MembershipBaseSchema becomes nullable for unknown reason.
-  registry.register('MembershipBaseSchema', membershipBaseSchema);
-  registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
-
-  registry.register('MenuSchema', menuSchema);
+  registry.register('Menu', menuSchema);
   registry.register('ApiError', apiErrorSchema);
 
+  // Register error responses
+  registerAllErrorResponses(registry, errorResponses);
+
+  // Register application-specific schemas
   registerAppSchema(registry);
 
   // Review all existing schemas

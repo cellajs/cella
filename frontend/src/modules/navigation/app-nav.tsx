@@ -11,6 +11,9 @@ import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 
+export const navSheetClassName =
+  'fixed sm:w-80 sm:z-105 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
+
 const AppNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
@@ -57,11 +60,10 @@ const AppNav = () => {
       id: 'nav-sheet',
       triggerRef,
       side: sheetSide,
-      hideClose: true,
+      showCloseButton: false,
       modal: isMobile,
       closeSheetOnRouteChange: false,
-      className:
-        'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
+      className: navSheetClassName,
       onClose: () => setNavSheetOpen(null),
     });
   };
@@ -74,7 +76,6 @@ const AppNav = () => {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
-  // TODO fix it can't use navigation out of sheet handlers components like UserSheetHandler because this useEffect re-triggers close and on close and there is navigation to remove sheet id from search and navigation doesn't happens
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;
@@ -83,7 +84,7 @@ const AppNav = () => {
       if (navState.focusView) setFocusView(false);
 
       useDialoger.getState().remove();
-      useSheeter.getState().removeOnRouteChange();
+      useSheeter.getState().removeOnRouteChange({ isCleanup: true });
 
       // Set nav bar loading state
       setNavLoading(true);

@@ -1,4 +1,4 @@
-import { Send } from 'lucide-react';
+import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
@@ -75,8 +75,12 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton loading={isPending} className="relative">
-            {!!form.getValues('emails')?.length && <Badge context="button">{form.getValues('emails')?.length}</Badge>}
-            <Send size={16} className="mr-2" />
+            {!!form.getValues('emails')?.length && (
+              <Badge variant="secondary" context="button">
+                {form.getValues('emails')?.length}
+              </Badge>
+            )}
+            <SendIcon size={16} className="mr-2" />
             {t('common:invite')}
           </SubmitButton>
           {form.isDirty && (

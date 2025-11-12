@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -17,25 +17,31 @@ import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/routes';
-import { usersBaseQuery } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
-import { getParsedSessionCookie, validateSession } from '../auth/helpers/session';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const systemRouteHandlers = app
-  /*
-   * Invite users to system
+  /**
+   * Invite users to system by list of email addresses. There are some scenarios:
+   * 1. email doesn't exist in emailsTable AND not in tokensTable (so no pending invitation) -> add to recipients list and create invitation token.
+   * 2. email doesn't exist in emailsTable BUT does exist in tokensTable (so pending invitation already) -> if token is expired, add to recipients,
+   * remove the old token and create a new one.
+   * 3. email exists in emailsTable AND in tokensTable -> remove from recipients.
    */
   .openapi(systemRoutes.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
@@ -46,75 +52,111 @@ const systemRouteHandlers = app
     const senderThumbnailUrl = user.thumbnailUrl;
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
 
-    const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
+    // Normalize + de-dupe
+    const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
+    if (normalizedEmails.length === 0) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
-    if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    const now = new Date();
 
-    // Query to filter out invitations on same email
-    const existingInvitesQuery = db
-      .select()
+    // 1) Emails that already belong to a verified user (users can have multiple emails)
+    const existingEmailRecords = await db
+      .select({ email: emailsTable.email })
+      .from(emailsTable)
+      .where(and(inArray(emailsTable.email, normalizedEmails), eq(emailsTable.verified, true)));
+
+    const existingEmails = new Set(existingEmailRecords.map((r) => r.email));
+
+    // 2) Pending invitation tokens for normalized emails
+    const pendingTokens = await db
+      .select({
+        id: tokensTable.id,
+        email: tokensTable.email,
+        expiresAt: tokensTable.expiresAt,
+        invokedAt: tokensTable.invokedAt,
+      })
       .from(tokensTable)
       .where(
         and(
           inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
-          // Make sure its a system invitation
-          isNull(tokensTable.entityType),
-          lt(tokensTable.expiresAt, new Date()),
-          isNull(tokensTable.consumedAt),
+          isNull(tokensTable.inactiveMembershipId), // system invite
+          isNull(tokensTable.invokedAt), // pending (not used)
         ),
       );
 
-    const existingUsersQuery = await usersBaseQuery().where(inArray(emailsTable.email, normalizedEmails));
+    // Index tokens per email, classify active vs expired
+    const activeTokenByEmail = new Map<string, { id: string }>();
+    const expiredTokenIdsByEmail = new Map<string, string[]>();
 
-    const [existingUsers, existingInvites] = await Promise.all([existingUsersQuery, existingInvitesQuery]);
+    for (const t of pendingTokens) {
+      const isActive = t.expiresAt > now;
+      if (isActive) activeTokenByEmail.set(t.email, { id: t.id });
+      else {
+        const arr = expiredTokenIdsByEmail.get(t.email) ?? [];
+        arr.push(t.id);
+        expiredTokenIdsByEmail.set(t.email, arr);
+      }
+    }
 
-    // Create a set of emails from both existing users and invitations
-    const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
+    // 3) Decide recipients vs rejected based on scenarios
+    const recipientEmails: string[] = [];
+    const rejectedItems: string[] = [];
 
-    // Filter out emails that already user or has invitations
-    const recipientEmails = normalizedEmails.filter((email) => !existingEmails.has(email));
-    const rejectedItems = normalizedEmails.filter((email) => existingEmails.has(email));
+    for (const email of normalizedEmails) {
+      if (existingEmails.has(email)) {
+        // Already a user
+        rejectedItems.push(email);
+        continue;
+      }
 
-    // Stop if no recipients
-    if (recipientEmails.length === 0) return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
+      if (activeTokenByEmail.has(email)) {
+        // Already has an active pending invite
+        rejectedItems.push(email);
+        continue;
+      }
 
-    // Generate tokens
-    const tokens = recipientEmails.map((email) => {
-      const token = nanoid(40);
-      return {
-        token,
-        type: 'invitation' as const,
-        email: email.toLowerCase().trim(),
-        createdBy: user.id,
-        expiresAt: createDate(new TimeSpan(7, 'd')),
-      };
-    });
+      // Either no token at all OR expired token(s)
+      recipientEmails.push(email);
+    }
 
-    // Batch insert tokens
+    if (recipientEmails.length === 0) {
+      return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
+    }
+
+    // Generate token and store hashed
+    const newToken = nanoid(40);
+    const hashedToken = encodeLowerCased(newToken);
+
+    // 5) Create new tokens for recipients
+    const tokens = recipientEmails.map((email) => ({
+      token: hashedToken,
+      type: 'invitation' as const,
+      email,
+      createdBy: user.id,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+    }));
+
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
 
-    // Change waitlist request status
+    // 6) Link waitlist requests (if any)
     await Promise.all(
-      insertedTokens.map((token) =>
+      insertedTokens.map((t) =>
         db
           .update(requestsTable)
-          .set({ tokenId: token.id })
-          .where(and(eq(requestsTable.email, token.email), eq(requestsTable.type, 'waitlist'))),
+          .set({ tokenId: t.id })
+          .where(and(eq(requestsTable.email, t.email), eq(requestsTable.type, 'waitlist'))),
       ),
     );
 
-    // Prepare emails
-    const recipients = insertedTokens.map((tokenRecord) => ({
-      email: tokenRecord.email,
-      lng: lng,
-      name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}`,
+    // 7) Prepare & send emails
+    const recipients = insertedTokens.map(({ email, type }) => ({
+      email,
+      lng,
+      name: slugFromEmail(email),
+      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
     }));
-
     type Recipient = (typeof recipients)[number];
 
-    // Send invitation
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
     await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
 
@@ -122,7 +164,7 @@ const systemRouteHandlers = app
 
     return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
   })
-  /*
+  /**
    * Get presigned URL
    */
   .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
@@ -145,10 +187,7 @@ const systemRouteHandlers = app
       const { user } = await validateSession(sessionToken);
 
       if (attachment) {
-        const memberships = await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+        const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = user.role === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
@@ -161,7 +200,7 @@ const systemRouteHandlers = app
 
     return ctx.json(url, 200);
   })
-  /*
+  /**
    * Paddle webhook
    */
   .openapi(systemRoutes.paddleWebhook, async (ctx) => {
@@ -183,9 +222,9 @@ const systemRouteHandlers = app
       logError('Error handling paddle webhook', error);
     }
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   })
-  /*
+  /**
    * Send newsletter to members of one or more organizations matching one ore more roles.
    */
   .openapi(systemRoutes.sendNewsletter, async (ctx) => {
@@ -195,7 +234,6 @@ const systemRouteHandlers = app
     const user = getContextUser();
 
     // Get members from organizations
-    // TODO(REFACTOR) using emails table
     const recipientsRecords = await db
       .selectDistinct({
         email: usersTable.email,
@@ -213,7 +251,6 @@ const systemRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
-          isNotNull(membershipsTable.activatedAt),
           eq(usersTable.newsletter, true),
         ),
       );
@@ -238,29 +275,8 @@ const systemRouteHandlers = app
         },
       ];
 
-    // Regex to match src="..." or src='...'
-    // Captures quote type in g 1 and actual URL in g 2
-    const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
-
-    const srcs = [...content.matchAll(srcRegex)].map(([_, src]) => src);
-
-    // Map to hold original -> signed URL replacements
-    const replacements = new Map<string, string>();
-
-    // For each unique src, fetch its signed URL
-    await Promise.all(
-      srcs.map(async (src) => {
-        try {
-          const signed = await getSignedUrlFromKey(src, { isPublic: true, bucketName: appConfig.s3PublicBucket });
-          replacements.set(src, signed);
-        } catch (e) {
-          replacements.set(src, src);
-        }
-      }),
-    );
-
     // Replace all src attributes in content
-    const newContent = content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
+    const newContent = await replaceSignedSrcs(content);
 
     type Recipient = (typeof recipients)[number];
 
@@ -270,7 +286,7 @@ const systemRouteHandlers = app
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });
 
-    return ctx.json(true, 200);
+    return ctx.body(null, 204);
   });
 
 export default systemRouteHandlers;

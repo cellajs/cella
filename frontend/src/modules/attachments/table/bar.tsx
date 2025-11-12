@@ -1,4 +1,4 @@
-import { Info, Trash, Upload, XSquare } from 'lucide-react';
+import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import type { Attachment } from '~/api.gen';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import type { AttachmentsTableProps } from '~/modules/attachments/table';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
+import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -17,7 +18,6 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
-import type { AttachmentsRouteSearchParams } from '../types';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & {
@@ -90,14 +90,14 @@ export const AttachmentsTableBar = ({
                   onClick={openDeleteDialog}
                   className="relative"
                   badge={selected.length}
-                  icon={Trash}
+                  icon={TrashIcon}
                   label={t('common:delete')}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
               </>
             ) : (
-              showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
+              showUpload && <TableBarButton icon={UploadIcon} label={t('common:upload')} onClick={() => open(entity.id)} />
             )}
             {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
@@ -129,7 +129,7 @@ export const AttachmentsTableBar = ({
               }}
               style={{ overflow: 'hidden' }}
             >
-              <AlertWrap id="edit_attachment" variant="plain" icon={Info}>
+              <AlertWrap id="edit_attachment" variant="plain" icon={InfoIcon}>
                 {t('common:edit_attachment.text')}
               </AlertWrap>
             </motion.div>
