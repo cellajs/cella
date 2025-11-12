@@ -20,12 +20,12 @@ const organizationTabs: PageTab[] = [
 const OrganizationPage = () => {
   const { t } = useTranslation();
   const { idOrSlug } = useParams({ from: '/appLayout/organization/$idOrSlug' });
-  const user = useUserStore((state) => state.user);
+  const systemRole = useUserStore((state) => state.systemRole);
 
   const orgQueryOptions = organizationQueryOptions(idOrSlug);
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
-  const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
+  const isAdmin = organization.membership?.role === 'admin' || systemRole === 'admin';
   const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 2);
 
   const { mutate } = useOrganizationUpdateMutation();

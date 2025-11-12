@@ -626,7 +626,10 @@ export const zGetMeData = z.object({
 /**
  * User
  */
-export const zGetMeResponse = zUser;
+export const zGetMeResponse = z.object({
+  user: zUser,
+  systemRole: z.enum(['admin', 'user']),
+});
 
 export const zUpdateMeData = z.object({
   body: z.object({

@@ -24,7 +24,7 @@ type Bindings = HttpBindings & {
 export type Env = {
   Variables: {
     user: UserModel;
-    userRole: SystemRoleModel['role'];
+    userRole: SystemRoleModel['role'] | 'user';
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;
@@ -40,7 +40,7 @@ export type Env = {
  *
  * @returns The system role of the current user.
  */
-export const getContextUserSystemRole = (): string | undefined => {
+export const getContextUserSystemRole = () => {
   return getContext<Env>().var.userRole;
 };
 

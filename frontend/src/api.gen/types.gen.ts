@@ -1417,7 +1417,10 @@ export type GetMeResponses = {
   /**
    * User
    */
-  200: User;
+  200: {
+    user: User;
+    systemRole: 'admin' | 'user';
+  };
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];

@@ -3,16 +3,18 @@ import i18n from 'i18next';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { User } from '~/api.gen';
+import type { GetMeResponse, User } from '~/api.gen';
 import type { MeAuthData, MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
+  systemRole: GetMeResponse['systemRole'];
   hasPasskey: boolean; // Current user's passkey
   hasTotp: MeAuthData['hasTotp']; // Current user's passkey
   enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
+  setSystemRole: (systemRole: GetMeResponse['systemRole']) => void; // Sets current user and updates lastUser
   setLastUser: (lastUser: Partial<MeUser>) => void; // Sets last user (used for MFA)
   setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasTotp' | 'enabledOAuth'> & { hasPasskey: boolean }>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
@@ -25,6 +27,7 @@ export const useUserStore = create<UserStoreState>()(
       immer((set) => ({
         // Hackish solution to avoid type issues for user being undefined. Router should prevent user ever being undefined in the app layout routes.
         user: null as unknown as MeUser,
+        systemRole: null as unknown as GetMeResponse['systemRole'],
         enabledOAuth: [] as MeAuthData['enabledOAuth'],
         hasPasskey: false,
         hasTotp: false,
@@ -62,6 +65,11 @@ export const useUserStore = create<UserStoreState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
+        setSystemRole: (systemRole) => {
+          set((state) => {
+            state.systemRole = systemRole;
+          });
+        },
         setLastUser: (lastUser) => {
           set((state) => {
             state.lastUser = {
@@ -80,6 +88,7 @@ export const useUserStore = create<UserStoreState>()(
         clearUserStore: () => {
           set((state) => {
             state.user = null as unknown as MeUser;
+            state.systemRole = null as unknown as GetMeResponse['systemRole'];
             state.lastUser = null;
             state.enabledOAuth = [];
             state.hasPasskey = false;

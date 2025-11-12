@@ -108,7 +108,6 @@ export const useColumns = () => {
         sortable: true,
         visible: !isMobile,
         resizable: true,
-
         width: 100,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <div>{t(row.role, { ns: ['app', 'common'] })}</div>,
