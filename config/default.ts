@@ -253,12 +253,11 @@ The documentation is generated from source code using \`zod\` schemas, converted
     supportEmail: 'support@cellajs.com',
     tel: '+31 6 12345678',
     streetAddress: 'Drizzle Road 42',
-    // streetB
     postcode: '90210 JS',
     city: 'Hono City',
     country: 'TypeScript Rock',
-    registration: 'Chamber of Commerce (KvK): 578 25 920', //
-    bankAccount: 'NL07 RABO 0309 4430 24', //
+    registration: 'Chamber of Commerce (KvK): 578 25 920',
+    bankAccount: 'NL07 RABO 0309 4430 24',
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',

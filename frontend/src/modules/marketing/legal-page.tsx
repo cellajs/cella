@@ -24,7 +24,7 @@ export const LegalPage = () => {
       <Tabs defaultValue="terms" className="mx-auto md:w-[70%] flex flex-col gap-8">
         <TabsList className="md:w-[50%] mx-auto">
           {tabs.map(({ id, label }) => (
-            <TabsTrigger key={id} value={id} className="">
+            <TabsTrigger key={id} value={id}>
               {t(label)}
             </TabsTrigger>
           ))}
