@@ -14,10 +14,10 @@ interface CLIConfig {
 }
 
 const availableSyncServices = [
-  { name: 'Boilerplate → fork (+packages)', value: 'boilerplate-fork+packages', disabled: true },
+  { name: 'Boilerplate → fork (+Sync packages)', value: 'boilerplate-fork+packages', disabled: true },
   { name: 'Boilerplate → fork', value: 'boilerplate-fork' },
   { name: 'Diverged files', value: 'diverged' },
-  { name: 'Packages', value: 'packages', disabled: true }
+  { name: 'Sync Packages', value: 'packages'}
 ];
 
 // Initialize variables to hold CLI options
@@ -70,6 +70,7 @@ async function setSyncService(): Promise<void> {
       message: 'Select the sync service you want to use:',
       choices: [
         ...availableSyncServices,
+        new Separator(),
         { name: 'Exit', value: 'exit' },
       ],
     });
@@ -93,6 +94,7 @@ async function handleConfiguration() {
     choices: [
       { name: 'continue', value: 'continue' },
       { name: 'Customize configuration', value: 'customize' },
+      new Separator(),
       { name: 'Exit', value: 'exit' },
     ],
   });

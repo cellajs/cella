@@ -1,4 +1,4 @@
-import { gitRevListCount, gitStatusPorcelain } from './command';
+import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain } from './command';
 
 /**
  * Get the number of commits that are in `sourceBranch` but not in `baseBranch`.
@@ -62,4 +62,22 @@ export async function hasAnythingToPush(
   const countStr = await gitRevListCount(repoPath, branch, `${remote}/${branch}`);
   const count = parseInt(countStr, 10);
   return count > 0;
+}
+
+/**
+ * Fetches and parses a JSON file from a specific branch reference in the repository.
+ * @param repoPath - Path to the repository
+ * @param branchRef - Branch reference (e.g., branch name, commit hash)
+ * @param jsonPath - Path to the JSON file within the repository
+ * @returns 
+ */
+export async function getRemoteJsonFile(repoPath: string, branchRef: string, jsonPath: string): Promise<any> {
+  try {
+    // Get the package.json contents
+    const pkgStr = await gitShowFileAtCommit(repoPath, branchRef, jsonPath);
+    return JSON.parse(pkgStr);
+  } catch (err) {
+    console.error(`Failed to fetch ${jsonPath} from ${branchRef}`, err);
+    return null;
+  }
 }

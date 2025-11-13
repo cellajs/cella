@@ -30,11 +30,13 @@
     "micromatch": "^4.0.8",
     "p-limit": "^6.2.0",
     "picocolors": "^1.1.1",
+    "semver": "^7.7.3",
     "validate-npm-package-name": "^5.0.1",
     "yocto-spinner": "^0.1.2"
   },
   "devDependencies": {
     "@types/micromatch": "^4.0.9",
+    "@types/semver": "^7.7.1",
     "tsx": "^4.20.3"
   }
 }

@@ -73,7 +73,7 @@ export class Config {
   }
 
   get forkIsRemote(): boolean {
-    if (['boilerplate-fork', 'diverged'].includes(this.state.syncService)) {
+    if (['boilerplate-fork', 'diverged', 'boilerplate-fork+packages', 'packages'].includes(this.state.syncService)) {
       return false;
     }
 
@@ -81,7 +81,7 @@ export class Config {
   }
 
   get boilerplateIsRemote(): boolean {
-    if (['boilerplate-fork', 'diverged'].includes(this.state.syncService)) {
+    if (['boilerplate-fork', 'diverged', 'boilerplate-fork+packages', 'packages'].includes(this.state.syncService)) {
       return true;
     }
     return this.state.boilerplateLocation === 'remote';
@@ -118,15 +118,16 @@ export class Config {
   }
 
   set syncService(value: AppConfig['syncService']) {
-    if (value === 'boilerplate-fork') {
+    if (['boilerplate-fork', 'boilerplate-fork+packages', 'packages', 'diverged'].includes(value)) {
       this.state.forkLocation = 'local';
       this.state.boilerplateLocation = 'remote';
+    }
+
+    if (value === 'boilerplate-fork') {
       this.state.log = logDefaultConfig;
     }
 
     if (value === 'diverged') {
-      this.state.forkLocation = 'local';
-      this.state.boilerplateLocation = 'remote';
       this.state.log = logDivergedConfig;
     }
 
@@ -145,7 +146,7 @@ export class Config {
    * Determines the working directory dynamically 
    */
   get workingDirectory(): string {
-    if (['boilerplate-fork', 'diverged'].includes(this.state.syncService)) {
+    if (['boilerplate-fork', 'diverged', 'packages', 'boilerplate-fork+packages'].includes(this.state.syncService)) {
       return this.state.fork.localPath;
     } else {
       return "";

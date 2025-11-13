@@ -9,7 +9,7 @@ import { createBranchIfMissing } from "./utils/git/branches";
 import { handleMerge } from "./utils/git/handle-merge";
 import { addAsRemote } from "./modules/setup/add-as-remote";
 
-import { config, type RepoConfig } from "./config";
+import { config } from "./config";
 
 /**
  * Setup checks config and repositories before running any scripts.
@@ -22,7 +22,7 @@ import { config, type RepoConfig } from "./config";
  * @throws If any setup check fails
  *
  * @example
- * await runSetup('syncBoilerplateIntoFork');
+ * await runSetup();
  */
 export async function runSetup() {
   console.info(pc.cyan("\nRunning Setup"));
