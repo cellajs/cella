@@ -4,6 +4,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
@@ -43,10 +44,15 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
       username: user.slug,
     });
 
-    // Fetch user's memberships from the database
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    // Fetch the user's memberships and system role in parallel
+    const [memberships, [userRoleRecord]] = await Promise.all([
+      db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
+      db.select({ role: systemRolesTable.role }).from(systemRolesTable).where(eq(systemRolesTable.userId, user.id)).limit(1),
+    ]);
 
+    // Store values in context for downstream use
     ctx.set('memberships', memberships);
+    ctx.set('userRole', userRoleRecord?.role || 'user'); // Fallback to 'user' if no system role is assigned
   } catch (err) {
     // If session validation fails, remove cookie
     if (err instanceof AppError) deleteAuthCookie(ctx, 'session');

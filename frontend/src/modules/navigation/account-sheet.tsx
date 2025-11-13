@@ -48,11 +48,11 @@ const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action 
 
 export const AccountSheet = () => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const { user, systemRole } = useUserStore();
   const isMobile = useBreakpoints('max', 'sm');
   const { isOnline } = useOnlineManager();
 
-  const isSystemAdmin = user.role === 'admin';
+  const isSystemAdmin = systemRole === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

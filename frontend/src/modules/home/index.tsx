@@ -12,8 +12,8 @@ const Home = () => {
   const { setDownAlert } = useAlertStore();
 
   useEffect(() => {
-    const { user } = useUserStore.getState();
-    if (user.role === 'admin' && !user.mfaRequired && appConfig.mode === 'production') setDownAlert('enable_mfa');
+    const { user, systemRole } = useUserStore.getState();
+    if (systemRole === 'admin' && !user.mfaRequired && appConfig.mode === 'production') setDownAlert('enable_mfa');
   }, []);
 
   return (

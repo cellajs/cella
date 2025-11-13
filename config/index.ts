@@ -63,7 +63,12 @@ export type Severity = keyof typeof appConfig.severityLevels
 /**
  * All token types used in the app
  */
-export type TokenType = (typeof appConfig.tokenTypes)[number];
+export type TokenType = (typeof appConfig.tokenTypes)[number]
+
+/**
+ * System roles available in the app
+ */
+export type SystemRoles = (typeof appConfig.roles.systemRoles)[number];
 
 const configModes = {
   development,

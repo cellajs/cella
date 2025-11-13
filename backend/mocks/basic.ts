@@ -107,7 +107,6 @@ export const mockAdmin = (id: string, email: string): InsertUserModel => {
     lastName: 'User',
     name: 'Admin User',
     slug: 'admin-user',
-    role: 'admin',
     email,
     language: appConfig.defaultLanguage,
     thumbnailUrl: null,

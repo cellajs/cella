@@ -4,7 +4,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
@@ -22,8 +22,7 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   if (!orgIdOrSlug) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   const memberships = getContextMemberships();
-  const user = getContextUser();
-  const isSystemAdmin = user.role === 'admin';
+  const userSytemRole = getContextUserSystemRole();
 
   // Fetch organization
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
@@ -33,7 +32,7 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
 
   // Check if user has access to organization (or is a system admin)
   const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
-  if (!isSystemAdmin && !orgMembership) {
+  if (userSytemRole !== 'admin' && !orgMembership) {
     throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
   }
   const orgWithMembership = { ...organization, membership: orgMembership };

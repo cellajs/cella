@@ -4,8 +4,9 @@ import { and, count, eq, ilike, inArray, ne, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
@@ -30,7 +31,7 @@ const usersRouteHandlers = app
 
     const filters = [
       // Filter by role if provided
-      ...(role ? [eq(usersTable.role, role)] : []),
+      ...(role ? [eq(systemRolesTable.role, role)] : []),
 
       // Exclude self when fetching shared memberships
       ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
@@ -47,7 +48,7 @@ const usersRouteHandlers = app
         email: usersTable.email,
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
-        role: usersTable.role,
+        role: systemRolesTable.role,
       },
       sort,
       usersTable.id,
@@ -57,19 +58,23 @@ const usersRouteHandlers = app
     const targetMembership = alias(membershipsTable, 'targetMembership'); // memberships of users being queried
     const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
 
+    const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
     const baseUsersQuery =
       mode === 'shared'
         ? db
-            .selectDistinct({ ...userSelect })
+            .selectDistinct(usersQuerySelect)
             .from(usersTable)
             .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
             .innerJoin(
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
             )
-        : db.select(userSelect).from(usersTable);
+        : db.select(usersQuerySelect).from(usersTable);
 
-    const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
+    const usersQuery = baseUsersQuery
+      .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
+      .where(and(...filters))
+      .orderBy(orderColumn);
 
     // Total count
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
@@ -113,7 +118,8 @@ const usersRouteHandlers = app
    */
   .openapi(userRoutes.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('json');
-    const { role: contextUserRole, id: contextUserId } = getContextUser();
+    const { id: contextUserId } = getContextUser();
+    const contextUserRole = getContextUserSystemRole();
 
     // Convert the user ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
@@ -156,6 +162,7 @@ const usersRouteHandlers = app
     const { idOrSlug } = ctx.req.valid('param');
     const requestingUser = getContextUser();
     const requesterMemberships = getContextMemberships();
+    const requstingUserSytemRole = getContextUserSystemRole();
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
@@ -181,7 +188,7 @@ const usersRouteHandlers = app
       )
       .limit(1);
 
-    if (requestingUser.role !== 'admin' && !sharedMembership) {
+    if (requstingUserSytemRole !== 'admin' && !sharedMembership) {
       throw new AppError({
         status: 403,
         type: 'forbidden',

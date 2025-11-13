@@ -49,7 +49,6 @@ export type User = {
   lastName: string | null;
   language: 'en' | 'nl';
   newsletter: boolean;
-  role: 'user' | 'admin';
   userFlags: {
     finishedOnboarding: boolean;
   };
@@ -1418,7 +1417,10 @@ export type GetMeResponses = {
   /**
    * User
    */
-  200: User;
+  200: {
+    user: User;
+    systemRole: 'admin' | 'user';
+  };
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
@@ -1922,7 +1924,7 @@ export type GetUsersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    role?: 'user' | 'admin';
+    role?: 'admin';
     mode?: 'all' | 'shared';
     targetEntityType?: 'organization';
     targetEntityId?: string;
@@ -3485,7 +3487,6 @@ export type GetMembersResponses = {
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';
-      role: 'user' | 'admin';
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;

@@ -3,7 +3,6 @@ import { boolean, foreignKey, index, jsonb, pgTable, timestamp, varchar } from '
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = appConfig.roles.systemRoles;
 const languagesEnum = appConfig.languages;
 
 /**
@@ -31,7 +30,6 @@ export const usersTable = pgTable(
     lastName: varchar(),
     language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
-    role: varchar({ enum: roleEnum }).notNull().default('user'),
     userFlags: jsonb()
       .$type<UserFlags>()
       .notNull()

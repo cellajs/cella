@@ -1,19 +1,18 @@
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { cn } from '~/utils/cn';
 
 interface Props {
-  entityType?: ContextEntityType;
   onChange: (value?: string) => void;
-  value?: (typeof appConfig.roles.allRoles)[number];
+  value?: (typeof appConfig.roles.entityRoles)[number];
   className?: string;
 }
 
-const SelectRoleRadio = ({ entityType, onChange, value, className }: Props) => {
+const SelectRoleRadio = ({ onChange, value, className }: Props) => {
   const { t } = useTranslation();
 
-  const roles = entityType ? appConfig.roles.entityRoles : ['user'];
+  const roles = appConfig.roles.entityRoles;
 
   return (
     <RadioGroup value={value} onValueChange={onChange} className={cn('inline-flex gap-4 items-center', className)}>

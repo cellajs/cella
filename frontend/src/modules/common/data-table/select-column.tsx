@@ -29,7 +29,7 @@ export const renderSelect = <TRow extends User | Member | Organization>({
   };
 
   // Determine role based on type
-  const role = 'membership' in row && row.membership ? row.membership.role : 'role' in row ? row.role : undefined;
+  const role = 'membership' in row && row.membership ? row.membership.role : undefined;
   return (
     <Select open={true} value={role} onValueChange={onChooseValue}>
       <SelectTrigger className="h-8 border-none p-2 text-xs tracking-wider">

@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
-import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import type { PermittedAction } from '#/permissions/permissions-config';
@@ -27,10 +27,10 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   action: Exclude<PermittedAction, 'create'>,
 ): Promise<EntityModel<K>> => {
   // Get current user role and memberships from request context
-  const { role } = getContextUser();
+  const userSytemRole = getContextUserSystemRole();
   const memberships = getContextMemberships();
 
-  const isSystemAdmin = role === 'admin';
+  const isSystemAdmin = userSytemRole === 'admin';
 
   // Step 1: Resolve target entity by ID or slug
   const entity = await resolveEntity(entityType, idOrSlug);
