@@ -3,8 +3,8 @@ import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import MarketingLayout from '~/modules/marketing/layout';
-import { coreSubjects, subjectLabels } from '~/modules/marketing/legal-config';
-import LegalText from '~/modules/marketing/legal-text';
+import { coreSubjects, subjectLabels } from '~/modules/marketing/legal/legal-config';
+import LegalText from '~/modules/marketing/legal/legal-text';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 
 export const LegalPage = () => {

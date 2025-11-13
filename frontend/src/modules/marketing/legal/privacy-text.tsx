@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import LegalContact from '~/modules/marketing/legal-contact';
-import SharedDataTypes from '~/modules/marketing/shared-data-types';
-import Subprocessors from '~/modules/marketing/subprocessors';
+import LegalContact from '~/modules/marketing/legal/legal-contact';
+import SharedDataTypes from '~/modules/marketing/legal/shared-data-types';
+import Subprocessors from '~/modules/marketing/legal/subprocessors';
 
 const PrivacyText = () => {
   const lastUpdated = 'September 23, 2024';

@@ -3,9 +3,9 @@ import { type RefObject, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
-import type { CoreLegalSubject } from '~/modules/marketing/legal-config';
+import type { CoreLegalSubject } from '~/modules/marketing/legal/legal-config';
 import { Button } from '~/modules/ui/button';
-import LegalText from '../marketing/legal-text';
+import LegalText from '../marketing/legal/legal-text';
 
 export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; mode?: 'waitlist' | 'signup' | 'verify' }) => {
   const { t } = useTranslation();

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import LegalContact from '~/modules/marketing/legal-contact';
+import LegalContact from '~/modules/marketing/legal/legal-contact';
 
 const TermsText = () => {
   const lastUpdated = 'September 23, 2024';
