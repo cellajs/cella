@@ -17,7 +17,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
 export const splitByAllowance = async (action: PermittedAction, entityType: EntityType, ids: string[], memberships: MembershipBaseModel[]) => {
-  const userSytemRole = getContextUserSystemRole();
+  const userSystemRole = getContextUserSystemRole();
 
   // Resolve entities
   const entities = await resolveEntities(entityType, ids);
@@ -29,7 +29,7 @@ export const splitByAllowance = async (action: PermittedAction, entityType: Enti
   for (const entity of entities) {
     const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
 
-    if (!isAllowed && userSytemRole !== 'admin') disallowedIds.push(entity.id);
+    if (!isAllowed && userSystemRole !== 'admin') disallowedIds.push(entity.id);
     else allowedIds.push(entity.id);
   }
 

@@ -60,12 +60,12 @@ const viteConfig = {
     }),
     tailwindcss(),
     appConfig.sentSentrySourceMaps
-      ? sentryVitePlugin({
+      ? (sentryVitePlugin({
         disable: appConfig.mode === 'development',
         org: appConfig.slug,
         project: appConfig.slug,
         authToken: process.env.SENTRY_AUTH_TOKEN,
-      })
+      }) as unknown as Plugin)
       : undefined,
     viteStaticCopy({
       targets: [

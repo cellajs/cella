@@ -354,7 +354,7 @@ function MockMenuItem({
         />
         <AvatarWrap
           className={cn(
-            'z-1 items-center m-2 mx-3 group-hover/menuItem:font-bold group-active/menuItem:translate-y-[.05rem]',
+            'z-1 items-center m-2 mx-3 group-hover/menuItem:font-bold',
             // Progressive sizing based on level starting from 14
             `text-xs size-${Math.max(4, 8 - level)} ${level > 0 ? 'mx-4 my-2' : 'm-2 mx-3'}`,
             level === 0 ? '' : 'group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:size-6',

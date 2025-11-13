@@ -52,7 +52,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
     >
       <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
       <AvatarWrap
-        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:size-6"
+        className="z-1 items-center m-2 mx-3 text-sm group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6"
         type={item.entityType}
         id={item.id}
         icon={Icon}

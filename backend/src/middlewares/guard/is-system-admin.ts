@@ -14,9 +14,9 @@ import { registerMiddlewareDescription } from '#/lib/openapi-describer';
  */
 export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async (_, next) => {
   const user = getContextUser();
-  const userSytemRole = getContextUserSystemRole();
+  const userSystemRole = getContextUserSystemRole();
 
-  if (userSytemRole !== 'admin') throw new AppError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
+  if (userSystemRole !== 'admin') throw new AppError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
 
   await next();
 });

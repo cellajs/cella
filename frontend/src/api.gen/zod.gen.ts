@@ -787,7 +787,7 @@ export const zGetUploadTokenData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    public: z.optional(z.union([z.string(), z.boolean()])),
+    public: z.optional(z.union([z.string(), z.boolean()])).default('false'),
     organizationId: z.optional(z.string()),
     templateId: z.enum(['avatar', 'cover', 'attachment']),
   }),
@@ -1095,7 +1095,7 @@ export const zGetPresignedUrlData = z.object({
   path: z.optional(z.never()),
   query: z.object({
     key: z.string(),
-    isPublic: z.optional(z.union([z.boolean(), z.string()])),
+    isPublic: z.optional(z.union([z.boolean(), z.string()])).default(false),
   }),
 });
 
@@ -1125,7 +1125,7 @@ export const zSendNewsletterData = z.object({
   path: z.optional(z.never()),
   query: z.optional(
     z.object({
-      toSelf: z.optional(z.union([z.string(), z.boolean()])),
+      toSelf: z.optional(z.union([z.string(), z.boolean()])).default('false'),
     }),
   ),
 });

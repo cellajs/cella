@@ -114,7 +114,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
 
   // Redirect to the frontend error page with query parameters for error details
   if (shouldRedirect) {
-    // TODO add to config base error path?
+    // Base error path is /error in frontend
     const redirectPath = meta?.errorPagePath || '/error';
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 

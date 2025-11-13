@@ -84,7 +84,6 @@ export const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
 export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Notify',
   type: 'notify',
-  isSelected: (block: { type: string }) => block.type === 'notify',
   icon: MessageCircleIcon as IconType,
 });
 

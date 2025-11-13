@@ -162,7 +162,7 @@ const usersRouteHandlers = app
     const { idOrSlug } = ctx.req.valid('param');
     const requestingUser = getContextUser();
     const requesterMemberships = getContextMemberships();
-    const requstingUserSytemRole = getContextUserSystemRole();
+    const requstingUserSystemRole = getContextUserSystemRole();
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
@@ -188,7 +188,7 @@ const usersRouteHandlers = app
       )
       .limit(1);
 
-    if (requstingUserSytemRole !== 'admin' && !sharedMembership) {
+    if (requstingUserSystemRole !== 'admin' && !sharedMembership) {
       throw new AppError({
         status: 403,
         type: 'forbidden',

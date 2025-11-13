@@ -27,10 +27,10 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   action: Exclude<PermittedAction, 'create'>,
 ): Promise<{ entity: EntityModel<T>; membership: MembershipBaseModel | null }> => {
   // Get current user role and memberships from request context
-  const userSytemRole = getContextUserSystemRole();
+  const userSystemRole = getContextUserSystemRole();
   const memberships = getContextMemberships();
 
-  const isSystemAdmin = userSytemRole === 'admin';
+  const isSystemAdmin = userSystemRole === 'admin';
 
   // Step 1: Resolve target entity by ID or slug
   const entity = await resolveEntity(entityType, idOrSlug);

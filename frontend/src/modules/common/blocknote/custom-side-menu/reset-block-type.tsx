@@ -1,4 +1,3 @@
-import type { Block, BlockConfig, InlineContentSchema, StyleSchema } from '@blocknote/core';
 import { type BlockTypeSelectItem, SideMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
 import { useMemo } from 'react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
@@ -54,13 +53,12 @@ export function ResetBlockTypeItem({ editor, props: { block, unfreezeMenu }, all
   const fullItems = useMemo(
     () =>
       filteredItems.map((item) => {
-        const { type, icon: Icon, isSelected, name } = item;
+        const { type, icon: Icon, name } = item;
         return {
           type: type,
           title: name,
           icon: <Icon size={16} />,
           onClick: () => handleItemClick(item),
-          isSelected: isSelected(block as unknown as Block<Record<string, BlockConfig>, InlineContentSchema, StyleSchema>),
         };
       }),
     [block, filteredItems, editor],

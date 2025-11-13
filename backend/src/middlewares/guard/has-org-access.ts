@@ -22,7 +22,7 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   if (!orgIdOrSlug) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   const memberships = getContextMemberships();
-  const userSytemRole = getContextUserSystemRole();
+  const userSystemRole = getContextUserSystemRole();
 
   // Fetch organization
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
@@ -32,7 +32,7 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
 
   // Check if user has access to organization (or is a system admin)
   const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
-  if (userSytemRole !== 'admin' && !orgMembership) {
+  if (userSystemRole !== 'admin' && !orgMembership) {
     throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
   }
   const orgWithMembership = { ...organization, membership: orgMembership };

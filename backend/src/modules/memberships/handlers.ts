@@ -67,7 +67,7 @@ const membershipRouteHandlers = app
 
     // Step 0: Contextual user and organization
     const user = getContextUser();
-    const userSytemRole = getContextUserSystemRole();
+    const userSystemRole = getContextUserSystemRole();
     const organization = getContextOrganization();
 
     // Step 0: Scenario buckets
@@ -149,7 +149,7 @@ const membershipRouteHandlers = app
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
         // Check if admin is inviting themselves
-        const isAdminInvitingSelf = user.email === email && userSytemRole === 'admin';
+        const isAdminInvitingSelf = user.email === email && userSystemRole === 'admin';
 
         if (isAdminInvitingSelf) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Direct add for admin self-invite

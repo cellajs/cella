@@ -185,12 +185,12 @@ const systemRouteHandlers = app
       // Get session id from cookie
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
-      const userSytemRole = getContextUserSystemRole();
+      const userSystemRole = getContextUserSystemRole();
 
       if (attachment) {
         const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-        const isSystemAdmin = userSytemRole === 'admin';
+        const isSystemAdmin = userSystemRole === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
 
         if (!isSystemAdmin || !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
