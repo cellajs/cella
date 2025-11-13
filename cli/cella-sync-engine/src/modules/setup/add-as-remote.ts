@@ -1,4 +1,4 @@
-import { behaviorConfig } from "../../config";
+import { config } from "../../config";
 
 import { RepoConfig } from "../../config";
 import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from "../../utils/git/remotes";
@@ -6,8 +6,8 @@ import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from "../../utils/gi
 /**
  * Adds the boilerplate repository as a remote to the fork repository if not already added.
  * - If the remote already exists, checks if the URL matches the configuration.
- * - If the URL does not match and behaviorConfig.onRemoteWrongUrl is 'overwrite', updates the URL.
- * - If the URL does not match and behaviorConfig.onRemoteWrongUrl is not 'overwrite', throws an error.
+ * - If the URL does not match and config.behavior.onRemoteWrongUrl is 'overwrite', updates the URL.
+ * - If the URL does not match and config.behavior.onRemoteWrongUrl is not 'overwrite', throws an error.
  */
 export async function addAsRemote(
     addAsRemote: RepoConfig,
@@ -27,7 +27,7 @@ export async function addAsRemote(
   }
 
   // Update remote URL to match configuration
-  if (behaviorConfig.onRemoteWrongUrl === 'overwrite') {
+  if (config.behavior.onRemoteWrongUrl === 'overwrite') {
     await setRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName, addAsRemote.repoReference!);
     return;
   }

@@ -82,6 +82,31 @@ export interface MinimalLogConfig {
 }
 
 /**
+ * Configuration for specifying behavior during sync operations.
+ */
+export interface MinimalBehaviorConfig {
+  /**
+   * Behavior when the remote repository already exists but has a different URL than expected.
+   * - 'overwrite': Update the remote URL to the expected one.
+   * - 'error': Throw an error and halt the operation.
+   */
+  onRemoteWrongUrl?: 'overwrite' | 'error';
+
+  /**
+   * Behavior when the remote is missing and some commands require it (for example a `git pull`)
+   * Options:
+   * - 'skip': Skip operations that require the upstream remote.
+   * - 'error': Throw an error and halt the operation.
+   */
+  onMissingRemote?: 'skip' | 'error';
+
+  /**
+   * Whether to skip all git push operations.
+   */
+  skipAllPushes?: boolean;
+}
+
+/**
  * Application configuration for the Cella Sync Engine.
  * Defines the synchronization service type and repository configurations.
  */
@@ -97,7 +122,7 @@ export interface AppConfig {
   fork: MinimalRepoConfig;
   forkLocation: 'local' | 'remote';
 
-  
+
   /**
    * Configuration for the boilerplate repository.
    */
@@ -108,4 +133,9 @@ export interface AppConfig {
    * Configuration for logging analyzed results.
    */
   log: MinimalLogConfig,
+
+  /**
+   * Configuration for specifying behavior during sync operations.
+   */
+  behavior: MinimalBehaviorConfig,
 }

@@ -1,10 +1,10 @@
 export { swizzleConfig } from "./swizzle";
-export { behaviorConfig } from "./behavior";
 
-import type { AppConfig, MinimalRepoConfig, MinimalLogConfig } from "./types";
+import type { AppConfig, MinimalRepoConfig, MinimalLogConfig, MinimalBehaviorConfig } from "./types";
 import { forkDefaultConfig } from "./fork.default";
 import { boilerplateDefaultConfig } from "./boilerplate.default";
 import { logDefaultConfig, logDivergedConfig } from "./log.default";
+import { behaviorDefaultConfig } from "./behavior.default";
 
 export type RepoConfig = MinimalRepoConfig & { 
   location: 'local' | 'remote', 
@@ -30,6 +30,8 @@ export class Config {
       boilerplateLocation: 'remote',
 
       log: logDefaultConfig,
+      behavior: behaviorDefaultConfig,
+      
       ...initial
     };
   }
@@ -66,6 +68,10 @@ export class Config {
 
   get log(): MinimalLogConfig {
     return this.state.log;
+  }
+
+  get behavior(): MinimalBehaviorConfig {
+    return this.state.behavior;
   }
 
   get syncService(): AppConfig['syncService'] {

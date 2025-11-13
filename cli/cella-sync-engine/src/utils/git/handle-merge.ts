@@ -1,6 +1,6 @@
 import { confirm } from '@inquirer/prompts';
 
-import { behaviorConfig } from '../../config';
+import { config } from '../../config';
 
 import { gitMerge, isMergeInProgress, gitCommit, gitCheckout, gitPush } from './command';
 import { MergeResult } from '../../types';
@@ -38,7 +38,7 @@ export async function handleMerge(
     }
 
     // Push merge result
-    if (!behaviorConfig.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+    if (!config.behavior.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
       await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
     }
 

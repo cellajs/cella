@@ -1,24 +1,21 @@
-import { BehaviorConfig } from "../types/config";
+import { MinimalBehaviorConfig } from "./types";
 
 /**
  * Configuration for specifying behavior during sync operations
  * - e.g., how to handle certain edge cases?
  */
-export const behaviorConfig: BehaviorConfig = {
+export const behaviorDefaultConfig: MinimalBehaviorConfig = {
   /**
-   * Module: run-preflight
    * Description: Behavior when remote is pointing to a different URL than expected.
    */
   onRemoteWrongUrl: 'overwrite',
 
   /**
-   * Module: run-preflight
-   * Description: Behavior when the upstream remote is missing.
+   * Description: Behavior when the remote is missing.
    */
-  onMissingUpstream: 'skip',
+  onMissingRemote: 'skip',
 
   /**
-   * Module: all
    * Description: Whether to skip all git push operations during sync.
    */
   skipAllPushes: true,

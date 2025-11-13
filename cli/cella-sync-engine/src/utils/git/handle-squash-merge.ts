@@ -1,4 +1,4 @@
-import { behaviorConfig } from '../../config';
+import { config } from '../../config';
 
 import { gitCheckout, gitMerge, gitCommit, gitAddAll, gitPush } from '../../utils/git/command';
 import { MergeResult } from '../../types';
@@ -36,7 +36,7 @@ export async function handleSquashMerge(
       await gitCommit(mergeIntoPath, commitMessage, { noVerify: true });
 
       // Push merge result
-      if (!behaviorConfig.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+      if (!config.behavior.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
         await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
       }
     }
