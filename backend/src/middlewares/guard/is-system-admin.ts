@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
-import { type Env, getContextUser } from '#/lib/context';
+import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
@@ -14,9 +14,9 @@ import { registerMiddlewareDescription } from '#/lib/openapi-describer';
  */
 export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async (_, next) => {
   const user = getContextUser();
+  const userSystemRole = getContextUserSystemRole();
 
-  const isSystemAdmin = user?.role.includes('admin');
-  if (!isSystemAdmin) throw new AppError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
+  if (userSystemRole !== 'admin') throw new AppError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
 
   await next();
 });

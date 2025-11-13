@@ -88,7 +88,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                 <span className="truncate">{el}</span>
                 <button
                   type="button"
-                  className="py-1 m-[-.25rem] ml-1 rounded-full focus-effect"
+                  className="py-1 -m-1 ml-1 rounded-full focus-effect"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -106,7 +106,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
         </div>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 36}px` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: `${bounds.width}px` }} className={'p-0'}>
         <Command shouldFilter={false}>
           <CommandInput
             value={searchQuery}

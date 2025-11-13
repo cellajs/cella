@@ -55,7 +55,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="p-0 rounded-lg" style={{ width: `${bounds.left + bounds.right + 2}px` }} align="start" sideOffset={4}>
+      <PopoverContent className="p-0 rounded-lg" style={{ width: `${bounds.width}px` }} align="start" sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandList>
             <CommandGroup>

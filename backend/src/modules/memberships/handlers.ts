@@ -10,7 +10,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextOrganization, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 // import { eventManager } from '#/lib/events';
@@ -67,6 +67,7 @@ const membershipRouteHandlers = app
 
     // Step 0: Contextual user and organization
     const user = getContextUser();
+    const userSystemRole = getContextUserSystemRole();
     const organization = getContextOrganization();
 
     // Step 0: Scenario buckets
@@ -148,7 +149,7 @@ const membershipRouteHandlers = app
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
         // Check if admin is inviting themselves
-        const isAdminInvitingSelf = user.email === email && user.role === 'admin';
+        const isAdminInvitingSelf = user.email === email && userSystemRole === 'admin';
 
         if (isAdminInvitingSelf) {
           existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Direct add for admin self-invite

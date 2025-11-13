@@ -47,7 +47,6 @@ export const zUser = z.object({
   lastName: z.union([z.string(), z.null()]),
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
-  role: z.enum(['user', 'admin']),
   userFlags: z.object({
     finishedOnboarding: z.boolean(),
   }),
@@ -627,7 +626,10 @@ export const zGetMeData = z.object({
 /**
  * User
  */
-export const zGetMeResponse = zUser;
+export const zGetMeResponse = z.object({
+  user: zUser,
+  systemRole: z.enum(['admin', 'user']),
+});
 
 export const zUpdateMeData = z.object({
   body: z.object({
@@ -785,7 +787,7 @@ export const zGetUploadTokenData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    public: z.optional(z.union([z.string(), z.boolean()])),
+    public: z.optional(z.union([z.string(), z.boolean()])).default('false'),
     organizationId: z.optional(z.string()),
     templateId: z.enum(['avatar', 'cover', 'attachment']),
   }),
@@ -841,7 +843,7 @@ export const zGetUsersData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
-      role: z.optional(z.enum(['user', 'admin'])),
+      role: z.optional(z.enum(['admin'])),
       mode: z.optional(z.enum(['all', 'shared'])),
       targetEntityType: z.optional(z.enum(['organization'])),
       targetEntityId: z.optional(z.string()),
@@ -1093,7 +1095,7 @@ export const zGetPresignedUrlData = z.object({
   path: z.optional(z.never()),
   query: z.object({
     key: z.string(),
-    isPublic: z.optional(z.union([z.boolean(), z.string()])),
+    isPublic: z.optional(z.union([z.boolean(), z.string()])).default(false),
   }),
 });
 
@@ -1123,7 +1125,7 @@ export const zSendNewsletterData = z.object({
   path: z.optional(z.never()),
   query: z.optional(
     z.object({
-      toSelf: z.optional(z.union([z.string(), z.boolean()])),
+      toSelf: z.optional(z.union([z.string(), z.boolean()])).default('false'),
     }),
   ),
 });
@@ -1474,7 +1476,6 @@ export const zGetMembersResponse = z.object({
       firstName: z.union([z.string(), z.null()]),
       lastName: z.union([z.string(), z.null()]),
       language: z.enum(['en', 'nl']),
-      role: z.enum(['user', 'admin']),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),

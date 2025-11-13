@@ -11,7 +11,7 @@ export default {
     screens: appConfig.theme.screenSizes,
     container: {
       center: true,
-      padding: '.75rem',
+      padding: '1rem',
       screens: {
         '2xl': '1400px',
       },

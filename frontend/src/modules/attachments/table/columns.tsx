@@ -31,11 +31,11 @@ import { isCDNUrl } from '~/utils/is-cdn-url';
 export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const storeUser = useUserStore((state) => state.user);
+  const storeUserSystemRole = useUserStore((state) => state.systemRole);
   const setTriggerRef = useDialoger((state) => state.setTriggerRef);
 
   const isMobile = useBreakpoints('max', 'sm', false);
-  const isAdmin = entity.membership?.role === 'admin' || storeUser?.role === 'admin';
+  const isAdmin = entity.membership?.role === 'admin' || storeUserSystemRole === 'admin';
 
   const columns: ColumnOrColumnGroup<Attachment>[] = [
     CheckboxColumn,

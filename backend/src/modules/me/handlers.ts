@@ -11,7 +11,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { env } from '#/env';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -47,11 +47,12 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.getMe, async (ctx) => {
     const user = getContextUser();
+    const systemRole = getContextUserSystemRole();
 
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json(user, 200);
+    return ctx.json({ user, systemRole }, 200);
   })
   /**
    * Toggle MFA require for me auth

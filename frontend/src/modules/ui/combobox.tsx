@@ -107,7 +107,8 @@ const Combobox = ({
         </Button>
       </PopoverTrigger>
       {/* bounds.width + bounds.x * 2 to also include padding */}
-      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width + bounds.x * 2}px` : '100%' }} className="p-0">
+      {/* TODO has scaling effect issue */}
+      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
         <Command shouldFilter={false}>
           {!isMobile && (
             <CommandInput value={searchValue} onValueChange={setSearchValue} clearValue={setSearchValue} placeholder={placeholders.search} />

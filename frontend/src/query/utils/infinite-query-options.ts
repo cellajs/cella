@@ -29,16 +29,33 @@ export const baseInfiniteQueryOptions = {
   }) as GetNextPageParamFunction<PageParams, QueryData<unknown>>,
 };
 
-type SortFunction<T> = (item: T) => string | number | null | undefined;
+type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+// Flatten all primitive keys recursively
+type FlattenPrimitiveKeys<T> = {
+  [K in keyof T]: T[K] extends Primitive ? K : T[K] extends object ? FlattenPrimitiveKeys<T[K]> : never;
+}[keyof T];
+
+// Nested primitives excluding keys that exist at the top-level
+type NestedPrimitiveKeys<T> = Exclude<
+  {
+    [K in keyof T]: T[K] extends object
+      ? FlattenPrimitiveKeys<T[K]> // get nested primitive keys
+      : never;
+  }[keyof T],
+  keyof T // remove top-level keys
+>;
+
+type SortFunction<T> = (item: T) => Primitive;
 
 interface FilterOptions<T> {
   q: string;
-  sort: keyof T;
+  sort: FlattenPrimitiveKeys<T>; // top-level + nested
   order: 'asc' | 'desc';
   searchIn: (keyof T)[];
   limit?: number;
   staleTime?: number;
-  sortOptions?: Partial<Record<keyof T, SortFunction<T>>>;
+  sortOptions?: Partial<Record<NestedPrimitiveKeys<T>, SortFunction<T>>>;
   additionalFilter?: (item: T) => boolean;
 }
 
@@ -112,8 +129,20 @@ export const infiniteQueryUseCachedIfCompleteOptions = <T>(baseQueryKey: QueryKe
         })
         // Sort items
         .sort((a, b) => {
-          const aVal = sortOptions?.[sort] ? sortOptions[sort](a) : a[sort] || '';
-          const bVal = sortOptions?.[sort] ? sortOptions[sort](b) : b[sort] || '';
+          let aVal: Primitive;
+          let bVal: Primitive;
+
+          if (sort in (sortOptions ?? {})) {
+            // Use sort function for nested keys
+            const fn = sortOptions![sort as NestedPrimitiveKeys<T>];
+            aVal = fn ? fn(a) : undefined;
+            bVal = fn ? fn(b) : undefined;
+          } else {
+            const aRaw = a[sort as keyof T];
+            const bRaw = b[sort as keyof T];
+            aVal = aRaw !== null && aRaw !== undefined && typeof aRaw === 'object' ? null : (aRaw as Primitive);
+            bVal = bRaw !== null && bRaw !== undefined && typeof bRaw === 'object' ? null : (bRaw as Primitive);
+          }
 
           if (aVal == null && bVal == null) return 0;
           if (aVal == null) return 1;

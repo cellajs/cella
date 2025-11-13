@@ -82,7 +82,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
               <FormItem className="flex-row ml-3 gap-4 items-center">
                 <FormLabel>{t('common:role')}</FormLabel>
                 <FormControl>
-                  <SelectRoleRadio value={value} entityType={entity?.entityType} onChange={onChange} />
+                  <SelectRoleRadio value={value} onChange={onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

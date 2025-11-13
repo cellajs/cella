@@ -10,9 +10,10 @@ import { useUserStore } from '~/store/user';
  * @returns The user data object.
  */
 export const getAndSetMe = async () => {
-  const user = await getMe();
+  const { user, systemRole } = await getMe();
   const skipLastUser = useUIStore.getState().impersonating;
   useUserStore.getState().setUser(user, skipLastUser);
+  useUserStore.getState().setSystemRole(systemRole);
   return user;
 };
 

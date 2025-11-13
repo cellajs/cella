@@ -1,8 +1,9 @@
 import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { Env, getContextUser } from '#/lib/context';
@@ -24,7 +25,14 @@ import { createDate, TimeSpan } from '#/utils/time-span';
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
 export const setUserSession = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
-  if (user.role === 'admin' || type === 'impersonation') {
+  const isSystemAdmin = await db
+    .select()
+    .from(systemRolesTable)
+    .where(and(eq(systemRolesTable.userId, user.id), eq(systemRolesTable.role, 'admin')))
+    .limit(1)
+    .then((rows) => !!rows[0]);
+
+  if (isSystemAdmin || type === 'impersonation') {
     const ip = getIp(ctx);
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');

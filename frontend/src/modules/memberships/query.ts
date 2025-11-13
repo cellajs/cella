@@ -74,8 +74,8 @@ export const membersQueryOptions = ({
       order,
       searchIn: ['name', 'email'],
       limit: baseLimit,
-      additionalFilter: role ? (m) => m.membership.role === role : undefined,
-      sortOptions: { role: (m) => m.membership.role },
+      additionalFilter: role ? ({ membership }) => membership.role === role : undefined,
+      sortOptions: { role: ({ membership }) => membership.role },
     }),
   });
 };

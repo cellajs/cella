@@ -2,6 +2,7 @@ import type { HttpBindings } from '@hono/node-server';
 import type * as Sentry from '@sentry/node';
 import { getContext } from 'hono/context-storage';
 import type { OrganizationModel } from '#/db/schema/organizations';
+import { SystemRoleModel } from '#/db/schema/system-roles';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -23,6 +24,7 @@ type Bindings = HttpBindings & {
 export type Env = {
   Variables: {
     user: UserModel;
+    userRole: SystemRoleModel['role'] | 'user';
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;
@@ -31,6 +33,15 @@ export type Env = {
     sentrySpan?: ReturnType<typeof Sentry.startSpan>;
   };
   Bindings: Bindings;
+};
+
+/**
+ * Access the current user's system role from the request context.
+ *
+ * @returns The system role of the current user.
+ */
+export const getContextUserSystemRole = () => {
+  return getContext<Env>().var.userRole;
 };
 
 /**

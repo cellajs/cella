@@ -54,7 +54,10 @@ interface ZeroValSet {
 
 function CommandInput({ className, value, clearValue, wrapClassName, isSearching, ...props }: CommandInputProps & ZeroValSet) {
   return (
-    <div data-slot="command-input-wrapper" className={cn('group relative flex h-10 items-center gap-2 border-b px-3', wrapClassName)}>
+    <div
+      data-slot="command-input-wrapper"
+      className={cn('group relative flex h-10 items-center border-b px-3', wrapClassName, value.length > 0 && 'pr-10')}
+    >
       <SearchSpinner isSearching={!!isSearching} value={value} />
 
       <CommandPrimitive.Input
@@ -109,7 +112,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm min-h-10 outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
