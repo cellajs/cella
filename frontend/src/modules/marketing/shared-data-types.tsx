@@ -1,9 +1,7 @@
-import type sharedDataTypes from '#json/shared-data-types.json';
+import sharedDataTypes from '#json/shared-data-types.json';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
-type _SharedDataTypes = typeof sharedDataTypes;
-
-const SharedDataTypes = ({ sharedDataTypes }: { sharedDataTypes: _SharedDataTypes }) => {
+const SharedDataTypes = () => {
   return (
     <Table title="Shared Data Types" className="mt-2">
       <TableHeader>

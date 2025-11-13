@@ -1,34 +1,21 @@
 import { Link } from '@tanstack/react-router';
+import { appConfig } from 'config';
 import LegalContact from '~/modules/marketing/legal-contact';
 
-interface TermsTextProps {
-  appName: string;
-  companyFull: string;
-  companyShort: string;
-  frontendUrl: string;
-  streetAddress: string;
-  city: string;
-  postcode: string;
-  country: string;
-  supportEmail: string;
-  registration: string;
-  bankAccount: string;
-}
-
-const TermsText = ({
-  appName,
-  companyFull,
-  companyShort,
-  frontendUrl,
-  streetAddress,
-  city,
-  postcode,
-  country,
-  supportEmail,
-  registration,
-  bankAccount,
-}: TermsTextProps) => {
+const TermsText = () => {
   const lastUpdated = 'September 23, 2024';
+
+  const appName = appConfig.name;
+  const companyFull = appConfig.company.name;
+  const companyShort = appConfig.company.name;
+  const frontendUrl = appConfig.frontendUrl;
+  const streetAddress = appConfig.company.streetAddress;
+  const postcode = appConfig.company.postcode;
+  const city = appConfig.company.city;
+  const country = appConfig.company.country;
+  const supportEmail = appConfig.company.supportEmail;
+  const registration = appConfig.company.registration;
+  const bankAccount = appConfig.company.bankAccount;
 
   return (
     <div className="prose dark:prose-invert text-foreground max-w-none">

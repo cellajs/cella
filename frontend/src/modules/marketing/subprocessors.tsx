@@ -1,9 +1,7 @@
-import type subprocessors from '#json/subprocessors.json';
+import subprocessors from '#json/subprocessors.json';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
-type _Subprocessors = typeof subprocessors;
-
-const Subprocessors = ({ subprocessors }: { subprocessors: _Subprocessors }) => {
+const Subprocessors = () => {
   return (
     <Table title="Subprocessors" className="mt-2">
       <TableHeader>

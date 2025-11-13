@@ -1,36 +1,22 @@
 import { Link } from '@tanstack/react-router';
-import sharedDataTypes from '#json/shared-data-types.json';
-import subprocessors from '#json/subprocessors.json';
+import { appConfig } from 'config';
 import LegalContact from '~/modules/marketing/legal-contact';
 import SharedDataTypes from '~/modules/marketing/shared-data-types';
 import Subprocessors from '~/modules/marketing/subprocessors';
 
-interface PrivacyTextProps {
-  appName: string;
-  companyFull: string;
-  companyShort: string;
-  streetAddress: string;
-  city: string;
-  postcode: string;
-  country: string;
-  supportEmail: string;
-  registration: string;
-  bankAccount: string;
-}
-
-const PrivacyText = ({
-  appName,
-  companyFull,
-  companyShort,
-  streetAddress,
-  city,
-  postcode,
-  country,
-  supportEmail,
-  registration,
-  bankAccount,
-}: PrivacyTextProps) => {
+const PrivacyText = () => {
   const lastUpdated = 'September 23, 2024';
+
+  const appName = appConfig.name;
+  const companyFull = appConfig.company.name;
+  const companyShort = appConfig.company.name;
+  const streetAddress = appConfig.company.streetAddress;
+  const postcode = appConfig.company.postcode;
+  const city = appConfig.company.city;
+  const country = appConfig.company.country;
+  const supportEmail = appConfig.company.supportEmail;
+  const registration = appConfig.company.registration;
+  const bankAccount = appConfig.company.bankAccount;
 
   return (
     <div className="prose dark:prose-invert text-foreground max-w-none">
@@ -238,13 +224,13 @@ const PrivacyText = ({
       <section className="mb-4" id="subprocessors">
         <h3 className="font-medium">Subprocessors</h3>
 
-        <Subprocessors subprocessors={subprocessors} />
+        <Subprocessors />
       </section>
 
       <section className="mb-4" id="shared-data-types">
         <h3 className="font-medium">Shared Data</h3>
 
-        <SharedDataTypes sharedDataTypes={sharedDataTypes} />
+        <SharedDataTypes />
       </section>
     </div>
   );
