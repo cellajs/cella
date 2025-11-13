@@ -18,8 +18,8 @@ export async function handleBoilerplateIntoForkMerge(
     // Start merge
     await handleMerge(
       forkConfig.workingDirectory,
-      forkConfig.syncBranch,
-      `${boilerplateConfig.remoteName}/${boilerplateConfig.branch}`,
+      forkConfig.syncBranchRef,
+      boilerplateConfig.branchRef,
       async function resolveConflicts() {
         // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
         await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);

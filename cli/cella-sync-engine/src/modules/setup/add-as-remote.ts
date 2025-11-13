@@ -13,23 +13,22 @@ export async function addAsRemote(
     addAsRemote: RepoConfig,
     addTo: RepoConfig,
 ) {
-  const remoteUrl = addAsRemote.use === 'remote' ? addAsRemote.remoteUrl! : addAsRemote.localPath!;
 
   // If boilerplate is not added as remote to fork, add it
   if (!await hasRemote(addTo.workingDirectory, addAsRemote.remoteName)) {
-    await addRemote(addTo.workingDirectory, addAsRemote.remoteName, remoteUrl!);
+    await addRemote(addTo.workingDirectory, addAsRemote.remoteName, addAsRemote.repoReference);
     return;
   }
 
   // Check remote URL matches configuration
   const currentUrl = await getRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName);
-  if (currentUrl === remoteUrl) {
+  if (currentUrl === addAsRemote.repoReference) {
     return;
   }
 
   // Update remote URL to match configuration
   if (behaviorConfig.onRemoteWrongUrl === 'overwrite') {
-    await setRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName, remoteUrl!);
+    await setRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName, addAsRemote.repoReference!);
     return;
   }
 

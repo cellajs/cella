@@ -14,14 +14,14 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
 
   // Squash merge (sync-branch → target-branch)
   const squashMergeIntoPath = config.fork.localPath;
-  const squashMergeIntoBranch = config.fork.branch;
-  const squashMergeFromBranch = config.fork.syncBranch;
+  const squashMergeIntoBranch = config.fork.branchRef;
+  const squashMergeFromBranch = config.fork.syncBranchRef;
   await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
 
   // Rebase target-branch (squash commit) → sync-branch
   const rebaseIntoPath = config.fork.localPath;
-  const rebaseIntoBranch = config.fork.syncBranch;
-  const rebaseFromBranch = config.fork.branch;
+  const rebaseIntoBranch = config.fork.syncBranchRef;
+  const rebaseFromBranch = config.fork.branchRef;
   await handleRebase(rebaseIntoPath, rebaseIntoBranch, rebaseFromBranch);
   
   console.info(pc.green("✔ Sync completed.\n"));

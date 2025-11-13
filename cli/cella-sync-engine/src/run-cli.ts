@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import { select } from "@inquirer/prompts";
+import { input, select } from "@inquirer/prompts";
 import { Command, InvalidArgumentError } from "commander";
 
 import { NAME, DESCRIPTION, VERSION, AUTHOR, GITHUB, WEBSITE } from './constants';
@@ -108,19 +108,25 @@ async function handleConfiguration() {
 }
 
 async function customizeConfiguration() {
-  let boilerplateUsage: string = config.boilerplate.use;
+  let boilerplateLocation: string = config.boilerplate.location;
+  let boilerplateBranch: string = config.boilerplate.branch;
 
   const whatToCustomize = await select<string>({
     message: 'Configure:',
     choices: [
-      { name: `Boilerplate usage: ${ boilerplateUsage === 'local' ? `${pc.bold('✓Local')} | remote`  : `${pc.bold('✓Remote')} | local`}`, value: 'boilerplateUsage' },
+      { name: `Boilerplate location: ${boilerplateLocation === 'local' ? `${pc.bold('✓Local')} | remote` : `${pc.bold('✓Remote')} | local`}`, value: 'boilerplateLocation' },
+      { name: `Boilerplate branch: <${pc.bold(boilerplateBranch)}>`, value: 'boilerplateBranch' },
       { name: 'Done', value: 'done' },
     ],
   });
 
-  if (whatToCustomize === 'boilerplateUsage') {
-    boilerplateUsage = boilerplateUsage === 'local' ? 'remote' : 'local';
-    config.boilerplateUse = boilerplateUsage as 'local' | 'remote';
+  if (whatToCustomize === 'boilerplateLocation') {
+    boilerplateLocation = boilerplateLocation === 'local' ? 'remote' : 'local';
+    config.boilerplateLocation = boilerplateLocation as 'local' | 'remote';
+  }
+  if (whatToCustomize === 'boilerplateBranch') {
+    boilerplateBranch = await input({ message: 'Enter boilerplate branch:' });
+    config.boilerplate = { branch: boilerplateBranch };
   }
 
   if (whatToCustomize !== 'done') {
@@ -129,17 +135,18 @@ async function customizeConfiguration() {
 }
 
 function showConfig() {
-  if (config.boilerplate.use === 'local') {
-    console.info(`Boilerplate: ${pc.bold('💻')} ${pc.cyan(config.boilerplate.localPath)} <${pc.bold(pc.cyan(config.boilerplate.branch))}> ${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`);
-  } else if (config.boilerplate.use === 'remote') {
-    console.info(`Boilerplate: ${pc.bold('🌐')} ${pc.cyan(config.boilerplate.remoteUrl)} <${pc.bold(pc.cyan(config.boilerplate.branch))}> ${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`);
-  }
-
-  if (config.fork.use === 'local') {
-    console.info(`Fork: ${pc.bold('💻')} ${pc.cyan(config.fork.localPath)} <${pc.bold(pc.cyan(config.fork.branch))}> ← <${pc.bold(pc.cyan(config.fork.syncBranch))}>`);
-  } else if (config.fork.use === 'remote') {
-    console.info(`Fork: ${pc.bold('🌐')} ${pc.cyan(config.fork.remoteUrl)} <${pc.bold(pc.cyan(config.fork.branch))}> ← <${pc.bold(pc.cyan(config.fork.syncBranch))}>`);
-  }
+  console.info(
+    `Boilerplate: ${pc.bold(config.boilerplate.location === 'local' ? '💻' : '🌐')} ` +
+    `${pc.cyan(config.boilerplate.repoReference)} ` +
+    `<${pc.bold(pc.cyan(config.boilerplate.branch))}> ` +
+    `${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`
+  );
+  
+  console.info(
+    `Fork: ${pc.bold(config.fork.location === 'local' ? '💻' : '🌐')} ` +
+    `${pc.cyan(config.fork.repoReference)} ` +
+    `<${pc.bold(pc.cyan(config.fork.branch))}> ← <${pc.bold(pc.cyan(config.fork.syncBranch))}>`
+  );
 
   console.info();
 }

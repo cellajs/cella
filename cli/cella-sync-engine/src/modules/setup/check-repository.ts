@@ -32,7 +32,7 @@ export async function checkRepository(repoConfig: RepoConfig) {
   }
 
   // When remote repository, check if we can access it (e.g., via GitHub API)
-  if (repoConfig.use === 'remote') {
+  if (repoConfig.location === 'remote') {
     if (!repoConfig.remoteUrl) {
       throw new Error(`Remote URL is not defined for repository at ${repoConfig.workingDirectory}`);
     }

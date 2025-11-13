@@ -95,14 +95,14 @@ export interface AppConfig {
    * Configuration for the forked repository.
    */
   fork: MinimalRepoConfig;
-  forkUse: 'local' | 'remote';
+  forkLocation: 'local' | 'remote';
 
   
   /**
    * Configuration for the boilerplate repository.
    */
   boilerplate: MinimalRepoConfig;
-  boilerplateUse: 'local' | 'remote';
+  boilerplateLocation: 'local' | 'remote';
 
   /**
    * Configuration for logging analyzed results.

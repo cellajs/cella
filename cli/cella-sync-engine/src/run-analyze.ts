@@ -18,8 +18,8 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   spinner.start();
 
   const [boilerplateFiles, forkFiles] = await Promise.all([
-    getGitFileHashes(config.boilerplate.workingDirectory, config.boilerplate.branch),
-    getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranch),
+    getGitFileHashes(config.boilerplate.workingDirectory, config.boilerplate.branchRef),
+    getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranchRef),
   ]);
 
   spinner.stop();

@@ -26,8 +26,8 @@ export async function analyzeFileCommits(
   filePath: string,
 ): Promise<CommitSummary> {
   const [boilerplateCommits, forkCommits] = await Promise.all([
-    getFileCommitHistory(boilerplate.workingDirectory, boilerplate.branch, filePath),
-    getFileCommitHistory(fork.workingDirectory, fork.branch, filePath),
+    getFileCommitHistory(boilerplate.workingDirectory, boilerplate.branchRef, filePath),
+    getFileCommitHistory(fork.workingDirectory, fork.branchRef, filePath),
   ]);
 
   const boilerplateLookup = toCommitLookup(boilerplateCommits);

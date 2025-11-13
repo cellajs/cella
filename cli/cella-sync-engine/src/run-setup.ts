@@ -29,17 +29,14 @@ export async function runSetup() {
 
   // Basic configuration checks
   checkConfig(config.boilerplate, [
-    { prop: 'branch', required: true },
-    { prop: 'remoteName', required: true },
-    { prop: 'remoteUrl', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'remote' },
-    { prop: 'localPath', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'local' },
+    { prop: 'branchRef', required: true },
+    { prop: 'repoReference', required: true }
   ]);
 
   checkConfig(config.fork, [
-    { prop: 'branch', required: true },
-    { prop: 'syncBranch', required: true },
-    { prop: 'remoteUrl', requiredIf: (fork: RepoConfig) => fork.use === 'remote' },
-    { prop: 'localPath', requiredIf: (fork: RepoConfig) => fork.use === 'local' },
+    { prop: 'branchRef', required: true },
+    { prop: 'syncBranchRef', required: true },
+    { prop: 'repoReference', required: true }
   ]);
 
   // Check if repositories are accessible
@@ -51,19 +48,19 @@ export async function runSetup() {
 
   // Ensure fork repository is clean (both working directory and target branch)
   await checkCleanState(config.fork.workingDirectory);
-  await checkCleanState(config.fork.workingDirectory, config.fork.branch);
+  await checkCleanState(config.fork.workingDirectory, config.fork.branchRef);
 
   // Check if sync-branch exists in fork, if not create it, then ensure it's clean
-  await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranch);
-  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranch);
+  await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranchRef);
+  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef);
 
   // Ensure latest changes are fetched for both repositories and left behind in a clean state
   await fetchLatestChanges(config.boilerplate);
   await fetchLatestChanges(config.fork);
 
   // Merge fork branch into sync branch to ensure it's up to date
-  await handleMerge(config.fork.workingDirectory, config.fork.syncBranch, config.fork.branch, null);
-  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranch, { skipCheckout: true });
+  await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
+  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
 
   console.info(pc.green("✔ Setup complete.\n"));
 }

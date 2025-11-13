@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastSyncedAt": "2025-11-13T10:34:17.196Z",
+  "lastSyncedAt": "2025-11-13T13:35:49.850Z",
   "entries": {
     "README.md": {
       "filePath": "README.md",
@@ -1538,6 +1538,38 @@
       "lastSwizzledAt": "2025-11-07T14:59:53.403Z",
       "boilerplateLastCommitSha": "6b2f19ebaa5983b7770dee6a20d523f024435694",
       "boilerplateBlobSha": "dac85e5290fb208f84cbe04241cd584a13e7a850"
+    },
+    "backend/drizzle/0000_talented_lifeguard.sql": {
+      "filePath": "backend/drizzle/0000_talented_lifeguard.sql",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "c88c0817ebef490d8381b8b4848cc6f759361084",
+      "commitAfterSwizzle": "c88c0817ebef490d8381b8b4848cc6f759361084",
+      "lastSwizzledAt": "2025-11-13T13:35:42.298Z",
+      "boilerplateLastCommitSha": "c88c0817ebef490d8381b8b4848cc6f759361084",
+      "boilerplateBlobSha": "d9c226c9d8845405e9a50265313d55fe0f87c603"
+    },
+    "frontend/src/api.gen/types.gen.ts": {
+      "filePath": "frontend/src/api.gen/types.gen.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "c88c0817ebef490d8381b8b4848cc6f759361084",
+      "lastCommitSha": "2a8e53aadf4904818c6c3242dae385795176a76a",
+      "commitAfterSwizzle": "c88c0817ebef490d8381b8b4848cc6f759361084",
+      "lastSwizzledAt": "2025-11-13T13:35:46.006Z",
+      "boilerplateLastCommitSha": "c88c0817ebef490d8381b8b4848cc6f759361084",
+      "boilerplateBlobSha": "b21730d0e0f8de19ac2296cb3f5b7de99ac589cc"
+    },
+    "frontend/src/modules/navigation/menu-sheet/section-button.tsx": {
+      "filePath": "frontend/src/modules/navigation/menu-sheet/section-button.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "6e2a28c499fe81991e26f367721a339c74c8a7d5",
+      "lastCommitSha": "0eb3abb5476dc52048b83213b2f89d2657bde2ae",
+      "commitAfterSwizzle": "6e2a28c499fe81991e26f367721a339c74c8a7d5",
+      "lastSwizzledAt": "2025-11-13T13:35:48.187Z",
+      "boilerplateLastCommitSha": "f04f2a0c831a0006bde0df06e748fd12b2b49f4e",
+      "boilerplateBlobSha": "23f1f5cb1b0fddf823ae12c383158115c9e67f93"
     }
   }
 }

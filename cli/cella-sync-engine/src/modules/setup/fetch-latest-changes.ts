@@ -14,16 +14,16 @@ import { checkCleanState } from "./check-clean-state";
  */
 export async function fetchLatestChanges(repoConfig: RepoConfig) {
   // For remote repositories, ensure latest changes are fetched
-  if (repoConfig.use === 'remote') {
+  if (repoConfig.isRemote) {
     await gitFetch(repoConfig.workingDirectory, repoConfig.remoteName);
   }
 
   // For local repositories, pull changes
-  if (repoConfig.use === 'local') {
-    await pullLatestChanges(repoConfig.workingDirectory, repoConfig.branch);
+  if (!repoConfig.isRemote) {
+    await pullLatestChanges(repoConfig.workingDirectory, repoConfig.branchRef);
 
-    if (repoConfig.branch) {
-      await pullLatestChanges(repoConfig.workingDirectory, repoConfig.branch);
+    if (repoConfig.syncBranchRef) {
+      await pullLatestChanges(repoConfig.workingDirectory, repoConfig.syncBranchRef);
     }
   }
 }
@@ -32,21 +32,21 @@ export async function fetchLatestChanges(repoConfig: RepoConfig) {
  * Handles pulling the latest changes for a local repository.
  * Also ensures the upstream remote exists before pulling.
  * And ensures the working directory is clean after pulling.
- * @param repoPath - The file system path to the repository
+ * @param localPath - The file system path to the repository
  * @param branchName - The name of the branch to pull changes for
  * @returns 
  */
-async function pullLatestChanges(repoPath: string, branchName: string) {
+async function pullLatestChanges(localPath: string, branchName: string) {
   const remoteBranch = `origin/${branchName}`;
 
-  if (await hasRemoteBranch(repoPath, remoteBranch)) {
-    await gitCheckout(repoPath, branchName);
-    await gitPull(repoPath, branchName);
-    await checkCleanState(repoPath, branchName, { skipCheckout: true });
+  if (await hasRemoteBranch(localPath, remoteBranch)) {
+    await gitCheckout(localPath, branchName);
+    await gitPull(localPath, branchName);
+    await checkCleanState(localPath, branchName, { skipCheckout: true });
     return;
   }
 
   if (behaviorConfig.onMissingUpstream === 'error') {
-    throw new Error(`Upstream remote for branch '${branchName}' is missing in repository at ${repoPath}.`);
+    throw new Error(`Upstream remote for branch '${branchName}' is missing in repository at ${localPath}.`);
   }
 }
