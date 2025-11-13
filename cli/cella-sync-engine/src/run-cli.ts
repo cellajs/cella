@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import { input, select } from "@inquirer/prompts";
+import { checkbox, input, select, Separator } from "@inquirer/prompts";
 import { Command, InvalidArgumentError } from "commander";
 
 import { NAME, DESCRIPTION, VERSION, AUTHOR, GITHUB, WEBSITE } from './constants';
@@ -110,12 +110,19 @@ async function handleConfiguration() {
 async function customizeConfiguration() {
   let boilerplateLocation: string = config.boilerplate.location;
   let boilerplateBranch: string = config.boilerplate.branch;
+  let divergedCommitStatus: string[] = config.log.analyzedFile.commitSummaryState || [];
 
   const whatToCustomize = await select<string>({
     message: 'Configure:',
     choices: [
+      new Separator('Boilerplate:'),
       { name: `Boilerplate location: ${boilerplateLocation === 'local' ? `${pc.bold('✓Local')} | remote` : `${pc.bold('✓Remote')} | local`}`, value: 'boilerplateLocation' },
       { name: `Boilerplate branch: <${pc.bold(boilerplateBranch)}>`, value: 'boilerplateBranch' },
+      ...(config.syncService === 'diverged' ? [
+        new Separator('Diverged:'),
+        { name: `Commit status: (${divergedCommitStatus.join(', ')})`, value: 'divergedCommitStatus' },
+      ] : []),
+      new Separator(),
       { name: 'Done', value: 'done' },
     ],
   });
@@ -127,6 +134,19 @@ async function customizeConfiguration() {
   if (whatToCustomize === 'boilerplateBranch') {
     boilerplateBranch = await input({ message: 'Enter boilerplate branch:' });
     config.boilerplate = { branch: boilerplateBranch };
+  }
+  if (whatToCustomize === 'divergedCommitStatus') {
+    const statusOptions = ['upToDate', 'ahead', 'behind', 'diverged', 'unrelated', 'unknown'];
+    
+    divergedCommitStatus = await checkbox<string>({
+      message: 'Select commit statuses to log:',
+      choices: statusOptions.map(status => ({
+        name: status,
+        value: status,
+        checked: divergedCommitStatus.includes(status),
+      })),
+    });
+    config.log.analyzedFile.commitSummaryState = divergedCommitStatus as NonNullable<typeof config.log.analyzedFile.commitSummaryState>;
   }
 
   if (whatToCustomize !== 'done') {
