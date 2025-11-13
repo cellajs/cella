@@ -14,6 +14,10 @@ export const config = {
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',
 
+  legal: {
+    pages: [] satisfies ('accessibility')[],
+  },
+
   aboutUrl: 'https://cellajs.com/about',
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
@@ -245,11 +249,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',
-    postcode: '90210 JS',
+    supportEmail: 'support@cellajs.com',
     tel: '+31 6 12345678',
     streetAddress: 'Drizzle Road 42',
+    postcode: '90210 JS',
     city: 'Hono City',
     country: 'TypeScript Rock',
+    registration: 'Chamber of Commerce (KvK): 578 25 920',
+    bankAccount: 'NL07 RABO 0309 4430 24',
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',

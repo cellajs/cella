@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor } from 'storybook/test';
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 
 /**
@@ -10,21 +9,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
 const meta = {
   title: 'ui/Tabs',
   component: Tabs,
+  subcomponents: { TabsList, TabsTrigger, TabsContent },
   tags: ['autodocs'],
   argTypes: {},
   args: {
     defaultValue: 'account',
-    className: 'w-96',
   },
   render: (args) => (
-    <Tabs {...args}>
-      <TabsList className="grid grid-cols-2">
-        <TabsTrigger value="account">Account</TabsTrigger>
-        <TabsTrigger value="password">Password</TabsTrigger>
-      </TabsList>
-      <TabsContent value="account">Make changes to your account here.</TabsContent>
-      <TabsContent value="password">Change your password here.</TabsContent>
-    </Tabs>
+    <div className="w-96">
+      <Tabs {...args}>
+        <TabsList>
+          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="password">Password</TabsTrigger>
+        </TabsList>
+        <TabsContent value="account">Make changes to your account here.</TabsContent>
+        <TabsContent value="password">Change your password here.</TabsContent>
+      </Tabs>
+    </div>
   ),
   parameters: {
     layout: 'centered',
@@ -36,9 +37,41 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * The default form of the tabs.
+ * The default form of the tabs list.
  */
 export const Default: Story = {};
+
+/**
+ * The underline form of the tabs list.
+ */
+export const Underline: Story = {
+  render: (args) => (
+    <Tabs {...args} className="w-96">
+      <TabsList variant="underline">
+        <TabsTrigger value="account">Account</TabsTrigger>
+        <TabsTrigger value="password">Password</TabsTrigger>
+      </TabsList>
+      <TabsContent value="account">Make changes to your account here.</TabsContent>
+      <TabsContent value="password">Change your password here.</TabsContent>
+    </Tabs>
+  ),
+};
+
+/**
+ * The side form of the tabs list.
+ */
+export const Side: Story = {
+  render: (args) => (
+    <Tabs {...args} className="w-96 flex flex-row">
+      <TabsList variant="side">
+        <TabsTrigger value="account">Account</TabsTrigger>
+        <TabsTrigger value="password">Password</TabsTrigger>
+      </TabsList>
+      <TabsContent value="account">Make changes to your account here.</TabsContent>
+      <TabsContent value="password">Change your password here.</TabsContent>
+    </Tabs>
+  ),
+};
 
 export const ShouldChangeTabs: Story = {
   name: 'when clicking a tab, should change the content',
