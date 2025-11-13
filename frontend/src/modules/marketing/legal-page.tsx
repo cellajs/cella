@@ -1,18 +1,16 @@
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import MarketingLayout from '~/modules/marketing/layout';
-import { defaultSubjects, subjectLabels } from '~/modules/marketing/legal-config';
+import { coreSubjects, subjectLabels } from '~/modules/marketing/legal-config';
+import LegalText from '~/modules/marketing/legal-text';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
-
-const LegalText = lazy(() => import('~/modules/marketing/legal-text'));
 
 export const LegalPage = () => {
   const { t } = useTranslation();
 
-  const slugs = [...defaultSubjects, ...appConfig.legal.pages];
+  const slugs = [...coreSubjects, ...appConfig.legal.pages];
   const tabs = slugs.map((slug) => ({
     id: slug,
     label: subjectLabels[slug],

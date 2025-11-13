@@ -1,14 +1,19 @@
-import { LegalSubject } from '~/modules/marketing/legal-config';
-import PrivacyText from '~/modules/marketing/privacy-text';
-import TermsText from '~/modules/marketing/terms-text';
+import { lazy, Suspense } from 'react';
+import type { LegalSubject } from '~/modules/marketing/legal-config';
+
+const legalTexts = {
+  terms: lazy(() => import('~/modules/marketing/terms-text')),
+  privacy: lazy(() => import('~/modules/marketing/privacy-text')),
+} as const satisfies Record<LegalSubject, React.LazyExoticComponent<() => React.JSX.Element>>;
 
 const LegalText = ({ subject }: { subject: LegalSubject }) => {
-  switch (subject) {
-    case 'privacy':
-      return <PrivacyText key={subject} />;
-    case 'terms':
-      return <TermsText key={subject} />;
-  }
+  const SubjectText = legalTexts[subject];
+
+  return (
+    <Suspense fallback={<>Loading…</>}>
+      <SubjectText />
+    </Suspense>
+  );
 };
 
 export default LegalText;
