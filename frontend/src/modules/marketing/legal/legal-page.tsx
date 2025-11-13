@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import MarketingLayout from '~/modules/marketing/layout';
@@ -21,13 +22,21 @@ export const LegalPage = () => {
 
   const navigate = useNavigate();
 
+  const [currentTab, setCurrentTab] = useState(defaultTab);
+  useEffect(() => {
+    const hash = location.hash;
+    if ((slugs as string[]).includes(hash) && hash !== currentTab) {
+      setCurrentTab(hash);
+    }
+  }, [location.hash]);
+
   return (
     <MarketingLayout title={t('common:legal')}>
       <div className="text-center my-8">
         <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} />
       </div>
       <Tabs
-        defaultValue={defaultTab}
+        value={currentTab}
         onValueChange={(hash) => navigate({ to: '.', hash, replace: true })}
         className="mx-auto md:w-[70%] flex flex-col gap-8"
       >
