@@ -36,7 +36,7 @@ const Pricing = () => {
       navigate({ to: '/auth/authenticate', replace: true });
     }
     if (action === 'waitlist_request') {
-      useDialoger.getState().create(<WaitlistForm buttonClassName="sm:max-w-50" dialog />, {
+      useDialoger.getState().create(<WaitlistForm dialog />, {
         id: 'waitlist-form',
         triggerRef: buttonRef,
         drawerOnMobile: true,

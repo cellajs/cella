@@ -69,7 +69,10 @@ export const WaitlistForm = ({ email, inputClassName, buttonContent, buttonClass
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className={cn('max-xs:min-w-full flex flex-col items-end gap-4', className)}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)}
+        className={cn('max-xs:min-w-full flex max-sm:flex-col items-end gap-4', className)}
+      >
         <FormField
           control={form.control}
           name="email"
