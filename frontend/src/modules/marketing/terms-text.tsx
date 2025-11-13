@@ -9,13 +9,7 @@ const TermsText = () => {
   const companyFull = appConfig.company.name;
   const companyShort = appConfig.company.name;
   const frontendUrl = appConfig.frontendUrl;
-  const streetAddress = appConfig.company.streetAddress;
-  const postcode = appConfig.company.postcode;
-  const city = appConfig.company.city;
-  const country = appConfig.company.country;
   const supportEmail = appConfig.company.supportEmail;
-  const registration = appConfig.company.registration;
-  const bankAccount = appConfig.company.bankAccount;
 
   return (
     <div className="prose dark:prose-invert text-foreground max-w-none">
@@ -23,16 +17,7 @@ const TermsText = () => {
       <p className="italic mb-2">Last updated: {lastUpdated}</p>
       <p>Here you can read our terms of use. If you have questions or comments about them, feel free to contact us.</p>
 
-      <LegalContact
-        companyFull={companyFull}
-        streetAddress={streetAddress}
-        city={city}
-        postcode={postcode}
-        country={country}
-        supportEmail={supportEmail}
-        registration={registration}
-        bankAccount={bankAccount}
-      />
+      <LegalContact />
 
       <section className="mb-4" id="introduction">
         <h3 className="font-medium">Introduction</h3>
