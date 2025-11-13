@@ -9,12 +9,9 @@ const Subprocessors = () => {
           <TableHead>Company</TableHead>
           <TableHead>Country</TableHead>
           <TableHead>Services</TableHead>
-          {/* <TableHead>Processing</TableHead> */}
           <TableHead>Categories</TableHead>
           <TableHead>Affected</TableHead>
-          {/* <TableHead>Purposes</TableHead> */}
           <TableHead>Risk</TableHead>
-          {/* <TableHead>DPA Effective</TableHead> */}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -27,20 +24,9 @@ const Subprocessors = () => {
             </TableCell>
             <TableCell>{subprocessor.country}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.servicesProvided}</TableCell>
-            {/* <TableCell>
-            {subprocessor.processingActivities}
-          </TableCell> */}
             <TableCell className="whitespace-normal">{subprocessor.categoriesOfPersonalData.join(', ')}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.dataSubjects.join(', ')}</TableCell>
-            {/* <TableCell>
-            {subprocessor.purposes}
-          </TableCell> */}
             <TableCell>{subprocessor.riskRating}</TableCell>
-            {/* <TableCell>
-            subprocessor.dpa.signed
-            {subprocessor.dpa.effectiveDate}
-            subprocessor.dpa.url
-          </TableCell> */}
           </TableRow>
         ))}
       </TableBody>
