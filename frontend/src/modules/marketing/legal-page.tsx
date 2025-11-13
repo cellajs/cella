@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,17 +12,27 @@ const LegalText = lazy(() => import('~/modules/marketing/legal-text'));
 export const LegalPage = () => {
   const { t } = useTranslation();
 
-  const tabs = [...defaultSubjects, ...appConfig.legal.pages].map((slug) => ({
+  const slugs = [...defaultSubjects, ...appConfig.legal.pages];
+  const tabs = slugs.map((slug) => ({
     id: slug,
     label: subjectLabels[slug],
   }));
+
+  const location = useLocation();
+  const defaultTab = (slugs as string[]).includes(location.hash) ? location.hash : 'terms';
+
+  const navigate = useNavigate();
 
   return (
     <MarketingLayout title={t('common:legal')}>
       <div className="text-center my-8">
         <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} />
       </div>
-      <Tabs defaultValue="terms" className="mx-auto md:w-[70%] flex flex-col gap-8">
+      <Tabs
+        defaultValue={defaultTab}
+        onValueChange={(hash) => navigate({ to: '.', hash, replace: true })}
+        className="mx-auto md:w-[70%] flex flex-col gap-8"
+      >
         <TabsList className="md:w-[50%] mx-auto">
           {tabs.map(({ id, label }) => (
             <TabsTrigger key={id} value={id}>
