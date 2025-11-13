@@ -1,15 +1,15 @@
-type LegalContactProps = {
-  companyFull: string;
-  streetAddress: string;
-  city: string;
-  postcode: string;
-  country: string;
-  supportEmail: string;
-  registration: string;
-  bankAccount: string;
-};
+import { appConfig } from 'config';
 
-const LegalContact = ({ companyFull, streetAddress, city, postcode, country, supportEmail, registration, bankAccount }: LegalContactProps) => {
+const LegalContact = () => {
+  const companyFull = appConfig.company.name;
+  const streetAddress = appConfig.company.streetAddress;
+  const postcode = appConfig.company.postcode;
+  const city = appConfig.company.city;
+  const country = appConfig.company.country;
+  const supportEmail = appConfig.company.supportEmail;
+  const registration = appConfig.company.registration;
+  const bankAccount = appConfig.company.bankAccount;
+
   return (
     <ul className="mt-8 mb-8 italic list-none">
       <li>
