@@ -253,7 +253,7 @@ const attachmentsRouteHandlers = app
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
     if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
-    const url = new URL(`${appConfig.frontendUrl}/organizations/${organization.slug}/attachments`);
+    const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);
     if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
 

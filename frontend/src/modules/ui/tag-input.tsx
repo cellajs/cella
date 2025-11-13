@@ -26,6 +26,7 @@ interface TagInputProps extends OmittedInputProps {
   tags: string[];
   setTags: React.Dispatch<React.SetStateAction<string[]>>;
 
+  // TODO we can simplify by removing this and go for styling for inside only
   direction?: 'row' | 'column';
   tagListPlacement: 'bottom' | 'top' | 'inside';
 
@@ -146,7 +147,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
   };
 
   const handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
-    if (activeTagIndex) setActiveTagIndex(null);
+    if (activeTagIndex !== null) setActiveTagIndex(null);
 
     if (addTagsOnBlur && inputValue.trim()) {
       const newTag = inputValue.trim();
@@ -185,7 +186,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
     if (!hasInput) {
       if (key === 'Backspace' && tags.length) {
         e.preventDefault();
-        removeTagByIndex(Number(tags[tags.length - 1]));
+        removeTagByIndex(tags.length - 1);
         return;
       }
       if (key === 'ArrowRight') {
@@ -237,7 +238,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
     setTagCount((prevTagCount) => prevTagCount - 1);
     onTagRemove?.(tags.find((tag) => tag === TagToRemove) || '');
 
-    if (activeTagIndex) setActiveTagIndex(activeTagIndex === 0 ? 0 : activeTagIndex - 1);
+    if (activeTagIndex !== null) setActiveTagIndex(activeTagIndex === 0 ? 0 : activeTagIndex - 1);
   };
 
   const handleClearAll = () => {
@@ -263,7 +264,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
         id="tag-input-wrapper"
         onClick={handleClick}
         className={cn(
-          'flex flex-wrap items-center p-1 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
+          'flex flex-wrap items-center py-1 px-3 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium shadow-xs sm:focus-within:ring-2 sm:focus-within:ring-offset-2 ring-offset-background sm:focus-within:ring-ring',
           tagListPlacement === 'bottom' ? 'flex-col-reverse' : tagListPlacement === 'top' ? 'flex-col' : 'flex-row',
           tagListPlacement === 'inside' &&
             'bg-background border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground focus-effect',
@@ -280,7 +281,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
             tagListClasses: cn(
               styleClasses?.tagList,
               tagListPlacement === 'inside' && tags.length < 1 && 'hidden',
-              tagListPlacement === 'inside' && 'p-1',
+              tagListPlacement === 'inside' && 'pr-1',
             ),
             tagClasses: styleClasses?.tag,
           }}
@@ -300,9 +301,12 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
             tagListPlacement !== 'inside'
               ? cn(
                   styleClasses?.input,
-                  'bg-background focus-effect border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
+                  'bg-background focus-effect shadow-none border border-input -my-0.5 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
                 )
-              : 'h-8 w-auto grow border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-1'
+              : cn(
+                  'h-8 w-auto grow shadow-none -my-px border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-0',
+                  tags.length && 'ml-1',
+                )
           }
           disabled={maxTags !== undefined && tags.length >= maxTags}
         />
@@ -353,6 +357,7 @@ const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, ac
           key={tag}
           {...badgeVariants}
           className={cn(
+            'pr-0 gap-0.5',
             {
               'justify-between w-full': direction === 'column',
               'focus-effect': index === activeTagIndex,
@@ -369,12 +374,12 @@ const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, ac
               e.stopPropagation(); // Prevent event from bubbling up to the tag span
               onRemoveTag(tag);
             }}
-            className={cn('p-0 h-full -mr-0.5', classStyleProps.tagClasses?.closeButton)}
+            className={cn('p-0 h-full active:translate-y-0!', classStyleProps.tagClasses?.closeButton)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
+              width="12"
+              height="12"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

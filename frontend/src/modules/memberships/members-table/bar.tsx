@@ -163,7 +163,7 @@ export const MembersTableBar = ({
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
-            <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+            <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 w-auto sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
 

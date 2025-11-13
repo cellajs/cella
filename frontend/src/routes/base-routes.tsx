@@ -86,7 +86,7 @@ export const AppLayoutRoute = createRoute({
     try {
       console.debug('Fetching me before entering app:', location.pathname);
 
-      // Try to use stored user for fast load time, then in loader use swr to refresh it
+      // Try to use stored user, it will still revalidate below
       const storedUser = useUserStore.getState().user;
       if (storedUser) {
         console.info('Continuing user with session');
@@ -123,7 +123,7 @@ export const AppLayoutRoute = createRoute({
       console.debug('Fetching menu while loading app:', location.pathname);
 
       // Revalidate user if not already awaited above
-      if (context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
 
       // Get menu too but defer it so app doesnt need to hang while its is being retrieved
       return await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true }));

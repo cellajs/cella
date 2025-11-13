@@ -63,7 +63,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
                 <SearchIcon width={16} height={16} />
               </motion.span>
               <motion.span
-                className="ml-1"
+                className="ml-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

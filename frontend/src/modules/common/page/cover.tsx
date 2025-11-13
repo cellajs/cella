@@ -63,8 +63,8 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
           className="relative top-3 mx-auto opacity-50 hover:opacity-80 hover:bg-secondary"
           onClick={openUploadDialog}
         >
-          <UploadIcon size={16} />
-          <span className="ml-1">{t('common:upload_item', { item: t('common:cover').toLowerCase() })}</span>
+          <UploadIcon size={16} className="mr-2" />
+          <span>{t('common:upload_item', { item: t('common:cover').toLowerCase() })}</span>
         </Button>
       )}
     </div>

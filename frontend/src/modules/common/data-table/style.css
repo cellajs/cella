@@ -28,6 +28,14 @@
   --rdg-row-selected-hover-background-color: none;
 }
 
+.rdg-cell:has(button[role="checkbox"]) {
+  outline: none !important;
+}
+
+.rdg-cell[role="columnheader"] {
+  background: none !important;
+}
+
 @media (max-width: 480px) {
   .rdg-cell[aria-selected="true"] {
     outline: none !important;
@@ -86,6 +94,7 @@
   position: absolute;
   top: 0.75rem;
   bottom: 0.75rem;
+  z-index: -1;
   right: 0;
   pointer-events: none;
   border-right: 2px solid hsl(var(--accent));

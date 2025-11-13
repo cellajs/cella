@@ -89,7 +89,7 @@ export function MockMenuSheet({ initialMenu }: MockMenuSheetProps) {
             <InputGroupAddon className="pr-2" align="inline-end">
               <XCircleIcon
                 size={16}
-                className={cn('opacity-70 hover:opacity-100 cursor-pointer', searchTerm ? 'block' : 'hidden')}
+                className={cn('opacity-70 hover:opacity-100 cursor-pointer', searchTerm ? 'visible' : 'invisible')}
                 onClick={() => setSearchTerm('')}
               />
             </InputGroupAddon>
