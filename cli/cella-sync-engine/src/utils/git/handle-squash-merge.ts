@@ -48,7 +48,7 @@ export async function handleSquashMerge(
   } catch (err: any) {
     console.error('Error squashing sync commits:', err.message || err);
 
-    console.log(err)
+    console.info(err)
     return { status: 'error', isMerging: false };
   }
 }

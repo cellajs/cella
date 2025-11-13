@@ -42,7 +42,7 @@ export function logAnalyzedSwizzleLine(analyzedFile: FileAnalysis, line: string)
     !swizzledConfigured || swizzledEqual,
   ].every(Boolean);
   
-  if (shouldLog) console.log(line);
+  if (shouldLog) console.info(line);
 }
 
 function getFilePath(analyzedFile: FileAnalysis): string {

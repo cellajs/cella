@@ -11,6 +11,8 @@ async function main(): Promise<void> {
   // Run configuration CLI
   await runCli();
   
+  console.log(config.syncService)
+
   // Preflight checks
   await runSetup();
 

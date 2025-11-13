@@ -1,17 +1,13 @@
 import pc from "picocolors";
 import { select } from "@inquirer/prompts";
-
-import { NAME, DESCRIPTION, VERSION, AUTHOR, GITHUB, WEBSITE } from './constants';
 import { Command, InvalidArgumentError } from "commander";
 
+import { NAME, DESCRIPTION, VERSION, AUTHOR, GITHUB, WEBSITE } from './constants';
 import { config } from "./config";
-
-// Define types for CLI options
-interface CLIOptions { }
+import { AppConfig } from "./config/types";
 
 // Define CLI configuration
 interface CLIConfig {
-  options: CLIOptions;
   args: string[];
   packageManager: string;
   syncService: string;
@@ -24,6 +20,7 @@ const availableSyncServices = [
   { name: 'Packages', value: 'packages', disabled: true }
 ];
 
+// Initialize variables to hold CLI options
 let syncService = '';
 const packageManager = 'pnpm';
 
@@ -41,19 +38,22 @@ export const command = new Command(NAME)
   })
   .parse();
 
-// Gather the CLI options and arguments
-const options: CLIOptions = command.opts<CLIOptions>();
-
 // Export the CLI configuration for use in other modules
 const cli: CLIConfig = {
-  options,
   args: command.args,
   packageManager,
   syncService,
 };
 
 export async function runCli(): Promise<void> {
-  // Display CLI version and created by information }
+  // Display CLI version and created by information
+  showCliTitle();
+
+  await setSyncService();
+  await handleConfiguration();
+};
+
+function showCliTitle() {
   console.info();
   console.info(pc.cyan(NAME));
   console.info(DESCRIPTION);
@@ -62,65 +62,84 @@ export async function runCli(): Promise<void> {
   console.info(`Created by ${AUTHOR}`);
   console.info(`${GITHUB} | ${WEBSITE}`);
   console.info();
+}
 
+async function setSyncService(): Promise<void> {
   if (!cli.syncService) {
     cli.syncService = await select<string>({
       message: 'Select the sync service you want to use:',
       choices: [
         ...availableSyncServices,
-        { name: 'Cancel', value: 'cancel' },
+        { name: 'Exit', value: 'exit' },
       ],
     });
 
-    if (cli.syncService === 'cancel') {
+    if (cli.syncService === 'exit') {
       process.exit(1);
     }
   } else {
     console.info(`Using sync service: ${pc.cyan(`${cli.syncService}\n`)}`);
   }
 
-  // @TODO: Improve this to allow configuration customization
-  config.syncService = cli.syncService;
+  config.syncService = cli.syncService as AppConfig['syncService'];
+}
 
-  console.info(`\nThe next configuration will be used to run ${cli.syncService}:`);
-  showConfig(cli);
+async function handleConfiguration() {
+  console.info(`\n${pc.bold(pc.cyan(`${cli.syncService} configuration:`))}`);
+  showConfig();
 
   const configurationState = await select<string>({
     message: 'What do you want to do next?',
     choices: [
       { name: 'continue', value: 'continue' },
-      { name: 'Customize configuration', value: 'customize', disabled: true },
-      { name: 'Show full configuration', value: 'show-full-config', disabled: true },
-      { name: 'Cancel', value: 'cancel' },
+      { name: 'Customize configuration', value: 'customize' },
+      { name: 'Exit', value: 'exit' },
     ],
   });
 
-  if (configurationState === 'cancel') {
+  if (configurationState === 'exit') {
     process.exit(1);
   }
 
-  if (configurationState === 'show-config') {
-    showConfig(cli);
+  if (configurationState === 'customize') {
+    await customizeConfiguration();
+    await handleConfiguration();
   }
-};
+}
 
-function showConfig(cliConfig: CLIConfig) {
-  console.info();
+async function customizeConfiguration() {
+  let boilerplateUsage: string = config.boilerplate.use;
 
+  const whatToCustomize = await select<string>({
+    message: 'Configure:',
+    choices: [
+      { name: `Boilerplate usage: ${ boilerplateUsage === 'local' ? `${pc.bold('✓Local')} | remote`  : `${pc.bold('✓Remote')} | local`}`, value: 'boilerplateUsage' },
+      { name: 'Done', value: 'done' },
+    ],
+  });
+
+  if (whatToCustomize === 'boilerplateUsage') {
+    boilerplateUsage = boilerplateUsage === 'local' ? 'remote' : 'local';
+    config.boilerplateUse = boilerplateUsage as 'local' | 'remote';
+  }
+
+  if (whatToCustomize !== 'done') {
+    await customizeConfiguration();
+  }
+}
+
+function showConfig() {
   if (config.boilerplate.use === 'local') {
-    console.info(`Boilerplate: ${pc.cyan(config.boilerplate.localPath)} <${pc.bold(pc.cyan(config.boilerplate.branch))}>`);
+    console.info(`Boilerplate: ${pc.bold('💻')} ${pc.cyan(config.boilerplate.localPath)} <${pc.bold(pc.cyan(config.boilerplate.branch))}> ${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`);
   } else if (config.boilerplate.use === 'remote') {
-    console.info(`Boilerplate: ${pc.cyan(config.boilerplate.remoteUrl)} <${pc.bold(pc.cyan(config.boilerplate.branch))}>`);
+    console.info(`Boilerplate: ${pc.bold('🌐')} ${pc.cyan(config.boilerplate.remoteUrl)} <${pc.bold(pc.cyan(config.boilerplate.branch))}> ${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`);
   }
 
   if (config.fork.use === 'local') {
-    console.info(`Fork: ${pc.cyan(config.fork.localPath)} <${pc.bold(pc.cyan(config.fork.branch))}>`);
+    console.info(`Fork: ${pc.bold('💻')} ${pc.cyan(config.fork.localPath)} <${pc.bold(pc.cyan(config.fork.branch))}> ← <${pc.bold(pc.cyan(config.fork.syncBranch))}>`);
   } else if (config.fork.use === 'remote') {
-    console.info(`Fork: ${pc.cyan(config.fork.remoteUrl)} <${pc.bold(pc.cyan(config.fork.branch))}>`);
+    console.info(`Fork: ${pc.bold('🌐')} ${pc.cyan(config.fork.remoteUrl)} <${pc.bold(pc.cyan(config.fork.branch))}> ← <${pc.bold(pc.cyan(config.fork.syncBranch))}>`);
   }
-
-  console.info(`Sync branch: ${pc.bold(pc.cyan(config.fork.branch))}`);
-  console.info(`Upstream: ${pc.bold(pc.cyan(config.boilerplate.remoteName))}`);
 
   console.info();
 }

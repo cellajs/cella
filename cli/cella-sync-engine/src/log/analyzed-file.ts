@@ -27,9 +27,6 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
 }
 
 export function shouldLogAnalyzedFileModule(): boolean {
-  console.log(config.log)
-
-
   const logModulesConfigured = 'modules' in config.log;
   if (!logModulesConfigured) return true;
   return config.log.modules?.includes('analyzedFile') || false;
@@ -53,7 +50,7 @@ export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): v
     !mergeStrategyConfigured || mergeStrategyEqual,
   ].every(Boolean);
 
-  if (shouldLog) console.log(line);
+  if (shouldLog) console.info(line);
 }
 
 function getFilePath(analyzedFile: FileAnalysis): string {

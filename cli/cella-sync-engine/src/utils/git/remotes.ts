@@ -9,7 +9,7 @@ import { runGitCommand } from './command';
  * 
  * @example
  * const remotes = await getRemotes('/path/to/repo');
- * console.log(remotes); // ['origin', 'upstream']
+ * console.info(remotes); // ['origin', 'upstream']
  */
 export async function getRemotes(repoPath: string): Promise<string[]> {
   const output = await runGitCommand('remote', repoPath);
@@ -26,7 +26,7 @@ export async function getRemotes(repoPath: string): Promise<string[]> {
  * 
  * @example
  * const hasOrigin = await hasRemote('/repo', 'origin');
- * console.log(hasOrigin); // true
+ * console.info(hasOrigin); // true
  */
 export async function hasRemote(repoPath: string, remoteName: string): Promise<boolean> {
   const remotes = await getRemotes(repoPath);
@@ -88,7 +88,7 @@ export async function addRemoteIfMissing(repoPath: string, remoteName: string, r
  * 
  * @example
  * const url = await getRemoteUrl('/repo', 'origin');
- * console.log(url); // 'https://github.com/user/project.git'
+ * console.info(url); // 'https://github.com/user/project.git'
  */
 export async function getRemoteUrl(repoPath: string, remoteName: string): Promise<string | null> {
   const exists = await hasRemote(repoPath, remoteName);

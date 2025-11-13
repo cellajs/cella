@@ -7,7 +7,7 @@ import { handleRebase } from "./utils/git/handle-rebase";
 import { config } from "./config"
 
 export async function runSync(analyzedFiles: FileAnalysis[]) {
-  console.log(pc.cyan("\nStarting sync process"));
+  console.info(pc.cyan("\nStarting sync process"));
 
   // Merge boilerplate into fork
   await handleBoilerplateIntoForkMerge(config.boilerplate, config.fork, analyzedFiles);
@@ -24,5 +24,5 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
   const rebaseFromBranch = config.fork.branch;
   await handleRebase(rebaseIntoPath, rebaseIntoBranch, rebaseFromBranch);
   
-  console.log(pc.green("✔ Sync completed.\n"));
+  console.info(pc.green("✔ Sync completed.\n"));
 }

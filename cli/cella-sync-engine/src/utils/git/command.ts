@@ -18,7 +18,7 @@ const execAsync = promisify(exec);
  * 
  * @example
  * const output = await runGitCommand('status', '/path/to/repo');
- * console.log(output);
+ * console.info(output);
  * // Example output:
  * // On branch main
  * // Your branch is up to date with 'origin/main'.
@@ -163,7 +163,7 @@ export async function gitAddAll(repoPath: string): Promise<string> {
  *
  * @example
  * const conflicts = await gitDiffUnmerged('/path/to/repo');
- * console.log(conflicts);
+ * console.info(conflicts);
  */
 export async function gitDiffUnmerged(repoPath: string): Promise<string> {
   return runGitCommand('diff --name-only --diff-filter=U', repoPath);
@@ -178,7 +178,7 @@ export async function gitDiffUnmerged(repoPath: string): Promise<string> {
  *
  * @example
  * const stagedFiles = await gitDiffCached('/path/to/repo');
- * console.log(stagedFiles);
+ * console.info(stagedFiles);
  */
 export async function gitDiffCached(repoPath: string): Promise<string> {
   return runGitCommand('diff --name-only --cached', repoPath);
@@ -193,7 +193,7 @@ export async function gitDiffCached(repoPath: string): Promise<string> {
  *
  * @example
  * const files = await gitLsTreeRecursive('/path/to/repo', 'main');
- * console.log(files);
+ * console.info(files);
  */
 export async function gitLsTreeRecursive(repoPath: string, branchName: string): Promise<string> {
   return runGitCommand(`ls-tree -r ${branchName}`, repoPath);
@@ -209,7 +209,7 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
  *
  * @example
  * const files = await gitLsTreeRecursiveAtCommit('/path/to/repo', 'abc123def456');
- * console.log(files);
+ * console.info(files);
  */
 export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: string): Promise<string> {
   return runGitCommand(`ls-tree -r ${commitSha}`, repoPath);
@@ -225,7 +225,7 @@ export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: st
  *
  * @example
  * const lastCommitSha = await gitLastCommitShaForFile('/path/to/repo', 'main', 'src/index.ts');
- * console.log(lastCommitSha);
+ * console.info(lastCommitSha);
  */
 export async function gitLastCommitShaForFile(repoPath: string, branchName: string, filePath: string): Promise<string> {
   return runGitCommand(`log -n 1 --format=%H ${branchName} -- "${filePath}"`, repoPath);
@@ -243,7 +243,7 @@ export async function gitLastCommitShaForFile(repoPath: string, branchName: stri
  *
  * @example
  * const history = await gitLogFileHistory('/path/to/repo', 'main', 'src/index.ts');
- * console.log(history);
+ * console.info(history);
  */
 export async function gitLogFileHistory(repoPath: string, branchName: string, filePath: string): Promise<string> {
   const command = `log --format="%H|%aI" --follow ${branchName} -- "${filePath}"`;
@@ -281,7 +281,7 @@ export async function gitCommit(
  *
  * @example
  * const content = await gitShowFileAtCommit('/path/to/repo', 'abc123def456', 'src/index.ts');
- * console.log(content);
+ * console.info(content);
  */
 export async function gitShowFileAtCommit(repoPath: string, commitSha: string, filePath: string): Promise<string> {
   return runGitCommand(`show ${commitSha}:${filePath}`, repoPath);
@@ -316,7 +316,7 @@ export async function gitMergeFile(oursPath: string, basePath: string, theirsPat
  * 
  * @example
  * if (isMergeInProgress('/path/to/repo')) {
- *   console.log('Merge in progress...');
+ *   console.info('Merge in progress...');
  * }
  */
 export function isMergeInProgress(repoPath: string): boolean {
@@ -331,7 +331,7 @@ export function isMergeInProgress(repoPath: string): boolean {
  * 
  * @example
  * if (isRebaseInProgress('/path/to/repo')) {
- *   console.log('Rebase in progress...');
+ *   console.info('Rebase in progress...');
  * }
  */
 export function isRebaseInProgress(repoPath: string): boolean {
@@ -465,7 +465,7 @@ export async function gitPush(
  *
  * @example
  * const countStr = await gitRevListCount('/repo', 'feature', 'main');
- * console.log(countStr); // e.g., "5"
+ * console.info(countStr); // e.g., "5"
  */
 export async function gitRevListCount(
   repoPath: string,

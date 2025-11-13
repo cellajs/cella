@@ -1,4 +1,3 @@
-export { logConfig } from "./log";
 export { swizzleConfig } from "./swizzle";
 export { behaviorConfig } from "./behavior";
 
@@ -14,10 +13,15 @@ export class Config {
 
   constructor(initial: Partial<AppConfig> = {}) {
     this.state = {
-      fork: forkDefaultConfig,
-      boilerplate: boilerplateDefaultConfig,
-      log: logDefaultConfig,
       syncService: 'boilerplate-fork',
+
+      fork: forkDefaultConfig,
+      forkUse: 'local',
+
+      boilerplate: boilerplateDefaultConfig,
+      boilerplateUse: 'remote',
+
+      log: logDefaultConfig,
       ...initial
     };
   }
@@ -25,7 +29,7 @@ export class Config {
   get fork(): RepoConfig {
     return {
       ...this.state.fork,
-      use: this.forkUse,
+      use: this.state.forkUse,
       type: 'fork',
       workingDirectory: this.workingDirectory
     };
@@ -34,7 +38,7 @@ export class Config {
   get boilerplate(): RepoConfig {
     return {
       ...this.state.boilerplate,
-      use: this.boilerplateUse,
+      use: this.state.boilerplateUse,
       type: 'boilerplate',
       workingDirectory: this.workingDirectory
     };
@@ -49,25 +53,27 @@ export class Config {
   }
 
   set syncService(value: AppConfig['syncService']) {
+    if (value === 'boilerplate-fork') {
+      this.state.forkUse = 'local';
+      this.state.boilerplateUse = 'remote';
+      this.state.log = logDefaultConfig;
+    }
+    
     if (value === 'diverged') {
+      this.state.forkUse = 'local';
+      this.state.boilerplateUse = 'remote';
       this.state.log = logDivergedConfig;
     }
     
     this.state.syncService = value;
   }
 
-  /**
-   * Dynamically computed "use" property for fork
-   */
-  get forkUse(): 'local' | 'remote' {
-    return ['boilerplate-fork', 'diverged'].includes(this.state.syncService) ? 'local' : 'remote';
+  set forkUse(value: 'local' | 'remote') {
+    this.state.forkUse = value;
   }
 
-  /**
-   * Dynamically computed "use" property for boilerplate
-   */
-  get boilerplateUse(): 'local' | 'remote' {
-    return ['boilerplate-fork', 'diverged'].includes(this.state.syncService) ? 'remote' : 'local';
+  set boilerplateUse(value: 'local' | 'remote') {
+    this.state.boilerplateUse = value;
   }
 
   /**

@@ -56,7 +56,7 @@ export function isBinaryFile(filePath: string): boolean {
  *
  * @example
  * const tempDir = await createTempDir('myapp-');
- * console.log(tempDir); // /tmp/myapp-abc123
+ * console.info(tempDir); // /tmp/myapp-abc123
  */
 export async function createTempDir(prefix: string): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -85,7 +85,7 @@ export async function removeDir(dirPath: string): Promise<void> {
  *
  * @example
  * const config = readJsonFile<{ port: number }>('./config.json');
- * console.log(config?.port); // 3000
+ * console.info(config?.port); // 3000
  */
 export function readJsonFile<T>(filePath: string): T | null {
   if (!existsSync(filePath)) return null;
@@ -166,7 +166,7 @@ export function matchPathPattern(filePath: string, pattern: string): boolean {
  */
 export async function removeFileIfExists(filePath: string): Promise<void> {
   if (existsSync(filePath)) {
-    console.log('Removing file:', filePath);
+    console.info('Removing file:', filePath);
     await rm(filePath, { force: true });
   }
 }

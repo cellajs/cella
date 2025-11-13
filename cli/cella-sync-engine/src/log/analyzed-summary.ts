@@ -44,7 +44,7 @@ export function logAnalyzedSummaryLines(lines: string[]): void {
 
   if (!logModulesConfigured || includesModule) {
     for (const line of lines) {
-      console.log(line);
+      console.info(line);
     }
   }
 }

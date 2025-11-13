@@ -25,20 +25,20 @@ import { config, type RepoConfig } from "./config";
  * await runSetup('syncBoilerplateIntoFork');
  */
 export async function runSetup() {
-  console.log(pc.cyan("\nRunning Setup"));
+  console.info(pc.cyan("\nRunning Setup"));
 
   // Basic configuration checks
   checkConfig(config.boilerplate, [
     { prop: 'branch', required: true },
-    { prop: 'remoteName', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'remote' },
+    { prop: 'remoteName', required: true },
     { prop: 'remoteUrl', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'remote' },
+    { prop: 'localPath', requiredIf: (boilerplate: RepoConfig) => boilerplate.use === 'local' },
   ]);
 
   checkConfig(config.fork, [
     { prop: 'branch', required: true },
-    { prop: 'remoteName', requiredIf: (fork: RepoConfig) => fork.use === 'remote' },
+    { prop: 'syncBranch', required: true },
     { prop: 'remoteUrl', requiredIf: (fork: RepoConfig) => fork.use === 'remote' },
-    { prop: 'syncBranch', requiredIf: (fork: RepoConfig) => fork.use === 'local' && config.syncService === 'boilerplate-fork' },
     { prop: 'localPath', requiredIf: (fork: RepoConfig) => fork.use === 'local' },
   ]);
 
@@ -65,5 +65,5 @@ export async function runSetup() {
   await handleMerge(config.fork.workingDirectory, config.fork.syncBranch, config.fork.branch, null);
   await checkCleanState(config.fork.workingDirectory, config.fork.syncBranch, { skipCheckout: true });
 
-  console.log(pc.green("✔ Setup complete.\n"));
+  console.info(pc.green("✔ Setup complete.\n"));
 }

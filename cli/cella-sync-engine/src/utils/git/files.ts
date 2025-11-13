@@ -27,7 +27,7 @@ import { FileEntry, CommitEntry } from '../../types';
  *
  * @example
  * const files = await getGitFileHashes('/repo', 'main');
- * console.log(files[0]);
+ * console.info(files[0]);
  * // { path: 'src/index.ts', blobSha: 'abc123...', shortBlobSha: 'abc1234', lastCommitSha: 'def456...', shortCommitSha: 'def4567' }
  */
 export async function getGitFileHashes(repoPath: string, branchName: string = 'HEAD'): Promise<FileEntry[]> {
@@ -68,7 +68,7 @@ export async function getGitFileHashes(repoPath: string, branchName: string = 'H
  *
  * @example
  * const history = await getFileCommitHistory('/repo', 'main', 'src/app.ts');
- * console.log(history[0]); // { sha: 'abc123...', date: '2024-12-01T10:20:30Z' }
+ * console.info(history[0]); // { sha: 'abc123...', date: '2024-12-01T10:20:30Z' }
  */
 export async function getFileCommitHistory(repoPath: string, branchName: string, filePath: string): Promise<CommitEntry[]> {
   const output = await gitLogFileHistory(repoPath, branchName, filePath);
@@ -116,7 +116,7 @@ export async function writeGitFileAtCommit(
  *
  * @example
  * const unmerged = await getUnmergedFiles('/repo');
- * console.log(unmerged); // ['src/conflicted-file.ts']
+ * console.info(unmerged); // ['src/conflicted-file.ts']
  */
 export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
   const output = await gitDiffUnmerged(repoPath);
@@ -133,7 +133,7 @@ export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
  *
  * @example
  * const staged = await getCachedFiles('/repo');
- * console.log(staged); // ['src/app.ts', 'package.json']
+ * console.info(staged); // ['src/app.ts', 'package.json']
  */
 export async function getCachedFiles(repoPath: string): Promise<string[]> {
   const output = await gitDiffCached(repoPath);
@@ -150,7 +150,7 @@ export async function getCachedFiles(repoPath: string): Promise<string[]> {
  *
  * @example
  * const sha = await getFileBlobShaAtCommit('/repo', 'abc123', 'src/utils.ts');
- * console.log(sha); // 'de9c0a1...'
+ * console.info(sha); // 'de9c0a1...'
  */
 export async function getFileBlobShaAtCommit(
   repoPath: string,

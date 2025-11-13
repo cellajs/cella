@@ -13,7 +13,7 @@ import { gitRevListCount, gitStatusPorcelain } from './command';
  *
  * @example
  * const count = await getCommitCount('/repo', 'sync-branch', 'development');
- * console.log(count); // e.g., 5
+ * console.info(count); // e.g., 5
  */
 export async function getCommitCount(
   repoPath: string,

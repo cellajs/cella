@@ -12,7 +12,7 @@ import { FileAnalysis } from "./types";
 import { config } from "./config";
 
 export async function runAnalyze(): Promise<FileAnalysis[]> {
-  console.log(pc.cyan("\nRunning file analysis"));
+  console.info(pc.cyan("\nRunning file analysis"));
 
   const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
   spinner.start();
@@ -35,7 +35,7 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
 
   spinner.stop();
 
-  console.log(pc.green("✔ File analysis complete."));
+  console.info(pc.green("✔ File analysis complete."));
 
   spinner.start("Update swizzle...");
 
@@ -43,11 +43,11 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   writeSwizzleMetadata(swizzleEntries);
 
   spinner.stop();
-  console.log(pc.green("✔ Swizzle update complete."));
+  console.info(pc.green("✔ Swizzle update complete."));
 
   // Log the analyzed files
   if (shouldLogAnalyzedFileModule()) {
-    console.log(pc.bold("\nFile analysis:"));
+    console.info(pc.bold("\nFile analysis:"));
     for (const file of analyzedFiles) {
       const line = analyzedFileLine(file);
       logAnalyzedFileLine(file, line);
@@ -57,7 +57,7 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
 
   // Log the swizzle analysis
   if (shouldLogAnalyzedSwizzleModule()) {
-    console.log(pc.bold("\nSwizzle analysis:"));
+    console.info(pc.bold("\nSwizzle analysis:"));
     for (const file of analyzedFiles) {
       const line = analyzedSwizzleLine(file);
       logAnalyzedSwizzleLine(file, line);
@@ -66,7 +66,7 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
 
   // Log the summary of analyzed files
   if (shouldLogAnalyzedSummaryModule()) {
-    console.log(pc.bold(`\nSummary:`));
+    console.info(pc.bold(`\nSummary:`));
     const summaryLines = analyzedSummaryLines(analyzedFiles);
     logAnalyzedSummaryLines(summaryLines);
   }
