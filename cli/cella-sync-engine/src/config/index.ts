@@ -1,10 +1,17 @@
 export { swizzleConfig } from "./swizzle";
 
+// Import all types
 import type { AppConfig, MinimalRepoConfig, MinimalLogConfig, MinimalBehaviorConfig } from "./types";
+
+// Import default configurations
 import { forkDefaultConfig } from "./fork.default";
 import { boilerplateDefaultConfig } from "./boilerplate.default";
 import { logDefaultConfig, logDivergedConfig } from "./log.default";
 import { behaviorDefaultConfig } from "./behavior.default";
+import { swizzleDefaultConfig } from "./swizzle.default";
+
+// Import user Config
+import { cellaConfig } from "../../../../cella.config"
 
 export type RepoConfig = MinimalRepoConfig & { 
   location: 'local' | 'remote', 
@@ -31,7 +38,8 @@ export class Config {
 
       log: logDefaultConfig,
       behavior: behaviorDefaultConfig,
-      
+      swizzle: swizzleDefaultConfig,
+
       ...initial
     };
   }

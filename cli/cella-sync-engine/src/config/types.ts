@@ -106,6 +106,34 @@ export interface MinimalBehaviorConfig {
   skipAllPushes?: boolean;
 }
 
+export interface MinimalSwizzleConfig {
+  /**
+   * Local file system path to find metadata
+   */
+  localPath: string;
+  
+  /**
+   * Version of the swizzle metadata format (update when schema changes)
+   */
+  metadataVersion: string,
+
+  /**
+   * Default metadata file name
+   * Stores information about (auto detect) swizzled files
+   */
+  metadataFileName: string,
+
+  /**
+   * Stores user-defined flags of 'edited' files for swizzling 
+   */
+  editedFiles: string[],
+
+  /**
+   * Stores user-defined flags of 'removed' files for swizzling
+   */
+  removedFiles: string[],
+}
+
 /**
  * Application configuration for the Cella Sync Engine.
  * Defines the synchronization service type and repository configurations.
@@ -138,4 +166,16 @@ export interface AppConfig {
    * Configuration for specifying behavior during sync operations.
    */
   behavior: MinimalBehaviorConfig,
+
+  /**
+   * Configuration related to swizzle metadata and settings files.
+   */
+  swizzle: MinimalSwizzleConfig,
 }
+
+/**
+ * A utility type that makes all properties of a given type T optional, including nested properties.
+ */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};

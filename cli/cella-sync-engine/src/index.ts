@@ -7,13 +7,10 @@ import { runAnalyze } from "./run-analyze";
 import { config } from "./config";
 import { runPackages } from "./run-packages";
 
-
 async function main(): Promise<void> {
   // Run configuration CLI
   await runCli();
   
-  console.log(config.syncService)
-
   // Preflight checks
   await runSetup();
 
