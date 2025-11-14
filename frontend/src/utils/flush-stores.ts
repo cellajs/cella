@@ -3,7 +3,6 @@ import { queryClient } from '~/query/query-client';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
 import { useNavigationStore } from '~/store/navigation';
-import { useSyncStore } from '~/store/sync';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -16,7 +15,6 @@ import { useUserStore } from '~/store/user';
 export const flushStores = (removeAccount?: boolean) => {
   queryClient.clear();
   useUserStore.setState({ user: null as unknown as MeUser });
-  useSyncStore.setState({ data: {} });
   useDraftStore.getState().clearForms();
   useNavigationStore.getState().clearNavigationStore();
   useUIStore.getState().setImpersonating(false);
