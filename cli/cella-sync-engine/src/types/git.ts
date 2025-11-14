@@ -43,6 +43,7 @@ export type CommitSummary = {
    * - `'behind'` - The branch is missing commits from upstream.
    * - `'diverged'` - Both the branch and upstream have unique commits.
    * - `'unrelated'` - The branches have no common history.
+   * - `'unknown'` - The relationship could not be determined.
    */
   status: 'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated' | 'unknown';
 

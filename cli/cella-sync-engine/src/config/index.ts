@@ -1,5 +1,3 @@
-export { swizzleConfig } from "./swizzle";
-
 // Import all types
 import type { AppConfig, MinimalRepoConfig, MinimalLogConfig, MinimalBehaviorConfig, MinimalSwizzleConfig } from "./types";
 
@@ -12,6 +10,7 @@ import { swizzleDefaultConfig } from "./swizzle.default";
 
 // Import custom config
 import { cellaConfig as customConfig } from "../../../../cella.config"
+import { SYNC_SERVICES } from "./sync-services";
 
 // Deconstruct user config and apply to current config
 const { 
@@ -44,7 +43,7 @@ export class Config {
 
   constructor(initial: Partial<AppConfig> = {}) {
     this.state = {
-      syncService: 'boilerplate-fork',
+      syncService: SYNC_SERVICES.BOILERPLATE_FORK,
 
       fork: { ...forkDefaultConfig, ...customForkConfig },
       forkLocation: 'local',

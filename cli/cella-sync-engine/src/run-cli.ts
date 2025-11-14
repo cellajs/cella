@@ -1,27 +1,19 @@
-import pc from "picocolors";
-import { checkbox, input, select, Separator } from "@inquirer/prompts";
-import { Command, InvalidArgumentError } from "commander";
+import { Command } from "commander";
 
-import { NAME, DESCRIPTION, VERSION, AUTHOR, GITHUB, WEBSITE } from './constants';
-import { config } from "./config";
-import { AppConfig } from "./config/types";
-
-// Define CLI configuration
-interface CLIConfig {
-  args: string[];
-  packageManager: string;
-  syncService: string;
-}
-
-const availableSyncServices = [
-  { name: 'Boilerplate → fork (+Sync packages)', value: 'boilerplate-fork+packages', disabled: true },
-  { name: 'Boilerplate → fork', value: 'boilerplate-fork' },
-  { name: 'Diverged files', value: 'diverged' },
-  { name: 'Sync Packages', value: 'packages'}
-];
+import { NAME, VERSION } from './constants';
+import { validateBranchName, validateLocation, validateRemoteName, validateSyncService } from "./modules/cli/commands";
+import { CLIConfig } from "./modules/cli/types";
+import { handleConfigurationAction, handleSyncService, onInitialConfigLoad } from "./modules/cli/handlers";
+import { showConfiguration, showStartingSyncMessage, showWelcome } from "./modules/cli/display";
 
 // Initialize variables to hold CLI options
 let syncService = '';
+let boilerplateBranch = '';
+let forkBranch = '';
+let forkSyncBranch = '';
+let boilerplateLocation = '';
+let boilerplateRemoteName = '';
+let forkLocation = '';
 const packageManager = 'pnpm';
 
 // Set up the CLI command using Commander
@@ -29,13 +21,13 @@ export const command = new Command(NAME)
   .version(VERSION, '-v, --version', `Output the current version of ${NAME}.`)
   .usage('[options]')
   .helpOption('-h, --help', 'Display this help message.')
-  .option('--sync-service <name>', 'Explicitly tell the CLI to use this sync service.', (name: string) => {
-    name = name.trim();
-    if (!availableSyncServices.some(service => service.value === name)) {
-      throw new InvalidArgumentError(`Invalid sync service: ${name}. Supported services are ${availableSyncServices.map((service: any) => `"${service.value}"`).join(', ')}.`);
-    }
-    syncService = name;
-  })
+  .option('--sync-service <name>', 'Explicitly tell the CLI to use this sync service.', (name: string) => { syncService = validateSyncService(name); })
+  .option('--boilerplate-location <location>', 'What location of the boilerplate to use (local|remote).', (location: string) => { boilerplateLocation = validateLocation(location); })
+  .option('--boilerplate-branch <name>', 'What branch of the boilerplate to use.', (name: string) => { boilerplateBranch = validateBranchName(name); })
+  .option('--boilerplate-remote-name <name>', 'What remote name to use for the boilerplate.', (name: string) => { boilerplateRemoteName = validateRemoteName(name); })
+  .option('--fork-location <location>', 'What location of the fork to use (local|remote).', (location: string) => { forkLocation = validateLocation(location); })
+  .option('--fork-branch <name>', 'What branch of the fork to use.', (name: string) => { forkBranch = validateBranchName(name); })
+  .option('--fork-sync-branch <name>', 'What sync branch of the fork to use.', (name: string) => { forkSyncBranch = validateBranchName(name); })
   .parse();
 
 // Export the CLI configuration for use in other modules
@@ -43,132 +35,33 @@ const cli: CLIConfig = {
   args: command.args,
   packageManager,
   syncService,
+  boilerplateLocation,
+  boilerplateRemoteName,
+  boilerplateBranch,
+  forkLocation,
+  forkBranch,
+  forkSyncBranch,
 };
 
+/**
+ * Run the CLI application.
+ */
 export async function runCli(): Promise<void> {
-  // Display CLI version and created by information
-  showCliTitle();
+  // Display welcome message
+  showWelcome();
 
-  await setSyncService();
-  await handleConfiguration();
+  // Pass the CLI configuration to update config on initial load
+  onInitialConfigLoad(cli);
+
+  // Handle sync service selection
+  await handleSyncService(cli);
+
+  // Show current configuration
+  showConfiguration();
+
+  // Handle further configuration actions
+  await handleConfigurationAction(cli);
+
+  // Display starting sync message
+  showStartingSyncMessage();
 };
-
-function showCliTitle() {
-  console.info();
-  console.info(pc.cyan(NAME));
-  console.info(DESCRIPTION);
-  console.info();
-  console.info(`Cli version ${pc.green(VERSION)}`);
-  console.info(`Created by ${AUTHOR}`);
-  console.info(`${GITHUB} | ${WEBSITE}`);
-  console.info();
-}
-
-async function setSyncService(): Promise<void> {
-  if (!cli.syncService) {
-    cli.syncService = await select<string>({
-      message: 'Select the sync service you want to use:',
-      choices: [
-        ...availableSyncServices,
-        new Separator(),
-        { name: 'Exit', value: 'exit' },
-      ],
-    });
-
-    if (cli.syncService === 'exit') {
-      process.exit(1);
-    }
-  } else {
-    console.info(`Using sync service: ${pc.cyan(`${cli.syncService}\n`)}`);
-  }
-
-  config.syncService = cli.syncService as AppConfig['syncService'];
-}
-
-async function handleConfiguration() {
-  console.info(`\n${pc.bold(pc.cyan(`${cli.syncService} configuration:`))}`);
-  showConfig();
-
-  const configurationState = await select<string>({
-    message: 'What do you want to do next?',
-    choices: [
-      { name: 'continue', value: 'continue' },
-      { name: 'Customize configuration', value: 'customize' },
-      new Separator(),
-      { name: 'Exit', value: 'exit' },
-    ],
-  });
-
-  if (configurationState === 'exit') {
-    process.exit(1);
-  }
-
-  if (configurationState === 'customize') {
-    await customizeConfiguration();
-    await handleConfiguration();
-  }
-}
-
-async function customizeConfiguration() {
-  let boilerplateLocation: string = config.boilerplate.location;
-  let boilerplateBranch: string = config.boilerplate.branch;
-  let divergedCommitStatus: string[] = config.log.analyzedFile.commitSummaryState || [];
-
-  const whatToCustomize = await select<string>({
-    message: 'Configure:',
-    choices: [
-      new Separator('Boilerplate:'),
-      { name: `Boilerplate location: ${boilerplateLocation === 'local' ? `${pc.bold('✓Local')} | remote` : `${pc.bold('✓Remote')} | local`}`, value: 'boilerplateLocation' },
-      { name: `Boilerplate branch: <${pc.bold(boilerplateBranch)}>`, value: 'boilerplateBranch' },
-      ...(config.syncService === 'diverged' ? [
-        new Separator('Diverged:'),
-        { name: `Commit status: (${divergedCommitStatus.join(', ')})`, value: 'divergedCommitStatus' },
-      ] : []),
-      new Separator(),
-      { name: 'Done', value: 'done' },
-    ],
-  });
-
-  if (whatToCustomize === 'boilerplateLocation') {
-    boilerplateLocation = boilerplateLocation === 'local' ? 'remote' : 'local';
-    config.boilerplateLocation = boilerplateLocation as 'local' | 'remote';
-  }
-  if (whatToCustomize === 'boilerplateBranch') {
-    boilerplateBranch = await input({ message: 'Enter boilerplate branch:' });
-    config.boilerplate = { branch: boilerplateBranch };
-  }
-  if (whatToCustomize === 'divergedCommitStatus') {
-    const statusOptions = ['upToDate', 'ahead', 'behind', 'diverged', 'unrelated', 'unknown'];
-    
-    divergedCommitStatus = await checkbox<string>({
-      message: 'Select commit statuses to log:',
-      choices: statusOptions.map(status => ({
-        name: status,
-        value: status,
-        checked: divergedCommitStatus.includes(status),
-      })),
-    });
-    config.log.analyzedFile.commitSummaryState = divergedCommitStatus as NonNullable<typeof config.log.analyzedFile.commitSummaryState>;
-  }
-
-  if (whatToCustomize !== 'done') {
-    await customizeConfiguration();
-  }
-}
-
-function showConfig() {
-  console.info(
-    `Boilerplate: ${pc.bold(config.boilerplate.location === 'local' ? '💻' : '🌐')} ` +
-    `${pc.cyan(config.boilerplate.repoReference)} ` +
-    `<${pc.bold(pc.cyan(config.boilerplate.branch))}> ` +
-    `${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`
-  );
-  
-  console.info(
-    `Fork: ${pc.bold(config.fork.location === 'local' ? '💻' : '🌐')} ` +
-    `${pc.cyan(config.fork.repoReference)} ` +
-    `<${pc.bold(pc.cyan(config.fork.branch))}> ← <${pc.bold(pc.cyan(config.fork.syncBranch))}>`
-  );
-
-  console.info();
-}

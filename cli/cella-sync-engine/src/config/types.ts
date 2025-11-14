@@ -1,4 +1,5 @@
 import type { FileAnalysis } from '../types';
+import { SyncService } from './sync-services';
 
 /**
  * Minimal configuration required to identify and work with a Git repository.
@@ -142,7 +143,7 @@ export interface AppConfig {
   /**
    * Type of synchronization service being used.
    */
-  syncService: 'boilerplate-fork' | 'boilerplate-fork+packages' | 'packages' | 'diverged';
+  syncService: SyncService;
 
   /**
    * Configuration for the forked repository.
