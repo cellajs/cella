@@ -76,6 +76,7 @@ function DropdownMenuCheckboxItem({ className, children, checked, ...props }: Re
       {...props}
     >
       {children}
+      <div className="grow" />
       <DropdownMenuPrimitive.ItemIndicator>
         <CheckIcon className="size-4 text-success" />
       </DropdownMenuPrimitive.ItemIndicator>

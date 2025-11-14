@@ -1,10 +1,13 @@
 import { createRoute } from '@tanstack/react-router';
+import z from 'zod';
 import AboutPage from '~/modules/marketing/about/about-page';
 import AccessibilityPage from '~/modules/marketing/accessibility-page';
 import ContactPage from '~/modules/marketing/contact-page';
+import { legalConfig } from '~/modules/marketing/legal/legal-config';
 import { LegalPage } from '~/modules/marketing/legal/legal-page';
 import { PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
+import { objectEntries } from '~/utils/object';
 
 export const AboutRoute = createRoute({
   path: '/about',
@@ -22,8 +25,13 @@ export const ContactRoute = createRoute({
   component: () => <ContactPage />,
 });
 
+const legalSubjects = objectEntries(legalConfig).map(([subject]) => subject);
+
 export const LegalRoute = createRoute({
   path: '/legal',
+  validateSearch: z.object({
+    tab: z.enum(legalSubjects).optional(),
+  }),
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Legal') }] }),
   getParentRoute: () => RootRoute,

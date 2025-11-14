@@ -1,9 +1,18 @@
-export const coreSubjects = ['terms', 'privacy'] as const satisfies LegalSubject[];
+import { lazy } from 'react';
+import type { LegalTexts } from './legal-text';
 
-export type LegalSubject = 'privacy' | 'terms';
-export type CoreLegalSubject = Extract<LegalSubject, 'privacy' | 'terms'>;
+export type LegalSubject = keyof typeof legalConfig;
 
-export const subjectLabels = {
-  terms: 'common:terms_of_use',
-  privacy: 'common:privacy_policy',
-} as const satisfies Record<LegalSubject, string>;
+/**
+ * Config to set legal text components to be used in Legal page.
+ */
+export const legalConfig = {
+  privacy: {
+    component: lazy(() => import('~/modules/marketing/legal/privacy-text')),
+    label: 'common:privacy_policy',
+  },
+  terms: {
+    component: lazy(() => import('~/modules/marketing/legal/terms-text')),
+    label: 'common:terms_of_use',
+  },
+} as const satisfies LegalTexts;

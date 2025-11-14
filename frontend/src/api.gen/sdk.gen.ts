@@ -999,7 +999,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
  *
  * 🛡️ Requires authentication
  *
- * Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.
+ * Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.
  *
  * **PUT /me/mfa** ·· [toggleMfa](https://api.cellajs.com/docs#tag/me/put/me/mfa) ·· _me_
  *

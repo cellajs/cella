@@ -14,6 +14,8 @@ export const objectKeys = <T extends object>(obj: T) => {
  * @param obj - The object whose entries are to be returned.
  * @returns An array of the object's key-value pairs.
  */
-export const objectEntries = <T extends object>(obj: T) => {
-  return Object.entries(obj) as Array<[keyof T, T[keyof T]]>;
-};
+export function objectEntries<T extends Record<string, unknown>>(obj: T) {
+  return Object.entries(obj) as {
+    [K in keyof T]: [K, T[K]];
+  }[keyof T][];
+}
