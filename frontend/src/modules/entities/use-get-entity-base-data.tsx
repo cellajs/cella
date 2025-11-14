@@ -84,11 +84,14 @@ export function useGetEntityBaseData(args: { idOrSlug: string; entityType: Conte
   const { data } = useQuery({
     queryKey: entitiesKeys.single(idOrSlug, entityType),
     queryFn: async () => {
-      if (entityType === 'user') return await getUser({ path: { idOrSlug } });
+      // Try to get user but fail gracefully if not found or forbidden
+      if (entityType === 'user') return await getUser({ path: { idOrSlug }, throwOnError: false });
 
+      // Or get context entity
       return await getContextEntity({
         path: { idOrSlug },
         query: { entityType },
+        throwOnError: false,
       });
     },
     enabled: !cachedEntity,

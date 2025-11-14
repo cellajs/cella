@@ -374,7 +374,10 @@ const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, ac
               e.stopPropagation(); // Prevent event from bubbling up to the tag span
               onRemoveTag(tag);
             }}
-            className={cn('p-0 h-full active:translate-y-0!', classStyleProps.tagClasses?.closeButton)}
+            className={cn(
+              'active:translate-y-0! size-4.5 ring-inset sm:focus-visible:ring-2 p-0 rounded-full cursor-pointer',
+              classStyleProps.tagClasses?.closeButton,
+            )}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
