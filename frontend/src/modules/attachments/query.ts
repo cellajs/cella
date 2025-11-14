@@ -1,8 +1,13 @@
+import { electricCollectionOptions } from '@tanstack/electric-db-collection';
+import { createCollection } from '@tanstack/react-db';
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import type { Attachment } from '~/api.gen';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
+import { zAttachment } from '~/api.gen/zod.gen';
+import { clientConfig } from '~/lib/api';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -86,4 +91,22 @@ export const attachmentsQueryOptions = ({
       limit: baseLimit,
     }),
   });
+};
+
+export const attachmentsCollection = (organizationId: string) => {
+  const params = { table: 'attachments', where: `organization_id = '${organizationId}'` };
+  return createCollection(
+    electricCollectionOptions({
+      schema: zAttachment,
+      getKey: (item) => item.id,
+      shapeOptions: {
+        url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
+        params,
+        backoffOptions,
+        fetchClient: clientConfig.fetch,
+        // TODO(DAVID) fix storePrefix or refactor handleSyncError
+        onError: (error) => handleSyncError(error, 'storePrefix', params),
+      },
+    }),
+  );
 };
