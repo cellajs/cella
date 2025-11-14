@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import type { z } from 'zod';
 import type { membershipBaseSchema } from '#/modules/memberships/schema';
 
+// TODO get rid of this
 type Events = {
   instantMembershipCreation: z.infer<typeof membershipBaseSchema>;
   acceptedMembership: z.infer<typeof membershipBaseSchema>;

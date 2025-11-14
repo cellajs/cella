@@ -6,7 +6,7 @@ import type { attachmentSchema } from '#/modules/attachments/schema';
 type AttachmentSelect = typeof attachmentsTable.$inferSelect;
 type Attachment = z.infer<typeof attachmentSchema>;
 
-export const processAttachmentUrlsBatch = async (attachments: AttachmentSelect[]): Promise<Attachment[]> => {
+export const processAttachmentUrlsInBatch = async (attachments: AttachmentSelect[]): Promise<Attachment[]> => {
   return Promise.all(attachments.map(processAttachment));
 };
 

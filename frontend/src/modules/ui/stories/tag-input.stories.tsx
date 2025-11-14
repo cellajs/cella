@@ -192,19 +192,19 @@ export const FullFeatured: Story = {
     const [tags, setTags] = useState(['react', 'typescript', 'storybook', 'testing']);
 
     const handleTagAdd = (tag: string) => {
-      console.log('Tag added:', tag);
+      console.info('Tag added:', tag);
     };
 
     const handleTagRemove = (tag: string) => {
-      console.log('Tag removed:', tag);
+      console.info('Tag removed:', tag);
     };
 
     const handleClearAll = () => {
-      console.log('All tags cleared');
+      console.info('All tags cleared');
     };
 
     const handleTagClick = (tag: string) => {
-      console.log('Tag clicked:', tag);
+      console.info('Tag clicked:', tag);
     };
 
     return (
