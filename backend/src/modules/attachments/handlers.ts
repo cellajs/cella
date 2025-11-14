@@ -33,15 +33,14 @@ const attachmentsRouteHandlers = app
       throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
     }
 
-    if (!where)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: no organization ID provided.' } });
-    // Extract organization IDs from `where` clause
-    const [requestedOrganizationId] = [...where.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
+    if (where && /organization_id\s*=/.test(where)) {
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: forbidden filter.' } });
+    }
+
     const organization = getContextOrganization();
 
-    // Only allow validated organization ID
-    if (requestedOrganizationId !== organization.id)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
+    const baseWhere = `organization_id = '${organization.id}'`;
+    const finalWhere = where ? `${where} AND ${baseWhere}` : `${baseWhere}`;
 
     // Construct the upstream URL
     const originUrl = new URL(`${appConfig.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
@@ -50,9 +49,9 @@ const attachmentsRouteHandlers = app
     // so that we return the right part of the Shape log.
     originUrl.searchParams.set('offset', offset);
     originUrl.searchParams.set('live', live ?? 'false');
+    originUrl.searchParams.set('where', finalWhere);
     if (handle) originUrl.searchParams.set('handle', handle);
     if (cursor) originUrl.searchParams.set('cursor', cursor);
-    if (where) originUrl.searchParams.set('where', where);
 
     try {
       const { body, headers, status, statusText } = await fetch(originUrl.toString());

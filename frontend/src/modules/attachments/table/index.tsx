@@ -1,4 +1,5 @@
 import { ilike, isNull, not, or, useLiveInfiniteQuery } from '@tanstack/react-db';
+import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -9,7 +10,6 @@ import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
 import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
-import { attachmentsCollection } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
@@ -18,6 +18,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const LIMIT = appConfig.requestLimits.attachments;
@@ -30,6 +31,8 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
+  const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+
   const attachmentUpdateMutation = useAttachmentUpdateMutation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -47,8 +50,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const [columns, setColumns] = useState(useColumns(entity, isSheet, isCompact));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // TODO(DAVID) make offline preload
-  const collection = attachmentsCollection(entity.membership?.organizationId || entity.id);
   const {
     data: fetchedRows,
     isLoading,
@@ -59,7 +60,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   } = useLiveInfiniteQuery(
     (liveQuery) => {
       return liveQuery
-        .from({ attachment: collection })
+        .from({ attachment: attachmentsCollectionQuery })
         .where(({ attachment }) =>
           q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
         )

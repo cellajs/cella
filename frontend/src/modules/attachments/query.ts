@@ -93,14 +93,15 @@ export const attachmentsQueryOptions = ({
   });
 };
 
-export const attachmentsCollection = (organizationId: string) => {
-  const params = { table: 'attachments', where: `organization_id = '${organizationId}'` };
+export const attachmentsCollection = (orgIdOrSlug: string) => {
+  const params = { table: 'attachments' };
+  // TODO(DAVID) add abort
   return createCollection(
     electricCollectionOptions({
       schema: zAttachment,
       getKey: (item) => item.id,
       shapeOptions: {
-        url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
+        url: new URL(`/${orgIdOrSlug}/attachments/shape-proxy`, appConfig.backendUrl).href,
         params,
         backoffOptions,
         fetchClient: clientConfig.fetch,
