@@ -5,6 +5,7 @@ import { config } from "../../config";
 import { SyncService } from "../../config/sync-services";
 import { promptConfigurationAction, promptSyncService, promptWhichConfigurationToCustomize, type CustomizeOption, type ConfigurationAction, promptConfigureLocation, promptConfigureBranch, promptDivergedCommitStatusOptions, promptConfigureRemoteName  } from "./prompts";
 import { AppConfig } from "../../config/types";
+import { showConfiguration } from "./display";
 
 /**
  * Handle sync service selection.
@@ -32,6 +33,10 @@ export async function handleConfigurationAction(cli: CLIConfig): Promise<void> {
 
   if (configurationState === 'customize') {
     await handleCustomizeConfiguration(cli);
+    
+    showConfiguration();
+    
+    await handleConfigurationAction(cli);
   }
 }
 

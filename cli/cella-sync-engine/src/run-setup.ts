@@ -25,7 +25,7 @@ import { config } from "./config";
  * await runSetup();
  */
 export async function runSetup() {
-  console.info(pc.cyan("\nRunning Setup"));
+  console.info(pc.cyan("Running Setup"));
 
   // Basic configuration checks
   checkConfig(config.boilerplate, [
@@ -62,5 +62,5 @@ export async function runSetup() {
   await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
   await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
 
-  console.info(pc.green("✔ Setup complete.\n"));
+  console.info(pc.green("✔ Setup complete."));
 }
