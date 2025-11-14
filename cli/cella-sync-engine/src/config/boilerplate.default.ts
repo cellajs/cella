@@ -8,7 +8,7 @@ export const boilerplateDefaultConfig: MinimalRepoConfig = {
   /**
    * Local file system path to the boilerplate repository (empty because differ per user).
    */
-  localPath: "/home/gino/Github/cella",
+  localPath: "",
 
   /**
    * The remote URL of the boilerplate repository

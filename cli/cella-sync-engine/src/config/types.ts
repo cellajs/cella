@@ -108,9 +108,9 @@ export interface MinimalBehaviorConfig {
 
 export interface MinimalSwizzleConfig {
   /**
-   * Local file system path to find metadata
+   * Local file system path (directory) to find metadata in
    */
-  localPath: string;
+  localDir: string;
   
   /**
    * Version of the swizzle metadata format (update when schema changes)
@@ -176,6 +176,9 @@ export interface AppConfig {
 /**
  * A utility type that makes all properties of a given type T optional, including nested properties.
  */
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
+export type DeepPartial<T> =
+  T extends (infer U)[]       // If T is an array
+    ? DeepPartial<U>[]        // Make its elements DeepPartial, but keep array shape
+    : T extends object        // If T is an object
+      ? { [P in keyof T]?: DeepPartial<T[P]> }
+      : T;                    // Otherwise primitive — leave as-is

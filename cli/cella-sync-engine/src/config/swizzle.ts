@@ -11,7 +11,7 @@ export const swizzleConfig = {
    * Default metadata file name
    * Stores information about swizzled files
    */
-  metadataFileName: 'cella-swizzle.metadata.json',
+  metadataFileName: 'cella.swizzled.json',
 
   /**
    * Default settings file name

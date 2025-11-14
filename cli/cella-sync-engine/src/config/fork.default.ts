@@ -8,7 +8,7 @@ export const forkDefaultConfig: MinimalRepoConfig = {
   /**
    * Local file system path to the fork repository (empty because differ per user).
    */
-  localPath: "/home/gino/Github/raak",
+  localPath: process.cwd(),
 
   /**
    * The remote URL of the fork repository

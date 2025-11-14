@@ -1,5 +1,5 @@
 import { SwizzleSettings, SwizzleAnalysis } from '../../types';
-import { swizzleConfig } from '../../config/index';
+import { config } from '../../config';
 import { matchPathPattern, readJsonFile, resolvePath } from '../../utils/files';
 
 let cachedSettings: SwizzleSettings | null = null;
@@ -11,7 +11,7 @@ let cachedSettings: SwizzleSettings | null = null;
 export function loadSwizzleSettings(): SwizzleSettings | null {
   if (cachedSettings) return cachedSettings;
 
-  const filePath = resolvePath(swizzleConfig.settingsFilePath);
+  const filePath = resolvePath(config.swizzle.localMetadataFilePath);
   cachedSettings = readJsonFile<SwizzleSettings>(filePath);
 
   return cachedSettings;

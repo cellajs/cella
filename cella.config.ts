@@ -1,7 +1,17 @@
 import { DeepPartial, AppConfig } from "./cli/cella-sync-engine/src/config/types";
 
 export const cellaConfig: DeepPartial<AppConfig> = {
+  boilerplate: {
+    localPath: "/home/gino/Github/cella",
+  },
+
+  fork: {
+    localPath: "/home/gino/Github/raak"
+  },
+
   swizzle: {
+    metadataFileName: 'cella.metadata.json',
+    localDir: '/home/gino/Github/cella',
     removedFiles: [
       "info/*",
       "cli/create-cella/*"

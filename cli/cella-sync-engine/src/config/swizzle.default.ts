@@ -5,9 +5,9 @@ import { MinimalSwizzleConfig } from "./types";
  */
 export const swizzleDefaultConfig: MinimalSwizzleConfig = {
   /**
-   * Local file system path to find metadata
+   * Local file system path (directory) to find metadata in
    */
-  localPath: process.cwd(),
+  localDir: process.cwd(),
 
   /**
    * Version of the swizzle metadata format (update when schema changes)
@@ -18,7 +18,7 @@ export const swizzleDefaultConfig: MinimalSwizzleConfig = {
    * Default metadata file name
    * Stores information about (auto detect) swizzled files
    */
-  metadataFileName: 'cella-swizzle.metadata.json',
+  metadataFileName: 'cella.swizzled.json',
 
   /**
    * Stores user-defined flags of 'edited' files for swizzling 

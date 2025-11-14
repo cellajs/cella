@@ -1,7 +1,7 @@
 export { swizzleConfig } from "./swizzle";
 
 // Import all types
-import type { AppConfig, MinimalRepoConfig, MinimalLogConfig, MinimalBehaviorConfig } from "./types";
+import type { AppConfig, MinimalRepoConfig, MinimalLogConfig, MinimalBehaviorConfig, MinimalSwizzleConfig } from "./types";
 
 // Import default configurations
 import { forkDefaultConfig } from "./fork.default";
@@ -10,8 +10,17 @@ import { logDefaultConfig, logDivergedConfig } from "./log.default";
 import { behaviorDefaultConfig } from "./behavior.default";
 import { swizzleDefaultConfig } from "./swizzle.default";
 
-// Import user Config
-import { cellaConfig } from "../../../../cella.config"
+// Import custom config
+import { cellaConfig as customConfig } from "../../../../cella.config"
+
+// Deconstruct user config and apply to current config
+const { 
+  fork: customForkConfig = {}, 
+  boilerplate: customBoilerplateConfig = {}, 
+  log: customLogConfig = {}, 
+  behavior: customBehaviorConfig = {}, 
+  swizzle: customSwizzleConfig = {}, 
+} = customConfig;
 
 export type RepoConfig = MinimalRepoConfig & { 
   location: 'local' | 'remote', 
@@ -23,6 +32,13 @@ export type RepoConfig = MinimalRepoConfig & {
   workingDirectory: string,
 };
 
+export type SwizzleConfig = MinimalSwizzleConfig & {
+  localMetadataFilePath: string;
+}
+
+export type LogConfig = MinimalLogConfig;
+export type BehaviorConfig = MinimalBehaviorConfig;
+
 export class Config {
   private state: AppConfig;
 
@@ -30,15 +46,15 @@ export class Config {
     this.state = {
       syncService: 'boilerplate-fork',
 
-      fork: forkDefaultConfig,
+      fork: { ...forkDefaultConfig, ...customForkConfig },
       forkLocation: 'local',
 
-      boilerplate: boilerplateDefaultConfig,
+      boilerplate: { ...boilerplateDefaultConfig, ...customBoilerplateConfig },
       boilerplateLocation: 'remote',
 
-      log: logDefaultConfig,
-      behavior: behaviorDefaultConfig,
-      swizzle: swizzleDefaultConfig,
+      log: { ...logDefaultConfig, ...customLogConfig },
+      behavior: { ...behaviorDefaultConfig, ...customBehaviorConfig },
+      swizzle: { ...swizzleDefaultConfig, ...customSwizzleConfig },
 
       ...initial
     };
@@ -74,12 +90,23 @@ export class Config {
     this.state.boilerplate = { ...this.state.boilerplate, ...value };
   }
 
-  get log(): MinimalLogConfig {
+  set fork(value: Partial<RepoConfig>) {
+    this.state.fork = { ...this.state.fork, ...value };
+  }
+
+  get log(): LogConfig {
     return this.state.log;
   }
 
-  get behavior(): MinimalBehaviorConfig {
+  get behavior(): BehaviorConfig {
     return this.state.behavior;
+  }
+
+  get swizzle(): SwizzleConfig {
+    return {
+      ...this.state.swizzle,
+      localMetadataFilePath: this.swizzleLocalMetadataFilePath,
+    };
   }
 
   get syncService(): AppConfig['syncService'] {
@@ -129,6 +156,10 @@ export class Config {
   get boilerplateSyncBranchRef(): string {
     if (!this.boilerplateIsRemote) return this.state.boilerplate.syncBranch;
     return `${this.state.boilerplate.remoteName}/${this.state.boilerplate.syncBranch}`;
+  }
+
+  get swizzleLocalMetadataFilePath() {
+    return `${this.state.swizzle.localDir}/${this.state.swizzle.metadataFileName}`;
   }
 
   set syncService(value: AppConfig['syncService']) {
