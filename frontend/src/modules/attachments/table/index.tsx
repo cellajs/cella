@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { ilike, isNull, not, or, useLiveInfiniteQuery } from '@tanstack/react-db';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -7,10 +7,9 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
-import { useElectricSyncAttachments } from '~/modules/attachments/hooks/use-electric-sync-attachments';
 import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { attachmentsCollection } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
@@ -34,7 +33,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const attachmentUpdateMutation = useAttachmentUpdateMutation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  useElectricSyncAttachments(entity.id);
   useLocalSyncAttachments(entity.id);
   useMergeLocalAttachments(entity.id, search);
 
@@ -49,18 +47,37 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const [columns, setColumns] = useState(useColumns(entity, isSheet, isCompact));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: entity.membership?.organizationId || entity.id, ...search, limit });
+  // TODO(DAVID) make offline preload
+  const collection = attachmentsCollection(entity.membership?.organizationId || entity.id);
   const {
     data: fetchedRows,
     isLoading,
-    isFetching,
-    error,
+    isError,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+    isFetchingNextPage,
+  } = useLiveInfiniteQuery(
+    (liveQuery) => {
+      return liveQuery
+        .from({ attachment: collection })
+        .where(({ attachment }) =>
+          q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
+        )
+        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+    },
+    {
+      pageSize: limit,
+      getNextPageParam: (lastPage, allPages) => {
+        const total = lastPage.length;
+        const fetchedCount = allPages.reduce((acc, page) => acc + page.length, 0);
+
+        if (fetchedCount >= total) return undefined;
+        return fetchedCount;
+      },
+    },
+    [(entity.id, sort, order, q, limit)],
+  );
+
   const rows = useOfflineTableSearch({
     data: fetchedRows,
     filterFn: ({ q }, item) => {
@@ -88,9 +105,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
 
   // isFetching already includes next page fetch scenario
   const fetchMore = useCallback(async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching]);
+    if (!hasNextPage || isLoading || isFetchingNextPage) return;
+    fetchNextPage();
+  }, [hasNextPage, isLoading, isFetchingNextPage]);
 
   const onSelectedRowsChange = (value: Set<string>) => {
     if (rows) setSelected(rows.filter((row) => value.has(row.id)));
@@ -100,7 +117,8 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
       <AttachmentsTableBar
         entity={entity}
-        queryKey={queryOptions.queryKey}
+        //TODO(DAVID) fix counter
+        queryKey={['queryKey']}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
@@ -121,9 +139,8 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           columns: columns.filter((column) => column.visible),
           enableVirtualization: false,
           limit,
-          error,
+          error: isError ? new Error(t('common:failed_to_load_attachments')) : undefined,
           isLoading,
-          isFetching,
           isFiltered: !!q,
           hasNextPage,
           fetchMore,
