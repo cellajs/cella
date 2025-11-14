@@ -93,21 +93,18 @@ export const attachmentsQueryOptions = ({
   });
 };
 
-export const attachmentsCollection = (orgIdOrSlug: string) => {
-  const params = { table: 'attachments' };
-  // TODO(DAVID) add abort
-  return createCollection(
+// TODO(DAVID) add abort
+export const attachmentsCollection = (orgIdOrSlug: string) =>
+  createCollection(
     electricCollectionOptions({
       schema: zAttachment,
       getKey: (item) => item.id,
       shapeOptions: {
         url: new URL(`/${orgIdOrSlug}/attachments/shape-proxy`, appConfig.backendUrl).href,
-        params,
+        params: { table: 'attachments' },
         backoffOptions,
         fetchClient: clientConfig.fetch,
-        // TODO(DAVID) fix storePrefix or refactor handleSyncError
-        onError: (error) => handleSyncError(error, 'storePrefix', params),
+        onError: (error) => handleSyncError(error),
       },
     }),
   );
-};
