@@ -50,17 +50,6 @@ export interface SwizzleMetadata {
 }
 
 /**
- * Custom settings to detect swizzled files using glob patterns.
- */
-export interface SwizzleSettings {
-  /** Files to treat as "removed" based on patterns */
-  removed?: string[];
-
-  /** Files to treat as "edited" based on patterns */
-  edited?: string[];
-}
-
-/**
  * Analysis of a file's swizzle state, comparing current state to metadata and settings.
  */
 export interface SwizzleAnalysis {
