@@ -10,7 +10,7 @@ export const cellaConfig: DeepPartial<AppConfig> = {
   },
 
   swizzle: {
-    metadataFileName: 'cella.metadata.json',
+    metadataFileName: 'cella.swizzled.json',
     localDir: '/home/gino/Github/cella',
     removedFiles: [
       "info/*",
