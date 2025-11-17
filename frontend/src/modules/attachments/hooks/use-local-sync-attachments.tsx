@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
@@ -17,15 +16,6 @@ export const useLocalSyncAttachments = (organizationId: string) => {
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
-
-  const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    attachmentsCollection.insert(attachments);
-    console.info('Successfully synced attachments to server:', attachments);
-
-    // Clean up offline files from IndexedDB
-    localAttachmentsCollection.delete(storedIds);
-    console.info('Successfully removed uploaded files from IndexedDB.');
-  };
 
   useEffect(() => {
     if (!isOnline || isSyncingRef.current || !appConfig.has.uploadEnabled) return;
@@ -75,8 +65,13 @@ export const useLocalSyncAttachments = (organizationId: string) => {
             if (assembly.error) throw new Error(assembly.error);
             const attachments = parseUploadedAttachments(assembly.results as UploadedUppyFile<'attachment'>, organizationId);
 
-            const ids = files.map(({ id }) => id);
-            onComplete(attachments, ids);
+            attachmentsCollection.insert(attachments);
+            console.info('Successfully synced attachments to server:', attachments);
+
+            // Clean up offline files from IndexedDB
+            localAttachmentsCollection.delete(files.map(({ id }) => id));
+            console.info('Successfully removed uploaded files from IndexedDB.');
+
             isSyncingRef.current = false;
           });
 
