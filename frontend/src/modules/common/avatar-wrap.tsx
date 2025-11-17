@@ -22,7 +22,7 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
         {...props}
         className={cn('group bg-background flex justify-center items-center rounded-md data-[type=user]:rounded-full overflow-hidden', className)}
       >
-        <Icon size={16} />
+        <Icon size={16} className="opacity-70 fill-accent" />
       </Avatar>
     );
 

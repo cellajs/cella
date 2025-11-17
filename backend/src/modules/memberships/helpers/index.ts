@@ -9,6 +9,7 @@ import { logEvent } from '#/utils/logger';
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
 };
+
 interface InsertMultipleProps<T> {
   userId: string;
   role: MembershipModel['role'];
@@ -52,7 +53,9 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
  *  the data is already deduped, normalized and valid.
  *
  * - Ensures organization membership exists for non-organization entities.
+ *   (relies on DB unique constraints + onConflictDoNothing to only insert when missing)
  * - Ensures associated parent membership exists when applicable.
+ *   (same: only inserted when missing)
  * - Inserts the target entity memberships.
  * - Computes per-user 'order' in a single grouped query and increments by 10.
  *
@@ -107,14 +110,19 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     return { targetEntitiesIdFields, baseMembership, entity };
   });
 
-  // Build organization membership rows (only for non-organization entities)
-  const orgRows = prepared
+  /**
+   * Build organization membership rows (only for non-organization entities).
+   * These are parent memberships and always get role "member".
+   * Creation is effectively "only if not existing" thanks to unique constraint + onConflictDoNothing.
+   */
+  const orgRows: InsertMembershipModel[] = prepared
     .filter(({ entity }) => entity.entityType !== 'organization')
     .map(({ baseMembership, targetEntitiesIdFields }) => {
       // Extract only organizationId (ignore other entity IDs)
       const { organizationId } = targetEntitiesIdFields;
       return {
         ...baseMembership,
+        role: 'member', // parent org membership is always 'member'
         organizationId,
         contextType: 'organization',
       } satisfies InsertMembershipModel;
@@ -133,6 +141,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
 
       return {
         ...baseMembership,
+        role: 'member', // parent/associated membership is always 'member'
         ...targetEntitiesIdFields,
         contextType: associatedType,
       } satisfies InsertMembershipModel;
