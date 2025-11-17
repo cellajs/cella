@@ -12,21 +12,19 @@ import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 // TODO(DAVID)(improvement) make uploaded attachment naming right, if it was changed during offline update it on upload
 export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
-  const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    attachmentsCollectionQuery.insert(attachments);
+    attachmentsCollection.insert(attachments);
     console.info('Successfully synced attachments to server:', attachments);
-    // TODO delete local files
+
     // Clean up offline files from IndexedDB
-    // deleteAttachments(
-    //   { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
-    //   { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
-    // );
+    localAttachmentsCollection.delete(storedIds);
+    console.info('Successfully removed uploaded files from IndexedDB.');
   };
 
   useEffect(() => {

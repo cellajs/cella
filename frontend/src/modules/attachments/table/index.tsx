@@ -1,4 +1,4 @@
-import { ilike, isNull, not, or, useLiveInfiniteQuery } from '@tanstack/react-db';
+import { ilike, isNull, not, or, useLiveInfiniteQuery, useLiveQuery } from '@tanstack/react-db';
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
@@ -9,7 +9,6 @@ import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
 import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
-import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
@@ -18,6 +17,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
+import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -29,11 +29,10 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   useLocalSyncAttachments(entity.id);
-  useMergeLocalAttachments(entity.id, search);
 
   // Table state
   const { q, sort, order } = search;
@@ -56,7 +55,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   } = useLiveInfiniteQuery(
     (liveQuery) => {
       return liveQuery
-        .from({ attachment: attachmentsCollectionQuery })
+        .from({ attachment: attachmentsCollection })
         .where(({ attachment }) =>
           q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
         )
@@ -75,8 +74,19 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [(entity.id, sort, order, q, limit)],
   );
 
+  const { data: localRows } = useLiveQuery(
+    (liveQuery) => {
+      return liveQuery
+        .from({ attachment: localAttachmentsCollection })
+        .where(({ attachment }) =>
+          q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
+        )
+        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+    },
+    [(entity.id, sort, order, q, limit)],
+  );
   const rows = useOfflineTableSearch({
-    data: fetchedRows,
+    data: [...fetchedRows, ...localRows],
     filterFn: ({ q }, item) => {
       if (!q) return true;
       const query = q.trim().toLowerCase(); // Normalize query
@@ -91,13 +101,11 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
+      const collection = isCDNUrl(attachment.url) ? attachmentsCollection : localAttachmentsCollection;
 
-      attachmentsCollectionQuery.update(attachment.id, (draft) => {
+      collection.update(attachment.id, (draft) => {
         draft.name = attachment.name;
       });
-
-      // TODO update local stored
-      // localUpdate: !isCDNUrl(attachment.url),
     }
   };
 

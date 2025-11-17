@@ -2,7 +2,7 @@ import { onlineManager, useQuery } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { attachmentsCollection } from '~/modules/attachments/query';
+import { initAttachmentsCollection, initLocalAttachmentsCollection } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
@@ -83,11 +83,11 @@ export const OrganizationAttachmentsRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   async loader({ params: { idOrSlug } }) {
-    const attachmentsCollectionQuery = attachmentsCollection(idOrSlug);
-
+    const attachmentsCollection = initAttachmentsCollection(idOrSlug);
+    const localAttachmentsCollection = initLocalAttachmentsCollection(idOrSlug);
     // TODO(DAVID) make offline preload
-    await attachmentsCollectionQuery.preload();
-    return { attachmentsCollectionQuery };
+    await Promise.all([attachmentsCollection.preload(), localAttachmentsCollection.preload()]);
+    return { attachmentsCollection, localAttachmentsCollection };
   },
   component: () => {
     const loaderData = useLoaderData({ from: OrganizationRoute.id });

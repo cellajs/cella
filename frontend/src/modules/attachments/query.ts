@@ -1,15 +1,15 @@
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
-import { createCollection } from '@tanstack/react-db';
+import { createCollection, localStorageCollectionOptions } from '@tanstack/react-db';
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import type { Attachment } from '~/api.gen';
 import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttachments, updateAttachment } from '~/api.gen';
-import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
+import { toaster } from '~/modules/common/toaster/service';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
-import { toaster } from '../common/toaster/service';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -100,11 +100,11 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
 // TODO(DAVID) add abort
-export const attachmentsCollection = (orgIdOrSlug: string) =>
+export const initAttachmentsCollection = (orgIdOrSlug: string) =>
   createCollection(
     electricCollectionOptions({
+      id: `${orgIdOrSlug}-attachments`,
       // schema: zAttachment,
-
       getKey: (item) => item.id,
       shapeOptions: {
         url: new URL(`/${orgIdOrSlug}/attachments/shape-proxy`, appConfig.backendUrl).href,
@@ -115,7 +115,6 @@ export const attachmentsCollection = (orgIdOrSlug: string) =>
       },
       onInsert: async ({ transaction }) => {
         const newAttachments = transaction.mutations.map(({ modified }) => modified);
-
         try {
           await createAttachment({ body: newAttachments, path: { orgIdOrSlug } });
           const message =
@@ -129,46 +128,61 @@ export const attachmentsCollection = (orgIdOrSlug: string) =>
         }
       },
       onUpdate: async ({ transaction }) => {
-        for (const { changes: body, original } of transaction.mutations) {
-          // if (localUpdate && name) {
-          //   const file = await LocalFileStorage.updateFileName(id, name);
-
-          //   if (!file) throw new Error(`Failed to update file name (${id}):`);
-
-          //   // TODO(IMPROVE)offline update responce(add createdAt/By, groupId into the file?)
-          //   const localAttachment: Attachment = {
-          //     id: file.id,
-          //     size: String(file.data?.size ?? 0),
-          //     url: file.preview || '',
-          //     thumbnailUrl: null,
-          //     convertedUrl: null,
-          //     contentType: file.type,
-          //     convertedContentType: null,
-          //     name: file.name || file.meta.name,
-          //     public: file.meta.public ?? false,
-          //     bucketName: file.meta.bucketName,
-          //     entityType: 'attachment',
-          //     createdAt: new Date().toISOString(),
-          //     createdBy: null,
-          //     modifiedAt: new Date().toISOString(),
-          //     modifiedBy: null,
-          //     groupId: '',
-          //     filename: file.meta.name || 'Unnamed file',
-          //     organizationId,
-          //   };
-          //   return localAttachment;
-          // }
-          try {
+        try {
+          for (const { changes: body, original } of transaction.mutations) {
             await updateAttachment({ body, path: { id: original.id, orgIdOrSlug } });
-          } catch (err) {
-            handleError('update');
           }
+        } catch (err) {
+          handleError('update');
         }
       },
       onDelete: async ({ transaction }) => {
         const ids = transaction.mutations.map(({ modified }) => modified.id);
         try {
           await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
+        } catch (err) {
+          handleError(ids.length > 1 ? 'deleteMany' : 'delete');
+        }
+      },
+    }),
+  );
+
+// TODO(DAVID) create custom events for local store ?
+export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
+  createCollection(
+    localStorageCollectionOptions({
+      id: `${orgIdOrSlug}-local-attachments`,
+      // schema: zAttachment,
+      getKey: (item) => item.id,
+      storageKey: `${appConfig.name}-local-attachments`,
+      onInsert: async ({ transaction }) => {
+        const newAttachments = transaction.mutations.map(({ modified }) => modified);
+
+        const message =
+          newAttachments.length === 1
+            ? t('common:success.create_resource', { resource: t('common:attachment') })
+            : t('common:success.create_counted_resources', { count: newAttachments.length, resources: t('common:attachments').toLowerCase() });
+
+        toaster(message, 'success');
+      },
+      onUpdate: async ({ transaction }) => {
+        try {
+          for (const { changes: body, original } of transaction.mutations) {
+            if (!body.name) continue;
+            const file = await LocalFileStorage.updateFileName(original.id, body.name);
+
+            if (!file) throw new Error(`Failed to update file name (${original.id}):`);
+
+            return { ...original, name: body.name };
+          }
+        } catch (err) {
+          handleError('update');
+        }
+      },
+      onDelete: async ({ transaction }) => {
+        const ids = transaction.mutations.map(({ modified }) => modified.id);
+        try {
+          await LocalFileStorage.removeFiles(ids);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }

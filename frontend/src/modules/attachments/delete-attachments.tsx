@@ -16,17 +16,17 @@ interface Props {
 
 const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const [isPending, setIsPending] = React.useState(false);
   const serverDeletionIds: string[] = attachments.filter(({ url }) => isCDNUrl(url)).map(({ id }) => id);
-  //TODO delete local
-  // const localDeletionIds: string[] = attachments.filter(({ url }) => !isCDNUrl(url)).map(({ id }) => id);
+  const localDeletionIds: string[] = attachments.filter(({ url }) => !isCDNUrl(url)).map(({ id }) => id);
 
   const onDelete = async () => {
     setIsPending(true);
     try {
-      attachmentsCollectionQuery.delete(serverDeletionIds);
+      attachmentsCollection.delete(serverDeletionIds);
+      localAttachmentsCollection.delete(localDeletionIds);
       callback?.({ data: attachments, status: 'success' });
     } catch (error) {
       if (error instanceof Error || error instanceof ApiError) callback?.({ status: 'fail', error });
