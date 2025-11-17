@@ -10,7 +10,6 @@ import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
 import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
-import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
@@ -19,7 +18,6 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
-import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -32,8 +30,6 @@ export interface AttachmentsTableProps {
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
   const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
-
-  const attachmentUpdateMutation = useAttachmentUpdateMutation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   useLocalSyncAttachments(entity.id);
@@ -95,12 +91,13 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
-      attachmentUpdateMutation.mutate({
-        id: attachment.id,
-        orgIdOrSlug: entity.id,
-        name: attachment.name,
-        localUpdate: !isCDNUrl(attachment.url),
+
+      attachmentsCollectionQuery.update(attachment.id, (draft) => {
+        draft.name = attachment.name;
       });
+
+      // TODO update local stored
+      // localUpdate: !isCDNUrl(attachment.url),
     }
   };
 

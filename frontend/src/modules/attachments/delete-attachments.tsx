@@ -1,36 +1,40 @@
+import { useLoaderData } from '@tanstack/react-router';
+import React from 'react';
 import type { Attachment } from '~/api.gen';
-import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
+import { ApiError } from '~/lib/api';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { EntityPage } from '~/modules/entities/types';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 interface Props {
-  entity: EntityPage;
   attachments: Attachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<Attachment[]>) => void;
 }
 
-const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
+const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation();
+  const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
-  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+  const [isPending, setIsPending] = React.useState(false);
+  const serverDeletionIds: string[] = attachments.filter(({ url }) => isCDNUrl(url)).map(({ id }) => id);
+  //TODO delete local
+  // const localDeletionIds: string[] = attachments.filter(({ url }) => !isCDNUrl(url)).map(({ id }) => id);
 
   const onDelete = async () => {
-    const localDeletionIds: string[] = [];
-    const serverDeletionIds: string[] = [];
-
-    for (const attachment of attachments) {
-      if (isCDNUrl(attachment.url)) serverDeletionIds.push(attachment.id);
-      else localDeletionIds.push(attachment.id);
+    setIsPending(true);
+    try {
+      attachmentsCollectionQuery.delete(serverDeletionIds);
+      callback?.({ data: attachments, status: 'success' });
+    } catch (error) {
+      if (error instanceof Error || error instanceof ApiError) callback?.({ status: 'fail', error });
+    } finally {
+      callback?.({ status: 'settle' });
+      if (isDialog) removeDialog();
+      setIsPending(false);
     }
-    deleteAttachments({ localDeletionIds, serverDeletionIds, orgIdOrSlug });
-
-    if (isDialog) removeDialog();
-    callback?.({ data: attachments, status: 'success' });
   };
 
   return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;

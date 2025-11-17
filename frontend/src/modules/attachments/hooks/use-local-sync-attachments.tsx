@@ -1,32 +1,32 @@
+import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 
 // TODO(DAVID)(improvement) make uploaded attachment naming right, if it was changed during offline update it on upload
 export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
-  const { mutate: createAttachments } = useAttachmentCreateMutation();
-  const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
+  const { attachmentsCollectionQuery } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachments(
-      { localCreation: false, attachments, orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('Successfully synced attachments to server:', attachments) },
-    );
+    attachmentsCollectionQuery.insert(attachments);
+    console.info('Successfully synced attachments to server:', attachments);
+    // TODO delete local files
     // Clean up offline files from IndexedDB
-    deleteAttachments(
-      { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
-    );
+    // deleteAttachments(
+    //   { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
+    //   { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
+    // );
   };
 
   useEffect(() => {
