@@ -66,7 +66,7 @@ export const useLocalSyncAttachments = (organizationId: string) => {
             if (assembly.error) throw new Error(assembly.error);
             const attachments = parseUploadedAttachments(assembly.results as UploadedUppyFile<'attachment'>, organizationId);
 
-            // TODO fix types (mb wait till v1)
+            // TODO(tanstakDB) fix types (mb wait till v1)
             attachmentsCollection.insert(attachments as unknown as Attachment[]);
             console.info('Successfully synced attachments to server:', attachments);
 

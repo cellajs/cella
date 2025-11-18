@@ -20,7 +20,7 @@ export const useAttachmentsUploadDialog = () => {
 
       const collection = appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
 
-      // TODO fix types (mb wait till v1)
+      // TODO(tanstakDB) fix types (mb wait till v1)
       collection.insert(attachments as unknown as Attachment[]);
       useUploader.getState().remove();
     };

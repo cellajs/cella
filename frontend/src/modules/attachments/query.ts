@@ -1,36 +1,17 @@
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
 import { createCollection, localStorageCollectionOptions } from '@tanstack/react-db';
-import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
+import { queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import type { Attachment } from '~/api.gen';
 import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttachments, updateAttachment } from '~/api.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
+import { AttachmentToInsert } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster/service';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
-import { AttachmentToInsert } from './types';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
-/**
- * Keys for attachments related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
-const keys = {
-  all: ['attachments'],
-  list: {
-    base: ['attachments', 'list'],
-    table: (filters: GetAttachmentsParams) => [...keys.list.base, 'table', filters],
-    similarTable: (filters: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...keys.list.base, 'table', filters],
-  },
-  create: ['attachments', 'create'],
-  update: ['attachments', 'update'],
-  delete: ['attachments', 'delete'],
-};
-
-export const attachmentsKeys = keys;
 
 /**
  * Query Options for fetching a grouped attachments.
@@ -42,7 +23,7 @@ export const attachmentsKeys = keys;
  * @returns  Query options.
  */
 export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<GetAttachmentsParams, 'attachmentId' | 'orgIdOrSlug'>) => {
-  const queryKey = attachmentsKeys.list.base;
+  const queryKey = ['attachments', 'preview'];
 
   return queryOptions({
     queryKey,
@@ -56,52 +37,11 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
   });
 };
 
-/**
- * Infinite Query Options for fetching a paginated list of attachments.
- *
- * This function returns the configuration for querying attachments from target organization with pagination support.
- *
- * @param param.orgIdOrSlug - Organization ID or slug.
- * @param param.q - Optional search query for filtering attachments.
- * @param param.sort - Field to sort by (default: 'createdAt').
- * @param param.order - Order of sorting (default: 'desc').
- * @param param.limit - Number of items per page (default: `appConfig.requestLimits.attachments`).
- * @returns Infinite query options.
- */
-export const attachmentsQueryOptions = ({
-  orgIdOrSlug,
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
-  limit: baseLimit = appConfig.requestLimits.attachments,
-}: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
-  const limit = String(baseLimit);
-
-  const baseQueryKey = attachmentsKeys.list.table({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
-  const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
-
-  return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
-      return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
-    },
-    ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<Attachment>(baseQueryKey, {
-      q,
-      sort,
-      order,
-      searchIn: ['name', 'filename'],
-      limit: baseLimit,
-    }),
-  });
-};
-
 const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
   if (action === 'deleteMany') toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
-// TODO(DAVID) add abort
+// TODO(tanstakDB) add abort
 export const initAttachmentsCollection = (orgIdOrSlug: string) =>
   createCollection(
     electricCollectionOptions({
@@ -118,7 +58,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
       onInsert: async ({ transaction }) => {
         const newAttachments = transaction.mutations.map(({ modified }) => modified);
         try {
-          // TODO fix types (mb wait till v1)
+          // TODO(tanstakDB) fix types (mb wait till v1)
           await createAttachment({ body: newAttachments as unknown as AttachmentToInsert[], path: { orgIdOrSlug } });
           const message =
             newAttachments.length === 1

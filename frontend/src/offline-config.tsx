@@ -1,4 +1,3 @@
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { UserMenuItem } from '~/modules/me/types';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
@@ -19,6 +18,7 @@ export const queriesToMap = (item: UserMenuItem) => {
       // - queryOptions to fetch the organization itself
       // - queryOptions to fetch members of the organization
       // - queryOptions to fetch attachments related to the organization
+      // TODO(tanstackDB) add attachments prefetch
       return [
         organizationQueryOptions(item.slug),
         membersQueryOptions({
@@ -26,7 +26,6 @@ export const queriesToMap = (item: UserMenuItem) => {
           orgIdOrSlug,
           entityType: item.entityType,
         }),
-        attachmentsQueryOptions({ orgIdOrSlug }),
       ];
 
     // Extend switch case for app-specific entity types ...
