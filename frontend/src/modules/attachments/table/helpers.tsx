@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { Attachment } from '~/api.gen';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
@@ -19,7 +20,8 @@ export const useAttachmentsUploadDialog = () => {
 
       const collection = appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
 
-      collection.insert(attachments);
+      // TODO fix types (mb wait till v1)
+      collection.insert(attachments as unknown as Attachment[]);
       useUploader.getState().remove();
     };
 

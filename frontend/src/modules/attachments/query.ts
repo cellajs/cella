@@ -5,11 +5,13 @@ import { appConfig } from 'config';
 import { t } from 'i18next';
 import type { Attachment } from '~/api.gen';
 import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttachments, updateAttachment } from '~/api.gen';
+import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { toaster } from '~/modules/common/toaster/service';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
+import { AttachmentToInsert } from './types';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -104,7 +106,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
   createCollection(
     electricCollectionOptions({
       id: `${orgIdOrSlug}-attachments`,
-      // schema: zAttachment,
+      schema: zAttachment,
       getKey: (item) => item.id,
       shapeOptions: {
         url: new URL(`/${orgIdOrSlug}/attachments/shape-proxy`, appConfig.backendUrl).href,
@@ -116,7 +118,8 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
       onInsert: async ({ transaction }) => {
         const newAttachments = transaction.mutations.map(({ modified }) => modified);
         try {
-          await createAttachment({ body: newAttachments, path: { orgIdOrSlug } });
+          // TODO fix types (mb wait till v1)
+          await createAttachment({ body: newAttachments as unknown as AttachmentToInsert[], path: { orgIdOrSlug } });
           const message =
             newAttachments.length === 1
               ? t('common:success.create_resource', { resource: t('common:attachment') })
@@ -152,7 +155,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
   createCollection(
     localStorageCollectionOptions({
       id: `${orgIdOrSlug}-local-attachments`,
-      // schema: zAttachment,
+      schema: zAttachment,
       getKey: (item) => item.id,
       storageKey: `${appConfig.name}-local-attachments`,
       onInsert: async ({ transaction }) => {
