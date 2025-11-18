@@ -1,3 +1,4 @@
+import { useLoaderData } from '@tanstack/react-router';
 import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
@@ -17,17 +18,16 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
-  BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & {
+  Omit<BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>, 'queryKey'> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
   entity,
-  queryKey,
   selected,
   searchVars,
   setSearch,
@@ -42,8 +42,9 @@ export const AttachmentsTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog();
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = attachmentsCollection.size + localAttachmentsCollection.size;
 
   const deleteButtonRef = useRef(null);
 
@@ -64,7 +65,7 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(<DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} />, {
+    createDialog(<DeleteAttachments dialog attachments={selected} callback={clearSelection} />, {
       id: 'delete-attachments',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

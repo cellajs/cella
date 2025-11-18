@@ -2,226 +2,20 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type {
-  CheckEmailData,
-  CheckEmailErrors,
-  CheckEmailResponses,
-  CheckSlugData,
-  CheckSlugErrors,
-  CheckSlugResponses,
-  CreateAttachmentData,
-  CreateAttachmentErrors,
-  CreateAttachmentResponses,
-  CreateOrganizationData,
-  CreateOrganizationErrors,
-  CreateOrganizationResponses,
-  CreatePasskeyData,
-  CreatePasskeyErrors,
-  CreatePasskeyResponses,
-  CreatePasswordData,
-  CreatePasswordErrors,
-  CreatePasswordResponses,
-  CreateRequestData,
-  CreateRequestErrors,
-  CreateRequestResponses,
-  CreateTotpData,
-  CreateTotpErrors,
-  CreateTotpResponses,
-  DeleteAttachmentsData,
-  DeleteAttachmentsErrors,
-  DeleteAttachmentsResponses,
-  DeleteMeData,
-  DeleteMeErrors,
-  DeleteMembershipsData,
-  DeleteMembershipsErrors,
-  DeleteMembershipsResponses,
-  DeleteMeResponses,
-  DeleteMyMembershipData,
-  DeleteMyMembershipErrors,
-  DeleteMyMembershipResponses,
-  DeleteMySessionsData,
-  DeleteMySessionsErrors,
-  DeleteMySessionsResponses,
-  DeleteOrganizationsData,
-  DeleteOrganizationsErrors,
-  DeleteOrganizationsResponses,
-  DeletePasskeyData,
-  DeletePasskeyErrors,
-  DeletePasskeyResponses,
-  DeleteRequestsData,
-  DeleteRequestsErrors,
-  DeleteRequestsResponses,
-  DeleteTotpData,
-  DeleteTotpErrors,
-  DeleteTotpResponses,
-  DeleteUsersData,
-  DeleteUsersErrors,
-  DeleteUsersResponses,
-  GeneratePasskeyChallengeData,
-  GeneratePasskeyChallengeErrors,
-  GeneratePasskeyChallengeResponses,
-  GenerateTotpKeyData,
-  GenerateTotpKeyErrors,
-  GenerateTotpKeyResponses,
-  GetAttachmentData,
-  GetAttachmentErrors,
-  GetAttachmentResponses,
-  GetAttachmentsData,
-  GetAttachmentsErrors,
-  GetAttachmentsResponses,
-  GetContextEntitiesData,
-  GetContextEntitiesErrors,
-  GetContextEntitiesResponses,
-  GetContextEntityData,
-  GetContextEntityErrors,
-  GetContextEntityResponses,
-  GetMeData,
-  GetMeErrors,
-  GetMembersData,
-  GetMembersErrors,
-  GetMembersResponses,
-  GetMeResponses,
-  GetMetricsData,
-  GetMetricsErrors,
-  GetMetricsResponses,
-  GetMyAuthData,
-  GetMyAuthErrors,
-  GetMyAuthResponses,
-  GetMyInvitationsData,
-  GetMyInvitationsErrors,
-  GetMyInvitationsResponses,
-  GetMyMenuData,
-  GetMyMenuErrors,
-  GetMyMenuResponses,
-  GetOrganizationData,
-  GetOrganizationErrors,
-  GetOrganizationResponses,
-  GetOrganizationsData,
-  GetOrganizationsErrors,
-  GetOrganizationsResponses,
-  GetPendingMembershipsData,
-  GetPendingMembershipsErrors,
-  GetPendingMembershipsResponses,
-  GetPresignedUrlData,
-  GetPresignedUrlErrors,
-  GetPresignedUrlResponses,
-  GetPublicCountsData,
-  GetPublicCountsErrors,
-  GetPublicCountsResponses,
-  GetRequestsData,
-  GetRequestsErrors,
-  GetRequestsResponses,
-  GetTokenDataData,
-  GetTokenDataErrors,
-  GetTokenDataResponses,
-  GetUploadTokenData,
-  GetUploadTokenErrors,
-  GetUploadTokenResponses,
-  GetUserData,
-  GetUserErrors,
-  GetUserResponses,
-  GetUsersData,
-  GetUsersErrors,
-  GetUsersResponses,
-  GithubCallbackData,
-  GithubCallbackErrors,
-  GithubData,
-  GithubErrors,
-  GoogleCallbackData,
-  GoogleCallbackErrors,
-  GoogleData,
-  GoogleErrors,
-  HandleMembershipInvitationData,
-  HandleMembershipInvitationErrors,
-  HandleMembershipInvitationResponses,
-  InvokeTokenData,
-  InvokeTokenErrors,
-  MembershipInviteData,
-  MembershipInviteErrors,
-  MembershipInviteResponses,
-  MicrosoftCallbackData,
-  MicrosoftCallbackErrors,
-  MicrosoftData,
-  MicrosoftErrors,
-  PaddleWebhookData,
-  PaddleWebhookErrors,
-  PaddleWebhookResponses,
-  RedirectToAttachmentData,
-  RedirectToAttachmentErrors,
-  RedirectToAttachmentResponses,
-  RequestPasswordData,
-  RequestPasswordErrors,
-  RequestPasswordResponses,
-  ResendInvitationWithTokenData,
-  ResendInvitationWithTokenErrors,
-  ResendInvitationWithTokenResponses,
-  SendNewsletterData,
-  SendNewsletterErrors,
-  SendNewsletterResponses,
-  ShapeProxyData,
-  ShapeProxyErrors,
-  ShapeProxyResponses,
-  SignInData,
-  SignInErrors,
-  SignInResponses,
-  SignInWithPasskeyData,
-  SignInWithPasskeyErrors,
-  SignInWithPasskeyResponses,
-  SignInWithTotpData,
-  SignInWithTotpErrors,
-  SignInWithTotpResponses,
-  SignOutData,
-  SignOutErrors,
-  SignOutResponses,
-  SignUpData,
-  SignUpErrors,
-  SignUpResponses,
-  SignUpWithTokenData,
-  SignUpWithTokenErrors,
-  SignUpWithTokenResponses,
-  StartImpersonationData,
-  StartImpersonationErrors,
-  StartImpersonationResponses,
-  StopImpersonationData,
-  StopImpersonationErrors,
-  StopImpersonationResponses,
-  SystemInviteData,
-  SystemInviteErrors,
-  SystemInviteResponses,
-  ToggleMfaData,
-  ToggleMfaErrors,
-  ToggleMfaResponses,
-  UnsubscribeMeData,
-  UnsubscribeMeErrors,
-  UpdateAttachmentData,
-  UpdateAttachmentErrors,
-  UpdateAttachmentResponses,
-  UpdateMeData,
-  UpdateMeErrors,
-  UpdateMembershipData,
-  UpdateMembershipErrors,
-  UpdateMembershipResponses,
-  UpdateMeResponses,
-  UpdateOrganizationData,
-  UpdateOrganizationErrors,
-  UpdateOrganizationResponses,
-  UpdateUserData,
-  UpdateUserErrors,
-  UpdateUserResponses,
-} from './types.gen';
+import type { CheckEmailData, CheckEmailErrors, CheckEmailResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CreateAttachmentData, CreateAttachmentErrors, CreateAttachmentResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreatePasskeyData, CreatePasskeyErrors, CreatePasskeyResponses, CreatePasswordData, CreatePasswordErrors, CreatePasswordResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, CreateTotpData, CreateTotpErrors, CreateTotpResponses, DeleteAttachmentsData, DeleteAttachmentsErrors, DeleteAttachmentsResponses, DeleteMeData, DeleteMeErrors, DeleteMembershipsData, DeleteMembershipsErrors, DeleteMembershipsResponses, DeleteMeResponses, DeleteMyMembershipData, DeleteMyMembershipErrors, DeleteMyMembershipResponses, DeleteMySessionsData, DeleteMySessionsErrors, DeleteMySessionsResponses, DeleteOrganizationsData, DeleteOrganizationsErrors, DeleteOrganizationsResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteRequestsData, DeleteRequestsErrors, DeleteRequestsResponses, DeleteTotpData, DeleteTotpErrors, DeleteTotpResponses, DeleteUsersData, DeleteUsersErrors, DeleteUsersResponses, GeneratePasskeyChallengeData, GeneratePasskeyChallengeErrors, GeneratePasskeyChallengeResponses, GenerateTotpKeyData, GenerateTotpKeyErrors, GenerateTotpKeyResponses, GetAttachmentData, GetAttachmentErrors, GetAttachmentResponses, GetAttachmentsData, GetAttachmentsErrors, GetAttachmentsResponses, GetContextEntitiesData, GetContextEntitiesErrors, GetContextEntitiesResponses, GetContextEntityData, GetContextEntityErrors, GetContextEntityResponses, GetMeData, GetMeErrors, GetMembersData, GetMembersErrors, GetMembersResponses, GetMeResponses, GetMetricsData, GetMetricsErrors, GetMetricsResponses, GetMyAuthData, GetMyAuthErrors, GetMyAuthResponses, GetMyInvitationsData, GetMyInvitationsErrors, GetMyInvitationsResponses, GetMyMenuData, GetMyMenuErrors, GetMyMenuResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetOrganizationsData, GetOrganizationsErrors, GetOrganizationsResponses, GetPendingMembershipsData, GetPendingMembershipsErrors, GetPendingMembershipsResponses, GetPresignedUrlData, GetPresignedUrlErrors, GetPresignedUrlResponses, GetPublicCountsData, GetPublicCountsErrors, GetPublicCountsResponses, GetRequestsData, GetRequestsErrors, GetRequestsResponses, GetTokenDataData, GetTokenDataErrors, GetTokenDataResponses, GetUploadTokenData, GetUploadTokenErrors, GetUploadTokenResponses, GetUserData, GetUserErrors, GetUserResponses, GetUsersData, GetUsersErrors, GetUsersResponses, GithubCallbackData, GithubCallbackErrors, GithubData, GithubErrors, GoogleCallbackData, GoogleCallbackErrors, GoogleData, GoogleErrors, HandleMembershipInvitationData, HandleMembershipInvitationErrors, HandleMembershipInvitationResponses, InvokeTokenData, InvokeTokenErrors, MembershipInviteData, MembershipInviteErrors, MembershipInviteResponses, MicrosoftCallbackData, MicrosoftCallbackErrors, MicrosoftData, MicrosoftErrors, PaddleWebhookData, PaddleWebhookErrors, PaddleWebhookResponses, RedirectToAttachmentData, RedirectToAttachmentErrors, RedirectToAttachmentResponses, RequestPasswordData, RequestPasswordErrors, RequestPasswordResponses, ResendInvitationWithTokenData, ResendInvitationWithTokenErrors, ResendInvitationWithTokenResponses, SendNewsletterData, SendNewsletterErrors, SendNewsletterResponses, ShapeProxyData, ShapeProxyErrors, ShapeProxyResponses, SignInData, SignInErrors, SignInResponses, SignInWithPasskeyData, SignInWithPasskeyErrors, SignInWithPasskeyResponses, SignInWithTotpData, SignInWithTotpErrors, SignInWithTotpResponses, SignOutData, SignOutErrors, SignOutResponses, SignUpData, SignUpErrors, SignUpResponses, SignUpWithTokenData, SignUpWithTokenErrors, SignUpWithTokenResponses, StartImpersonationData, StartImpersonationErrors, StartImpersonationResponses, StopImpersonationData, StopImpersonationErrors, StopImpersonationResponses, SystemInviteData, SystemInviteErrors, SystemInviteResponses, ToggleMfaData, ToggleMfaErrors, ToggleMfaResponses, UnsubscribeMeData, UnsubscribeMeErrors, UpdateAttachmentData, UpdateAttachmentErrors, UpdateAttachmentResponses, UpdateMeData, UpdateMeErrors, UpdateMembershipData, UpdateMembershipErrors, UpdateMembershipResponses, UpdateMeResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
-  /**
-   * You can provide a client instance returned by `createClient()` instead of
-   * individual options. This might be also useful if you want to implement a
-   * custom client.
-   */
-  client?: Client;
-  /**
-   * You can pass arbitrary values through the `meta` object. This can be
-   * used to access values that aren't defined as part of the SDK function.
-   */
-  meta?: Record<string, unknown>;
+    /**
+     * You can provide a client instance returned by `createClient()` instead of
+     * individual options. This might be also useful if you want to implement a
+     * custom client.
+     */
+    client?: Client;
+    /**
+     * You can pass arbitrary values through the `meta` object. This can be
+     * used to access values that aren't defined as part of the SDK function.
+     */
+    meta?: Record<string, unknown>;
 };
 
 /**
@@ -239,15 +33,15 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(options: Options<CheckEmailData, ThrowOnError>) => {
-  return (options.client ?? client).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/check-email',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/check-email',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -266,11 +60,11 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/invoke-token/{type}/{token}',
-    ...options,
-  });
+    return (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/invoke-token/{type}/{token}',
+        ...options
+    });
 };
 
 /**
@@ -289,11 +83,11 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/token/{type}/{id}',
-    ...options,
-  });
+    return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/token/{type}/{id}',
+        ...options
+    });
 };
 
 /**
@@ -310,18 +104,18 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
-  return (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/impersonation/start',
-    ...options,
-  });
+    return (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/impersonation/start',
+        ...options
+    });
 };
 
 /**
@@ -337,18 +131,18 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
-  return (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/impersonation/stop',
-    ...options,
-  });
+    return (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/impersonation/stop',
+        ...options
+    });
 };
 
 /**
@@ -365,15 +159,15 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(options: Options<ResendInvitationWithTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<ResendInvitationWithTokenResponses, ResendInvitationWithTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/resend-invitation',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<ResendInvitationWithTokenResponses, ResendInvitationWithTokenErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/resend-invitation',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -389,11 +183,11 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(o
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-out',
-    ...options,
-  });
+    return (options?.client ?? client).post<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/sign-out',
+        ...options
+    });
 };
 
 /**
@@ -409,18 +203,18 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: Options<GenerateTotpKeyData, ThrowOnError>) => {
-  return (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/totp/generate-key',
-    ...options,
-  });
+    return (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/totp/generate-key',
+        ...options
+    });
 };
 
 /**
@@ -436,18 +230,18 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/totp',
-    ...options,
-  });
+    return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/totp',
+        ...options
+    });
 };
 
 /**
@@ -464,22 +258,22 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/totp',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/totp',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -497,15 +291,15 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Options<SignInWithTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/totp-verification',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/totp-verification',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -524,15 +318,15 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 201, 302, 400, 401, 403, 404, 429
  */
 export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-up',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+    return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/sign-up',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers
+        }
+    });
 };
 
 /**
@@ -552,15 +346,15 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-up/{tokenId}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/sign-up/{tokenId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -578,15 +372,15 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const requestPassword = <ThrowOnError extends boolean = true>(options: Options<RequestPasswordData, ThrowOnError>) => {
-  return (options.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/request-password',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/request-password',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -605,15 +399,15 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options: Op
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/create-password/{tokenId}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/create-password/{tokenId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -632,15 +426,15 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signIn = <ThrowOnError extends boolean = true>(options: Options<SignInData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/sign-in',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/sign-in',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -659,22 +453,22 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/passkey',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/passkey',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -691,18 +485,18 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/auth/passkey/{id}',
-    ...options,
-  });
+    return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/auth/passkey/{id}',
+        ...options
+    });
 };
 
 /**
@@ -721,15 +515,15 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(options: Options<GeneratePasskeyChallengeData, ThrowOnError>) => {
-  return (options.client ?? client).post<GeneratePasskeyChallengeResponses, GeneratePasskeyChallengeErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/passkey/generate-challenge',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<GeneratePasskeyChallengeResponses, GeneratePasskeyChallengeErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/passkey/generate-challenge',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -752,15 +546,15 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: Options<SignInWithPasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/passkey-verification',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/passkey-verification',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -778,11 +572,11 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: 
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const github = <ThrowOnError extends boolean = true>(options?: Options<GithubData, ThrowOnError>) => {
-  return (options?.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/github',
-    ...options,
-  });
+    return (options?.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/github',
+        ...options
+    });
 };
 
 /**
@@ -800,11 +594,11 @@ export const github = <ThrowOnError extends boolean = true>(options?: Options<Gi
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const google = <ThrowOnError extends boolean = true>(options?: Options<GoogleData, ThrowOnError>) => {
-  return (options?.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/google',
-    ...options,
-  });
+    return (options?.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/google',
+        ...options
+    });
 };
 
 /**
@@ -822,11 +616,11 @@ export const google = <ThrowOnError extends boolean = true>(options?: Options<Go
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const microsoft = <ThrowOnError extends boolean = true>(options?: Options<MicrosoftData, ThrowOnError>) => {
-  return (options?.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/microsoft',
-    ...options,
-  });
+    return (options?.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/microsoft',
+        ...options
+    });
 };
 
 /**
@@ -848,11 +642,11 @@ export const microsoft = <ThrowOnError extends boolean = true>(options?: Options
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const githubCallback = <ThrowOnError extends boolean = true>(options: Options<GithubCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/github/callback',
-    ...options,
-  });
+    return (options.client ?? client).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/github/callback',
+        ...options
+    });
 };
 
 /**
@@ -871,11 +665,11 @@ export const githubCallback = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const googleCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/google/callback',
-    ...options,
-  });
+    return (options.client ?? client).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/google/callback',
+        ...options
+    });
 };
 
 /**
@@ -894,11 +688,11 @@ export const googleCallback = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const microsoftCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/microsoft/callback',
-    ...options,
-  });
+    return (options.client ?? client).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/auth/microsoft/callback',
+        ...options
+    });
 };
 
 /**
@@ -914,18 +708,18 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<DeleteMeData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me',
-    ...options,
-  });
+    return (options?.client ?? client).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me',
+        ...options
+    });
 };
 
 /**
@@ -941,18 +735,18 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMe = <ThrowOnError extends boolean = true>(options?: Options<GetMeData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me',
+        ...options
+    });
 };
 
 /**
@@ -976,22 +770,22 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(options: Options<UpdateMeData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1010,22 +804,22 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options<ToggleMfaData, ThrowOnError>) => {
-  return (options?.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/mfa',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+    return (options?.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/mfa',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers
+        }
+    });
 };
 
 /**
@@ -1041,18 +835,18 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options<GetMyAuthData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/auth',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/auth',
+        ...options
+    });
 };
 
 /**
@@ -1068,18 +862,18 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options<GetMyMenuData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/menu',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/menu',
+        ...options
+    });
 };
 
 /**
@@ -1095,18 +889,18 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: Options<GetMyInvitationsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/invitations',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/invitations',
+        ...options
+    });
 };
 
 /**
@@ -1123,22 +917,22 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: Options<DeleteMySessionsData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/sessions',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+    return (options?.client ?? client).delete<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/sessions',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers
+        }
+    });
 };
 
 /**
@@ -1156,18 +950,18 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteMyMembership = <ThrowOnError extends boolean = true>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/leave',
-    ...options,
-  });
+    return (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/leave',
+        ...options
+    });
 };
 
 /**
@@ -1186,18 +980,18 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUploadToken = <ThrowOnError extends boolean = true>(options: Options<GetUploadTokenData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/upload-token',
-    ...options,
-  });
+    return (options.client ?? client).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/me/upload-token',
+        ...options
+    });
 };
 
 /**
@@ -1215,11 +1009,11 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/unsubscribe',
-    ...options,
-  });
+    return (options.client ?? client).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/me/unsubscribe',
+        ...options
+    });
 };
 
 /**
@@ -1236,22 +1030,22 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteUsers = <ThrowOnError extends boolean = true>(options: Options<DeleteUsersData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/users',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1276,18 +1070,18 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/users',
+        ...options
+    });
 };
 
 /**
@@ -1304,18 +1098,18 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users/{idOrSlug}',
-    ...options,
-  });
+    return (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/users/{idOrSlug}',
+        ...options
+    });
 };
 
 /**
@@ -1339,22 +1133,22 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/users/{idOrSlug}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/users/{idOrSlug}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1371,22 +1165,22 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteOrganizations = <ThrowOnError extends boolean = true>(options: Options<DeleteOrganizationsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/organizations',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1407,18 +1201,18 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganizations = <ThrowOnError extends boolean = true>(options?: Options<GetOrganizationsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/organizations',
+        ...options
+    });
 };
 
 /**
@@ -1436,22 +1230,22 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createOrganization = <ThrowOnError extends boolean = true>(options: Options<CreateOrganizationData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/organizations',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1468,18 +1262,18 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations/{idOrSlug}',
-    ...options,
-  });
+    return (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/organizations/{idOrSlug}',
+        ...options
+    });
 };
 
 /**
@@ -1513,22 +1307,22 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateOrganization = <ThrowOnError extends boolean = true>(options: Options<UpdateOrganizationData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations/{idOrSlug}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/organizations/{idOrSlug}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1558,18 +1352,18 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getContextEntities = <ThrowOnError extends boolean = true>(options?: Options<GetContextEntitiesData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/context-entities',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/entities/context-entities',
+        ...options
+    });
 };
 
 /**
@@ -1588,18 +1382,18 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getContextEntity = <ThrowOnError extends boolean = true>(options: Options<GetContextEntityData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetContextEntityResponses, GetContextEntityErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/context/{idOrSlug}',
-    ...options,
-  });
+    return (options.client ?? client).get<GetContextEntityResponses, GetContextEntityErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/entities/context/{idOrSlug}',
+        ...options
+    });
 };
 
 /**
@@ -1618,22 +1412,22 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<CheckSlugData, ThrowOnError>) => {
-  return (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/check-slug',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/entities/check-slug',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1650,22 +1444,22 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const systemInvite = <ThrowOnError extends boolean = true>(options: Options<SystemInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system/invite',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/system/invite',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1683,11 +1477,11 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/system/presigned-url',
-    ...options,
-  });
+    return (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/system/presigned-url',
+        ...options
+    });
 };
 
 /**
@@ -1704,15 +1498,15 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
-  return (options?.client ?? client).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/system/paddle-webhook',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+    return (options?.client ?? client).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/system/paddle-webhook',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers
+        }
+    });
 };
 
 /**
@@ -1733,22 +1527,22 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Options<SendNewsletterData, ThrowOnError>) => {
-  return (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system/newsletter',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/system/newsletter',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1765,22 +1559,22 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteRequests = <ThrowOnError extends boolean = true>(options: Options<DeleteRequestsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/requests',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/requests',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1801,18 +1595,18 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getRequests = <ThrowOnError extends boolean = true>(options?: Options<GetRequestsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/requests',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/requests',
+        ...options
+    });
 };
 
 /**
@@ -1832,15 +1626,15 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(options: Options<CreateRequestData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/requests',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/requests',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1857,18 +1651,18 @@ export const createRequest = <ThrowOnError extends boolean = true>(options: Opti
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMetrics = <ThrowOnError extends boolean = true>(options?: Options<GetMetricsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/metrics',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/metrics',
+        ...options
+    });
 };
 
 /**
@@ -1885,11 +1679,11 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/metrics/public',
-    ...options,
-  });
+    return (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/metrics/public',
+        ...options
+    });
 };
 
 /**
@@ -1914,18 +1708,18 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
-  return (options.client ?? client).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/shape-proxy',
-    ...options,
-  });
+    return (options.client ?? client).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/attachments/shape-proxy',
+        ...options
+    });
 };
 
 /**
@@ -1943,22 +1737,22 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/attachments',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -1981,18 +1775,18 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments',
-    ...options,
-  });
+    return (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/attachments',
+        ...options
+    });
 };
 
 /**
@@ -2009,22 +1803,22 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createAttachment = <ThrowOnError extends boolean = true>(options: Options<CreateAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/attachments',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -2042,18 +1836,18 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/{id}',
-    ...options,
-  });
+    return (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/attachments/{id}',
+        ...options
+    });
 };
 
 /**
@@ -2073,22 +1867,22 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/attachments/{id}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -2106,11 +1900,11 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const redirectToAttachment = <ThrowOnError extends boolean = true>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/{orgIdOrSlug}/attachments/{id}/link',
-    ...options,
-  });
+    return (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        url: '/{orgIdOrSlug}/attachments/{id}/link',
+        ...options
+    });
 };
 
 /**
@@ -2130,22 +1924,22 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteMemberships = <ThrowOnError extends boolean = true>(options: Options<DeleteMembershipsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/memberships',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/memberships',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -2166,22 +1960,22 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const membershipInvite = <ThrowOnError extends boolean = true>(options: Options<MembershipInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/memberships',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/memberships',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -2203,22 +1997,22 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMembership = <ThrowOnError extends boolean = true>(options: Options<UpdateMembershipData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/memberships/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+    return (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/memberships/{id}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -2237,18 +2031,18 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(options: Options<HandleMembershipInvitationData, ThrowOnError>) => {
-  return (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
-    ...options,
-  });
+    return (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
+        ...options
+    });
 };
 
 /**
@@ -2273,18 +2067,18 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMembers = <ThrowOnError extends boolean = true>(options: Options<GetMembersData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/memberships/members',
-    ...options,
-  });
+    return (options.client ?? client).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/memberships/members',
+        ...options
+    });
 };
 
 /**
@@ -2308,16 +2102,16 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPendingMemberships = <ThrowOnError extends boolean = true>(options: Options<GetPendingMembershipsData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/memberships/pending',
-    ...options,
-  });
+    return (options.client ?? client).get<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
+        security: [
+            {
+                in: 'cookie',
+                name: 'cella-development-session-v1',
+                type: 'apiKey'
+            }
+        ],
+        url: '/{orgIdOrSlug}/memberships/pending',
+        ...options
+    });
 };

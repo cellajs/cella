@@ -85,6 +85,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     },
     [(entity.id, sort, order, q, limit)],
   );
+
   const rows = useOfflineTableSearch({
     data: [...fetchedRows, ...localRows],
     filterFn: ({ q }, item) => {
@@ -123,8 +124,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
       <AttachmentsTableBar
         entity={entity}
-        //TODO(DAVID) fix counter
-        queryKey={['queryKey']}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
