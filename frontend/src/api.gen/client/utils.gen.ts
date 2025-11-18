@@ -3,18 +3,11 @@
 import { getAuthToken } from '../core/auth.gen';
 import type { QuerySerializerOptions } from '../core/bodySerializer.gen';
 import { jsonBodySerializer } from '../core/bodySerializer.gen';
-import {
-  serializeArrayParam,
-  serializeObjectParam,
-  serializePrimitiveParam,
-} from '../core/pathSerializer.gen';
+import { serializeArrayParam, serializeObjectParam, serializePrimitiveParam } from '../core/pathSerializer.gen';
 import { getUrl } from '../core/utils.gen';
 import type { Client, ClientOptions, Config, RequestOptions } from './types.gen';
 
-export const createQuerySerializer = <T = unknown>({
-  parameters = {},
-  ...args
-}: QuerySerializerOptions = {}) => {
+export const createQuerySerializer = <T = unknown>({ parameters = {}, ...args }: QuerySerializerOptions = {}) => {
   const querySerializer = (queryParams: T) => {
     const search: string[] = [];
     if (queryParams && typeof queryParams === 'object') {
@@ -65,9 +58,7 @@ export const createQuerySerializer = <T = unknown>({
 /**
  * Infers parseAs value from provided Content-Type header.
  */
-export const getParseAs = (
-  contentType: string | null,
-): Exclude<Config['parseAs'], 'auto'> => {
+export const getParseAs = (contentType: string | null): Exclude<Config['parseAs'], 'auto'> => {
   if (!contentType) {
     // If no Content-Type header is provided, the best we can do is return the raw response body,
     // which is effectively the same as the 'stream' option.
@@ -80,10 +71,7 @@ export const getParseAs = (
     return;
   }
 
-  if (
-    cleanContent.startsWith('application/json') ||
-    cleanContent.endsWith('+json')
-  ) {
+  if (cleanContent.startsWith('application/json') || cleanContent.endsWith('+json')) {
     return 'json';
   }
 
@@ -91,11 +79,7 @@ export const getParseAs = (
     return 'formData';
   }
 
-  if (
-    ['application/', 'audio/', 'image/', 'video/'].some((type) =>
-      cleanContent.startsWith(type),
-    )
-  ) {
+  if (['application/', 'audio/', 'image/', 'video/'].some((type) => cleanContent.startsWith(type))) {
     return 'blob';
   }
 
@@ -115,11 +99,7 @@ const checkForExistence = (
   if (!name) {
     return false;
   }
-  if (
-    options.headers.has(name) ||
-    options.query?.[name] ||
-    options.headers.get('Cookie')?.includes(`${name}=`)
-  ) {
+  if (options.headers.has(name) || options.query?.[name] || options.headers.get('Cookie')?.includes(`${name}=`)) {
     return true;
   }
   return false;
@@ -168,10 +148,7 @@ export const buildUrl: Client['buildUrl'] = (options) =>
     baseUrl: options.baseUrl as string,
     path: options.path,
     query: options.query,
-    querySerializer:
-      typeof options.querySerializer === 'function'
-        ? options.querySerializer
-        : createQuerySerializer(options.querySerializer),
+    querySerializer: typeof options.querySerializer === 'function' ? options.querySerializer : createQuerySerializer(options.querySerializer),
     url: options.url,
   });
 
@@ -192,19 +169,14 @@ const headersEntries = (headers: Headers): Array<[string, string]> => {
   return entries;
 };
 
-export const mergeHeaders = (
-  ...headers: Array<Required<Config>['headers'] | undefined>
-): Headers => {
+export const mergeHeaders = (...headers: Array<Required<Config>['headers'] | undefined>): Headers => {
   const mergedHeaders = new Headers();
   for (const header of headers) {
     if (!header) {
       continue;
     }
 
-    const iterator =
-      header instanceof Headers
-        ? headersEntries(header)
-        : Object.entries(header);
+    const iterator = header instanceof Headers ? headersEntries(header) : Object.entries(header);
 
     for (const [key, value] of iterator) {
       if (value === null) {
@@ -216,33 +188,18 @@ export const mergeHeaders = (
       } else if (value !== undefined) {
         // assume object headers are meant to be JSON stringified, i.e. their
         // content value in OpenAPI specification is 'application/json'
-        mergedHeaders.set(
-          key,
-          typeof value === 'object' ? JSON.stringify(value) : (value as string),
-        );
+        mergedHeaders.set(key, typeof value === 'object' ? JSON.stringify(value) : (value as string));
       }
     }
   }
   return mergedHeaders;
 };
 
-type ErrInterceptor<Err, Res, Req, Options> = (
-  error: Err,
-  response: Res,
-  request: Req,
-  options: Options,
-) => Err | Promise<Err>;
+type ErrInterceptor<Err, Res, Req, Options> = (error: Err, response: Res, request: Req, options: Options) => Err | Promise<Err>;
 
-type ReqInterceptor<Req, Options> = (
-  request: Req,
-  options: Options,
-) => Req | Promise<Req>;
+type ReqInterceptor<Req, Options> = (request: Req, options: Options) => Req | Promise<Req>;
 
-type ResInterceptor<Res, Req, Options> = (
-  response: Res,
-  request: Req,
-  options: Options,
-) => Res | Promise<Res>;
+type ResInterceptor<Res, Req, Options> = (response: Res, request: Req, options: Options) => Res | Promise<Res>;
 
 class Interceptors<Interceptor> {
   fns: Array<Interceptor | null> = [];
@@ -270,10 +227,7 @@ class Interceptors<Interceptor> {
     return this.fns.indexOf(id);
   }
 
-  update(
-    id: number | Interceptor,
-    fn: Interceptor,
-  ): number | Interceptor | false {
+  update(id: number | Interceptor, fn: Interceptor): number | Interceptor | false {
     const index = this.getInterceptorIndex(id);
     if (this.fns[index]) {
       this.fns[index] = fn;
@@ -294,12 +248,7 @@ export interface Middleware<Req, Res, Err, Options> {
   response: Interceptors<ResInterceptor<Res, Req, Options>>;
 }
 
-export const createInterceptors = <Req, Res, Err, Options>(): Middleware<
-  Req,
-  Res,
-  Err,
-  Options
-> => ({
+export const createInterceptors = <Req, Res, Err, Options>(): Middleware<Req, Res, Err, Options> => ({
   error: new Interceptors<ErrInterceptor<Err, Res, Req, Options>>(),
   request: new Interceptors<ReqInterceptor<Req, Options>>(),
   response: new Interceptors<ResInterceptor<Res, Req, Options>>(),

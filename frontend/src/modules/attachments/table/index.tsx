@@ -86,6 +86,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [(entity.id, sort, order, q, limit)],
   );
 
+  // TODO add ordering
   const rows = useOfflineTableSearch({
     data: [...fetchedRows, ...localRows],
     filterFn: ({ q }, item) => {
