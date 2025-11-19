@@ -5,6 +5,7 @@ import { generateContextEntityTypeFields } from '#/db/utils/generate-context-ent
 import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { tokensTable } from './tokens';
 
 const roleEnum = appConfig.roles.entityRoles;
 
@@ -14,7 +15,9 @@ const baseColumns = {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
+  email: varchar().notNull(),
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+  tokenId: varchar().references(() => tokensTable.id, { onDelete: 'set null' }),
   role: varchar({ enum: roleEnum }).notNull().default('member'),
   rejectedAt: timestamp({ mode: 'string' }),
   createdBy: varchar()

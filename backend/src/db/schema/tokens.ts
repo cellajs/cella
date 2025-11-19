@@ -1,6 +1,5 @@
 import { appConfig } from 'config';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -10,7 +9,9 @@ const tokenTypeEnum = appConfig.tokenTypes;
 
 /**
  * Tokens table contains tokens of different types: email verification, invitation, password reset.
- * A token is always related to a userId. It can also be related to an entityId (e.g. organizationId, projectId, etc.).
+ * Users can have multiple tokens of different types. Users can also have multiple tokens of the same type (e.g., multiple password reset requests).
+ * Tokens can be associated with an email, user, oauth account, or inactive membership. Invoking a token marks it as used by setting invokedAt and creates a singleUseToken.
+ * Tokens can expire based on expiresAt. TODO: implement cleanup of expired tokens 30 days after expiration.
  *
  * @link http://localhost:4000/docs#tag/tokens
  */
@@ -23,7 +24,7 @@ export const tokensTable = pgTable('tokens', {
   email: varchar().notNull(),
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
-  inactiveMembershipId: varchar().references(() => inactiveMembershipsTable.id, { onDelete: 'cascade' }),
+  inactiveMembershipId: varchar(),
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   expiresAt: timestampColumns.expiresAt,
   invokedAt: timestamp({ withTimezone: true, mode: 'date' }),

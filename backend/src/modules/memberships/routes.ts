@@ -98,7 +98,7 @@ const membershipRoutes = {
     method: 'post',
     path: '/{id}/{acceptOrReject}',
     guard: [isAuthenticated],
-    tags: ['membership'],
+    tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }) },

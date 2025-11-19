@@ -2228,7 +2228,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
- * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/memberships/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _memberships_
  *
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`

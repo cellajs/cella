@@ -117,7 +117,9 @@ export type InactiveMembership = {
   createdAt: string;
   id: string;
   contextType: 'organization';
+  email: string;
   userId: string | null;
+  tokenId: string | null;
   role: 'member' | 'admin';
   rejectedAt: string | null;
   createdBy: string;

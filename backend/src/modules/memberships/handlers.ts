@@ -77,6 +77,9 @@ const membershipRouteHandlers = app
     const existingUsersToDirectAdd: Array<{ userId: string; email: string }> = []; // Scenario 2b: existing users with active org membership to directly add
     const newUserTokenEmails: string[] = []; // Scenario 3: new users -> create token + email with token
 
+    // we'll collect all inactive memberships here and insert once later
+    const inactiveMembershipsToInsert: any[] = [];
+
     // Step 0: Email meta for outgoing messages
     const lng = appConfig.defaultLanguage;
     const senderName = user.name;
@@ -95,6 +98,7 @@ const membershipRouteHandlers = app
         membershipId: membershipsTable.id, // nullable if no membership
         inactiveMembershipId: inactiveMembershipsTable.id, // nullable if no inactive membership
         orgMembershipId: orgMemberships.id,
+        tokenId: tokensTable.id, // include token via join (pending invitations)
       })
       .from(emailsTable)
       .leftJoin(usersTable, eq(usersTable.id, emailsTable.userId))
@@ -106,14 +110,17 @@ const membershipRouteHandlers = app
           eq(membershipsTable[targetEntityIdField], entityId),
         ),
       )
+      // join inactiveMemberships by userId OR email so we also see email-only invites
       .leftJoin(
         inactiveMembershipsTable,
         and(
-          eq(inactiveMembershipsTable.userId, usersTable.id),
           eq(inactiveMembershipsTable.contextType, entityType),
           eq(inactiveMembershipsTable[targetEntityIdField], entityId),
+          or(eq(inactiveMembershipsTable.userId, usersTable.id), eq(inactiveMembershipsTable.email, emailsTable.email)),
         ),
       )
+      // join tokens using inactiveMemberships.tokenId (type 'invitation' only)
+      .leftJoin(tokensTable, and(eq(tokensTable.id, inactiveMembershipsTable.tokenId), eq(tokensTable.type, 'invitation')))
       .leftJoin(
         orgMemberships,
         and(
@@ -123,17 +130,6 @@ const membershipRouteHandlers = app
         ),
       )
       .where(and(inArray(emailsTable.email, normalizedEmails)));
-
-    // Get tokens too because some inactive memberships are linked to tokens, not usersTable/emailsTable
-    const tokenRows = await db
-      .select({
-        email: tokensTable.email,
-        inactiveMembershipId: tokensTable.inactiveMembershipId,
-      })
-      .from(tokensTable)
-      .where(and(inArray(tokensTable.email, normalizedEmails), eq(tokensTable.type, 'invitation')));
-
-    const pendingInvitationEmails = new Set(tokenRows.map((r) => r.email));
 
     // Step 1b: Index rows by email in emailsTable (handle potential duplicates defensively)
     const rowsByEmail = new Map<string, typeof membershipAwareRows>();
@@ -146,7 +142,7 @@ const membershipRouteHandlers = app
 
       const hasActiveMembership = rows.some((r) => r.membershipId);
       const hasUserInactiveMembership = rows.some((r) => r.inactiveMembershipId);
-      const hasTokenInvite = pendingInvitationEmails.has(email);
+      const hasTokenInvite = rows.some((r) => r.tokenId); // from joined tokens
 
       // Scenario 1: already has active membership → skip
       if (hasActiveMembership) {
@@ -184,9 +180,9 @@ const membershipRouteHandlers = app
     }
 
     // Step 2: Bulk create memberships
-    // For Scenario 2a (existing users to activate)
+    // For Scenario 2a we collect inactive memberships to insert later in one bulk call
     if (existingUsersToActivate.length > 0) {
-      const membershipsToInsert = existingUsersToActivate.map(({ userId }) => ({
+      const membershipsForExistingUsers = existingUsersToActivate.map(({ userId }) => ({
         userId,
         role,
         entity,
@@ -195,8 +191,9 @@ const membershipRouteHandlers = app
         ...getBaseMembershipEntityId(entity),
       }));
 
-      await db.insert(inactiveMembershipsTable).values(membershipsToInsert);
+      inactiveMembershipsToInsert.push(...membershipsForExistingUsers);
     }
+
     // For Scenario 2b (existing users to directly add)
     if (existingUsersToDirectAdd.length > 0) {
       const membershipsToInsert = existingUsersToDirectAdd.map(({ userId }) => ({
@@ -223,37 +220,29 @@ const membershipRouteHandlers = app
       }),
     ];
 
-    // Step 4: Prepare inactive memberships for new users and generate tokens
-    const membershipsToInsert = newUserTokenEmails.map((email) => ({
-      email,
-      id: nanoid(),
-      role,
-      entity,
-      createdBy: user.id,
-      contextType: entityType,
-      ...getBaseMembershipEntityId(entity),
-    }));
-
-    if (newUserTokenEmails.length > 0) await db.insert(inactiveMembershipsTable).values(membershipsToInsert).returning();
-
     // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (new users)
+
+    // 🔑 NEW: pre-generate inactiveMembership IDs for new users (to break the circular ref)
+    const newUserInactiveMembershipIdsByEmail = new Map<string, string>();
+    for (const email of newUserTokenEmails) {
+      newUserInactiveMembershipIdsByEmail.set(email, nanoid());
+    }
+
     const rawTokens: Array<{ email: string; raw: string }> = [];
     const tokensToInsert = newUserTokenEmails.map((email) => {
-      // Step 4a: Generate raw + hashed token
       const raw = nanoid(40);
       const hashed = encodeLowerCased(raw);
       rawTokens.push({ email, raw });
 
-      // Step 4b: Build token record (membership for new users is deferred upon using the token session)
       return {
         token: hashed,
         type: 'invitation' as const,
         email,
-        inactiveMembershipId: membershipsToInsert.find((m) => m.email === email)!.id,
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
         role,
         entityType,
+        inactiveMembershipId: newUserInactiveMembershipIdsByEmail.get(email)!,
         ...getBaseMembershipEntityId(entity),
       };
     });
@@ -261,10 +250,12 @@ const membershipRouteHandlers = app
     // Step 5: Insert tokens in bulk (Scenario 3)
     let insertedTokens: Array<{ id: string; email: string; token: string; type: string }> = [];
     if (tokensToInsert.length > 0) {
-      insertedTokens = await db
-        .insert(tokensTable)
-        .values(tokensToInsert)
-        .returning({ id: tokensTable.id, email: tokensTable.email, token: tokensTable.token, type: tokensTable.type });
+      insertedTokens = await db.insert(tokensTable).values(tokensToInsert).returning({
+        id: tokensTable.id,
+        email: tokensTable.email,
+        token: tokensTable.token,
+        type: tokensTable.type,
+      });
 
       // Step 5b: Link waitlist requests to new tokens (if any)
       // TODO consider dropping this to simplify
@@ -276,6 +267,28 @@ const membershipRouteHandlers = app
             .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'))),
         ),
       );
+    }
+
+    // Step 5c – create inactive memberships for Scenario 2a + 3 in one bulk insert
+    if (newUserTokenEmails.length > 0 && insertedTokens.length > 0) {
+      const tokensByEmail = new Map(insertedTokens.map((t) => [t.email, t.id]));
+
+      const newUserInactiveMemberships = newUserTokenEmails.map((email) => ({
+        id: newUserInactiveMembershipIdsByEmail.get(email)!, // use pre-generated ID
+        email,
+        role,
+        entity,
+        createdBy: user.id,
+        contextType: entityType,
+        tokenId: tokensByEmail.get(email)!, // link inactive membership → token
+        ...getBaseMembershipEntityId(entity),
+      }));
+
+      inactiveMembershipsToInsert.push(...newUserInactiveMemberships);
+    }
+
+    if (inactiveMembershipsToInsert.length > 0) {
+      await db.insert(inactiveMembershipsTable).values(inactiveMembershipsToInsert);
     }
 
     // Step 6: Prepare "with-token" recipients (Scenario 3)
@@ -312,7 +325,8 @@ const membershipRouteHandlers = app
         user.email,
       );
     }
-    // // Check create restrictions
+
+    // // TODO: what is the status of this code? Check create restrictions
     // const [{ currentOrgMemberships }] = await db
     //   .select({ currentOrgMemberships: count() })
     //   .from(membershipsTable)
@@ -329,6 +343,7 @@ const membershipRouteHandlers = app
 
     return ctx.json({ success: invitesSentCount > 0, rejectedItems, invitesSentCount }, 200);
   })
+
   /**
    * Delete memberships to remove users from entity
    * When user is allowed to delete entity, they can delete memberships too
