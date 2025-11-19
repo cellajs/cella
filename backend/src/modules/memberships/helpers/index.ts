@@ -3,6 +3,7 @@ import { inArray, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';
+import { eventManager } from '#/lib/events';
 import { MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { logEvent } from '#/utils/logger';
 
@@ -176,6 +177,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     const entityIdField = appConfig.entityIdFields[entityType];
     const entityId = row[entityIdField];
     logEvent('info', `User added to ${entityType}`, { userId: row.userId, [entityIdField]: entityId });
+    eventManager.emit('instantMembershipCreation', row);
   }
 
   // Return inserted target rows to the caller

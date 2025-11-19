@@ -30,7 +30,6 @@ export const zMembershipBase = z.object({
   muted: z.boolean(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
-  uniqueKey: z.string(),
 });
 
 export const zUser = z.object({

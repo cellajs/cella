@@ -16,6 +16,7 @@ export const membershipBaseSchema = membershipSchema
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
+    uniqueKey: true,
   })
   .openapi('MembershipBase');
 

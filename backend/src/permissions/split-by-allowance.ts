@@ -2,7 +2,7 @@ import type { EntityType } from 'config';
 import { getContextUserSystemRole } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import permissionManager, { type PermittedAction } from '#/permissions/permissions-config';
+import permissionManager, { type EntityAction } from '#/permissions/permissions-config';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
@@ -16,7 +16,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @param memberships - The user's memberships.
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
-export const splitByAllowance = async (action: PermittedAction, entityType: EntityType, ids: string[], memberships: MembershipBaseModel[]) => {
+export const splitByAllowance = async (action: EntityAction, entityType: EntityType, ids: string[], memberships: MembershipBaseModel[]) => {
   const userSystemRole = getContextUserSystemRole();
 
   // Resolve entities

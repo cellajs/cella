@@ -32,7 +32,6 @@ export type MembershipBase = {
   muted: boolean;
   order: number;
   organizationId: string;
-  uniqueKey: string;
 };
 
 export type User = {

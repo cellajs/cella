@@ -2,7 +2,7 @@ import { appConfig, type ContextEntityType, type ProductEntityType } from 'confi
 import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import type { PermittedAction } from '#/permissions/permissions-config';
+import type { EntityAction } from '#/permissions/permissions-config';
 import permissionManager from '#/permissions/permissions-config';
 
 /**
@@ -24,7 +24,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   idOrSlug: string,
   entityType: K,
   contextEntityType: ContextEntityType,
-  action: Exclude<PermittedAction, 'create'>,
+  action: Exclude<EntityAction, 'create'>,
 ): Promise<EntityModel<K>> => {
   // Get current user role and memberships from request context
   const userSystemRole = getContextUserSystemRole();

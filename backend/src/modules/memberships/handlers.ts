@@ -260,7 +260,7 @@ const membershipRouteHandlers = app
       });
 
       // Step 5b: Link waitlist requests to new tokens (if any)
-      // TODO consider dropping this to simplify
+      // TODO: This should be handled by eventManager in requests module itself
       await Promise.all(
         insertedTokens.map(({ id, email }) =>
           db
