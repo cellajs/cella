@@ -32,6 +32,7 @@ export type MembershipBase = {
   muted: boolean;
   order: number;
   organizationId: string;
+  uniqueKey: string;
 };
 
 export type User = {
@@ -111,6 +112,7 @@ export type Membership = {
   muted: boolean;
   order: number;
   organizationId: string;
+  uniqueKey: string;
 };
 
 export type InactiveMembership = {
@@ -124,6 +126,7 @@ export type InactiveMembership = {
   rejectedAt: string | null;
   createdBy: string;
   organizationId: string;
+  uniqueKey: string;
 };
 
 export type Attachment = {

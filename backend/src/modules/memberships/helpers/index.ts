@@ -125,6 +125,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
         role: 'member', // parent org membership is always 'member'
         organizationId,
         contextType: 'organization',
+        uniqueKey: `${baseMembership.userId}-${organizationId}`,
       } satisfies InsertMembershipModel;
     });
 
@@ -144,6 +145,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
         role: 'member', // parent/associated membership is always 'member'
         ...targetEntitiesIdFields,
         contextType: associatedType,
+        uniqueKey: `${baseMembership.userId}-${targetEntitiesIdFields[appConfig.entityIdFields[associatedType]]}`,
       } satisfies InsertMembershipModel;
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -153,6 +155,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     ...baseMembership,
     contextType: entity.entityType,
     ...targetEntitiesIdFields,
+    uniqueKey: `${baseMembership.userId}-${targetEntitiesIdFields[appConfig.entityIdFields[entity.entityType]]}`,
   }));
 
   const [insertedTarget] = await Promise.all([

@@ -38,17 +38,20 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const membershipRouteHandlers = app
   /**
    * Create memberships (invite members) for an entity such as an organization or project, by list of emails.
-   * It will create multiple (inactive) memberships for each user and each entity if the entity has associated (parent) entities.
-   * For example, inviting a user to a project creates an inactive project membership but it will also create an
-   * inactive organization membership if the user is not already a member of the associated organization.
+   * It will create multiple  memberships for each user and each entity if the entity has associated (parent) entities.
+   * For example, inviting a user to a project create an
+   * inactive organization membership if the user is not already a member of the associated organization. However,
+   * if the user is already an active member of the organization, only a direct project membership is created.
+   * 
+   * When an inactive membership is created, an invitation token is also created and emailed to the user. 
    * 
    * | Scenario | Description                                        | (Inactive) Memberships?       | Token?     |
      | -------- | -------------------------------------------------- | ----------------------------- | ---------- |
      | **1**    | Already has active membership → skip               | ❌                             | ❌         |
      | **1b**   | Has inactive membership → reminder only            | ❌                             | ❌         |
-     | **2**    | Existing user but no (org) membership yet          | ✅  inactive membership(s)     | ❌         |
+     | **2a**   | Existing user but no (org) membership yet          | ✅  inactive membership        | ❌         |
      | **2b**   | Existing user with active org membership           | ✅  direct membership          | ❌         |
-     | **3**    | New email address (no user in system)              | ✅  inactive membership(s)     | ✅         |
+     | **3**    | New email address (no user in system)              | ✅  inactive membership        | ✅         |
    */
   .openapi(membershipRoutes.createMemberships, async (ctx) => {
     // Step 0: Parse and normalize input
@@ -182,16 +185,17 @@ const membershipRouteHandlers = app
     // Step 2: Bulk create memberships
     // For Scenario 2a we collect inactive memberships to insert later in one bulk call
     if (existingUsersToActivate.length > 0) {
-      const membershipsForExistingUsers = existingUsersToActivate.map(({ userId }) => ({
+      const inactiveMembershipsForExistingUsers = existingUsersToActivate.map(({ userId }) => ({
         userId,
         role,
         entity,
         createdBy: user.id,
         contextType: entityType,
+        uniqueKey: `${userId}-${entityId}`,
         ...getBaseMembershipEntityId(entity),
       }));
 
-      inactiveMembershipsToInsert.push(...membershipsForExistingUsers);
+      inactiveMembershipsToInsert.push(...inactiveMembershipsForExistingUsers);
     }
 
     // For Scenario 2b (existing users to directly add)
@@ -222,11 +226,9 @@ const membershipRouteHandlers = app
 
     // Step 4: Bulk-create fresh invitation tokens for Scenario 3 (new users)
 
-    // 🔑 NEW: pre-generate inactiveMembership IDs for new users (to break the circular ref)
+    // 🔑 Pre-generate inactiveMembership IDs
     const newUserInactiveMembershipIdsByEmail = new Map<string, string>();
-    for (const email of newUserTokenEmails) {
-      newUserInactiveMembershipIdsByEmail.set(email, nanoid());
-    }
+    for (const email of newUserTokenEmails) newUserInactiveMembershipIdsByEmail.set(email, nanoid());
 
     const rawTokens: Array<{ email: string; raw: string }> = [];
     const tokensToInsert = newUserTokenEmails.map((email) => {
@@ -270,6 +272,8 @@ const membershipRouteHandlers = app
     }
 
     // Step 5c – create inactive memberships for Scenario 2a + 3 in one bulk insert
+    let insertedInactiveMemberships: Array<{ id: string; email: string }> = [];
+
     if (newUserTokenEmails.length > 0 && insertedTokens.length > 0) {
       const tokensByEmail = new Map(insertedTokens.map((t) => [t.email, t.id]));
 
@@ -281,6 +285,7 @@ const membershipRouteHandlers = app
         createdBy: user.id,
         contextType: entityType,
         tokenId: tokensByEmail.get(email)!, // link inactive membership → token
+        uniqueKey: `${email}-${entityId}`,
         ...getBaseMembershipEntityId(entity),
       }));
 
@@ -288,18 +293,23 @@ const membershipRouteHandlers = app
     }
 
     if (inactiveMembershipsToInsert.length > 0) {
-      await db.insert(inactiveMembershipsTable).values(inactiveMembershipsToInsert);
+      insertedInactiveMemberships = await db.insert(inactiveMembershipsTable).values(inactiveMembershipsToInsert).onConflictDoNothing().returning({
+        id: inactiveMembershipsTable.id,
+        email: inactiveMembershipsTable.email,
+      });
     }
 
     // Step 6: Prepare "with-token" recipients (Scenario 3)
     const rawByEmail = new Map(rawTokens.map((t) => [t.email, t.raw]));
 
-    const withTokenRecipients = insertedTokens.map(({ email, type }) => {
-      const rawToken = rawByEmail.get(email)!; // guaranteed from same source list
-      const memberInviteLink = `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
+    const withTokenRecipients = insertedTokens
+      .filter(({ email }) => insertedInactiveMemberships.some((m) => m.email === email))
+      .map(({ email, type }) => {
+        const rawToken = rawByEmail.get(email)!;
+        const memberInviteLink = `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
 
-      return { email, lng, name: slugFromEmail(email), memberInviteLink };
-    });
+        return { email, lng, name: slugFromEmail(email), memberInviteLink };
+      });
 
     // Static email props are same for each scenario
     const staticProps = { senderName, senderThumbnailUrl, subject, lng, role, entityName };
@@ -336,8 +346,8 @@ const membershipRouteHandlers = app
     //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
     // }
 
-    // Step 9:  Only count *new inactive memberships* created in this call:
-    const invitesSentCount = existingUsersToActivate.length + newUserTokenEmails.length;
+    // Step 9:  Only count successful pending invites, not direct adds or rejections
+    const invitesSentCount = insertedInactiveMemberships.length;
 
     logEvent('info', 'Users invited on entity level', { count: invitesSentCount, entityType, [targetEntityIdField]: entityId });
 

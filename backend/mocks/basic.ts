@@ -176,6 +176,7 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
     order: getMembershipOrderOffset(organization.id) * 10,
     createdAt: pastIsoDate(),
     createdBy: user.id,
+    uniqueKey: `${user.id}-${organization.id}`
   }
 }
 

@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
@@ -62,8 +62,9 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
       )
       .limit(1);
 
+    // If there are existing invitation tokens, set the user ID on the associated inactive memberships
     if (existingTokens.length > 0) {
-      await handleSetUserOnInactiveMembership(
+      await handleSetUserOnInactiveMemberships(
         user.id,
         existingTokens.map((t) => t.inactiveMembershipId!),
       );
@@ -97,13 +98,15 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
  * @param userId - The ID of the newly created user.
  * @param inactiveMembershipIds - The IDs of the inactive memberships to update.
  */
-export const handleSetUserOnInactiveMembership = async (userId: string, inactiveMembershipIds: string[]) => {
-  const [inactiveMembership] = await db
+export const handleSetUserOnInactiveMemberships = async (userId: string, inactiveMembershipIds: string[]) => {
+  await db
     .update(inactiveMembershipsTable)
-    .set({ userId })
-    .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds))
-    .returning();
-  if (!inactiveMembership) throw new Error('No inactive membership found for token.');
+    .set({
+      userId,
+      uniqueKey: sql`concat(${userId}, '-', ${inactiveMembershipsTable.contextType})`,
+      // Postgres string concatenation
+    })
+    .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
 
   // Delete associated tokens
   await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));

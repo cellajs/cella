@@ -30,6 +30,7 @@ export const zMembershipBase = z.object({
   muted: z.boolean(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
+  uniqueKey: z.string(),
 });
 
 export const zUser = z.object({
@@ -109,6 +110,7 @@ export const zMembership = z.object({
   muted: z.boolean(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
+  uniqueKey: z.string(),
 });
 
 export const zInactiveMembership = z.object({
@@ -122,6 +124,7 @@ export const zInactiveMembership = z.object({
   rejectedAt: z.union([z.string(), z.null()]),
   createdBy: z.string(),
   organizationId: z.string(),
+  uniqueKey: z.string(),
 });
 
 export const zAttachment = z.object({

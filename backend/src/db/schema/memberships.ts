@@ -27,6 +27,7 @@ const baseColumns = {
   muted: boolean().default(false).notNull(),
   order: doublePrecision().notNull(),
   organizationId: organizationId.notNull(),
+  uniqueKey: varchar().unique().notNull(),
 };
 
 // Generate entity id columns based on entity-config
