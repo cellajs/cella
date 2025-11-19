@@ -13,7 +13,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-// import { eventManager } from '#/lib/events';
+import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
@@ -37,8 +37,8 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const membershipRouteHandlers = app
   /**
-   * Create memberships (invite members) for an entity such as an organization, by list of emails.
-   * It will create multiple (inactive) memberships for each user if the entity has associated (parent) entities.
+   * Create memberships (invite members) for an entity such as an organization or project, by list of emails.
+   * It will create multiple (inactive) memberships for each user and each entity if the entity has associated (parent) entities.
    * For example, inviting a user to a project creates an inactive project membership but it will also create an
    * inactive organization membership if the user is not already a member of the associated organization.
    * 
@@ -46,9 +46,9 @@ const membershipRouteHandlers = app
      | -------- | -------------------------------------------------- | ----------------------------- | ---------- |
      | **1**    | Already has active membership → skip               | ❌                             | ❌         |
      | **1b**   | Has inactive membership → reminder only            | ❌                             | ❌         |
-     | **2**    | Existing user but no (org) membership yet          | ✅  inactive membership        | ❌         |
+     | **2**    | Existing user but no (org) membership yet          | ✅  inactive membership(s)     | ❌         |
      | **2b**   | Existing user with active org membership           | ✅  direct membership          | ❌         |
-     | **3**    | New email address (no user in system)              | ✅  inactive membership        | ✅         |
+     | **3**    | New email address (no user in system)              | ✅  inactive membership(s)     | ✅         |
    */
   .openapi(membershipRoutes.createMemberships, async (ctx) => {
     // Step 0: Parse and normalize input
@@ -124,49 +124,62 @@ const membershipRouteHandlers = app
       )
       .where(and(inArray(emailsTable.email, normalizedEmails)));
 
-    // Step 1b: Index rows by email (handle potential duplicates defensively)
+    // Get tokens too because some inactive memberships are linked to tokens, not usersTable/emailsTable
+    const tokenRows = await db
+      .select({
+        email: tokensTable.email,
+        inactiveMembershipId: tokensTable.inactiveMembershipId,
+      })
+      .from(tokensTable)
+      .where(and(inArray(tokensTable.email, normalizedEmails), eq(tokensTable.type, 'invitation')));
+
+    const pendingInvitationEmails = new Set(tokenRows.map((r) => r.email));
+
+    // Step 1b: Index rows by email in emailsTable (handle potential duplicates defensively)
     const rowsByEmail = new Map<string, typeof membershipAwareRows>();
     for (const e of normalizedEmails) rowsByEmail.set(e, [] as any);
     for (const r of membershipAwareRows) rowsByEmail.get(r.email)!.push(r);
 
     // Step 1c: Bucket by scenarios using the pre-fetched data
     for (const email of normalizedEmails) {
-      const rows = rowsByEmail.get(email)!; // array (possibly empty)
+      const rows = rowsByEmail.get(email)!; // possibly []
 
-      // If we have any row with an activated membership, Scenario 1
-      if (rows.some((r) => r.membershipId)) {
+      const hasActiveMembership = rows.some((r) => r.membershipId);
+      const hasUserInactiveMembership = rows.some((r) => r.inactiveMembershipId);
+      const hasTokenInvite = pendingInvitationEmails.has(email);
+
+      // Scenario 1: already has active membership → skip
+      if (hasActiveMembership) {
         rejectedItems.push(email);
         continue;
       }
 
-      // If we have a membership but not activated, Scenario 1b
-      if (rows.some((r) => r.inactiveMembershipId)) {
+      // Scenario 1b: pending members (either user-based inactive or email+token)
+      if (hasUserInactiveMembership || hasTokenInvite) {
         reminderEmails.push(email);
         continue;
       }
 
-      // If we have a user (but no membership), Scenario 2
+      // Scenario 2: existing user but no membership yet
       const userRow = rows.find((r) => r.userId);
       if (userRow?.userId) {
-        // Check if admin is inviting themselves
         const isAdminInvitingSelf = user.email === email && userSystemRole === 'admin';
 
         if (isAdminInvitingSelf) {
-          existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Direct add for admin self-invite
+          existingUsersToDirectAdd.push({ userId: userRow.userId, email });
         } else {
-          // User could still have an active organization membership
           const hasActiveOrgMembership = entityType !== 'organization' && !!rows.find((r) => r.orgMembershipId);
 
           if (hasActiveOrgMembership) {
-            existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // Scenario 2b
+            existingUsersToDirectAdd.push({ userId: userRow.userId, email }); // 2b
           } else {
-            existingUsersToActivate.push({ userId: userRow.userId, email }); // Scenario 2a
+            existingUsersToActivate.push({ userId: userRow.userId, email }); // 2a
           }
         }
         continue;
       }
 
-      // Otherwise, brand-new user, Scenario 3
+      // Scenario 3: truly new email — no user, no membership, no token invite
       newUserTokenEmails.push(email);
     }
 
@@ -309,8 +322,8 @@ const membershipRouteHandlers = app
     //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
     // }
 
-    // Step 9: Compute and return outcome
-    const invitesSentCount = noTokenRecipients.length + withTokenRecipients.length; // excludes already members
+    // Step 9:  Only count *new inactive memberships* created in this call:
+    const invitesSentCount = existingUsersToActivate.length + newUserTokenEmails.length;
 
     logEvent('info', 'Users invited on entity level', { count: invitesSentCount, entityType, [targetEntityIdField]: entityId });
 
@@ -453,7 +466,6 @@ const membershipRouteHandlers = app
       throw new AppError({ status: 404, type: 'inactive_membership_not_found', severity: 'error', meta: { id: inactiveMembershipId } });
 
     if (acceptOrReject === 'accept') {
-      // Activate memberships, can be multiple if there are nested entity memberships. Eg. organization and project
       const entityFieldIdName = appConfig.entityIdFields[inactiveMembership.contextType];
       const entityFieldId = inactiveMembership[entityFieldIdName];
       if (!entityFieldId) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: inactiveMembership.contextType });
@@ -467,9 +479,10 @@ const membershipRouteHandlers = app
 
       await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      // TODO(DAVID) eventManager.emit('acceptedMembership', membership);
+      const membership = activatedMemberships[0];
+      eventManager.emit('acceptedMembership', membership);
 
-      logEvent('info', 'Accepted memberships', { ids: activatedMemberships.map((m) => m.id) });
+      logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
     }
 
     // Reject membership simply deletes the membership
@@ -556,13 +569,16 @@ const membershipRouteHandlers = app
         id: table.id,
         role: table.role,
         userId: table.userId,
-        email: userBaseSelect.email,
+        // Prefer user email, fall back to token email
+        email: sql<string>`coalesce(${userBaseSelect.email}, ${tokensTable.email})`.as('email'),
         thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
         createdAt: table.createdAt,
         createdBy: table.createdBy,
       })
       .from(table)
-      .innerJoin(usersTable, eq(usersTable.id, table.userId))
+      // User is optional because user may not exist yet, just a token and inactive membership
+      .leftJoin(usersTable, eq(usersTable.id, table.userId))
+      .leftJoin(tokensTable, and(eq(tokensTable.inactiveMembershipId, table.id), eq(tokensTable.type, 'invitation')))
       .where(and(eq(table[entityIdField], entity.id), eq(table.organizationId, organization.id)))
       .orderBy(orderColumn);
 

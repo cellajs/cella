@@ -65,16 +65,13 @@ const DomainsFormField = <TFieldValues extends FieldValues>({ control, name, lab
                   setCurrentValue('');
                 }}
                 validateTag={checkValidDomain}
-                // TODO hardcode styles in TagInput, its too complicated to keep it organized otherwise
+                // TODO handle this with tailwind and data-attributes in TagInput
                 styleClasses={{
-                  tag: {
-                    closeButton: 'h-4.5 w-4.5 ring-inset sm:focus-visible:ring-2 p-0 rounded-full cursor-pointer',
-                  },
                   input: `${
                     fieldActive
                       ? !checkValidInput(currentValue)
                         ? 'ring-2 sm:focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500'
-                        : 'max-sm:ring-offset-0  max-sm:ring-transparent ring-2 ring-offset-2 ring-white'
+                        : 'max-sm:ring-offset-0 max-sm:ring-transparent ring-2 ring-offset-2 ring-white'
                       : ''
                   }`,
                 }}

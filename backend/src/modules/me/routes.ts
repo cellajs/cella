@@ -217,8 +217,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Toggle MFA',
-    description:
-      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.',
+    description: 'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

@@ -10,6 +10,7 @@ import { mailer } from '#/lib/mailer';
 import { userSelect } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
 
@@ -40,14 +41,15 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   // Delete previous token
   await deleteVerificationTokens(user.id, 'email-verification');
 
-  const token = nanoid(40);
+  const newToken = nanoid(40);
+  const hashedToken = encodeLowerCased(newToken);
   const email = user.email;
 
   // Create new token
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
-      token,
+      token: hashedToken,
       type: 'email-verification',
       userId: user.id,
       email,
@@ -75,7 +77,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const lng = user.language;
 
   // Create verification link: go to
-  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${tokenRecord.token}`;
+  const verifyPath = `/auth/invoke-token/${tokenRecord.type}/${newToken}`;
   const verificationURL = new URL(verifyPath, appConfig.backendUrl);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', redirectPath);

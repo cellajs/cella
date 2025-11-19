@@ -18,7 +18,7 @@ export const SectionArchiveButton = ({ archiveToggleClick, archivedCount }: Sect
         disabled={archivedCount < 1}
         variant="secondary"
         className="w-full group bg-background p-0 transition duration-300 focus-visible:outline-hidden ring-inset focus-visible:ring-offset-0 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
-        group-data-[submenu=true]/archived:h-8"
+        group-data-[submenu=true]/archived:h-8 shadow-none"
       >
         <div className="w-12 py-2 flex justify-center items-center">
           <ArchiveIcon size={16} className="ml-2 items-center opacity-75" />

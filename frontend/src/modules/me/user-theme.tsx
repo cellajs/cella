@@ -23,7 +23,7 @@ const UserTheme = ({ size = 16, buttonClassName = '', contentClassName = '' }: U
     { id: 'dark', label: t('common:dark'), icon: MoonIcon },
   ] as const;
 
-  const themes = objectEntries(appConfig.theme.colors);
+  const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
   function Icon({ icon: Icon }: { icon: React.ElementType<LucideProps> }) {
     return <Icon size={size} strokeWidth={appConfig.theme.strokeWidth} />;

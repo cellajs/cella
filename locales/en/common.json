@@ -485,6 +485,7 @@
   "reject": "Reject",
   "my_account": "My account",
   "chat_with_us": "Chat with us",
-  "accept_invitations.text": "Here you can accept or reject invitations to new entities.",
-  "compact_view": "Compact view"
+  "accept_invitations.text": "Here you can accept or reject invitations.",
+  "compact_view": "Compact view",
+  "type": "Type"
 }

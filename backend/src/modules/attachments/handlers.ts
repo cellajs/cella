@@ -8,7 +8,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
+import { processAttachmentUrls, processAttachmentUrlsInBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
@@ -116,7 +116,7 @@ const attachmentsRouteHandlers = app
 
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
-    const data = await processAttachmentUrlsBatch(createdAttachments);
+    const data = await processAttachmentUrlsInBatch(createdAttachments);
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
@@ -157,7 +157,7 @@ const attachmentsRouteHandlers = app
         throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
       }
 
-      const items = await processAttachmentUrlsBatch([targetAttachment]);
+      const items = await processAttachmentUrlsInBatch([targetAttachment]);
       // return target attachment itself if no groupId
       if (!targetAttachment.groupId) return ctx.json({ items, total: 1 }, 200);
 
@@ -175,7 +175,7 @@ const attachmentsRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 
-    const items = await processAttachmentUrlsBatch(attachments);
+    const items = await processAttachmentUrlsInBatch(attachments);
 
     return ctx.json({ items, total }, 200);
   })

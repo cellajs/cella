@@ -9,6 +9,7 @@ import { logEvent } from '#/utils/logger';
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
 };
+
 interface InsertMultipleProps<T> {
   userId: string;
   role: MembershipModel['role'];
@@ -48,10 +49,13 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 };
 
 /**
- * Batch insert direct memberships for existing users.
+ * Batch insert direct memberships for existing users. The function assumes that
+ *  the data is already deduped, normalized and valid.
  *
  * - Ensures organization membership exists for non-organization entities.
+ *   (relies on DB unique constraints + onConflictDoNothing to only insert when missing)
  * - Ensures associated parent membership exists when applicable.
+ *   (same: only inserted when missing)
  * - Inserts the target entity memberships.
  * - Computes per-user 'order' in a single grouped query and increments by 10.
  *
@@ -66,17 +70,11 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
   // Fetch per-user max(order) in one query to determine the next order baseline
-  const maxOrderRows =
-    userIds.length > 0
-      ? await db
-          .select({
-            userId: membershipsTable.userId,
-            maxOrder: max(membershipsTable.order),
-          })
-          .from(membershipsTable)
-          .where(inArray(membershipsTable.userId, userIds))
-          .groupBy(membershipsTable.userId)
-      : [];
+  const maxOrderRows = await db
+    .select({ userId: membershipsTable.userId, maxOrder: max(membershipsTable.order) })
+    .from(membershipsTable)
+    .where(inArray(membershipsTable.userId, userIds))
+    .groupBy(membershipsTable.userId);
 
   // Map userId -> current max(order) (default 0 if none)
   const maxOrdersByUser = new Map<string, number>(maxOrderRows.map((r) => [r.userId, r.maxOrder ?? 0]));
@@ -96,7 +94,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     // Compute incremental order per user: start from global max, then +10 per assignment
     const prevMax = maxOrdersByUser.get(userId) ?? 0;
     const alreadyAssigned = assignedCounts.get(userId) ?? 0;
-    const nextOrder = (prevMax ? prevMax : 0) + (alreadyAssigned === 0 ? 1000 - prevMax : 0) + alreadyAssigned * 10 || 1000;
+    const base = prevMax === 0 ? 990 : prevMax;
+    const nextOrder = base + (alreadyAssigned + 1) * 10;
+
     assignedCounts.set(userId, alreadyAssigned + 1);
 
     // Build base row used in all inserts for this item
@@ -110,14 +110,19 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     return { targetEntitiesIdFields, baseMembership, entity };
   });
 
-  // Build organization membership rows (only for non-organization entities)
-  const orgRows = prepared
+  /**
+   * Build organization membership rows (only for non-organization entities).
+   * These are parent memberships and always get role "member".
+   * Creation is effectively "only if not existing" thanks to unique constraint + onConflictDoNothing.
+   */
+  const orgRows: InsertMembershipModel[] = prepared
     .filter(({ entity }) => entity.entityType !== 'organization')
     .map(({ baseMembership, targetEntitiesIdFields }) => {
       // Extract only organizationId (ignore other entity IDs)
       const { organizationId } = targetEntitiesIdFields;
       return {
         ...baseMembership,
+        role: 'member', // parent org membership is always 'member'
         organizationId,
         contextType: 'organization',
       } satisfies InsertMembershipModel;
@@ -134,9 +139,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
       const associatedType = relation.entityType;
       if (!associatedType) return null;
 
-      // TODO(DAVID)(REFACTOR) fix assign entities fields for associated entities(also change menu structure?)
       return {
         ...baseMembership,
+        role: 'member', // parent/associated membership is always 'member'
         ...targetEntitiesIdFields,
         contextType: associatedType,
       } satisfies InsertMembershipModel;

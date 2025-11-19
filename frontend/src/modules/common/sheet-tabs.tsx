@@ -45,7 +45,9 @@ export const SheetTabs = ({ tabs }: Props) => {
           ))}
         </nav>
       )}
-      <Suspense>{renderPage()}</Suspense>
+      <div className="container w-full">
+        <Suspense>{renderPage()}</Suspense>
+      </div>
     </div>
   );
 };

@@ -46,7 +46,7 @@ export const useColumns = () => {
   const columns: ColumnOrColumnGroup<Invitation>[] = [
     {
       key: 'name',
-      name: t('common:entity'),
+      name: '',
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
@@ -56,6 +56,14 @@ export const useColumns = () => {
           <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
         </>
       ),
+    },
+    {
+      key: 'entityType',
+      name: t('common:type'),
+      visible: true,
+      sortable: false,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <span>{t(`app:${row.entity.entityType}`)}</span>,
     },
     {
       key: 'role',

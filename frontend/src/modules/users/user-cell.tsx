@@ -23,7 +23,7 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug }: BaseProps
   const navigate = useNavigate();
   const cellRef = useRef<HTMLAnchorElement | null>(null);
 
-  const setTriggerRef = useSheeter((state) => state.setTriggerRef);
+  const setTriggerRef = useSheeter.getState().setTriggerRef;
 
   return (
     <Link

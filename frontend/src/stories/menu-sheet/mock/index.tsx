@@ -66,7 +66,7 @@ export function MockMenuSheet({ initialMenu }: MockMenuSheetProps) {
   const archiveToggleClick = (sectionKey: string) => setIsArchivedVisible((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
   const handleCreateAction = () => {
     // Mock create action
-    console.log('Create organization clicked');
+    console.info('Create organization clicked');
   };
 
   return (

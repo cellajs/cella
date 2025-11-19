@@ -1,0 +1,34 @@
+[
+  {
+    "slug": "scaleway-os",
+    "name": "Scaleway Object Storage",
+    "legalName": "Scaleway SAS",
+    "website": "https://www.scaleway.com/",
+    "servicesProvided": ["Cloud infrastructure", "Object storage (S3 API compatible)"],
+    "processingActivities": [
+      "Hosting and storing customer data",
+      "Serving and transferring stored objects via API"
+    ],
+    "categoriesOfPersonalData": [
+      "Contact data",
+      "Identifiers",
+      "Customer content and files (as uploaded by controller)"
+    ],
+    "dataSubjects": [
+      "Customers",
+      "End users of customer applications"
+    ],
+    "purposes": [
+      "Service hosting and data storage",
+      "Backup and availability",
+      "Content delivery"
+    ],
+    "country": "France",
+    "dpa": {
+      "signed": true,
+      "effectiveDate": "2022-07-01",
+      "url": "https://www.scaleway.com/en/terms-and-conditions/data-processing-agreement/"
+    },
+    "riskRating": "low"
+  }
+]
