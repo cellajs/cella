@@ -74,7 +74,7 @@ export const MenuSheet = () => {
           const newOrder = getRelativeItemOrder(menu, sourceItem.entityType, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
 
           // Exit early if order remains the same
-          if (targetData.order === sourceItem.membership.order || newOrder === sourceItem.membership.order) return;
+          if (newOrder === sourceItem.membership.order) return;
 
           await mutateAsync({
             id: sourceItem.membership.id,
