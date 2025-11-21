@@ -45,7 +45,7 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 
       return acc;
     },
-    {} as Partial<Record<(typeof appConfig.entityIdFields)[keyof typeof appConfig.entityIdFields], string>> & { organizationId: string },
+    {} as Partial<Record<(typeof appConfig.entityIdFields)[ContextEntityType], string>> & { organizationId: string },
   );
 };
 
@@ -141,12 +141,20 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
       const associatedType = relation.entityType;
       if (!associatedType) return null;
 
+      const associatedField = targetEntitiesIdFields[appConfig.entityIdFields[associatedType]];
+      if (!associatedField) return null;
+
+      // Get the target entity's ID field to exclude it, but always preserve organizationId
+      const targetEntityIdField = appConfig.entityIdFields[entity.entityType];
+      const { [targetEntityIdField]: _, organizationId, ...otherIdFields } = targetEntitiesIdFields;
+
       return {
         ...baseMembership,
         role: 'member', // parent/associated membership is always 'member'
-        ...targetEntitiesIdFields,
+        organizationId,
+        ...otherIdFields,
         contextType: associatedType,
-        uniqueKey: `${baseMembership.userId}-${targetEntitiesIdFields[appConfig.entityIdFields[associatedType]]}`,
+        uniqueKey: `${baseMembership.userId}-${associatedField}`,
       } satisfies InsertMembershipModel;
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
