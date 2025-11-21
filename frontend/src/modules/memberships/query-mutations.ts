@@ -52,14 +52,14 @@ export const useInviteMemberMutation = () =>
             if (!oldOrg || !oldOrg.counts || oldOrg.id !== organizationId) return oldOrg;
 
             const orgPendingTableQueries = getSimilarQueries(membersKeys.table.similarPending({ idOrSlug: oldOrg.slug, entityType }));
-            for (const [queryKey] of orgPendingTableQueries) queryClient.invalidateQueries({ queryKey });
+            for (const [queryKey] of orgPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
             return updateInvitesCount(oldOrg, invitesSentCount);
           });
         }
 
         const entityPendingTableQueries = getSimilarQueries(membersKeys.table.similarPending({ idOrSlug: slug, entityType }));
-        for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey });
+        for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
         // Try cache update for both id and slug
         queryClient.setQueryData<EntityPage>([entityType], (oldEntity) => {
@@ -156,7 +156,7 @@ export const useMemberUpdateMutation = () =>
 
         // if role changes invalidate role based filter
         if (updatedMembership.role && activeKey.some((el) => typeof el === 'object' && el && 'role' in el && el.role)) {
-          queryClient.invalidateQueries({ queryKey: activeKey });
+          queryClient.invalidateQueries({ queryKey: activeKey, refetchType: 'all' });
           continue;
         }
 

@@ -185,7 +185,8 @@ const membershipRouteHandlers = app
     // Step 2: Bulk create memberships
     // For Scenario 2a we collect inactive memberships to insert later in one bulk call
     if (existingUsersToActivate.length > 0) {
-      const inactiveMembershipsForExistingUsers = existingUsersToActivate.map(({ userId }) => ({
+      const inactiveMembershipsForExistingUsers = existingUsersToActivate.map(({ userId, email }) => ({
+        email,
         userId,
         role,
         entity,
