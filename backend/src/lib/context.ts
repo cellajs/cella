@@ -1,5 +1,5 @@
 import type { HttpBindings } from '@hono/node-server';
-import type * as Sentry from '@sentry/node';
+import type * as ErrorTracker from '@sentry/node';
 import { getContext } from 'hono/context-storage';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import { SystemRoleModel } from '#/db/schema/system-roles';
@@ -29,8 +29,8 @@ export type Env = {
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     token: TokenModel;
     logId: string;
-    sentry: typeof Sentry;
-    sentrySpan?: ReturnType<typeof Sentry.startSpan>;
+    errorTracker: typeof ErrorTracker;
+    errorTrackerSpan?: ReturnType<typeof ErrorTracker.startSpan>;
   };
   Bindings: Bindings;
 };
