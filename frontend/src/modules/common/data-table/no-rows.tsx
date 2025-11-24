@@ -16,7 +16,7 @@ export const NoRows = ({ isFiltered, isFetching, customComponent }: NoRowsProps)
   return (
     <div className="flex flex-col items-center justify-center w-full p-8">
       {isFiltered && !isFetching && (
-        <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+        <ContentPlaceholder icon={SearchIcon} title="common:no_resource_found" titleProps={{ resource: t('common:results').toLowerCase() }} />
       )}
       {!isFiltered && !isFetching && (customComponent ?? t('common:no_resource_yet', { resource: t('common:results').toLowerCase() }))}
     </div>

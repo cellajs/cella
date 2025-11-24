@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { FieldValues } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import type { UserMenu } from '~/modules/me/types';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
@@ -21,7 +20,6 @@ const SelectParentFormField = <TFieldValues extends FieldValues>({
   required,
   disabled,
 }: SelectParentProps<TFieldValues>) => {
-  const { t } = useTranslation();
   const { menu } = useNavigationStore();
 
   // Derive combobox options
@@ -55,9 +53,10 @@ const SelectParentFormField = <TFieldValues extends FieldValues>({
               disabled={disabled}
               renderAvatar
               placeholders={{
-                trigger: t('common:select_resource', { resource: t(`common:${parentType}`).toLowerCase() }),
-                search: t('common:placeholder.search'),
-                notFound: t('common:no_resource_found', { resource: t(`common:${parentType}`).toLowerCase() }),
+                trigger: 'common:select_resource',
+                search: 'common:placeholder.search',
+                notFound: 'common:no_resource_found',
+                resource: `common:${parentType}`,
               }}
             />
           </FormControl>

@@ -128,7 +128,7 @@ const OrganizationsTable = () => {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
+            <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:organizations').toLowerCase() }} />
           ),
         }}
       />

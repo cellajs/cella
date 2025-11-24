@@ -149,7 +149,7 @@ export const MenuSheet = () => {
         {searchResultsListItems().length > 0 ? (
           searchResultsListItems()
         ) : (
-          <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          <ContentPlaceholder icon={SearchIcon} title="common:no_resource_found" titleProps={{ resource: t('common:results').toLowerCase() }} />
         )}
       </div>
       {!searchTerm && (

@@ -1,6 +1,6 @@
 {
-  "now": "Just now",
-  "seconds": "%ds",
+  "hours": "%dh",
   "minutes": "%dm",
-  "hours": "%dh"
+  "now": "Just now",
+  "seconds": "%ds"
 }

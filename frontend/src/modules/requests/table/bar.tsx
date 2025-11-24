@@ -114,7 +114,7 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
                   badge={selectedToWaitlist.length}
                   variant="darkSuccess"
                   className="relative"
-                  label={t('common:invite')}
+                  label="common:invite"
                   icon={PartyPopperIcon}
                   onClick={approveSelectedRequests}
                 />
@@ -123,12 +123,12 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
                 ref={deleteButtonRef}
                 variant="destructive"
                 icon={TrashIcon}
-                label={t('common:remove')}
+                label="common:remove"
                 badge={selected.length}
                 className="relative"
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
             </>
           )}
           {selected.length === 0 && <TableCount count={total} label="common:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}

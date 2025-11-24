@@ -2,12 +2,13 @@ import type { LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { forwardRef, type ReactNode } from 'react';
 import slugify from 'slugify';
+import type { TKey } from '~/lib/i18n-locales';
 import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
 type Props = {
   icon: LucideIcon;
-  label: string;
+  label: TKey;
   badge?: ReactNode;
 } & ButtonProps;
 

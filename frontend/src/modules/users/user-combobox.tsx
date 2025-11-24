@@ -122,11 +122,15 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                 <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
+                      <ContentPlaceholder
+                        icon={SearchIcon}
+                        title="common:no_resource_found"
+                        titleProps={{ resource: t('common:users').toLowerCase() }}
+                      />
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Users2Icon} title={t('common:invite_members_search.text', { appName: appConfig.name })} />
+                      <ContentPlaceholder icon={Users2Icon} title="common:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
                     </CommandEmpty>
                   )}
                 </motion.div>

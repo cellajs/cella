@@ -85,6 +85,7 @@ export const MembersTableBar = ({
         title: t('common:remove_resource', { resource: t('common:members').toLowerCase() }),
         description: (
           <Trans
+            t={t}
             i18nKey="common:confirm.remove_members"
             values={{
               entityType: entity.entityType,
@@ -143,14 +144,14 @@ export const MembersTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={entity.id ? t('common:remove') : t('common:delete')}
+                  label={entity.id ? 'common:remove' : 'common:delete'}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
               !isFiltered &&
-              isAdmin && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              isAdmin && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="common:invite" onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>

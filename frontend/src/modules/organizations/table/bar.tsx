@@ -130,25 +130,25 @@ export const OrganizationsTableBar = ({
               <TableBarButton
                 ref={newsletterButtonRef}
                 onClick={openNewsletterSheet}
-                label={t('common:newsletter')}
+                label="common:newsletter"
                 icon={MailboxIcon}
                 badge={selected.length}
                 className="relative"
               />
               <TableBarButton
                 variant="destructive"
-                label={t('common:remove')}
+                label="common:remove"
                 icon={TrashIcon}
                 className="relative"
                 badge={selected.length}
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
             </>
           ) : (
             !isFiltered && (
               <TableBarButton
-                label={t('common:create')}
+                label="common:create"
                 icon={PlusIcon}
                 onClick={() => {
                   createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {

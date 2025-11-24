@@ -114,6 +114,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               <CardTitle>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</CardTitle>
               <CardDescription>
                 <Trans
+                  t={t}
                   i18nKey="common:delete_resource_notice.text"
                   values={{ name: organization.name, resource: t('common:organization').toLowerCase() }}
                 />

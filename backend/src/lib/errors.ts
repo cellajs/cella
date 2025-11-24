@@ -14,9 +14,7 @@ const isProduction = appConfig.mode === 'production';
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & { errorPagePath?: string };
 
-type CellaErrorKeys = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
-type AppSpecificErrorKeys = Exclude<keyof (typeof locales)['en']['appError'], `${string}.text`>;
-type ErrorKey = CellaErrorKeys | AppSpecificErrorKeys;
+type ErrorKey = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
 
 export type ConstructedError = {
   type: ErrorKey;

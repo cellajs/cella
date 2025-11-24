@@ -19,22 +19,22 @@ const CallToAction = () => {
         <span className="opacity-50 ml-4 mr-2">—</span>
         {t('about:call_to_action.finish')}
       </p>
-      <div className="flex flex-col sm:flex-row z-10 mx-auto mt-6 mb-12 gap-2">
+      <div className="flex flex-col sm:flex-row z-10 mx-auto mt-6 mb-12 gap-4">
         <Button
           ref={ref}
           variant="ghost"
           size="xl"
           onClick={() => contactFormHandler(ref)}
-          className="glow-button bg-background/95 px-20 rounded-full! relative hover:bg-background! active:bg-background"
+          className="glow-button bg-background/95 px-10 rounded-full! relative hover:bg-background! active:bg-background"
           aria-label="Contact"
         >
           {t('common:contact_us')}
         </Button>
         <Button
-          variant="ghost"
+          variant="plain"
           size="xl"
           onClick={() => window.open(appConfig.company.element, '_blank', 'noopener')}
-          className="flex gap-1 glow-button bg-background/95 px-20 rounded-full! relative hover:bg-background! active:bg-background"
+          className="flex gap-1 rounded-full! px-10"
           aria-label="Contact"
         >
           {t('common:chat_with_us')}

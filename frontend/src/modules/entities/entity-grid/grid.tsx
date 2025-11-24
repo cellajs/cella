@@ -43,9 +43,9 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
 
   if (!isFetching && !error && !entities.length) {
     return isFiltered ? (
-      <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />
+      <ContentPlaceholder icon={SearchIcon} title="common:no_resource_found" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
     ) : (
-      <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />
+      <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
     );
   }
 

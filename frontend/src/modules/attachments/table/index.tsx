@@ -132,7 +132,11 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={PaperclipIcon} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+            <ContentPlaceholder
+              icon={PaperclipIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:attachments').toLowerCase() }}
+            />
           ),
         }}
       />

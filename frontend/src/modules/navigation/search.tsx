@@ -121,15 +121,8 @@ export const AppSearch = () => {
           <CommandEmpty className="h-full sm:h-[36vh]">
             <ContentPlaceholder
               icon={SearchIcon}
-              title={
-                searchValue.length
-                  ? t('common:no_resource_found', {
-                      resource: t('common:results').toLowerCase(),
-                    })
-                  : t('common:global_search.text', {
-                      appName: appConfig.name,
-                    })
-              }
+              title={searchValue.length ? 'common:no_resource_found' : 'common:global_search.text'}
+              titleProps={{ resource: t('common:results').toLowerCase(), appName: appConfig.name }}
             />
           </CommandEmpty>
           {notFound && !searchValue.length && !!recentSearches.length && (

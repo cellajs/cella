@@ -1,13 +1,10 @@
 import type { FieldValues } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
 import timezones from '#json/timezones.json';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 const SelectTimezone = <TFieldValues extends FieldValues>({ control, name, disabled, label, required }: BaseFormFieldProps<TFieldValues>) => {
-  const { t } = useTranslation();
-
   const options = timezones.map(({ utc, text }) => ({ value: utc[0], label: text }));
 
   return (
@@ -28,9 +25,10 @@ const SelectTimezone = <TFieldValues extends FieldValues>({ control, name, disab
               onChange={onChange}
               disabled={disabled}
               placeholders={{
-                trigger: t('common:placeholder.select_timezone'),
-                search: t('common:placeholder.search_timezone'),
-                notFound: t('common:no_resource_found', { resource: t('common:timezone').toLowerCase() }),
+                trigger: 'common:placeholder.select_timezone',
+                search: 'common:placeholder.search_timezone',
+                notFound: 'common:no_resource_found',
+                resource: 'common:timezone',
               }}
             />
           </FormControl>

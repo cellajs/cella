@@ -91,13 +91,13 @@ export const AttachmentsTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={t('common:delete')}
+                  label="common:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
-              showUpload && <TableBarButton icon={UploadIcon} label={t('common:upload')} onClick={() => open(entity.id)} />
+              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open(entity.id)} />
             )}
             {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>

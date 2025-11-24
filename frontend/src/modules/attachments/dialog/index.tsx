@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { FlameKindlingIcon, ServerCrashIcon, WifiOffIcon } from 'lucide-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { groupedAttachmentsQueryOptions } from '~/modules/attachments/query';
@@ -16,7 +15,6 @@ interface AttachmentDialogProps {
 }
 
 const AttachmentDialog = ({ attachmentId, orgIdOrSlug, localAttachment }: AttachmentDialogProps) => {
-  const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
   const { data, error, isLoading } = useQuery({
@@ -35,7 +33,7 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug, localAttachment }: Attach
     return <AttachmentsCarousel items={[{ ...localAttachment, url: localAttachment.preview }]} isDialog saveInSearchParams={false} />;
   }
 
-  if (error) return <ContentPlaceholder icon={ServerCrashIcon} title={t('error:request_failed')} />;
+  if (error) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
 
   // Show a loading spinner if no cache exists and data is still loading
   if (isLoading) {
@@ -46,14 +44,14 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug, localAttachment }: Attach
     );
   }
 
-  if (!isOnline) return <ContentPlaceholder icon={WifiOffIcon} title={t('common:offline.text')} />;
+  if (!isOnline) return <ContentPlaceholder icon={WifiOffIcon} title="common:offline.text" />;
 
   return attachments.length ? (
     <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">
       <AttachmentsCarousel items={attachments} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
     </div>
   ) : (
-    <ContentPlaceholder icon={FlameKindlingIcon} title={t('error:not_found.text')} />
+    <ContentPlaceholder icon={FlameKindlingIcon} title="error:not_found.text" />
   );
 };
 

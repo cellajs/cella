@@ -5,6 +5,7 @@ import { Virtualizer } from 'virtua';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
+import { TKey } from '~/lib/i18n-locales';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
@@ -27,9 +28,10 @@ export interface ComboboxProps {
   contentWidthMatchInput?: boolean;
   disabled?: boolean;
   placeholders?: {
-    trigger?: string;
-    search?: string;
-    notFound?: string;
+    trigger?: TKey;
+    search?: TKey;
+    notFound?: TKey;
+    resource?: TKey;
   };
 }
 
@@ -55,10 +57,11 @@ const Combobox = ({
 
   const debouncedSearchQuery = useDebounce(searchValue, 300);
 
-  const placeholders = {
-    trigger: t('common:select'),
-    search: t('common:placeholder.search'),
-    notFound: t('common:no_resource_found', { resource: t('common:item').toLowerCase() }),
+  const placeholders: Record<keyof typeof passedPlaseholders, TKey> = {
+    trigger: 'common:select',
+    search: 'common:placeholder.search',
+    notFound: 'common:no_resource_found',
+    resource: 'common:item',
     ...passedPlaseholders,
   };
 
@@ -106,7 +109,6 @@ const Combobox = ({
           <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
-      {/* bounds.width + bounds.x * 2 to also include padding */}
       {/* TODO has scaling effect issue */}
       <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
         <Command shouldFilter={false}>
@@ -116,7 +118,7 @@ const Combobox = ({
 
           <CommandList className="h-[30vh]">
             <CommandEmpty>
-              <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} />
+              <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleProps={{ resource: t(placeholders.resource).toLowerCase() }} />
             </CommandEmpty>
 
             <CommandGroup>

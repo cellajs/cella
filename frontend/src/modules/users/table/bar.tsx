@@ -103,13 +103,13 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={t('common:delete')}
+                  label="common:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
-              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="common:invite" onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && <TableCount count={total} label="common:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>

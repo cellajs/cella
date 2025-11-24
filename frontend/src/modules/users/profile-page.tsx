@@ -62,8 +62,8 @@ const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
       </div>
     );
 
-  if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title={t('error:request_failed')} />;
-  if (!user) return <ContentPlaceholder icon={FlameKindlingIcon} title={t('error:no_user_found')} />;
+  if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
+  if (!user) return <ContentPlaceholder icon={FlameKindlingIcon} title="error:no_user_found" />;
 
   return (
     <>

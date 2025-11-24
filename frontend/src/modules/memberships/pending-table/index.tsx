@@ -83,7 +83,7 @@ export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />
+            <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:invites').toLowerCase() }} />
           ),
         }}
       />
