@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { forwardRef, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import type { TKey } from '~/lib/i18n-locales';
 import { Badge } from '~/modules/ui/badge';
@@ -13,6 +14,7 @@ type Props = {
 } & ButtonProps;
 
 export const TableBarButton = forwardRef<HTMLButtonElement, Props>(({ icon: Icon, label, badge, className, ...props }, ref) => {
+  const { t } = useTranslation();
   const id = slugify(label, { lower: true, strict: true });
   return (
     <Button asChild {...props}>
@@ -27,7 +29,7 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(({ icon: Icon
         exit={{ scale: 0.6, opacity: 0 }}
       >
         {Icon && <motion.span className="flex items-center mr-2">{<Icon size={16} />}</motion.span>}
-        {label && <span>{label}</span>}
+        {label && <span>{t(label)}</span>}
 
         {badge && <Badge context="button">{badge}</Badge>}
       </motion.button>

@@ -58,7 +58,7 @@ const entityRoutes = {
     tags: ['entities'],
     summary: 'Get a context entity',
     description: `Retrieve detailed information about a single context entity by its ID or slug.
-      Supports all context entity types configured in the system. Returns only table fields for the entity type.`,
+      Supports all context entity types configured in the system. Returns only base fields for the entity.`,
     request: { params: entityParamSchema, query: z.object({ entityType: contextEntityTypeSchema }) },
     responses: {
       200: {

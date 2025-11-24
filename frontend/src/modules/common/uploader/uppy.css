@@ -10,6 +10,10 @@
   border-bottom: 0.125rem solid hsl(var(--primary));
 }
 
+.uppy-Dashboard-note {
+  font-size: 12px;
+}
+
 .uppy-DashboardTab-btn {
   display: flex;
 }

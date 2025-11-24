@@ -42,6 +42,7 @@ export function useGetEntityBaseData(args: { idOrSlug: string; entityType: Conte
     for (const [, cachedData] of queries) {
       if (!cachedData) continue;
 
+      // TODO(DAVID): add comments to explain each case
       if (isQueryData<WithIdSlug>(cachedData)) {
         const found = cachedData.items.find(matchEntity);
         if (found) return found;

@@ -1578,7 +1578,7 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
  * 🛡️ Requires authentication
  *
  * Retrieve detailed information about a single context entity by its ID or slug.
- * Supports all context entity types configured in the system. Returns only table fields for the entity type.
+ * Supports all context entity types configured in the system. Returns only base fields for the entity.
  *
  * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](https://api.cellajs.com/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
  *
