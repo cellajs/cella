@@ -6,13 +6,13 @@ In this folder we manage the translations that is handled using i18next.
 * [i18n ally documentation](https://github.com/lokalise/i18n-ally/wiki)
 
 ### Install i18n Ally
-We recommend using the VSCode plugin `lokalise.i18n-ally` to manage translations in this `locale` folder.
+We recommend using the VSCode plugin `lokalise.i18n-ally` to manage translations in this `locales` folder.
 
 The recommended settings to put in your `.vscode/settings.json` or to edit in the settings page of your workspace:
 
 ```
 {
-  "i18n-ally.localesPaths": ["locales"],
+  "i18n-ally.localesPaths": ["locales/.locales-cache"],
   "i18n-ally.annotationDelimiter": ".",
   "i18n-ally.keystyle": "flat",
   "i18n-ally.dirStructure": "dir",

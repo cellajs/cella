@@ -34,7 +34,7 @@
   "feature.tanstack_title": "tanstack",
   "feature.vite_text": "With vite and pnpm we have a monorepo with a fast build process.",
   "feature.vite_title": "vite & pnpm",
-  "hero.subtitle": "Offline, instant & realtime.",
+  "hero.subtitle": "Offline, instat & realtime.",
   "hero.text": "Cella is a TypeScript template to build collaborative web apps with <strong>sync engine</strong>. MIT licensed. European infra only.",
   "hero.title": "",
   "prerelease": "Prerelease",

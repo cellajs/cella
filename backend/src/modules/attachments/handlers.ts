@@ -29,6 +29,7 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
     const { live, handle, offset, cursor, where, table } = ctx.req.valid('query');
 
+    // TODO(DAVID): introducing toastMessage for this seems overkill, can we simplify by using dedicated type? `table_mismatch`, `organization_required`, `organization_mismatch`?
     if (table !== 'attachments') {
       throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
     }

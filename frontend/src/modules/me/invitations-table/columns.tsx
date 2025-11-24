@@ -63,7 +63,7 @@ export const useColumns = () => {
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <span>{t(`app:${row.entity.entityType}`)}</span>,
+      renderCell: ({ row }) => <span>{t(`common:${row.entity.entityType}`)}</span>,
     },
     {
       key: 'role',
@@ -74,7 +74,7 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative group h-full w-full">
-          {row.inactiveMembership.role ? t(row.inactiveMembership.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
+          {row.inactiveMembership.role ? t(`common:${row.inactiveMembership.role}`) : <span className="text-muted">-</span>}
         </div>
       ),
     },

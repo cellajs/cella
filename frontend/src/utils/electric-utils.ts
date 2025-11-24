@@ -1,7 +1,6 @@
 import { type BackoffOptions, type ChangeMessage, type ExternalParamsRecord, FetchError, type Row } from '@electric-sql/client';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster/service';
 import { useSyncStore } from '~/store/sync';
 
 // Convert camelCase to snake_case
@@ -79,9 +78,9 @@ export const handleSyncError = (error: Error, storePrefix: string, params: Exter
 
     const apiError = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown error during sync', ...responseJson });
 
-    const toastMsg = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
+    const errorMessage = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
 
-    toaster(toastMsg, 'warning');
+    console.warn(errorMessage);
     return;
   }
 

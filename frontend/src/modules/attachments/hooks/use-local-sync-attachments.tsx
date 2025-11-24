@@ -83,7 +83,7 @@ export const useLocalSyncAttachments = (organizationId: string) => {
           });
 
         for (const file of files) {
-          // TODO(DAVID) all types around file/custom uppy file look a bit confusing. can we do something about it? Ensure `data` is non-null to satisfy Uppy types: fall back to a size-only object when missing.
+          // TODO all types around file/custom uppy file look a bit confusing. can we do something about it? Ensure `data` is non-null to satisfy Uppy types: fall back to a size-only object when missing.
           const data = file.data ?? { size: file.size ?? null };
           localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}`, data });
         }

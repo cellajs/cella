@@ -67,7 +67,6 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug }: BaseProps
 /**
  * Wrapper around UserCell to get userCell by ID. Avoid trigger `Rendered more hooks than during the previous render.`
  */
-// TODO(DAVID)(refactor) simple users get 403 if not in cache
 export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
   if (!userId) return <span className="text-muted">-</span>;
 

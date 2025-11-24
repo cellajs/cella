@@ -14,7 +14,7 @@ import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { watchBackendOpenApi } from './vite/openapi-watch-mode';
-import { swallowLocaleHMR } from './vite/swallow-locale-hmr';
+import { localesHMR } from './vite/locales-hmr';
 
 const ReactCompilerConfig = {
   /* ... */
@@ -169,7 +169,12 @@ if (appConfig.frontendUrl.includes('https')) {
 if (appConfig.mode === 'development' && !isStorybook) {
   viteConfig.plugins?.push(
     i18nextHMRPlugin({ localesDir: '../locales' }),
-    swallowLocaleHMR(),
+    localesHMR({
+      srcDir: path.resolve(__dirname, '../locales'),
+      outDir: path.resolve(__dirname, '../locales/.locales-cache'),
+      merge: { target: 'common', sources: ['app'] },
+      verbose: false,
+    }),
     watchBackendOpenApi(),
     reactScan({
       enable: false,
