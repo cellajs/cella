@@ -16,6 +16,7 @@ import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/rout
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organization-routes';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system-routes';
 import { UserAccountRoute, UserInOrganizationProfileRoute, UserProfileRoute } from '~/routes/user-routes';
+import { PagesRoute } from './pages-routes';
 
 //App-specific route imports here
 //...
@@ -40,6 +41,7 @@ export const routeTree = RootRoute.addChildren([
       UnsubscribedRoute,
       AuthErrorRoute,
     ]),
+    PagesRoute,
   ]),
   AppLayoutRoute.addChildren([
     HomeRoute,
