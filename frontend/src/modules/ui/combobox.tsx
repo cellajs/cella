@@ -104,7 +104,7 @@ const Combobox = ({
               {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate text-muted-foreground">{placeholders.trigger}</span>
+            <span className="truncate text-muted-foreground">{t(placeholders.trigger)}</span>
           )}
           <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
@@ -113,7 +113,7 @@ const Combobox = ({
       <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
         <Command shouldFilter={false}>
           {!isMobile && (
-            <CommandInput value={searchValue} onValueChange={setSearchValue} clearValue={setSearchValue} placeholder={placeholders.search} />
+            <CommandInput value={searchValue} onValueChange={setSearchValue} clearValue={setSearchValue} placeholder={t(placeholders.search)} />
           )}
 
           <CommandList className="h-[30vh]">

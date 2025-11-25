@@ -8,8 +8,7 @@ specific needs. The key benefits include modularity and flexibility.
 ## BlockNote Block Customization Guide
 
 The default BlockNote schema can be extended to include custom block types, such as **Notify** and **Mention**. For example,
-you can find this custom components under `blocknote/custom-element`. For app-specific customizations, use `blocknote/
-app-specific-custom`.
+you can find this custom components under `blocknote/custom-element`. 
 functions `getSideMenuItems` and `getSlashMenuItems` are required for integrating custom items into the side and slash
 menus, respectively. For default Cella usage, they should look like this:
 

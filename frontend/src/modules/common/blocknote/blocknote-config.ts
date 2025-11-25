@@ -12,7 +12,7 @@ import type {
 } from '~/modules/common/blocknote/types';
 
 /**
- *  Basic Configuration
+ *  Basic configuration
  */
 
 // Base custom schema
@@ -32,12 +32,12 @@ declare module '~/modules/common/blocknote/types' {
 export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
 /**
- *  Side Menu Configuration
+ *  Side menu configuration
  */
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
 /**
- *  Slash Menu Configuration
+ *  Slash menu configuration
  */
 
 // Indexed items (max 9 for quick number-based selection)
@@ -90,7 +90,7 @@ export const getSlashMenuItems = (
 };
 
 /**
- *  Formatting toolbar Configuration
+ *  Formatting toolbar configuration
  */
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   blockTypeSelect: false,

@@ -35,11 +35,23 @@
   @font-face {
     font-family: "Open Sans";
     src:
-      local("Open Sans"),
-      local("OpenSans"),
+      local("Open Sans Regular"),
+      local("OpenSans-Regular"),
       url(/static/fonts/OpenSans-Regular.woff2) format("woff2"),
       url(/static/fonts/OpenSans-Regular.woff) format("woff");
     font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Medium"),
+      local("OpenSans-Medium"),
+      url(/static/fonts/OpenSans-Medium.woff2) format("woff2"),
+      url(/static/fonts/OpenSans-Medium.woff) format("woff");
+    font-weight: 500;
     font-style: normal;
     font-display: swap;
   }

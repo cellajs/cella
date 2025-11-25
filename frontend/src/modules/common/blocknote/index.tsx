@@ -1,5 +1,4 @@
 import '@blocknote/shadcn/style.css';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
