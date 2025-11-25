@@ -1,5 +1,4 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { EntityType } from 'config';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import pagesRoutes from '#/modules/pages/routes';
@@ -27,7 +26,8 @@ const pagesRouteHandlers = app
 
     // validate organization?
 
-    return await proxyElectricSync(table as EntityType, query);
+    // TODO add pages EntityType?
+    return await proxyElectricSync(table, query);
   })
   /**
    * Create Pages

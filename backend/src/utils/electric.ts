@@ -44,11 +44,11 @@ const prepareElectricUrl = (table: string, query: ElectricUrlQuery): URL => {
 /**
  * Make request to Electric proxy, copying Electric Protocol params
  * @see https://electric-sql.com/docs/guides/auth#proxy-auth
- * @param {EntityType} table
+ * @param {string} table
  * @param {ElectricUrlQuery} query
  * @returns {Response}
  */
-export const proxyElectricSync = async (table: EntityType, query: ElectricUrlQuery): Promise<Response> => {
+export const proxyElectricSync = async (table: string, query: ElectricUrlQuery, entityType?: EntityType): Promise<Response> => {
   try {
     const originUrl = prepareElectricUrl(table, query);
 
@@ -74,7 +74,7 @@ export const proxyElectricSync = async (table: EntityType, query: ElectricUrlQue
       status: 500,
       type: 'sync_failed',
       severity: 'error',
-      entityType: table,
+      entityType,
       originalError: error,
     });
   }

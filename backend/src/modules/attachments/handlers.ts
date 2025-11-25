@@ -5,7 +5,6 @@ import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
-import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { processAttachmentUrls, processAttachmentUrlsInBatch } from '#/modules/attachments/helpers/process-attachment-urls';
@@ -13,6 +12,7 @@ import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
+import { proxyElectricSync } from '#/utils/electric';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -27,7 +27,8 @@ const attachmentsRouteHandlers = app
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
-    const { live, handle, offset, cursor, where, table } = ctx.req.valid('query');
+    const query = ctx.req.valid('query');
+    const { where, table } = query;
 
     // TODO(DAVID): introducing toastMessage for this seems overkill, can we simplify by using dedicated type? `table_mismatch`, `organization_required`, `organization_mismatch`?
     if (table !== 'attachments') {
@@ -44,43 +45,7 @@ const attachmentsRouteHandlers = app
     if (requestedOrganizationId !== organization.id)
       throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
 
-    // Construct the upstream URL
-    const originUrl = new URL(`${appConfig.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
-
-    // Copy over the relevant query params that the Electric client adds
-    // so that we return the right part of the Shape log.
-    originUrl.searchParams.set('offset', offset);
-    originUrl.searchParams.set('live', live ?? 'false');
-    if (handle) originUrl.searchParams.set('handle', handle);
-    if (cursor) originUrl.searchParams.set('cursor', cursor);
-    if (where) originUrl.searchParams.set('where', where);
-
-    try {
-      const { body, headers, status, statusText } = await fetch(originUrl.toString());
-
-      // Fetch decompresses the body but doesn't remove the
-      // content-encoding & content-length headers which would
-      // break decoding in the browser.
-      //
-      // See https://github.com/whatwg/fetch/issues/1729
-      const newHeaders = new Headers(headers);
-      newHeaders.delete('content-encoding');
-      newHeaders.delete('content-length');
-
-      // Construct a new Response you control
-      return new Response(body, { status, statusText, headers: newHeaders });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown electric error');
-      throw new AppError({
-        name: error.name,
-        message: error.message,
-        status: 500,
-        type: 'sync_failed',
-        severity: 'error',
-        entityType: 'attachment',
-        originalError: error,
-      });
-    }
+    return await proxyElectricSync(table, query, 'attachment');
   })
   /**
    * Create one or more attachments
