@@ -24,12 +24,9 @@ type SearchParams<T> = {
  *   - `search`: The current search parameters (query string).
  *   - `setSearch`: A function to update the search parameters and sync with the URL.
  */
-const useSearchParams = <T extends Record<string, string | string[] | undefined>>({
-  from,
-  defaultValues,
-  saveDataInSearch = true,
-  useCurrentSearch = saveDataInSearch,
-}: SearchParams<T>) => {
+const useSearchParams = <T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams<T>) => {
+  const { from, defaultValues, saveDataInSearch = true, useCurrentSearch = saveDataInSearch } = searchParams ?? {};
+
   const navigate = useNavigate();
   const params = useParams(from ? { from, strict: true } : { strict: false });
   const search = useSearch(from ? { from, strict: true } : { strict: false });
