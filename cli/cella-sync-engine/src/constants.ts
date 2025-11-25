@@ -3,6 +3,8 @@ import packageJson from '../package.json' assert { type: 'json' };
 
 export const NAME = 'cella-sync-engine';
 
+export const DIVIDER = '-------------------------------';
+
 // Export details from package.json
 export const DESCRIPTION: string = packageJson.description;
 export const VERSION: string = packageJson.version;

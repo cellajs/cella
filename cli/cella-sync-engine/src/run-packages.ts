@@ -1,4 +1,5 @@
 import pc from "picocolors";
+import * as path from 'path';
 
 import { config } from "./config";
 import { FileAnalysis, PackageJson } from "./types";
@@ -26,6 +27,9 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
   // Keep track of new package.jsons to write
   const newPackageJsons: { [filePath: string]: PackageJson } = {};
 
+  // Gather all lines to log
+  const allSummaryLines: string[] = [];
+
   for (const analyzedFile of analyzedFiles) {
     const isPackageFile = analyzedFile.filePath.endsWith('package.json');
     const isRemovedInSwizzle = analyzedFile.swizzle?.flaggedInSettingsAs === 'removed';
@@ -36,7 +40,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       continue;
     }
 
-    const resolvedForkPath = resolvePath(forkPath);
+    const resolvedForkPath = path.join(config.fork.workingDirectory, forkPath);
     const forkPackageJson = readJsonFile<PackageJson>(resolvedForkPath);
     const boilerplatePackageJson = await getRemoteJsonFile(
       config.boilerplate.workingDirectory,
@@ -47,24 +51,6 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
     const depsToUpdate = getDepsToUpdate(boilerplatePackageJson?.dependencies || {}, forkPackageJson?.dependencies || {});
     const devDepsToUpdate = getDepsToUpdate(boilerplatePackageJson?.devDependencies || {}, forkPackageJson?.devDependencies || {});
 
-    const amountOfDepsToUpdate = Object.keys(depsToUpdate).length;
-    const amountOfDevDepsToUpdate = Object.keys(devDepsToUpdate).length;
-
-    // Prepare new package.json content (only if there are updates)
-    if (amountOfDepsToUpdate || amountOfDevDepsToUpdate) {
-      if (!newPackageJsons[forkPath]) {
-        newPackageJsons[forkPath] = { ...forkPackageJson };
-      }
-      for (const dep in depsToUpdate) {
-        newPackageJsons[forkPath].dependencies = newPackageJsons[forkPath].dependencies || {};
-        newPackageJsons[forkPath].dependencies![dep] = depsToUpdate[dep];
-      }
-      for (const dep in devDepsToUpdate) {
-        newPackageJsons[forkPath].devDependencies = newPackageJsons[forkPath].devDependencies || {};
-        newPackageJsons[forkPath].devDependencies![dep] = devDepsToUpdate[dep];
-      }
-    }
-
     // Log the package summary
     const summaryLines = packageSummaryLines(
       analyzedFile,
@@ -73,16 +59,33 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       devDepsToUpdate
     );
 
-    logPackageSummaryLines(summaryLines);
+    allSummaryLines.push(...summaryLines);
+
+    const amountOfDepsToUpdate = Object.keys(depsToUpdate).length;
+    const amountOfDevDepsToUpdate = Object.keys(devDepsToUpdate).length;
+
+    // Prepare new package.json content (only if there are updates)
+    if (amountOfDepsToUpdate || amountOfDevDepsToUpdate) {
+      if (!newPackageJsons[resolvedForkPath]) {
+        newPackageJsons[resolvedForkPath] = { ...forkPackageJson };
+      }
+      for (const dep in depsToUpdate) {
+        newPackageJsons[resolvedForkPath].dependencies = newPackageJsons[resolvedForkPath].dependencies || {};
+        newPackageJsons[resolvedForkPath].dependencies![dep] = depsToUpdate[dep];
+      }
+      for (const dep in devDepsToUpdate) {
+        newPackageJsons[resolvedForkPath].devDependencies = newPackageJsons[resolvedForkPath].devDependencies || {};
+        newPackageJsons[resolvedForkPath].devDependencies![dep] = devDepsToUpdate[dep];
+      }
+    }
   }
 
   if (config.behavior.dryRunPackageJsonChanges) {
     console.info(pc.yellow("\nDry Run enabled - no package.json changes will be written.\n"));
   } else {
     // Write new package.json files
-    for (const filePath in newPackageJsons) {
-      const resolvedForkPath = resolvePath(filePath);
-      const newPackageJson = newPackageJsons[filePath];
+    for (const resolvedForkPath in newPackageJsons) {
+      const newPackageJson = newPackageJsons[resolvedForkPath];
       writeJsonFile(resolvedForkPath, newPackageJson);
     }
 
@@ -99,4 +102,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
   }
 
   console.info(pc.green("✔ Sync Package.json complete.\n"));
+
+  // Log all package summaries
+  logPackageSummaryLines(allSummaryLines);
 }

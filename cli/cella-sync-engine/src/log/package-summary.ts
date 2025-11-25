@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import { FileAnalysis, PackageJson } from '../types';
 import { config } from '../config';
+import { DIVIDER } from '../constants';
 
 
 export function packageSummaryLines(
@@ -14,7 +15,8 @@ export function packageSummaryLines(
   const amountOfDevDepsToUpdate = Object.keys(devDepsToUpdate).length;
 
   const lines: string[] = [
-    pc.bold(`\n${analyzedFile.filePath}:`)
+    DIVIDER,
+    pc.bold(`${analyzedFile.filePath}:`)
   ];
 
   if (!amountOfDepsToUpdate && !amountOfDevDepsToUpdate) {
@@ -39,6 +41,8 @@ export function packageSummaryLines(
       }
     }
   }
+
+  lines.push(DIVIDER);
 
   return lines;
 }
