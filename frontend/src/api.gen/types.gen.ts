@@ -1985,6 +1985,7 @@ export type GetUsersResponses = {
     items: Array<
       User & {
         memberships: Array<MembershipBase>;
+        role?: 'admin';
       }
     >;
     total: number;

@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from '~/api.gen';
 import type { Member, PendingMembership } from '~/modules/memberships/types';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { listQueryOptions } from '~/query/utils/options';
 
 type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> & GetPendingMembershipsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -77,6 +78,46 @@ export const membersQueryOptions = ({
       additionalFilter: role ? ({ membership }) => membership.role === role : undefined,
       sortOptions: { role: ({ membership }) => membership.role },
     }),
+  });
+};
+
+export const membersListQueryOptions = ({
+  idOrSlug,
+  orgIdOrSlug,
+  entityType,
+  q = '',
+  sort = 'createdAt',
+  order = 'desc',
+  role,
+  limit = appConfig.requestLimits.members,
+}: GetMembersParams & { limit?: number }) => {
+  const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
+  const baseQueryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined });
+
+  return listQueryOptions({
+    queryKey,
+    queryFn: async ({ limit, offset }, signal) => {
+      return await getMembers({
+        query: { q, idOrSlug, role, entityType, sort, order, offset: String(offset), limit: String(limit) },
+        path: { orgIdOrSlug },
+        signal,
+      });
+    },
+    limit,
+    cachedQuery: {
+      queryKey: baseQueryKey,
+      filterOptions: {
+        q,
+        sort,
+        order,
+        searchIn: ['name', 'email'],
+        limit,
+        sortOptions: {
+          role: (m) => m.membership.role,
+        },
+        additionalFilter: role ? ({ membership }) => membership.role === role : undefined,
+      },
+    },
   });
 };
 

@@ -10,7 +10,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import { useElectricSyncAttachments } from '~/modules/attachments/hooks/use-electric-sync-attachments';
 import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { attachmentsListQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
@@ -49,7 +49,12 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const [columns, setColumns] = useState(useColumns(entity, isSheet, isCompact));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: entity.membership?.organizationId || entity.id, ...search, limit });
+  const queryOptions = attachmentsListQueryOptions({
+    orgIdOrSlug: entity.membership?.organizationId || entity.id,
+    ...search,
+    limit,
+  });
+
   const {
     data: fetchedRows,
     isLoading,
@@ -61,6 +66,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     ...queryOptions,
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
+
   const rows = useOfflineTableSearch({
     data: fetchedRows,
     filterFn: ({ q }, item) => {

@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { usersQueryOptions } from '~/modules/users/query';
+import { usersListQueryOptions } from '~/modules/users/query';
 import { UsersTableBar } from '~/modules/users/table/bar';
 import { useColumns } from '~/modules/users/table/columns';
 import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modules/users/types';
@@ -23,7 +23,7 @@ const UsersTable = () => {
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = usersQueryOptions({ ...search, limit });
+  const queryOptions = usersListQueryOptions({ ...search, limit });
   const {
     data: rows,
     isLoading,

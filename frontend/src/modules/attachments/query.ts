@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import type { Attachment } from '~/api.gen';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { listQueryOptions } from '~/query/utils/options';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -85,5 +86,38 @@ export const attachmentsQueryOptions = ({
       searchIn: ['name', 'filename'],
       limit: baseLimit,
     }),
+  });
+};
+
+export const attachmentsListQueryOptions = ({
+  orgIdOrSlug,
+  q = '',
+  sort = 'createdAt',
+  order = 'desc',
+  limit = appConfig.requestLimits.attachments,
+}: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
+  const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
+  const baseQueryKey = attachmentsKeys.list.table({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
+
+  return listQueryOptions({
+    queryKey,
+    queryFn: async ({ limit, offset }, signal) => {
+      return await getAttachments({
+        query: { q, sort, order, limit: String(limit), offset: String(offset) },
+        path: { orgIdOrSlug },
+        signal,
+      });
+    },
+    limit,
+    cachedQuery: {
+      queryKey: baseQueryKey,
+      filterOptions: {
+        q,
+        sort,
+        order,
+        searchIn: ['name', 'filename'],
+        limit,
+      },
+    },
   });
 };

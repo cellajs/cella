@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
 import type { Attachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { attachmentsListQueryOptions } from '~/modules/attachments/query';
 import type { AttachmentInfiniteQueryData, AttachmentQueryData, AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import { queryClient } from '~/query/query-client';
 import { formatUpdatedCacheData, getQueryItems } from '~/query/utils/mutate-query';
@@ -49,7 +49,13 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         organizationId,
       }));
 
-      const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: organizationId, q, sort, order, limit });
+      const queryOptions = attachmentsListQueryOptions({
+        orgIdOrSlug: organizationId,
+        q,
+        sort,
+        order,
+        limit,
+      });
 
       await queryClient.prefetchInfiniteQuery(queryOptions);
 

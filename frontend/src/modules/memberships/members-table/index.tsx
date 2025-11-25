@@ -11,7 +11,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/bar';
 import { useColumns } from '~/modules/memberships/members-table/columns';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 
@@ -42,7 +42,7 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersQueryOptions({
+  const queryOptions = membersListQueryOptions({
     idOrSlug: entity.slug,
     entityType,
     orgIdOrSlug: organizationId,

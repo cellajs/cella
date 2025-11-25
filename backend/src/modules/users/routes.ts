@@ -1,6 +1,7 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { systemRoleBaseSchema } from '#/modules/system/schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
@@ -28,7 +29,12 @@ const userRoutes = {
         description: 'Users',
         content: {
           'application/json': {
-            schema: paginationSchema(userSchema.extend({ memberships: membershipBaseSchema.array() })),
+            schema: paginationSchema(
+              userSchema.extend({
+                memberships: membershipBaseSchema.array(),
+                role: systemRoleBaseSchema.shape.role.optional(),
+              }),
+            ),
           },
         },
       },

@@ -879,6 +879,7 @@ export const zGetUsersResponse = z.object({
     zUser.and(
       z.object({
         memberships: z.array(zMembershipBase),
+        role: z.optional(z.enum(['admin'])),
       }),
     ),
   ),

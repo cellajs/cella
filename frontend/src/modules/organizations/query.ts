@@ -16,6 +16,7 @@ import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigatio
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { listQueryOptions } from '~/query/utils/options';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -88,6 +89,37 @@ export const organizationsQueryOptions = ({
       searchIn: ['name'],
       limit: baseLimit,
     }),
+  });
+};
+
+export const organizationsListQueryOptions = ({
+  q = '',
+  sort = 'createdAt',
+  order = 'desc',
+  limit = appConfig.requestLimits.organizations,
+}: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
+  const queryKey = organizationsKeys.table.entries({ q, sort, order });
+  const baseQueryKey = organizationsKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
+
+  return listQueryOptions({
+    queryKey,
+    queryFn: async ({ limit, offset }, signal) => {
+      return await getOrganizations({
+        query: { q, sort, order, limit: String(limit), offset: String(offset) },
+        signal,
+      });
+    },
+    limit,
+    cachedQuery: {
+      queryKey: baseQueryKey,
+      filterOptions: {
+        q,
+        sort,
+        order,
+        searchIn: ['name'],
+        limit,
+      },
+    },
   });
 };
 
