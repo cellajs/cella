@@ -94,6 +94,7 @@ export type Organization = {
     };
     entities: {
       attachment: number;
+      page: number;
     };
   };
 };
@@ -214,7 +215,7 @@ export type ApiError = {
     | 510
     | 511;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  entityType?: 'user' | 'organization' | 'attachment';
+  entityType?: 'user' | 'organization' | 'attachment' | 'page';
   logId?: string;
   path?: string;
   method?: string;
@@ -252,7 +253,6 @@ export type Page = {
   keywords: string;
   order: number;
   status: 'unpublished' | 'published' | 'archived';
-  parentIds: Array<string> | null;
   createdAt: string;
   createdBy: string | null;
   modifiedAt: string | null;
@@ -2441,7 +2441,6 @@ export type CreatePagesData = {
     keywords: string;
     order: number;
     status?: 'unpublished' | 'published' | 'archived';
-    parentIds?: Array<string> | null;
   }>;
   path?: never;
   query?: never;
@@ -2640,7 +2639,7 @@ export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContex
 export type CheckSlugData = {
   body: {
     slug: string;
-    entityType: 'user' | 'organization' | 'attachment';
+    entityType: 'user' | 'organization' | 'attachment' | 'page';
   };
   path?: never;
   query?: never;
@@ -3097,6 +3096,7 @@ export type GetPublicCountsResponses = {
     user: number;
     organization: number;
     attachment: number;
+    page: number;
   };
 };
 

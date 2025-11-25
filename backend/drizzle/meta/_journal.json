@@ -22,6 +22,13 @@
       "when": 1763549930403,
       "tag": "0002_huge_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1764086916600,
+      "tag": "0003_shiny_vertigo",
+      "breakpoints": true
     }
   ]
 }

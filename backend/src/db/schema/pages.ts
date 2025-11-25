@@ -1,4 +1,4 @@
-import { AnyPgColumn, doublePrecision, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { doublePrecision, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
@@ -27,11 +27,11 @@ export const pagesTable = pgTable(
     //   .references(() => organizationsTable.id, {
     //     onDelete: 'cascade',
     //   }),
-    parentIds: varchar()
-      .array()
-      .references((): AnyPgColumn => pagesTable.id, {
-        onDelete: 'set null',
-      }),
+    // parentIds: varchar()
+    //   .array()
+    //   .references((): AnyPgColumn => pagesTable.id, {
+    //     onDelete: 'set null',
+    //   }),
     createdAt: timestampColumns.createdAt,
     createdBy: varchar().references(() => usersTable.id, {
       onDelete: 'set null',
