@@ -243,6 +243,22 @@ export type TooManyRequestsError = ApiError & {
   status?: 429;
 };
 
+export type Page = {
+  id: string;
+  entityType: 'page';
+  slug: string;
+  title: string;
+  content: string;
+  keywords: string;
+  order: number;
+  status: 'unpublished' | 'published' | 'archived';
+  parentIds: Array<string> | null;
+  createdAt: string;
+  createdBy: string | null;
+  modifiedAt: string | null;
+  modifiedBy: string | null;
+};
+
 export type CheckEmailData = {
   body: {
     email: string;
@@ -2317,6 +2333,198 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
+export type ShapeProxyData = {
+  body?: never;
+  path: {
+    orgIdOrSlug: string;
+  };
+  query: {
+    table: string;
+    offset: string;
+    handle?: string;
+    cursor?: string;
+    live?: string;
+    where?: string;
+  };
+  url: '/pages/shape-proxy';
+};
+
+export type ShapeProxyErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
+
+export type ShapeProxyResponses = {
+  /**
+   * Success
+   */
+  200: unknown;
+};
+
+export type GetPagesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'order' | 'status' | 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+  };
+  url: '/pages';
+};
+
+export type GetPagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPagesError = GetPagesErrors[keyof GetPagesErrors];
+
+export type GetPagesResponses = {
+  /**
+   * Pages
+   */
+  200: {
+    items: Array<Page>;
+    total: number;
+  };
+};
+
+export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
+
+export type CreatePagesData = {
+  body: Array<{
+    id?: string;
+    entityType?: 'page';
+    slug: string;
+    title: string;
+    content: string;
+    keywords: string;
+    order: number;
+    status?: 'unpublished' | 'published' | 'archived';
+    parentIds?: Array<string> | null;
+  }>;
+  path?: never;
+  query?: never;
+  url: '/pages';
+};
+
+export type CreatePagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreatePagesError = CreatePagesErrors[keyof CreatePagesErrors];
+
+export type CreatePagesResponses = {
+  /**
+   * Pages
+   */
+  201: Array<Page>;
+};
+
+export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponses];
+
+export type GetPageData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/pages/{id}';
+};
+
+export type GetPageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPageError = GetPageErrors[keyof GetPageErrors];
+
+export type GetPageResponses = {
+  /**
+   * Page
+   */
+  200: Page;
+};
+
+export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
+
 export type GetContextEntitiesData = {
   body?: never;
   path?: never;
@@ -2894,7 +3102,7 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
-export type ShapeProxyData = {
+export type ShapeProxy2Data = {
   body?: never;
   path: {
     orgIdOrSlug: string;
@@ -2910,7 +3118,7 @@ export type ShapeProxyData = {
   url: '/{orgIdOrSlug}/attachments/shape-proxy';
 };
 
-export type ShapeProxyErrors = {
+export type ShapeProxy2Errors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2933,9 +3141,9 @@ export type ShapeProxyErrors = {
   429: TooManyRequestsError;
 };
 
-export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
+export type ShapeProxy2Error = ShapeProxy2Errors[keyof ShapeProxy2Errors];
 
-export type ShapeProxyResponses = {
+export type ShapeProxy2Responses = {
   /**
    * Success
    */

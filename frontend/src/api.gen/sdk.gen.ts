@@ -15,6 +15,9 @@ import type {
   CreateOrganizationData,
   CreateOrganizationErrors,
   CreateOrganizationResponses,
+  CreatePagesData,
+  CreatePagesErrors,
+  CreatePagesResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -99,6 +102,12 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
+  GetPageData,
+  GetPageErrors,
+  GetPageResponses,
+  GetPagesData,
+  GetPagesErrors,
+  GetPagesResponses,
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
@@ -158,6 +167,9 @@ import type {
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
+  ShapeProxy2Data,
+  ShapeProxy2Errors,
+  ShapeProxy2Responses,
   ShapeProxyData,
   ShapeProxyErrors,
   ShapeProxyResponses,
@@ -1532,6 +1544,133 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
+ * Shape proxy
+ *
+ * 🛡️ Requires authentication
+ *
+ * Proxies requests to ElectricSQL's shape endpoint for the `pages` table.
+ * Used by clients to synchronize local data with server state via the shape log system.
+ * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
+ *
+ * **GET /pages/shape-proxy** ·· [shapeProxy](https://api.cellajs.com/docs#tag/pages/get/pages/shape-proxy) ·· _pages_
+ *
+ * @param {shapeProxyData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string} options.query.table - `string`
+ * @param {string} options.query.offset - `string`
+ * @param {string=} options.query.handle - `string` (optional)
+ * @param {string=} options.query.cursor - `string` (optional)
+ * @param {string=} options.query.live - `string` (optional)
+ * @param {string=} options.query.where - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
+  return (options.client ?? client).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages/shape-proxy',
+    ...options,
+  });
+};
+
+/**
+ * Get list of pages
+ *
+ * 🛡️ Requires authentication
+ *
+ * Retrieves all *pages* associated with a specific entity, such as an organization.
+ *
+ * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· _pages_
+ *
+ * @param {getPagesData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) => {
+  return (options?.client ?? client).get<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages',
+    ...options,
+  });
+};
+
+/**
+ * Create pages
+ *
+ * 🛡️ Requires authentication
+ *
+ * Creates one or more new *pages*.
+ *
+ * **POST /pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
+ *
+ * @param {createPagesData} options
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ */
+export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) => {
+  return (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Get page
+ *
+ * 🛡️ Requires authentication
+ *
+ * Fetches metadata and access details for a single *page* by ID.
+ *
+ * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
+ *
+ * @param {getPageData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPage = <ThrowOnError extends boolean = true>(options: Options<GetPageData, ThrowOnError>) => {
+  return (options.client ?? client).get<GetPageResponses, GetPageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages/{id}',
+    ...options,
+  });
+};
+
+/**
  * Get list of context entities
  *
  * 🛡️ Requires authentication
@@ -1901,9 +2040,9 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * Used by clients to synchronize local data with server state via the shape log system.
  * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
  *
- * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy2](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
  *
- * @param {shapeProxyData} options
+ * @param {shapeProxy2Data} options
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @param {string} options.query.table - `string`
  * @param {string} options.query.offset - `string`
@@ -1913,8 +2052,8 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * @param {string=} options.query.where - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
-  return (options.client ?? client).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
+export const shapeProxy2 = <ThrowOnError extends boolean = true>(options: Options<ShapeProxy2Data, ThrowOnError>) => {
+  return (options.client ?? client).get<ShapeProxy2Responses, ShapeProxy2Errors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {

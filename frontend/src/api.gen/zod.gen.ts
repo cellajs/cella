@@ -258,6 +258,22 @@ export const zTooManyRequestsError = zApiError.and(
   }),
 );
 
+export const zPage = z.object({
+  id: z.string(),
+  entityType: z.enum(['page']),
+  slug: z.string(),
+  title: z.string(),
+  content: z.string(),
+  keywords: z.string(),
+  order: z.number().gte(-140737488355328).lte(140737488355327),
+  status: z.enum(['unpublished', 'published', 'archived']),
+  parentIds: z.union([z.array(z.string()), z.null()]),
+  createdAt: z.string(),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+});
+
 export const zCheckEmailData = z.object({
   body: z.object({
     email: z.email(),
@@ -1007,6 +1023,82 @@ export const zUpdateOrganizationData = z.object({
  */
 export const zUpdateOrganizationResponse = zOrganization;
 
+export const zShapeProxyData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.object({
+    table: z.string(),
+    offset: z.string(),
+    handle: z.optional(z.string()),
+    cursor: z.optional(z.string()),
+    live: z.optional(z.string()),
+    where: z.optional(z.string()),
+  }),
+});
+
+export const zGetPagesData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['order', 'status', 'createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Pages
+ */
+export const zGetPagesResponse = z.object({
+  items: z.array(zPage),
+  total: z.number(),
+});
+
+export const zCreatePagesData = z.object({
+  body: z
+    .array(
+      z.object({
+        id: z.optional(z.string()),
+        entityType: z.optional(z.enum(['page'])),
+        slug: z.string(),
+        title: z.string(),
+        content: z.string(),
+        keywords: z.string(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
+        parentIds: z.optional(z.union([z.array(z.string()), z.null()])),
+      }),
+    )
+    .min(1)
+    .max(50),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Pages
+ */
+export const zCreatePagesResponse = z.array(zPage);
+
+export const zGetPageData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page
+ */
+export const zGetPageResponse = zPage;
+
 export const zGetContextEntitiesData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -1236,7 +1328,7 @@ export const zGetPublicCountsResponse = z.object({
   attachment: z.number(),
 });
 
-export const zShapeProxyData = z.object({
+export const zShapeProxy2Data = z.object({
   body: z.optional(z.never()),
   path: z.object({
     orgIdOrSlug: z.string(),
