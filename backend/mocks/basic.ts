@@ -25,7 +25,7 @@ const organizationName = new UniqueEnforcer();
 const userSlug = new UniqueEnforcer();
 const userEmail = new UniqueEnforcer();
 
-// Tracks the current order offset for memberships per context
+// Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
 
 /**
