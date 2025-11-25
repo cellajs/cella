@@ -89,11 +89,11 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       writeJsonFile(resolvedForkPath, newPackageJson);
     }
 
-    // // Let Git add all changes
-    // await gitAddAll(config.fork.workingDirectory);
+    // Let Git add all changes
+    await gitAddAll(config.fork.workingDirectory);
 
-    // // Commit package.json changes
-    // await gitCommit(config.fork.workingDirectory, `Sync package.json dependencies from ${config.boilerplate.branchRef}`, { noVerify: true });
+    // Commit package.json changes
+    await gitCommit(config.fork.workingDirectory, `Sync package.json dependencies from ${config.boilerplate.branchRef}`, { noVerify: true });
 
     // Push changes if not skipped
     if (!config.behavior.skipAllPushes) {
