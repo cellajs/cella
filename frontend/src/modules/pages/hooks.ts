@@ -9,7 +9,6 @@ import useSearchParams from '~/hooks/use-search-params';
 import { pageQueryOptions, pagesDetailsQueryOptions, pagesLimit, pagesListQueryOptions } from '~/modules/pages/queries';
 import { PagesSearch } from '~/modules/pages/types';
 import { InfiniteQueryData, QueryData } from '~/query/types';
-import { nanoid } from '~/utils/nanoid';
 import { toaster } from '../common/toaster/service';
 
 // #region Helpers
@@ -47,9 +46,9 @@ const usePathIds = () => {
 
 type TableName<T extends EntityType | 'page'> = `${T}s`;
 
-const getTableQueries = <N extends TableName<EntityType | 'page'>, T extends { id: string }>(queryKeyFilter: [N]) => {
+const getTableQueries = <N extends TableName<EntityType | 'page'>, T extends { id: string } | { id: string }[]>(queryKeyFilter: [N]) => {
   const queryClient = useQueryClient();
-  return queryClient.getQueriesData<T | T[]>({ queryKey: queryKeyFilter });
+  return queryClient.getQueriesData<T>({ queryKey: queryKeyFilter });
 };
 
 // #endregion
@@ -109,32 +108,51 @@ const isInfiniteData = <T>(data: QueryData<T> | InfiniteQueryData<T>): data is I
   return 'pages' in data;
 };
 
+//
+
 const handlers = {
   create: <T extends { id: string }>(cached: T[], item: T | T[]): T[] => {
     const items = Array.isArray(item) ? item : [item];
     return [...cached, ...items];
   },
-  update: <T extends { id: string }>(cached: T[], item: T | T[]) => {
+  update: <T extends { id: string }>(cached: T[], item: T | T[]): T[] => {
     const items = Array.isArray(item) ? item : [item];
     return cached.map((item) => {
       const match = items.find((i) => i.id === item.id);
       return match ?? item;
     });
   },
-  delete: <T extends { id: string }>(cached: T[], id: string | string[]) => {
+  delete: <T extends { id: string }>(cached: T[], id: string | string[]): T[] => {
     const ids = Array.isArray(id) ? id : [id];
     return cached.filter((item) => ids.includes(item.id));
   },
+} as const;
+
+type Handlers = typeof handlers;
+type Method = keyof Handlers;
+
+const handleUpdate = <T extends { id: string } | { id: string }[], M extends Method, A = M extends 'delete' ? string | string[] : T | T[]>(
+  type: M,
+  cached: T[],
+  arg: A,
+): T[] => {
+  // @ts-expect-error
+  return handlers[type]<T>(cached, arg);
 };
 
-const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { id: string }, R extends Partial<T>>({
+const useTableMutation = <
+  T extends { id: string } | { id: string }[],
+  R extends { data: T },
+  N extends TableName<EntityType | 'page'>,
+  M extends Method,
+>({
   table,
   type,
   mutationFn,
 }: {
   table: N;
-  type: 'create' | 'update' | 'delete';
-  mutationFn: (data: R) => Promise<T>;
+  type: M;
+  mutationFn: (args: R) => Promise<T>;
 }) => {
   const keyFilter: [N] = [table];
 
@@ -142,10 +160,9 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
 
   return useMutation({
     mutationFn,
-    onMutate: async (variables, context) => {
-      const optimisticId = variables.id ?? nanoid(); // oof
-
-      const previous: [QueryKey, T | T[], string | undefined][] = [];
+    // at some point here, does shit get persisted locally?
+    onMutate: async (value, context): Promise<[QueryKey, T | T[]][]> => {
+      const previous: [QueryKey, T | T[]][] = [];
 
       for (const [queryKey, cached] of getTableQueries<N, T>(keyFilter)) {
         // Cancel outgoing refetches to avoid overwriting optimistic update
@@ -156,10 +173,11 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
           continue;
         }
 
-        const handleUpdate = handlers[type];
+        previous.push([queryKey, cached]);
+
+        // const { order: insertOrder } = getQueryKeySortOrder(queryKey);
 
         // Optimistically update to the new value
-        // @ts-ignore
         context.client.setQueryData<QueryData<T> | InfiniteQueryData<T>>(queryKey, (prev) => {
           if (!prev) {
             return prev;
@@ -168,14 +186,12 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
           // Handle Infinite case
           if (isInfiniteData(prev)) {
             const original = prev.pages.flatMap(({ items }) => items);
-            // @ts-ignore
-            const updated = handleUpdate(original, variables);
+            const updated = handleUpdate(type, original, value);
 
             if (!updated.length) {
-              // ?
               return {
                 pages: [{ items: [], total: 0 }],
-                pageParams: [0],
+                pageParams: [{ page: 0, offset: 0 }],
               };
             }
 
@@ -190,7 +206,7 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
                     total: updated.length,
                   },
                 ],
-                pageParams: [0],
+                pageParams: [{ page: 0, offset: 0 }],
               };
             }
 
@@ -207,22 +223,19 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
                   total: items.length,
                 };
               }),
-              pageParams: chunks.map((_, i) => i),
+              pageParams: chunks.map((chunk, page) => ({ page, offset: chunk.length })),
             };
           }
 
           // Handle Query case
           const original = prev.items;
-          // @ts-ignore
-          const updated = handleUpdate(original, variables);
+          const updated = handleUpdate(type, original, value);
 
           return {
             items: updated,
             total: updated.length,
           };
         });
-
-        previous.push([queryKey, cached, optimisticId]);
       }
 
       // side effects
@@ -231,6 +244,8 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
       return previous;
     },
     onError: (_error, _variables, onMutateResult, context) => {
+      // maybe vary result based on if offline?
+
       toaster(t(`error:${type}_resource`, { resource: t(`app:${table}`) }), 'error');
 
       if (!onMutateResult?.length) {
@@ -247,12 +262,33 @@ const useTableMutation = <N extends TableName<EntityType | 'page'>, T extends { 
   });
 };
 
-export const useCreatePage = () => {
+export const useCreatePages = () => {
   return useTableMutation({
     table: 'pages',
     type: 'create',
-    // @ts-ignore
-    mutationFn: async (page: Pick<Page, 'title' | 'content'>) => {},
+    mutationFn: async ({ data }: { other: string; data: Page[] }): Promise<Page[]> => {
+      return data;
+    },
+  });
+};
+
+export const useUpdatePages = () => {
+  return useTableMutation({
+    table: 'pages',
+    type: 'update',
+    mutationFn: async ({ data }: { other: string; data: Page[] }): Promise<Page[]> => {
+      return data;
+    },
+  });
+};
+
+export const useDeletePages = () => {
+  return useTableMutation({
+    table: 'pages',
+    type: 'delete',
+    mutationFn: async ({ data }: { other: string; data: Page[] }): Promise<Page[]> => {
+      return data;
+    },
   });
 };
 
