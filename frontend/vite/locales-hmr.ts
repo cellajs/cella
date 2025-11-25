@@ -17,19 +17,16 @@ export interface LocalesHMROptions {
 function resolveOptions(userOptions: LocalesHMROptions = {}): Required<LocalesHMROptions> {
   return {
     srcDir: userOptions.srcDir ?? path.resolve(process.cwd(), '../locales'),
-    outDir: userOptions.outDir ?? path.resolve(process.cwd(), '../locales/.locales-cache'),
+    outDir: userOptions.outDir ?? path.resolve(process.cwd(), '../.vscode/.locales-cache'),
     merge: userOptions.merge ?? { target: 'common', sources: ['app'] },
     verbose: userOptions.verbose ?? true,
   };
 }
 
-function log(level: 'debug' | 'info' | 'warn' | 'error', message: string, verbose: boolean, ...args: unknown[]) {
-  if (!verbose && (level === 'debug' || level === 'info')) return;
+function log(level: 'info' | 'warn' | 'error', message: string, verbose: boolean, ...args: unknown[]) {
+  if (!verbose && level === 'info') return;
   const prefix = 'LocalesHMR:';
   switch (level) {
-    case 'debug':
-      console.debug(prefix, message, ...args);
-      break;
     case 'info':
       console.info(prefix, message, ...args);
       break;
@@ -101,7 +98,7 @@ async function syncLanguage(lang: string, options: Required<LocalesHMROptions>):
   if (Object.keys(mergedTarget).length > 0) {
     const commonOut = path.join(outLangDir, `${targetNs}.json`);
     await fsp.writeFile(commonOut, JSON.stringify(mergedTarget, null, 2), 'utf8');
-    log('debug', `wrote merged ${targetNs}.json for "${lang}" → ${commonOut}`, verbose);
+    log('info', `wrote merged ${targetNs}.json for "${lang}" → ${commonOut}`, verbose);
   }
 
   await Promise.all(
@@ -111,7 +108,7 @@ async function syncLanguage(lang: string, options: Required<LocalesHMROptions>):
 
       const outFile = path.join(outLangDir, `${ns}.json`);
       await fsp.writeFile(outFile, JSON.stringify(data, null, 2), 'utf8');
-      log('debug', `copied ${lang}/${ns}.json → ${outFile}`, verbose);
+      log('info', `copied ${lang}/${ns}.json → ${outFile}`, verbose);
     }),
   );
 }
@@ -159,14 +156,18 @@ export function localesHMR(userOptions: LocalesHMROptions = {}): Plugin {
         data: { file: ctx.file },
       });
 
-      log('debug', `locale file changed, prevent full reload: ${ctx.file}`, options.verbose);
+      log('info', `locale file changed, prevent full reload: ${ctx.file}`, options.verbose);
 
+      // Sync the changed language into the cache
+      // This could be optimized to only update affected files
       try {
         const rel = path.relative(options.srcDir, ctx.file);
         const [lang] = rel.split(path.sep);
 
         if (lang) {
-          await syncLanguage(lang, options);
+          void syncLanguage(lang, options).catch((err) => {
+            log('error', 'error while syncing locales for cache', options.verbose, err);
+          });
         }
       } catch (err) {
         log('error', 'error while syncing locales on HMR', options.verbose, err);

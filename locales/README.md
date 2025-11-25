@@ -12,7 +12,7 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
 
 ```
 {
-  "i18n-ally.localesPaths": ["locales/.locales-cache"],
+  "i18n-ally.localesPaths": [".vscode/.locales-cache"],
   "i18n-ally.annotationDelimiter": ".",
   "i18n-ally.keystyle": "flat",
   "i18n-ally.dirStructure": "dir",
