@@ -6,7 +6,7 @@ import { MinimalRepoConfig } from "./types";
  */
 export const forkDefaultConfig: MinimalRepoConfig = {
   /**
-   * Local file system path to the fork repository (empty because differ per user).
+   * Local file system path to the fork repository.
    */
   localPath: process.cwd(),
 

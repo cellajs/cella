@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { CLIConfig } from "./types";
 import { config } from "../../config";
 import { SyncService } from "../../config/sync-services";
-import { promptConfigurationAction, promptSyncService, promptWhichConfigurationToCustomize, type CustomizeOption, type ConfigurationAction, promptConfigureLocation, promptConfigureBranch, promptDivergedCommitStatusOptions, promptConfigureRemoteName  } from "./prompts";
+import { promptConfigurationAction, promptSyncService, promptWhichConfigurationToCustomize, type CustomizeOption, type ConfigurationAction, promptConfigureLocation, promptConfigureBranch, promptDivergedCommitStatusOptions, promptConfigureRemoteName, promptPackageJsonMode  } from "./prompts";
 import { AppConfig } from "../../config/types";
 import { showConfiguration } from "./display";
 
@@ -75,6 +75,10 @@ export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void
     await handleCustomizeDivergedCommitStatus();
   }
 
+  if (configToCustomize === 'packageJsonMode') {
+    await handleCustomizePackageJsonMode();
+  }
+
   // Recursively handle customization until done
   if (configToCustomize !== 'done') {
     await handleCustomizeConfiguration(cli);
@@ -135,6 +139,14 @@ export async function handleCustomizeRemoteName(cli: CLIConfig, type: 'boilerpla
 export async function handleCustomizeDivergedCommitStatus(): Promise<void> {
   const divergedCommitStatus = await promptDivergedCommitStatusOptions();
   config.log.analyzedFile.commitSummaryState = divergedCommitStatus as NonNullable<typeof config.log.analyzedFile.commitSummaryState>;
+}
+
+/**
+ * Handle customization of dry run package.json changes option.
+ */
+export async function handleCustomizePackageJsonMode(): Promise<void> {
+  const packageJsonMode = await promptPackageJsonMode();
+  config.behavior.packageJsonMode = packageJsonMode;
 }
 
 /**

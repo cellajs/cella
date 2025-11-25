@@ -11,21 +11,27 @@ import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
 import { FileAnalysis } from "./types";
 import { config } from "./config";
 
+/**
+ * Runs the file analysis process, comparing files between the boilerplate and fork repositories.
+ * This includes fetching file lists, analyzing file histories, updating swizzle metadata (if applicable),
+ * and logging the results.
+ */
 export async function runAnalyze(): Promise<FileAnalysis[]> {
   console.info(pc.cyan("\nRunning file analysis"));
 
   const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
   spinner.start();
 
+  // Fetch file hashes from both boilerplate and fork repositories in parallel
   const [boilerplateFiles, forkFiles] = await Promise.all([
     getGitFileHashes(config.boilerplate.workingDirectory, config.boilerplate.branchRef),
     getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranchRef),
   ]);
 
   spinner.stop();
-
   spinner.start("Analyzing file histories...");
 
+  // Analyze files by comparing boilerplate and fork file hashes
   const analyzedFiles = await analyzeManyFiles(
     config.boilerplate,
     config.fork,
@@ -34,11 +40,10 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   );
 
   spinner.stop();
-
   console.info(pc.green("✔ File analysis complete."));
-
   spinner.start("Update swizzle...");
 
+  // Extract swizzle entries from analyzed files and update swizzle metadata
   const swizzleEntries = extractSwizzleEntries(analyzedFiles);
   writeSwizzleMetadata(swizzleEntries);
 
@@ -70,5 +75,6 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     logAnalyzedSummaryLines(summaryLines);
   }
 
+  // Return the analyzed files data
   return analyzedFiles
 }

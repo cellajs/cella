@@ -13,6 +13,7 @@ export type CustomizeOption =
   | 'forkLocation'
   | 'forkBranch'
   | 'forkSyncBranch'
+  | 'packageJsonMode'
   | 'done';
 
 /**
@@ -25,7 +26,7 @@ export async function promptSyncService(): Promise<SyncService> {
     choices: [
       ...SYNC_SERVICE_OPTIONS,
       new Separator(),
-      { name: 'Exit', value: 'exit' },
+      { name: pc.red('Exit'), value: 'exit' },
     ],
   });
 
@@ -48,7 +49,7 @@ export async function promptConfigurationAction(): Promise<ConfigurationAction> 
       { name: 'continue', value: 'continue' },
       { name: 'Customize configuration', value: 'customize' },
       new Separator(),
-      { name: 'Exit', value: 'exit' },
+      { name: pc.red('Exit'), value: 'exit' },
     ],
   });
 
@@ -83,6 +84,11 @@ export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOp
         { name: `Commit status: (${(config.log.analyzedFile.commitSummaryState || []).join(', ')})`, value: 'divergedCommitStatus' },
       ] : []),
 
+      ...(config.syncService === 'packages' ? [
+        new Separator('Packages:'),
+        { name: `Package.json changes: <${pc.bold(config.behavior.packageJsonMode === 'dryRun' ? 'Dry run (only log)' : 'Apply Changes (write, commit)')}>`, value: 'packageJsonMode' },
+      ] : []),
+
       new Separator(),
       { name: 'Done', value: 'done' },
     ],
@@ -106,6 +112,23 @@ export async function promptConfigureLocation(type: 'boilerplate' | 'fork'): Pro
   });
 
   return location as 'local' | 'remote';
+}
+
+/**
+ * Prompt the user to configure package.json mode (dry run or apply changes).
+ * @returns 
+ */
+export async function promptPackageJsonMode(): Promise<'dryRun' | 'applyChanges'> {
+  const mode = await select<string>({
+    message: `What mode do you want for package.json changes?`,
+    default: config.behavior.packageJsonMode,
+    choices: [
+      { name: 'Dry run (only log)', value: 'dryRun' },
+      { name: 'Apply Changes (write, commit)', value: 'applyChanges' },
+    ],
+  });
+
+  return mode as 'dryRun' | 'applyChanges';
 }
 
 /**

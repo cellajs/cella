@@ -110,7 +110,7 @@ export interface MinimalBehaviorConfig {
    * Whether to perform a dry run for package.json changes.
    * If true, changes to package.json will not be written, only displayed.
    */
-  dryRunPackageJsonChanges?: boolean;
+  packageJsonMode?: 'dryRun' | 'applyChanges';
 
   /**
    * Whether to skip writing the swizzle metadata file.

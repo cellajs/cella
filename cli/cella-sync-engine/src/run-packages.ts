@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import { config } from "./config";
 import { FileAnalysis, PackageJson } from "./types";
-import { readJsonFile, resolvePath, writeJsonFile } from "./utils/files";
+import { readJsonFile, writeJsonFile } from "./utils/files";
 import { gitAddAll, gitCheckout, gitCommit, gitPush } from "./utils/git/command";
 import { getRemoteJsonFile } from "./utils/git/helpers";
 import { getDepsToUpdate } from "./modules/package/get-deps-to-update";
@@ -30,16 +30,20 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
   // Gather all lines to log
   const allSummaryLines: string[] = [];
 
+  // Use file analyses to determine which package.json files to update
   for (const analyzedFile of analyzedFiles) {
+    // Create some pointer flags for easier reading
     const isPackageFile = analyzedFile.filePath.endsWith('package.json');
     const isRemovedInSwizzle = analyzedFile.swizzle?.flaggedInSettingsAs === 'removed';
     const boilerplatePath = analyzedFile.boilerplateFile?.path;
     const forkPath = analyzedFile.forkFile?.path;
 
+    // Skip non-package.json files, removed files, or files not present in both repos
     if (!isPackageFile || isRemovedInSwizzle || !boilerplatePath || !forkPath) {
       continue;
     }
 
+    // Load package.json files
     const resolvedForkPath = path.join(config.fork.workingDirectory, forkPath);
     const forkPackageJson = readJsonFile<PackageJson>(resolvedForkPath);
     const boilerplatePackageJson = await getRemoteJsonFile(
@@ -48,10 +52,11 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       analyzedFile.filePath
     );
 
+    // Determine dependencies to update
     const depsToUpdate = getDepsToUpdate(boilerplatePackageJson?.dependencies || {}, forkPackageJson?.dependencies || {});
     const devDepsToUpdate = getDepsToUpdate(boilerplatePackageJson?.devDependencies || {}, forkPackageJson?.devDependencies || {});
 
-    // Log the package summary
+    // Create summary lines (will be logged at the end of the process)
     const summaryLines = packageSummaryLines(
       analyzedFile,
       forkPackageJson,
@@ -59,8 +64,10 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       devDepsToUpdate
     );
 
+    // Append to all summary lines
     allSummaryLines.push(...summaryLines);
 
+    // Determine amounts of dependencies to update
     const amountOfDepsToUpdate = Object.keys(depsToUpdate).length;
     const amountOfDevDepsToUpdate = Object.keys(devDepsToUpdate).length;
 
@@ -69,10 +76,12 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       if (!newPackageJsons[resolvedForkPath]) {
         newPackageJsons[resolvedForkPath] = { ...forkPackageJson };
       }
+
       for (const dep in depsToUpdate) {
         newPackageJsons[resolvedForkPath].dependencies = newPackageJsons[resolvedForkPath].dependencies || {};
         newPackageJsons[resolvedForkPath].dependencies![dep] = depsToUpdate[dep];
       }
+      
       for (const dep in devDepsToUpdate) {
         newPackageJsons[resolvedForkPath].devDependencies = newPackageJsons[resolvedForkPath].devDependencies || {};
         newPackageJsons[resolvedForkPath].devDependencies![dep] = devDepsToUpdate[dep];
@@ -80,7 +89,8 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
     }
   }
 
-  if (config.behavior.dryRunPackageJsonChanges) {
+  // Handle dry run or write changes
+  if (config.behavior.packageJsonMode === 'dryRun') {
     console.info(pc.yellow("\nDry Run enabled - no package.json changes will be written.\n"));
   } else {
     // Write new package.json files

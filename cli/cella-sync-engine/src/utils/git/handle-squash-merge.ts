@@ -2,7 +2,7 @@ import { config } from '../../config';
 
 import { gitCheckout, gitMerge, gitCommit, gitAddAll, gitPush } from '../../utils/git/command';
 import { MergeResult } from '../../types';
-import { getCommitCount } from '../../utils/git/helpers';
+import { getCommitCount, getLastCommitMessages } from '../../utils/git/helpers';
 import { hasRemoteBranch } from './branches';
 
 /**
@@ -12,6 +12,7 @@ export async function handleSquashMerge(
   mergeIntoPath: string,
   mergeIntoBranch: string,
   mergeFromBranch: string,
+  maxPreviewCommits?: number,
 ): Promise<MergeResult> {
   try {
     if (!mergeIntoBranch) {
@@ -31,8 +32,29 @@ export async function handleSquashMerge(
       // Add all changes to staging
       await gitAddAll(mergeIntoPath);
 
+      // Get recent commit messages for preview
+      const recentMessages = maxPreviewCommits ? await getLastCommitMessages(
+        mergeIntoPath,
+        mergeFromBranch,
+        mergeIntoBranch,
+        maxPreviewCommits,
+      ) : [];
+
       // Commit the squashed changes
-      const commitMessage = `Squash ${commitCount} commits from '${mergeFromBranch}' into '${mergeIntoBranch}'`;
+      let commitMessage = `Squash ${commitCount} commits from '${mergeFromBranch}' into '${mergeIntoBranch}'`;
+
+      // Append recent commit messages to the commit message
+      if (recentMessages.length) {
+        const bullets = recentMessages.map(msg => `- ${msg}`).join('\n');
+        const remaining = commitCount - recentMessages.length;
+
+        commitMessage += `\n\n${bullets}`;
+        if (remaining > 0) {
+          commitMessage += `\n+${remaining} more commit${remaining > 1 ? 's' : ''}`;
+        }
+      }
+
+      // Create the commit
       await gitCommit(mergeIntoPath, commitMessage, { noVerify: true });
 
       // Push merge result

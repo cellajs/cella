@@ -6,6 +6,9 @@ import { handleSquashMerge } from "./utils/git/handle-squash-merge";
 import { handleMerge } from "./utils/git/handle-merge";
 import { config } from "./config"
 
+/**
+ * Runs the synchronization process between the boilerplate and fork repositories.
+ */
 export async function runSync(analyzedFiles: FileAnalysis[]) {
   console.info(pc.cyan("\nStarting sync process"));
 
@@ -16,7 +19,7 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
   const squashMergeIntoPath = config.fork.localPath;
   const squashMergeIntoBranch = config.fork.branchRef;
   const squashMergeFromBranch = config.fork.syncBranchRef;
-  await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
+  await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch, 5);
 
   // Merge target-branch (squash commit) → sync-branch
   const mergeIntoPath = config.fork.localPath;

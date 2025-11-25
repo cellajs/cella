@@ -1,4 +1,4 @@
-import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain } from './command';
+import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain, runGitCommand } from './command';
 
 /**
  * Get the number of commits that are in `sourceBranch` but not in `baseBranch`.
@@ -80,4 +80,27 @@ export async function getRemoteJsonFile(repoPath: string, branchRef: string, jso
     console.error(`Failed to fetch ${jsonPath} from ${branchRef}`, err);
     return null;
   }
+}
+
+/**
+ * Lists the commit messages between two branches.
+ * @param repoPath - Path to the repository
+ * @param fromBranch - 
+ * @param toBranch 
+ * @param limit 
+ * @returns 
+ */
+export async function getLastCommitMessages(
+  repoPath: string,
+  fromBranch: string,
+  toBranch: string,
+  limit: number = 5,
+): Promise<string[]> {
+  // git log <toBranch>..<fromBranch> -n <limit> --pretty=format:%s
+  const cmd = `log ${toBranch}..${fromBranch} -n ${limit} --pretty=format:%s`;
+
+  const output = await runGitCommand(cmd, repoPath);
+
+  if (!output) return [];
+  return output.split('\n').map(line => line.trim());
 }

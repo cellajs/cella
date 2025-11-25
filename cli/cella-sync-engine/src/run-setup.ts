@@ -13,7 +13,6 @@ import { config } from "./config";
 
 /**
  * Setup checks config and repositories before running any scripts.
- * For now we only support the flow: Boilerplate → Fork (via sync branch).
  * - Ensures boilerplate repository settings are correct.
  * - Ensures fork repository settings are correct.
  * - Validates connectivity to both repositories.

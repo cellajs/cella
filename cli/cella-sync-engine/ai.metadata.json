@@ -1,40 +1,89 @@
 {
   "projectName": "Cella Sync Engine",
-  "description": "A CLI tool to handle git syncs between a boilerplate and fork instance, with automatic conflict analysis and resolution.",
+  "description": "A CLI tool to handle git synchronization tasks between a `boilerplate` and `fork` instance, with automatic conflict analysis and resolution, packages updates.",
   "version": "0.1.0",
   "language": "TypeScript",
   "framework": "Hono",
   "lastUpdated": "2025-08-13T14:30:00Z",
   "cliName": "cella-sync-engine",
   "syncProcess": [
-    "Create a new sync-branch in the fork",
+    "Create/fetch a new sync-branch in the fork",
     "Add boilerplate as upstream in the fork/sync-branch",
     "Merge commits from fork into fork/sync-branch",
     "Merge commits from boilerplate into fork/sync-branch (attempt auto-resolve conflicts git cannot auto-resolve)",
     "Squash commits from fork/sync-branch into fork for clean history",
-    "Rebase squash commit back into fork/sync-branch"
+    "Merge squash commit back into fork/sync-branch"
   ],
   "folderStructure": {
     "root": ["package.json", "package-lock.json", "index.ts"],
     "src": {
-      "config": ["*"],
-      "log": ["analyzed-file.ts", "analyzed-summary.ts", "analyzed-swizzle.ts"],
+      "config": [
+        "behavior.default.ts", 
+        "boilerplate.default.ts", 
+        "fork.default.ts", 
+        "index.ts", 
+        "log.default.ts", 
+        "swizzle.default.ts", 
+        "sync-services.ts", 
+        "types.ts"
+      ],
+      "log": ["analyzed-file.ts", "analyzed-summary.ts", "analyzed-swizzle.ts", "package-summary.ts"],
       "modules": {
-        "git": [
-          "analyze-file.blob.ts",
-          "analyze-file-commits.ts",
-          "analyze-file-merge-risk.ts",
-          "check-file-merge.ts"
+        "cli": [
+          "commands.ts",
+          "display.ts",
+          "handlers.ts",
+          "prompts.ts",
+          "types.ts"
         ],
-        "swizzle": ["analyze.ts", "detect.ts", "detect-removed.ts", "metadata.ts"],
+        "git": [
+          "analyze-file-blob.ts",
+          "analyze-file-commits.ts",
+          "check-file-merge.ts",
+          "determine-file-merge-strategy.ts",
+          "handle-boilerplate-into-fork-merge.ts"
+        ],
+        "package": [
+          "get-deps-to-update.ts"
+        ],
+        "setup": [
+          "add-as-remote.ts",
+          "check-clean-state.ts",
+          "check-config.ts",
+          "check-repository.ts",
+          "fetch-latest-changes.ts"
+        ],
+        "swizzle": [
+          "analyze.ts", 
+          "detect-edited.ts",
+          "detect-removed.ts", 
+          "detect.ts",
+          "metadata.ts",
+          "settings.ts"
+        ],
         "*": ["analyze-file.ts"]
       },
+      "types": ["git.ts", "index.ts", "swizzle.ts"],
       "utils": {
-        "git": ["command.ts", "files.ts", "remotes.ts"],
+        "git": [
+          "branches.ts",
+          "command.ts", 
+          "files.ts", 
+          "handle-merge.ts",
+          "handle-rebase.ts",
+          "handle-squash-merge.ts",
+          "helpers.ts",
+          "remotes.ts"
+        ],
         "*": ["files.ts"]
       },
+      "constants.ts": "*",
       "index.ts": "*",
-      "types": ["index.ts", "git.ts", "swizzle.ts"]
+      "run-analyze.ts": "*",
+      "run-cli.ts": "*",
+      "run-packages.ts": "*",
+      "run-setup.ts": "*",
+      "run-sync.ts": "*"
     },
     "cli": {
       "cella-sync-engine": ["*"]
@@ -58,23 +107,16 @@
       "date": "string"
     },
     "CommitSummary": {
-      "status": "'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated'",
+      "status": "'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated' | 'unknown''",
       "commitsAhead": "number",
       "commitsBehind": "number",
       "sharedAncestorSha?": "string",
       "lastSyncedAt?": "string",
       "historyCoverage": "'complete' | 'partial' | 'unknown'"
     },
-    "MergeRisk": {
-      "likelihood": "'low' | 'medium' | 'high'",
-      "reason": "'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown'",
-      "safeByGit": "boolean",
-      "check": "'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck'"
-    },
-    "MergeCheck": {
-      "couldRun": "boolean",
-      "reason": "'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unknown'",
-      "automergeable": "boolean"
+    "FileMergeStrategy": {
+      "strategy": "'keep-fork' | 'keep-boilerplate' | 'remove-from-fork' | 'remove-from-boilerplate' | 'manual' | 'unknown'",
+      "reason": "string"
     },
     "SwizzleEntry": {
       "filePath": "string",
@@ -90,12 +132,14 @@
     },
     "SwizzleMetadata": {
       "version": "string",
+      "lastSyncedAt": "string",
       "entries": "Record<string, SwizzleEntry>"
     },
     "SwizzleAnalysis": {
       "existingMetadata?": "SwizzleEntry",
       "existingMetadataValid?": "boolean",
-      "newMetadata?": "SwizzleEntry"
+      "newMetadata?": "SwizzleEntry",
+      "flaggedInSettingsAs?": "'removed' | 'edited' | undefined"
     },
     "FileAnalysis": {
       "filePath": "string",
@@ -103,9 +147,18 @@
       "forkFile?": "FileEntry",
       "commitSummary?": "CommitSummary",
       "blobStatus?": "'identical' | 'different' | 'missing'",
-      "mergeRisk?": "MergeRisk",
-      "mergeCheck?": "MergeCheck",
-      "swizzle?": "SwizzleAnalysis"
+      "swizzle?": "SwizzleAnalysis",
+      "mergeStrategy?": "FileMergeStrategy"
+    },
+    "MergeResult": {
+      "status": "'success' | 'conflict' | 'error'",
+      "error?": "Error",
+      "isMerging?": "boolean"
+    },
+    "PackageJson": {
+      "dependencies?": "Record<string, string>",
+      "devDependencies?": "Record<string, string>",
+      "[key: string]": "any"
     }
   },
   "metadataVersion": "1.0.0"

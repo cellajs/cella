@@ -23,7 +23,7 @@ export const behaviorDefaultConfig: MinimalBehaviorConfig = {
   /**
    * Description: Do not write package.json changes, only show them.
    */
-  dryRunPackageJsonChanges: false,
+  packageJsonMode: 'applyChanges',
 
   /**
    * Description: Do not write any swizzle metadata file
