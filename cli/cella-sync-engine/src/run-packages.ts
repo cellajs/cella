@@ -1,17 +1,12 @@
 import pc from "picocolors";
 
 import { config } from "./config";
-import { FileAnalysis } from "./types";
-import { readJsonFile, resolvePath } from "./utils/files";
-import { gitCheckout } from "./utils/git/command";
+import { FileAnalysis, PackageJson } from "./types";
+import { readJsonFile, resolvePath, writeJsonFile } from "./utils/files";
+import { gitAddAll, gitCheckout, gitCommit, gitPush } from "./utils/git/command";
 import { getRemoteJsonFile } from "./utils/git/helpers";
 import { getDepsToUpdate } from "./modules/package/get-deps-to-update";
-
-interface PackageJson {
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  [key: string]: any; // optional, allows other fields
-}
+import { logPackageSummaryLines, packageSummaryLines } from "./log/package-summary";
 
 /**
  * Sync package dependencies between boilerplate and fork.
@@ -27,6 +22,9 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
 
   // Checkout to the branch to merge into
   await gitCheckout(config.fork.workingDirectory, config.fork.branchRef);
+
+  // Keep track of new package.jsons to write
+  const newPackageJsons: { [filePath: string]: PackageJson } = {};
 
   for (const analyzedFile of analyzedFiles) {
     const isPackageFile = analyzedFile.filePath.endsWith('package.json');
@@ -52,26 +50,51 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
     const amountOfDepsToUpdate = Object.keys(depsToUpdate).length;
     const amountOfDevDepsToUpdate = Object.keys(devDepsToUpdate).length;
 
-    console.log(pc.bold(`\n${analyzedFile.filePath}:`));
-    if (!amountOfDepsToUpdate && !amountOfDevDepsToUpdate) {
-      console.log(pc.gray('  - No dependencies to update.'));
-      continue;
-    }
-    console.log('Dependencies:');
-    if (!amountOfDepsToUpdate) {
-      console.log(pc.gray('  - No dependencies to update.'));
-    } else {
+    // Prepare new package.json content (only if there are updates)
+    if (amountOfDepsToUpdate || amountOfDevDepsToUpdate) {
+      if (!newPackageJsons[forkPath]) {
+        newPackageJsons[forkPath] = { ...forkPackageJson };
+      }
       for (const dep in depsToUpdate) {
-        console.log(`  - ${dep}: ${forkPackageJson?.dependencies?.[dep]} → ${pc.bold(pc.cyan(depsToUpdate[dep]))}`);
+        newPackageJsons[forkPath].dependencies = newPackageJsons[forkPath].dependencies || {};
+        newPackageJsons[forkPath].dependencies![dep] = depsToUpdate[dep];
+      }
+      for (const dep in devDepsToUpdate) {
+        newPackageJsons[forkPath].devDependencies = newPackageJsons[forkPath].devDependencies || {};
+        newPackageJsons[forkPath].devDependencies![dep] = devDepsToUpdate[dep];
       }
     }
-    if (!amountOfDevDepsToUpdate) {
-      console.log(pc.gray('  - No dev dependencies to update.'));
-    } else {
-      console.log('Dev Dependencies:');
-      for (const dep in devDepsToUpdate) {
-        console.log(`  - ${dep}: ${forkPackageJson?.devDependencies?.[dep]} → ${pc.bold(pc.cyan(devDepsToUpdate[dep]))}`);
-      }
+
+    // Log the package summary
+    const summaryLines = packageSummaryLines(
+      analyzedFile,
+      forkPackageJson,
+      depsToUpdate,
+      devDepsToUpdate
+    );
+
+    logPackageSummaryLines(summaryLines);
+  }
+
+  if (config.behavior.dryRunPackageJsonChanges) {
+    console.info(pc.yellow("\nDry Run enabled - no package.json changes will be written.\n"));
+  } else {
+    // Write new package.json files
+    for (const filePath in newPackageJsons) {
+      const resolvedForkPath = resolvePath(filePath);
+      const newPackageJson = newPackageJsons[filePath];
+      writeJsonFile(resolvedForkPath, newPackageJson);
+    }
+
+    // // Let Git add all changes
+    // await gitAddAll(config.fork.workingDirectory);
+
+    // // Commit package.json changes
+    // await gitCommit(config.fork.workingDirectory, `Sync package.json dependencies from ${config.boilerplate.branchRef}`, { noVerify: true });
+
+    // Push changes if not skipped
+    if (!config.behavior.skipAllPushes) {
+      await gitPush(config.fork.workingDirectory, 'origin', config.fork.branchRef);
     }
   }
 

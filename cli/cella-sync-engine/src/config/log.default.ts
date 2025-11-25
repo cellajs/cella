@@ -7,7 +7,7 @@ export const logDefaultConfig: MinimalLogConfig = {
   /**
    * Modules to be logged.
    */
-  modules: ['analyzedFile', 'analyzedSummary'],
+  modules: ['analyzedFile', 'analyzedSummary', 'packageSummary'],
 
   /**
    * Filters for logging analyzed files.

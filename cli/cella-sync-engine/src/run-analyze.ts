@@ -54,7 +54,6 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     }
   }
 
-
   // Log the swizzle analysis
   if (shouldLogAnalyzedSwizzleModule()) {
     console.info(pc.bold("\nSwizzle analysis:"));

@@ -52,5 +52,8 @@ export function writeSwizzleMetadata(entries: SwizzleEntry[]): void {
     },
   }
 
-  writeJsonFile(filePath, mergedMetadata);
+  // Write merged metadata back to file
+  if (!config.behavior.skipWritingSwizzleMetadataFile) {
+    writeJsonFile(filePath, mergedMetadata);
+  }
 }

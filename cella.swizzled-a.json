@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastSyncedAt": "2025-11-14T14:33:46.247Z",
+  "lastSyncedAt": "2025-11-25T12:36:48.862Z",
   "entries": {
     "README.md": {
       "filePath": "README.md",
@@ -1955,6 +1955,114 @@
       "lastSwizzledAt": "2025-11-14T14:33:44.254Z",
       "boilerplateLastCommitSha": "2324d586cd85d5dfaa9d7cd1533c9427c8af90a4",
       "boilerplateBlobSha": "7e99f20d906e2946a4667f964e7ee61b0a07e476"
+    },
+    "backend/drizzle/0001_melodic_sabra.sql": {
+      "filePath": "backend/drizzle/0001_melodic_sabra.sql",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "fda350981f2d265e8521aaa08be96c9bebe066bc",
+      "commitAfterSwizzle": "fda350981f2d265e8521aaa08be96c9bebe066bc",
+      "lastSwizzledAt": "2025-11-25T11:14:21.223Z",
+      "boilerplateLastCommitSha": "fda350981f2d265e8521aaa08be96c9bebe066bc",
+      "boilerplateBlobSha": "a67aab304ebfd0126887a6dfd70af7164c820a82"
+    },
+    "backend/drizzle/0002_huge_maria_hill.sql": {
+      "filePath": "backend/drizzle/0002_huge_maria_hill.sql",
+      "event": "removed",
+      "swizzled": true,
+      "sharedAncestorSha": "8dbea58a742a23a88c5e0776d3d6dbddf4fd3853",
+      "commitAfterSwizzle": "8dbea58a742a23a88c5e0776d3d6dbddf4fd3853",
+      "lastSwizzledAt": "2025-11-25T11:14:21.226Z",
+      "boilerplateLastCommitSha": "8dbea58a742a23a88c5e0776d3d6dbddf4fd3853",
+      "boilerplateBlobSha": "c7ec2fe8342ff7c5f597c41fa269cecb84494ee7"
+    },
+    "backend/drizzle/meta/0001_snapshot.json": {
+      "filePath": "backend/drizzle/meta/0001_snapshot.json",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "fda350981f2d265e8521aaa08be96c9bebe066bc",
+      "lastCommitSha": "29da31fc19f3e79a512236e21603804c074c3376",
+      "commitAfterSwizzle": "fda350981f2d265e8521aaa08be96c9bebe066bc",
+      "lastSwizzledAt": "2025-11-25T11:14:21.361Z",
+      "boilerplateLastCommitSha": "fda350981f2d265e8521aaa08be96c9bebe066bc",
+      "boilerplateBlobSha": "6d9d380f0584f99ca99e01cf2ee83e152485c3c3"
+    },
+    "backend/drizzle/meta/0002_snapshot.json": {
+      "filePath": "backend/drizzle/meta/0002_snapshot.json",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "8dbea58a742a23a88c5e0776d3d6dbddf4fd3853",
+      "lastCommitSha": "29da31fc19f3e79a512236e21603804c074c3376",
+      "commitAfterSwizzle": "8dbea58a742a23a88c5e0776d3d6dbddf4fd3853",
+      "lastSwizzledAt": "2025-11-25T11:14:21.403Z",
+      "boilerplateLastCommitSha": "8dbea58a742a23a88c5e0776d3d6dbddf4fd3853",
+      "boilerplateBlobSha": "866ba837bac431537f44da3cd5ea650492f53f38"
+    },
+    "frontend/src/api.gen/client.gen.ts": {
+      "filePath": "frontend/src/api.gen/client.gen.ts",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "lastCommitSha": "94d8b2049ae4df97c7348e2bfdb35ea5f99c4fce",
+      "commitAfterSwizzle": "6ed7bea6229478b01d158526813ba2bc94f57ad3",
+      "lastSwizzledAt": "2025-11-25T11:14:25.058Z",
+      "boilerplateLastCommitSha": "ca2e713d2000b7339962a36a8e4e04d1a1287e98",
+      "boilerplateBlobSha": "de9897f61a2f06b616201d46396927a9c1a15cc4"
+    },
+    "frontend/src/modules/common/blocknote/README.md": {
+      "filePath": "frontend/src/modules/common/blocknote/README.md",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "240601d7727ad2c7f8f163f834f3fee7cd71dee9",
+      "lastCommitSha": "0eb3abb5476dc52048b83213b2f89d2657bde2ae",
+      "commitAfterSwizzle": "240601d7727ad2c7f8f163f834f3fee7cd71dee9",
+      "lastSwizzledAt": "2025-11-25T11:14:25.885Z",
+      "boilerplateLastCommitSha": "4cc4f82f7c57130633db61269596a614563b6301",
+      "boilerplateBlobSha": "20db4229fd790c6a8a3e3749fd904c082dd9aa23"
+    },
+    "frontend/src/modules/common/blocknote/index.tsx": {
+      "filePath": "frontend/src/modules/common/blocknote/index.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "a12edb60abb5a04d7323dba5907e7717f009fdf0",
+      "lastCommitSha": "274999184a5a8a230c80eca3d2fbdc179e22ce5b",
+      "commitAfterSwizzle": "a12edb60abb5a04d7323dba5907e7717f009fdf0",
+      "lastSwizzledAt": "2025-11-25T11:14:26.045Z",
+      "boilerplateLastCommitSha": "4cc4f82f7c57130633db61269596a614563b6301",
+      "boilerplateBlobSha": "1c243d890b8692b040e1ef97c5d747436b905737"
+    },
+    "frontend/src/modules/common/contact-form/contact-form-map.tsx": {
+      "filePath": "frontend/src/modules/common/contact-form/contact-form-map.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastCommitSha": "0eb3abb5476dc52048b83213b2f89d2657bde2ae",
+      "commitAfterSwizzle": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastSwizzledAt": "2025-11-25T11:14:26.014Z",
+      "boilerplateLastCommitSha": "4cc4f82f7c57130633db61269596a614563b6301",
+      "boilerplateBlobSha": "4c377ca5cd09b4033e6046a88b19d652ffb3e63c"
+    },
+    "frontend/src/modules/common/contact-form/contact-form.tsx": {
+      "filePath": "frontend/src/modules/common/contact-form/contact-form.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastCommitSha": "0eb3abb5476dc52048b83213b2f89d2657bde2ae",
+      "commitAfterSwizzle": "f8240b3e5834ce44803418d72eea2ba27cbe7ab4",
+      "lastSwizzledAt": "2025-11-25T11:14:26.023Z",
+      "boilerplateLastCommitSha": "4cc4f82f7c57130633db61269596a614563b6301",
+      "boilerplateBlobSha": "25e4f666a4d1943e93a67417936fdf50fc7a55b3"
+    },
+    "frontend/src/modules/common/page/nav.tsx": {
+      "filePath": "frontend/src/modules/common/page/nav.tsx",
+      "event": "edited",
+      "swizzled": true,
+      "sharedAncestorSha": "8c3ecd4176c21b9c64150ab21ca26abd93ebaf7a",
+      "lastCommitSha": "0eb3abb5476dc52048b83213b2f89d2657bde2ae",
+      "commitAfterSwizzle": "8c3ecd4176c21b9c64150ab21ca26abd93ebaf7a",
+      "lastSwizzledAt": "2025-11-25T11:14:26.460Z",
+      "boilerplateLastCommitSha": "4cc4f82f7c57130633db61269596a614563b6301",
+      "boilerplateBlobSha": "763cb346cc123e764d8d55ef04b2ae80e1f8fa41"
     }
   }
 }

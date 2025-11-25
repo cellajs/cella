@@ -15,7 +15,7 @@ export async function handleMerge(
   mergeIntoPath: string,
   mergeIntoBranch: string,
   mergeFromBranch: string,
-  resolveConflicts: (() => Promise<void>) | null,
+  resolveConflicts?: (() => Promise<void>) | null,
 ): Promise<MergeResult> {
   try {
     // Checkout to the branch to merge into

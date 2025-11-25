@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { handleBoilerplateIntoForkMerge } from "./modules/git/handle-boilerplate-into-fork-merge";
 import { FileAnalysis } from "./types";
 import { handleSquashMerge } from "./utils/git/handle-squash-merge";
-import { handleRebase } from "./utils/git/handle-rebase";
+import { handleMerge } from "./utils/git/handle-merge";
 import { config } from "./config"
 
 export async function runSync(analyzedFiles: FileAnalysis[]) {
@@ -18,11 +18,11 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
   const squashMergeFromBranch = config.fork.syncBranchRef;
   await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
 
-  // Rebase target-branch (squash commit) → sync-branch
-  const rebaseIntoPath = config.fork.localPath;
-  const rebaseIntoBranch = config.fork.syncBranchRef;
-  const rebaseFromBranch = config.fork.branchRef;
-  await handleRebase(rebaseIntoPath, rebaseIntoBranch, rebaseFromBranch);
+  // Merge target-branch (squash commit) → sync-branch
+  const mergeIntoPath = config.fork.localPath;
+  const mergeIntoBranch = config.fork.syncBranchRef;
+  const mergeFromBranch = config.fork.branchRef;
+  await handleMerge(mergeIntoPath, mergeIntoBranch, mergeFromBranch);
   
   console.info(pc.green("✔ Sync completed.\n"));
 }

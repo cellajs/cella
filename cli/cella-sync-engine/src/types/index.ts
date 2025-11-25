@@ -52,3 +52,12 @@ export interface MergeResult {
    */
   isMerging?: boolean;
 }
+
+/**
+ * Represents a simplified structure of a package.json file.
+ */
+export interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  [key: string]: any; // optional, allows other fields
+}

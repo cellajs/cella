@@ -34,7 +34,7 @@ export interface MinimalRepoConfig {
 /**
  * Types of log modules available for logging analyzed results.
  */
-type LogModule = 'analyzedFile' | 'analyzedSummary' | 'analyzedSwizzle';
+type LogModule = 'analyzedFile' | 'analyzedSummary' | 'analyzedSwizzle' | 'packageSummary';
 
 /**
  * Configuration for logging analyzed results
@@ -105,6 +105,18 @@ export interface MinimalBehaviorConfig {
    * Whether to skip all git push operations.
    */
   skipAllPushes?: boolean;
+
+  /**
+   * Whether to perform a dry run for package.json changes.
+   * If true, changes to package.json will not be written, only displayed.
+   */
+  dryRunPackageJsonChanges?: boolean;
+
+  /**
+   * Whether to skip writing the swizzle metadata file.
+   * If true, the swizzle metadata file will not be written.
+   */
+  skipWritingSwizzleMetadataFile?: boolean;
 }
 
 export interface MinimalSwizzleConfig {
