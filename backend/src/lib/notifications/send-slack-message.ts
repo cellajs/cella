@@ -11,7 +11,10 @@ export const sendSlackMessage = async (prefix: string, email: string) => {
   try {
     const { secretKey, serverURL, slackWebhookUrl, subscriberId, workflowId } = novuConfig;
 
-    if (!secretKey || !slackWebhookUrl) return logEvent('info', 'Missing required Novu appConfig values (API key or Slack webhook).');
+    if (!secretKey || !slackWebhookUrl) {
+      logEvent('info', 'Missing required Novu appConfig values (API key or Slack webhook).');
+      return;
+    }
 
     const novu = new Novu({ secretKey, serverURL });
 
@@ -29,9 +32,10 @@ export const sendSlackMessage = async (prefix: string, email: string) => {
     );
 
     // Trigger Slack notification workflow
-    await novu.trigger({ workflowId, to: { subscriberId }, payload: { prefix, email } });
+    const novuResponse = await novu.trigger({ workflowId, to: { subscriberId }, payload: { prefix, email } });
 
-    return logEvent('info', `Slack message sent successfully to subscriber: ${subscriberId}`);
+    logEvent('info', `Slack message sent successfully to subscriber: ${subscriberId}`);
+    return novuResponse;
   } catch (error) {
     logError('Failed to send Slack message', error);
   }

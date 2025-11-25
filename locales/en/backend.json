@@ -39,5 +39,7 @@
   "email.system_invite.title": "Join <strong>{{appName}}</strong>",
   "email.unsubscribe": "Unsubscribe",
   "email.waitlist_request.text": "Thanks for joining the waitlist for {{appName}}. We'll notify you as soon as it's your turn.",
-  "email.waitlist_request.title": "You're on the waitlist!"
+  "email.waitlist_request.title": "You're on the waitlist!",
+  "email.recive_request.title": "{{appName}} recive new {{type}} request"
+
 }
