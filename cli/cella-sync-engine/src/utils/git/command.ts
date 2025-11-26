@@ -13,7 +13,9 @@ const execAsync = promisify(exec);
  * @param command - The Git command to execute (e.g., 'status', 'checkout branch-name').
  *                   This should be the arguments string after `git`.
  * @param repoPath - The absolute or relative path to the Git repository.
+ * 
  * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
+ * 
  * @throws Will throw an error if the Git command fails.
  * 
  * @example
@@ -40,6 +42,7 @@ export async function runGitCommand(command: string, repoPath: string, options: 
  * 
  * @param repoPath - The file system path to the git repository
  * @param branchName - The name of the branch to check out
+ * 
  * @returns The stdout from the git checkout command
  *
  * @example
@@ -55,6 +58,7 @@ export async function gitCheckout(repoPath: string, branchName: string): Promise
  * 
  * @param repoPath - The file system path to the git repository
  * @param remoteName - The name of the remote to fetch from (e.g., 'origin')
+ * 
  * @returns The stdout from the git fetch command
  *
  * @example
@@ -73,6 +77,7 @@ export async function gitFetch(repoPath: string, remoteName: string): Promise<st
  *   - noCommit: If true, adds the --no-commit flag (merge staged but not committed)
  *   - noEdit: If true, adds the --no-edit flag (use default commit message)
  *   - squash: If true, perform a squash merge
+ * 
  * @returns The stdout from the git merge command
  *
  * @example
@@ -103,6 +108,7 @@ export async function gitMerge(
  *   - skip: If true, skips the current patch in a paused rebase
  *   - abort: If true, aborts the current rebase
  *   - noEdit: If true, adds the --no-edit flag (use default commit messages)
+ * 
  * @returns The stdout from the git rebase command
  *
  * @example
@@ -135,6 +141,7 @@ export async function gitRebase(
  * 
  * @param repoPath - The file system path to the git repository
  * @param filePath - The path to the file to stage
+ * 
  * @returns The stdout from the git add command
  *
  * @example
@@ -148,6 +155,7 @@ export async function gitAdd(repoPath: string, filePath: string): Promise<string
  * Stages all files for commit in the given repository.
  * 
  * @param repoPath - The file system path to the git repository
+ * 
  * @returns The stdout from the git add command
  */
 export async function gitAddAll(repoPath: string): Promise<string> {
@@ -159,6 +167,7 @@ export async function gitAddAll(repoPath: string): Promise<string> {
  * Returns raw stdout from git (one file path per line).
  * 
  * @param repoPath - The file system path to the git repository
+ * 
  * @returns A string containing newline-separated paths of unmerged files
  *
  * @example
@@ -174,6 +183,7 @@ export async function gitDiffUnmerged(repoPath: string): Promise<string> {
  * Returns raw stdout from git (one file path per line).
  * 
  * @param repoPath - The file system path to the git repository
+ * 
  * @returns A string containing newline-separated paths of staged files
  *
  * @example
@@ -189,6 +199,7 @@ export async function gitDiffCached(repoPath: string): Promise<string> {
  * 
  * @param repoPath - The file system path to the git repository
  * @param branchName - The name of the branch to list files from
+ * 
  * @returns The stdout from the git ls-tree command showing all files in the branch
  *
  * @example
@@ -205,6 +216,7 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
  * 
  * @param repoPath - The file system path to the git repository
  * @param commitSha - The SHA of the commit to list files from
+ * 
  * @returns The stdout from the git ls-tree command, showing all files in the commit
  *
  * @example
@@ -221,6 +233,7 @@ export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: st
  * @param repoPath - The file system path to the git repository
  * @param branchName - The name of the branch to check
  * @param filePath - The path to the file to check
+ * 
  * @returns The full commit SHA of the last commit that modified the file
  *
  * @example
@@ -239,6 +252,7 @@ export async function gitLastCommitShaForFile(repoPath: string, branchName: stri
  * @param repoPath - The file system path to the git repository
  * @param branchName - The name of the branch to check
  * @param filePath - The path to the file to check
+ * 
  * @returns The stdout from the git log command showing the file's commit history
  *
  * @example
@@ -257,6 +271,7 @@ export async function gitLogFileHistory(repoPath: string, branchName: string, fi
  * @param message - The commit message
  * @param options - Optional flags for the commit
  *  - noVerify: If true, adds the `--no-verify` flag to skip pre-commit hooks
+ * 
  * @returns The stdout from the git commit command
  *
  * @example
@@ -277,6 +292,7 @@ export async function gitCommit(
  * @param repoPath - The file system path to the git repository
  * @param commitSha - The SHA of the commit
  * @param filePath - The path to the file
+ * 
  * @returns The stdout from the git show command, i.e., the file contents at that commit
  *
  * @example
@@ -297,6 +313,8 @@ export async function gitShowFileAtCommit(repoPath: string, commitSha: string, f
  * @param basePath - Path to the common ancestor ("base") version of the file
  * @param theirsPath - Path to the "theirs" version of the file
  * 
+ * @returns A promise that resolves when the merge is successful
+ * 
  * @throws If merge conflicts occur (Git exits with code 1)
  * 
  * @example
@@ -312,6 +330,7 @@ export async function gitMergeFile(oursPath: string, basePath: string, theirsPat
  * Checks if a merge is currently in progress within the given repository.
  * 
  * @param repoPath - The file system path to the git repository
+ * 
  * @returns `true` if a merge is in progress (i.e., `.git/MERGE_HEAD` exists), otherwise `false`
  * 
  * @example
@@ -327,6 +346,7 @@ export function isMergeInProgress(repoPath: string): boolean {
  * Checks if a rebase is currently in progress within the given repository.
  * 
  * @param repoPath - The file system path to the git repository
+ * 
  * @returns `true` if a rebase is in progress (i.e., `.git/rebase-apply` or `.git/rebase-merge` exists), otherwise `false`
  * 
  * @example
@@ -346,6 +366,7 @@ export function isRebaseInProgress(repoPath: string): boolean {
  * 
  * @param repoPath - The file system path to the git repository
  * @param filePath - The path to the conflicted file
+ * 
  * @returns The stdout from the git checkout command
  * 
  * @example
@@ -361,6 +382,7 @@ export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Pro
  * 
  * @param repoPath - The file system path to the git repository
  * @param filePath - The path to the conflicted file
+ * 
  * @returns The stdout from the git checkout command
  * 
  * @example
@@ -377,6 +399,7 @@ export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): P
  * 
  * @param repoPath - The file system path to the git repository
  * @param filePath - The path to the file to unstage
+ * 
  * @returns The stdout from the git rm command
  * 
  * @example
@@ -391,6 +414,7 @@ export function gitRemoveFilePathFromCache(repoPath: string, filePath: string): 
  * 
  * @param repoPath - The file system path to the git repository
  * @param filePath - The untracked file or directory to remove
+ * 
  * @returns The stdout from the git clean command
  * 
  * @example
@@ -405,6 +429,7 @@ export async function gitCleanUntrackedFile(repoPath: string, filePath: string):
  * ⚠️ This operation is destructive and cannot be undone.
  * 
  * @param repoPath - The file system path to the git repository
+ * 
  * @returns The stdout from the git clean command
  * 
  * @example
@@ -421,6 +446,7 @@ export async function gitCleanAllUntrackedFiles(repoPath: string): Promise<strin
  * 
  * @param repoPath - The file system path to the git repository
  * @param filePath - The path to the staged file to restore
+ * 
  * @returns The stdout from the git restore command
  * 
  * @example
@@ -433,12 +459,14 @@ export async function gitRestoreStagedFile(repoPath: string, filePath: string): 
 /**
  * Pushes commits to a remote branch.
  *
- * @param repoPath   The file system path of the git repository.
- * @param remote     The remote name to push to (e.g. "origin")
- * @param branch     The branch to push.
+ * @param repoPath - The file system path of the git repository.
+ * @param remote - The remote name to push to (e.g. "origin")
+ * @param branch - The branch to push.
  * @param options
  *    - force       If true -> --force-with-lease
  *    - setUpstream If true -> --set-upstream
+ * 
+ * @returns The stdout from the git push command
  */
 export async function gitPush(
   repoPath: string,
@@ -460,7 +488,9 @@ export async function gitPush(
  * @param repoPath - Absolute or relative path to the Git repository
  * @param sourceBranch - The branch to compare (e.g., feature branch)
  * @param baseBranch - The branch to compare against (e.g., main or development)
+ * 
  * @returns The raw string output of `git rev-list --count`
+ * 
  * @throws If the Git command fails
  *
  * @example
@@ -479,6 +509,7 @@ export async function gitRevListCount(
  * Executes `git rev-parse --is-inside-work-tree` to check if the given repository path
  * 
  * @param repoPath - Absolute or relative path to the Git repository
+ * 
  * @returns The raw string output of `git rev-parse`
  */
 export async function gitRevParseIsInsideWorkTree(repoPath: string): Promise<string> {
@@ -489,6 +520,7 @@ export async function gitRevParseIsInsideWorkTree(repoPath: string): Promise<str
  * Connects to a remote repository and lists references using `git ls-remote`.
  * @param repoPath - Absolute or relative path to the Git repository
  * @param remotePath - The path or URL of the remote to query (e.g., 'origin' or a URL)
+ * 
  * @returns The raw string output of `git ls-remote`
  */
 export async function gitLsRemote(repoPath: string, remotePath: string): Promise<string> {
@@ -498,6 +530,7 @@ export async function gitLsRemote(repoPath: string, remotePath: string): Promise
 /**
  * Executes `git status --porcelain` to get the status of the working tree.
  * @param repoPath - Absolute or relative path to the Git repository
+ * 
  * @returns The raw string output of `git status --porcelain`
  */
 export async function gitStatusPorcelain(repoPath: string): Promise<string> {
@@ -508,6 +541,7 @@ export async function gitStatusPorcelain(repoPath: string): Promise<string> {
  * Pulls the latest changes from the specified branch of the origin remote.
  * @param repoPath - The file system path to the git repository
  * @param branchName - The name of the branch to pull from
+ * 
  * @returns The stdout from the git pull command
  *
  * @example

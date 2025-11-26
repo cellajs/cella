@@ -12,6 +12,7 @@ import { gitMergeFile } from '../../utils/git/command';
  * @param boilerplateConfig - Repo config for the boilerplate
  * @param forkConfig - Repo config for the fork
  * @param analysis - The file analysis object
+ * 
  * @returns `true` if Git can auto-merge the file; `false` if a merge conflict is expected
  */
 export async function checkFileAutomerge(

@@ -36,6 +36,7 @@ const binaryExtensions = new Set([
  * so it may not correctly detect all binary or text files.
  *
  * @param filePath - The file path to inspect
+ * 
  * @returns `true` if the file appears to be binary, otherwise `false`
  *
  * @example
@@ -52,6 +53,7 @@ export function isBinaryFile(filePath: string): boolean {
  * Internally uses `fs.mkdtemp()` and returns the full path of the new directory.
  *
  * @param prefix - A short prefix for the directory name (e.g., `'myapp-'`)
+ * 
  * @returns The absolute path to the created temporary directory
  *
  * @example
@@ -67,6 +69,8 @@ export async function createTempDir(prefix: string): Promise<string> {
  * Internally calls `fs.rm()` with `{ recursive: true, force: true }`.
  *
  * @param dirPath - The directory path to remove
+ * 
+ * @returns A promise that resolves when the directory has been removed
  *
  * @example
  * await removeDir('/tmp/myapp-abc123');
@@ -81,6 +85,7 @@ export async function removeDir(dirPath: string): Promise<void> {
  * Returns `null` if the file does not exist or cannot be parsed.
  *
  * @param filePath - The path to the JSON file
+ * 
  * @returns The parsed JSON object, or `null` if reading or parsing fails
  *
  * @example
@@ -105,6 +110,8 @@ export function readJsonFile<T>(filePath: string): T | null {
  *
  * @param filePath - The destination path for the JSON file
  * @param data - The JavaScript object or value to serialize and write
+ * 
+ * @returns void
  *
  * @example
  * writeJsonFile('./config.json', { port: 3000, debug: true });
@@ -118,6 +125,7 @@ export function writeJsonFile(filePath: string, data: any): void {
  * Equivalent to `path.resolve(filePath)`.
  *
  * @param filePath - The relative or absolute file path
+ * 
  * @returns The absolute path
  *
  * @example
@@ -135,6 +143,7 @@ export function resolvePath(filePath: string): string {
  *
  * @param filePath - The file path to test
  * @param pattern - The pattern to match (e.g., `'src/*.ts'`)
+ * 
  * @returns `true` if the file path matches the pattern, otherwise `false`
  *
  * @example
@@ -160,6 +169,8 @@ export function matchPathPattern(filePath: string, pattern: string): boolean {
  * Internally checks with `fs.existsSync()` and uses `fs.rm()` with `{ force: true }`.
  *
  * @param filePath - The path to the file to remove
+ * 
+ * @returns A promise that resolves when the file has been removed (if it existed)
  *
  * @example
  * await removeFileIfExists('./dist/output.log');
@@ -175,6 +186,7 @@ export async function removeFileIfExists(filePath: string): Promise<void> {
  * Checks if the specified path is a directory.
  * 
  * @param dirPath - The path to check
+ * 
  * @returns `true` if the path is a directory, otherwise `false`
  */
 export async function isDirectory(dirPath: string): Promise<boolean> {

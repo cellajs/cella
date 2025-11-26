@@ -9,6 +9,7 @@ import { MergeResult } from '../../types';
  * Any conflicts that arise will prompt the user to resolve them manually.
  *
  * @param forkConfig - Configuration of the fork repository.
+ * 
  * @returns A MergeResult indicating success or error.
  *
  * @example
@@ -40,6 +41,10 @@ export async function handleRebase(
  * Starts the merge process between the fork and boilerplate repositories.
  * @param forkConfig - RepoConfig of the forked repo
  * @param boilerplateConfig - RepoConfig of the boilerplate repo
+ * 
+ * @throws Will throw an error if the rebase fails for reasons other than conflicts.
+ * 
+ * @returns A promise that resolves when the rebase is initiated.
  */
 async function startRebase(rebaseIntoPath: string, rebaseFromBranch: string) {
   try {
@@ -57,7 +62,12 @@ async function startRebase(rebaseIntoPath: string, rebaseFromBranch: string) {
  * Checks for unmerged files and prompts the user to resolve them manually.
  * Recursively waits until all conflicts are resolved.
  *
- * @param forkConfig - Configuration of the fork repository.
+ * @param rebaseIntoPath - Configuration of the fork repository.
+ * @param rebaseFromBranch - The branch being rebased from.
+ * 
+ * @throws Will throw an error if the user decides to abort the rebase process.
+ * 
+ * @returns A promise that resolves when all conflicts are resolved.
  */
 async function waitForManualConflictResolution(rebaseIntoPath: string, rebaseFromBranch: string): Promise<void> {
   let conflicts = await getUnmergedFiles(rebaseIntoPath);

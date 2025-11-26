@@ -4,7 +4,9 @@ import { matchPathPattern } from '../../utils/files';
 
 /**
  * Gets the swizzle status for a specific file path.
- * @param filePath The file path to check.
+ * 
+ * @param filePath - The file path to check.
+ * 
  * @returns The swizzle status if found, otherwise undefined.
  */
 export function getFlaggedAs(filePath: string): SwizzleAnalysis["flaggedInSettingsAs"] {

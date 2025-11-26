@@ -5,6 +5,7 @@ import { FileAnalysis, SwizzleEntry } from '../../types/index';
  * indicating a potential "removed" swizzle event.
  * 
  * @param analyzedFile - The analyzed file information.
+ * 
  * @returns A SwizzleEntry if the file is detected as removed, otherwise null.
  */
 export function detectRemovedSwizzle(analyzedFile: FileAnalysis): SwizzleEntry | null {

@@ -44,6 +44,8 @@ import { config } from "./config";
  *
  * @example
  * await runSetup();
+ * 
+ * @returns A promise that resolves when setup is complete.
  */
 export async function runSetup() {
   console.info(pc.cyan("Running Setup"));

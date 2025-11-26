@@ -11,6 +11,7 @@ import { DIVIDER } from '../constants';
  * @param forkPackageJson - The package.json content of the forked repository.
  * @param depsToUpdate - Depenencies to update with their new versions.
  * @param devDepsToUpdate - Dev dependencies to update with their new versions.
+ * 
  * @returns An array of formatted summary lines.
  */
 export function packageSummaryLines(
@@ -79,6 +80,8 @@ export function shouldLogPackageSummaryModule(): boolean {
  * Logs the package summary lines to the console if logging is enabled for the module.
  * 
  * @param lines - The summary lines to log.
+ * 
+ * @returns void
  */
 export function logPackageSummaryLines(lines: string[]): void {
   if (lines.length === 0) {

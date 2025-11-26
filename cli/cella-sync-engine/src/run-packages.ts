@@ -29,7 +29,7 @@ import { logPackageSummaryLines, packageSummaryLines } from "./log/package-summa
  *
  * Finally, a readable summary of updates is logged.
  *
- * @param analyzedFiles The results from `runAnalyze()`, used to determine which
+ * @param analyzedFiles - The results from `runAnalyze()`, used to determine which
  *                      package.json files require synchronization.
  */
 export async function runPackages(analyzedFiles: FileAnalysis[]) {

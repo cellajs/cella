@@ -23,6 +23,7 @@ import { FileEntry, CommitEntry } from '../../types';
  *
  * @param repoPath - The file system path to the Git repository
  * @param branchName - The name of the branch to inspect (defaults to `'HEAD'`)
+ * 
  * @returns An array of {@link FileEntry} objects containing file paths and SHA info
  *
  * @example
@@ -64,6 +65,7 @@ export async function getGitFileHashes(repoPath: string, branchName: string = 'H
  * @param repoPath - The file system path to the Git repository
  * @param branchName - The branch name to inspect
  * @param filePath - The file path to retrieve commit history for
+ * 
  * @returns An array of {@link CommitEntry} objects containing commit SHAs and dates
  *
  * @example
@@ -90,6 +92,8 @@ export async function getFileCommitHistory(repoPath: string, branchName: string,
  * @param commitSha - The commit SHA to extract the file from
  * @param filePath - The file path inside the repository
  * @param outputPath - The output path where the file content will be written
+ * 
+ * @returns A promise that resolves when the file has been written
  *
  * @example
  * await writeGitFileAtCommit('/repo', 'abc123', 'src/index.ts', '/tmp/index.ts');
@@ -112,6 +116,7 @@ export async function writeGitFileAtCommit(
  * Internally runs `git diff --name-only --diff-filter=U`.
  *
  * @param repoPath - The file system path to the Git repository
+ * 
  * @returns An array of file paths that are currently unmerged
  *
  * @example
@@ -129,6 +134,7 @@ export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
  * Internally runs `git diff --name-only --cached`.
  *
  * @param repoPath - The file system path to the Git repository
+ * 
  * @returns An array of staged file paths
  *
  * @example
@@ -146,6 +152,7 @@ export async function getCachedFiles(repoPath: string): Promise<string[]> {
  * @param repoPath - The file system path to the Git repository
  * @param commitSha - The commit SHA to inspect
  * @param filePath - The path to the file to check
+ * 
  * @returns The blob SHA of the file at that commit, or `null` if it doesn’t exist
  *
  * @example
@@ -183,6 +190,8 @@ export async function getFileBlobShaAtCommit(
  *
  * @param repoPath - The file system path to the Git repository
  * @param filePath - The path to the conflicted file
+ * 
+ * @returns A promise that resolves when the conflict has been resolved
  *
  * @example
  * await resolveConflictAsOurs('/repo', 'src/config.ts');
@@ -202,6 +211,8 @@ export async function resolveConflictAsOurs(repoPath: string, filePath: string):
  *
  * @param repoPath - The file system path to the Git repository
  * @param filePath - The path to the conflicted file
+ * 
+ * @returns A promise that resolves when the conflict has been resolved
  *
  * @example
  * await resolveConflictAsTheirs('/repo', 'src/config.ts');

@@ -7,6 +7,8 @@ let cachedMetadata: SwizzleMetadata | null = null;
 /**
  * Loads swizzle metadata from the given file path.
  * Returns cached version if already loaded.
+ * 
+ * @returns SwizzleMetadata or null if file doesn't exist.
  */
 export function loadSwizzleMetadata(): SwizzleMetadata | null {
   if (cachedMetadata) return cachedMetadata;
@@ -19,8 +21,10 @@ export function loadSwizzleMetadata(): SwizzleMetadata | null {
 
 /**
  * Retrieves swizzle metadata for a specific file path.
- * @param filePath The file path to retrieve swizzle metadata for.
- * @returns 
+ * 
+ * @param filePath - The file path to retrieve swizzle metadata for.
+ * 
+ * @returns A SwizzleEntry if metadata exists for the file, otherwise null.
  */
 export function getSwizzleMetadata(filePath: string): SwizzleEntry | null {
   const metadata = loadSwizzleMetadata();
@@ -30,6 +34,8 @@ export function getSwizzleMetadata(filePath: string): SwizzleEntry | null {
 /**
  * Clears the swizzle metadata cache.
  * Useful for tests or reloading after changes.
+ * 
+ * @returns void
  */
 export function clearSwizzleMetadataCache(): void {
   cachedMetadata = null;
@@ -38,6 +44,10 @@ export function clearSwizzleMetadataCache(): void {
 /**
  * Write SwizzleMetadata to a JSON file.
  * Merges with existing metadata if file already exists.
+ * 
+ * @param entries - Array of SwizzleEntry to write to metadata.
+  * 
+  * @returns void
  */
 export function writeSwizzleMetadata(entries: SwizzleEntry[]): void {
   const filePath = resolvePath(config.swizzle.localMetadataFilePath);

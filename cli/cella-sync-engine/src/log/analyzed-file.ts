@@ -6,7 +6,8 @@ import { config } from "../config";
 /**
  * Creates a log line for an analyzed file.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The log line string.
  */
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
@@ -41,7 +42,8 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
 /**
  * Returns the file path of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled file path string.
  */
 function getFilePath(analyzedFile: FileAnalysis): string {
@@ -51,7 +53,8 @@ function getFilePath(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the git status of the analyzed file, styled for console output.
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled git status string.
  */
 function getGitStatus(analyzedFile: FileAnalysis): string {
@@ -83,7 +86,8 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
 /**
  * Returns the commit state of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled commit state string.
  */
 function getCommitState(analyzedFile: FileAnalysis): string {
@@ -111,7 +115,8 @@ function getCommitState(analyzedFile: FileAnalysis): string {
 /**
  * Returns the commit SHA information of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled commit SHA string.
  */
 function getCommitSha(analyzedFile: FileAnalysis): string {
@@ -136,7 +141,8 @@ function getCommitSha(analyzedFile: FileAnalysis): string {
 /**
  * Returns the last synced date of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled last synced date string.
  */
 function getLastSyncedAt(analyzedFile: FileAnalysis): string {
@@ -160,7 +166,8 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
 /**
  * Returns the merge strategy flag of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled merge strategy flag string.
  */
 function getStrategyFlag(analyzedFile: FileAnalysis): string {
@@ -184,7 +191,8 @@ function getStrategyFlag(analyzedFile: FileAnalysis): string {
 /**
  * Returns the reason for the merge strategy of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled merge strategy reason string.
  */
 function getStrategyReason(analyzedFile: FileAnalysis): string {
@@ -224,8 +232,10 @@ export function shouldLogAnalyzedFileModule(): boolean {
 /**
  * Will log the analyzed file line based on the configuration.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
  * @param line The line to be logged.
+ * 
+ * @returns void
  */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
   // If commit summary state (filter) is configured, check if it matches the analyzed file's state

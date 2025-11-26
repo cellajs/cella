@@ -5,6 +5,7 @@ import { runGitCommand } from './command';
  * Internally runs `git remote` and splits the output by line.
  * 
  * @param repoPath - The file system path to the Git repository
+ * 
  * @returns An array of remote names (e.g., `['origin', 'upstream']`)
  * 
  * @example
@@ -22,6 +23,7 @@ export async function getRemotes(repoPath: string): Promise<string[]> {
  * 
  * @param repoPath - The file system path to the Git repository
  * @param remoteName - The name of the remote to check (optional)
+ * 
  * @returns `true` if the specified remote exists (or if any exist when `remoteName` is omitted), otherwise `false`
  * 
  * @example
@@ -47,6 +49,8 @@ export async function hasRemote(repoPath: string, remoteName: string): Promise<b
  * @param remoteName - The name of the remote to add (e.g., `'origin'`)
  * @param remoteUrl - The URL of the remote repository
  * 
+ * @returns A promise that resolves when the remote is added
+ * 
  * @throws If the remote already exists or Git returns an error
  * 
  * @example
@@ -68,6 +72,8 @@ export async function setRemoteUrl(repoPath: string, remoteName: string, remoteU
  * @param remoteName - The name of the remote to add (e.g., `'origin'`)
  * @param remoteUrl - The URL of the remote repository
  * 
+ * @returns A promise that resolves when the remote is added or immediately if it already exists
+ * 
  * @example
  * await addRemoteIfMissing('/repo', 'origin', 'https://github.com/user/project.git');
  * // If 'origin' already exists, nothing happens
@@ -84,6 +90,7 @@ export async function addRemoteIfMissing(repoPath: string, remoteName: string, r
  * 
  * @param repoPath - The file system path to the Git repository
  * @param remoteName - The name of the remote (e.g., 'origin')
+ * 
  * @returns The remote URL as a string, or `null` if the remote does not exist
  * 
  * @example

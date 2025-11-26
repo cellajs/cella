@@ -3,7 +3,9 @@ import { FileAnalysis, SwizzleEntry } from '../../types/index';
 /**
  * Detects if a file has been edited in the fork compared to the boilerplate,
  * indicating a potential "edited" swizzle event.
+ * 
  * @param analyzedFile - The analyzed file information.
+ * 
  * @returns A SwizzleEntry if the file is detected as edited, otherwise null.
  */
 export function detectEditedSwizzle(analyzedFile: FileAnalysis): SwizzleEntry | null {

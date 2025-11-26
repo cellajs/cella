@@ -6,7 +6,8 @@ import { SUPPORTED_SYNC_SERVICES } from "../../config/sync-services";
  * Validate a Git branch name.
  * 
  * @param name - Name of the branch to validate
- * @returns 
+ * 
+ * @returns The validated branch name.
  */
 export function validateBranchName(name: string): string {
   name = name.trim();
@@ -20,7 +21,8 @@ export function validateBranchName(name: string): string {
  * Validate a sync service name.
  * 
  * @param name - Name of the sync service to validate
- * @returns 
+ * 
+ * @returns The validated sync service name.
  */
 export function validateSyncService(name: string): string {
   name = name.trim();
@@ -34,7 +36,8 @@ export function validateSyncService(name: string): string {
  * Validate a location value (local|remote).
  * 
  * @param location - Location value to validate
- * @returns 
+ * 
+ * @returns The validated location value.
  */
 export function validateLocation(location: string): string {
   location = location.trim().toLowerCase();
@@ -47,8 +50,9 @@ export function validateLocation(location: string): string {
 /**
  * Validate a remote name.
  * 
- * @param name 
- * @returns 
+ * @param name - Name of the remote to validate
+ * 
+ * @returns The validated remote name.
  */
 export function validateRemoteName(name: string): string {
   name = name.trim();
@@ -62,6 +66,7 @@ export function validateRemoteName(name: string): string {
  * Check if a branch name is valid according to Git naming conventions.
  * 
  * @param name - Name of the branch to check
+ * 
  * @returns boolean indicating if the branch name is valid
  */
 function isValidBranchName(name: string): boolean {

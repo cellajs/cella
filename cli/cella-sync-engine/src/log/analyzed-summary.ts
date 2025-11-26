@@ -7,7 +7,8 @@ import { config } from '../config';
  * Generates summary lines from the analyzed files.
  * 
  * @param analyzedFiles - Array of FileAnalysis objects.
- * @returns string[] - An array of summary lines.
+ * 
+ * @returns An array of summary lines.
  */
 export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 
@@ -66,7 +67,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 /**
  * Determines if the analyzed summary module should be logged based on the configuration.
  * 
- * @returns boolean - True if the module should be logged, false otherwise.
+ * @returns Whether the analyzed summary module should be logged.
  */
 export function shouldLogAnalyzedSummaryModule(): boolean {
   const logModulesConfigured = 'modules' in config.log;
@@ -82,6 +83,8 @@ export function shouldLogAnalyzedSummaryModule(): boolean {
  * Logs the analyzed summary lines to the console based on the configuration.
  * 
  * @param lines - Array of summary lines to log.
+ * 
+ * @returns void
  */
 export function logAnalyzedSummaryLines(lines: string[]): void {
   if (lines.length === 0) {

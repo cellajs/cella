@@ -26,11 +26,13 @@ import { config } from "./config"
  *
  * Logging is printed at each stage to provide feedback in the CLI.
  *
- * @param analyzedFiles Array of `FileAnalysis` objects returned from `runAnalyze()`.
+ * @param analyzedFiles - Array of `FileAnalysis` objects returned from `runAnalyze()`.
  *                      This contains information about files to sync and swizzle metadata.
  *
  * @example
  * await runSync(analyzedFiles);
+ * 
+ * @returns A promise that resolves when the sync process is complete.
  */
 export async function runSync(analyzedFiles: FileAnalysis[]) {
   console.info(pc.cyan("\nStarting sync process"));

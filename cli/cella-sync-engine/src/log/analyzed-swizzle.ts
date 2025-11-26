@@ -8,7 +8,8 @@ import { config } from "../config";
  * Includes key details: file path, swizzle event, commit info, and detection status.
  * 
  * @param analyzedFile - The FileAnalysis object for the analyzed file.
-  * @returns string - Formatted log line for the analyzed file.
+ * 
+ * @returns Formatted log line for the analyzed file.
  */
 export function analyzedSwizzleLine(analyzedFile: FileAnalysis): string {
 
@@ -35,7 +36,8 @@ export function analyzedSwizzleLine(analyzedFile: FileAnalysis): string {
 /**
  * Gets the file path of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled file path string.
  */
 function getFilePath(analyzedFile: FileAnalysis): string {
@@ -46,7 +48,8 @@ function getFilePath(analyzedFile: FileAnalysis): string {
 /**
  * Gets the swizzle status of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled swizzle status string.
  */  
 function getSwizzleStatus(analyzedFile: FileAnalysis): string {
@@ -62,7 +65,8 @@ function getSwizzleStatus(analyzedFile: FileAnalysis): string {
 /**
  * Returns the swizzle event of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled swizzle event string.
  */
 function getSwizzleEvent(analyzedFile: FileAnalysis): string {
@@ -79,7 +83,8 @@ function getSwizzleEvent(analyzedFile: FileAnalysis): string {
 /**
  * Returns the last swizzled date of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled last swizzled date string.
  */
 function getLastSwizzledAt(analyzedFile: FileAnalysis): string {
@@ -97,7 +102,8 @@ function getLastSwizzledAt(analyzedFile: FileAnalysis): string {
 /**
  * Returns a status tag indicating the swizzle validity of the analyzed file, styled for console output.
  * 
- * @param analyzedFile The analyzed file object.
+ * @param analyzedFile - The analyzed file object.
+ * 
  * @returns The styled swizzle status tag string.
  */
 function getSwizzleStatusTag(analyzedFile: FileAnalysis): string {
@@ -137,8 +143,10 @@ export function shouldLogAnalyzedSwizzleModule(): boolean {
 /**
  * Will log the analyzed swizzle line based on the configuration.
  * 
- * @param analyzedFile The analyzed file object.
- * @param line The line to be logged.
+ * @param analyzedFile - The analyzed file object.
+ * @param line - The line to be logged.
+ * 
+ * @returns void
  */
 export function logAnalyzedSwizzleLine(analyzedFile: FileAnalysis, line: string): void {
   // If swizzled (filter) is configured, check if it matches the analyzed file's swizzle status
