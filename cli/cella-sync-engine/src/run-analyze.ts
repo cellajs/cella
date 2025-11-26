@@ -12,9 +12,38 @@ import { FileAnalysis } from "./types";
 import { config } from "./config";
 
 /**
- * Runs the file analysis process, comparing files between the boilerplate and fork repositories.
- * This includes fetching file lists, analyzing file histories, updating swizzle metadata (if applicable),
- * and logging the results.
+ * Executes the complete file analysis workflow for a sync between the boilerplate and fork.
+ *
+ * This process includes:
+ *
+ * **1. Fetching file hashes**  
+ *    Retrieves the full list of tracked files (via blob SHA hashes) for:
+ *    - the boilerplate repository
+ *    - the fork's sync branch
+ *
+ * **2. Running file-by-file analysis**  
+ *    Each file is processed to determine:
+ *    - commit history differences  
+ *    - content differences  
+ *    - swizzle status (removed/edited/etc.)  
+ *    - recommended merge strategy  
+ *
+ * **3. Updating swizzle metadata**  
+ *    Extracts swizzle events from the analysis and writes refreshed metadata
+ *    to `.swizzle` state storage.
+ *
+ * **4. Logging (optional, based on config)**  
+ *    Logs:
+ *    - per-file analysis
+ *    - swizzle analysis
+ *    - final summary
+ *
+ * This function forms the core engine of the sync process,
+ * producing a structured list of `FileAnalysis` objects that
+ * downstream sync operations will act upon.
+ *
+ * @returns A Promise resolving to an array of `FileAnalysis` objects,
+ *          one for each analyzed file.
  */
 export async function runAnalyze(): Promise<FileAnalysis[]> {
   console.info(pc.cyan("\nRunning file analysis"));
