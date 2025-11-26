@@ -1,14 +1,14 @@
 import z from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { baseElectrycSyncQuery, inOrgParamSchema } from '#/utils/schema/common';
+import { baseElectrycSyncQuery, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema } from '#/utils/schema/success-responses';
-import { pageListQuerySchema, pageSchema, pagesCreateManySchema } from './schema';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { pageListQuerySchema, pageSchema, pagesCreateManySchema, pageUpdateSchema } from './schema';
 
 const pagesRoutes = {
   /**
-   * Electric Shape Proxy
+   * Electric Shape Proxy?
    */
   shapeProxy: createCustomRoute({
     operationId: 'shapeProxy',
@@ -17,7 +17,7 @@ const pagesRoutes = {
     guard: [isAuthenticated], // hasOrgAccess
     tags: ['pages'],
     summary: 'Shape proxy',
-    description: `Proxies requests to ElectricSQL's shape endpoint for the \`pages\` table.
+    description: `Proxy requests to ElectricSQL's shape endpoint for the \`pages\` table.
       Used by clients to synchronize local data with server state via the shape log system.
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
     request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
@@ -36,7 +36,7 @@ const pagesRoutes = {
     guard: [isAuthenticated], // hasOrgAccess
     tags: ['pages'],
     summary: 'Create pages',
-    description: 'Creates one or more new *pages*.',
+    description: 'Insert one or more new *pages*.',
     request: {
       // params: inOrgParamSchema,
       body: {
@@ -46,7 +46,7 @@ const pagesRoutes = {
     },
     responses: {
       201: {
-        description: 'Pages',
+        description: 'Page(s)',
         content: {
           'application/json': {
             schema: pageSchema.array(),
@@ -65,8 +65,8 @@ const pagesRoutes = {
     path: '/',
     guard: [isAuthenticated], // hasOrgAccess?
     tags: ['pages'],
-    summary: 'Get list of pages',
-    description: 'Retrieves all *pages* associated with a specific entity, such as an organization.',
+    summary: 'Get pages',
+    description: 'Get all matching *pages*.',
     request: {
       // params: inOrgParamSchema,
       query: pageListQuerySchema,
@@ -93,7 +93,7 @@ const pagesRoutes = {
     guard: [isAuthenticated], // hasOrgAccess
     tags: ['pages'],
     summary: 'Get page',
-    description: 'Fetches metadata and access details for a single *page* by ID.',
+    description: 'Get a single *page* by ID.',
     request: {
       // params: idInOrgParamSchema,
       params: z.object({
@@ -106,6 +106,69 @@ const pagesRoutes = {
         content: {
           'application/json': {
             schema: pageSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Update Page
+   */
+  updatePage: createCustomRoute({
+    operationId: 'updatePage',
+    method: 'put',
+    path: '/{id}',
+    guard: [isAuthenticated], // hasOrgAccess
+    tags: ['pages'],
+    summary: 'Update page',
+    description: 'Update a single *page* by ID.',
+    request: {
+      // params: idInOrgParamSchema,
+      params: z.object({
+        id: z.string(),
+      }),
+      body: {
+        required: true,
+        content: { 'application/json': { schema: pageUpdateSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Page updated',
+        content: {
+          'application/json': {
+            schema: pageSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Delete Page
+   */
+  deletePages: createCustomRoute({
+    operationId: 'deletePages',
+    method: 'delete',
+    path: '/',
+    guard: [isAuthenticated], // hasOrgAccess
+    tags: ['pages'],
+    summary: 'Delete pages',
+    description: 'Delete one or more *pages* by ID.',
+    request: {
+      // params: idInOrgParamSchema,
+      body: {
+        required: true,
+        content: { 'application/json': { schema: idsBodySchema() } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Page(s) deleted',
+        content: {
+          'application/json': {
+            schema: successWithRejectedItemsSchema,
           },
         },
       },

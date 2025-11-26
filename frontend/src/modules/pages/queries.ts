@@ -8,7 +8,7 @@ import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 type PagesQuery = Exclude<GetPagesData['query'], undefined>;
 
 /** Pages request limit */
-export const pagesLimit = appConfig.requestLimits.attachments; //
+export const pagesLimit = appConfig.requestLimits.pages;
 /** Pages accepted cutoff days */
 // const ACCEPTED_CUTOFF_DAYS = 14;
 

@@ -1,6 +1,6 @@
 import { QueryKey, useInfiniteQuery, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { useMatchRoute } from '@tanstack/react-router';
-import { EntityType } from 'config';
+import type { EntityType } from 'config';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
@@ -44,9 +44,9 @@ const usePathIds = () => {
   };
 };
 
-type TableName<T extends EntityType | 'page'> = `${T}s`;
+type TableName<T extends EntityType> = `${T}s`;
 
-const getTableQueries = <N extends TableName<EntityType | 'page'>, T extends { id: string } | { id: string }[]>(queryKeyFilter: [N]) => {
+const getTableQueries = <N extends TableName<EntityType>, T extends { id: string } | { id: string }[]>(queryKeyFilter: [N]) => {
   const queryClient = useQueryClient();
   return queryClient.getQueriesData<T>({ queryKey: queryKeyFilter });
 };

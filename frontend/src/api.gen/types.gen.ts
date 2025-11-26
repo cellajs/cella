@@ -94,6 +94,7 @@ export type Organization = {
     };
     entities: {
       attachment: number;
+      page: number;
     };
   };
 };
@@ -214,7 +215,7 @@ export type ApiError = {
     | 510
     | 511;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  entityType?: 'user' | 'organization' | 'attachment';
+  entityType?: 'user' | 'organization' | 'attachment' | 'page';
   logId?: string;
   path?: string;
   method?: string;
@@ -252,7 +253,7 @@ export type Page = {
   keywords: string;
   order: number;
   status: 'unpublished' | 'published' | 'archived';
-  parentIds: Array<string> | null;
+  parentId: string | null;
   createdAt: string;
   createdBy: string | null;
   modifiedAt: string | null;
@@ -2382,6 +2383,52 @@ export type ShapeProxyResponses = {
   200: unknown;
 };
 
+export type DeletePagesData = {
+  body: {
+    ids: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/pages';
+};
+
+export type DeletePagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
+
+export type DeletePagesResponses = {
+  /**
+   * Page(s) deleted
+   */
+  200: {
+    success: boolean;
+    rejectedItems: Array<string>;
+  };
+};
+
+export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
+
 export type GetPagesData = {
   body?: never;
   path?: never;
@@ -2442,7 +2489,7 @@ export type CreatePagesData = {
     keywords: string;
     order: number;
     status?: 'unpublished' | 'published' | 'archived';
-    parentIds?: Array<string> | null;
+    parentId?: string | null;
   }>;
   path?: never;
   query?: never;
@@ -2476,7 +2523,7 @@ export type CreatePagesError = CreatePagesErrors[keyof CreatePagesErrors];
 
 export type CreatePagesResponses = {
   /**
-   * Pages
+   * Page(s)
    */
   201: Array<Page>;
 };
@@ -2525,6 +2572,57 @@ export type GetPageResponses = {
 };
 
 export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
+
+export type UpdatePageData = {
+  body: {
+    slug?: string;
+    title?: string;
+    content?: string;
+    keywords?: string;
+    order?: number;
+    status?: 'unpublished' | 'published' | 'archived';
+    parentId?: string | null;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/pages/{id}';
+};
+
+export type UpdatePageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdatePageError = UpdatePageErrors[keyof UpdatePageErrors];
+
+export type UpdatePageResponses = {
+  /**
+   * Page updated
+   */
+  200: Page;
+};
+
+export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
 
 export type GetContextEntitiesData = {
   body?: never;
@@ -2641,7 +2739,7 @@ export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContex
 export type CheckSlugData = {
   body: {
     slug: string;
-    entityType: 'user' | 'organization' | 'attachment';
+    entityType: 'user' | 'organization' | 'attachment' | 'page';
   };
   path?: never;
   query?: never;
@@ -3098,6 +3196,7 @@ export type GetPublicCountsResponses = {
     user: number;
     organization: number;
     attachment: number;
+    page: number;
   };
 };
 

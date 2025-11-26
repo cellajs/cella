@@ -20,6 +20,18 @@ export const pagesCreateManySchema = z
   .min(1)
   .max(50);
 
+export const pageUpdateSchema = pageInsertSchema
+  .pick({
+    slug: true,
+    title: true,
+    content: true,
+    keywords: true,
+    order: true,
+    status: true,
+    parentId: true,
+  })
+  .partial();
+
 export const pageSchema = pageSelectSchema.openapi('Page');
 
 // tasks require a project or workspace id

@@ -27,11 +27,10 @@ export const pagesTable = pgTable(
     //   .references(() => organizationsTable.id, {
     //     onDelete: 'cascade',
     //   }),
-    parentIds: varchar()
-      .array()
-      .references((): AnyPgColumn => pagesTable.id, {
-        onDelete: 'set null',
-      }),
+    parentId: varchar().references((): AnyPgColumn => pagesTable.id, {
+      // or inherit?
+      onDelete: 'set null',
+    }),
     createdAt: timestampColumns.createdAt,
     createdBy: varchar().references(() => usersTable.id, {
       onDelete: 'set null',

@@ -169,7 +169,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /**
    * All entity types used in the app
    */
-  entityTypes: ['user', 'organization', 'attachment'] as const,
+  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
   /**
    * Page entity types (pages with memberships + users)
@@ -184,7 +184,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /**
    * Product entity types (mostly content)
    */
-  productEntityTypes: ['attachment'] as const,
+  productEntityTypes: ['attachment', 'page'] as const,
 
   /**
    * Define fields to identify an entity in a relationship
@@ -193,6 +193,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     user: 'userId',
     organization: 'organizationId',
     attachment: 'attachmentId',
+    page: 'pageId',
   } as const,
 
   /**
@@ -228,6 +229,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     organizations: 40,
     requests: 40,
     attachments: 40,
+    pages: 40,
     pendingMemberships: 20,
   },
   /**

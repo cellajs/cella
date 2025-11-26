@@ -92,6 +92,7 @@ export const zOrganization = z.object({
     }),
     entities: z.object({
       attachment: z.number(),
+      page: z.number(),
     }),
   }),
 });
@@ -219,7 +220,7 @@ export const zApiError = z.object({
     z.literal(511),
   ]),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  entityType: z.optional(z.enum(['user', 'organization', 'attachment'])),
+  entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
   logId: z.optional(z.string()),
   path: z.optional(z.string()),
   method: z.optional(z.string()),
@@ -267,7 +268,7 @@ export const zPage = z.object({
   keywords: z.string(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
   status: z.enum(['unpublished', 'published', 'archived']),
-  parentIds: z.union([z.array(z.string()), z.null()]),
+  parentId: z.union([z.string(), z.null()]),
   createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
@@ -1039,6 +1040,22 @@ export const zShapeProxyData = z.object({
   }),
 });
 
+export const zDeletePagesData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page(s) deleted
+ */
+export const zDeletePagesResponse = z.object({
+  success: z.boolean(),
+  rejectedItems: z.array(z.string()),
+});
+
 export const zGetPagesData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -1073,7 +1090,7 @@ export const zCreatePagesData = z.object({
         keywords: z.string(),
         order: z.number().gte(-140737488355328).lte(140737488355327),
         status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
-        parentIds: z.optional(z.union([z.array(z.string()), z.null()])),
+        parentId: z.optional(z.union([z.string(), z.null()])),
       }),
     )
     .min(1)
@@ -1083,7 +1100,7 @@ export const zCreatePagesData = z.object({
 });
 
 /**
- * Pages
+ * Page(s)
  */
 export const zCreatePagesResponse = z.array(zPage);
 
@@ -1099,6 +1116,27 @@ export const zGetPageData = z.object({
  * Page
  */
 export const zGetPageResponse = zPage;
+
+export const zUpdatePageData = z.object({
+  body: z.object({
+    slug: z.optional(z.string()),
+    title: z.optional(z.string()),
+    content: z.optional(z.string()),
+    keywords: z.optional(z.string()),
+    order: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
+    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
+    parentId: z.optional(z.union([z.string(), z.null()])),
+  }),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page updated
+ */
+export const zUpdatePageResponse = zPage;
 
 export const zGetContextEntitiesData = z.object({
   body: z.optional(z.never()),
@@ -1159,7 +1197,7 @@ export const zGetContextEntityResponse = zContextEntityBase;
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),
-    entityType: z.enum(['user', 'organization', 'attachment']),
+    entityType: z.enum(['user', 'organization', 'attachment', 'page']),
   }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -1327,6 +1365,7 @@ export const zGetPublicCountsResponse = z.object({
   user: z.number(),
   organization: z.number(),
   attachment: z.number(),
+  page: z.number(),
 });
 
 export const zShapeProxy2Data = z.object({

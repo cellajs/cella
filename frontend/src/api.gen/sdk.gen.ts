@@ -48,6 +48,9 @@ import type {
   DeleteOrganizationsData,
   DeleteOrganizationsErrors,
   DeleteOrganizationsResponses,
+  DeletePagesData,
+  DeletePagesErrors,
+  DeletePagesResponses,
   DeletePasskeyData,
   DeletePasskeyErrors,
   DeletePasskeyResponses,
@@ -217,6 +220,9 @@ import type {
   UpdateOrganizationData,
   UpdateOrganizationErrors,
   UpdateOrganizationResponses,
+  UpdatePageData,
+  UpdatePageErrors,
+  UpdatePageResponses,
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
@@ -1548,7 +1554,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  *
  * 🛡️ Requires authentication
  *
- * Proxies requests to ElectricSQL's shape endpoint for the `pages` table.
+ * Proxy requests to ElectricSQL's shape endpoint for the `pages` table.
  * Used by clients to synchronize local data with server state via the shape log system.
  * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
  *
@@ -1580,11 +1586,43 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
 };
 
 /**
- * Get list of pages
+ * Delete pages
  *
  * 🛡️ Requires authentication
  *
- * Retrieves all *pages* associated with a specific entity, such as an organization.
+ * Delete one or more *pages* by ID.
+ *
+ * **DELETE /pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/pages) ·· _pages_
+ *
+ * @param {deletePagesData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) => {
+  return (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Get pages
+ *
+ * 🛡️ Requires authentication
+ *
+ * Get all matching *pages*.
  *
  * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· _pages_
  *
@@ -1616,7 +1654,7 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
  *
  * 🛡️ Requires authentication
  *
- * Creates one or more new *pages*.
+ * Insert one or more new *pages*.
  *
  * **POST /pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
  *
@@ -1647,7 +1685,7 @@ export const createPages = <ThrowOnError extends boolean = true>(options: Option
  *
  * 🛡️ Requires authentication
  *
- * Fetches metadata and access details for a single *page* by ID.
+ * Get a single *page* by ID.
  *
  * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
  *
@@ -1667,6 +1705,45 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
     ],
     url: '/pages/{id}',
     ...options,
+  });
+};
+
+/**
+ * Update page
+ *
+ * 🛡️ Requires authentication
+ *
+ * Update a single *page* by ID.
+ *
+ * **PUT /pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/pages/{id}) ·· _pages_
+ *
+ * @param {updatePageData} options
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {string=} options.body.title - `string` (optional)
+ * @param {string=} options.body.content - `string` (optional)
+ * @param {string=} options.body.keywords - `string` (optional)
+ * @param {number=} options.body.order - `number` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.parentId - `string | null` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const updatePage = <ThrowOnError extends boolean = true>(options: Options<UpdatePageData, ThrowOnError>) => {
+  return (options.client ?? client).put<UpdatePageResponses, UpdatePageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 };
 
