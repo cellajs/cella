@@ -86,6 +86,7 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
  * @param forkConfig - RepoConfig of the forked repo
  * @param analyzedFiles - List of analyzed files
  * 
+ * @throws Error if the user chooses to abort the merge process.
  * @returns void
  */
 async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalysis[]) {

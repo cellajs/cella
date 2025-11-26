@@ -7,6 +7,7 @@ import { SUPPORTED_SYNC_SERVICES } from "../../config/sync-services";
  * 
  * @param name - Name of the branch to validate
  * 
+ * @throws {InvalidArgumentError} If the branch name is invalid.
  * @returns The validated branch name.
  */
 export function validateBranchName(name: string): string {
@@ -22,6 +23,7 @@ export function validateBranchName(name: string): string {
  * 
  * @param name - Name of the sync service to validate
  * 
+ * @throws {InvalidArgumentError} If the sync service name is invalid.
  * @returns The validated sync service name.
  */
 export function validateSyncService(name: string): string {
@@ -37,6 +39,7 @@ export function validateSyncService(name: string): string {
  * 
  * @param location - Location value to validate
  * 
+ * @throws {InvalidArgumentError} If the location value is invalid.
  * @returns The validated location value.
  */
 export function validateLocation(location: string): string {
@@ -52,6 +55,7 @@ export function validateLocation(location: string): string {
  * 
  * @param name - Name of the remote to validate
  * 
+ * @throws {InvalidArgumentError} If the remote name is invalid.
  * @returns The validated remote name.
  */
 export function validateRemoteName(name: string): string {
