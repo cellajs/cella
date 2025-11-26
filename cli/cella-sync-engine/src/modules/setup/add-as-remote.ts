@@ -8,6 +8,12 @@ import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from "../../utils/gi
  * - If the remote already exists, checks if the URL matches the configuration.
  * - If the URL does not match and config.behavior.onRemoteWrongUrl is 'overwrite', updates the URL.
  * - If the URL does not match and config.behavior.onRemoteWrongUrl is not 'overwrite', throws an error.
+ * 
+ * @param addAsRemote - The repository configuration to add as a remote (e.g., boilerplate).
+ * @param addTo - The repository configuration to which the remote should be added (e.g., fork).
+ * 
+ * @throws Error if the remote URL does not match and the behavior is not set to 'overwrite'.
+ * @returns void
  */
 export async function addAsRemote(
     addAsRemote: RepoConfig,

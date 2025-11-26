@@ -14,9 +14,8 @@ const execAsync = promisify(exec);
  *                   This should be the arguments string after `git`.
  * @param repoPath - The absolute or relative path to the Git repository.
  * 
- * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
- * 
  * @throws Will throw an error if the Git command fails.
+ * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
  * 
  * @example
  * const output = await runGitCommand('status', '/path/to/repo');
@@ -313,9 +312,8 @@ export async function gitShowFileAtCommit(repoPath: string, commitSha: string, f
  * @param basePath - Path to the common ancestor ("base") version of the file
  * @param theirsPath - Path to the "theirs" version of the file
  * 
- * @returns A promise that resolves when the merge is successful
- * 
  * @throws If merge conflicts occur (Git exits with code 1)
+ * @returns A promise that resolves when the merge is successful
  * 
  * @example
  * await gitMergeFile('ours.txt', 'base.txt', 'theirs.txt');
@@ -489,9 +487,8 @@ export async function gitPush(
  * @param sourceBranch - The branch to compare (e.g., feature branch)
  * @param baseBranch - The branch to compare against (e.g., main or development)
  * 
- * @returns The raw string output of `git rev-list --count`
- * 
  * @throws If the Git command fails
+ * @returns The raw string output of `git rev-list --count`
  *
  * @example
  * const countStr = await gitRevListCount('/repo', 'feature', 'main');

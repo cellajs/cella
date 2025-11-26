@@ -12,6 +12,10 @@ import { checkCleanState } from "./check-clean-state";
  * Also ensures the working directory is clean after pulling.
  * 
  * @param repoConfig - The repository configuration
+ * @returns Promise that resolves when the latest changes are fetched
+ * 
+ * @example
+ * await fetchLatestChanges(boilerplateConfig);
  */
 export async function fetchLatestChanges(repoConfig: RepoConfig) {
   // For remote repositories, ensure latest changes are fetched
@@ -37,6 +41,7 @@ export async function fetchLatestChanges(repoConfig: RepoConfig) {
  * @param localPath - The file system path to the repository
  * @param branchName - The name of the branch to pull changes for
  * 
+ * @throws If the upstream remote is missing and the configuration dictates to error
  * @returns Promise that resolves when the pull operation is complete
  */
 async function pullLatestChanges(localPath: string, branchName: string) {

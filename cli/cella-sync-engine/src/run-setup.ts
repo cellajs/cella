@@ -41,11 +41,10 @@ import { config } from "./config";
  *    Merges the fork branch into the sync branch to ensure it's up-to-date.
  *
  * @throws Will throw an error if any setup step fails (invalid config, inaccessible repository, unclean state, etc.)
+ * @returns A promise that resolves when setup is complete.
  *
  * @example
  * await runSetup();
- * 
- * @returns A promise that resolves when setup is complete.
  */
 export async function runSetup() {
   console.info(pc.cyan("Running Setup"));

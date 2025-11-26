@@ -9,9 +9,8 @@ import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain, runGitCommand
  * @param sourceBranch - The branch to compare (e.g., feature branch)
  * @param baseBranch - The branch to compare against (e.g., main or development)
  * 
- * @returns The number of commits (integer)
- * 
  * @throws If the Git command fails or output cannot be parsed as a number
+ * @returns The number of commits (integer)
  *
  * @example
  * const count = await getCommitCount('/repo', 'sync-branch', 'development');

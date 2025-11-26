@@ -8,6 +8,12 @@ import { handleMerge } from '../../utils/git/handle-merge';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
+ * 
+ * @param boilerplateConfig - Configuration for the boilerplate repository
+ * @param forkConfig - Configuration for the forked repository
+ * @param analyzedFiles - List of pre-analyzed files with merge strategies
+ * 
+ * @returns A {@link MergeResult} indicating the outcome of the merge process.
  */
 export async function handleBoilerplateIntoForkMerge(
   boilerplateConfig: RepoConfig,
@@ -45,6 +51,8 @@ export async function handleBoilerplateIntoForkMerge(
  * 
  * @param forkConfig - Path to the forked repo
  * @param analyzedFiles - List of analyzed files
+ * 
+ * @returns void
  */
 async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAnalysis[]) {
   const cached = await getCachedFiles(repoPath);
@@ -74,8 +82,11 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
 /**
  * Resolves merge conflicts based on the provided analyzed files and their strategies.
  * If conflicts remain after automatic resolution, prompts the user to resolve them manually.
+ * 
  * @param forkConfig - RepoConfig of the forked repo
  * @param analyzedFiles - List of analyzed files
+ * 
+ * @returns void
  */
 async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalysis[]) {
   let conflicts = await getUnmergedFiles(repoPath);

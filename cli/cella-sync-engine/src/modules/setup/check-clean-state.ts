@@ -6,11 +6,14 @@ import { isRepoClean } from "../../utils/git/helpers";
  * Checks if a Git repository is clean.
  * - Optionally checks out a target branch before validation.
  * - Throws an error if there are uncommitted changes, or if a merge or rebase is in progress.
+ * 
  * @param localPath - The file system path to the repository
  * @param branchRef - The branch to check out before validation (optional)
  * @param options - Additional options
  * @param options.skipCheckout - If true, skips checking out the target branch
+ * 
  * @throws If the repository is not clean
+ * @returns void
  *
  * @example
  * await checkCleanState('/path/to/repo', 'main');

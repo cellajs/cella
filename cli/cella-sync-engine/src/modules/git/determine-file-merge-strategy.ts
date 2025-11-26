@@ -4,19 +4,6 @@ import { FileAnalysis, FileMergeStrategy } from "../../types";
  * Determines the most appropriate merge strategy for a given file,
  * based on commit history, blob comparisons, and swizzle metadata.
  *
- * Resolution priority is as follows:
- * 1. **Swizzle metadata** — if the file is explicitly swizzled in the fork,
- *    prefer the fork’s decision (keep or remove).
- * 2. **Commit HEADs identical** — if the last modifying commits match,
- *    no merge is required (keep fork).
- * 3. **Blobs identical** — if file contents are identical,
- *    no merge is required (keep fork).
- * 4. **Commit history "upToDate" or "ahead"** — assume that conflicts were
- *    resolved earlier in the fork. Prefer keeping fork or removing if missing.
- * 5. **Commit history "diverged" or "unrelated"** — cannot safely auto-resolve,
- *    requires manual intervention.
- * 6. **Fallback** — if none of the above conditions match, return "unknown".
- *
  * @param fileAnalysis - Precomputed analysis object for a single file,
  *   containing commit history, blob status, and optional swizzle metadata.
  *

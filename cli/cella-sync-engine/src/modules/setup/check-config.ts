@@ -18,8 +18,10 @@ type checklistItem = {
  * Checks the repository configuration against a checklist.
  * @param repoConfig - The repository configuration
  * @param checklist - The checklist of properties to validate
+ * 
  * @throws If any required property is missing or has an invalid value
- *
+ * @returns void
+ * 
  * @example
  * checkConfig(boilerplateConfig, boilerplateConfigChecklist);
  */

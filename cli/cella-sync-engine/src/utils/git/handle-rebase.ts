@@ -43,7 +43,6 @@ export async function handleRebase(
  * @param boilerplateConfig - RepoConfig of the boilerplate repo
  * 
  * @throws Will throw an error if the rebase fails for reasons other than conflicts.
- * 
  * @returns A promise that resolves when the rebase is initiated.
  */
 async function startRebase(rebaseIntoPath: string, rebaseFromBranch: string) {
@@ -66,7 +65,6 @@ async function startRebase(rebaseIntoPath: string, rebaseFromBranch: string) {
  * @param rebaseFromBranch - The branch being rebased from.
  * 
  * @throws Will throw an error if the user decides to abort the rebase process.
- * 
  * @returns A promise that resolves when all conflicts are resolved.
  */
 async function waitForManualConflictResolution(rebaseIntoPath: string, rebaseFromBranch: string): Promise<void> {

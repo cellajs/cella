@@ -6,9 +6,12 @@ import { gitLsRemote, gitRevParseIsInsideWorkTree } from "../../utils/git/comman
 
 /**
  * Checks the repository connectivity and accessibility.
+ * 
  * @param repoConfig - The repository configuration
+ * 
  * @throws If connectivity validation fails
- *
+ * @returns void
+ * 
  * @example
  * await checkRepository(boilerplateConfig);
  */

@@ -49,9 +49,8 @@ export async function hasRemote(repoPath: string, remoteName: string): Promise<b
  * @param remoteName - The name of the remote to add (e.g., `'origin'`)
  * @param remoteUrl - The URL of the remote repository
  * 
- * @returns A promise that resolves when the remote is added
- * 
  * @throws If the remote already exists or Git returns an error
+ * @returns A promise that resolves when the remote is added
  * 
  * @example
  * await addRemote('/repo', 'origin', 'https://github.com/user/project.git');

@@ -2,6 +2,7 @@ import type { RepoConfig } from "../../config";
 import { CommitSummary, CommitEntry } from "../../types";
 import { getFileCommitHistory } from "../../utils/git/files";
 
+// Structure to hold commit lookup data
 type CommitLookup = {
   commits: CommitEntry[];
   shas: string[];
@@ -18,7 +19,9 @@ type CommitLookup = {
  * @param boilerplate - Boilerplate repository config (local).
  * @param fork - Fork repository config (local).
  * @param filePath - Relative file path to compare.
+ * 
  * @throws If either repo is not local.
+ * @returns A Promise resolving to a CommitSummary object containing the analysis results.
  */
 export async function analyzeFileCommits(
   boilerplate: RepoConfig,
@@ -49,7 +52,11 @@ export async function analyzeFileCommits(
 }
 
 /** 
- * Converts a commit history array into a lookup structure for efficient querying 
+ * Converts a commit history array into a lookup structure for efficient querying
+ * 
+ * @param commits - Array of commit entries
+ * 
+ * @returns CommitLookup structure containing commits, SHAs array, and SHAs set
  */
 function toCommitLookup(commits: CommitEntry[]): CommitLookup {
   const shas = commits.map(entry => entry.sha);
@@ -59,6 +66,11 @@ function toCommitLookup(commits: CommitEntry[]): CommitLookup {
 
 /**
  * Finds the first shared commit (common ancestor) between boilerplate and fork histories.
+ * 
+ * @param boilerplateLookup - Commit lookup for the boilerplate repository
+ * @param forkLookup - Commit lookup for the fork repository
+ * 
+ * @returns The shared CommitEntry if found, otherwise undefined
  */
 function getSharedAncestor(
   boilerplateLookup: CommitLookup,
@@ -69,6 +81,12 @@ function getSharedAncestor(
 
 /**
  * Calculates how many commits ahead & behind the fork is compared to the boilerplate
+ * 
+ * @param boilerplateLookup - Commit lookup for the boilerplate repository
+ * @param forkLookup - Commit lookup for the fork repository
+ * @param ancestorSha - SHA of the shared ancestor commit
+ * 
+ * @returns An object containing the counts of commits ahead and behind
  */
 function getAmountAheadBehind(
   boilerplateLookup: CommitLookup,
@@ -89,6 +107,12 @@ function getAmountAheadBehind(
 
 /**
  * Determines the status of the current commit
+ * 
+ * @param ancestorSha - SHA of the shared ancestor commit
+ * @param commitsAhead - Number of commits the fork is ahead
+ * @param commitsBehind - Number of commits the fork is behind
+ * 
+ * @returns The commit status as a string
  */
 function getStatus(
   ancestorSha: string | undefined,
@@ -104,6 +128,11 @@ function getStatus(
 
 /**
  * Determines the coverage of boilerplate commit history present in the fork.
+ * 
+ * @param boilerplateLookup - Commit lookup for the boilerplate repository
+ * @param forkLookup - Commit lookup for the fork repository
+ * 
+ * @returns The history coverage as a string ('unknown', 'partial', or 'complete')
  */
 export function getHistoryCoverage(
   boilerplateLookup: CommitLookup,
