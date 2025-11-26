@@ -1,14 +1,15 @@
 import pc from "picocolors";
 
-import { CLIConfig } from "./types";
+import { CLIConfig, ConfigurationAction, CustomizeOption } from "./types";
 import { config } from "../../config";
 import { SyncService } from "../../config/sync-services";
-import { promptConfigurationAction, promptSyncService, promptWhichConfigurationToCustomize, type CustomizeOption, type ConfigurationAction, promptConfigureLocation, promptConfigureBranch, promptDivergedCommitStatusOptions, promptConfigureRemoteName, promptPackageJsonMode  } from "./prompts";
+import { promptConfigurationAction, promptSyncService, promptWhichConfigurationToCustomize, promptConfigureLocation, promptConfigureBranch, promptDivergedCommitStatusOptions, promptConfigureRemoteName, promptPackageJsonMode  } from "./prompts";
 import { AppConfig } from "../../config/types";
 import { showConfiguration } from "./display";
 
 /**
  * Handle sync service selection.
+ * 
  * @param cli - The CLI configuration object
  */
 export async function handleSyncService(cli: CLIConfig): Promise<void> {
@@ -22,6 +23,7 @@ export async function handleSyncService(cli: CLIConfig): Promise<void> {
 
 /**
  * Handle further configuration actions.
+ * 
  * @param cli - The CLI configuration object
  */
 export async function handleConfigurationAction(cli: CLIConfig): Promise<void> {
@@ -42,6 +44,7 @@ export async function handleConfigurationAction(cli: CLIConfig): Promise<void> {
 
 /**
  * Handle customization of configuration.
+ * 
  * @param cli - The CLI configuration object
  */
 export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void> {
@@ -87,8 +90,9 @@ export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void
 
 /**
  * Handle customization of location.
- * @param cli 
- * @param type 
+ * 
+ * @param cli - The CLI configuration object
+ * @param type - The type of location to customize ('boilerplate' or 'fork')
  */
 export async function handleCustomizeLocation(cli: CLIConfig, type: 'boilerplate' | 'fork'): Promise<void> {
   if (type === 'fork') {
@@ -103,9 +107,10 @@ export async function handleCustomizeLocation(cli: CLIConfig, type: 'boilerplate
 
 /**
  * Handle customization of branch.
- * @param cli 
- * @param type 
- * @param branchType 
+ * 
+ * @param cli - The CLI configuration object
+ * @param type - The repository type of the branch to customize ('boilerplate' or 'fork')
+ * @param branchType - The specific branch type to customize ('branch' or 'syncBranch')
  */
 export async function handleCustomizeBranch(cli: CLIConfig, type: 'boilerplate' | 'fork', branchType: 'branch' | 'syncBranch'): Promise<void> {
   if (type === 'fork') {
@@ -122,8 +127,9 @@ export async function handleCustomizeBranch(cli: CLIConfig, type: 'boilerplate' 
 
 /**
  * Handle customization of remote name.
- * @param cli 
- * @param type 
+ * 
+ * @param cli - The CLI configuration object
+ * @param type - The type of remote name to customize ('boilerplate')
  */
 export async function handleCustomizeRemoteName(cli: CLIConfig, type: 'boilerplate'): Promise<void> {
   const remoteName = await promptConfigureRemoteName(type);
@@ -151,6 +157,7 @@ export async function handleCustomizePackageJsonMode(): Promise<void> {
 
 /**
  * Pass CLI configuration values to the main config on initial load.
+ * 
  * @param cliConfig - The CLI configuration object
  */
 export function onInitialConfigLoad(cli: CLIConfig) {

@@ -1,8 +1,10 @@
 import { InvalidArgumentError } from "commander";
+
 import { SUPPORTED_SYNC_SERVICES } from "../../config/sync-services";
 
 /**
  * Validate a Git branch name.
+ * 
  * @param name - Name of the branch to validate
  * @returns 
  */
@@ -16,6 +18,7 @@ export function validateBranchName(name: string): string {
 
 /**
  * Validate a sync service name.
+ * 
  * @param name - Name of the sync service to validate
  * @returns 
  */
@@ -29,6 +32,7 @@ export function validateSyncService(name: string): string {
 
 /**
  * Validate a location value (local|remote).
+ * 
  * @param location - Location value to validate
  * @returns 
  */
@@ -42,6 +46,7 @@ export function validateLocation(location: string): string {
 
 /**
  * Validate a remote name.
+ * 
  * @param name 
  * @returns 
  */
@@ -55,6 +60,7 @@ export function validateRemoteName(name: string): string {
 
 /** 
  * Check if a branch name is valid according to Git naming conventions.
+ * 
  * @param name - Name of the branch to check
  * @returns boolean indicating if the branch name is valid
  */

@@ -3,22 +3,10 @@ import pc from "picocolors";
 import { checkbox, input, select, Separator } from "@inquirer/prompts";
 import { SYNC_SERVICE_OPTIONS, SyncService } from "../../config/sync-services";
 import { config } from "../../config";
-
-export type ConfigurationAction = 'continue' | 'customize';
-export type CustomizeOption =
-  | 'boilerplateLocation'
-  | 'boilerplateBranch'
-  | 'boilerplateRemoteName'
-  | 'divergedCommitStatus'
-  | 'forkLocation'
-  | 'forkBranch'
-  | 'forkSyncBranch'
-  | 'packageJsonMode'
-  | 'done';
+import { ConfigurationAction, CustomizeOption } from "./types";
 
 /**
  * Prompt the user to select a sync service.
- * @returns 
  */
 export async function promptSyncService(): Promise<SyncService> {
   const syncService = await select<string>({
@@ -40,7 +28,6 @@ export async function promptSyncService(): Promise<SyncService> {
 
 /**
  * Prompt the user for configuration action.
- * @returns 
  */
 export async function promptConfigurationAction(): Promise<ConfigurationAction> {
   const configurationState = await select<string>({
@@ -62,7 +49,6 @@ export async function promptConfigurationAction(): Promise<ConfigurationAction> 
 
 /**
  * Prompt the user to select which configuration to customize.
- * @returns 
  */
 export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOption> {
   const configToCustomize = await select<string>({
@@ -99,7 +85,6 @@ export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOp
 
 /**
  * Prompt the user to configure location (local or remote).
- * @returns 
  */
 export async function promptConfigureLocation(type: 'boilerplate' | 'fork'): Promise<'local' | 'remote'> {
   const location = await select<string>({
@@ -116,7 +101,6 @@ export async function promptConfigureLocation(type: 'boilerplate' | 'fork'): Pro
 
 /**
  * Prompt the user to configure package.json mode (dry run or apply changes).
- * @returns 
  */
 export async function promptPackageJsonMode(): Promise<'dryRun' | 'applyChanges'> {
   const mode = await select<string>({
@@ -133,8 +117,9 @@ export async function promptPackageJsonMode(): Promise<'dryRun' | 'applyChanges'
 
 /**
  * Prompt the user to configure branch name.
- * @param branchType 
- * @returns 
+ * 
+ * @param type - The repository type of the branch to customize ('boilerplate' or 'fork')
+ * @param branchType - The specific branch type to customize ('branch' or 'syncBranch')
  */
 export async function promptConfigureBranch(type: 'boilerplate' | 'fork', branchType: 'branch' | 'syncBranch'): Promise<string> {
   const branch = await input({ message: `Enter ${type} ${branchType}:` });
@@ -147,7 +132,8 @@ export async function promptConfigureBranch(type: 'boilerplate' | 'fork', branch
 
 /**
  * Prompt the user to configure remote name.
- * @returns 
+ * 
+ * @param type - The repository type of the remote name to customize ('boilerplate' or 'fork')
  */
 export async function promptConfigureRemoteName(type: 'boilerplate' | 'fork'): Promise<string> {
   const remoteName = await input({ message: `Enter ${type} remote name:` });
@@ -160,7 +146,6 @@ export async function promptConfigureRemoteName(type: 'boilerplate' | 'fork'): P
 
 /**
  * Prompt the user to select diverged commit status options.
- * @returns 
  */
 export async function promptDivergedCommitStatusOptions(): Promise<string[]> {
   const options = ['upToDate', 'ahead', 'behind', 'diverged', 'unrelated', 'unknown'];

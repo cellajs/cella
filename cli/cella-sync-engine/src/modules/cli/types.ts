@@ -10,3 +10,18 @@ export interface CLIConfig {
   forkBranch: string;
   forkSyncBranch: string;
 }
+
+// Define supported configuration actions (continue or customize)
+export type ConfigurationAction = 'continue' | 'customize';
+
+// Define all possible customization options
+export type CustomizeOption =
+  | 'boilerplateLocation'
+  | 'boilerplateBranch'
+  | 'boilerplateRemoteName'
+  | 'divergedCommitStatus'
+  | 'forkLocation'
+  | 'forkBranch'
+  | 'forkSyncBranch'
+  | 'packageJsonMode'
+  | 'done';
