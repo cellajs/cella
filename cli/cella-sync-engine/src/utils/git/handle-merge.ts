@@ -10,6 +10,14 @@ import { hasRemoteBranch } from './branches';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
+ * 
+ * @param mergeIntoPath - The file path of the repository where the merge is taking place.
+ * @param mergeIntoBranch - The target branch to merge into.
+ * @param mergeFromBranch - The source branch to merge from.
+ * @param resolveConflicts - Optional function to automatically resolve conflicts.
+ * 
+ * @throws Will throw an error if any git operation fails.
+ * @returns A Promise that resolves to a MergeResult indicating the outcome of the merge operation.
  */
 export async function handleMerge(
   mergeIntoPath: string,
@@ -52,8 +60,12 @@ export async function handleMerge(
 
 /**
  * Starts the merge process between the fork and boilerplate repositories.
+ * 
  * @param forkConfig - RepoConfig of the forked repo
  * @param boilerplateConfig - RepoConfig of the boilerplate repo
+ * 
+ * @throws Will throw an error if the merge fails for reasons other than conflicts.
+ * @returns A Promise that resolves when the merge process is initiated.
  */
 async function startMerge(mergeIntoPath: string, mergeFromBranch: string) {
   try {
@@ -69,8 +81,11 @@ async function startMerge(mergeIntoPath: string, mergeFromBranch: string) {
 /**
  * Resolves merge conflicts based on the provided analyzed files and their strategies.
  * If conflicts remain after automatic resolution, prompts the user to resolve them manually.
- * @param forkConfig - RepoConfig of the forked repo
- * @param analyzedFiles - List of analyzed files
+ * 
+ * @param mergeIntoPath - The file path of the repository where the merge is taking place.
+ * 
+ * @throws Will throw an error if the user chooses to abort the merge process.
+ * @returns A Promise that resolves when all conflicts are resolved.
  */
 async function waitForManualConflictResolution(mergeIntoPath: string) {
   let conflicts = await getUnmergedFiles(mergeIntoPath);

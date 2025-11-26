@@ -10,6 +10,16 @@ import { determineFileMergeStrategy } from './git/determine-file-merge-strategy'
 // Run 10 analyses at a time
 const limit = pLimit(10);
 
+/**
+ * Analyzes a file by comparing its state in the boilerplate and fork repositories.
+ * 
+ * @param boilerplate - The boilerplate repository configuration
+ * @param fork - The fork repository configuration
+ * @param boilerplateFile - The file entry from the boilerplate repository
+ * @param forkFile - The file entry from the fork repository (if it exists)
+ * 
+ * @returns A promise that resolves to the analyzed file data
+ */
 export async function analyzeFile(
   boilerplate: RepoConfig,
   fork: RepoConfig,
@@ -38,6 +48,16 @@ export async function analyzeFile(
   return analyzedFile;
 }
 
+/**
+ * Analyzes multiple files by comparing their states in the boilerplate and fork repositories.
+ * 
+ * @param boilerplate - The boilerplate repository configuration
+ * @param fork - The fork repository configuration
+ * @param boilerplateFiles - The list of file entries from the boilerplate repository
+ * @param forkFiles - The list of file entries from the fork repository
+ * 
+ * @returns A promise that resolves to an array of analyzed file data
+ */
 export async function analyzeManyFiles(
   boilerplate: RepoConfig,
   fork: RepoConfig,

@@ -7,6 +7,14 @@ import { hasRemoteBranch } from './branches';
 
 /**
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch
+ * 
+ * @param mergeIntoPath - The file path of the repository where the merge is taking place.
+ * @param mergeIntoBranch - The target branch to merge into.
+ * @param mergeFromBranch - The source branch to merge from.
+ * @param maxPreviewCommits - Maximum number of recent commit messages to include in the squash commit message.
+ * 
+ * @throws Will throw an error if mergeIntoBranch is not defined or if any git operation fails.
+ * @returns A Promise that resolves to a MergeResult indicating the outcome of the squash merge operation.
  */
 export async function handleSquashMerge(
   mergeIntoPath: string,

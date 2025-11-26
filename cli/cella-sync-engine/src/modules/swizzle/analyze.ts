@@ -3,6 +3,15 @@ import { detectSwizzles } from "./detect";
 import { getSwizzleMetadata } from "./metadata";
 import { getFlaggedAs } from "./settings";
 
+/**
+ * Run swizzle analysis on an analyzed file
+ * 
+ * @todo: Check what to do if existing metadata is invalid
+ * 
+ * @param analyzedFile The analyzed file data
+ * 
+ * @returns The swizzle analysis result
+ */
 export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
   const flaggedInSettingsAs = getFlaggedAs(analyzedFile.filePath);
   const existingEntry = getSwizzleMetadata(analyzedFile.filePath);
@@ -17,7 +26,6 @@ export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
       };
     }
 
-    // @todo: Check what to do if existing metadata is invalid
     return {
       existingMetadata: existingEntry,
       existingMetadataValid: false,
@@ -34,6 +42,14 @@ export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
   };
 }
 
+/**
+ * Check if existing swizzle metadata is still valid
+ * 
+ * @param entry - The existing swizzle entry
+ * @param analyzedFile - The analyzed file data
+ * 
+ * @returns A boolean indicating if the existing metadata is valid
+ */
 function isSwizzleMetadataValid(entry: SwizzleEntry, analyzedFile: FileAnalysis): boolean {
   // Case: The swizzled commit still matches the boilerplate commit
   if (entry.boilerplateLastCommitSha === analyzedFile.boilerplateFile?.lastCommitSha) {
@@ -48,6 +64,13 @@ function isSwizzleMetadataValid(entry: SwizzleEntry, analyzedFile: FileAnalysis)
   return false;
 }
 
+/**
+ * Retrieve all swizzle entries from an array of analyzed files
+ * 
+ * @param analyzedFiles - The array of analyzed file data
+ * 
+ * @returns An array of swizzle entries extracted from the analyzed files
+ */
 export function extractSwizzleEntries(analyzedFiles: FileAnalysis[]): SwizzleEntry[] {
   const entries: SwizzleEntry[] = [];
 

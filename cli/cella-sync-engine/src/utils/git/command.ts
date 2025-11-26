@@ -13,7 +13,8 @@ const execAsync = promisify(exec);
  * @param command - The Git command to execute (e.g., 'status', 'checkout branch-name').
  *                   This should be the arguments string after `git`.
  * @param repoPath - The absolute or relative path to the Git repository.
- * 
+ * @param options - Optional settings for command execution.
+ *    - skipEditor: If true, sets the GIT_EDITOR environment variable to true to skip any editor prompts. 
  * @throws Will throw an error if the Git command fails.
  * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
  * 
@@ -106,7 +107,7 @@ export async function gitMerge(
  *   - continue: If true, continues a paused rebase
  *   - skip: If true, skips the current patch in a paused rebase
  *   - abort: If true, aborts the current rebase
- *   - noEdit: If true, adds the --no-edit flag (use default commit messages)
+ *  - skipEditor: If true, sets GIT_EDITOR to true to skip editor prompts during rebase
  * 
  * @returns The stdout from the git rebase command
  *

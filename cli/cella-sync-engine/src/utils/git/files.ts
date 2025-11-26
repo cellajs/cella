@@ -1,4 +1,5 @@
 import { writeFile } from 'fs/promises';
+
 import {
   gitAdd,
   gitCheckoutOursFilePath,
@@ -11,6 +12,7 @@ import {
   gitLsTreeRecursiveAtCommit,
   gitShowFileAtCommit,
 } from './command';
+
 import { FileEntry, CommitEntry } from '../../types';
 
 /**
