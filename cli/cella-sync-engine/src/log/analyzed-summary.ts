@@ -1,4 +1,5 @@
 import pc from 'picocolors';
+
 import { FileAnalysis } from '../types';
 import { config } from '../config';
 
@@ -9,6 +10,8 @@ import { config } from '../config';
  * @returns string[] - An array of summary lines.
  */
 export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
+
+  // Initialize summary counts
   const Summary: Record<string, number> = {
     totalFiles: 0,
     upToDate: 0,
@@ -22,24 +25,32 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
   }
 
   for (const file of analyzedFiles) {
+    // Increment total files count
     Summary.totalFiles++;
 
+    // Increment count based on git status
     const gitStatus = file.commitSummary?.status || 'unknown';
+
     if (gitStatus in Summary) {
       Summary[gitStatus]++;
     } else {
       Summary.unknown++;
     }
 
+    // Increment swizzle counts
     const swizzle = file.swizzle;
     if (swizzle) {
       if (swizzle?.existingMetadata?.swizzled || swizzle?.newMetadata?.swizzled) {
         Summary.swizzled++;
-        if (swizzle.newMetadata?.swizzled) Summary.swizzledNew++;
+
+        if (swizzle.newMetadata?.swizzled) {
+          Summary.swizzledNew++;
+        }
       }
     }
   }
 
+  // Construct and return summary lines
   return [
     `  Total Files: ${pc.bold(Summary.totalFiles)}`,
     `  Up to Date: ${pc.bold(pc.green(Summary.upToDate))}`,
@@ -60,7 +71,10 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 export function shouldLogAnalyzedSummaryModule(): boolean {
   const logModulesConfigured = 'modules' in config.log;
 
-  if (!logModulesConfigured) return true;
+  if (!logModulesConfigured) {
+    return true;
+  }
+  
   return config.log.modules?.includes('analyzedSummary') || false;
 }
 
@@ -70,7 +84,9 @@ export function shouldLogAnalyzedSummaryModule(): boolean {
  * @param lines - Array of summary lines to log.
  */
 export function logAnalyzedSummaryLines(lines: string[]): void {
-  if (lines.length === 0) return;
+  if (lines.length === 0) {
+    return;
+  }
 
   if (shouldLogAnalyzedSummaryModule()) {
     for (const line of lines) {

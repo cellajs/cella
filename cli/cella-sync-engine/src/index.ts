@@ -35,7 +35,7 @@ async function main(): Promise<void> {
   // Perform analysis (file diffs, metadata, merge strategies, etc.)
   const analyzedFiles = await runAnalyze();
   
-  // Apply file sync logic (if module configuration allows)
+  // Apply file sync logic (if enabled)
   if (shouldRunSync()) {
     await runSync(analyzedFiles);
   }
