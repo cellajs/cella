@@ -66,10 +66,25 @@ export const rateLimiter = (
 
     // Generate rate limit key with fallback logic
     let rateLimitKey = '';
+
     for (const identifier of identifiers) {
       const value = extractedIdentifiers[identifier];
       if (!value) continue;
-      rateLimitKey += identifier === 'ip' ? `#${value}` : value;
+
+      switch (identifier) {
+        case 'ip': {
+          rateLimitKey += `ip:${value}`;
+          break;
+        }
+        case 'email': {
+          rateLimitKey += `email:${value}`;
+          break;
+        }
+        case 'userId': {
+          rateLimitKey += `userId:${value}`;
+          break;
+        }
+      }
     }
 
     const limitState = await limiter.get(rateLimitKey);

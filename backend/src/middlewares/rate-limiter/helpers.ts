@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgres, type RateLimiterRes } from 'rate-limiter-flexible';
 import { db } from '#/db/db';
 import { env } from '#/env';
-import { Env } from '#/lib/context';
+import { Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { defaultOptions } from '#/middlewares/rate-limiter/core';
 import { Identifiers, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
@@ -46,6 +46,7 @@ export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract
   const results: Identifiers = {
     email: null,
     ip: null,
+    userId: null,
   };
 
   for (const identifier of identifiersToExtract) {
@@ -93,6 +94,11 @@ export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract
 
       case 'ip': {
         results.ip = getIp(ctx);
+        break;
+      }
+      case 'userId': {
+        const user = getContextUser();
+        if (user) results.userId = user.id;
         break;
       }
     }

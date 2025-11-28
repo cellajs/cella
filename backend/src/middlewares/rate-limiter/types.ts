@@ -1,7 +1,7 @@
 import { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
-export type RateLimitIdentifier = 'ip' | 'email';
+export type RateLimitIdentifier = 'ip' | 'email' | 'userId';
 export type Identifiers = Record<RateLimitIdentifier, string | null>;
 
 type LimiterStatusLists = {
