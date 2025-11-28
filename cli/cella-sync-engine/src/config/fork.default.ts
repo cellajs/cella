@@ -13,7 +13,7 @@ export const forkDefaultConfig: MinimalRepoConfig = {
   /**
    * The remote URL of the fork repository
    */
-  remoteUrl: "https://github.com/cellajs/raak.git",
+  remoteUrl: "",
 
   /**
    * The "branch" to sync from. Make sure this branch exists in the fork repository.
