@@ -1723,7 +1723,7 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @param {string=} options.body.title - `string` (optional)
  * @param {string=} options.body.content - `string` (optional)
  * @param {string=} options.body.keywords - `string` (optional)
- * @param {number=} options.body.order - `number` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {string | null=} options.body.parentId - `string | null` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429

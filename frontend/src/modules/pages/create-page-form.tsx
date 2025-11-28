@@ -2,15 +2,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { SaveIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import z from 'zod';
-import { createPages, Page } from '~/api.gen';
+import { createPages, type Page } from '~/api.gen';
 import { zCreatePagesData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
-import { ApiError } from '~/lib/api';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import Spinner from '~/modules/common/spinner';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { useTableMutation } from '~/query/utils/mutations';
+import { useUserStore } from '~/store/user';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 import { nanoid } from '~/utils/nanoid';
 import { blocksToHTML } from '../common/blocknote/helpers';
@@ -19,8 +18,9 @@ import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
 import { toaster } from '../common/toaster/service';
 import { Button, SubmitButton } from '../ui/button';
+import { Separator } from '../ui/separator';
 
-type FormValues = z.infer<typeof schema>;
+// type FormValues = z.infer<typeof schema>;
 const schema = zCreatePagesData.shape.body.unwrap();
 
 type CreatePageFormProps = {
@@ -31,10 +31,28 @@ type CreatePageFormProps = {
   // children?: React.ReactNode;
 };
 
+type PageData = Partial<Page> & Pick<Page, 'title' | 'content' | 'keywords'>;
+
+const createPage = (pageData: PageData, createdBy: string): Page => {
+  const createdAt = new Date().toISOString();
+  return {
+    id: nanoid(),
+    entityType: 'page',
+    slug: pageData.slug ?? pageData.title.toLowerCase().split(' ').join('-'),
+    status: 'unpublished',
+    parentId: null,
+    displayOrder: 0,
+    createdAt,
+    createdBy,
+    modifiedAt: createdAt,
+    modifiedBy: createdBy,
+    ...pageData,
+  };
+};
+
 export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirection }: CreatePageFormProps) => {
   const { t } = useTranslation();
 
-  // const { nextStep } = useStepper();
   const isFocused = true; // grab from context?
 
   const blocknoteId = useRef(`blocknote-${nanoid()}`);
@@ -44,11 +62,14 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
     formOptions: {
       resolver: zodResolver(schema),
       defaultValues: {
+        id: nanoid(),
         slug: '',
         title: '',
         content: '',
         keywords: '',
-        order: 0,
+        status: 'unpublished',
+        parentId: null,
+        displayOrder: 0,
       },
     },
   });
@@ -60,39 +81,41 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
       })()
     : false;
 
-  // const isPublic = useProjectPublicity(projectId);
-
-  // const { members } = useScopedWorkspaceData();
-  // const projectMembers = useMemo(() => members.filter((m) => m.membership.projectId === projectId), [members]);
-
-  const mutation = useMutation<Page[], ApiError, FormValues>({
-    mutationFn: async (data) => {
-      return await createPages({
-        body: [
-          {
-            id: '',
-            // organizationId: '',
-            entityType: 'page',
-            ...data,
-            order: 0,
-            keywords: '',
-            status: 'unpublished',
-            content: blocksToHTML(data.content),
-          },
-        ],
-      });
+  const mutation = useTableMutation({
+    table: 'pages',
+    type: 'create',
+    mutationFn: async (body: Page[]) => {
+      console.log(body);
+      return await createPages({ body });
     },
-    onSuccess: ([data]) => {
-      form.reset();
-      toaster(t('common:success.create_newsletter'), 'success');
-      // useSheeter.getState().remove(formContainerId);
-      callback?.({ status: 'success', data });
-    },
+  });
+
+  const { user } = useUserStore();
+  const handleSubmit = form.handleSubmit((data) => {
+    const page = createPage(
+      {
+        entityType: 'page',
+        ...data,
+        content: blocksToHTML(data.content),
+        keywords: 'test-tag', //
+        status: 'unpublished', //
+      },
+      user.id,
+    );
+
+    return mutation.mutate([page], {
+      onSuccess: ([data]) => {
+        form.reset();
+        toaster(t('common:success.create_newsletter'), 'success');
+        // useSheeter.getState().remove(formContainerId);
+        callback?.({ status: 'success', data });
+      },
+    });
   });
 
   return (
     <Form {...form} labelDirection={labelDirection}>
-      <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <InputFormField
           control={form.control}
           name="title"
@@ -126,6 +149,7 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
             </FormItem>
           )}
         /> */}
+        <Separator />
         <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
           <BlockNoteContent
             control={form.control}
@@ -134,7 +158,7 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
               id: blocknoteId.current,
               editable: isFocused || isDialog,
               members: [], // project members
-              className: 'min-h-16 [&>.bn-editor]:min-h-16',
+              className: 'min-h-64 [&>.bn-editor]:min-h-64',
               // { isPublic, organizationId, onComplete }
               baseFilePanelProps: { organizationId },
               trailingBlock: false,

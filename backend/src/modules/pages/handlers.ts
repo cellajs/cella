@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, or, SQL } from 'drizzle-orm';
+import sanitize from 'sanitize-html';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
@@ -43,11 +44,11 @@ const pagesRouteHandlers = app
    * Create Page(s)
    */
   .openapi(pagesRoutes.createPages, async (ctx) => {
-    // const user = getContextUser();
+    const user = getContextUser();
     // const organization = getContextOrganization();
     // const limit = organization.restrictions.page;
 
-    const newPages = ctx.req.valid('json');
+    const pageData = ctx.req.valid('json');
 
     // if (restrictions && newPages.length > restrictions) {
     //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'page' });
@@ -55,7 +56,19 @@ const pagesRouteHandlers = app
 
     // get count of matching pages, and check against restrictions
 
-    const pages = await db.insert(pagesTable).values(newPages).returning();
+    const pages = await db
+      .insert(pagesTable)
+      .values(
+        pageData.map(({ content, ...p }) => {
+          return {
+            ...p,
+            content: sanitize(content),
+            createdBy: user.id,
+            modifiedBy: user.id,
+          };
+        }),
+      )
+      .returning();
 
     logEvent('info', `${pages.length} page(s) created`);
 
@@ -120,7 +133,7 @@ const pagesRouteHandlers = app
 
     const orderColumn = getOrderColumn(
       {
-        order: pagesTable.order,
+        order: pagesTable.displayOrder,
         status: pagesTable.status,
         createdAt: pagesTable.createdAt,
         createdBy: pagesTable.createdBy,
@@ -132,7 +145,7 @@ const pagesRouteHandlers = app
     );
 
     const pagesQuery = db
-      .select(pagesTable._.columns)
+      .select(getTableColumns(pagesTable))
       .from(pagesTable)
       .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
       .where(

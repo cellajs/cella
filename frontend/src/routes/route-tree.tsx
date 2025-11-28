@@ -41,7 +41,6 @@ export const routeTree = RootRoute.addChildren([
       UnsubscribedRoute,
       AuthErrorRoute,
     ]),
-    PagesRoute,
   ]),
   AppLayoutRoute.addChildren([
     HomeRoute,
@@ -52,7 +51,7 @@ export const routeTree = RootRoute.addChildren([
     UserInOrganizationProfileRoute,
     UserAccountRoute,
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
-
+    PagesRoute,
     // App-specific routes here
     // ...
   ]),

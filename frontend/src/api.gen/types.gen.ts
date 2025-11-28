@@ -251,13 +251,13 @@ export type Page = {
   title: string;
   content: string;
   keywords: string;
-  order: number;
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
+  displayOrder: number;
   createdAt: string;
-  createdBy: string | null;
+  createdBy: string;
   modifiedAt: string | null;
-  modifiedBy: string | null;
+  modifiedBy: string;
 };
 
 export type CheckEmailData = {
@@ -2487,9 +2487,9 @@ export type CreatePagesData = {
     title: string;
     content: string;
     keywords: string;
-    order: number;
     status?: 'unpublished' | 'published' | 'archived';
     parentId?: string | null;
+    displayOrder: number;
   }>;
   path?: never;
   query?: never;
@@ -2579,7 +2579,7 @@ export type UpdatePageData = {
     title?: string;
     content?: string;
     keywords?: string;
-    order?: number;
+    displayOrder?: number;
     status?: 'unpublished' | 'published' | 'archived';
     parentId?: string | null;
   };

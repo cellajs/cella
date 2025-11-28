@@ -3,6 +3,8 @@ import { queryClient } from '~/query/query-client';
 import { InfiniteQueryData } from '~/query/types';
 import { formatUpdatedCacheData } from './mutate-query';
 
+// #region Queries
+
 export const detailQueryOptions = <T>(
   {
     queryKey,
@@ -233,3 +235,45 @@ export const listQueryOptions = <T>(
     // select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 };
+
+// #endregion
+
+// #region Mutations
+
+// const anyMutationOptions = ({
+//   mutationKey,
+//   // onError,
+// }: {
+//   mutationKey: MutationKey;
+//   // onSuccess
+//   // onError: () => void;
+// }) => {
+//   return mutationOptions({
+//     mutationKey,
+//     onMutate: (variables, context) => {
+//       // useMutateQueryData
+//     },
+//     // toast on success?
+//     onError: (error, variables, onMutateResult, context) => {
+//       // onError(error, variables, onMutateResult, context);
+//       // maybe vary result based on if offline?
+
+//       // conditional toaster
+//       toaster(t(`error:${type}_resource`, { resource: t(`app:${table}`) }), 'error');
+
+//       // context?
+//       if (!onMutateResult?.length) {
+//         return;
+//       }
+
+//       for (const [queryKey, cached] of onMutateResult) {
+//         context.client.setQueryData(queryKey, cached);
+//       }
+//     },
+//     onSettled: (_data, _error, _variables, _onMutateResult, context) => {
+//       context.client.invalidateQueries({ queryKey: mutationKey.slice(0, 1) });
+//     },
+//   })
+// }
+
+// #endregion

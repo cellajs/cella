@@ -32,7 +32,7 @@ export const config = {
   cookieVersion: 'v1',
 
   // Which scripts to run when seeding the database
-  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
+  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:pages'],
 
   // API docs settings
   apiVersion: 'v1',

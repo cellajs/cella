@@ -26,7 +26,7 @@ export const pageUpdateSchema = pageInsertSchema
     title: true,
     content: true,
     keywords: true,
-    order: true,
+    displayOrder: true,
     status: true,
     parentId: true,
   })

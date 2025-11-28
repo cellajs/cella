@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { raw } from 'hono/html';
 import { FileArchiveIcon, FileCheckIcon, FilePenLineIcon, LucideProps } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,10 +41,10 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
-          to="/organization/$idOrSlug/members"
+          to="/pages"
           draggable="false"
           tabIndex={tabIndex}
-          params={{ idOrSlug: row.slug }}
+          // params={{ idOrSlug: row.slug }}
           className="flex space-x-2 items-center outline-0 ring-0 group"
         >
           {/* <AvatarWrap
@@ -59,17 +60,17 @@ export const usePagesTableColumns = (isCompact: boolean) => {
         </Link>
       ),
     },
-    // {
-    //   key: 'keywords',
-    //   name: 'Keywords',
-    //   editable: true,
-    //   visible: true,
-    //   sortable: true,
-    //   resizable: true,
-    //   minWidth: 180,
-    //   renderHeaderCell: HeaderCell,
-    //   renderCell: ({ row }) => <span className="font-medium">{row.description || '-'}</span>,
-    // },
+    {
+      key: 'keywords',
+      name: 'Keywords',
+      editable: true,
+      visible: true,
+      sortable: true,
+      resizable: true,
+      minWidth: 180,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <span className="font-medium">{row.keywords || '-'}</span>,
+    },
     // {
     //   key: 'labels',
     //   name: t('app:labels'),
@@ -112,22 +113,26 @@ export const usePagesTableColumns = (isCompact: boolean) => {
         );
       },
     },
-    // {
-    //   key: 'description',
-    //   name: 'Description',
-    //   editable: true,
-    //   visible: true,
-    //   sortable: true,
-    //   resizable: true,
-    //   minWidth: 180,
-    //   renderHeaderCell: HeaderCell,
-    //   renderCell: ({ row }) => <span className="font-medium">{row.description || '-'}</span>,
-    // },
+    {
+      key: 'content',
+      name: 'Content',
+      editable: true,
+      visible: true,
+      sortable: true,
+      resizable: true,
+      minWidth: 180,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => {
+        const html = raw(row.content);
+        html;
+        return <span className="font-medium">{row.content.slice(0, 50) || '-'}</span>;
+      },
+    },
     {
       key: 'createdBy',
       name: t('common:created_by'),
       sortable: false,
-      visible: false,
+      visible: true,
       resizable: true,
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,

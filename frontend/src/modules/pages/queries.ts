@@ -1,9 +1,8 @@
-import { infiniteQueryOptions, QueryKey, queryOptions } from '@tanstack/react-query';
 import { RegisteredRouter, UseSearchResult } from '@tanstack/router-core';
 import { appConfig } from 'config';
 import { GetPagesData, getPage, getPages, Page } from '~/api.gen';
 import { parseBlocksText } from '~/lib/blocknote';
-import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
+import { detailQueryOptions, detailsQueryOptions, listQueryOptions } from '~/query/utils/options';
 
 type PagesQuery = Exclude<GetPagesData['query'], undefined>;
 
@@ -29,34 +28,23 @@ const pagesKeys = {
     public: (query: PagesQuery) => [...pagesKeys.details.base(), 'public', query] as const,
   },
   detail: {
-    base: () => [...pagesKeys.all],
+    base: () => [...pagesKeys.all] as const,
     private: (id: string) => [...pagesKeys.details.base(), id] as const,
     public: (id: string) => [...pagesKeys.detail.base(), 'public', id] as const,
   },
+  create: () => [...pagesKeys.all, 'create'] as const,
+  update: () => [...pagesKeys.all, 'update'] as const,
+  delete: () => [...pagesKeys.all, 'delete'] as const,
 };
 
-// #region Detail (Single)
+// #region Queries
 
-const detailQueryOptions = <T>(
-  {
-    queryKey,
-    queryFn,
-  }: {
-    queryKey: QueryKey;
-    queryFn: () => Promise<T>;
-  },
-  orgIdOrSlug?: string,
-) => {
-  return queryOptions({
-    queryKey,
-    queryFn,
-    ...(!orgIdOrSlug && {
-      gcTime: 0,
-      staleTime: 0,
-    }),
-  });
-};
-
+/**
+ *
+ * @param id
+ * @param orgIdOrSlug
+ * @returns
+ */
 export const pageQueryOptions = (id: string, orgIdOrSlug?: string) => {
   return detailQueryOptions(
     {
@@ -74,31 +62,12 @@ export const pageQueryOptions = (id: string, orgIdOrSlug?: string) => {
   );
 };
 
-// #endregion
-
-// #region Details (Board)
-
-const detailsQueryOptions = <T>(
-  {
-    queryKey,
-    queryFn,
-  }: {
-    queryKey: QueryKey;
-    queryFn: () => Promise<T>;
-  },
-  orgIdOrSlug?: string,
-) => {
-  return queryOptions({
-    // queryKey: [table, filter, sort, limit, offset],
-    queryKey,
-    queryFn,
-    ...(!orgIdOrSlug && {
-      gcTime: 0,
-      staleTime: 0,
-    }),
-  });
-};
-
+/**
+ *
+ * @param query
+ * @param orgIdOrSlug
+ * @returns
+ */
 export const pagesDetailsQueryOptions = (query: PagesQuery, orgIdOrSlug?: string) => {
   return detailsQueryOptions(
     {
@@ -116,48 +85,6 @@ export const pagesDetailsQueryOptions = (query: PagesQuery, orgIdOrSlug?: string
     },
     orgIdOrSlug,
   );
-};
-
-// #endregion
-
-// #region List (Infinite)
-
-const { initialPageParam, staleTime } = baseInfiniteQueryOptions;
-
-const listQueryOptions = <T>(
-  {
-    queryKey,
-    queryFn,
-    limit,
-  }: {
-    queryKey: QueryKey;
-    queryFn: (params: { limit: number; offset: number }, signal: AbortSignal) => Promise<ListResponse<T>>;
-    limit: number;
-  },
-  orgIdOrSlug?: string,
-) => {
-  return infiniteQueryOptions({
-    queryKey,
-    queryFn: async ({ pageParam, signal }) => {
-      // order of operations?
-      const offset = pageParam.offset || (pageParam.page || 0) * limit;
-      // return result of getter with path, query, and signal
-      return await queryFn({ limit, offset }, signal);
-    },
-    initialPageParam,
-    getNextPageParam: (lastPage, allPages) => {
-      const fetchedCount = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      // can this be done server-side?
-      return fetchedCount < lastPage.total ? { page: allPages.length, offset: fetchedCount } : undefined;
-    },
-    staleTime,
-    ...(orgIdOrSlug && {
-      gcTime: 0,
-      staleTime: 0,
-    }),
-    refetchOnWindowFocus: false,
-    // infiniteQueryUseCachedIfCompleteOptions
-  });
 };
 
 type InfinitePagesQuery = Omit<PagesQuery, 'limit'> & {
@@ -198,18 +125,7 @@ export const pagesListQueryOptions = (
 
 // #endregion
 
-/** WIP - Generic core query type */
-// type Query<T, S extends keyof T = keyof T> = {
-//   q?: string;
-//   sort?: S;
-//   order?: 'asc' | 'desc';
-//   limit?: number;
-// }
-
-/** WIP - Generic core response type */
-type ListResponse<T> = { items: T[]; total: number };
-
-// #region helpers
+// #region Helpers
 
 /**
  *
@@ -223,8 +139,8 @@ export const filterPages = (query: UseSearchResult<RegisteredRouter, undefined, 
     return true;
   }
 
-  const matchMode = 'all';
   // const { matchMode = 'all' } = query;
+  const matchMode = 'all';
 
   const normalized = query.q.trim().toLowerCase();
   const raw = normalized.startsWith('=') ? normalized.slice(1) : normalized;
@@ -245,5 +161,34 @@ export const filterPages = (query: UseSearchResult<RegisteredRouter, undefined, 
     return matchMode === 'all' ? item.includes(raw) : keywords.some((w) => item.includes(w));
   });
 };
+
+// #endregion
+
+// #region Mutations
+
+// const useCreate = <T>() => {
+//   mutationOptions({
+//     mutationKey: pagesKeys.create(),
+//     mutationFn: (variables: T[]): Promise<T[]> => {},
+//     onMutate: handleOnMutate(['pages'], 'create'),
+//     onSuccess: () => {
+//       // toaster();
+//     },
+//     onError: (_error, _variables, onMutateResult, context) => {
+//       // maybe vary result based on if offline?
+
+//       // toaster(t(`error:${type}_resource`, { resource: t(`app:${table}`) }), 'error');
+
+//       if (!onMutateResult?.length) {
+//         return;
+//       }
+
+//       for (const [queryKey, cached] of onMutateResult) {
+//         context.client.setQueryData(queryKey, cached);
+//       }
+//     },
+//     onSettled: handleOnSettled(['pages']),
+//   })
+// }
 
 // #endregion

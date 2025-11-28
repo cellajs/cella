@@ -266,13 +266,13 @@ export const zPage = z.object({
   title: z.string(),
   content: z.string(),
   keywords: z.string(),
-  order: z.number().gte(-140737488355328).lte(140737488355327),
   status: z.enum(['unpublished', 'published', 'archived']),
   parentId: z.union([z.string(), z.null()]),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   createdAt: z.string(),
-  createdBy: z.union([z.string(), z.null()]),
+  createdBy: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.string(),
 });
 
 export const zCheckEmailData = z.object({
@@ -1088,9 +1088,9 @@ export const zCreatePagesData = z.object({
         title: z.string(),
         content: z.string(),
         keywords: z.string(),
-        order: z.number().gte(-140737488355328).lte(140737488355327),
         status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
         parentId: z.optional(z.union([z.string(), z.null()])),
+        displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
       }),
     )
     .min(1)
@@ -1123,7 +1123,7 @@ export const zUpdatePageData = z.object({
     title: z.optional(z.string()),
     content: z.optional(z.string()),
     keywords: z.optional(z.string()),
-    order: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
+    displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
     status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
     parentId: z.optional(z.union([z.string(), z.null()])),
   }),

@@ -1,7 +1,9 @@
-import { AnyPgColumn, doublePrecision, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { AnyPgColumn, doublePrecision, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+
+// https://orm.drizzle.team/docs/generated-columns
 
 /**
  * Pages table.
@@ -15,10 +17,8 @@ export const pagesTable = pgTable(
       .default('page'),
     slug: varchar().notNull().unique(),
     title: varchar().notNull(),
-    content: varchar().notNull(),
+    content: varchar().notNull(), // optional for "folders"?
     keywords: varchar().notNull(),
-    // order is a reserved keyword in Postgres, so we need to use a different name
-    order: doublePrecision().notNull(),
     status: varchar({ enum: ['unpublished', 'published', 'archived'] })
       .notNull()
       .default('unpublished'),
@@ -31,14 +31,22 @@ export const pagesTable = pgTable(
       // or inherit?
       onDelete: 'set null',
     }),
+    displayOrder: doublePrecision().notNull(),
     createdAt: timestampColumns.createdAt,
-    createdBy: varchar().references(() => usersTable.id, {
-      onDelete: 'set null',
-    }),
+    createdBy: varchar()
+      .notNull()
+      .references(() => usersTable.id, {
+        onDelete: 'set null',
+      }),
     modifiedAt: timestampColumns.modifiedAt,
-    modifiedBy: varchar().references(() => usersTable.id, {
-      onDelete: 'set null',
-    }),
+    modifiedBy: varchar()
+      .notNull()
+      .references(() => usersTable.id, {
+        onDelete: 'set null',
+      }),
   },
-  // (table) => [index('pages_organization_id_index').on(table.organizationId)],
+  (table) => [
+    unique('group_order').on(table.parentId, table.displayOrder),
+    // index('pages_organization_id_index').on(table.organizationId),
+  ],
 );
