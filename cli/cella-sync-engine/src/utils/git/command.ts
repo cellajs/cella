@@ -86,14 +86,15 @@ export async function gitFetch(repoPath: string, remoteName: string): Promise<st
 export async function gitMerge(
   repoPath: string,
   branchName: string,
-  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean; acceptTheirs?: boolean } = {}
+  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean; acceptTheirs?: boolean, allowUnrelatedHistories?: boolean } = {}
 ): Promise<string> {
   const noCommitFlag = options.noCommit ? '--no-commit' : '';
   const noEditFlag = options.noEdit ? '--no-edit' : '';
   const squashFlag = options.squash ? '--squash' : '';
   const acceptTheirsFlag = options.acceptTheirs ? '--strategy-option=theirs' : '';
+  const allowUnrelatedHistoriesFlag = options.allowUnrelatedHistories ? '--allow-unrelated-histories' : '';
 
-  const cmd = `merge ${branchName} ${squashFlag} ${noEditFlag} ${noCommitFlag} ${acceptTheirsFlag}`;
+  const cmd = `merge ${branchName} ${squashFlag} ${noEditFlag} ${noCommitFlag} ${acceptTheirsFlag} ${allowUnrelatedHistoriesFlag}`;
   return runGitCommand(cmd, repoPath);
 }
 

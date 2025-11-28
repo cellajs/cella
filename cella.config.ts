@@ -1,17 +1,12 @@
 import { DeepPartial, AppConfig } from "./cli/cella-sync-engine/src/config/types";
 
 export const cellaConfig: DeepPartial<AppConfig> = {
-  boilerplate: {
-    localPath: "/home/Github/cella", // <-- CHANGE THIS TO YOUR LOCAL PATH
-  },
-
   fork: {
-    localPath: "/home/Github/raak" // <-- CHANGE THIS TO YOUR LOCAL PATH OR use process.cwd() (current working directory)
+    localPath: "/home/gino/Github/my-cella-app",
   },
 
   swizzle: {
     metadataFileName: 'cella.swizzled.json',
-    localDir: '/home/Github/cella', // <-- CHANGE THIS TO YOUR LOCAL PATH
     removedFiles: [
       "info/*",
       "cli/create-cella/*"

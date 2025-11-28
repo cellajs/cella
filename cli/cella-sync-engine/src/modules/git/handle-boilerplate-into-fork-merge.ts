@@ -21,6 +21,9 @@ export async function handleBoilerplateIntoForkMerge(
   analyzedFiles: FileAnalysis[],
 ): Promise<MergeResult> {
   try {
+    // Check if this is the first sync and confirm with the user
+    const isFirstSync = await checkIfFirstSyncAndConfirm(analyzedFiles);
+
     // Start merge
     await handleMerge(
       forkConfig.workingDirectory,
@@ -35,7 +38,8 @@ export async function handleBoilerplateIntoForkMerge(
 
         // Cleanup all untracked files
         await gitCleanAllUntrackedFiles(forkConfig.workingDirectory);
-      }
+      },
+      { allowUnrelatedHistories: isFirstSync },
     );
 
     return { status: 'success', isMerging: false };
@@ -46,10 +50,41 @@ export async function handleBoilerplateIntoForkMerge(
   }
 }
 
+/**
+ * Checks if this is the first sync by analyzing commit summaries.
+ * If so, prompts the user for confirmation to continue.
+ * We need to allow unrelated histories in this case.
+ * 
+ * @param analyzedFiles - List of analyzed files 
+ * @throws Error if the user chooses to abort the merge process.
+ * 
+ * @returns boolean indicating if this is the first sync
+ */
+async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promise<boolean> {
+  // Check if there are only unrelated history files (if so, ask user if this is the first sync, then we need to run it with: --allow-unrelated-histories)
+  const isFirstSync = analyzedFiles.every(file => file.commitSummary?.status === 'unrelated');
+
+  // If it's possibly the first sync, confirm with the user
+  if (isFirstSync) {
+    const continueSync = await confirm({
+      message: 'It looks like this might be the first sync (all files have unrelated histories). Do you want to continue with the first sync process?',
+      default: true,
+    });
+
+    if (!continueSync) {
+      throw new Error('Merge process aborted by user.');
+    }
+
+    return isFirstSync;
+  }
+
+  return false;
+}
+
 /** 
  * Cleans up non-conflicted files based on their merge strategies.
  * 
- * @param forkConfig - Path to the forked repo
+ * @param repoPath - Path to the forked repo
  * @param analyzedFiles - List of analyzed files
  * 
  * @returns void

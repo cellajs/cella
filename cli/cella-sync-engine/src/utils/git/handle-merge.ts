@@ -24,13 +24,14 @@ export async function handleMerge(
   mergeIntoBranch: string,
   mergeFromBranch: string,
   resolveConflicts?: (() => Promise<void>) | null,
+  { allowUnrelatedHistories = false } = {},
 ): Promise<MergeResult> {
   try {
     // Checkout to the branch to merge into
     await gitCheckout(mergeIntoPath, mergeIntoBranch);
 
     // Start merge
-    await startMerge(mergeIntoPath, mergeFromBranch);
+    await startMerge(mergeIntoPath, mergeFromBranch, { allowUnrelatedHistories });
 
     // Resolve any remaining conflicts
     if (resolveConflicts) {
@@ -67,9 +68,9 @@ export async function handleMerge(
  * @throws Will throw an error if the merge fails for reasons other than conflicts.
  * @returns A Promise that resolves when the merge process is initiated.
  */
-async function startMerge(mergeIntoPath: string, mergeFromBranch: string) {
+async function startMerge(mergeIntoPath: string, mergeFromBranch: string, { allowUnrelatedHistories = false } = {}) {
   try {
-    await gitMerge(mergeIntoPath, mergeFromBranch, { noEdit: true });
+    await gitMerge(mergeIntoPath, mergeFromBranch, { noEdit: true, allowUnrelatedHistories });
   } catch (err) {
     // Check if merge is in conflict state (rethrow if not)
     if (!isMergeInProgress(mergeIntoPath)) {
