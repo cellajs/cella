@@ -59,7 +59,7 @@ async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promis
   // If it's possibly the first sync, confirm with the user
   if (isFirstSync) {
     const continueSync = await confirm({
-      message: 'It looks like this might be the first sync (all files have unrelated histories). Do you want to continue with the first sync process?',
+      message: `It looks like this might be the first sync (all ${analyzedFiles.length} files have unrelated histories).\n This requires allowing unrelated histories in the merge. Do you want to continue?`,
       default: true,
     });
 
