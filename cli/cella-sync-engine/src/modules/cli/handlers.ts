@@ -3,7 +3,20 @@ import pc from "picocolors";
 import { CLIConfig, ConfigurationAction, CustomizeOption } from "./types";
 import { config } from "../../config";
 import { SyncService } from "../../config/sync-services";
-import { promptConfigurationAction, promptSyncService, promptWhichConfigurationToCustomize, promptConfigureLocation, promptConfigureBranch, promptDivergedCommitStatusOptions, promptConfigureRemoteName, promptPackageJsonMode  } from "./prompts";
+
+import {
+  promptConfigurationAction,
+  promptSyncService,
+  promptWhichConfigurationToCustomize,
+  promptConfigureLocation,
+  promptConfigureBranch,
+  promptDivergedCommitStatusOptions,
+  promptConfigureRemoteName,
+  promptPackageJsonMode,
+  promptConfigureSkipAllPushes,
+  promptConfigureMaxGitPreviewsForSquashCommits,
+} from "./prompts";
+
 import { AppConfig } from "../../config/types";
 import { showConfiguration } from "./display";
 
@@ -35,9 +48,9 @@ export async function handleConfigurationAction(cli: CLIConfig): Promise<void> {
 
   if (configurationState === 'customize') {
     await handleCustomizeConfiguration(cli);
-    
+
     showConfiguration();
-    
+
     await handleConfigurationAction(cli);
   }
 }
@@ -80,6 +93,14 @@ export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void
 
   if (configToCustomize === 'packageJsonMode') {
     await handleCustomizePackageJsonMode();
+  }
+
+  if (configToCustomize === 'skipAllPushes') {
+    await handleCustomizeSkipAllPushes();
+  }
+
+  if (configToCustomize === 'maxGitPreviewsForSquashCommits') {
+    await handleCustomizeMaxGitPreviewsForSquashCommits();
   }
 
   // Recursively handle customization until done
@@ -156,6 +177,22 @@ export async function handleCustomizePackageJsonMode(): Promise<void> {
 }
 
 /**
+ * Handle customization of skip all pushes option.
+ */
+export async function handleCustomizeSkipAllPushes(): Promise<void> {
+  const skipAllPushes = await promptConfigureSkipAllPushes();
+  config.behavior.skipAllPushes = skipAllPushes;
+}
+
+/**
+ * Handle customization of max git previews for squash commits option.
+ */
+export async function handleCustomizeMaxGitPreviewsForSquashCommits(): Promise<void> {
+  const maxGitPreviewsForSquashCommits = await promptConfigureMaxGitPreviewsForSquashCommits();
+  config.behavior.maxGitPreviewsForSquashCommits = maxGitPreviewsForSquashCommits;
+}
+
+/**
  * Pass CLI configuration values to the main config on initial load.
  * 
  * @param cliConfig - The CLI configuration object
@@ -178,10 +215,10 @@ export function onInitialConfigLoad(cli: CLIConfig) {
   }
 
   if (cli.forkBranch) {
-    config.fork = {  branch: cli.forkBranch  };
+    config.fork = { branch: cli.forkBranch };
   }
 
   if (cli.forkSyncBranch) {
-    config.fork = { syncBranch: cli.forkSyncBranch  };
+    config.fork = { syncBranch: cli.forkSyncBranch };
   }
 }

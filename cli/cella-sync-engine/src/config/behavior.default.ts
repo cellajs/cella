@@ -29,4 +29,9 @@ export const behaviorDefaultConfig: MinimalBehaviorConfig = {
    * Description: Do not write any swizzle metadata file
    */
   skipWritingSwizzleMetadataFile: true,
+
+  /**
+   * Description: Maximum number of git previews for Squash commits.
+   */
+  maxGitPreviewsForSquashCommits: 30,
 }

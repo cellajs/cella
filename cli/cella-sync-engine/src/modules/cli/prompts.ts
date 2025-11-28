@@ -1,7 +1,7 @@
 import pc from "picocolors";
 
 import { checkbox, input, select, Separator } from "@inquirer/prompts";
-import { SYNC_SERVICE_OPTIONS, SyncService } from "../../config/sync-services";
+import { SYNC_SERVICE_OPTIONS, SyncService, SERVICES_RUNNING_FROM_LOCAL_FORK } from "../../config/sync-services";
 import { config } from "../../config";
 import { ConfigurationAction, CustomizeOption } from "./types";
 
@@ -72,7 +72,14 @@ export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOp
 
       ...(config.syncService === 'packages' ? [
         new Separator('Packages:'),
+        { name: `Run GIT push: <${pc.bold(config.behavior.skipAllPushes ? 'No' : 'Yes')}>`, value: 'skipAllPushes' },
         { name: `Package.json changes: <${pc.bold(config.behavior.packageJsonMode === 'dryRun' ? 'Dry run (only log)' : 'Apply Changes (write, commit)')}>`, value: 'packageJsonMode' },
+      ] : []),
+
+      ...(['boilerplate-fork', 'boilerplate-fork+packages'].includes(config.syncService) ? [
+        new Separator('Boilerplate-Fork+Packages:'),
+        { name: `Run GIT push: <${pc.bold(config.behavior.skipAllPushes ? 'No' : 'Yes')}>`, value: 'skipAllPushes' },
+        { name: `Squash - max preview commits: <${pc.bold(config.behavior.maxGitPreviewsForSquashCommits)}>`, value: 'maxGitPreviewsForSquashCommits' },
       ] : []),
 
       new Separator(),
@@ -92,7 +99,7 @@ export async function promptConfigureLocation(type: 'boilerplate' | 'fork'): Pro
     default: type === 'boilerplate' ? config.boilerplate.location : config.fork.location,
     choices: [
       { name: 'Local', value: 'local' },
-      { name: 'Remote', value: 'remote' },
+      { name: 'Remote', value: 'remote', disabled: type === 'fork' && SERVICES_RUNNING_FROM_LOCAL_FORK.includes(config.syncService) },
     ],
   });
 
@@ -160,4 +167,34 @@ export async function promptDivergedCommitStatusOptions(): Promise<string[]> {
   });
 
   return divergedCommitStatus;
+}
+
+/**
+ * Prompt the user to configure max git previews for squash commits.
+ */
+export async function promptConfigureMaxGitPreviewsForSquashCommits(): Promise<number> {
+  const inputValue = await input({ message: `Enter max git previews for squash commits (current: ${config.behavior.maxGitPreviewsForSquashCommits}):` });
+  const parsedValue = parseInt(inputValue, 10);
+  if (isNaN(parsedValue) || parsedValue < 1) {
+    console.error(pc.red('x Error:'), `Please enter a valid positive number.`);
+    return promptConfigureMaxGitPreviewsForSquashCommits();
+  }
+  return parsedValue;
+}
+
+/**
+ * Prompt the user to configure skip all pushes option.
+ */
+export async function promptConfigureSkipAllPushes(): Promise<boolean> {
+  const runGitPush = await select<string>({
+    message: `Run GIT push?`,
+    default: config.behavior.skipAllPushes ? 'no' : 'yes',
+    choices: [
+      { name: 'Yes', value: 'yes' },
+      { name: 'No', value: 'no' },
+    ],
+  });
+
+  // Skip all pushes (i.e., do not run git push) if the user selects 'no'
+  return runGitPush === 'no';
 }

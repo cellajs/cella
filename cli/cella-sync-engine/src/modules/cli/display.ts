@@ -63,11 +63,13 @@ export function showServiceConfiguration() {
   }
 
   if (config.syncService === 'boilerplate-fork+packages' || config.syncService === 'packages') {
+    console.info(`Run GIT push: `, `${config.behavior.skipAllPushes ? pc.red('✗ No') : pc.green('✓ Yes')}`);
     console.info(`Package.json changes: `, `${pc.cyan(config.behavior.packageJsonMode === 'dryRun' ? 'Dry run (only log)' : 'Apply Changes (write, commit)')}`);
   }
 
   if (config.syncService === 'boilerplate-fork' || config.syncService === 'boilerplate-fork+packages') {
     console.info(`Run GIT push: `, `${config.behavior.skipAllPushes ? pc.red('✗ No') : pc.green('✓ Yes')}`);
+    console.info(`Squash - max preview commits: `, pc.cyan(config.behavior.maxGitPreviewsForSquashCommits));
   }
 }
 

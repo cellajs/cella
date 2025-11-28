@@ -24,4 +24,6 @@ export type CustomizeOption =
   | 'forkBranch'
   | 'forkSyncBranch'
   | 'packageJsonMode'
+  | 'skipAllPushes'
+  | 'maxGitPreviewsForSquashCommits'
   | 'done';

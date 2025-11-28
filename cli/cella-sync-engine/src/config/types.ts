@@ -117,6 +117,11 @@ export interface MinimalBehaviorConfig {
    * If true, the swizzle metadata file will not be written.
    */
   skipWritingSwizzleMetadataFile?: boolean;
+
+  /**
+   * Maximum number of git previews for Squash commits.
+   */
+  maxGitPreviewsForSquashCommits?: number;
 }
 
 export interface MinimalSwizzleConfig {

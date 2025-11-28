@@ -46,7 +46,7 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
   const squashMergeFromBranch = config.fork.syncBranchRef;
 
   // The last parameter (5) indicates we include the last 5 commit messages in the squash commit
-  await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch, 5);
+  await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
 
   // Merge target branch (with squash commit) back into sync branch
   const mergeIntoPath = config.fork.localPath;

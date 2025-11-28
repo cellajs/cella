@@ -20,6 +20,17 @@ export type SyncService = typeof SYNC_SERVICES[keyof typeof SYNC_SERVICES];
 export const SUPPORTED_SYNC_SERVICES: SyncService[] = Object.values(SYNC_SERVICES);
 
 /**
+ * Services that are running from a local fork repository.
+ */
+export const SERVICES_RUNNING_FROM_LOCAL_FORK: SyncService[] = [
+  SYNC_SERVICES.BOILERPLATE_FORK,
+  SYNC_SERVICES.BOILERPLATE_FORK_PACKAGES,
+  SYNC_SERVICES.PACKAGES,
+  SYNC_SERVICES.DIVERGED,
+  SYNC_SERVICES.ANALYZE,
+];
+
+/**
  * Nicely formatted options for UI or CLI selection.
  */
 export const SYNC_SERVICE_OPTIONS = [

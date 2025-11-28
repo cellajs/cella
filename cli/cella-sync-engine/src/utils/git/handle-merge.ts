@@ -69,7 +69,7 @@ export async function handleMerge(
  */
 async function startMerge(mergeIntoPath: string, mergeFromBranch: string) {
   try {
-    await gitMerge(mergeIntoPath, mergeFromBranch, { noEdit: true, noCommit: true });
+    await gitMerge(mergeIntoPath, mergeFromBranch, { noEdit: true });
   } catch (err) {
     // Check if merge is in conflict state (rethrow if not)
     if (!isMergeInProgress(mergeIntoPath)) {
