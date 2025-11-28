@@ -24,7 +24,6 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "compose.yaml",
       "cella.config.js",
       "cella.config.ts",
-      "cella-swizzle.config.json",
       "config/default.ts",
       "config/staging.ts",
       "config/development.ts",
