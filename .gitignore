@@ -43,6 +43,7 @@ frontend/stats.html
 .trigger
 
 # Cella
+cella.config.ts
 cella.diverged.txt
 *storybook.log
 storybook-static
