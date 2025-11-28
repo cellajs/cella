@@ -64,27 +64,36 @@ export async function runSetup() {
   // Verify repository accessibility
   await checkRepository(config.boilerplate);
   await checkRepository(config.fork);
+  console.info(pc.green("✔ Repository accessibility verified."));
 
   // Ensure boilerplate is added as a remote in the fork
   await addAsRemote(config.boilerplate, config.fork);
+  console.info(pc.green("✔ Boilerplate remote setup complete."));
 
   // Ensure fork working directory and branches are clean
   await checkCleanState(config.fork.workingDirectory);
   await checkCleanState(config.fork.workingDirectory, config.fork.branchRef);
+  console.info(pc.green("✔ Fork repository clean state verified."));
 
   // Create sync branch if missing, then check it's clean
   await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranchRef);
   await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef);
+  console.info(pc.green("✔ Fork sync branch clean state verified."));
 
   // Fetch latest changes for both repositories
   await fetchLatestChanges(config.boilerplate);
+  console.info(pc.green("✔ Boilerplate latest changes fetched."));
+
   await fetchLatestChanges(config.fork);
+  console.info(pc.green("✔ Fork latest changes fetched."));
 
   // Merge fork branch into sync branch to ensure sync branch is up-to-date
   await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
+  console.info(pc.green("✔ Fork sync branch updated with latest fork changes."));
 
   // Ensure sync branch is clean post-merge
   await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
-
+  console.info(pc.green("✔ Fork sync branch clean state verified post-merge."));
+  
   console.info(pc.green("✔ Setup complete."));
 }

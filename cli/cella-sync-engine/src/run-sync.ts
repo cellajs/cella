@@ -39,6 +39,7 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
 
   // Merge boilerplate into fork (sync-branch)
   await handleBoilerplateIntoForkMerge(config.boilerplate, config.fork, analyzedFiles);
+  console.info(pc.green("✔ Boilerplate changes merged into fork sync branch."));
 
   // Squash merge sync-branch → target branch
   const squashMergeIntoPath = config.fork.localPath;
@@ -47,12 +48,14 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
 
   // The last parameter (5) indicates we include the last 5 commit messages in the squash commit
   await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
+  console.info(pc.green("✔ Sync branch squash-merged into target branch."));
 
   // Merge target branch (with squash commit) back into sync branch
   const mergeIntoPath = config.fork.localPath;
   const mergeIntoBranch = config.fork.syncBranchRef;
   const mergeFromBranch = config.fork.branchRef;
   await handleMerge(mergeIntoPath, mergeIntoBranch, mergeFromBranch);
+  console.info(pc.green("✔ Target branch changes merged back into sync branch."));
   
   console.info(pc.green("✔ Sync completed.\n"));
 }
