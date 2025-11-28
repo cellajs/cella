@@ -1,7 +1,6 @@
 import { gitCheckout, gitRebase, isRebaseInProgress } from '../../utils/git/command';
 import { getUnmergedFiles } from '../../utils/git/files';
 import { confirm } from '@inquirer/prompts';
-import { MergeResult } from '../../types';
 
 /**
  * Rebases the target branch (e.g., squash commit) back into the fork's sync branch.
@@ -10,7 +9,7 @@ import { MergeResult } from '../../types';
  *
  * @param forkConfig - Configuration of the fork repository.
  * 
- * @returns A MergeResult indicating success or error.
+ * @returns A promise that resolves when the rebase process is complete.
  *
  * @example
  * await handleRebase(forkConfig);
@@ -19,22 +18,15 @@ export async function handleRebase(
   rebaseIntoPath: string,
   rebaseIntoBranch: string,
   rebaseFromBranch: string,
-): Promise<MergeResult> {
-  try {
-    // Checkout the sync branch
-    await gitCheckout(rebaseIntoPath, rebaseIntoBranch);
+): Promise<void> {
+  // Checkout the sync branch
+  await gitCheckout(rebaseIntoPath, rebaseIntoBranch);
 
-    // Start the rebase process
-    await startRebase(rebaseIntoPath, rebaseFromBranch);
+  // Start the rebase process
+  await startRebase(rebaseIntoPath, rebaseFromBranch);
 
-    // Handle conflicts manually
-    await waitForManualConflictResolution(rebaseIntoPath, rebaseFromBranch);
-
-    return { status: 'success', isMerging: false };
-  } catch (err: any) {
-    console.error('Error during rebase:', err.message || err);
-    return { status: 'error', isMerging: false };
-  }
+  // Handle conflicts manually
+  await waitForManualConflictResolution(rebaseIntoPath, rebaseFromBranch);
 }
 
 /**

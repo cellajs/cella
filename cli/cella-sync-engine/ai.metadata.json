@@ -150,11 +150,6 @@
       "swizzle?": "SwizzleAnalysis",
       "mergeStrategy?": "FileMergeStrategy"
     },
-    "MergeResult": {
-      "status": "'success' | 'conflict' | 'error'",
-      "error?": "Error",
-      "isMerging?": "boolean"
-    },
     "PackageJson": {
       "dependencies?": "Record<string, string>",
       "devDependencies?": "Record<string, string>",

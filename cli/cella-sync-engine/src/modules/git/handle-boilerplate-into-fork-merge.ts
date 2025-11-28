@@ -2,7 +2,7 @@ import { confirm } from '@inquirer/prompts';
 
 import { RepoConfig } from '../../config';
 import { gitCleanUntrackedFile, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile } from '../../utils/git/command';
-import { FileAnalysis, MergeResult } from '../../types';
+import { FileAnalysis } from '../../types';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
 import { handleMerge } from '../../utils/git/handle-merge';
 
@@ -13,41 +13,33 @@ import { handleMerge } from '../../utils/git/handle-merge';
  * @param forkConfig - Configuration for the forked repository
  * @param analyzedFiles - List of pre-analyzed files with merge strategies
  * 
- * @returns A {@link MergeResult} indicating the outcome of the merge process.
+ * @returns A Promise that resolves when the merge process is complete.
  */
 export async function handleBoilerplateIntoForkMerge(
   boilerplateConfig: RepoConfig,
   forkConfig: RepoConfig,
   analyzedFiles: FileAnalysis[],
-): Promise<MergeResult> {
-  try {
-    // Check if this is the first sync and confirm with the user
-    const isFirstSync = await checkIfFirstSyncAndConfirm(analyzedFiles);
+): Promise<void> {
+  // Check if this is the first sync and confirm with the user
+  const isFirstSync = await checkIfFirstSyncAndConfirm(analyzedFiles);
 
-    // Start merge
-    await handleMerge(
-      forkConfig.workingDirectory,
-      forkConfig.syncBranchRef,
-      boilerplateConfig.branchRef,
-      async function resolveConflicts() {
-        // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
-        await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);
+  // Start merge
+  await handleMerge(
+    forkConfig.workingDirectory,
+    forkConfig.syncBranchRef,
+    boilerplateConfig.branchRef,
+    async function resolveConflicts() {
+      // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
+      await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);
 
-        // Resolve any remaining conflicts
-        await resolveMergeConflicts(forkConfig.workingDirectory, analyzedFiles);
+      // Resolve any remaining conflicts
+      await resolveMergeConflicts(forkConfig.workingDirectory, analyzedFiles);
 
-        // Cleanup all untracked files
-        await gitCleanAllUntrackedFiles(forkConfig.workingDirectory);
-      },
-      { allowUnrelatedHistories: isFirstSync },
-    );
-
-    return { status: 'success', isMerging: false };
-  } catch (err) {
-    console.error(err)
-
-    return { status: 'error', isMerging: false };
-  }
+      // Cleanup all untracked files
+      await gitCleanAllUntrackedFiles(forkConfig.workingDirectory);
+    },
+    { allowUnrelatedHistories: isFirstSync },
+  );
 }
 
 /**

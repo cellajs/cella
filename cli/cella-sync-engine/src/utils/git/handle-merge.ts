@@ -3,7 +3,6 @@ import { confirm } from '@inquirer/prompts';
 import { config } from '../../config';
 
 import { gitMerge, isMergeInProgress, gitCommit, gitCheckout, gitPush } from './command';
-import { MergeResult } from '../../types';
 import { getUnmergedFiles } from './files';
 import { hasAnythingToCommit } from './helpers';
 import { hasRemoteBranch } from './branches';
@@ -17,7 +16,7 @@ import { hasRemoteBranch } from './branches';
  * @param resolveConflicts - Optional function to automatically resolve conflicts.
  * 
  * @throws Will throw an error if any git operation fails.
- * @returns A Promise that resolves to a MergeResult indicating the outcome of the merge operation.
+ * @returns A Promise that resolves when the merge process is complete.
  */
 export async function handleMerge(
   mergeIntoPath: string,
@@ -25,37 +24,29 @@ export async function handleMerge(
   mergeFromBranch: string,
   resolveConflicts?: (() => Promise<void>) | null,
   { allowUnrelatedHistories = false } = {},
-): Promise<MergeResult> {
-  try {
-    // Checkout to the branch to merge into
-    await gitCheckout(mergeIntoPath, mergeIntoBranch);
+): Promise<void> {
+  // Checkout to the branch to merge into
+  await gitCheckout(mergeIntoPath, mergeIntoBranch);
 
-    // Start merge
-    await startMerge(mergeIntoPath, mergeFromBranch, { allowUnrelatedHistories });
+  // Start merge
+  await startMerge(mergeIntoPath, mergeFromBranch, { allowUnrelatedHistories });
 
-    // Resolve any remaining conflicts
-    if (resolveConflicts) {
-      await resolveConflicts();
-    } 
+  // Resolve any remaining conflicts
+  if (resolveConflicts) {
+    await resolveConflicts();
+  }
 
-    // Wait for any manual conflict resolution
-    await waitForManualConflictResolution(mergeIntoPath);
+  // Wait for any manual conflict resolution
+  await waitForManualConflictResolution(mergeIntoPath);
 
-    // Finalize merge
-    if (await hasAnythingToCommit(mergeIntoPath)) {
-      await gitCommit(mergeIntoPath, `Merge ${mergeFromBranch} into ${mergeIntoBranch}`, { noVerify: true });
-    }
+  // Finalize merge
+  if (await hasAnythingToCommit(mergeIntoPath)) {
+    await gitCommit(mergeIntoPath, `Merge ${mergeFromBranch} into ${mergeIntoBranch}`, { noVerify: true });
+  }
 
-    // Push merge result
-    if (!config.behavior.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
-      await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
-    }
-
-    return { status: 'success', isMerging: false };
-  } catch (err) {
-    console.error(err)
-
-    return { status: 'error', isMerging: false };
+  // Push merge result
+  if (!config.behavior.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+    await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
   }
 }
 

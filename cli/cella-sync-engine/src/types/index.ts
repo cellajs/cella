@@ -30,29 +30,6 @@ export type FileAnalysis = {
   mergeStrategy?: FileMergeStrategy;
 }
 
-
-/**
- * Represents the result of a merge operation between a fork and its boilerplate.
- */
-export interface MergeResult {
-  /**
-   * The overall outcome of the merge.
-   * - `'success'` - Merge completed cleanly
-   * - `'conflict'` - Merge completed with conflicts
-   * - `'error'` - Merge failed due to an error
-   */
-  status: 'success' | 'conflict' | 'error';
-
-  /** The error object if the merge failed */
-  error?: Error;
-
-  /**
-   * Indicates whether a merge is still in progress,
-   * e.g., when conflicts exist that need manual resolution
-   */
-  isMerging?: boolean;
-}
-
 /**
  * Represents a simplified structure of a package.json file.
  */
