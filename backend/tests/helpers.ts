@@ -2,7 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { membershipsTable } from '#/db/schema/memberships';
 import { passwordsTable } from '#/db/schema/passwords';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
@@ -64,6 +66,55 @@ export async function enableMFAForUser(userId: string) {
  */
 export async function verifyUserEmail(email: string) {
   await db.update(emailsTable).set({ verified: true, verifiedAt: pastIsoDate() }).where(eq(emailsTable.email, email.toLowerCase()));
+}
+
+/**
+ * Create a system admin user with password authentication
+ */
+export async function createSystemAdminUser(email: string, password: string, verified: boolean = true) {
+  // Create regular user first
+  const user = await createPasswordUser(email, password, verified);
+
+  // Assign system admin role
+  await db.insert(systemRolesTable).values({
+    id: user.id,
+    userId: user.id,
+    role: 'admin',
+    createdAt: pastIsoDate(),
+  });
+
+  return user;
+}
+
+/**
+ * Create an organization admin user with password authentication
+ */
+export async function createOrganizationAdminUser(
+  email: string,
+  password: string,
+  organizationId: string,
+  role: 'admin' | 'member' = 'admin',
+  verified: boolean = true,
+) {
+  // Create regular user first
+  const user = await createPasswordUser(email, password, verified);
+
+  // Create organization membership
+  const membership = {
+    id: `membership-${user.id}`,
+    userId: user.id,
+    organizationId,
+    contextType: 'organization' as const,
+    role,
+    order: 1,
+    createdAt: pastIsoDate(),
+    createdBy: user.id,
+    uniqueKey: `${user.id}-${organizationId}`,
+  };
+
+  await db.insert(membershipsTable).values(membership);
+
+  return user;
 }
 
 /**
