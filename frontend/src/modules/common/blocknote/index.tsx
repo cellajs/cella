@@ -7,7 +7,7 @@ import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandl
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import { customSchema, customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
