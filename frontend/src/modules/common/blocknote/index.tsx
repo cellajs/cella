@@ -96,10 +96,11 @@ const BlockNote = ({
 
   const handleKeyDown: KeyboardEventHandler = useCallback(
     (event) => {
-      const isEscape = event.key === 'Escape';
-      const isCmdEnter = (event.metaKey || event.ctrlKey) && event.key === 'Enter';
+      const { metaKey, ctrlKey, key } = event;
+      const isEscape = key === 'Escape';
+      const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
 
-      // IDE-like wrapping logic
+      // IDE-like wrapping characters
       const wrappingChars: Record<string, string> = {
         '[': ']',
         '{': '}',
@@ -109,30 +110,43 @@ const BlockNote = ({
         "'": "'",
       };
 
-      const char = event.key;
-      if (wrappingChars[char] && editor.getTextCursorPosition().block.content) {
-        const selection = editor.getTextCursorPosition();
-        const hasSelection = selection.block.content && Array.isArray(selection.block.content) && selection.block.content.length > 0;
+      // Handle character-based wrapping
+      if (wrappingChars[key]) {
+        const selection = editor.getSelection();
 
-        if (hasSelection) {
+        const singleBlockSelected =
+          selection && selection.blocks.length === 1 && Array.isArray(selection.blocks[0].content) && selection.blocks[0].content.length > 0;
+
+        if (singleBlockSelected) {
           event.preventDefault();
 
-          const selectedBlocks = editor.getSelection();
+          const [currentBlock] = selection.blocks;
+          const selectedText = editor.getSelectedText();
+
+          editor.updateBlock(currentBlock, {
+            content: `${key}${selectedText}${wrappingChars[key]}`,
+          });
 
           return;
         }
       }
 
-      if (!isCmdEnter && !isEscape) return;
+      // Skip everything else if it's not special command
+      if (!isEscape && !isCmdEnter) return;
+
       event.preventDefault();
 
-      if (isEscape) onEscapeClick?.();
-
-      if (isCmdEnter) {
-        event.stopPropagation();
-        onEnterClick?.();
-        if (!editor.isEmpty) handleUpdateData(editor);
+      // Escape handling
+      if (isEscape) {
+        onEscapeClick?.();
+        return;
       }
+
+      // Cmd/Ctrl + Enter
+      event.stopPropagation();
+      onEnterClick?.();
+
+      if (!editor.isEmpty) handleUpdateData(editor);
     },
     [editor, defaultValue],
   );
