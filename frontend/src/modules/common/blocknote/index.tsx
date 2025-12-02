@@ -80,8 +80,6 @@ const BlockNote = ({
     (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
 
-  const emojiPicker = slashMenu ? customSlashIndexedItems.includes('emoji') && allowedBlockTypes.includes('emoji') : emojis;
-
   const editor = useCreateBlockNote({
     schema: customSchema,
     heading: { levels: headingLevels },
@@ -207,7 +205,7 @@ const BlockNote = ({
       sideMenu={false}
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
-      emojiPicker={!emojiPicker}
+      emojiPicker={!emojis}
       filePanel={false} // Because in CustomFilePanel renders default UI
       onFocus={onFocus}
       onClick={handleClick}
@@ -226,8 +224,8 @@ const BlockNote = ({
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}
 
-      {/* Changes the Emoji Picker to only have 10 columns & min length of 0. */}
-      {emojiPicker && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={0} />}
+      {/* Changes the Emoji Picker to only have 8 columns & min length of 0. */}
+      {emojis && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={1} />}
 
       <CustomFilePanel filePanel={filePanel} baseFilePanelProps={baseFilePanelProps} />
     </BlockNoteView>
