@@ -17,7 +17,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { searchUsersQueryOptions } from '~/modules/users/query';
 
 interface Props {
-  value: string[];
+  value: string[] | undefined;
   onChange: (items: string[]) => void;
   entity: EntityPage;
 }
@@ -29,7 +29,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const entityIdField = appConfig.entityIdFields[entity.entityType];
 
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>(value);
+  const [selected, setSelected] = useState<string[]>(value ?? []);
   const [searchQuery, setSearchQuery] = useState('');
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);

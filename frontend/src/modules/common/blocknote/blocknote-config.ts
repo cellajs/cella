@@ -1,4 +1,5 @@
-import { BlockNoteSchema, type DefaultSuggestionItem, type Dictionary } from '@blocknote/core';
+import { BlockNoteSchema, type Dictionary } from '@blocknote/core';
+import { type DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify';

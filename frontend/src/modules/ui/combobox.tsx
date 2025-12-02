@@ -21,7 +21,7 @@ interface ComboBoxOption {
 
 export interface ComboboxProps {
   options: ComboBoxOption[];
-  value: string;
+  value: string | undefined;
   onChange: (newValue: string) => void;
   renderOption?: (option: ComboBoxOption) => React.ReactNode;
   renderAvatar?: boolean;

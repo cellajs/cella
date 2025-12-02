@@ -1,6 +1,6 @@
-import { defaultProps, insertOrUpdateBlock } from '@blocknote/core';
+import { defaultProps } from '@blocknote/core';
+import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
-
 import { MessageCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
@@ -71,7 +71,7 @@ export const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Notify',
   key: 'notify',
   onItemClick: () => {
-    insertOrUpdateBlock(editor, {
+    insertOrUpdateBlockForSlashMenu(editor, {
       type: 'notify',
     });
   },

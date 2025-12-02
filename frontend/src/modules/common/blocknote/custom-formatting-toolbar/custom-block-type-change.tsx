@@ -5,11 +5,11 @@ import {
   useBlockNoteEditor,
   useComponentsContext,
   useDictionary,
-  useEditorContentOrSelectionChange,
+  useEditorState,
   useSelectedBlocks,
 } from '@blocknote/react';
 import { ChevronDownIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
@@ -24,7 +24,10 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   const currentBlock = selectedBlocks[0];
   const itemsType: readonly string[] = customBlockTypeSwitchItems;
 
-  const [block, setBlock] = useState(editor.getTextCursorPosition().block);
+  const block = useEditorState({
+    editor,
+    selector: ({ editor }) => editor.getTextCursorPosition().block,
+  });
 
   const filteredItems = useMemo(
     () =>
@@ -74,7 +77,7 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   );
 
   // Update the block whenever the editor content or selection changes
-  useEditorContentOrSelectionChange(() => setBlock(editor.getTextCursorPosition().block), editor);
+  useEditorState({ editor, selector: ({ editor }) => editor.getTextCursorPosition().block });
 
   // Return null if the menu should not be shown or the editor is not editable
   if (!shouldShow || !editor.isEditable) return null;

@@ -29,19 +29,19 @@ import { useUIStore } from '~/store/ui';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
-      type: 'edit' | 'create';
-      updateData: (strBlocks: string) => void;
-    })
+    type: 'edit' | 'create';
+    updateData: (strBlocks: string) => void;
+  })
   | (CommonBlockNoteProps & {
-      type: 'preview';
-      editable?: never;
-      updateData?: never;
-      onEscapeClick?: never;
-      onEnterClick?: never;
-      onBeforeLoad?: never;
-      filePanel?: never;
-      baseFilePanelProps?: never;
-    });
+    type: 'preview';
+    editable?: never;
+    updateData?: never;
+    onEscapeClick?: never;
+    onEnterClick?: never;
+    onBeforeLoad?: never;
+    filePanel?: never;
+    baseFilePanelProps?: never;
+  });
 
 // TODO ensure code block highliht works and shadCn components
 const BlockNote = ({
@@ -128,17 +128,17 @@ const BlockNote = ({
 
   const handleBlur: FocusEventHandler = useCallback(
     (event) => {
-      // if user in Side Menu does not update
-      if (editor.sideMenu.view?.menuFrozen) return;
+      // TODO // if user in Side Menu does not update
+      // if (editor.sideMenu.view?.menuFrozen) return;
 
-      // if user in Formatting Toolbar does not update
-      if (editor.formattingToolbar.shown) return;
+      // // if user in Formatting Toolbar does not update
+      // if (editor.formattingToolbar.shown) return;
 
-      // if user in Slash Menu does not update
-      if (editor.suggestionMenus.shown) return;
+      // // if user in Slash Menu does not update
+      // if (editor.suggestionMenus.shown) return;
 
-      // if user in file panel does not update
-      if (editor.filePanel?.shown) return;
+      // // if user in file panel does not update
+      // if (editor.filePanel?.shown) return;
 
       const nextFocused = event.relatedTarget;
       // Check if the next focused element is still inside the editor
