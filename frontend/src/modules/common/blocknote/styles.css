@@ -261,6 +261,17 @@
   background-color: hsl(var(--accent) / 0.6);
 }
 
+/* Mobile-specific styles for slash menu */
+@media (max-width: 640px) {
+  .slash-menu {
+    align-items: center;
+    padding: 24px 0px;
+  }
+  .slash-menu-item {
+    justify-content: center;
+  }
+}
+
 .notify {
   display: flex;
   justify-content: center;

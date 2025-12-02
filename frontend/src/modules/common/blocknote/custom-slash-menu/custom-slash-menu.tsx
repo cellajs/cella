@@ -2,10 +2,16 @@ import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
-import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
+import { DialogTitle } from '~/modules/ui/dialog';
+import { Drawer, DrawerContent, DrawerPortal } from '~/modules/ui/drawer';
 
-export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number, allowedTypes: CustomBlockTypes[]) => {
-  const { items, loadingState, selectedIndex, onItemClick } = props;
+export const slashMenu = (
+  props: SuggestionMenuProps<DefaultReactSuggestionItem> & { editor: CustomBlockNoteEditor },
+  originalItemCount: number,
+  allowedTypes: CustomBlockTypes[],
+) => {
+  const { items, loadingState, selectedIndex, onItemClick, editor } = props;
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
@@ -52,7 +58,7 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
     selectedItem?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [selectedIndex]);
 
-  return (
+  const menuContent = (
     <div className="slash-menu">
       {items.map((item, index) => (
         <div role="tablist" key={item.title}>
@@ -64,7 +70,7 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
             role="tab"
             type="button"
             aria-selected={selectedIndex === index}
-            className="slash-menu-item !px-[0.5rem]"
+            className="slash-menu-item px-2!"
             onMouseDown={(e) => triggerItemClick(item, e)}
             tabIndex={0}
           >
@@ -80,4 +86,19 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
       ))}
     </div>
   );
+
+  if (isMobile) {
+    return (
+      <Drawer open={editor.suggestionMenus.shown} onClose={() => editor.suggestionMenus.closeMenu()} noBodyStyles>
+        <DrawerPortal>
+          <DrawerContent>
+            <DialogTitle className="hidden" />
+            {menuContent}
+          </DrawerContent>
+        </DrawerPortal>
+      </Drawer>
+    );
+  }
+
+  return menuContent;
 };

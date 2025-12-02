@@ -11,7 +11,7 @@ export const CustomSlashMenu = ({ editor, allowedTypes, headingLevels }: CustomB
     <SuggestionMenuController
       triggerCharacter={'/'}
       getItems={async (query) => filterSuggestionItems(slashMenuItems, query)}
-      suggestionMenuComponent={(props) => slashMenu(props, slashMenuItems.length, allowedTypes)}
+      suggestionMenuComponent={(props) => slashMenu({ ...props, editor }, slashMenuItems.length, allowedTypes)}
     />
   );
 };
