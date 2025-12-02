@@ -98,6 +98,31 @@ const BlockNote = ({
     (event) => {
       const isEscape = event.key === 'Escape';
       const isCmdEnter = (event.metaKey || event.ctrlKey) && event.key === 'Enter';
+
+      // IDE-like wrapping logic
+      const wrappingChars: Record<string, string> = {
+        '[': ']',
+        '{': '}',
+        '(': ')',
+        '`': '`',
+        '"': '"',
+        "'": "'",
+      };
+
+      const char = event.key;
+      if (wrappingChars[char] && editor.getTextCursorPosition().block.content) {
+        const selection = editor.getTextCursorPosition();
+        const hasSelection = selection.block.content && Array.isArray(selection.block.content) && selection.block.content.length > 0;
+
+        if (hasSelection) {
+          event.preventDefault();
+
+          const selectedBlocks = editor.getSelection();
+
+          return;
+        }
+      }
+
       if (!isCmdEnter && !isEscape) return;
       event.preventDefault();
 
