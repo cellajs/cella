@@ -164,12 +164,12 @@ const BlockNote = ({
 
   const handleOnBeforeLoad = useCallback(() => onBeforeLoad?.(editor), [editor]);
 
-  const sideMenuExt = useExtensionState(SideMenuExtension);
-  const suggestionMenuExt = useExtension(SuggestionMenu);
+  const sideMenuExt = useExtensionState(SideMenuExtension, { editor });
+  const suggestionMenuExt = useExtension(SuggestionMenu, { editor });
   const formattingToolbarShown = useExtensionState(FormattingToolbarExtension, {
     editor,
   });
-  const filePanelShown = !!useExtensionState(FilePanelExtension);
+  const filePanelShown = !!useExtensionState(FilePanelExtension, { editor });
 
   const handleBlur: FocusEventHandler = useCallback(
     (event) => {
