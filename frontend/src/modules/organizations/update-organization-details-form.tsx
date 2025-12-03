@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { appConfig } from 'config';
 import { lazy, Suspense } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +76,7 @@ const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet 
             name="welcomeText"
             label={t('common:introduction')}
             baseBlockNoteProps={{
-              id: 'blocknote-welcome',
+              id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
               className:
                 'min-h-20 max-h-[50vh] overflow-auto bg-background pl-10 pr-6 p-3 border-input ring-offset-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',

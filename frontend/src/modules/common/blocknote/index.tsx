@@ -5,6 +5,8 @@ import { FilePanelExtension, FormattingToolbarExtension, SideMenuExtension, Sugg
 import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { WebrtcProvider } from 'y-webrtc';
+import * as Y from 'yjs';
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
@@ -14,7 +16,7 @@ import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { compareIsContentSame, getParsedContent } from '~/modules/common/blocknote/helpers';
+import { compareIsContentSame, getParsedContent, getRandomColor } from '~/modules/common/blocknote/helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
@@ -32,6 +34,18 @@ type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
+      collaborative: true;
+      user: {
+        id?: string;
+        name: string;
+        color?: string;
+      };
+    })
+  | (CommonBlockNoteProps & {
+      type: 'edit' | 'create';
+      updateData: (strBlocks: string) => void;
+      collaborative?: false | undefined;
+      user?: never;
     })
   | (CommonBlockNoteProps & {
       type: 'preview';
@@ -42,6 +56,8 @@ type BlockNoteProps =
       onBeforeLoad?: never;
       filePanel?: never;
       baseFilePanelProps?: never;
+      collaborative?: never;
+      user?: never;
     });
 
 // TODO ensure code block highliht works and shadCn components
@@ -64,6 +80,9 @@ const BlockNote = ({
   members, // for mentions
   filePanel,
   baseFilePanelProps,
+  // Collaboration
+  collaborative = false,
+  user,
   // Functions
   updateData,
   onEscapeClick,
@@ -81,11 +100,29 @@ const BlockNote = ({
     (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
 
+  const collaborationConfig = collaborative
+    ? {
+        // The Yjs Provider responsible for transporting updates:
+        provider: new WebrtcProvider(id, new Y.Doc()),
+        // Where to store BlockNote data in the Y.Doc:
+        fragment: new Y.Doc().getXmlFragment('document-store'),
+        // Information (name and color) for this user:
+        user: {
+          name: user?.name || 'Anonymous User',
+          color: user?.color || getRandomColor(),
+        },
+        // When to show user labels on the collaboration cursor. Set by default to
+        // "activity" (show when the cursor moves), but can also be set to "always".
+        showCursorLabels: 'activity' as const,
+      }
+    : undefined;
+
   const editor = useCreateBlockNote({
     schema: customSchema,
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
+    collaboration: collaborationConfig,
     // TODO(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
