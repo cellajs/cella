@@ -1,20 +1,18 @@
-import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
+import { SuggestionMenu } from '@blocknote/core/extensions';
+import { type DefaultReactSuggestionItem, type SuggestionMenuProps, useExtension } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
-import type { CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
+import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerPortal } from '~/modules/ui/drawer';
 
-export const slashMenu = (
-  props: SuggestionMenuProps<DefaultReactSuggestionItem> & { editor: CustomBlockNoteEditor },
-  originalItemCount: number,
-  allowedTypes: CustomBlockTypes[],
-) => {
-  const { items, loadingState, selectedIndex, onItemClick, editor } = props;
+export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number, allowedTypes: CustomBlockTypes[]) => {
+  const { items, loadingState, selectedIndex, onItemClick } = props;
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
+  const slashMenu = useExtension(SuggestionMenu);
 
   const handleKeyPress = async (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
@@ -89,7 +87,7 @@ export const slashMenu = (
 
   if (isMobile) {
     return (
-      <Drawer open={editor.suggestionMenus.shown} onClose={() => editor.suggestionMenus.closeMenu()} noBodyStyles>
+      <Drawer open={slashMenu.shown()} onClose={() => slashMenu.closeMenu()} noBodyStyles>
         <DrawerPortal>
           <DrawerContent>
             <DialogTitle className="hidden" />

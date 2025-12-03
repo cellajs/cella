@@ -15,7 +15,7 @@ export const CustomSideMenu = ({ editor, allowedTypes, headingLevels }: CustomBl
         <SideMenu {...props}>
           {customBlockTypeSwitchItems.includes(props.block.type) ? (
             <DragHandleButton {...props}>
-              <ResetBlockTypeItem editor={editor} props={props} allowedTypes={allowedTypes} headingLevels={headingLevels} />
+              <ResetBlockTypeItem editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} />
             </DragHandleButton>
           ) : (
             <Components.SideMenu.Button

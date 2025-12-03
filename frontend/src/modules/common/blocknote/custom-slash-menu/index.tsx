@@ -1,4 +1,4 @@
-import { filterSuggestionItems } from '@blocknote/core';
+import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { SuggestionMenuController } from '@blocknote/react';
 import { getSlashMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { slashMenu } from '~/modules/common/blocknote/custom-slash-menu/custom-slash-menu';
@@ -11,7 +11,7 @@ export const CustomSlashMenu = ({ editor, allowedTypes, headingLevels }: CustomB
     <SuggestionMenuController
       triggerCharacter={'/'}
       getItems={async (query) => filterSuggestionItems(slashMenuItems, query)}
-      suggestionMenuComponent={(props) => slashMenu({ ...props, editor }, slashMenuItems.length, allowedTypes)}
+      suggestionMenuComponent={(props) => slashMenu(props, slashMenuItems.length, allowedTypes)}
     />
   );
 };
