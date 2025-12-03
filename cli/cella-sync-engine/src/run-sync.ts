@@ -50,12 +50,5 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
   await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
   console.info(pc.green("✔ Sync branch squash-merged into target branch."));
 
-  // Merge target branch (with squash commit) back into sync branch
-  const mergeIntoPath = config.fork.localPath;
-  const mergeIntoBranch = config.fork.syncBranchRef;
-  const mergeFromBranch = config.fork.branchRef;
-  await handleMerge(mergeIntoPath, mergeIntoBranch, mergeFromBranch);
-  console.info(pc.green("✔ Target branch changes merged back into sync branch."));
-  
   console.info(pc.green("✔ Sync completed.\n"));
 }
