@@ -51,6 +51,9 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, blockId, isPublic 
   const { isOnline } = useOnlineManager();
 
   const filePanel = useExtension(FilePanelExtension);
+  const editor = useBlockNoteEditor(customSchema);
+
+  const block = editor.getBlock(blockId)!;
 
   const blockType = (block.type as keyof typeof basicBlockTypes) || 'file';
   const uppyOptions: CustomUppyOpt = {
@@ -59,7 +62,6 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, blockId, isPublic 
       allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
     },
   };
-  const editor = useBlockNoteEditor(customSchema);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
   const [open, setOpen] = useState(!!blockId);
