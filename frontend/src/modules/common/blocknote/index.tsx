@@ -1,7 +1,8 @@
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 
-import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { FilePanelExtension, FormattingToolbarExtension, SideMenuExtension, SuggestionMenu } from '@blocknote/core/extensions';
+import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
 import { getPresignedUrl } from '~/api.gen';
@@ -163,19 +164,26 @@ const BlockNote = ({
 
   const handleOnBeforeLoad = useCallback(() => onBeforeLoad?.(editor), [editor]);
 
+  const sideMenuExt = useExtensionState(SideMenuExtension);
+  const suggestionMenuExt = useExtension(SuggestionMenu);
+  const formattingToolbarShown = useExtensionState(FormattingToolbarExtension, {
+    editor,
+  });
+  const filePanelShown = !!useExtensionState(FilePanelExtension);
+
   const handleBlur: FocusEventHandler = useCallback(
     (event) => {
       // if user in Side Menu does not update
-      if (editor.sideMenu.view?.menuFrozen) return;
+      if (sideMenuExt?.show) return;
 
       // if user in Formatting Toolbar does not update
-      if (editor.formattingToolbar.shown) return;
+      if (formattingToolbarShown) return;
 
       // if user in Slash Menu does not update
-      if (editor.suggestionMenus.shown) return;
+      if (suggestionMenuExt.shown()) return;
 
       // if user in file panel does not update
-      if (editor.filePanel?.shown) return;
+      if (filePanelShown) return;
 
       const nextFocused = event.relatedTarget;
       // Check if the next focused element is still inside the editor
@@ -183,7 +191,7 @@ const BlockNote = ({
 
       if (type === 'edit') handleUpdateData(editor);
     },
-    [editor, defaultValue],
+    [editor, sideMenuExt, formattingToolbarShown, suggestionMenuExt, filePanelShown],
   );
 
   const handleClick: MouseEventHandler = useCallback(
