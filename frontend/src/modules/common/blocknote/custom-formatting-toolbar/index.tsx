@@ -32,7 +32,15 @@ export const CustomFormattingToolbar = ({ headingLevels }: { headingLevels: Cust
       return (
         <FormattingToolbar>
           {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect headingLevels={headingLevels} />}
-          {customFormattingToolBarConfig.blockStyleSelect && <BasicTextStyleButton basicTextStyle={'bold'} />}
+          {customFormattingToolBarConfig.blockStyleSelect && (
+            <>
+              <BasicTextStyleButton basicTextStyle="bold" />
+              <BasicTextStyleButton basicTextStyle="italic" />
+              <BasicTextStyleButton basicTextStyle="code" />
+              <BasicTextStyleButton basicTextStyle="strike" />
+              <BasicTextStyleButton basicTextStyle="underline" />
+            </>
+          )}
           {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 
           {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
