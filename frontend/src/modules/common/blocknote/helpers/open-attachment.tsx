@@ -11,7 +11,7 @@ export const openAttachment = async (
 ) => {
   event.preventDefault();
   const formattingToolbar = useExtension(FormattingToolbarExtension);
-
+  formattingToolbar.close();
   const {
     block: { props },
   } = editor.getTextCursorPosition();
