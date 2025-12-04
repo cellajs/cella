@@ -8,13 +8,13 @@ import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';
-import type { contextEntitiesListQueryOptions } from '~/modules/entities/query';
+import type { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
 export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 'sort' | 'q' | 'role'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
-  queryOptions: ReturnType<typeof contextEntitiesListQueryOptions>;
+  queryOptions: ReturnType<typeof contextEntitiesQueryOptions>;
 }
 
 export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = EntityTile, entityType, label, searchVars }: Props) => {

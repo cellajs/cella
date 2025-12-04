@@ -2,7 +2,6 @@ import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/
 import { appConfig, ContextEntityType } from 'config';
 import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
-import { listQueryOptions } from '~/query/utils/options';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -86,30 +85,5 @@ export const contextEntitiesQueryOptions = ({
     },
     ...baseInfiniteQueryOptions,
     staleTime: 0,
-  });
-};
-
-export const contextEntitiesListQueryOptions = ({
-  q = '',
-  sort = 'name',
-  types,
-  role,
-  excludeArchived,
-  limit = appConfig.requestLimits.default,
-  targetUserId = useUserStore.getState().user.id,
-}: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId' | 'orgAffiliated' | 'order' | 'limit'> & { limit?: number }) => {
-  const queryKey = entitiesKeys.grid.context({ q, sort, targetUserId, types, role });
-
-  const orgAffiliated = 'false';
-
-  return listQueryOptions({
-    queryKey,
-    queryFn: async ({ limit, offset }, signal) => {
-      return await getContextEntities({
-        query: { q, sort, types, role, targetUserId, excludeArchived, orgAffiliated, limit: String(limit), offset: String(offset) },
-        signal,
-      });
-    },
-    limit,
   });
 };

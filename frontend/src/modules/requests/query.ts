@@ -16,7 +16,6 @@ import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
-import { listQueryOptions } from '~/query/utils/options';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -68,37 +67,6 @@ export const requestsQueryOptions = ({
       searchIn: ['email'],
       limit: baseLimit,
     }),
-  });
-};
-
-export const requestsListQueryOptions = ({
-  q = '',
-  sort = 'createdAt',
-  order = 'asc',
-  limit = appConfig.requestLimits.requests,
-}: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const queryKey = requestsKeys.table.entries({ q, sort, order });
-  const baseQueryKey = requestsKeys.table.entries({ q: '', sort: 'createdAt', order: 'asc' });
-
-  return listQueryOptions({
-    queryKey,
-    queryFn: async ({ offset, limit }, signal) => {
-      return await getRequests({
-        query: { q, sort, order, limit: String(limit), offset: String(offset) },
-        signal,
-      });
-    },
-    limit,
-    cachedQuery: {
-      queryKey: baseQueryKey,
-      filterOptions: {
-        q,
-        sort,
-        order,
-        searchIn: ['email'],
-        limit,
-      },
-    },
   });
 };
 

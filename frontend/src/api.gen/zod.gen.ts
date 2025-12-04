@@ -1062,7 +1062,7 @@ export const zGetPagesData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      sort: z.optional(z.enum(['order', 'status', 'createdAt'])),
+      sort: z.optional(z.enum(['displayOrder', 'status', 'createdAt'])),
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),

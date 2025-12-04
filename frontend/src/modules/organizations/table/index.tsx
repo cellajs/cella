@@ -12,7 +12,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { organizationsListQueryOptions } from '~/modules/organizations/query';
+import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
 import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
@@ -38,7 +38,7 @@ const OrganizationsTable = () => {
   const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = organizationsListQueryOptions({ ...search, limit });
+  const queryOptions = organizationsQueryOptions({ ...search, limit });
 
   const {
     data: rows,

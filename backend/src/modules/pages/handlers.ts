@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getTableColumns, ilike, inArray, or, SQL } from 'drizzle-orm';
-import sanitize from 'sanitize-html';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
@@ -13,8 +12,10 @@ import { defaultHook } from '#/utils/default-hook';
 import { proxyElectricSync } from '#/utils/electric';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { Page } from './schema';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -56,19 +57,25 @@ const pagesRouteHandlers = app
 
     // get count of matching pages, and check against restrictions
 
-    const pages = await db
-      .insert(pagesTable)
-      .values(
-        pageData.map(({ content, ...p }) => {
-          return {
-            ...p,
-            content: sanitize(content),
-            createdBy: user.id,
-            modifiedBy: user.id,
-          };
-        }),
-      )
-      .returning();
+    const inserts: Omit<Page, 'createdAt' | 'modifiedAt'>[] = [];
+    for (const newPage of pageData) {
+      const slugAvailable = await checkSlugAvailable(newPage.slug);
+      if (!slugAvailable) {
+        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'page', meta: { slug: newPage.slug } });
+      }
+
+      inserts.push({
+        id: nanoid(),
+        entityType: 'page',
+        status: 'unpublished',
+        parentId: null,
+        createdBy: user.id,
+        modifiedBy: user.id,
+        ...newPage,
+      });
+    }
+
+    const pages = await db.insert(pagesTable).values(inserts).returning();
 
     logEvent('info', `${pages.length} page(s) created`);
 
@@ -133,7 +140,7 @@ const pagesRouteHandlers = app
 
     const orderColumn = getOrderColumn(
       {
-        order: pagesTable.displayOrder,
+        displayOrder: pagesTable.displayOrder,
         status: pagesTable.status,
         createdAt: pagesTable.createdAt,
         createdBy: pagesTable.createdBy,
@@ -207,11 +214,11 @@ const pagesRouteHandlers = app
    * Delete pages by ids
    */
   .openapi(pagesRoutes.deletePages, async (ctx) => {
-    const memberships = getContextMemberships();
-
     const { ids } = ctx.req.valid('json');
     if (!ids.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'page' });
 
+    const memberships = getContextMemberships();
+    // Distinguish which pages the user is allowed to delete
     const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'page', ids, memberships);
 
     if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'page' });

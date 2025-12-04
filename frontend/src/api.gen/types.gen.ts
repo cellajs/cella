@@ -2434,7 +2434,7 @@ export type GetPagesData = {
   path?: never;
   query?: {
     q?: string;
-    sort?: 'order' | 'status' | 'createdAt';
+    sort?: 'displayOrder' | 'status' | 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;

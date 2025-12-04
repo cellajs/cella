@@ -2,7 +2,7 @@ import type { ContextEntityType } from 'config';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGridBar } from '~/modules/entities/entity-grid/bar';
 import { BaseEntityGrid, type EntitySearch } from '~/modules/entities/entity-grid/grid';
-import { contextEntitiesListQueryOptions } from '~/modules/entities/query';
+import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
 export interface EntityGridWrapperProps {
   entityType: ContextEntityType;
@@ -16,7 +16,7 @@ export interface EntityGridWrapperProps {
 const EntityGrid = ({ entityType, label, userId, focusView = true, saveDataInSearch = true, tileComponent }: EntityGridWrapperProps) => {
   const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch });
 
-  const queryOptions = contextEntitiesListQueryOptions({ ...search, types: [entityType], targetUserId: userId });
+  const queryOptions = contextEntitiesQueryOptions({ ...search, types: [entityType], targetUserId: userId });
 
   return (
     <div className="flex flex-col gap-4 h-full">

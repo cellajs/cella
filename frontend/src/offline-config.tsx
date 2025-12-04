@@ -1,6 +1,6 @@
-import { attachmentsListQueryOptions } from '~/modules/attachments/query';
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { UserMenuItem } from '~/modules/me/types';
-import { membersListQueryOptions } from '~/modules/memberships/query';
+import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 /**
@@ -21,12 +21,12 @@ export const queriesToMap = (item: UserMenuItem) => {
       // - queryOptions to fetch attachments related to the organization
       return [
         organizationQueryOptions(item.slug),
-        membersListQueryOptions({
+        membersQueryOptions({
           idOrSlug: item.slug,
           orgIdOrSlug,
           entityType: item.entityType,
         }),
-        attachmentsListQueryOptions({ orgIdOrSlug }),
+        attachmentsQueryOptions({ orgIdOrSlug }),
       ];
 
     // Extend switch case for app-specific entity types ...

@@ -1,126 +1,73 @@
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import { RegisteredRouter, UseSearchResult } from '@tanstack/router-core';
 import { appConfig } from 'config';
-import { GetPagesData, getPage, getPages, Page } from '~/api.gen';
+import { type GetPagesData, getPages, type Page } from '~/api.gen';
 import { parseBlocksText } from '~/lib/blocknote';
-import { detailQueryOptions, detailsQueryOptions, listQueryOptions } from '~/query/utils/options';
-
-type PagesQuery = Exclude<GetPagesData['query'], undefined>;
+import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 
 /** Pages request limit */
 export const pagesLimit = appConfig.requestLimits.pages;
 /** Pages accepted cutoff days */
 // const ACCEPTED_CUTOFF_DAYS = 14;
 
-/**
- * Pages query key factory
- * @see https://tkdodo.eu/blog/effective-react-query-keys#use-query-key-factories
- */
-const pagesKeys = {
-  all: ['pages'] as const,
-  list: {
-    base: () => [...pagesKeys.all, 'list'] as const,
-    private: (query: PagesQuery) => [...pagesKeys.list.base(), query] as const,
-    public: (query: PagesQuery) => [...pagesKeys.list.base(), 'public', query] as const,
-  },
-  details: {
-    base: () => [...pagesKeys.all, 'details'] as const,
-    private: (query: PagesQuery) => [...pagesKeys.details.base(), query] as const,
-    public: (query: PagesQuery) => [...pagesKeys.details.base(), 'public', query] as const,
-  },
-  detail: {
-    base: () => [...pagesKeys.all] as const,
-    private: (id: string) => [...pagesKeys.details.base(), id] as const,
-    public: (id: string) => [...pagesKeys.detail.base(), 'public', id] as const,
-  },
-  create: () => [...pagesKeys.all, 'create'] as const,
-  update: () => [...pagesKeys.all, 'update'] as const,
-  delete: () => [...pagesKeys.all, 'delete'] as const,
+type PagesSortKey = NonNullable<NonNullable<GetPagesData['query']>['sort']>;
+
+type Options<TSortKey extends string = string> = {
+  q?: string;
+  sort?: TSortKey;
+  order?: 'asc' | 'desc';
+  limit?: number;
+  isPublic?: boolean;
+};
+
+type ByIdOptions<TSortKey extends string = string> = Options<TSortKey> & {
+  id: string;
+};
+
+type InfiniteOptions<TSortKey extends string = string> = Options<TSortKey> & {
+  limit: number;
+};
+
+type PagesQueryKeys = {
+  [K in keyof typeof pagesQueryKeys]: (typeof pagesQueryKeys)[K] extends (...args: any) => any
+    ? ReturnType<(typeof pagesQueryKeys)[K]>
+    : (typeof pagesQueryKeys)[K];
+};
+
+export const pagesQueryKeys = {
+  all: [{ scope: 'pages' }] as const,
+  list: <TOptions extends InfiniteOptions<PagesSortKey> = InfiniteOptions<PagesSortKey>>(options: TOptions) =>
+    [{ ...pagesQueryKeys.all[0], mode: 'list', ...options }] as const,
+  details: <TOptions extends Options<PagesSortKey> = Options<PagesSortKey>>(options: TOptions) =>
+    [{ ...pagesQueryKeys.all[0], mode: 'details', ...options }] as const,
+  detail: <TOptions extends ByIdOptions<PagesSortKey> = ByIdOptions<PagesSortKey>>(options: TOptions) =>
+    [{ ...pagesQueryKeys.all[0], mode: 'detail', ...options }] as const,
 };
 
 // #region Queries
 
-/**
- *
- * @param id
- * @param orgIdOrSlug
- * @returns
- */
-export const pageQueryOptions = (id: string, orgIdOrSlug?: string) => {
-  return detailQueryOptions(
-    {
-      queryKey: orgIdOrSlug ? pagesKeys.detail.private(id) : pagesKeys.detail.public(id),
-      queryFn: async () => {
-        return await getPage({
-          path: {
-            id,
-            // orgIdOrSlug,
-          },
-        });
-      },
+export const pagesListQueryOptions = <TQueryKey extends PagesQueryKeys['list']>(queryKey: TQueryKey) => {
+  const [{ scope, isPublic, limit, ...query }] = queryKey;
+
+  return infiniteQueryOptions({
+    queryKey,
+    queryFn: async ({ pageParam, signal }) => {
+      // order of operations?
+      const offset = pageParam.offset || (pageParam.page || 0) * limit;
+
+      return await getPages({
+        // path: { orgIdOrSlug },
+        query: {
+          limit: limit.toString(),
+          offset: offset.toString(),
+          ...query,
+        },
+        signal,
+      });
     },
-    orgIdOrSlug,
-  );
-};
-
-/**
- *
- * @param query
- * @param orgIdOrSlug
- * @returns
- */
-export const pagesDetailsQueryOptions = (query: PagesQuery, orgIdOrSlug?: string) => {
-  return detailsQueryOptions(
-    {
-      queryKey: orgIdOrSlug ? pagesKeys.details.private(query) : pagesKeys.details.public(query),
-      queryFn: async () => {
-        return await getPages({
-          // path: { orgIdOrSlug },
-          query: {
-            offset: '0',
-            limit: pagesLimit.toString(),
-            // acceptedCutoff: ACCEPTED_CUTOFF_DAYS,
-          },
-        });
-      },
-    },
-    orgIdOrSlug,
-  );
-};
-
-type InfinitePagesQuery = Omit<PagesQuery, 'limit'> & {
-  limit?: number;
-};
-
-export const pagesListQueryOptions = (
-  { q = '', sort = 'createdAt', order = 'desc', limit = pagesLimit, offset }: InfinitePagesQuery,
-  orgIdOrSlug?: string,
-) => {
-  const query: PagesQuery = {
-    q,
-    sort,
-    order,
-    limit: limit.toString(),
-    offset,
-  };
-
-  return listQueryOptions(
-    {
-      queryKey: orgIdOrSlug ? pagesKeys.list.private(query) : pagesKeys.list.public(query),
-      queryFn: async (params, signal) => {
-        return await getPages({
-          // path: { orgIdOrSlug },
-          query: {
-            limit: params.limit.toString(),
-            offset: params.offset.toString(),
-            ...query,
-          },
-          signal,
-        });
-      },
-      limit: limit ?? pagesLimit,
-    },
-    orgIdOrSlug,
-  );
+    ...baseInfiniteQueryOptions,
+    select: ({ pages }) => pages.flatMap(({ items }) => items),
+  });
 };
 
 // #endregion
@@ -161,34 +108,5 @@ export const filterPages = (query: UseSearchResult<RegisteredRouter, undefined, 
     return matchMode === 'all' ? item.includes(raw) : keywords.some((w) => item.includes(w));
   });
 };
-
-// #endregion
-
-// #region Mutations
-
-// const useCreate = <T>() => {
-//   mutationOptions({
-//     mutationKey: pagesKeys.create(),
-//     mutationFn: (variables: T[]): Promise<T[]> => {},
-//     onMutate: handleOnMutate(['pages'], 'create'),
-//     onSuccess: () => {
-//       // toaster();
-//     },
-//     onError: (_error, _variables, onMutateResult, context) => {
-//       // maybe vary result based on if offline?
-
-//       // toaster(t(`error:${type}_resource`, { resource: t(`app:${table}`) }), 'error');
-
-//       if (!onMutateResult?.length) {
-//         return;
-//       }
-
-//       for (const [queryKey, cached] of onMutateResult) {
-//         context.client.setQueryData(queryKey, cached);
-//       }
-//     },
-//     onSettled: handleOnSettled(['pages']),
-//   })
-// }
 
 // #endregion

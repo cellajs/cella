@@ -4,7 +4,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { baseElectrycSyncQuery, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
-import { pageListQuerySchema, pageSchema, pagesCreateManySchema, pageUpdateSchema } from './schema';
+import { pageListQuerySchema, pageSchema, pagesInsertManySchema, pageUpdateSchema } from './schema';
 
 const pagesRoutes = {
   /**
@@ -41,7 +41,7 @@ const pagesRoutes = {
       // params: inOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: pagesCreateManySchema } },
+        content: { 'application/json': { schema: pagesInsertManySchema } },
       },
     },
     responses: {

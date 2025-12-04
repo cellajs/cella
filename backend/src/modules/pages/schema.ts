@@ -8,7 +8,7 @@ const pageInsertSchema = createInsertSchema(pagesTable);
 export type Page = z.infer<typeof pageSelectSchema>;
 const pageSelectSchema = createSelectSchema(pagesTable);
 
-export const pagesCreateManySchema = z
+export const pagesInsertManySchema = z
   .array(
     pageInsertSchema.omit({
       modifiedAt: true,
@@ -34,17 +34,9 @@ export const pageUpdateSchema = pageInsertSchema
 
 export const pageSchema = pageSelectSchema.openapi('Page');
 
-// tasks require a project or workspace id
+const pageSortKeys = pageSelectSchema.keyof().extract(['displayOrder', 'status', 'createdAt']);
+
 export type PageListQuery = z.infer<typeof pageListQuerySchema>;
 export const pageListQuerySchema = paginationQuerySchema.extend({
-  // orgIdOrSlug: z.string().optional(),
-  // pageId: z.string().optional(),
-  sort: z.enum(['order', 'status', 'createdAt']).default('createdAt').optional(),
-  order: z.enum(['asc', 'desc']).default('asc').optional(),
-  // matchMode: z.enum(['all', 'any']).default('all').optional(),
-  // acceptedCutOff: z.coerce.number().positive().optional(),
+  sort: pageSortKeys.default('createdAt').optional(),
 });
-
-// const something = pageListQuerySchema.extend({
-//   order: pageListQuerySchema.shape.order.optional(),
-// });

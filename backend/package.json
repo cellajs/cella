@@ -71,7 +71,6 @@
     "@sentry/node": "^9.47.1",
     "@sentry/profiling-node": "^9.47.1",
     "@t3-oss/env-core": "^0.13.8",
-    "@types/sanitize-html": "^2.16.0",
     "arctic": "^3.7.0",
     "config": "workspace:*",
     "drizzle-orm": "^0.44.7",
@@ -95,7 +94,6 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-i18next": "^16.3.4",
-    "sanitize-html": "^2.17.0",
     "slugify": "^1.6.6",
     "ua-parser-js": "^2.0.6",
     "zod": "4.1.12"

@@ -1,8 +1,8 @@
-import { useInfiniteQuery, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMatchRoute } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
-import { pageQueryOptions, pagesDetailsQueryOptions, pagesLimit, pagesListQueryOptions } from '~/modules/pages/queries';
+import { pagesLimit, pagesListQueryOptions, pagesQueryKeys } from '~/modules/pages/queries';
 import type { PagesSearch } from '~/modules/pages/types';
 
 // #region Helpers
@@ -26,16 +26,6 @@ const usePathIds = () => {
 
 // #region Queries
 
-export const usePage = (id: string) => {
-  const { orgIdOrSlug } = usePathIds();
-  return useQuery(pageQueryOptions(id, orgIdOrSlug));
-};
-
-export const usePagesDetails = () => {
-  const { orgIdOrSlug } = usePathIds();
-  return useSuspenseQuery(pagesDetailsQueryOptions({}, orgIdOrSlug));
-};
-
 export const usePagesList = () => {
   const { orgIdOrSlug } = usePathIds();
   const { search, setSearch } = useSearchParams<PagesSearch>();
@@ -49,7 +39,7 @@ export const usePagesList = () => {
   const query = orgIdOrSlug ? { ...baseQuery } : { ...baseQuery };
 
   const { data, error, isLoading, isFetching, hasNextPage, ...queryProps } = useInfiniteQuery({
-    ...pagesListQueryOptions(query, orgIdOrSlug),
+    ...pagesListQueryOptions(pagesQueryKeys.list(query)),
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 

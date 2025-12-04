@@ -6,7 +6,6 @@ import type { ApiError } from '~/lib/api';
 import type { UserWithRoleAndMemberships } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
-import { listQueryOptions } from '~/query/utils/options';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -90,39 +89,6 @@ export const usersQueryOptions = ({
       limit: baseLimit,
       additionalFilter: role ? (u) => u.role === role : undefined,
     }),
-  });
-};
-
-export const usersListQueryOptions = ({
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
-  role,
-  limit = appConfig.requestLimits.users,
-}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset' | 'mode'> & { limit?: number }) => {
-  const queryKey = usersKeys.table.entries({ q, sort, order, role });
-  const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
-
-  return listQueryOptions({
-    queryKey,
-    queryFn: async ({ offset, limit }, signal) => {
-      return await getUsers({
-        query: { q, sort, order, role, limit: String(limit), offset: String(offset), mode: 'all' },
-        signal,
-      });
-    },
-    limit,
-    cachedQuery: {
-      queryKey: baseQueryKey,
-      filterOptions: {
-        q,
-        sort,
-        order,
-        searchIn: ['email', 'name'],
-        limit,
-        additionalFilter: role ? (u) => u.role === role : undefined,
-      },
-    },
   });
 };
 
