@@ -79,7 +79,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
               </span>
             </span>
           )}
-          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100">
+          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 absolute z-[-1] sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
               : item.membership.role
