@@ -108,9 +108,15 @@ export async function getLastCommitMessages(
   limit: number = 5,
 ): Promise<string[]> {
   // git log <toBranch>..<fromBranch> -n <limit> --pretty=format:%s
-  const cmd = `log ${toBranch}..${fromBranch} -n ${limit} --pretty=format:%s`;
+  const args = [
+    'log',
+    `${toBranch}..${fromBranch}`,
+    '-n',
+    String(limit),
+    '--pretty=format:%s'
+  ];
 
-  const output = await runGitCommand(cmd, repoPath);
+  const output = await runGitCommand(args, repoPath);
 
   if (!output) return [];
   return output.split('\n').map(line => line.trim());

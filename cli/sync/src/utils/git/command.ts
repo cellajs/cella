@@ -1,17 +1,15 @@
-import { exec, execFile } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
 const execFileAsync = promisify(execFile);
-const execAsync = promisify(exec);
 
 /**
  * Executes a Git command in a specific repository path and returns the trimmed stdout as a string.
  * This function runs the command asynchronously and will throw an error if the Git command fails.
  * 
- * @param command - The Git command to execute (e.g., 'status', 'checkout branch-name').
- *                   This should be the arguments string after `git`.
+ * @param args - The Git command arguments to execute (e.g., ['status'], ['checkout', 'branch-name']).
  * @param repoPath - The absolute or relative path to the Git repository.
  * @param options - Optional settings for command execution.
  *    - skipEditor: If true, sets the GIT_EDITOR environment variable to true to skip any editor prompts. 
@@ -19,20 +17,26 @@ const execAsync = promisify(exec);
  * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
  * 
  * @example
- * const output = await runGitCommand('status', '/path/to/repo');
+ * const output = await runGitCommand(['status'], '/path/to/repo');
  * console.info(output);
  * // Example output:
  * // On branch main
  * // Your branch is up to date with 'origin/main'.
  */
-export async function runGitCommand(command: string, repoPath: string, options: { skipEditor?: boolean } = {}): Promise<string> {
-  let gitCommand = repoPath ? `git -C ${repoPath} ${command}` : `git ${command}`;
+export async function runGitCommand(
+  args: string[],
+  repoPath: string,
+  options: { skipEditor?: boolean } = {}
+): Promise<string> {
+  const gitArgs = repoPath ? ["-C", repoPath, ...args] : args;
 
-  if (options.skipEditor) {
-    gitCommand = `GIT_EDITOR=true ${gitCommand}`;
-  }
+  const env = {
+    ...process.env,
+    ...(options.skipEditor ? { GIT_EDITOR: "true" } : {})
+  };
 
-  const { stdout } = await execAsync(gitCommand);
+  const { stdout } = await execFileAsync("git", gitArgs, { env });
+
   return stdout.trim();
 }
 
@@ -49,7 +53,7 @@ export async function runGitCommand(command: string, repoPath: string, options: 
  * await gitCheckout('/path/to/repo', 'feature/new-feature');
  */
 export async function gitCheckout(repoPath: string, branchName: string): Promise<string> {
-  return runGitCommand(`checkout ${branchName}`, repoPath);
+  return runGitCommand(['checkout', branchName], repoPath);
 }
 
 /**
@@ -65,7 +69,7 @@ export async function gitCheckout(repoPath: string, branchName: string): Promise
  * await gitFetch('/path/to/repo', 'origin');
  */
 export async function gitFetch(repoPath: string, remoteName: string): Promise<string> {
-  return runGitCommand(`fetch ${remoteName}`, repoPath);
+  return runGitCommand(['fetch', remoteName], repoPath);
 }
 
 /**
@@ -88,14 +92,15 @@ export async function gitMerge(
   branchName: string,
   options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean; acceptTheirs?: boolean, allowUnrelatedHistories?: boolean } = {}
 ): Promise<string> {
-  const noCommitFlag = options.noCommit ? '--no-commit' : '';
-  const noEditFlag = options.noEdit ? '--no-edit' : '';
-  const squashFlag = options.squash ? '--squash' : '';
-  const acceptTheirsFlag = options.acceptTheirs ? '--strategy-option=theirs' : '';
-  const allowUnrelatedHistoriesFlag = options.allowUnrelatedHistories ? '--allow-unrelated-histories' : '';
+  const args = ['merge', branchName];
 
-  const cmd = `merge ${branchName} ${squashFlag} ${noEditFlag} ${noCommitFlag} ${acceptTheirsFlag} ${allowUnrelatedHistoriesFlag}`;
-  return runGitCommand(cmd, repoPath);
+  if (options.squash) args.push('--squash');
+  if (options.noEdit) args.push('--no-edit');
+  if (options.noCommit) args.push('--no-commit');
+  if (options.acceptTheirs) args.push('--strategy-option=theirs');
+  if (options.allowUnrelatedHistories) args.push('--allow-unrelated-histories');
+
+  return runGitCommand(args, repoPath);
 }
 
 /**
@@ -120,20 +125,20 @@ export async function gitRebase(
   upstreamBranch: string,
   options: { interactive?: boolean; continue?: boolean; skip?: boolean; abort?: boolean; skipEditor?: boolean } = {}
 ): Promise<string> {
-  let cmd = 'rebase';
+  const args: string[] = ['rebase'];
 
-  if (options.interactive) cmd += ' -i';
-  if (options.continue) cmd += ' --continue';
-  if (options.skip) cmd += ' --skip';
-  if (options.abort) cmd += ' --abort';
+  if (options.interactive) args.push('-i');
+  if (options.continue) args.push('--continue');
+  if (options.skip) args.push('--skip');
+  if (options.abort) args.push('--abort');
 
   // Only add upstream branch if it's a normal rebase (not continue/skip/abort)
   const normalRebase = !options.continue && !options.skip && !options.abort;
   if (normalRebase) {
-    cmd += ` ${upstreamBranch}`;
+    args.push(upstreamBranch);
   }
 
-  return runGitCommand(cmd, repoPath, { skipEditor: !normalRebase && options.skipEditor });
+  return runGitCommand(args, repoPath, { skipEditor: !normalRebase && options.skipEditor });
 }
 
 /**
@@ -149,7 +154,7 @@ export async function gitRebase(
  * await gitAdd('/path/to/repo', 'src/index.ts');
  */
 export async function gitAdd(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(`add "${filePath}"`, repoPath);
+  return runGitCommand(['add', filePath], repoPath);
 }
 
 /**
@@ -160,7 +165,7 @@ export async function gitAdd(repoPath: string, filePath: string): Promise<string
  * @returns The stdout from the git add command
  */
 export async function gitAddAll(repoPath: string): Promise<string> {
-  return runGitCommand(`add -A`, repoPath);
+  return runGitCommand(['add', '-A'], repoPath);
 }
 
 /**
@@ -208,7 +213,7 @@ export async function gitDiffCached(repoPath: string): Promise<string> {
  * console.info(files);
  */
 export async function gitLsTreeRecursive(repoPath: string, branchName: string): Promise<string> {
-  return runGitCommand(`ls-tree -r ${branchName}`, repoPath);
+  return runGitCommand(['ls-tree', '-r', branchName], repoPath);
 }
 
 /**
@@ -225,7 +230,7 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
  * console.info(files);
  */
 export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: string): Promise<string> {
-  return runGitCommand(`ls-tree -r ${commitSha}`, repoPath);
+  return runGitCommand(['ls-tree', '-r', commitSha], repoPath);
 }
 
 /**
@@ -242,7 +247,7 @@ export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: st
  * console.info(lastCommitSha);
  */
 export async function gitLastCommitShaForFile(repoPath: string, branchName: string, filePath: string): Promise<string> {
-  return runGitCommand(`log -n 1 --format=%H ${branchName} -- "${filePath}"`, repoPath);
+  return runGitCommand(['log', '-n', '1', '--format=%H', branchName, '--', filePath], repoPath);
 }
 
 /**
@@ -261,8 +266,16 @@ export async function gitLastCommitShaForFile(repoPath: string, branchName: stri
  * console.info(history);
  */
 export async function gitLogFileHistory(repoPath: string, branchName: string, filePath: string): Promise<string> {
-  const command = `log --format="%H|%aI" --follow ${branchName} -- "${filePath}"`;
-  return runGitCommand(command, repoPath);
+  const args = [
+    'log',
+    '--format=%H|%aI',
+    '--follow',
+    branchName,
+    '--',
+    filePath
+  ];
+
+  return runGitCommand(args, repoPath);
 }
 
 /**
@@ -284,7 +297,7 @@ export async function gitCommit(
   options?: { noVerify?: boolean }
 ): Promise<string> {
   const noVerifyFlag = options?.noVerify ? '--no-verify' : '';
-  return runGitCommand(`commit ${noVerifyFlag} -m "${message}"`, repoPath);
+  return runGitCommand(['commit', noVerifyFlag, '-m', message].filter(Boolean), repoPath);
 }
 
 /**
@@ -301,7 +314,7 @@ export async function gitCommit(
  * console.info(content);
  */
 export async function gitShowFileAtCommit(repoPath: string, commitSha: string, filePath: string): Promise<string> {
-  return runGitCommand(`show ${commitSha}:${filePath}`, repoPath);
+  return runGitCommand(['show', `${commitSha}:${filePath}`], repoPath);
 }
 
 /**
@@ -373,7 +386,7 @@ export function isRebaseInProgress(repoPath: string): boolean {
  * await gitCheckoutOursFilePath('/repo', 'src/config.ts');
  */
 export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(`checkout --ours ${filePath}`, repoPath);
+  return runGitCommand(['checkout', '--ours', filePath], repoPath);
 }
 
 /**
@@ -389,7 +402,7 @@ export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Pro
  * await gitCheckoutTheirsFilePath('/repo', 'src/config.ts');
  */
 export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(`checkout --theirs ${filePath}`, repoPath);
+  return runGitCommand(['checkout', '--theirs', filePath], repoPath);
 }
 
 /**
@@ -406,7 +419,7 @@ export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): P
  * await gitRemoveFilePathFromCache('/repo', 'src/config.ts');
  */
 export function gitRemoveFilePathFromCache(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(`rm --cached "${filePath}"`, repoPath);
+  return runGitCommand(['rm', '--cached', filePath], repoPath);
 }
 
 /**
@@ -421,7 +434,7 @@ export function gitRemoveFilePathFromCache(repoPath: string, filePath: string): 
  * await gitCleanUntrackedFile('/repo', 'temp/build.log');
  */
 export async function gitCleanUntrackedFile(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(`clean -fd "${filePath}"`, repoPath);
+  return runGitCommand(['clean', '-fd', filePath], repoPath);
 }
 
 /**
@@ -436,7 +449,7 @@ export async function gitCleanUntrackedFile(repoPath: string, filePath: string):
  * await gitCleanAllUntrackedFiles('/repo');
  */
 export async function gitCleanAllUntrackedFiles(repoPath: string): Promise<string> {
-  return runGitCommand('clean -fd', repoPath);
+  return runGitCommand(['clean', '-fd'], repoPath);
 }
 
 /**
@@ -453,7 +466,7 @@ export async function gitCleanAllUntrackedFiles(repoPath: string): Promise<strin
  * await gitRestoreStagedFile('/repo', 'src/index.ts');
  */
 export async function gitRestoreStagedFile(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(`restore --staged --source=HEAD --worktree -- "${filePath}"`, repoPath);
+  return runGitCommand(['restore', '--staged', '--source=HEAD', '--worktree', '--', filePath], repoPath);
 }
 
 /**
@@ -477,7 +490,7 @@ export async function gitPush(
   const forceFlag = options?.force ? '--force-with-lease' : '';
   const upstreamFlag = options?.setUpstream ? '--set-upstream' : '';
 
-  return runGitCommand(`push ${forceFlag} ${upstreamFlag} ${remote} ${branch}`, repoPath);
+  return runGitCommand(['push', forceFlag, upstreamFlag, remote, branch].filter(Boolean), repoPath);
 }
 
 
@@ -501,7 +514,7 @@ export async function gitRevListCount(
   sourceBranch: string,
   baseBranch: string
 ): Promise<string> {
-  return runGitCommand(`rev-list --count ${baseBranch}..${sourceBranch}`, repoPath);
+  return runGitCommand(['rev-list', '--count', `${baseBranch}..${sourceBranch}`], repoPath);
 }
 
 /**
@@ -512,7 +525,7 @@ export async function gitRevListCount(
  * @returns The raw string output of `git rev-parse`
  */
 export async function gitRevParseIsInsideWorkTree(repoPath: string): Promise<string> {
-  return runGitCommand(`rev-parse --is-inside-work-tree`, repoPath);
+  return runGitCommand(['rev-parse', '--is-inside-work-tree'], repoPath);
 }
 
 /**
@@ -523,7 +536,7 @@ export async function gitRevParseIsInsideWorkTree(repoPath: string): Promise<str
  * @returns The raw string output of `git ls-remote`
  */
 export async function gitLsRemote(repoPath: string, remotePath: string): Promise<string> {
-  return runGitCommand(`ls-remote ${remotePath}`, repoPath);
+  return runGitCommand(['ls-remote', remotePath], repoPath);
 }
 
 /**
@@ -533,7 +546,7 @@ export async function gitLsRemote(repoPath: string, remotePath: string): Promise
  * @returns The raw string output of `git status --porcelain`
  */
 export async function gitStatusPorcelain(repoPath: string): Promise<string> {
-  return runGitCommand(`status --porcelain`, repoPath);
+  return runGitCommand(['status', '--porcelain'], repoPath);
 }
 
 /**
@@ -547,5 +560,5 @@ export async function gitStatusPorcelain(repoPath: string): Promise<string> {
  * await gitPull('/path/to/repo', 'development');
  */
 export async function gitPull(repoPath: string, branchName: string): Promise<string> {
-  return runGitCommand(`pull origin ${branchName}`, repoPath);
+  return runGitCommand(['pull', 'origin', branchName], repoPath);
 }

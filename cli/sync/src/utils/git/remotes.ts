@@ -13,7 +13,7 @@ import { runGitCommand } from './command';
  * console.info(remotes); // ['origin', 'upstream']
  */
 export async function getRemotes(repoPath: string): Promise<string[]> {
-  const output = await runGitCommand('remote', repoPath);
+  const output = await runGitCommand(['remote'], repoPath);
   return output.split('\n').map(r => r.trim()).filter(Boolean);
 }
 
@@ -56,11 +56,11 @@ export async function hasRemote(repoPath: string, remoteName: string): Promise<b
  * await addRemote('/repo', 'origin', 'https://github.com/user/project.git');
  */
 export async function addRemote(repoPath: string, remoteName: string, remoteUrl: string): Promise<void> {
-  await runGitCommand(`remote add ${remoteName} ${remoteUrl}`, repoPath);
+  await runGitCommand(['remote', 'add', remoteName, remoteUrl], repoPath);
 }
 
 export async function setRemoteUrl(repoPath: string, remoteName: string, remoteUrl: string): Promise<void> {
-  await runGitCommand(`remote set-url ${remoteName} ${remoteUrl}`, repoPath);
+  await runGitCommand(['remote', 'set-url', remoteName, remoteUrl], repoPath);
 }
 
 
@@ -100,6 +100,6 @@ export async function getRemoteUrl(repoPath: string, remoteName: string): Promis
   const exists = await hasRemote(repoPath, remoteName);
   if (!exists) return null;
 
-  const url = await runGitCommand(`remote get-url ${remoteName}`, repoPath);
+  const url = await runGitCommand(['remote', 'get-url', remoteName], repoPath);
   return url.trim();
 }

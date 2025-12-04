@@ -8,7 +8,7 @@ import { runGitCommand } from './command';
  * @returns An array of local branch names
  */
 export async function getLocalBranches(repoPath: string): Promise<string[]> {
-  const output = await runGitCommand(`branch --format="%(refname:short)"`, repoPath);
+  const output = await runGitCommand(['branch', '--format=%(refname:short)'], repoPath);
   return output.split('\n').map(b => b.trim()).filter(Boolean);
 }
 
@@ -20,7 +20,7 @@ export async function getLocalBranches(repoPath: string): Promise<string[]> {
  * @returns An array of remote branch names
  */
 export async function getRemoteBranches(repoPath: string): Promise<string[]> {
-  const output = await runGitCommand(`branch -r --format="%(refname:short)"`, repoPath);
+  const output = await runGitCommand(['branch', '-r', '--format=%(refname:short)'], repoPath);
   return output.split('\n').map(b => b.trim()).filter(Boolean);
 }
 
@@ -62,7 +62,7 @@ export async function hasRemoteBranch(repoPath: string, remoteBranchName: string
 export async function createBranchIfMissing(repoPath: string, branchName: string, baseBranch: string = 'HEAD'): Promise<void> {
   const exists = await hasLocalBranch(repoPath, branchName);
   if (!exists) {
-    await runGitCommand(`checkout -b ${branchName} ${baseBranch}`, repoPath);
+    await runGitCommand(['checkout', '-b', branchName, baseBranch], repoPath);
   }
 }
 
@@ -79,6 +79,6 @@ export async function pushBranchIfMissing(repoPath: string, branchName: string, 
   const remoteBranch = `${remoteName}/${branchName}`;
   const exists = await hasRemoteBranch(repoPath, remoteBranch);
   if (!exists) {
-    await runGitCommand(`push ${remoteName} ${branchName}`, repoPath);
+    await runGitCommand(['push', remoteName, branchName], repoPath);
   }
 }
