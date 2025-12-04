@@ -1,4 +1,4 @@
-import { PlusIcon, XSquareIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
@@ -15,6 +15,7 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { PagesSearch } from '~/modules/pages/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 import { CreatePageForm } from '../create-page-form';
+import DeletePagesForm from '../delete-pages-form';
 
 interface PagesTableBarProps extends BaseTableBarProps<Page, PagesSearch> {
   isCompact: boolean;
@@ -36,10 +37,13 @@ export const PagesTableBar = ({
 }: PagesTableBarProps) => {
   const { t } = useTranslation();
 
-  const removeDialog = useDialoger((state) => state.remove);
-  const createDialog = useDialoger((state) => state.create);
+  const organizationId = '';
+
+  const mountDialog = useDialoger((state) => state.create);
+  const unmountDialog = useDialoger((state) => state.remove);
 
   const createButtonRef = useRef(null);
+  const deleteButtonRef = useRef(null);
 
   const isFiltered = !!search.q;
   const onResetFilter = () => {
@@ -56,9 +60,25 @@ export const PagesTableBar = ({
           <FilterBarActions>
             {selected.length ? (
               <>
-                {/* publish */}
-                {/* archive */}
-                {/* delete? */}
+                <TableBarButton
+                  variant="destructive"
+                  label="common:remove"
+                  icon={TrashIcon}
+                  className="relative"
+                  badge={selected.length}
+                  onClick={() =>
+                    mountDialog(<DeletePagesForm pages={selected} isDialog callback={() => unmountDialog('delete-pages')} />, {
+                      id: 'delete-pages',
+                      triggerRef: deleteButtonRef,
+                      className: 'max-w-xl',
+                      title: t('common:delete'),
+                      description: t('common:confirm.delete_counted_resource', {
+                        count: selected.length,
+                        resource: selected.length > 1 ? t('common:pages').toLowerCase() : t('common:page').toLowerCase(),
+                      }),
+                    })
+                  }
+                />
                 <TableBarButton onClick={clearSelection} label="common:clear" icon={XSquareIcon} variant="ghost" />
                 <TableCount count={total} label="common:organization" isFiltered={isFiltered} onResetFilters={onResetFilter} />
               </>
@@ -69,7 +89,7 @@ export const PagesTableBar = ({
                     label="common:create"
                     icon={PlusIcon}
                     onClick={() =>
-                      createDialog(<CreatePageForm organizationId="" isDialog callback={() => removeDialog('create-page')} />, {
+                      mountDialog(<CreatePageForm organizationId={organizationId} isDialog callback={() => unmountDialog('create-page')} />, {
                         id: 'create-page',
                         triggerRef: createButtonRef,
                         className: 'md:max-w-2xl',
