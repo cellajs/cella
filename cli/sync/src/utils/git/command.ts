@@ -181,7 +181,7 @@ export async function gitAddAll(repoPath: string): Promise<string> {
  * console.info(conflicts);
  */
 export async function gitDiffUnmerged(repoPath: string): Promise<string> {
-  return runGitCommand('diff --name-only --diff-filter=U', repoPath);
+  return runGitCommand(['diff', '--name-only', '--diff-filter=U'], repoPath);
 }
 
 /** 
@@ -197,7 +197,7 @@ export async function gitDiffUnmerged(repoPath: string): Promise<string> {
  * console.info(stagedFiles);
  */
 export async function gitDiffCached(repoPath: string): Promise<string> {
-  return runGitCommand('diff --name-only --cached', repoPath);
+  return runGitCommand(['diff', '--name-only', '--cached'], repoPath);
 }
 
 /**
