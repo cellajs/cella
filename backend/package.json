@@ -107,7 +107,7 @@
     "@types/pg": "^8.15.6",
     "@types/react": "^19.2.7",
     "@types/ua-parser-js": "^0.7.39",
-    "@typescript/native-preview": "7.0.0-dev.20250910.1",
+    "@typescript/native-preview": "7.0.0-dev.20251204.1",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "cross-env": "^10.1.0",
