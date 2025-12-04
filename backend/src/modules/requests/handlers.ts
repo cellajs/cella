@@ -91,7 +91,6 @@ const requestRouteHandlers = app
     const recipients = [{ email: normalizedEmail }];
 
     if ((!matrixResp || !matrixResp.ok) && !slackResp) {
-      // TODO change for salesEmail ?
       mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestInfoEmail, { ...staticProps, subject: title }, [
         { email: appConfig.company.email },
       ]);
