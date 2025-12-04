@@ -5,7 +5,7 @@ import {
   useBlockNoteEditor,
   useComponentsContext,
   useDictionary,
-  useEditorContentOrSelectionChange,
+  useEditorState,
   useSelectedBlocks,
 } from '@blocknote/react';
 import { ChevronDownIcon } from 'lucide-react';
@@ -74,7 +74,13 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   );
 
   // Update the block whenever the editor content or selection changes
-  useEditorContentOrSelectionChange(() => setBlock(editor.getTextCursorPosition().block), editor);
+  useEditorState({
+    editor,
+    selector: ({ editor }) => {
+      const selectedBlock = editor.getSelection()?.blocks[0] || editor.getTextCursorPosition().block;
+      setBlock(selectedBlock as typeof block);
+    },
+  });
 
   // Return null if the menu should not be shown or the editor is not editable
   if (!shouldShow || !editor.isEditable) return null;

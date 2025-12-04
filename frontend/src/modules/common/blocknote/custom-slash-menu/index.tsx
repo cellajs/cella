@@ -1,4 +1,4 @@
-import { filterSuggestionItems } from '@blocknote/core';
+import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { SuggestionMenuController } from '@blocknote/react';
 import { getSlashMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { slashMenu } from '~/modules/common/blocknote/custom-slash-menu/custom-slash-menu';

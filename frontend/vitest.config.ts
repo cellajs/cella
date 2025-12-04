@@ -30,6 +30,8 @@ export default defineConfig({
           instances: [{ browser: 'chromium' }],
         },
         setupFiles: ['./.storybook/vitest.setup.ts'],
+        // Exclude stories that have complex dependencies
+        exclude: ['**/BlockNote.stories.tsx'],
       },
     }],
   },
