@@ -476,7 +476,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
  * Verify TOTP
  *
  * 🌐 Public access
- * ⏳ Spam (10/h)
+ * ⏳ TOTP Verification (5/h)
  *
  * Validates the TOTP code and completes TOTP based authentication.
  *
@@ -691,7 +691,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
  * Generate passkey challenge
  *
  * 🌐 Public access
- * ⏳ Spam (10/h)
+ * ⏳ Passkey Challenge (5/h)
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
@@ -1622,6 +1622,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
  * Get presigned URL
  *
  * 🌐 Public access
+ * ⏳ Presigned URL (20/h)
  *
  * Generates and returns a presigned URL for uploading files to an S3 bucket.
  *

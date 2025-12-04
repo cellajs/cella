@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
@@ -59,7 +59,7 @@ const systemRoutes = {
     method: 'get',
     path: '/presigned-url',
     guard: [isPublicAccess],
-    // TODO rate limiting this endpoint, try first authenticated users by id, fallback to ip address
+    middleware: [presignedUrlLimiter],
     tags: ['system'],
     summary: 'Get presigned URL',
     description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',

@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { passkeyChallengeLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   passkeyChallengeBodySchema,
   passkeyChallengeSchema,
@@ -18,8 +18,7 @@ const authPasskeysRoutes = {
     method: 'post',
     path: '/passkey/generate-challenge',
     guard: isPublicAccess,
-    // TODO look into rate limit customized for passkeys
-    middleware: [spamLimiter],
+    middleware: [passkeyChallengeLimiter],
     tags: ['auth'],
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
