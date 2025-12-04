@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
-import { raw } from 'hono/html';
 import { FileArchiveIcon, FileCheckIcon, FilePenLineIcon, LucideProps } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { parseBlocksText } from '~/lib/blocknote';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -123,9 +123,8 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        const html = raw(row.content);
-        html;
-        return <span className="font-medium">{row.content.slice(0, 50) || '-'}</span>;
+        const content = parseBlocksText(row.content);
+        return <span className="font-medium">{content.slice(0, 50) || '-'}</span>;
       },
     },
     {

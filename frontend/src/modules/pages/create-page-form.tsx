@@ -12,7 +12,6 @@ import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 import { nanoid } from '~/utils/nanoid';
-import { blocksToHTML } from '../common/blocknote/helpers';
 import { CallbackArgs } from '../common/data-table/types';
 import InputFormField from '../common/form-fields/input';
 import { SlugFormField } from '../common/form-fields/slug';
@@ -96,7 +95,6 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
       {
         entityType: 'page',
         ...data,
-        content: blocksToHTML(data.content),
         keywords: 'test-tag', //
         status: 'unpublished', //
       },
