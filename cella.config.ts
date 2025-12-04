@@ -1,4 +1,4 @@
-import { DeepPartial, AppConfig } from "./cli/cella-sync-engine/src/config/types";
+import { DeepPartial, AppConfig } from "./cli/sync/src/config/types";
 
 export const cellaConfig: DeepPartial<AppConfig> = {
   swizzle: {

@@ -5,14 +5,13 @@
   "language": "TypeScript",
   "framework": "Hono",
   "lastUpdated": "2025-08-13T14:30:00Z",
-  "cliName": "cella-sync-engine",
+  "cliName": "sync",
   "syncProcess": [
     "Create/fetch a new sync-branch in the fork",
     "Add boilerplate as upstream in the fork/sync-branch",
     "Merge commits from fork into fork/sync-branch",
     "Merge commits from boilerplate into fork/sync-branch (attempt auto-resolve conflicts git cannot auto-resolve)",
-    "Squash commits from fork/sync-branch into fork for clean history",
-    "Merge squash commit back into fork/sync-branch"
+    "Squash commits from fork/sync-branch into fork for clean history"
   ],
   "folderStructure": {
     "root": ["package.json", "package-lock.json", "index.ts"],
@@ -86,7 +85,7 @@
       "run-sync.ts": "*"
     },
     "cli": {
-      "cella-sync-engine": ["*"]
+      "synce": ["*"]
     }
   },
   "commands": {

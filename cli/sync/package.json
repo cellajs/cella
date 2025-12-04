@@ -1,13 +1,13 @@
 {
-  "name": "@cella/cella-sync-engine",
+  "name": "@cella/sync",
   "version": "0.0.1",
   "private": false,
   "license": "MIT",
-  "description": "Use cella-sync-engine to keep your Cella fork up-to-date with Cella.",
+  "description": "Use sync to keep your Cella fork up-to-date with Cella.",
   "repository": {
     "type": "git",
     "url": "https://github.com/cellajs/cella",
-    "directory": "cli/cella-sync-engine"
+    "directory": "cli/sync"
   },
   "homepage": "https://cellajs.com",
   "author": "CellaJS <info@cellajs.com>",
