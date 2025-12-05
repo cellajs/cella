@@ -13,7 +13,7 @@ import { observabilityMiddleware } from '#/middlewares/observability';
 const app = new OpenAPIHono<Env>();
 
 // Secure headers
-app.use('*', secureHeaders());
+app.use('*', secureHeaders({ referrerPolicy: 'strict-origin-when-cross-origin' }));
 
 // Get metrics and trace
 app.use('*', observabilityMiddleware);

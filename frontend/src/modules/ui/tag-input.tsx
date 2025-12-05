@@ -26,10 +26,6 @@ interface TagInputProps extends OmittedInputProps {
   tags: string[];
   setTags: React.Dispatch<React.SetStateAction<string[]>>;
 
-  // TODO we can simplify by removing this and go for styling for inside only
-  direction?: 'row' | 'column';
-  tagListPlacement: 'bottom' | 'top' | 'inside';
-
   placeholder?: string;
   placeholderWhenFull?: string;
 
@@ -62,9 +58,6 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
   const {
     tags,
     setTags,
-
-    direction = 'row',
-    tagListPlacement,
 
     placeholder,
     placeholderWhenFull = 'Max tags reached',
@@ -265,10 +258,8 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
         onClick={handleClick}
         className={cn(
           'flex flex-wrap items-center py-1 px-3 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium shadow-xs sm:focus-within:ring-2 sm:focus-within:ring-offset-2 ring-offset-background sm:focus-within:ring-ring',
-          tagListPlacement === 'bottom' ? 'flex-col-reverse' : tagListPlacement === 'top' ? 'flex-col' : 'flex-row',
-          tagListPlacement === 'inside' &&
-            'bg-background border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground focus-effect',
-          tagListPlacement === 'inside' && styleClasses?.input,
+          'flex-row bg-background border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground focus-effect',
+          styleClasses?.input,
         )}
       >
         <TagList
@@ -276,13 +267,8 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
           badgeVariants={badgeVariants}
           onTagClick={onTagClick}
           onRemoveTag={removeTag}
-          direction={direction}
           classStyleProps={{
-            tagListClasses: cn(
-              styleClasses?.tagList,
-              tagListPlacement === 'inside' && tags.length < 1 && 'hidden',
-              tagListPlacement === 'inside' && 'pr-1',
-            ),
+            tagListClasses: cn(styleClasses?.tagList, tags.length < 1 && 'hidden', 'pr-1'),
             tagClasses: styleClasses?.tag,
           }}
           activeTagIndex={activeTagIndex}
@@ -297,17 +283,10 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           {...inputProps}
-          className={
-            tagListPlacement !== 'inside'
-              ? cn(
-                  styleClasses?.input,
-                  'bg-background focus-effect shadow-none border border-input -my-0.5 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
-                )
-              : cn(
-                  'h-8 w-auto grow shadow-none -my-px border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-0',
-                  tags.length && 'ml-1',
-                )
-          }
+          className={cn(
+            'h-8 w-auto grow shadow-none -my-px border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-0',
+            tags.length && 'ml-1',
+          )}
           disabled={maxTags !== undefined && tags.length >= maxTags}
         />
       </div>
@@ -331,7 +310,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
   );
 });
 
-type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'direction' | 'onTagClick'> & {
+type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'onTagClick'> & {
   activeTagIndex: null | number;
   classStyleProps: {
     tagListClasses: TagInputStyleClassesProps['tagList'];
@@ -340,18 +319,9 @@ type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'direction' |
   onRemoveTag: (id: string) => void;
 };
 
-const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) => {
+const TagList = ({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) => {
   return (
-    <div
-      className={cn(
-        'flex flex-wrap gap-1 rounded-md',
-        {
-          'flex-row': direction === 'row',
-          'flex-col': direction === 'column',
-        },
-        classStyleProps.tagListClasses,
-      )}
-    >
+    <div className={cn('flex flex-wrap gap-1 rounded-md flex-row', classStyleProps.tagListClasses)}>
       {tags.map((tag, index) => (
         <Badge
           key={tag}
@@ -359,7 +329,6 @@ const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, ac
           className={cn(
             'pr-0 gap-0.5',
             {
-              'justify-between w-full': direction === 'column',
               'focus-effect': index === activeTagIndex,
             },
             classStyleProps.tagClasses?.body,

@@ -12,10 +12,11 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { organizationsQueryOptions } from '~/modules/organizations/query';
+import { organizationsKeys, organizationsQueryOptions } from '~/modules/organizations/query';
 import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
 import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { useUserStore } from '~/store/user';
 
 const LIMIT = appConfig.requestLimits.organizations;
@@ -23,8 +24,9 @@ const LIMIT = appConfig.requestLimits.organizations;
 const OrganizationsTable = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const updateMember = useMemberUpdateMutation();
 
-  const updateMemberMembership = useMemberUpdateMutation();
+  const mutateOrganizationsCache = useMutateQueryData(organizationsKeys.table.base);
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
 
   // Table state
@@ -72,12 +74,21 @@ const OrganizationsTable = () => {
       const orgIdOrSlug = organization.id;
 
       try {
+        // TODO re-check and add mutation or invalidation all connected queries(members table, single organization query)
         if (partOfOrganization) {
-          await updateMemberMembership.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
+          await updateMember.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
+          // Update organizations cache to reflect membership change
+          const updatedOrganization = { ...organization, membership: { ...membership, role: newRole } };
+          mutateOrganizationsCache.update([updatedOrganization]);
         } else {
           await membershipInvite({ query: mutationVariables, path: { orgIdOrSlug }, body: { emails: [user.email], role: newRole } });
-          // TODO add cache mutation for organization tables
-          await getAndSetMenu();
+
+          const menu = await getAndSetMenu();
+          const targetMenuItem = menu.organization.find((org) => org.id === organization.id);
+          if (targetMenuItem) {
+            const updatedOrganization = { ...organization, membership: targetMenuItem.membership };
+            mutateOrganizationsCache.update([updatedOrganization]);
+          }
           toaster(t('common:success.role_updated'), 'success');
         }
       } catch (err) {

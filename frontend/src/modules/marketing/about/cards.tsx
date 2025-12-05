@@ -40,9 +40,9 @@ const AboutCards = () => {
                   className={`h-8 w-8 object-contain ${invert && mode === 'dark' && 'invert'}`}
                   loading="lazy"
                 />
-                <span className="ml-4 font-medium">{name}</span>
+                <span className="ml-4 font-semibold">{name}</span>
               </div>
-              <div className="grow overflow-hidden font-light pt-4">{t(text)}</div>
+              <div className="grow overflow-hidden pt-4">{t(text)}</div>
               <div className="pt-2 text-sm">
                 <div className="text-muted-foreground mb-2">{t(purpose)}</div>
                 <div className="font-semibold group-hover:underline underline-offset-4">

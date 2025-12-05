@@ -5,6 +5,8 @@ import * as DropdownMenu from '~/modules/ui/dropdown-menu';
 import { DropdownMenuContentNoPortal } from '~/modules/ui/dropdown-menu';
 import * as Input from '~/modules/ui/input';
 import * as Label from '~/modules/ui/label';
+import * as Popover from '~/modules/ui/popover';
+import { PopoverContentNoPortal } from '~/modules/ui/popover';
 import * as Select from '~/modules/ui/select';
 import { SelectContentNoPortal } from '~/modules/ui/select';
 import * as Tabs from '~/modules/ui/tabs';
@@ -21,6 +23,10 @@ export const shadCNComponents = {
   Select: {
     ...Select,
     SelectContent: SelectContentNoPortal,
+  },
+  Popover: {
+    ...Popover,
+    PopoverContent: PopoverContentNoPortal,
   },
   Tooltip,
   Label,

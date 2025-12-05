@@ -16,9 +16,9 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import DeleteMembershipsForm from '~/modules/memberships/delete-memberships-form';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
 import { PendingMemberships } from '~/modules/memberships/pending-table/pending-memberships';
-import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
@@ -70,7 +70,7 @@ export const MembersTableBar = ({
 
   const openDeleteDialog = () => {
     createDialog(
-      <RemoveMembersForm
+      <DeleteMembershipsForm
         organizationId={entity.organizationId || entity.id}
         entityIdOrSlug={entity.slug}
         entityType={entity.entityType}
@@ -79,7 +79,7 @@ export const MembersTableBar = ({
         callback={clearSelection}
       />,
       {
-        id: 'remove-members',
+        id: 'delete-memberships',
         triggerRef: deleteButtonRef,
         className: 'max-w-xl',
         title: t('common:remove_resource', { resource: t('common:members').toLowerCase() }),

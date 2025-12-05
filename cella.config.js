@@ -60,7 +60,6 @@ export const config = {
     'frontend/src/modules/common/logo.tsx',
     'frontend/src/modules/common/bg-animation/*',
     'frontend/src/modules/common/blocknote/blocknote-config.ts',
-    'frontend/src/modules/common/blocknote/app-specific-custom/*',
     'frontend/src/modules/home/onboarding/onboarding-config.ts',
     'frontend/src/modules/marketing/marketing-config.tsx',
     'frontend/src/modules/marketing/about/about-page.tsx',
@@ -79,6 +78,5 @@ export const config = {
     'json/text-blocks.json',
     'locales/en/about.json',
     'locales/en/app.json',
-    'locales/en/app-errors.json',
   ],
 };

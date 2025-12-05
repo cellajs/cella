@@ -105,7 +105,7 @@ const ContactFormMap = () => {
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
     >
-      <div className="md:pb-12 w-full h-full">
+      <div className="w-full h-full">
         <div className="w-full h-full rounded-sm overflow-hidden bg-accent">
           <APIProvider apiKey={appConfig.googleMapsKey} libraries={['marker']}>
             <AnimatePresence>

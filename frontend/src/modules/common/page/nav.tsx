@@ -84,7 +84,7 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
                 if (el) tabRefs.current[id] = el;
               }}
               resetScroll={false}
-              className="relative last:mr-4 max-sm:p-3 p-2 lg:px-4 rounded-sm focus-effect group"
+              className="relative last:mr-4 max-sm:py-3 max-sm:text-sm p-2 lg:px-4 rounded-sm font-medium focus-effect group"
               to={path}
               draggable="false"
               data-active={fallbackToFirst && index === 0 ? true : undefined}

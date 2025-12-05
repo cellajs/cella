@@ -30,20 +30,17 @@ const attachmentsRouteHandlers = app
     const query = ctx.req.valid('query');
     const { where, table } = query;
 
-    // TODO(DAVID): introducing toastMessage for this seems overkill, can we simplify by using dedicated type? `table_mismatch`, `organization_required`, `organization_mismatch`?
     if (table !== 'attachments') {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
+      throw new AppError({ status: 403, type: 'sync_table_mismatch', severity: 'warn' });
     }
 
-    if (!where)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: no organization ID provided.' } });
+    if (!where) throw new AppError({ status: 403, type: 'sync_organization_required', severity: 'warn' });
     // Extract organization IDs from `where` clause
     const [requestedOrganizationId] = [...where.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
     const organization = getContextOrganization();
 
     // Only allow validated organization ID
-    if (requestedOrganizationId !== organization.id)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
+    if (requestedOrganizationId !== organization.id) throw new AppError({ status: 403, type: 'sync_organization_mismatch', severity: 'warn' });
 
     return await proxyElectricSync(table, query, 'attachment');
   })
@@ -56,6 +53,7 @@ const attachmentsRouteHandlers = app
     const organization = getContextOrganization();
     const attachmentRestrictions = organization.restrictions.attachment;
 
+    // Check restriction limits
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }

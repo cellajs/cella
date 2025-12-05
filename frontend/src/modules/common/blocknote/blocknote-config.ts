@@ -1,4 +1,6 @@
-import { BlockNoteSchema, type DefaultSuggestionItem, type Dictionary } from '@blocknote/core';
+import { codeBlockOptions } from '@blocknote/code-block';
+import { BlockNoteSchema, CodeBlockOptions, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
+import { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify';
@@ -12,32 +14,66 @@ import type {
 } from '~/modules/common/blocknote/types';
 
 /**
- *  Basic Configuration
+ *  Basic configuration
  */
+
+// Config for supported languages for BlockNote code blocks
+export const supportedLanguages = {
+  text: {
+    name: 'Plain Text',
+    aliases: ['text', 'txt', 'plain'],
+  },
+  html: {
+    name: 'HTML',
+    aliases: ['htm'],
+  },
+  javascript: {
+    name: 'JavaScript',
+    aliases: ['javascript', 'js'],
+  },
+  json: {
+    name: 'JSON',
+    aliases: ['json'],
+  },
+  jsonc: {
+    name: 'JSON with Comments',
+    aliases: ['jsonc'],
+  },
+  markdown: {
+    name: 'Markdown',
+    aliases: ['markdown', 'md'],
+  },
+  typescript: {
+    name: 'TypeScript',
+    aliases: ['typescript', 'ts'],
+  },
+} satisfies CodeBlockOptions['supportedLanguages'];
 
 // Base custom schema
 export const customSchema = BlockNoteSchema.create().extend({
-  blockSpecs: { notify: notifyBlock() }, // Adds Notify block
+  blockSpecs: {
+    notify: notifyBlock(), // Adds Notify block
+    codeBlock: createCodeBlockSpec({
+      indentLineWithTab: true,
+      supportedLanguages,
+      defaultLanguage: 'text',
+      // TODO(BLOCKING) Blocknote type err
+      createHighlighter: codeBlockOptions.createHighlighter as any,
+    }),
+  },
   inlineContentSpecs: { mention: MentionSchema }, // Adds Mention tag
 });
-
-// Extend Blocknote types to include custom block keys for slash menu
-declare module '~/modules/common/blocknote/types' {
-  export interface ExtendableBlocknoteTypes {
-    SlashKeys: DefaultSuggestionItem['key'] | 'notify';
-  }
-}
 
 // Blocks to witch can be switched by sidemenu btn or in formatting toolbar
 export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
 /**
- *  Side Menu Configuration
+ *  Side menu configuration
  */
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
 /**
- *  Slash Menu Configuration
+ *  Slash menu configuration
  */
 
 // Indexed items (max 9 for quick number-based selection)
@@ -90,7 +126,7 @@ export const getSlashMenuItems = (
 };
 
 /**
- *  Formatting toolbar Configuration
+ *  Formatting toolbar configuration
  */
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   blockTypeSelect: false,

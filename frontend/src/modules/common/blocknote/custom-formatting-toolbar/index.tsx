@@ -1,4 +1,5 @@
 import {
+  BasicTextStyleButton,
   ColorStyleButton,
   CreateLinkButton,
   FileCaptionButton,
@@ -12,7 +13,6 @@ import { useEffect } from 'react';
 import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blocknote-config';
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
 import { CellaCustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
-import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-type-change';
 import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
@@ -32,7 +32,15 @@ export const CustomFormattingToolbar = ({ headingLevels }: { headingLevels: Cust
       return (
         <FormattingToolbar>
           {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect headingLevels={headingLevels} />}
-          {customFormattingToolBarConfig.blockStyleSelect && <CustomTextStyleSelect />}
+          {customFormattingToolBarConfig.blockStyleSelect && (
+            <>
+              <BasicTextStyleButton basicTextStyle="bold" />
+              <BasicTextStyleButton basicTextStyle="italic" />
+              <BasicTextStyleButton basicTextStyle="code" />
+              <BasicTextStyleButton basicTextStyle="strike" />
+              <BasicTextStyleButton basicTextStyle="underline" />
+            </>
+          )}
           {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 
           {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}

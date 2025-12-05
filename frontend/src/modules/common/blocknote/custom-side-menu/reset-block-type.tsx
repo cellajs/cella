@@ -1,4 +1,5 @@
-import { type BlockTypeSelectItem, SideMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
+import { SideMenuExtension } from '@blocknote/core/extensions';
+import { type BlockTypeSelectItem, useComponentsContext, useDictionary, useExtension, useExtensionState } from '@blocknote/react';
 import { useMemo } from 'react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
@@ -7,15 +8,19 @@ import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } fr
 
 interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteEditor;
-  props: Omit<SideMenuProps, 'addBlock'>;
   allowedTypes: CustomBlockTypes[];
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
 }
 
-export function ResetBlockTypeItem({ editor, props: { block, unfreezeMenu }, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
+export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
+
+  const sideMenu = useExtension(SideMenuExtension);
+  const block = useExtensionState(SideMenuExtension, { selector: (state) => state?.block });
+
+  if (block === undefined) return null;
 
   const filteredSelectItems = customBlockTypeSwitchItems.filter((i) => allowedTypes.includes(i));
   const selectItemsType: readonly string[] = filteredSelectItems;
@@ -77,7 +82,7 @@ export function ResetBlockTypeItem({ editor, props: { block, unfreezeMenu }, all
             key={title}
             onClick={() => {
               onClick();
-              unfreezeMenu();
+              sideMenu.unfreezeMenu();
             }}
             icon={icon}
             checked={isSelected}

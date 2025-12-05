@@ -17,6 +17,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { RequestResponseEmail, RequestResponseEmailProps } from '../../../emails/request-was-sent';
+import { RequestInfoEmail } from '../../../emails/request-was-sent-admin';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
@@ -60,34 +61,40 @@ const requestRouteHandlers = app
 
     // Determine message content based on notification type
     let textMessage: string;
-    let slackTitle: string;
+    let title: string;
 
     switch (type) {
       case 'waitlist':
         textMessage = `New Waitlist Request\nEmail: ${normalizedEmail}`;
-        slackTitle = 'Join waitlist request';
+        title = 'Join waitlist request';
         break;
       case 'newsletter':
         textMessage = `Newsletter Signup Request\nEmail: ${normalizedEmail}`;
-        slackTitle = 'Join newsletter request';
+        title = 'Join newsletter request';
         break;
       case 'contact':
         textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
-        slackTitle = `Request for contact with message: "${message}"`;
+        title = `Request for contact with message: "${message}"`;
         break;
     }
 
     // Send message to Matrix
-    await sendMatrixMessage({ msgtype: 'm.notice', textMessage });
+    const matrixResp = await sendMatrixMessage({ msgtype: 'm.notice', textMessage });
 
     // Send message to Slack
-    await sendSlackMessage(slackTitle, normalizedEmail);
+    const slackResp = await sendSlackMessage(title, normalizedEmail);
 
     // Send email
     const lng = appConfig.defaultLanguage;
     const subject = i18n.t('backend:email.request.subject', { lng, appName: appConfig.name, requestType: type });
     const staticProps = { lng, subject, type, message };
     const recipients = [{ email: normalizedEmail }];
+
+    if ((!matrixResp || !matrixResp.ok) && !slackResp) {
+      mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestInfoEmail, { ...staticProps, subject: title }, [
+        { email: appConfig.company.email },
+      ]);
+    }
 
     type Recipient = { email: string };
 

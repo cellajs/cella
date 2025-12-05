@@ -1,20 +1,22 @@
 import '@blocknote/shadcn/style.css';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
-import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { FilePanelExtension, FormattingToolbarExtension, SideMenuExtension, SuggestionMenu } from '@blocknote/core/extensions';
+import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { WebrtcProvider } from 'y-webrtc';
+import * as Y from 'yjs';
 import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import { customSchema, customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { compareIsContentSame, getParsedContent } from '~/modules/common/blocknote/helpers';
+import { compareIsContentSame, getParsedContent, getRandomColor } from '~/modules/common/blocknote/helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
@@ -32,6 +34,18 @@ type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
+      collaborative: true;
+      user: {
+        id?: string;
+        name: string;
+        color?: string;
+      };
+    })
+  | (CommonBlockNoteProps & {
+      type: 'edit' | 'create';
+      updateData: (strBlocks: string) => void;
+      collaborative?: false | undefined;
+      user?: never;
     })
   | (CommonBlockNoteProps & {
       type: 'preview';
@@ -42,9 +56,10 @@ type BlockNoteProps =
       onBeforeLoad?: never;
       filePanel?: never;
       baseFilePanelProps?: never;
+      collaborative?: never;
+      user?: never;
     });
 
-// TODO ensure code block highliht works and shadCn components
 const BlockNote = ({
   id,
   type,
@@ -64,6 +79,9 @@ const BlockNote = ({
   members, // for mentions
   filePanel,
   baseFilePanelProps,
+  // Collaboration
+  collaborative = false,
+  user,
   // Functions
   updateData,
   onEscapeClick,
@@ -81,13 +99,29 @@ const BlockNote = ({
     (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
 
-  const emojiPicker = slashMenu ? customSlashIndexedItems.includes('emoji') && allowedBlockTypes.includes('emoji') : emojis;
+  const collaborationConfig = collaborative
+    ? {
+        // The Yjs Provider responsible for transporting updates:
+        provider: new WebrtcProvider(id, new Y.Doc()),
+        // Where to store BlockNote data in the Y.Doc:
+        fragment: new Y.Doc().getXmlFragment('document-store'),
+        // Information (name and color) for this user:
+        user: {
+          name: user?.name || 'Anonymous User',
+          color: user?.color || getRandomColor(),
+        },
+        // When to show user labels on the collaboration cursor. Set by default to
+        // "activity" (show when the cursor moves), but can also be set to "always".
+        showCursorLabels: 'activity' as const,
+      }
+    : undefined;
 
   const editor = useCreateBlockNote({
     schema: customSchema,
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
+    collaboration: collaborationConfig,
     // TODO(BLOCKING) remove image blink (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
@@ -99,18 +133,57 @@ const BlockNote = ({
 
   const handleKeyDown: KeyboardEventHandler = useCallback(
     (event) => {
-      const isEscape = event.key === 'Escape';
-      const isCmdEnter = (event.metaKey || event.ctrlKey) && event.key === 'Enter';
-      if (!isCmdEnter && !isEscape) return;
+      const { metaKey, ctrlKey, key } = event;
+      const isEscape = key === 'Escape';
+      const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
+
+      // IDE-like wrapping characters
+      const wrappingChars: Record<string, string> = {
+        '[': ']',
+        '{': '}',
+        '(': ')',
+        '`': '`',
+        '"': '"',
+        "'": "'",
+      };
+
+      // Handle character-based wrapping
+      if (wrappingChars[key]) {
+        const selection = editor.getSelection();
+
+        const singleBlockSelected =
+          selection && selection.blocks.length === 1 && Array.isArray(selection.blocks[0].content) && selection.blocks[0].content.length > 0;
+
+        if (singleBlockSelected) {
+          event.preventDefault();
+
+          const [currentBlock] = selection.blocks;
+          const selectedText = editor.getSelectedText();
+
+          editor.updateBlock(currentBlock, {
+            content: `${key}${selectedText}${wrappingChars[key]}`,
+          });
+
+          return;
+        }
+      }
+
+      // Skip everything else if it's not special command
+      if (!isEscape && !isCmdEnter) return;
+
       event.preventDefault();
 
-      if (isEscape) onEscapeClick?.();
-
-      if (isCmdEnter) {
-        event.stopPropagation();
-        onEnterClick?.();
-        if (!editor.isEmpty) handleUpdateData(editor);
+      // Escape handling
+      if (isEscape) {
+        onEscapeClick?.();
+        return;
       }
+
+      // Cmd/Ctrl + Enter
+      event.stopPropagation();
+      onEnterClick?.();
+
+      if (!editor.isEmpty) handleUpdateData(editor);
     },
     [editor, defaultValue],
   );
@@ -127,19 +200,26 @@ const BlockNote = ({
 
   const handleOnBeforeLoad = useCallback(() => onBeforeLoad?.(editor), [editor]);
 
+  const sideMenuExt = useExtensionState(SideMenuExtension, { editor });
+  const suggestionMenuExt = useExtension(SuggestionMenu, { editor });
+  const formattingToolbarShown = useExtensionState(FormattingToolbarExtension, {
+    editor,
+  });
+  const filePanelShown = !!useExtensionState(FilePanelExtension, { editor });
+
   const handleBlur: FocusEventHandler = useCallback(
     (event) => {
       // if user in Side Menu does not update
-      if (editor.sideMenu.view?.menuFrozen) return;
+      if (sideMenuExt?.show) return;
 
       // if user in Formatting Toolbar does not update
-      if (editor.formattingToolbar.shown) return;
+      if (formattingToolbarShown) return;
 
       // if user in Slash Menu does not update
-      if (editor.suggestionMenus.shown) return;
+      if (suggestionMenuExt.shown()) return;
 
       // if user in file panel does not update
-      if (editor.filePanel?.shown) return;
+      if (filePanelShown) return;
 
       const nextFocused = event.relatedTarget;
       // Check if the next focused element is still inside the editor
@@ -147,7 +227,7 @@ const BlockNote = ({
 
       if (type === 'edit') handleUpdateData(editor);
     },
-    [editor, defaultValue],
+    [editor, sideMenuExt, formattingToolbarShown, suggestionMenuExt, filePanelShown],
   );
 
   const handleClick: MouseEventHandler = useCallback(
@@ -177,7 +257,7 @@ const BlockNote = ({
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
 
-  // TODO Autofocus issue (BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
+  // TODO(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
     if (!editable || !editor) return;
 
@@ -208,7 +288,7 @@ const BlockNote = ({
       sideMenu={false}
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
-      emojiPicker={!emojiPicker}
+      emojiPicker={!emojis}
       filePanel={false} // Because in CustomFilePanel renders default UI
       onFocus={onFocus}
       onClick={handleClick}
@@ -227,8 +307,8 @@ const BlockNote = ({
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}
 
-      {/* Changes the Emoji Picker to only have 10 columns & min length of 0. */}
-      {emojiPicker && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={0} />}
+      {/* Changes the Emoji Picker to only have 8 columns & min length of 0. */}
+      {emojis && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={1} />}
 
       <CustomFilePanel filePanel={filePanel} baseFilePanelProps={baseFilePanelProps} />
     </BlockNoteView>

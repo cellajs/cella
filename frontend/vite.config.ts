@@ -168,13 +168,13 @@ if (appConfig.frontendUrl.includes('https')) {
 // Enable additional plugins only in development mode
 if (appConfig.mode === 'development' && !isStorybook) {
   viteConfig.plugins?.push(
-    i18nextHMRPlugin({ localesDir: '../locales' }),
     localesHMR({
       srcDir: path.resolve(__dirname, '../locales'),
-      outDir: path.resolve(__dirname, '../locales/.locales-cache'),
+      outDir: path.resolve(__dirname, '../.vscode/.locales-cache'),
       merge: { target: 'common', sources: ['app'] },
       verbose: false,
     }),
+    i18nextHMRPlugin({ localesDir: '../locales' }),
     watchBackendOpenApi(),
     reactScan({
       enable: false,

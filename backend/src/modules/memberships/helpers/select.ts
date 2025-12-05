@@ -14,8 +14,8 @@ type MembershipBaseSelect = Pick<TableColumns, MembershipBaseKeys>;
 /**
  * Membership select for base data only.
  */
-export const membershipBaseSelect = (() => {
-  const cols = getTableColumns(membershipsTable) satisfies TableColumns;
+export const membershipBaseSelect: MembershipBaseSelect = (() => {
+  const cols = getTableColumns(membershipsTable);
   const keys = Object.keys(membershipBaseSchema.shape) as MembershipBaseKeys[];
   return pickColumns(cols, keys);
-})() satisfies MembershipBaseSelect;
+})();
