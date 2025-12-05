@@ -24,7 +24,7 @@ type Story = StoryObj;
 export const Default: Story = {
   render: () => {
     const [tags, setTags] = useState(['react', 'typescript', 'storybook']);
-    return <TagInput tags={tags} setTags={setTags} placeholder="Add a tag..." showCount={true} tagListPlacement="bottom" />;
+    return <TagInput tags={tags} setTags={setTags} placeholder="Add a tag..." showCount={true} />;
   },
 };
 
@@ -34,7 +34,7 @@ export const Default: Story = {
 export const WithMaxTags: Story = {
   render: () => {
     const [tags, setTags] = useState(['frontend', 'backend', 'database']);
-    return <TagInput tags={tags} setTags={setTags} maxTags={5} showCount={true} placeholder="Add up to 5 tags..." tagListPlacement="bottom" />;
+    return <TagInput tags={tags} setTags={setTags} maxTags={5} showCount={true} placeholder="Add up to 5 tags..." />;
   },
 };
 
@@ -44,9 +44,7 @@ export const WithMaxTags: Story = {
 export const WithLengthValidation: Story = {
   render: () => {
     const [tags, setTags] = useState(['short', 'medium-length', 'very-long-tag-example']);
-    return (
-      <TagInput tags={tags} setTags={setTags} minLength={3} maxLength={20} placeholder="Tags must be 3-20 characters" tagListPlacement="bottom" />
-    );
+    return <TagInput tags={tags} setTags={setTags} minLength={3} maxLength={20} placeholder="Tags must be 3-20 characters" />;
   },
 };
 
@@ -56,37 +54,7 @@ export const WithLengthValidation: Story = {
 export const WithClearAll: Story = {
   render: () => {
     const [tags, setTags] = useState(['important', 'urgent', 'review', 'pending']);
-    return <TagInput tags={tags} setTags={setTags} showClearAllButton={true} placeholder="Add tags..." tagListPlacement="bottom" />;
-  },
-};
-
-/**
- * Vertical tag layout for better organization of many tags.
- */
-export const VerticalLayout: Story = {
-  render: () => {
-    const [tags, setTags] = useState(['category-1', 'category-2', 'category-3', 'category-4']);
-    return <TagInput tags={tags} setTags={setTags} direction="column" placeholder="Add tags..." tagListPlacement="bottom" />;
-  },
-};
-
-/**
- * Tag input with tags placed inside the input field.
- */
-export const InsideInput: Story = {
-  render: () => {
-    const [tags, setTags] = useState(['react', 'vue', 'angular']);
-    return <TagInput tags={tags} setTags={setTags} tagListPlacement="inside" placeholder="Add tags..." />;
-  },
-};
-
-/**
- * Tag input with tags placed above the input field.
- */
-export const TopPlacement: Story = {
-  render: () => {
-    const [tags, setTags] = useState(['design', 'development', 'testing']);
-    return <TagInput tags={tags} setTags={setTags} tagListPlacement="top" placeholder="Add tags..." />;
+    return <TagInput tags={tags} setTags={setTags} showClearAllButton={true} placeholder="Add tags..." />;
   },
 };
 
@@ -101,7 +69,6 @@ export const CustomStyling: Story = {
         tags={tags}
         setTags={setTags}
         placeholder="Add tags..."
-        tagListPlacement="bottom"
         badgeVariants={{ variant: 'secondary' }}
         styleClasses={{
           tagList: 'gap-2',
@@ -121,7 +88,7 @@ export const CustomStyling: Story = {
 export const WithTruncation: Story = {
   render: () => {
     const [tags, setTags] = useState(['very-long-tag-name-that-should-be-truncated', 'another-extremely-long-tag-for-testing-purposes', 'short']);
-    return <TagInput tags={tags} setTags={setTags} truncate={15} placeholder="Add tags..." tagListPlacement="bottom" />;
+    return <TagInput tags={tags} setTags={setTags} truncate={15} placeholder="Add tags..." />;
   },
 };
 
@@ -131,7 +98,7 @@ export const WithTruncation: Story = {
 export const AddOnBlur: Story = {
   render: () => {
     const [tags, setTags] = useState(['existing-tag']);
-    return <TagInput tags={tags} setTags={setTags} addTagsOnBlur={true} placeholder="Type and click away to add tag" tagListPlacement="bottom" />;
+    return <TagInput tags={tags} setTags={setTags} addTagsOnBlur={true} placeholder="Type and click away to add tag" />;
   },
 };
 
@@ -147,15 +114,7 @@ export const CustomValidation: Story = {
       return /^[a-zA-Z0-9-]+$/.test(tag);
     };
 
-    return (
-      <TagInput
-        tags={tags}
-        setTags={setTags}
-        validateTag={validateTag}
-        placeholder="Only alphanumeric characters and hyphens allowed"
-        tagListPlacement="bottom"
-      />
-    );
+    return <TagInput tags={tags} setTags={setTags} validateTag={validateTag} placeholder="Only alphanumeric characters and hyphens allowed" />;
   },
 };
 
@@ -170,7 +129,7 @@ export const WithTagClick: Story = {
       alert(`Clicked tag: ${tag}`);
     };
 
-    return <TagInput tags={tags} setTags={setTags} onTagClick={handleTagClick} placeholder="Click on tags to interact" tagListPlacement="bottom" />;
+    return <TagInput tags={tags} setTags={setTags} onTagClick={handleTagClick} placeholder="Click on tags to interact" />;
   },
 };
 
@@ -180,7 +139,7 @@ export const WithTagClick: Story = {
 export const Empty: Story = {
   render: () => {
     const [tags, setTags] = useState<string[]>([]);
-    return <TagInput tags={tags} setTags={setTags} placeholder="Start typing to add tags..." tagListPlacement="bottom" />;
+    return <TagInput tags={tags} setTags={setTags} placeholder="Start typing to add tags..." />;
   },
 };
 
@@ -222,7 +181,6 @@ export const FullFeatured: Story = {
           addOnPaste={true}
           addTagsOnBlur={true}
           truncate={20}
-          tagListPlacement="bottom"
           badgeVariants={{ variant: 'outline' }}
           onTagAdd={handleTagAdd}
           onTagRemove={handleTagRemove}

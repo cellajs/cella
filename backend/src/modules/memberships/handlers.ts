@@ -337,18 +337,18 @@ const membershipRouteHandlers = app
       );
     }
 
-    // // TODO: what is the status of this code? Check create restrictions
-    // const [{ currentOrgMemberships }] = await db
-    //   .select({ currentOrgMemberships: count() })
-    //   .from(membershipsTable)
-    //   .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
-    // const membersRestrictions = organization.restrictions.user;
-    // if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
-    //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
-    // }
-
-    // Step 9:  Only count successful pending invites, not direct adds or rejections
     const invitesSentCount = insertedInactiveMemberships.length;
+
+    // Check restrictions: max members in organization
+    const [{ currentOrgMemberships }] = await db
+      .select({ currentOrgMemberships: count() })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+
+    const membersRestrictions = organization.restrictions.user;
+    if (membersRestrictions !== 0 && currentOrgMemberships + invitesSentCount > membersRestrictions) {
+      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
+    }
 
     logEvent('info', 'Users invited on entity level', { count: invitesSentCount, entityType, [targetEntityIdField]: entityId });
 

@@ -88,6 +88,7 @@ const attachmentsRouteHandlers = app
     const organization = getContextOrganization();
     const attachmentRestrictions = organization.restrictions.attachment;
 
+    // Check restriction limits
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }

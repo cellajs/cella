@@ -257,7 +257,7 @@ const BlockNote = ({
     else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
 
-  // TODO Autofocus issue (BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
+  // TODO(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
     if (!editable || !editor) return;
 

@@ -57,7 +57,7 @@ export const customSchema = BlockNoteSchema.create().extend({
       indentLineWithTab: true,
       supportedLanguages,
       defaultLanguage: 'text',
-      // TODO (BLOCKING) Blocknote type err
+      // TODO(BLOCKING) Blocknote type err
       createHighlighter: codeBlockOptions.createHighlighter as any,
     }),
   },
