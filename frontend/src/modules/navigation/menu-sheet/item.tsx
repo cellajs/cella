@@ -46,7 +46,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeProps={{ 'data-link-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
-        'data-[link-active=true]:ring-transparent active:translate-y-[.05rem]',
+        'data-[link-active=true]:ring-transparent data-[link-active=true]:font-medium active:translate-y-[.05rem]',
         className,
       )}
     >
@@ -79,7 +79,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
               </span>
             </span>
           )}
-          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 pointer-events-none sm:group-hover/menuItem:opacity-100">
+          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 absolute z-[-1] sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
               : item.membership.role

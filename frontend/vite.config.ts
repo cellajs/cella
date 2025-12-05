@@ -172,7 +172,7 @@ if (appConfig.mode === 'development' && !isStorybook) {
       srcDir: path.resolve(__dirname, '../locales'),
       outDir: path.resolve(__dirname, '../.vscode/.locales-cache'),
       merge: { target: 'common', sources: ['app'] },
-      verbose: true,
+      verbose: false,
     }),
     i18nextHMRPlugin({ localesDir: '../locales' }),
     watchBackendOpenApi(),
