@@ -1,6 +1,4 @@
 import { type BackoffOptions, type ChangeMessage, type ExternalParamsRecord, FetchError, type Row } from '@electric-sql/client';
-import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
-import { ApiError } from '~/lib/api';
 import { useSyncStore } from '~/store/sync';
 
 // Convert camelCase to snake_case
@@ -73,14 +71,9 @@ export const handleSyncError = (error: Error, storePrefix: string, params: Exter
       return;
     }
 
-    // Handle generic backend sync error response
-    const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
+    const message = error.message ?? 'Unknown error during sync';
 
-    const apiError = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown error during sync', ...responseJson });
-
-    const errorMessage = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
-
-    console.warn(errorMessage);
+    console.warn(message);
     return;
   }
 
