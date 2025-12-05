@@ -109,7 +109,6 @@ const Combobox = ({
           <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
-      {/* TODO has scaling effect issue */}
       <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
         <Command shouldFilter={false}>
           {!isMobile && (

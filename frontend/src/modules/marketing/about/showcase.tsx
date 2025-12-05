@@ -42,7 +42,7 @@ const Showcase = () => {
                         />
                       </h3>
                     </a>
-                    <p className="leading-relaxed font-light">{t(text)}</p>
+                    <p className="leading-relaxed">{t(text)}</p>
                   </div>
                 </div>
               </div>

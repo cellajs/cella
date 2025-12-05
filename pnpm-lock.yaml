@@ -275,6 +275,40 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  cli/create-cella:
+    dependencies:
+      '@inquirer/prompts':
+        specifier: ^6.0.1
+        version: 6.0.1
+      axios:
+        specifier: ^1.8.3
+        version: 1.12.2
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      cross-spawn:
+        specifier: ^7.0.6
+        version: 7.0.6
+      giget:
+        specifier: ^1.2.3
+        version: 1.2.5
+      picocolors:
+        specifier: ^1.1.0
+        version: 1.1.1
+      validate-npm-package-name:
+        specifier: ^5.0.1
+        version: 5.0.1
+      yocto-spinner:
+        specifier: ^0.1.0
+        version: 0.1.2
+    devDependencies:
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.0(@swc/core@1.7.26)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.2)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.6
+
   cli/sync:
     dependencies:
       '@inquirer/prompts':
@@ -316,40 +350,6 @@ importers:
         version: 7.7.1
       tsx:
         specifier: ^4.20.3
-        version: 4.20.6
-
-  cli/create-cella:
-    dependencies:
-      '@inquirer/prompts':
-        specifier: ^6.0.1
-        version: 6.0.1
-      axios:
-        specifier: ^1.8.3
-        version: 1.12.2
-      commander:
-        specifier: ^12.1.0
-        version: 12.1.0
-      cross-spawn:
-        specifier: ^7.0.6
-        version: 7.0.6
-      giget:
-        specifier: ^1.2.3
-        version: 1.2.5
-      picocolors:
-        specifier: ^1.1.0
-        version: 1.1.1
-      validate-npm-package-name:
-        specifier: ^5.0.1
-        version: 5.0.1
-      yocto-spinner:
-        specifier: ^0.1.0
-        version: 0.1.2
-    devDependencies:
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.0(@swc/core@1.7.26)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.2)
-      tsx:
-        specifier: ^4.19.2
         version: 4.20.6
 
   cli/sync-cella:
@@ -505,8 +505,8 @@ importers:
         specifier: ^1.2.4
         version: 1.2.4(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@sentry/react':
-        specifier: ^10.28.0
-        version: 10.28.0(react@19.2.1)
+        specifier: ^10.29.0
+        version: 10.29.0(react@19.2.1)
       '@t3-oss/env-core':
         specifier: ^0.13.8
         version: 0.13.8(arktype@2.1.20)(typescript@5.9.3)(valibot@1.2.0(typescript@5.9.3))(zod@4.1.12)
@@ -514,17 +514,17 @@ importers:
         specifier: ^0.5.19
         version: 0.5.19(tailwindcss@4.1.17)
       '@tanstack/query-sync-storage-persister':
-        specifier: ^5.90.13
-        version: 5.90.13
+        specifier: ^5.90.14
+        version: 5.90.14
       '@tanstack/react-query':
-        specifier: ^5.90.11
-        version: 5.90.11(react@19.2.1)
+        specifier: ^5.90.12
+        version: 5.90.12(react@19.2.1)
       '@tanstack/react-query-devtools':
         specifier: ^5.91.1
-        version: 5.91.1(@tanstack/react-query@5.90.11(react@19.2.1))(react@19.2.1)
+        version: 5.91.1(@tanstack/react-query@5.90.12(react@19.2.1))(react@19.2.1)
       '@tanstack/react-query-persist-client':
-        specifier: ^5.90.13
-        version: 5.90.13(@tanstack/react-query@5.90.11(react@19.2.1))(react@19.2.1)
+        specifier: ^5.90.14
+        version: 5.90.14(@tanstack/react-query@5.90.12(react@19.2.1))(react@19.2.1)
       '@tanstack/react-router':
         specifier: ^1.139.14
         version: 1.139.14(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -658,8 +658,8 @@ importers:
         specifier: 4.8.69
         version: 4.8.69
       player.style:
-        specifier: ^0.3.0
-        version: 0.3.0(react@19.2.1)
+        specifier: ^0.3.1
+        version: 0.3.1(react@19.2.1)
       qrcode.react:
         specifier: ^4.2.0
         version: 4.2.0(react@19.2.1)
@@ -813,7 +813,7 @@ importers:
         version: 3.2.4(playwright@1.57.0)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4)
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(@vitest/browser@3.2.4(playwright@1.56.1)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@3.2.4))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.1)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@27.2.0(canvas@3.2.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)
       babel-plugin-react-compiler:
         specifier: 19.1.0-rc.3
         version: 19.1.0-rc.3
@@ -2599,6 +2599,7 @@ packages:
 
   '@evilmartians/lefthook@1.13.6':
     resolution: {integrity: sha512-79vplrUBWL4Fkt59YkEBdSpqBVhNrY8t5+jEp+wX5QbsmbQLcSULqwS7FmbNRyECa2LWMrUWpe6ENIfNwB4jiw==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -5029,32 +5030,32 @@ packages:
     resolution: {integrity: sha512-/ZqxUvKeEztU9drOoPC/8opEPOk+jLlB2q4+xpx6HVLq6aFu3pMpalkTpAQz8XfRfpLp8O25bh6pGPcHDCYpqg==}
     engines: {node: '>=12.*'}
 
-  '@sentry-internal/browser-utils@10.28.0':
-    resolution: {integrity: sha512-FYcslFXo+Lq5/9/G83NSVK2vQlcXRkbJ6AHrMwZyPv1Qd9KJ08qoZo4buxMv63MzYDicNF591HBAqCxsv5gXsA==}
+  '@sentry-internal/browser-utils@10.29.0':
+    resolution: {integrity: sha512-M3kycMY6f3KY9a8jDYac+yG0E3ZgWVWSxlOEC5MhYyX+g7mqxkwrb3LFQyuxSm/m+CCgMTCaPOOaB2twXP6EQg==}
     engines: {node: '>=18'}
 
-  '@sentry-internal/feedback@10.28.0':
-    resolution: {integrity: sha512-vIv59ZN7Ig/oa6se/qGR69Odx3SQRoW2sIcbmJpxbjRF44Re0ZLFk6vBB3AyUvU3Lqnvabbw3y5AAwJt7Z//ug==}
+  '@sentry-internal/feedback@10.29.0':
+    resolution: {integrity: sha512-Y7IRsNeS99cEONu1mZWZc3HvbjNnu59Hgymm0swFFKbdgbCgdT6l85kn2oLsuq4Ew8Dw/pL/Sgpwsl9UgYFpUg==}
     engines: {node: '>=18'}
 
   '@sentry-internal/node-cpu-profiler@2.2.0':
     resolution: {integrity: sha512-oLHVYurqZfADPh5hvmQYS5qx8t0UZzT2u6+/68VXsFruQEOnYJTODKgU3BVLmemRs3WE6kCJjPeFdHVYOQGSzQ==}
     engines: {node: '>=18'}
 
-  '@sentry-internal/replay-canvas@10.28.0':
-    resolution: {integrity: sha512-/5KnIJXms0DHiqwOsND23fBMIJ1wUzAH5DiGHdY5yHGQTYy9BmVgUxW/Pv57kXqkgA3nBvE38z5Nu6+Cq6uixw==}
+  '@sentry-internal/replay-canvas@10.29.0':
+    resolution: {integrity: sha512-typY4JrpAQQGPuSyd/BD8+nNCbvTV2UVvKzr+iKgI0m1qc4Dz8tHZ4Nfais2Z8eYn/pL1kqVQN5ERTmJoYFdIw==}
     engines: {node: '>=18'}
 
-  '@sentry-internal/replay@10.28.0':
-    resolution: {integrity: sha512-umFBdM5eVJJYnUbrjrSJdjfqs21OMDz5pJtNPTNO8+KjTNSMg/QozBkEyaQZEEfdjYZy9MAcwfQPDPfEMvfUuQ==}
+  '@sentry-internal/replay@10.29.0':
+    resolution: {integrity: sha512-45NVw9PwB9TQ8z+xJ6G6Za+wmQ1RTA35heBSzR6U4bknj8LmA04k2iwnobvxCBEQXeLfcJEO1vFgagMoqMZMBw==}
     engines: {node: '>=18'}
 
   '@sentry/babel-plugin-component-annotate@4.6.1':
     resolution: {integrity: sha512-aSIk0vgBqv7PhX6/Eov+vlI4puCE0bRXzUG5HdCsHBpAfeMkI8Hva6kSOusnzKqs8bf04hU7s3Sf0XxGTj/1AA==}
     engines: {node: '>= 14'}
 
-  '@sentry/browser@10.28.0':
-    resolution: {integrity: sha512-OJY5L/2IDB82Eh5Ko83I9YgBN45VBtFi0TFUxSrVDcdeha1tC9YS/975U294K9T2B0kKG65jF8JkWa6x3Gi6HA==}
+  '@sentry/browser@10.29.0':
+    resolution: {integrity: sha512-XdbyIR6F4qoR9Z1JCWTgunVcTJjS9p2Th+v4wYs4ME+ZdLC4tuKKmRgYg3YdSIWCn1CBfIgdI6wqETSf7H6Njw==}
     engines: {node: '>=18'}
 
   '@sentry/bundler-plugin-core@4.6.1':
@@ -5113,8 +5114,8 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
-  '@sentry/core@10.28.0':
-    resolution: {integrity: sha512-9yFIPxyfWkDzt+IaRjboeNiXOKi22ZRGG3ELmZlLak8JCC+vA+q/+AmF/8Jnw59WlL3/KVC1Q8+t8bLCkxlswg==}
+  '@sentry/core@10.29.0':
+    resolution: {integrity: sha512-olQ2DU9dA/Bwsz3PtA9KNXRMqBWRQSkPw+MxwWEoU1K1qtiM9L0j6lbEFb5iSY3d7WYD5MB+1d5COugjSBrHtw==}
     engines: {node: '>=18'}
 
   '@sentry/core@9.47.1':
@@ -5152,8 +5153,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@sentry/react@10.28.0':
-    resolution: {integrity: sha512-n8RCgjqoRh4R9B39jvAUMwRCs2eTIG96CZStZ5TMcRozQyOQ92Cj+aWRrX70nMjoyN3SVI1aLJ6wKB8Lqyw89A==}
+  '@sentry/react@10.29.0':
+    resolution: {integrity: sha512-YGaEUXubzil7qssD1koh1fyt0aS8tHB61/6+oNShJ6xZPg03AB42bNMr2/y8fIFx36kb3MiCA5sFoH/ubF0LnQ==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^16.14.0 || 17.x || 18.x || 19.x
@@ -5713,17 +5714,17 @@ packages:
     resolution: {integrity: sha512-l6wcxwDBeh/7Dhles23U1O8lp9kNJmAb2yNjekR6olZwCRNAVA8TCXlVCrueELyFlYZqvQkh0ofxnzG62A1Kkg==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.90.11':
-    resolution: {integrity: sha512-f9z/nXhCgWDF4lHqgIE30jxLe4sYv15QodfdPDKYAk7nAEjNcndy4dHz3ezhdUaR23BpWa4I2EH4/DZ0//Uf8A==}
+  '@tanstack/query-core@5.90.12':
+    resolution: {integrity: sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg==}
 
   '@tanstack/query-devtools@5.91.1':
     resolution: {integrity: sha512-l8bxjk6BMsCaVQH6NzQEE/bEgFy1hAs5qbgXl0xhzezlaQbPk6Mgz9BqEg2vTLPOHD8N4k+w/gdgCbEzecGyNg==}
 
-  '@tanstack/query-persist-client-core@5.91.10':
-    resolution: {integrity: sha512-oZQk/kap5jHx2w+JcSI6CvDFXR5jmAldqJsH5IEQizVOEwaRlCyYEBZ3Df56HXNxW4spWX0cjhI/4o+mnCGtHw==}
+  '@tanstack/query-persist-client-core@5.91.11':
+    resolution: {integrity: sha512-NNpRGxQY/nVOdzfs5QbevPjGsUVoEiFwqxxaopLyu6todwtDOCfIOfhXSmpMVXBiCxUn7kqaUB1iwaBKqoAVRQ==}
 
-  '@tanstack/query-sync-storage-persister@5.90.13':
-    resolution: {integrity: sha512-ysJFlPzQat1FyXKiKx+bK1kDiF0zdHgZV5Kc3V7rw6w5Uz7shaiQaAmp3VJoZXl63diE4mErFBSra/z+6iBigg==}
+  '@tanstack/query-sync-storage-persister@5.90.14':
+    resolution: {integrity: sha512-gqQy7VFNUcFnD61mr1sqvMLdL3MXrTzMmjuQqRVyItb9FgEKzMSyBfo8cLZPiWWrz29eAVlQs1rEYUNLZRRMqg==}
 
   '@tanstack/react-query-devtools@5.91.1':
     resolution: {integrity: sha512-tRnJYwEbH0kAOuToy8Ew7bJw1lX3AjkkgSlf/vzb+NpnqmHPdWM+lA2DSdGQSLi1SU0PDRrrCI1vnZnci96CsQ==}
@@ -5731,14 +5732,14 @@ packages:
       '@tanstack/react-query': ^5.90.10
       react: ^18 || ^19
 
-  '@tanstack/react-query-persist-client@5.90.13':
-    resolution: {integrity: sha512-04R+o/su8wuqlEvUl6dJLLI8auUCFCCJ2qGfELPSJSE4mF0HOh+ZtmsDRuLXA/jBMyV6X2RZLrZTMRWNgWM4gw==}
+  '@tanstack/react-query-persist-client@5.90.14':
+    resolution: {integrity: sha512-jTGnr/DBlzV/UYqU+b8bZWECBuqh3Q3g7Ih50IktZkvmwTUsidQhhl2JyknNYVZkl5AgMfPAywNKZLTI82wmlA==}
     peerDependencies:
-      '@tanstack/react-query': ^5.90.11
+      '@tanstack/react-query': ^5.90.12
       react: ^18 || ^19
 
-  '@tanstack/react-query@5.90.11':
-    resolution: {integrity: sha512-3uyzz01D1fkTLXuxF3JfoJoHQMU2fxsfJwE+6N5hHy0dVNoZOvwKP8Z2k7k1KDeD54N20apcJnG75TBAStIrBA==}
+  '@tanstack/react-query@5.90.12':
+    resolution: {integrity: sha512-graRZspg7EoEaw0a8faiUASCyJrqjKPdqJ9EwuDRUF9mEYJ1YPczI9H+/agJ0mOJkPCJDk0lsz5QTrLZ/jQ2rg==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -6709,8 +6710,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.9.0:
-    resolution: {integrity: sha512-Mh++g+2LPfzZToywfE1BUzvZbfOY52Nil0rn9H1CPC5DJ7fX+Vir7nToBeoiSbB1zTNeGYbELEvJESujgGrzXw==}
+  baseline-browser-mapping@2.9.2:
+    resolution: {integrity: sha512-PxSsosKQjI38iXkmb3d0Y32efqyA0uW4s41u4IVBsLlWLhCiYNpH/AfNOVWRqCQBlD8TFJTz6OUWNd4DFJCnmw==}
     hasBin: true
 
   bcp-47-match@2.0.3:
@@ -7508,8 +7509,8 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  electron-to-chromium@1.5.264:
-    resolution: {integrity: sha512-1tEf0nLgltC3iy9wtlYDlQDc5Rg9lEKVjEmIHJ21rI9OcqkvD45K1oyNIRA4rR1z3LgJ7KeGzEBojVcV6m4qjA==}
+  electron-to-chromium@1.5.266:
+    resolution: {integrity: sha512-kgWEglXvkEfMH7rxP5OSZZwnaDWT7J9EoZCujhnpLbfi0bbNtRkgdX2E3gt0Uer11c61qCYktB3hwkAS325sJg==}
 
   embla-carousel-autoplay@8.6.0:
     resolution: {integrity: sha512-OBu5G3nwaSXkZCo1A6LTaFMZ8EpkYbwIaH+bPqdBnDGQ2fh4+NbzjXjs2SktoPNKCtflfVMc75njaDHOYXcrsA==}
@@ -9030,8 +9031,8 @@ packages:
   mdurl@2.0.0:
     resolution: {integrity: sha512-Lf+9+2r+Tdp5wXDXC4PcIBjTDtq4UKjCPMQhKIuzpJNW0b96kVqSwW0bT7FhRSfmAiFYgP+SCRvdrDozfh0U5w==}
 
-  media-chrome@4.14.0:
-    resolution: {integrity: sha512-IEdFb4blyF15vLvQzLIn6USJBv7Kf2ne+TfLQKBYI5Z0f9VEBVZz5MKy4Uhi0iA9lStl2S9ENIujJRuJIa5OiA==}
+  media-chrome@4.16.1:
+    resolution: {integrity: sha512-qtFlsy0lNDVCyVo//ZCAfRPKwgehfOYp6rThZzDUuZ5ypv41yqUfAxK+P9TOs+XSVWXATPTT2WRV0fbW0BH4vQ==}
 
   merge-refs@1.3.0:
     resolution: {integrity: sha512-nqXPXbso+1dcKDpPCXvwZyJILz+vSLqGGOnDrYHQYE+B8n9JTCekVLC65AfCpR4ggVyA/45Y0iR9LDyS2iI+zA==}
@@ -9630,8 +9631,8 @@ packages:
   pkg-types@2.3.0:
     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
 
-  player.style@0.3.0:
-    resolution: {integrity: sha512-ny1TbqA2ZsUd6jzN+F034+UMXVK7n5SrwepsrZ2gIqVz00Hn0ohCUbbUdst/2IOFCy0oiTbaOXkSFxRw1RmSlg==}
+  player.style@0.3.1:
+    resolution: {integrity: sha512-z/T8hJGaTkHT9vdXgWdOgF37eB1FV7/j52VXQZ2lgEhpru9oT8TaUWIxp6GoxTnhPBM4X6nSbpkAHrT7UTjUKg==}
 
   playwright-core@1.57.0:
     resolution: {integrity: sha512-agTcKlMw/mjBWOnD6kFZttAAGHgi/Nw0CZ2o6JqWSbMlI219lAFLZZCyqByTsvVAJq5XA5H8cA6PrvBRpBWEuQ==}
@@ -11235,8 +11236,8 @@ packages:
     resolution: {integrity: sha512-aZwGpamFO61g3OlfT7OQCHqhGnW43ieH9WZeP7QxN/G/jS4jfqUkZxoryvJgVPEcrl5NL/ggHsSmLMHuH64Lhg==}
     engines: {node: '>=4'}
 
-  update-browserslist-db@1.2.1:
-    resolution: {integrity: sha512-R9NcHbbZ45RoWfTdhn1J9SS7zxNvlddv4YRrHTUaFdtjbmfncfedB45EC9IaqJQ97iAR1GZgOfyRQO+ExIF6EQ==}
+  update-browserslist-db@1.2.2:
+    resolution: {integrity: sha512-E85pfNzMQ9jpKkA7+TJAi4TJN+tBCuWh5rUcS/sv6cFi+1q9LYDwDI5dpUL0u/73EElyQ8d3TEaeW4sPedBqYA==}
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
@@ -16213,38 +16214,38 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@sentry-internal/browser-utils@10.28.0':
+  '@sentry-internal/browser-utils@10.29.0':
     dependencies:
-      '@sentry/core': 10.28.0
+      '@sentry/core': 10.29.0
 
-  '@sentry-internal/feedback@10.28.0':
+  '@sentry-internal/feedback@10.29.0':
     dependencies:
-      '@sentry/core': 10.28.0
+      '@sentry/core': 10.29.0
 
   '@sentry-internal/node-cpu-profiler@2.2.0':
     dependencies:
       detect-libc: 2.1.2
       node-abi: 3.85.0
 
-  '@sentry-internal/replay-canvas@10.28.0':
+  '@sentry-internal/replay-canvas@10.29.0':
     dependencies:
-      '@sentry-internal/replay': 10.28.0
-      '@sentry/core': 10.28.0
+      '@sentry-internal/replay': 10.29.0
+      '@sentry/core': 10.29.0
 
-  '@sentry-internal/replay@10.28.0':
+  '@sentry-internal/replay@10.29.0':
     dependencies:
-      '@sentry-internal/browser-utils': 10.28.0
-      '@sentry/core': 10.28.0
+      '@sentry-internal/browser-utils': 10.29.0
+      '@sentry/core': 10.29.0
 
   '@sentry/babel-plugin-component-annotate@4.6.1': {}
 
-  '@sentry/browser@10.28.0':
+  '@sentry/browser@10.29.0':
     dependencies:
-      '@sentry-internal/browser-utils': 10.28.0
-      '@sentry-internal/feedback': 10.28.0
-      '@sentry-internal/replay': 10.28.0
-      '@sentry-internal/replay-canvas': 10.28.0
-      '@sentry/core': 10.28.0
+      '@sentry-internal/browser-utils': 10.29.0
+      '@sentry-internal/feedback': 10.29.0
+      '@sentry-internal/replay': 10.29.0
+      '@sentry-internal/replay-canvas': 10.29.0
+      '@sentry/core': 10.29.0
 
   '@sentry/bundler-plugin-core@4.6.1':
     dependencies:
@@ -16304,7 +16305,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@sentry/core@10.28.0': {}
+  '@sentry/core@10.29.0': {}
 
   '@sentry/core@9.47.1': {}
 
@@ -16378,10 +16379,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@sentry/react@10.28.0(react@19.2.1)':
+  '@sentry/react@10.29.0(react@19.2.1)':
     dependencies:
-      '@sentry/browser': 10.28.0
-      '@sentry/core': 10.28.0
+      '@sentry/browser': 10.29.0
+      '@sentry/core': 10.29.0
       hoist-non-react-statics: 3.3.2
       react: 19.2.1
 
@@ -17052,34 +17053,34 @@ snapshots:
 
   '@tanstack/history@1.139.0': {}
 
-  '@tanstack/query-core@5.90.11': {}
+  '@tanstack/query-core@5.90.12': {}
 
   '@tanstack/query-devtools@5.91.1': {}
 
-  '@tanstack/query-persist-client-core@5.91.10':
+  '@tanstack/query-persist-client-core@5.91.11':
     dependencies:
-      '@tanstack/query-core': 5.90.11
+      '@tanstack/query-core': 5.90.12
 
-  '@tanstack/query-sync-storage-persister@5.90.13':
+  '@tanstack/query-sync-storage-persister@5.90.14':
     dependencies:
-      '@tanstack/query-core': 5.90.11
-      '@tanstack/query-persist-client-core': 5.91.10
+      '@tanstack/query-core': 5.90.12
+      '@tanstack/query-persist-client-core': 5.91.11
 
-  '@tanstack/react-query-devtools@5.91.1(@tanstack/react-query@5.90.11(react@19.2.1))(react@19.2.1)':
+  '@tanstack/react-query-devtools@5.91.1(@tanstack/react-query@5.90.12(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@tanstack/query-devtools': 5.91.1
-      '@tanstack/react-query': 5.90.11(react@19.2.1)
+      '@tanstack/react-query': 5.90.12(react@19.2.1)
       react: 19.2.1
 
-  '@tanstack/react-query-persist-client@5.90.13(@tanstack/react-query@5.90.11(react@19.2.1))(react@19.2.1)':
+  '@tanstack/react-query-persist-client@5.90.14(@tanstack/react-query@5.90.12(react@19.2.1))(react@19.2.1)':
     dependencies:
-      '@tanstack/query-persist-client-core': 5.91.10
-      '@tanstack/react-query': 5.90.11(react@19.2.1)
+      '@tanstack/query-persist-client-core': 5.91.11
+      '@tanstack/react-query': 5.90.12(react@19.2.1)
       react: 19.2.1
 
-  '@tanstack/react-query@5.90.11(react@19.2.1)':
+  '@tanstack/react-query@5.90.12(react@19.2.1)':
     dependencies:
-      '@tanstack/query-core': 5.90.11
+      '@tanstack/query-core': 5.90.12
       react: 19.2.1
 
   '@tanstack/react-router-devtools@1.139.14(@tanstack/react-router@1.139.14(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(@tanstack/router-core@1.139.14)(@types/node@24.10.1)(csstype@3.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(solid-js@1.9.9)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)':
@@ -17937,7 +17938,7 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/coverage-v8@3.2.4(@vitest/browser@3.2.4(playwright@1.56.1)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@3.2.4))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.1)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@27.2.0(canvas@3.2.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))':
+  '@vitest/coverage-v8@3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -18288,7 +18289,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.9.0: {}
+  baseline-browser-mapping@2.9.2: {}
 
   bcp-47-match@2.0.3: {}
 
@@ -18345,11 +18346,11 @@ snapshots:
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.9.0
+      baseline-browser-mapping: 2.9.2
       caniuse-lite: 1.0.30001759
-      electron-to-chromium: 1.5.264
+      electron-to-chromium: 1.5.266
       node-releases: 2.0.27
-      update-browserslist-db: 1.2.1(browserslist@4.28.1)
+      update-browserslist-db: 1.2.2(browserslist@4.28.1)
 
   buffer-equal-constant-time@1.0.1: {}
 
@@ -19016,7 +19017,7 @@ snapshots:
     dependencies:
       jake: 10.9.4
 
-  electron-to-chromium@1.5.264: {}
+  electron-to-chromium@1.5.266: {}
 
   embla-carousel-autoplay@8.6.0(embla-carousel@8.6.0):
     dependencies:
@@ -20970,7 +20971,7 @@ snapshots:
 
   mdurl@2.0.0: {}
 
-  media-chrome@4.14.0(react@19.2.1):
+  media-chrome@4.16.1(react@19.2.1):
     dependencies:
       ce-la-react: 0.3.2(react@19.2.1)
     transitivePeerDependencies:
@@ -21682,9 +21683,9 @@ snapshots:
       exsolve: 1.0.8
       pathe: 2.0.3
 
-  player.style@0.3.0(react@19.2.1):
+  player.style@0.3.1(react@19.2.1):
     dependencies:
-      media-chrome: 4.14.0(react@19.2.1)
+      media-chrome: 4.16.1(react@19.2.1)
     transitivePeerDependencies:
       - react
 
@@ -23619,7 +23620,7 @@ snapshots:
 
   upath@1.2.0: {}
 
-  update-browserslist-db@1.2.1(browserslist@4.28.1):
+  update-browserslist-db@1.2.2(browserslist@4.28.1):
     dependencies:
       browserslist: 4.28.1
       escalade: 3.2.0

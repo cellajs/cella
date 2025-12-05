@@ -75,7 +75,7 @@ const AboutPage = () => {
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
             aria-label="Read more"
           >
-            <span className="font-light">{t('about:why')}</span>
+            <span className="font-normal">{t('about:why')}</span>
             <ArrowDownIcon size={16} className="ml-2 animate-bounce" />
           </Link>
         </Hero>

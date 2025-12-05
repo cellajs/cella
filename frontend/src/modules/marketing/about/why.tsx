@@ -23,7 +23,7 @@ const Why = () => {
                   </div>
                   <div className="w-full">
                     <h3 className="mb-2 text-xl font-medium 2xl:text-[1.38rem]">{t(title)}</h3>
-                    <p className="leading-relaxed font-light">{t(text)}</p>
+                    <p className="leading-relaxed">{t(text)}</p>
                   </div>
                 </div>
               </div>
