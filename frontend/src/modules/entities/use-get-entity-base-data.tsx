@@ -42,19 +42,23 @@ export function useGetEntityBaseData(args: { idOrSlug: string; entityType: Conte
     for (const [, cachedData] of queries) {
       if (!cachedData) continue;
 
-      // TODO(DAVID): add comments to explain each case
+      // 1: Standard query data with items array
       if (isQueryData<WithIdSlug>(cachedData)) {
         const found = cachedData.items.find(matchEntity);
         if (found) return found;
       } else if (isInfiniteQueryData<WithIdSlug>(cachedData)) {
+        // 2: Infinite query data with paginated items
         const found = cachedData.pages.flatMap(({ items }) => items).find(matchEntity);
         if (found) return found;
       } else if (typeof cachedData === 'object') {
+        // 3: Generic object - check all values for arrays or single entities
         for (const value of Object.values(cachedData)) {
           if (Array.isArray(value)) {
+            // 3a: Array of entities
             const found = (value as WithIdSlug[]).find(matchEntity);
             if (found) return found;
           } else if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+            // 3b: Single entity object
             if (matchEntity(value as WithIdSlug)) return value;
           }
         }

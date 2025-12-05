@@ -1,4 +1,3 @@
-// TODO how can we import appConfig here without causing build issues?
 import { config } from '../../../config/default';
 import type { TsdocPlugin } from './types';
 

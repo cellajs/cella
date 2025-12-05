@@ -1,9 +1,15 @@
 import type { HeadingOptions } from '@blocknote/core';
+import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import type { Member } from '~/modules/memberships/types';
+
+// Extendable Blocknote types interface
+export interface ExtendableBlocknoteTypes {
+  SlashKeys: DefaultSuggestionItem['key'] | 'notify';
+}
 
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;

@@ -29,20 +29,17 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
     const { live, handle, offset, cursor, where, table } = ctx.req.valid('query');
 
-    // TODO(DAVID): introducing toastMessage for this seems overkill, can we simplify by using dedicated type? `table_mismatch`, `organization_required`, `organization_mismatch`?
     if (table !== 'attachments') {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
+      throw new AppError({ status: 403, type: 'sync_table_mismatch', severity: 'warn' });
     }
 
-    if (!where)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: no organization ID provided.' } });
+    if (!where) throw new AppError({ status: 403, type: 'sync_organization_required', severity: 'warn' });
     // Extract organization IDs from `where` clause
     const [requestedOrganizationId] = [...where.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
     const organization = getContextOrganization();
 
     // Only allow validated organization ID
-    if (requestedOrganizationId !== organization.id)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
+    if (requestedOrganizationId !== organization.id) throw new AppError({ status: 403, type: 'sync_organization_mismatch', severity: 'warn' });
 
     // Construct the upstream URL
     const originUrl = new URL(`${appConfig.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
