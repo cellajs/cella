@@ -17,9 +17,6 @@ export const booleanTransformSchema = z
 /** Enum schema for entity types */
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
-/** Enum schema for page entity types */
-export const pageEntityTypeSchema = z.enum(appConfig.pageEntityTypes);
-
 /** Enum schema for context entity types */
 export const contextEntityTypeSchema = z.enum(appConfig.contextEntityTypes);
 

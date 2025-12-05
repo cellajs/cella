@@ -8,23 +8,17 @@ const pageInsertSchema = createInsertSchema(pagesTable);
 export type Page = z.infer<typeof pageSelectSchema>;
 const pageSelectSchema = createSelectSchema(pagesTable);
 
-export const pagesInsertManySchema = z
-  .array(
-    pageInsertSchema.omit({
-      modifiedAt: true,
-      modifiedBy: true,
-      createdAt: true,
-      createdBy: true,
-    }),
-  )
-  .min(1)
-  .max(50);
+export const pageCreateBodySchema = pageInsertSchema.omit({
+  modifiedAt: true,
+  modifiedBy: true,
+  createdAt: true,
+  createdBy: true,
+});
 
-export const pageUpdateSchema = pageInsertSchema
+export const pageUpdateBodySchema = pageInsertSchema
   .pick({
-    slug: true,
-    title: true,
-    content: true,
+    name: true,
+    description: true,
     keywords: true,
     displayOrder: true,
     status: true,

@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { SaveIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createPages, type Page } from '~/api.gen';
-import { zCreatePagesData } from '~/api.gen/zod.gen';
+import { createPage, type Page } from '~/api.gen';
+import { zCreatePageData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import Spinner from '~/modules/common/spinner';
@@ -14,13 +14,12 @@ import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 import { nanoid } from '~/utils/nanoid';
 import { CallbackArgs } from '../common/data-table/types';
 import InputFormField from '../common/form-fields/input';
-import { SlugFormField } from '../common/form-fields/slug';
 import { toaster } from '../common/toaster/service';
 import { Button, SubmitButton } from '../ui/button';
 import { Separator } from '../ui/separator';
 
 // type FormValues = z.infer<typeof schema>;
-const schema = zCreatePagesData.shape.body.unwrap();
+const schema = zCreatePageData.shape.body;
 
 type CreatePageFormProps = {
   organizationId: string;
@@ -30,14 +29,14 @@ type CreatePageFormProps = {
   // children?: React.ReactNode;
 };
 
-type PageData = Partial<Page> & Pick<Page, 'title' | 'content' | 'keywords'>;
+type PageData = Partial<Page> & Pick<Page, 'name' | 'description' | 'keywords'>;
 
-const createPage = (pageData: PageData, createdBy: string): Page => {
+// TODO can we get this derived from zod schema?
+const prepareCreatePage = (pageData: PageData, createdBy: string): Page => {
   const createdAt = new Date().toISOString();
   return {
     id: nanoid(),
     entityType: 'page',
-    slug: pageData.slug ?? pageData.title.toLowerCase().split(' ').join('-'),
     status: 'unpublished',
     parentId: null,
     displayOrder: 0,
@@ -52,19 +51,19 @@ const createPage = (pageData: PageData, createdBy: string): Page => {
 export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirection }: CreatePageFormProps) => {
   const { t } = useTranslation();
 
-  const isFocused = true; // grab from context?
+  const isFocused = true; // TODO grab from context?
 
+  // TODO can we offload this to the blocknote component
   const blocknoteId = useRef(`blocknote-${nanoid()}`);
 
-  const formContainerId = 'create-organization';
+  const formContainerId = 'create-page';
   const form = useFormWithDraft(formContainerId, {
     formOptions: {
       resolver: zodResolver(schema),
       defaultValues: {
         id: nanoid(),
-        slug: '',
-        title: '',
-        content: '',
+        name: '',
+        description: '',
         keywords: '',
         status: 'unpublished',
         parentId: null,
@@ -75,33 +74,35 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
 
   const isDirty = form.isDirty
     ? (() => {
-        const { slug, title, content } = form.watch();
-        return [slug, title].some((s) => s.length) || blocknoteFieldIsDirty(content);
+        const { name, description } = form.watch();
+        return [name].some((s) => s?.length) || blocknoteFieldIsDirty(description ?? '');
       })()
     : false;
 
   const mutation = useTableMutation({
     table: 'pages',
     type: 'create',
-    mutationFn: async (body: Page[]) => {
+    mutationFn: async (body: Page) => {
       console.log(body);
-      return await createPages({ body });
+      return await createPage({ body: body });
     },
   });
 
   const { user } = useUserStore();
   const handleSubmit = form.handleSubmit((data) => {
-    const page = createPage(
+    // TODO
+    const page = prepareCreatePage(
       {
         entityType: 'page',
-        ...data,
-        keywords: 'test-tag', //
-        status: 'unpublished', //
+        name: data.name || '',
+        description: data.description,
+        keywords: 'test-tag',
+        status: 'unpublished',
       },
       user.id,
     );
 
-    return mutation.mutate([page], {
+    return mutation.mutate(page, {
       onSuccess: ([data]) => {
         form.reset();
         toaster(t('common:success.create_newsletter'), 'success');
@@ -116,42 +117,17 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
       <form onSubmit={handleSubmit} className="space-y-6">
         <InputFormField
           control={form.control}
-          name="title"
+          name="name"
           label={t('common:title')}
           // placeholder={t('common:placeholder.subject')}
           required
           inputClassName="font-bold"
         />
-        {/* debounce */}
-        <SlugFormField
-          control={form.control}
-          entityType="organization"
-          label="Slug"
-          // label={t('common:resource_handle', { resource: t('common:organization') })}
-          // description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
-          nameValue={form.watch('slug')}
-        />
-        {/* <FormField
-          control={form.control}
-          name="keywords"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t('common:roles')}
-                <span className="ml-1 opacity-50">*</span>
-              </FormLabel>
-              <FormControl>
-                <SelectRoles {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
         <Separator />
         <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
           <BlockNoteContent
             control={form.control}
-            name="content"
+            name="description"
             baseBlockNoteProps={{
               id: blocknoteId.current,
               editable: isFocused || isDialog,
@@ -164,10 +140,6 @@ export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirect
             }}
           />
         </Suspense>
-
-        {/* <AlertWrap id="test-email" variant="plain" icon={InfoIcon}>
-          {t('common:test_email.text')}
-        </AlertWrap> */}
 
         <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
           <SubmitButton disabled={!isDirty} loading={mutation.isPending}>

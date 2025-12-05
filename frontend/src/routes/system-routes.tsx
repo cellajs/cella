@@ -1,6 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
+import PagesTable from '~/modules/pages/table';
 import SystemPage from '~/modules/system/system-page';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { organizationsRouteSearchParamsSchema, requestsRouteSearchParamsSchema, usersRouteSearchParamsSchema } from '~/routes/search-params-schemas';
@@ -62,6 +63,20 @@ export const RequestsTableRoute = createRoute({
   component: () => (
     <Suspense>
       <RequestsTable />
+    </Suspense>
+  ),
+});
+
+export const PagesTableRoute = createRoute({
+  path: '/pages',
+  validateSearch: requestsRouteSearchParamsSchema,
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: appTitle('Pages') }] }),
+  getParentRoute: () => SystemRoute,
+  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  component: () => (
+    <Suspense>
+      <PagesTable />
     </Suspense>
   ),
 });

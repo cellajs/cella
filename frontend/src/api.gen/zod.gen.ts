@@ -130,8 +130,9 @@ export const zInactiveMembership = z.object({
 export const zAttachment = z.object({
   createdAt: z.string(),
   id: z.string(),
-  name: z.string(),
   entityType: z.enum(['attachment']),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
   public: z.boolean(),
   bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
@@ -260,16 +261,15 @@ export const zTooManyRequestsError = zApiError.and(
 );
 
 export const zPage = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['page']),
-  slug: z.string(),
-  title: z.string(),
-  content: z.string(),
+  name: z.string(),
+  description: z.string(),
   keywords: z.string(),
   status: z.enum(['unpublished', 'published', 'archived']),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-  createdAt: z.string(),
   createdBy: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.string(),
@@ -1051,10 +1051,7 @@ export const zDeletePagesData = z.object({
 /**
  * Page(s) deleted
  */
-export const zDeletePagesResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const zDeletePagesResponse = z.void();
 
 export const zGetPagesData = z.object({
   body: z.optional(z.never()),
@@ -1078,31 +1075,25 @@ export const zGetPagesResponse = z.object({
   total: z.number(),
 });
 
-export const zCreatePagesData = z.object({
-  body: z
-    .array(
-      z.object({
-        id: z.optional(z.string()),
-        entityType: z.optional(z.enum(['page'])),
-        slug: z.string(),
-        title: z.string(),
-        content: z.string(),
-        keywords: z.string(),
-        status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
-        parentId: z.optional(z.union([z.string(), z.null()])),
-        displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-      }),
-    )
-    .min(1)
-    .max(50),
+export const zCreatePageData = z.object({
+  body: z.object({
+    id: z.optional(z.string()),
+    entityType: z.optional(z.enum(['page'])),
+    name: z.optional(z.string()),
+    description: z.string(),
+    keywords: z.string(),
+    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
+    parentId: z.optional(z.union([z.string(), z.null()])),
+    displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
+  }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
 });
 
 /**
- * Page(s)
+ * Page
  */
-export const zCreatePagesResponse = z.array(zPage);
+export const zCreatePageResponse = z.array(zPage);
 
 export const zGetPageData = z.object({
   body: z.optional(z.never()),
@@ -1119,9 +1110,8 @@ export const zGetPageResponse = zPage;
 
 export const zUpdatePageData = z.object({
   body: z.object({
-    slug: z.optional(z.string()),
-    title: z.optional(z.string()),
-    content: z.optional(z.string()),
+    name: z.optional(z.string()),
+    description: z.optional(z.string()),
     keywords: z.optional(z.string()),
     displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
     status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
@@ -1197,7 +1187,7 @@ export const zGetContextEntityResponse = zContextEntityBase;
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),
-    entityType: z.enum(['user', 'organization', 'attachment', 'page']),
+    entityType: z.enum(['user', 'organization']),
   }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -1431,6 +1421,7 @@ export const zCreateAttachmentData = z.object({
     .array(
       z.object({
         id: z.optional(z.string()),
+        description: z.optional(z.union([z.string(), z.null()])),
         public: z.optional(z.boolean()),
         bucketName: z.string(),
         groupId: z.optional(z.union([z.string(), z.null()])),

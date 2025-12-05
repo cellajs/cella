@@ -27,20 +27,18 @@ const attachmentsRouteHandlers = app
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
-    const query = ctx.req.valid('query');
-    const { where, table } = query;
+    const { table, ...query } = ctx.req.valid('query');
 
-    if (table !== 'attachments') {
-      throw new AppError({ status: 403, type: 'sync_table_mismatch', severity: 'warn' });
-    }
+    // Validate query params
+    if (table !== 'attachments') throw new AppError({ status: 400, type: 'sync_table_mismatch', severity: 'error' });
+    if (!query.where) throw new AppError({ status: 400, type: 'sync_organization_required', severity: 'error' });
 
-    if (!where) throw new AppError({ status: 403, type: 'sync_organization_required', severity: 'warn' });
     // Extract organization IDs from `where` clause
-    const [requestedOrganizationId] = [...where.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
+    const [requestedOrganizationId] = [...query.where.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
     const organization = getContextOrganization();
 
     // Only allow validated organization ID
-    if (requestedOrganizationId !== organization.id) throw new AppError({ status: 403, type: 'sync_organization_mismatch', severity: 'warn' });
+    if (requestedOrganizationId !== organization.id) throw new AppError({ status: 400, type: 'sync_organization_mismatch', severity: 'error' });
 
     return await proxyElectricSync(table, query, 'attachment');
   })

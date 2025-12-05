@@ -132,8 +132,9 @@ export type InactiveMembership = {
 export type Attachment = {
   createdAt: string;
   id: string;
-  name: string;
   entityType: 'attachment';
+  name: string;
+  description: string | null;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -245,16 +246,15 @@ export type TooManyRequestsError = ApiError & {
 };
 
 export type Page = {
+  createdAt: string;
   id: string;
   entityType: 'page';
-  slug: string;
-  title: string;
-  content: string;
+  name: string;
+  description: string;
   keywords: string;
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
-  createdAt: string;
   createdBy: string;
   modifiedAt: string | null;
   modifiedBy: string;
@@ -2421,10 +2421,7 @@ export type DeletePagesResponses = {
   /**
    * Page(s) deleted
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
-  };
+  204: void;
 };
 
 export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
@@ -2479,24 +2476,23 @@ export type GetPagesResponses = {
 
 export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
-export type CreatePagesData = {
-  body: Array<{
+export type CreatePageData = {
+  body: {
     id?: string;
     entityType?: 'page';
-    slug: string;
-    title: string;
-    content: string;
+    name?: string;
+    description: string;
     keywords: string;
     status?: 'unpublished' | 'published' | 'archived';
     parentId?: string | null;
     displayOrder: number;
-  }>;
+  };
   path?: never;
   query?: never;
   url: '/pages';
 };
 
-export type CreatePagesErrors = {
+export type CreatePageErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2519,16 +2515,16 @@ export type CreatePagesErrors = {
   429: TooManyRequestsError;
 };
 
-export type CreatePagesError = CreatePagesErrors[keyof CreatePagesErrors];
+export type CreatePageError = CreatePageErrors[keyof CreatePageErrors];
 
-export type CreatePagesResponses = {
+export type CreatePageResponses = {
   /**
-   * Page(s)
+   * Page
    */
   201: Array<Page>;
 };
 
-export type CreatePagesResponse = CreatePagesResponses[keyof CreatePagesResponses];
+export type CreatePageResponse = CreatePageResponses[keyof CreatePageResponses];
 
 export type GetPageData = {
   body?: never;
@@ -2575,9 +2571,8 @@ export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
 
 export type UpdatePageData = {
   body: {
-    slug?: string;
-    title?: string;
-    content?: string;
+    name?: string;
+    description?: string;
     keywords?: string;
     displayOrder?: number;
     status?: 'unpublished' | 'published' | 'archived';
@@ -2739,7 +2734,7 @@ export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContex
 export type CheckSlugData = {
   body: {
     slug: string;
-    entityType: 'user' | 'organization' | 'attachment' | 'page';
+    entityType: 'user' | 'organization';
   };
   path?: never;
   query?: never;
@@ -3354,6 +3349,7 @@ export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachment
 export type CreateAttachmentData = {
   body: Array<{
     id?: string;
+    description?: string | null;
     public?: boolean;
     bucketName: string;
     groupId?: string | null;

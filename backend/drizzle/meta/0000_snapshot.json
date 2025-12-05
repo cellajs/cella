@@ -1,5 +1,5 @@
 {
-  "id": "37f065cd-ee1e-4e1a-b82b-95d25a001fb6",
+  "id": "d8b39f2e-0ce9-4245-bece-0301c608942c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -21,19 +21,25 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'attachment'"
-        },
         "entity_type": {
           "name": "entity_type",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
           "default": "'attachment'"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'New attachment'"
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "public": {
           "name": "public",
@@ -300,8 +306,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
         "user_id": {
           "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_id": {
+          "name": "token_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -330,6 +348,12 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "unique_key": {
+          "name": "unique_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -345,6 +369,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "inactive_memberships_token_id_tokens_id_fk": {
+          "name": "inactive_memberships_token_id_tokens_id_fk",
+          "tableFrom": "inactive_memberships",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "token_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "inactive_memberships_created_by_users_id_fk": {
@@ -375,7 +412,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "inactive_memberships_uniqueKey_unique": {
+          "name": "inactive_memberships_uniqueKey_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "unique_key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -459,6 +504,12 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "unique_key": {
+          "name": "unique_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -517,7 +568,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "memberships_uniqueKey_unique": {
+          "name": "memberships_uniqueKey_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "unique_key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -700,7 +759,7 @@
           "type": "json",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{\"user\":1000,\"attachment\":100}'::json"
+          "default": "'{\"user\":1000,\"attachment\":100,\"page\":0}'::json"
         },
         "notification_email": {
           "name": "notification_email",
@@ -839,6 +898,144 @@
           "nullsNotDistinct": false,
           "columns": [
             "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pages": {
+      "name": "pages",
+      "schema": "",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'page'"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'New page'"
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "keywords": {
+          "name": "keywords",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unpublished'"
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modified_at": {
+          "name": "modified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modified_by": {
+          "name": "modified_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pages_parent_id_pages_id_fk": {
+          "name": "pages_parent_id_pages_id_fk",
+          "tableFrom": "pages",
+          "tableTo": "pages",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "pages_created_by_users_id_fk": {
+          "name": "pages_created_by_users_id_fk",
+          "tableFrom": "pages",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "pages_modified_by_users_id_fk": {
+          "name": "pages_modified_by_users_id_fk",
+          "tableFrom": "pages",
+          "tableTo": "users",
+          "columnsFrom": [
+            "modified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "group_order": {
+          "name": "group_order",
+          "nullsNotDistinct": false,
+          "columns": [
+            "parent_id",
+            "display_order"
           ]
         }
       },
@@ -1357,19 +1554,6 @@
           "tableTo": "oauth_accounts",
           "columnsFrom": [
             "oauth_account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "tokens_inactive_membership_id_inactive_memberships_id_fk": {
-          "name": "tokens_inactive_membership_id_inactive_memberships_id_fk",
-          "tableFrom": "tokens",
-          "tableTo": "inactive_memberships",
-          "columnsFrom": [
-            "inactive_membership_id"
           ],
           "columnsTo": [
             "id"

@@ -35,3 +35,8 @@ export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
     .optional()
     .transform((val) => val === 'true'),
 });
+
+export const checkSlugBodySchema = z.object({
+  slug: z.string(),
+  entityType: z.enum(['user', ...appConfig.contextEntityTypes]),
+});

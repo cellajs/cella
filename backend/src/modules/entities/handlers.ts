@@ -167,7 +167,7 @@ const entityRouteHandlers = app
     return ctx.json(entity, 200);
   })
   /**
-   * Check if slug is available
+   * Check if slug is available among page entities (context entities + users)
    */
   .openapi(entityRoutes.checkSlug, async (ctx) => {
     const { slug, entityType } = ctx.req.valid('json');

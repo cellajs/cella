@@ -17,6 +17,9 @@ import { searchUsersQueryOptions } from '~/modules/users/query';
 import { getEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';
 
+// Define searchable entity types
+const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
+
 export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -152,7 +155,7 @@ export const AppSearch = () => {
               ))}
             </CommandGroup>
           )}
-          {appConfig.pageEntityTypes.map((entityType) => (
+          {searchableEntityTypes.map((entityType) => (
             <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} onSelect={onSelectItem} />
           ))}
         </CommandList>

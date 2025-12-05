@@ -15,9 +15,9 @@ import type {
   CreateOrganizationData,
   CreateOrganizationErrors,
   CreateOrganizationResponses,
-  CreatePagesData,
-  CreatePagesErrors,
-  CreatePagesResponses,
+  CreatePageData,
+  CreatePageErrors,
+  CreatePageResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -1541,7 +1541,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Delete pages
  *
- * 🛡️ Requires authentication
+ * 🛡️ Requires authentication (system access)
  *
  * Delete one or more *pages* by ID.
  *
@@ -1549,7 +1549,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
  *
  * @param {deletePagesData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
   (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
@@ -1572,7 +1572,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Get pages
  *
- * 🛡️ Requires authentication
+ * 🌐 Public access
  *
  * Get all matching *pages*.
  *
@@ -1589,13 +1589,6 @@ export const deletePages = <ThrowOnError extends boolean = true>(options: Option
 export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) =>
   (options?.client ?? client).get<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/pages',
     ...options,
   });
@@ -1603,17 +1596,25 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
 /**
  * Create pages
  *
- * 🛡️ Requires authentication
+ * 🛡️ Requires authentication (system access)
  *
  * Insert one or more new *pages*.
  *
- * **POST /pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
+ * **POST /pages** ·· [createPage](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
  *
- * @param {createPagesData} options
+ * @param {createPageData} options
+ * @param {string=} options.body.id - `string` (optional)
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.description - `string` (optional)
+ * @param {string=} options.body.keywords - `string` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.parentId - `string | null` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createPages = <ThrowOnError extends boolean = true>(options: Options<CreatePagesData, ThrowOnError>) =>
-  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
+export const createPage = <ThrowOnError extends boolean = true>(options: Options<CreatePageData, ThrowOnError>) =>
+  (options.client ?? client).post<CreatePageResponses, CreatePageErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1633,7 +1634,7 @@ export const createPages = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Get page
  *
- * 🛡️ Requires authentication
+ * 🌐 Public access
  *
  * Get a single *page* by ID.
  *
@@ -1646,13 +1647,6 @@ export const createPages = <ThrowOnError extends boolean = true>(options: Option
 export const getPage = <ThrowOnError extends boolean = true>(options: Options<GetPageData, ThrowOnError>) =>
   (options.client ?? client).get<GetPageResponses, GetPageErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/pages/{id}',
     ...options,
   });
@@ -1660,7 +1654,7 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
 /**
  * Update page
  *
- * 🛡️ Requires authentication
+ * 🛡️ Requires authentication (system access)
  *
  * Update a single *page* by ID.
  *
@@ -1668,9 +1662,8 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  *
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
- * @param {string=} options.body.slug - `string` (optional)
- * @param {string=} options.body.title - `string` (optional)
- * @param {string=} options.body.content - `string` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.description - `string` (optional)
  * @param {string=} options.body.keywords - `string` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @param {enum=} options.body.status - `enum` (optional)

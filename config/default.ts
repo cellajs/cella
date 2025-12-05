@@ -172,11 +172,6 @@ The documentation is generated from source code using \`zod\` schemas, converted
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
   /**
-   * Page entity types (pages with memberships + users)
-   */
-  pageEntityTypes: ['user', 'organization'] as const,
-
-  /**
    * Context entity types (memberships)
    */
   contextEntityTypes: ['organization'] as const,

@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { appConfig, type EntityType } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
@@ -18,7 +18,7 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  entityType: EntityType;
+  entityType: ContextEntityType | 'user';
 };
 
 export const SlugFormField = <TFieldValues extends FieldValues>({

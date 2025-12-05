@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { contextEntitiesQuerySchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
+import { checkSlugBodySchema, contextEntitiesQuerySchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
-import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema } from '#/utils/schema/common';
+import { contextEntityTypeSchema, entityParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
 
@@ -20,7 +20,7 @@ const entityRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: z.object({ slug: slugSchema, entityType: entityTypeSchema }) } },
+        content: { 'application/json': { schema: checkSlugBodySchema } },
       },
     },
     responses: {

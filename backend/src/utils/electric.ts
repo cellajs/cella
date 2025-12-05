@@ -68,6 +68,7 @@ export const proxyElectricSync = async (table: string, query: ElectricUrlQuery, 
     return new Response(body, { status, statusText, headers: safeHeaders });
   } catch (cause) {
     const error = cause instanceof Error ? cause : new Error('Unknown electric error', { cause });
+
     throw new AppError({
       name: error.name,
       message: error.message,

@@ -1,10 +1,10 @@
 import z from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
-import { isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { baseElectrycSyncQuery, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
-import { pageListQuerySchema, pageSchema, pagesInsertManySchema, pageUpdateSchema } from './schema';
+import { paginationSchema } from '#/utils/schema/success-responses';
+import { pageCreateBodySchema, pageListQuerySchema, pageSchema, pageUpdateBodySchema } from './schema';
 
 const pagesRoutes = {
   /**
@@ -14,7 +14,7 @@ const pagesRoutes = {
     operationId: 'shapeProxy',
     method: 'get',
     path: '/shape-proxy',
-    guard: [isAuthenticated], // hasOrgAccess
+    guard: [isAuthenticated],
     tags: ['pages'],
     summary: 'Shape proxy',
     description: `Proxy requests to ElectricSQL's shape endpoint for the \`pages\` table.
@@ -29,24 +29,23 @@ const pagesRoutes = {
   /**
    * Create Pages
    */
-  createPages: createCustomRoute({
-    operationId: 'createPages',
+  createPage: createCustomRoute({
+    operationId: 'createPage',
     method: 'post',
     path: '/',
-    guard: [isAuthenticated], // hasOrgAccess
+    guard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Create pages',
     description: 'Insert one or more new *pages*.',
     request: {
-      // params: inOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: pagesInsertManySchema } },
+        content: { 'application/json': { schema: pageCreateBodySchema } },
       },
     },
     responses: {
       201: {
-        description: 'Page(s)',
+        description: 'Page',
         content: {
           'application/json': {
             schema: pageSchema.array(),
@@ -63,12 +62,11 @@ const pagesRoutes = {
     operationId: 'getPages',
     method: 'get',
     path: '/',
-    guard: [isAuthenticated], // hasOrgAccess?
+    guard: [isPublicAccess],
     tags: ['pages'],
     summary: 'Get pages',
     description: 'Get all matching *pages*.',
     request: {
-      // params: inOrgParamSchema,
       query: pageListQuerySchema,
     },
     responses: {
@@ -84,18 +82,17 @@ const pagesRoutes = {
     },
   }),
   /**
-   * Get Page
+   * Get page
    */
   getPage: createCustomRoute({
     operationId: 'getPage',
     method: 'get',
     path: '/{id}',
-    guard: [isAuthenticated], // hasOrgAccess
+    guard: [isPublicAccess],
     tags: ['pages'],
     summary: 'Get page',
     description: 'Get a single *page* by ID.',
     request: {
-      // params: idInOrgParamSchema,
       params: z.object({
         id: z.string(),
       }),
@@ -103,75 +100,58 @@ const pagesRoutes = {
     responses: {
       200: {
         description: 'Page',
-        content: {
-          'application/json': {
-            schema: pageSchema,
-          },
-        },
+        content: { 'application/json': { schema: pageSchema } },
       },
       ...errorResponseRefs,
     },
   }),
   /**
-   * Update Page
+   * Update page
    */
   updatePage: createCustomRoute({
     operationId: 'updatePage',
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated], // hasOrgAccess
+    guard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Update page',
     description: 'Update a single *page* by ID.',
     request: {
-      // params: idInOrgParamSchema,
       params: z.object({
         id: z.string(),
       }),
       body: {
         required: true,
-        content: { 'application/json': { schema: pageUpdateSchema } },
+        content: { 'application/json': { schema: pageUpdateBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'Page updated',
-        content: {
-          'application/json': {
-            schema: pageSchema,
-          },
-        },
+        content: { 'application/json': { schema: pageSchema } },
       },
       ...errorResponseRefs,
     },
   }),
   /**
-   * Delete Page
+   * Delete page
    */
   deletePages: createCustomRoute({
     operationId: 'deletePages',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated], // hasOrgAccess
+    guard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Delete pages',
     description: 'Delete one or more *pages* by ID.',
     request: {
-      // params: idInOrgParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {
-      200: {
-        description: 'Page(s) deleted',
-        content: {
-          'application/json': {
-            schema: successWithRejectedItemsSchema,
-          },
-        },
-      },
+      204: { description: 'Page(s) deleted' },
       ...errorResponseRefs,
     },
   }),

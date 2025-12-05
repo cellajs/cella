@@ -3,19 +3,16 @@ import { and, count, eq, getTableColumns, ilike, inArray, or, SQL } from 'drizzl
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import pagesRoutes from '#/modules/pages/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
-import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { proxyElectricSync } from '#/utils/electric';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { Page } from './schema';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -29,68 +26,37 @@ const pagesRouteHandlers = app
   .openapi(pagesRoutes.shapeProxy, async (ctx) => {
     const { table, ...query } = ctx.req.valid('query');
 
-    if (table !== 'pages') {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
-    }
-
-    if (!query.where) {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: no organization ID provided.' } });
-    }
-
-    // validate organization?
+    // Validate query params
+    if (table !== 'pages') throw new AppError({ status: 400, type: 'sync_table_mismatch', severity: 'error' });
 
     return await proxyElectricSync(table, query);
   })
   /**
-   * Create Page(s)
+   * Create page
    */
-  .openapi(pagesRoutes.createPages, async (ctx) => {
-    const user = getContextUser();
-    // const organization = getContextOrganization();
-    // const limit = organization.restrictions.page;
-
+  .openapi(pagesRoutes.createPage, async (ctx) => {
     const pageData = ctx.req.valid('json');
 
-    // if (restrictions && newPages.length > restrictions) {
-    //   throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'page' });
-    // }
+    const user = getContextUser();
 
-    // get count of matching pages, and check against restrictions
+    const newPage = {
+      createdBy: user.id,
+      modifiedBy: user.id,
+      ...pageData,
+    };
 
-    const inserts: Omit<Page, 'createdAt' | 'modifiedAt'>[] = [];
-    for (const newPage of pageData) {
-      const slugAvailable = await checkSlugAvailable(newPage.slug);
-      if (!slugAvailable) {
-        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'page', meta: { slug: newPage.slug } });
-      }
+    const [pageRecord] = await db.insert(pagesTable).values(newPage).returning();
 
-      inserts.push({
-        id: nanoid(),
-        entityType: 'page',
-        status: 'unpublished',
-        parentId: null,
-        createdBy: user.id,
-        modifiedBy: user.id,
-        ...newPage,
-      });
-    }
+    logEvent('info', `A new ${pageRecord.status} page was created`);
 
-    const pages = await db.insert(pagesTable).values(inserts).returning();
-
-    logEvent('info', `${pages.length} page(s) created`);
-
-    return ctx.json(pages, 201);
+    return ctx.json(pageRecord, 201);
   })
   /**
    * Get Pages
    */
   .openapi(pagesRoutes.getPages, async (ctx) => {
-    // const user = getContextUser();
-    // const organization = getContextOrganization();
-
     const {
       q,
-      // orgIdOrSlug,
       // pageId,
       sort,
       order,
@@ -120,17 +86,17 @@ const pagesRouteHandlers = app
       const qFilters =
         matchMode === 'all' || searchTerms.length === 1
           ? [
-              ilike(pagesTable.title, queryToken),
+              ilike(pagesTable.name, queryToken),
               ilike(pagesTable.keywords, queryToken),
-              ilike(pagesTable.content, queryToken),
+              ilike(pagesTable.description, queryToken),
               ilike(usersTable.name, queryToken),
               ilike(usersTable.email, queryToken),
             ]
           : [
               // this seems stricter
-              inArray(pagesTable.title, searchTerms),
+              inArray(pagesTable.name, searchTerms),
               inArray(pagesTable.keywords, searchTerms), // hm
-              inArray(pagesTable.content, searchTerms),
+              inArray(pagesTable.description, searchTerms),
               inArray(usersTable.name, searchTerms),
               inArray(usersTable.email, searchTerms),
             ];
@@ -155,12 +121,7 @@ const pagesRouteHandlers = app
       .select(getTableColumns(pagesTable))
       .from(pagesTable)
       .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
-      .where(
-        and(
-          // eq(pagesTable.organizationId, organizationId),
-          or(...filters),
-        ),
-      );
+      .where(and(or(...filters)));
 
     const promises: [Promise<Page[]>, Promise<number>] = [
       pagesQuery.orderBy(orderColumn).limit(limit).offset(offset),
@@ -217,19 +178,11 @@ const pagesRouteHandlers = app
     const { ids } = ctx.req.valid('json');
     if (!ids.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'page' });
 
-    const memberships = getContextMemberships();
-    // Distinguish which pages the user is allowed to delete
-    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'page', ids, memberships);
-
-    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'page' });
-
-    const filter = allowedIds.length === 1 ? eq(pagesTable.id, allowedIds[0]) : inArray(pagesTable.id, allowedIds);
-
-    await db.delete(pagesTable).where(filter);
+    await db.delete(pagesTable).where(inArray(pagesTable.id, ids));
 
     logEvent('info', 'Page(s) deleted', ids);
 
-    return ctx.json({ success: true, rejectedItems }, 200);
+    return ctx.body(null, 204);
   });
 
 export default pagesRouteHandlers;

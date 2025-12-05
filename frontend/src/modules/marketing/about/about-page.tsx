@@ -72,11 +72,11 @@ const AboutPage = () => {
                 navigate({ hash: 'why', replace: true });
               }, 20);
             }}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'group')}
             aria-label="Read more"
           >
-            <span className="font-normal">{t('about:why')}</span>
-            <ArrowDownIcon size={16} className="ml-2 animate-bounce" />
+            <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>
+            <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
           </Link>
         </Hero>
 

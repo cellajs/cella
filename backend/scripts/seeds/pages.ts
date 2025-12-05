@@ -15,9 +15,8 @@ seed(db, { pages: pagesTable })
       columns: {
         id: f.uuid(),
         entityType: f.valuesFromArray({ values: ['page'] }),
-        slug: f.uuid(),
-        title: f.jobTitle(), //
-        content: f.default({ 
+        name: f.jobTitle(), //
+        description: f.default({
           defaultValue: JSON.stringify([{
             content: [{ type: "text", text: LOREM_IPSUM, styles: {} }],
             children: [],

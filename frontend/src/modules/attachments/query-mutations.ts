@@ -66,6 +66,7 @@ export const useAttachmentCreateMutation = () =>
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entityType: 'attachment',
+          description: '',
           createdAt: new Date().toISOString(),
           createdBy: null,
           modifiedAt: new Date().toISOString(),
@@ -166,6 +167,7 @@ export const useAttachmentUpdateMutation = () =>
         // TODO(IMPROVE)offline update responce(add createdAt/By, groupId into the file?)
         const localAttachment: Attachment = {
           id: file.id,
+          description: '',
           size: String(file.data?.size ?? 0),
           url: file.preview || '',
           thumbnailUrl: null,

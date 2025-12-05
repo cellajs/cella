@@ -41,6 +41,8 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
+          // TODO
+          // @ts-ignore
           to="/pages"
           draggable="false"
           tabIndex={tabIndex}
@@ -55,7 +57,7 @@ export const usePagesTableColumns = (isCompact: boolean) => {
             url={row.thumbnailUrl}
           /> */}
           <span className="group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
-            {row.title}
+            {row.name}
           </span>
         </Link>
       ),
@@ -123,7 +125,7 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        const content = parseBlocksText(row.content);
+        const content = parseBlocksText(row.description || '');
         return <span className="font-medium">{content.slice(0, 50) || '-'}</span>;
       },
     },

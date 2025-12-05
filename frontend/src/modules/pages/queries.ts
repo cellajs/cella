@@ -100,9 +100,9 @@ export const filterPages = (query: UseSearchResult<RegisteredRouter, undefined, 
   }
 
   return [
-    item.title.toLowerCase(),
+    item.name.toLowerCase(),
     item.keywords.toLowerCase(),
-    parseBlocksText(item.content),
+    parseBlocksText(item.description),
     // match author
   ].some((item) => {
     return matchMode === 'all' ? item.includes(raw) : keywords.some((w) => item.includes(w));
