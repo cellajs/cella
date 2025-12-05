@@ -296,8 +296,17 @@ export async function gitCommit(
   message: string,
   options?: { noVerify?: boolean }
 ): Promise<string> {
-  const noVerifyFlag = options?.noVerify ? '--no-verify' : '';
-  return runGitCommand(['commit', noVerifyFlag, '-m', message].filter(Boolean), repoPath);
+  const args = ['commit'];
+
+  if (options?.noVerify) {
+    args.push('--no-verify');
+  }
+
+  for (const line of message.split('\n')) {
+    args.push('-m', line);
+  }
+
+  return runGitCommand(args, repoPath);
 }
 
 /**
