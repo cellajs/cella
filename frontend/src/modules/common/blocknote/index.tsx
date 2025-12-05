@@ -60,7 +60,6 @@ type BlockNoteProps =
       user?: never;
     });
 
-// TODO ensure code block highliht works and shadCn components
 const BlockNote = ({
   id,
   type,
