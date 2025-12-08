@@ -41,7 +41,8 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
   if (action === 'deleteMany') toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
-// TODO(tanstakDB) add abort
+
+// TODO(tanstackDB) add abort
 export const initAttachmentsCollection = (orgIdOrSlug: string) =>
   createCollection(
     electricCollectionOptions({
@@ -55,10 +56,11 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
         fetchClient: clientConfig.fetch,
         onError: (error) => handleSyncError(error),
       },
+      syncMode: 'progressive',
       onInsert: async ({ transaction }) => {
         const newAttachments = transaction.mutations.map(({ modified }) => modified);
         try {
-          // TODO(tanstakDB) fix types (mb wait till v1)
+          // TODO(tanstackDB) fix types (mb wait till v1)
           await createAttachment({ body: newAttachments as unknown as AttachmentToInsert[], path: { orgIdOrSlug } });
           const message =
             newAttachments.length === 1

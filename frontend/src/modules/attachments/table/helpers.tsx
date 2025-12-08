@@ -1,4 +1,3 @@
-import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { t } from 'i18next';
@@ -12,15 +11,17 @@ const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
 export const useAttachmentsUploadDialog = () => {
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const open = (organizationId: string) => {
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
 
-      const collection = appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
+      //  TODO(tanstackDB) add offline handle
+      //       const collection = appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
+      const collection = attachmentsCollection;
 
-      // TODO(tanstakDB) fix types (mb wait till v1)
+      // TODO(tanstackDB) fix types (mb wait till v1)
       collection.insert(attachments as unknown as Attachment[]);
       useUploader.getState().remove();
     };
