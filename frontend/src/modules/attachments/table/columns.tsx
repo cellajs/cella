@@ -5,7 +5,7 @@ import { CloudIcon, CloudOffIcon, CopyCheckIcon, CopyIcon, DownloadIcon, TrashIc
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
-import type { Attachment } from '~/api.gen';
+import { type Attachment, getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
@@ -45,41 +45,47 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId, convertedUrl }, tabIndex }) => {
+      renderCell: ({ row: { id, filename, contentType, groupId }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
-        if (!thumbnailUrl && !convertedUrl && !url?.startsWith('blob:http'))
-          return (
-            <div className="flex space-x-2 items-center justify-center w-full h-full">
-              <AttachmentPreview id={id} url={url} name={filename} contentType={contentType} />
-            </div>
-          );
-
         return (
-          <Link
-            to={url}
-            ref={cellRef}
-            draggable="false"
-            tabIndex={tabIndex}
-            className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey) return;
-              e.preventDefault();
-
-              // Store trigger to bring focus back
-              setTriggerRef(id, cellRef);
-
-              navigate({
-                to: '.',
-                replace: false,
-                resetScroll: false,
-                search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined }),
-              });
-            }}
-          >
-            <AttachmentPreview id={id} url={thumbnailUrl ?? url} name={filename} contentType={contentType} />
-          </Link>
+          <div className="flex space-x-2 items-center justify-center w-full h-full">
+            <AttachmentPreview id={id} url={'url'} name={filename} contentType={contentType} />
+          </div>
         );
+        // TODO(tanstackDB) add preview
+        // if (!thumbnailUrl && !convertedUrl && !url?.startsWith('blob:http'))
+        //   return (
+        //     <div className="flex space-x-2 items-center justify-center w-full h-full">
+        //       <AttachmentPreview id={id} url={url} name={filename} contentType={contentType} />
+        //     </div>
+        //   );
+
+        // return (
+        //   <Link
+        //     to={url}
+        //     ref={cellRef}
+        //     draggable="false"
+        //     tabIndex={tabIndex}
+        //     className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
+        //     onClick={(e) => {
+        //       if (e.metaKey || e.ctrlKey) return;
+        //       e.preventDefault();
+
+        //       // Store trigger to bring focus back
+        //       setTriggerRef(id, cellRef);
+
+        //       navigate({
+        //         to: '.',
+        //         replace: false,
+        //         resetScroll: false,
+        //         search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined }),
+        //       });
+        //     }}
+        //   >
+        //     <AttachmentPreview id={id} url={thumbnailUrl ?? url} name={filename} contentType={contentType} />
+        //   </Link>
+        // );
       },
     },
     {
@@ -105,7 +111,9 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       sortable: false,
       width: 32,
       renderCell: ({ row }) => {
-        const isInCloud = isCDNUrl(row.url);
+        // const isInCloud = isCDNUrl(row.url);
+        const isInCloud = true;
+
         return (
           <div
             className="flex justify-center items-center h-full w-full"
@@ -126,8 +134,8 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        const isInCloud = isCDNUrl(row.url);
-        if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
+        // const isInCloud = isCDNUrl(row.url);
+        // if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
 
         const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
@@ -154,7 +162,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download, isInProgress } = useDownloader();
-        if (!isCDNUrl(row.url)) return <div className="text-muted text-center w-full">-</div>;
+        // if (!isCDNUrl(row.url)) return <div className="text-muted text-center w-full">-</div>;
         return (
           <Button
             variant="cell"
@@ -165,7 +173,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             aria-label="Download"
             data-tooltip="true"
             data-tooltip-content={t('common:download')}
-            onClick={() => download(row.url, row.filename)}
+            onClick={() => getPresignedUrl({ query: { key: row.originalKey, isPublic: row.public } }).then((url) => download(url, row.filename))}
           >
             {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
           </Button>
@@ -181,7 +189,8 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard } = useCopyToClipboard();
 
-        const isInCloud = isCDNUrl(row.url);
+        // const isInCloud = isCDNUrl(row.url);
+        const isInCloud = true;
         if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
         const ellipsisOptions: EllipsisOption<Attachment>[] = [
           {

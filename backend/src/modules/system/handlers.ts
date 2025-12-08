@@ -193,7 +193,7 @@ const systemRouteHandlers = app
         const isSystemAdmin = userSystemRole === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
 
-        if (!isSystemAdmin || !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
+        if (!isSystemAdmin && !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
       }
     }
 
