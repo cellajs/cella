@@ -15,7 +15,6 @@ import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -102,24 +101,11 @@ const attachmentsRouteHandlers = app
       throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
-    const user = getContextUser();
-    const groupId = newAttachments.length > 1 ? nanoid() : null;
-
-    const fixedNewAttachments = newAttachments.map((el) => ({
-      ...el,
-      name: el.filename.split('.').slice(0, -1).join('.'),
-      createdBy: user.id,
-      groupId,
-      organizationId: organization.id,
-    }));
-
-    const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
-
-    const data = await processAttachmentUrlsBatch(createdAttachments);
+    const createdAttachments = await db.insert(attachmentsTable).values(newAttachments).returning();
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    return ctx.json(data, 201);
+    return ctx.json(createdAttachments, 201);
   })
   /**
    * Get attachments
@@ -211,11 +197,9 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    const data = await processAttachmentUrls(updatedAttachment);
-
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    return ctx.json(data, 200);
+    return ctx.json(updatedAttachment, 200);
   })
   /**
    * Delete attachments by ids

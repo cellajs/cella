@@ -136,13 +136,13 @@ export type Attachment = {
   contentType: string;
   convertedContentType: string | null;
   size: string;
+  originalKey: string;
+  convertedKey: string | null;
+  thumbnailKey: string | null;
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
   organizationId: string;
-  url: string;
-  thumbnailUrl: string | null;
-  convertedUrl: string | null;
 };
 
 export type Menu = {
@@ -3041,7 +3041,10 @@ export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachment
 
 export type CreateAttachmentData = {
   body: Array<{
+    createdAt?: string;
     id?: string;
+    name?: string;
+    entityType?: 'attachment';
     public?: boolean;
     bucketName: string;
     groupId?: string | null;
@@ -3052,6 +3055,9 @@ export type CreateAttachmentData = {
     originalKey: string;
     convertedKey?: string | null;
     thumbnailKey?: string | null;
+    createdBy?: string | null;
+    modifiedAt?: string | null;
+    modifiedBy?: string | null;
     organizationId: string;
   }>;
   path: {

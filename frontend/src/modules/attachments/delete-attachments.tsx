@@ -6,7 +6,6 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
-import { isCDNUrl } from '~/utils/is-cdn-url';
 
 interface Props {
   attachments: Attachment[];
@@ -16,17 +15,19 @@ interface Props {
 
 const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const [isPending, setIsPending] = React.useState(false);
-  const serverDeletionIds: string[] = attachments.filter(({ url }) => isCDNUrl(url)).map(({ id }) => id);
-  const localDeletionIds: string[] = attachments.filter(({ url }) => !isCDNUrl(url)).map(({ id }) => id);
+  // TODO(tanstackDB)
+  // const serverDeletionIds: string[] = attachments.filter(({ url }) => isCDNUrl(url)).map(({ id }) => id);
+  // const localDeletionIds: string[] = attachments.filter(({ url }) => !isCDNUrl(url)).map(({ id }) => id);
 
   const onDelete = async () => {
     setIsPending(true);
     try {
-      attachmentsCollection.delete(serverDeletionIds);
-      localAttachmentsCollection.delete(localDeletionIds);
+      attachmentsCollection.delete(attachments.map(({ id }) => id));
+      // attachmentsCollection.delete(attachments);
+      // localAttachmentsCollection.delete(localDeletionIds);
       callback?.({ data: attachments, status: 'success' });
     } catch (error) {
       if (error instanceof Error || error instanceof ApiError) callback?.({ status: 'fail', error });

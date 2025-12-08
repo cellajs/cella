@@ -1,46 +1,78 @@
 import { uploadTemplates } from 'config/templates';
-import type { AttachmentToInsert } from '~/modules/attachments/types';
+import { Attachment } from '~/api.gen';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import { useUserStore } from '~/store/user';
 import { nanoid } from '~/utils/nanoid';
 
-export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, groupId = nanoid()) => {
-  const uploadedAttachments: AttachmentToInsert[] = [];
+const baseAttachmentValues = {
+  entityType: 'attachment' as const,
+  convertedContentType: null,
+  convertedKey: null,
+  thumbnailKey: null,
+  modifiedAt: null,
+  modifiedBy: null,
+};
+
+export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string): Attachment[] => {
+  const createdBy = useUserStore.getState().user.id;
+  const createdAt = new Date().toDateString();
 
   // Process original files
-  const originalFiles = result[':original'] || [];
-  for (const { size, url, mime, ext, type, original_name, original_id, user_meta } of originalFiles) {
-    uploadedAttachments.push({
-      id: original_id || nanoid(),
-      originalKey: url,
-      size: String(size || 0),
+  const originalFiles = result[':original'] ?? [];
+
+  const attachmentsById = new Map<string, Attachment>();
+  const groupId = originalFiles.length > 1 ? nanoid() : null;
+
+  for (const file of originalFiles) {
+    const { size, url, mime, original_name, original_id, user_meta } = file;
+
+    const id = original_id || nanoid();
+
+    const filename = original_name || user_meta?.name || 'file';
+    const extIndex = filename.lastIndexOf('.');
+    const name = extIndex > 0 ? filename.substring(0, extIndex) : filename;
+
+    attachmentsById.set(id, {
+      id,
+      size: String(size ?? 0),
       contentType: mime,
-      filename: original_name || user_meta.name,
+      filename,
+      name,
+      public: user_meta?.public === 'true',
+      bucketName: user_meta?.bucketName,
+      originalKey: url,
+      groupId,
       organizationId,
-      public: user_meta.public === 'true',
-      bucketName: user_meta.bucketName,
-      type: type ?? ext,
+      createdBy,
+      createdAt,
+      ...baseAttachmentValues,
     });
   }
-  // Process all converted and thumbnail variants
-  const processSteps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
 
-  for (const step of processSteps) {
-    const processFiles = result[step] || [];
-    if (!processFiles.length) continue;
+  //  Process converted + thumbnail variants
+  const steps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
 
-    for (const { url, mime, type, original_id } of processFiles) {
-      const target = uploadedAttachments.find((a) => a.id === original_id);
+  for (const step of steps) {
+    const files = result[step] ?? [];
+
+    for (const { url, mime, original_id } of files) {
+      if (!original_id) continue;
+
+      const target = attachmentsById.get(original_id);
       if (!target) continue;
 
-      if (step.includes('converted_')) {
+      if (step.startsWith('converted_')) {
         target.convertedKey = url;
         target.convertedContentType = mime;
-        if (type) target.type = type;
       }
 
-      if (step.includes('thumb_')) target.thumbnailKey = url;
+      if (step.startsWith('thumb_')) {
+        target.thumbnailKey = url;
+      }
     }
   }
 
-  return uploadedAttachments.length > 1 ? uploadedAttachments.map((attachment) => ({ ...attachment, groupId })) : uploadedAttachments;
+  const a = Array.from(attachmentsById.values());
+
+  return a;
 };

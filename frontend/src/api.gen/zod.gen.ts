@@ -134,13 +134,13 @@ export const zAttachment = z.object({
   contentType: z.string(),
   convertedContentType: z.union([z.string(), z.null()]),
   size: z.string(),
+  originalKey: z.string(),
+  convertedKey: z.union([z.string(), z.null()]),
+  thumbnailKey: z.union([z.string(), z.null()]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
   organizationId: z.string(),
-  url: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  convertedUrl: z.union([z.string(), z.null()]),
 });
 
 export const zMenu = z.object({
@@ -1294,7 +1294,10 @@ export const zCreateAttachmentData = z.object({
   body: z
     .array(
       z.object({
+        createdAt: z.optional(z.string()),
         id: z.optional(z.string()),
+        name: z.optional(z.string()),
+        entityType: z.optional(z.enum(['attachment'])),
         public: z.optional(z.boolean()),
         bucketName: z.string(),
         groupId: z.optional(z.union([z.string(), z.null()])),
@@ -1305,6 +1308,9 @@ export const zCreateAttachmentData = z.object({
         originalKey: z.string(),
         convertedKey: z.optional(z.union([z.string(), z.null()])),
         thumbnailKey: z.optional(z.union([z.string(), z.null()])),
+        createdBy: z.optional(z.union([z.string(), z.null()])),
+        modifiedAt: z.optional(z.union([z.string(), z.null()])),
+        modifiedBy: z.optional(z.union([z.string(), z.null()])),
         organizationId: z.string(),
       }),
     )

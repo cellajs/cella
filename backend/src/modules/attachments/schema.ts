@@ -4,21 +4,10 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { paginationQuerySchema } from '#/utils/schema/common';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
-const attachmentSelectSchema = createSelectSchema(attachmentsTable);
+// TODO(tanstackDB) fix errors from schema
+export const attachmentSchema = createSelectSchema(attachmentsTable).openapi('Attachment');
 
-export const attachmentCreateManySchema = z
-  .array(
-    attachmentInsertSchema.omit({
-      name: true,
-      entityType: true,
-      modifiedAt: true,
-      modifiedBy: true,
-      createdAt: true,
-      createdBy: true,
-    }),
-  )
-  .min(1)
-  .max(50);
+export const attachmentCreateManySchema = attachmentInsertSchema.array().min(1).max(50);
 
 export const attachmentUpdateBodySchema = attachmentInsertSchema
   .pick({
@@ -26,15 +15,6 @@ export const attachmentUpdateBodySchema = attachmentInsertSchema
     originalKey: true,
   })
   .partial();
-
-export const attachmentSchema = attachmentSelectSchema
-  .omit({ originalKey: true, convertedKey: true, thumbnailKey: true })
-  .extend({
-    url: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    convertedUrl: z.string().nullable(),
-  })
-  .openapi('Attachment');
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   attachmentId: z.string().optional(),
