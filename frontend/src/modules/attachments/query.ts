@@ -1,3 +1,4 @@
+import { snakeCamelMapper } from '@electric-sql/client';
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
 import { createCollection } from '@tanstack/react-db';
 import { queryOptions } from '@tanstack/react-query';
@@ -52,6 +53,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
         params: { table: 'attachments' },
         backoffOptions,
         fetchClient: clientConfig.fetch,
+        columnMapper: snakeCamelMapper(),
         onError: (error) => handleSyncError(error),
       },
       syncMode: 'progressive',

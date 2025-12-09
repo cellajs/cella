@@ -51,35 +51,12 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     isFetchingNextPage,
   } = useLiveInfiniteQuery(
     (liveQuery) => {
-      return (
-        liveQuery
-          .from({ attachment: attachmentsCollection })
-          .where(({ attachment }) =>
-            q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
-          )
-          // TODO(tanstackDB) fix table snake_case vs app camelCase
-          .select(({ attachment }) => ({
-            id: attachment.id,
-            name: attachment.name,
-            entityType: attachment.entity_type,
-            public: attachment.public,
-            bucketName: attachment.bucket_name,
-            groupId: attachment.group_id,
-            filename: attachment.filename,
-            contentType: attachment.content_type,
-            convertedContentType: attachment.converted_content_type,
-            size: attachment.size,
-            originalKey: attachment.original_key,
-            convertedKey: attachment.converted_key,
-            thumbnailKey: attachment.thumbnail_key,
-            createdBy: attachment.created_by,
-            createdAt: attachment.created_at,
-            modifiedAt: attachment.modified_at,
-            modifiedBy: attachment.modified_by,
-            organizationId: attachment.organization_id,
-          }))
-          .orderBy(({ attachment }) => attachment[sort || 'id'], order)
-      );
+      return liveQuery
+        .from({ attachment: attachmentsCollection })
+        .where(({ attachment }) =>
+          q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
+        )
+        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
     },
     {
       pageSize: limit,

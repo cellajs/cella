@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
@@ -26,7 +27,6 @@ import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
-import { isCDNUrl } from '~/utils/is-cdn-url';
 
 export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
@@ -45,47 +45,58 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { id, filename, contentType, groupId }, tabIndex }) => {
+      renderCell: async ({ row: { id, filename, contentType, thumbnailKey, public: isPublic, originalKey, groupId }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
+        const wrapClass = 'flex space-x-2 items-center justify-center w-full h-full';
+
+        const key = thumbnailKey || originalKey;
+
+        // For files that are NOT blob URLs → just render preview, no link wrap
+        if (key.startsWith('blob:http')) {
+          return (
+            <div className={wrapClass}>
+              <AttachmentPreview id={id} name={filename} url={key} contentType={contentType} />
+            </div>
+          );
+        }
+
+        // The computed URL for preview and link
+        const { data: url } = useQuery({
+          queryKey: ['presigned-url', key, isPublic],
+          queryFn: () => getPresignedUrl({ query: { key, isPublic } }),
+        });
+
+        // Blob URLs: wrap in a Link with custom behavior
         return (
-          <div className="flex space-x-2 items-center justify-center w-full h-full">
-            <AttachmentPreview id={id} url={'url'} name={filename} contentType={contentType} />
-          </div>
+          <Link
+            to={url}
+            ref={cellRef}
+            draggable="false"
+            tabIndex={tabIndex}
+            className={wrapClass}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) return; // allow new tab
+              e.preventDefault();
+
+              // Store focus anchor
+              setTriggerRef(id, cellRef);
+
+              navigate({
+                to: '.',
+                replace: false,
+                resetScroll: false,
+                search: (prev) => ({
+                  ...prev,
+                  attachmentDialogId: id,
+                  groupId: groupId || undefined,
+                }),
+              });
+            }}
+          >
+            <AttachmentPreview id={id} name={filename} url={url} contentType={contentType} />
+          </Link>
         );
-        // TODO(tanstackDB) add preview
-        // if (!thumbnailUrl && !convertedUrl && !url?.startsWith('blob:http'))
-        //   return (
-        //     <div className="flex space-x-2 items-center justify-center w-full h-full">
-        //       <AttachmentPreview id={id} url={url} name={filename} contentType={contentType} />
-        //     </div>
-        //   );
-
-        // return (
-        //   <Link
-        //     to={url}
-        //     ref={cellRef}
-        //     draggable="false"
-        //     tabIndex={tabIndex}
-        //     className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
-        //     onClick={(e) => {
-        //       if (e.metaKey || e.ctrlKey) return;
-        //       e.preventDefault();
-
-        //       // Store trigger to bring focus back
-        //       setTriggerRef(id, cellRef);
-
-        //       navigate({
-        //         to: '.',
-        //         replace: false,
-        //         resetScroll: false,
-        //         search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined }),
-        //       });
-        //     }}
-        //   >
-        //     <AttachmentPreview id={id} url={thumbnailUrl ?? url} name={filename} contentType={contentType} />
-        //   </Link>
-        // );
       },
     },
     {
@@ -111,16 +122,16 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       sortable: false,
       width: 32,
       renderCell: ({ row }) => {
-        // const isInCloud = isCDNUrl(row.url);
-        const isInCloud = true;
+        const key = row.thumbnailKey || row.originalKey;
+        const isLocal = key.startsWith('blob:http');
 
         return (
           <div
             className="flex justify-center items-center h-full w-full"
             data-tooltip="true"
-            data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
+            data-tooltip-content={isLocal ? t('common:local_only') : t('common:online')}
           >
-            {isInCloud ? <CloudIcon className="text-success" size={16} /> : <CloudOffIcon className="opacity-50" size={16} />}
+            {isLocal ? <CloudOffIcon className="opacity-50" size={16} /> : <CloudIcon className="text-success" size={16} />}
           </div>
         );
       },
@@ -134,8 +145,11 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        // const isInCloud = isCDNUrl(row.url);
-        // if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
+
+        const key = row.thumbnailKey || row.originalKey;
+        const isLocal = key.startsWith('blob:http');
+
+        if (isLocal) return <div className="text-muted text-center w-full">-</div>;
 
         const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
@@ -162,7 +176,11 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download, isInProgress } = useDownloader();
-        // if (!isCDNUrl(row.url)) return <div className="text-muted text-center w-full">-</div>;
+
+        const key = row.thumbnailKey || row.originalKey;
+        const isLocal = key.startsWith('blob:http');
+
+        if (isLocal) return <div className="text-muted text-center w-full">-</div>;
         return (
           <Button
             variant="cell"
@@ -189,9 +207,11 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard } = useCopyToClipboard();
 
-        // const isInCloud = isCDNUrl(row.url);
-        const isInCloud = true;
-        if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
+        const key = row.thumbnailKey || row.originalKey;
+        const isLocal = key.startsWith('blob:http');
+
+        if (isLocal) return <div className="text-muted text-center w-full">-</div>;
+
         const ellipsisOptions: EllipsisOption<Attachment>[] = [
           {
             label: i18n.t('common:delete'),
@@ -211,7 +231,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
           },
         ];
 
-        if (isInCloud) {
+        if (!isLocal) {
           const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
 
           ellipsisOptions.push({

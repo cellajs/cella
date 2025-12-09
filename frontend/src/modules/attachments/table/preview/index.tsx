@@ -3,12 +3,14 @@ import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
 
 interface Props {
   id: string;
-  url: string;
   contentType: string;
   name: string;
+  url?: string;
 }
 
 const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
+  if (!baseUrl) return <FilePlaceholder contentType={contentType} />;
+
   const { url, error } = useAttachmentUrl(id, baseUrl, contentType);
 
   if (!url || error || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;

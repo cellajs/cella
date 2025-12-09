@@ -34,7 +34,7 @@
     "@blocknote/core": "0.42.0",
     "@blocknote/react": "0.42.0",
     "@blocknote/shadcn": "0.42.0",
-    "@electric-sql/client": "1.1.3",
+    "@electric-sql/client": "^1.2.0",
     "@electric-sql/react": "1.0.18",
     "@floating-ui/dom": "^1.7.4",
     "@floating-ui/react": "^0.27.16",
