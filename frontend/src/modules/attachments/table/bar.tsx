@@ -42,11 +42,9 @@ export const AttachmentsTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog();
-  // const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
-  const { attachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
-  // const total = attachmentsCollection.size + localAttachmentsCollection.size;
-  const total = attachmentsCollection.size;
+  const total = attachmentsCollection.size + localAttachmentsCollection.size;
 
   const deleteButtonRef = useRef(null);
 

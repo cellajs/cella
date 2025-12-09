@@ -1,12 +1,13 @@
 import { snakeCamelMapper } from '@electric-sql/client';
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
-import { createCollection } from '@tanstack/react-db';
+import { createCollection, localStorageCollectionOptions } from '@tanstack/react-db';
 import { queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttachments, updateAttachment } from '~/api.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { toaster } from '~/modules/common/toaster/service';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
 
@@ -41,7 +42,6 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
 
-// TODO(tanstackDB) add abort
 export const initAttachmentsCollection = (orgIdOrSlug: string) =>
   createCollection(
     electricCollectionOptions({
@@ -92,44 +92,44 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
   );
 
 // TODO(DAVID) create custom events for local store ?
-// export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
-//   createCollection(
-//     localStorageCollectionOptions({
-//       id: `${orgIdOrSlug}-local-attachments`,
-//       schema: zAttachment,
-//       getKey: (item) => item.id,
-//       storageKey: `${appConfig.name}-local-attachments`,
-//       onInsert: async ({ transaction }) => {
-//         const newAttachments = transaction.mutations.map(({ modified }) => modified);
+export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
+  createCollection(
+    localStorageCollectionOptions({
+      id: `${orgIdOrSlug}-local-attachments`,
+      schema: zAttachment,
+      getKey: (item) => item.id,
+      storageKey: `${appConfig.name}-local-attachments`,
+      onInsert: async ({ transaction }) => {
+        const newAttachments = transaction.mutations.map(({ modified }) => modified);
 
-//         const message =
-//           newAttachments.length === 1
-//             ? t('common:success.create_resource', { resource: t('common:attachment') })
-//             : t('common:success.create_counted_resources', { count: newAttachments.length, resources: t('common:attachments').toLowerCase() });
+        const message =
+          newAttachments.length === 1
+            ? t('common:success.create_resource', { resource: t('common:attachment') })
+            : t('common:success.create_counted_resources', { count: newAttachments.length, resources: t('common:attachments').toLowerCase() });
 
-//         toaster(message, 'success');
-//       },
-//       onUpdate: async ({ transaction }) => {
-//         try {
-//           for (const { changes: body, original } of transaction.mutations) {
-//             if (!body.name) continue;
-//             const file = await LocalFileStorage.updateFileName(original.id, body.name);
+        toaster(message, 'success');
+      },
+      onUpdate: async ({ transaction }) => {
+        try {
+          for (const { changes: body, original } of transaction.mutations) {
+            if (!body.name) continue;
+            const file = await LocalFileStorage.updateFileName(original.id, body.name);
 
-//             if (!file) throw new Error(`Failed to update file name (${original.id}):`);
+            if (!file) throw new Error(`Failed to update file name (${original.id}):`);
 
-//             return { ...original, name: body.name };
-//           }
-//         } catch (err) {
-//           handleError('update');
-//         }
-//       },
-//       onDelete: async ({ transaction }) => {
-//         const ids = transaction.mutations.map(({ modified }) => modified.id);
-//         try {
-//           await LocalFileStorage.removeFiles(ids);
-//         } catch (err) {
-//           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
-//         }
-//       },
-//     }),
-//   );
+            return { ...original, name: body.name };
+          }
+        } catch (err) {
+          handleError('update');
+        }
+      },
+      onDelete: async ({ transaction }) => {
+        const ids = transaction.mutations.map(({ modified }) => modified.id);
+        try {
+          await LocalFileStorage.removeFiles(ids);
+        } catch (err) {
+          handleError(ids.length > 1 ? 'deleteMany' : 'delete');
+        }
+      },
+    }),
+  );

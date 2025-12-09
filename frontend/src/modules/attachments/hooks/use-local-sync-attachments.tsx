@@ -1,7 +1,6 @@
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
-import { Attachment } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
@@ -66,8 +65,7 @@ export const useLocalSyncAttachments = (organizationId: string) => {
             if (assembly.error) throw new Error(assembly.error);
             const attachments = parseUploadedAttachments(assembly.results as UploadedUppyFile<'attachment'>, organizationId);
 
-            // TODO(tanstackDB) fix types (mb wait till v1)
-            attachmentsCollection.insert(attachments as unknown as Attachment[]);
+            attachmentsCollection.insert(attachments);
             console.info('Successfully synced attachments to server:', attachments);
 
             // Clean up offline files from IndexedDB

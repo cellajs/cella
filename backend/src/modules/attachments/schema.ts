@@ -4,7 +4,6 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { paginationQuerySchema } from '#/utils/schema/common';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
-// TODO(tanstackDB) fix errors from schema
 export const attachmentSchema = createSelectSchema(attachmentsTable).openapi('Attachment');
 
 export const attachmentCreateManySchema = attachmentInsertSchema.array().min(1).max(50);

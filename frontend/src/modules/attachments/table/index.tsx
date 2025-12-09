@@ -1,4 +1,4 @@
-import { ilike, isNull, not, or, useLiveInfiniteQuery } from '@tanstack/react-db';
+import { ilike, isNull, not, or, useLiveInfiniteQuery, useLiveQuery } from '@tanstack/react-db';
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
+import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
@@ -26,7 +27,7 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const { attachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   // useLocalSyncAttachments(entity.id);
@@ -43,7 +44,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const {
-    data: rows,
+    data: fetchedRows,
     isLoading,
     isError,
     fetchNextPage,
@@ -71,27 +72,28 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [(entity.id, search)],
   );
 
-  // const { data: localRows } = useLiveQuery(
-  //   (liveQuery) => {
-  //     return liveQuery
-  //       .from({ attachment: localAttachmentsCollection })
-  //       .where(({ attachment }) =>
-  //         q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
-  //       )
-  //       .orderBy(({ attachment }) => attachment[sort || 'id'], order);
-  //   },
-  //   [(entity.id, sort, order, q, limit)],
-  // );
+  const { data: localRows } = useLiveQuery(
+    (liveQuery) => {
+      return liveQuery
+        .from({ attachment: localAttachmentsCollection })
+        .where(({ attachment }) =>
+          q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
+        )
+        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+    },
+    [(entity.id, sort, order, q, limit)],
+  );
+  console.log('🚀 ~ AttachmentsTable ~ localRows:', localRows);
 
   // TODO(tanstackDB) add ordering
-  // const rows = useOfflineTableSearch({
-  //   data: [...fetchedRows, ...localRows],
-  //   filterFn: ({ q }, item) => {
-  //     if (!q) return true;
-  //     const query = q.trim().toLowerCase(); // Normalize query
-  //     return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
-  //   },
-  // });
+  const rows = useOfflineTableSearch({
+    data: [...fetchedRows, ...localRows],
+    filterFn: ({ q }, item) => {
+      if (!q) return true;
+      const query = q.trim().toLowerCase(); // Normalize query
+      return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
+    },
+  });
 
   // Update rows
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
@@ -100,10 +102,8 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
-      //  TODO(tanstackDB) add offline handle
 
-      // const collection = isCDNUrl(attachment.url) ? attachmentsCollection : localAttachmentsCollection;
-      const collection = attachmentsCollection;
+      const collection = attachment.originalKey.startsWith('blob:http') ? localAttachmentsCollection : attachmentsCollection;
 
       collection.update(attachment.id, (draft) => {
         draft.name = attachment.name;

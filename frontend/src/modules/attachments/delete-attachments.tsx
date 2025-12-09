@@ -15,19 +15,18 @@ interface Props {
 
 const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { attachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const [isPending, setIsPending] = React.useState(false);
   // TODO(tanstackDB)
-  // const serverDeletionIds: string[] = attachments.filter(({ url }) => isCDNUrl(url)).map(({ id }) => id);
-  // const localDeletionIds: string[] = attachments.filter(({ url }) => !isCDNUrl(url)).map(({ id }) => id);
+  const serverDeletionIds: string[] = attachments.filter(({ originalKey }) => originalKey.startsWith('blob:http')).map(({ id }) => id);
+  const localDeletionIds: string[] = attachments.filter(({ originalKey }) => !originalKey.startsWith('blob:http')).map(({ id }) => id);
 
   const onDelete = async () => {
     setIsPending(true);
     try {
-      attachmentsCollection.delete(attachments.map(({ id }) => id));
-      // attachmentsCollection.delete(attachments);
-      // localAttachmentsCollection.delete(localDeletionIds);
+      attachmentsCollection.delete(serverDeletionIds);
+      localAttachmentsCollection.delete(localDeletionIds);
       callback?.({ data: attachments, status: 'success' });
     } catch (error) {
       if (error instanceof Error || error instanceof ApiError) callback?.({ status: 'fail', error });
