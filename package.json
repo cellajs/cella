@@ -60,11 +60,11 @@
     "@evilmartians/lefthook": "^1.13.6",
     "@typescript/native-preview": "7.0.0-dev.20251204.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.71.0",
+    "knip": "^5.73.0",
     "rimraf": "^6.1.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.15"
   },
   "dependencies": {
     "dotenv": "^17.2.3"
