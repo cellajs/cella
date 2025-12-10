@@ -72,7 +72,5 @@ export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>,
     }
   }
 
-  const a = Array.from(attachmentsById.values());
-
-  return a;
+  return Array.from(attachmentsById.values());
 };
