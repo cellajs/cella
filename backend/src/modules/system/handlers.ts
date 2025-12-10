@@ -170,6 +170,8 @@ const systemRouteHandlers = app
   .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
     const { key, isPublic: queryPublic } = ctx.req.valid('query');
 
+    // TODO: can this tight coupling with attachments module be prevented?
+    // Or move this handler to attachments module?
     const [attachment] = await db
       .select()
       .from(attachmentsTable)

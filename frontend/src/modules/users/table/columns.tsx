@@ -31,7 +31,7 @@ export const useColumns = () => {
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} className="font-medium" />,
       },
       {
         key: 'impersonate',

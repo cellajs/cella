@@ -13,12 +13,13 @@ interface BaseProps {
   tabIndex: number;
   compactable?: boolean;
   orgIdOrSlug?: string;
+  className?: string;
 }
 
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug }: BaseProps & { user: UserBase }) => {
+export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }: BaseProps & { user: UserBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLAnchorElement | null>(null);
@@ -30,8 +31,9 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug }: BaseProps
       ref={cellRef}
       to={orgIdOrSlug ? '/$orgIdOrSlug/user/$idOrSlug' : '/user/$idOrSlug'}
       tabIndex={tabIndex}
+      draggable="false"
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
-      className="flex space-x-2 items-center outline-0 ring-0 group truncate py-0.5"
+      className={cn('flex space-x-2 items-center outline-0 ring-0 group truncate py-0.5', className)}
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
@@ -54,7 +56,7 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug }: BaseProps
       <AvatarWrap type="user" className="h-8 w-8 group-active:translate-y-[.05rem]" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span
         className={cn(
-          'group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium',
+          'group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate',
           { '[[data-is-compact=true]_*&]:hidden': compactable },
         )}
       >

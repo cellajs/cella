@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { parseBlocksText } from '~/lib/blocknote';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -36,6 +35,7 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       key: 'title',
       name: t('common:title'),
       visible: true,
+      minWidth: 200,
       sortable: true,
       resizable: true,
       renderHeaderCell: HeaderCell,
@@ -63,45 +63,13 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       ),
     },
     {
-      key: 'keywords',
-      name: 'Keywords',
-      editable: true,
-      visible: true,
-      sortable: true,
-      resizable: true,
-      minWidth: 180,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <span className="font-medium">{row.keywords || '-'}</span>,
-    },
-    // {
-    //   key: 'labels',
-    //   name: t('app:labels'),
-    //   sortable: false,
-    //   visible: false,
-    //   width: 190,
-    //   renderHeaderCell: HeaderCell,
-    //   renderCell: ({ row }) => {
-    //     if (!row.labels.length) return <span className="text-muted">-</span>;
-    //     return (
-    //       <div className="flex flex-col">
-    //         {row.labels.map((label) => (
-    //           <div key={label.id} className="flex items-center gap-1">
-    //             <DotIcon className="rounded-md text-background" size={8} style={badgeStyle(label.color)} strokeWidth={4} />
-    //             <span className="text-xs">{label.name}</span>
-    //           </div>
-    //         ))}
-    //       </div>
-    //     );
-    //   },
-    // },
-    {
       key: 'status',
       name: t('common:status'),
       editable: true,
       visible: !isMobile,
       sortable: true,
       resizable: true,
-      width: 140,
+      width: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
         const colorClasses = statusColors[row.status];
@@ -113,20 +81,6 @@ export const usePagesTableColumns = (isCompact: boolean) => {
             <span className={colorClasses}>{t(`app:${row.status}`)}</span>
           </>
         );
-      },
-    },
-    {
-      key: 'content',
-      name: 'Content',
-      editable: true,
-      visible: true,
-      sortable: true,
-      resizable: true,
-      minWidth: 180,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => {
-        const content = parseBlocksText(row.description || '');
-        return <span className="font-medium">{content.slice(0, 50) || '-'}</span>;
       },
     },
     {
