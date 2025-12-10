@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
+import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
@@ -30,7 +31,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  // useLocalSyncAttachments(entity.id);
+  useLocalSyncAttachments(entity.id);
 
   // Table state
   const { q, sort, order } = search;
@@ -83,7 +84,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     },
     [(entity.id, sort, order, q, limit)],
   );
-  console.log('🚀 ~ AttachmentsTable ~ localRows:', localRows);
 
   // TODO(tanstackDB) add ordering
   const rows = useOfflineTableSearch({
