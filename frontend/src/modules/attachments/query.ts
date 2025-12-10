@@ -9,6 +9,7 @@ import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { toaster } from '~/modules/common/toaster/service';
+import { offlineQueryConfig } from '~/query/provider';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
@@ -42,7 +43,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
 
-export const initAttachmentsCollection = (orgIdOrSlug: string) =>
+export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetch = false) =>
   createCollection(
     electricCollectionOptions({
       id: `${orgIdOrSlug}-attachments`,
@@ -56,6 +57,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string) =>
         columnMapper: snakeCamelMapper(),
         onError: (error) => handleSyncError(error),
       },
+      ...(forOfflinePrefetch ? offlineQueryConfig : {}),
       syncMode: 'progressive',
       onInsert: async ({ transaction }) => {
         const newAttachments = transaction.mutations.map(({ modified }) => modified);

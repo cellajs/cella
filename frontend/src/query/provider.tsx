@@ -4,7 +4,7 @@ import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { queriesToMap } from '~/offline-config';
+import { getPrefetchItems } from '~/offline-config';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/query/utils';
@@ -12,7 +12,7 @@ import { prefetchQuery } from '~/query/utils/prefetch-query';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
-const offlineQueryConfig = {
+export const offlineQueryConfig = {
   gcTime: 24 * 60 * 60 * 1000, // Cache expiration time: 24 hours
   meta: {
     offlinePrefetch: true,
@@ -51,20 +51,22 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       // If menu query failed or request was aborted, return early
       if (menuResponse.status !== 'fulfilled' || isCancelled) return;
 
-      // Recursive function to prefetch menu items
       const prefetchMenuItems = async (items: UserMenuItem[]) => {
         for (const item of items) {
           if (isCancelled) return; // Check for abortion in each loop
           if (item.membership.archived) continue; // Skip archived items
 
-          // Fetch queries for this menu item in parallel
-          const queries = queriesToMap(item).map((query) =>
-            prefetchQuery({
-              ...query,
-              ...offlineQueryConfig,
-            }),
+          // Prefetch all queries related to this menu item in parallel
+
+          const prefetchPromises = getPrefetchItems(item).map((source) =>
+            typeof source === 'function'
+              ? source()
+              : prefetchQuery({
+                  ...source,
+                  ...offlineQueryConfig,
+                }),
           );
-          await Promise.allSettled(queries);
+          await Promise.allSettled(prefetchPromises);
 
           await waitFor(500); // Avoid overloading server
 
