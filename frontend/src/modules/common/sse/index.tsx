@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import { useSSE } from '~/modules/common/sse/use-sse';
 import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
@@ -18,8 +18,8 @@ const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: (data: SSE
       const data = JSON.parse(e.data) as SSEEventsMap[T];
       callback(data);
     } catch (error) {
-      Sentry.captureException(error);
-      console.error(`Failed to parse SSE event - ${type}`, error);
+      ErrorTracker.captureException(error);
+      console.error('Error parsing update event', error);
     }
   });
 };

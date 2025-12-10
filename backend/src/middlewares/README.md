@@ -33,4 +33,4 @@ You can use the middleware `hasValidSingleUseToken` to validate a single use tok
 
 ### Monitoring
 
-A middleware to start Sentry error tracking and perf tracing. Later on, when user and organization are confirmed, they are set using `setUser` and `setTag`.
+A middleware to start error tracking and perf tracing. Later on, when user and organization are confirmed, they are set using `setUser` and `setTag`.

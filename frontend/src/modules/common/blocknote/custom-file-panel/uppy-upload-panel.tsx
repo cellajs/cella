@@ -2,7 +2,7 @@ import type { PartialBlock } from '@blocknote/core';
 import { FilePanelExtension } from '@blocknote/core/extensions';
 import { type FilePanelProps, useBlockNoteEditor, useExtension } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor';
@@ -135,7 +135,7 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, blockId, isPublic 
         }
         setUppy(localUppy);
       } catch (err) {
-        Sentry.captureException(err);
+        ErrorTracker.captureException(err);
       }
     };
 

@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import i18n from 'i18next';
 import { useEffect, useRef, useState } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
@@ -68,7 +68,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
       } catch (e) {
         console.error(e);
         if (e instanceof Error) {
-          Sentry.captureException(e);
+          ErrorTracker.captureException(e);
           setError(`Failed to load file: ${e.message}`);
           setUrl(null); // Ensure URL is null on error
         }

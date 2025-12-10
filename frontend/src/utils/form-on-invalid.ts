@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as ErrorTracker from '@sentry/react';
 import { t } from 'i18next';
 import { createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
@@ -21,7 +21,7 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
     ),
   });
 
-  Sentry.captureException(new Error('Form validation failed'), { extra: errors });
+  ErrorTracker.captureException(new Error('Form validation failed'), { extra: errors });
 };
 
 // Recursively build a list of readable error message from FieldErrors object
