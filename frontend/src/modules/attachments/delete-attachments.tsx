@@ -18,7 +18,6 @@ const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) =
   const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const [isPending, setIsPending] = React.useState(false);
-  // TODO(tanstackDB)
   const serverDeletionIds: string[] = attachments.filter(({ originalKey }) => originalKey.startsWith('blob:http')).map(({ id }) => id);
   const localDeletionIds: string[] = attachments.filter(({ originalKey }) => !originalKey.startsWith('blob:http')).map(({ id }) => id);
 

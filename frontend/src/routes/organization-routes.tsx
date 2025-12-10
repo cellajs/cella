@@ -85,7 +85,6 @@ export const OrganizationAttachmentsRoute = createRoute({
   async loader({ params: { idOrSlug } }) {
     const attachmentsCollection = initAttachmentsCollection(idOrSlug);
     const localAttachmentsCollection = initLocalAttachmentsCollection(idOrSlug);
-    // TODO(tanstackDB) make offline preload
     await Promise.all([attachmentsCollection.preload(), localAttachmentsCollection.preload()]);
     return { attachmentsCollection, localAttachmentsCollection };
   },
