@@ -1,0 +1,48 @@
+import { Dexie, type EntityTable } from 'dexie';
+import type { CustomUppyFile } from '~/modules/common/uploader/types';
+import type { UploadTokenQuery } from '~/modules/me/types';
+
+export type SyncStatus = 'idle' | 'processing' | 'synced' | 'failed';
+
+export interface AttachmentFile {
+  id?: number;
+  fileId: string; // Uppy file ID
+  file: CustomUppyFile;
+  organizationId: string;
+  batchId: string; // Groups files uploaded together
+  tokenQuery: UploadTokenQuery;
+  syncStatus: SyncStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  syncAttempts?: number;
+  lastSyncAttempt?: Date;
+  errorMessage?: string;
+}
+
+export interface AttachmentBatch {
+  id?: number;
+  batchId: string;
+  organizationId: string;
+  tokenQuery: UploadTokenQuery;
+  syncStatus: SyncStatus;
+  fileCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt?: Date;
+}
+
+export class AttachmentDatabase extends Dexie {
+  attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
+  attachmentBatches!: EntityTable<AttachmentBatch, 'id'>;
+
+  constructor() {
+    super('CellaAttachmentDatabase');
+
+    this.version(1).stores({
+      attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus], [batchId+syncStatus]',
+      attachmentBatches: '++id, batchId, organizationId, syncStatus, createdAt, updatedAt, fileCount, [organizationId+syncStatus]',
+    });
+  }
+}
+
+export const attachmentDb = new AttachmentDatabase();

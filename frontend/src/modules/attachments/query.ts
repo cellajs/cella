@@ -7,7 +7,7 @@ import { t } from 'i18next';
 import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttachments, updateAttachment } from '~/api.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
-import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
+import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
 import { toaster } from '~/modules/common/toaster/service';
 import { offlineQueryConfig } from '~/query/provider';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
@@ -115,7 +115,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
         try {
           for (const { changes: body, original } of transaction.mutations) {
             if (!body.name) continue;
-            const file = await LocalFileStorage.updateFileName(original.id, body.name);
+            const file = await dexieAttachmentStorage.updateFileName(original.id, body.name);
 
             if (!file) throw new Error(`Failed to update file name (${original.id}):`);
 
@@ -128,7 +128,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
       onDelete: async ({ transaction }) => {
         const ids = transaction.mutations.map(({ modified }) => modified.id);
         try {
-          await LocalFileStorage.removeFiles(ids);
+          await dexieAttachmentStorage.removeFiles(ids);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }

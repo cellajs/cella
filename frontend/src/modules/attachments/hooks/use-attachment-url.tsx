@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import i18n from 'i18next';
 import { useEffect, useRef, useState } from 'react';
-import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
+import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
 import { useBlobStore } from '~/store/blob'; // Import Zustand store
 import { isCDNUrl } from '~/utils/is-cdn-url';
 import { sanitizeUrl } from '~/utils/sanitize-url';
@@ -10,7 +10,7 @@ import { sanitizeUrl } from '~/utils/sanitize-url';
  * Custom hook for usable attachment URL, handling both remote and locally stored files.
  *
  * - If the base URL is a trusted remote path (e.g. static or CDN), it returns that directly.
- * - If the file is stored locally (e.g. IndexedDB via LocalFileStorage), it creates a Blob URL.
+ * - If the file is stored locally (e.g. IndexedDB via Dexie), it creates a Blob URL.
  * - Uses a shared blob URL cache via Zustand (`useBlobStore`) to avoid redundant blob creation.
  * - Returns any error encountered when accessing or generating the local file.
  *
@@ -48,8 +48,9 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
 
     const fetchLocal = async () => {
       try {
-        const file = await LocalFileStorage.getFile(id);
-        if (!file || !file.data) {
+        const attachmentFile = await dexieAttachmentStorage.getFile(id);
+        const file = attachmentFile?.file;
+        if (!attachmentFile || !file || !file.data) {
           setError(i18n.t('error:local_file_not_found'));
           setUrl(null); // Make sure URL is null if file not found
           return;
