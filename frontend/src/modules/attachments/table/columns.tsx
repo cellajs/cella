@@ -12,6 +12,7 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import AttachmentPreview from '~/modules/attachments/table/preview';
+import { isLocalAttachment } from '~/modules/attachments/utils';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
@@ -53,7 +54,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         const key = thumbnailKey || originalKey;
 
         // For files that are NOT blob URLs → just render preview, no link wrap
-        if (key.startsWith('blob:http')) {
+        if (isLocalAttachment(key)) {
           return (
             <div className={wrapClass}>
               <AttachmentPreview id={id} name={filename} url={key} contentType={contentType} />
@@ -123,7 +124,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       width: 32,
       renderCell: ({ row }) => {
         const key = row.thumbnailKey || row.originalKey;
-        const isLocal = key.startsWith('blob:http');
+        const isLocal = isLocalAttachment(key);
 
         return (
           <div
@@ -141,13 +142,12 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       name: '',
       visible: !isMobile,
       sortable: false,
-      resizable: true,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
 
         const key = row.thumbnailKey || row.originalKey;
-        const isLocal = key.startsWith('blob:http');
+        const isLocal = isLocalAttachment(key);
 
         if (isLocal) return <div className="text-muted text-center w-full">-</div>;
 
@@ -178,7 +178,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         const { download, isInProgress } = useDownloader();
 
         const key = row.thumbnailKey || row.originalKey;
-        const isLocal = key.startsWith('blob:http');
+        const isLocal = isLocalAttachment(key);
 
         if (isLocal) return <div className="text-muted text-center w-full">-</div>;
         return (
@@ -208,7 +208,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         const { copyToClipboard } = useCopyToClipboard();
 
         const key = row.thumbnailKey || row.originalKey;
-        const isLocal = key.startsWith('blob:http');
+        const isLocal = isLocalAttachment(key);
 
         if (isLocal) return <div className="text-muted text-center w-full">-</div>;
 
@@ -253,6 +253,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       name: t('common:filename'),
       visible: !isMobile,
       sortable: false,
+      resizable: true,
       minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
@@ -263,6 +264,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       key: 'size',
       name: t('common:size'),
       sortable: true,
+      resizable: true,
       visible: !isMobile,
       minWidth: 100,
       renderHeaderCell: HeaderCell,

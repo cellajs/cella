@@ -2,6 +2,7 @@ import { useLoaderData } from '@tanstack/react-router';
 import React from 'react';
 import type { Attachment } from '~/api.gen';
 import { ApiError } from '~/lib/api';
+import { isLocalAttachment } from '~/modules/attachments/utils';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -18,8 +19,8 @@ const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) =
   const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
   const [isPending, setIsPending] = React.useState(false);
-  const serverDeletionIds: string[] = attachments.filter(({ originalKey }) => originalKey.startsWith('blob:http')).map(({ id }) => id);
-  const localDeletionIds: string[] = attachments.filter(({ originalKey }) => !originalKey.startsWith('blob:http')).map(({ id }) => id);
+  const serverDeletionIds: string[] = attachments.filter(({ originalKey }) => isLocalAttachment(originalKey)).map(({ id }) => id);
+  const localDeletionIds: string[] = attachments.filter(({ originalKey }) => !isLocalAttachment(originalKey)).map(({ id }) => id);
 
   const onDelete = async () => {
     setIsPending(true);
