@@ -8,6 +8,7 @@ import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttach
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
 import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
+import { imagePreloader } from '~/modules/attachments/services/image-preloader';
 import { toaster } from '~/modules/common/toaster/service';
 import { offlineQueryConfig } from '~/query/provider';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
@@ -63,6 +64,10 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
         const newAttachments = transaction.mutations.map(({ modified }) => modified);
         try {
           await createAttachment({ body: newAttachments, path: { orgIdOrSlug } });
+
+          // Preload new image attachments in parallel
+          imagePreloader.preloadAttachments(newAttachments, orgIdOrSlug);
+
           const message =
             newAttachments.length === 1
               ? t('common:success.create_resource', { resource: t('common:attachment') })
