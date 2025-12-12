@@ -1,4 +1,4 @@
-import { initAttachmentsCollection } from '~/modules/attachments/query';
+import { initAttachmentsCollection } from '~/modules/attachments/collections';
 import type { UserMenuItem } from '~/modules/me/types';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';

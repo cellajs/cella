@@ -2,7 +2,7 @@ import { onlineManager, useQuery } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { initAttachmentsCollection, initLocalAttachmentsCollection } from '~/modules/attachments/query';
+import { initAttachmentsCollection, initLocalAttachmentsCollection } from '~/modules/attachments/collections';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';

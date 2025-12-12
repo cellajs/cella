@@ -336,23 +336,23 @@ export class DexieAttachmentStorage {
       return attachmentDb.attachmentCache.where('groupId').equals(groupId).toArray();
     } catch (error) {
       Sentry.captureException(error);
-      console.error(`Failed to retrieve cached image (${id}):`, error);
+      console.error(`Failed to retrieve cached image${groupId ? `s groupId: ${groupId}` : ` id:${id}`} | `, error);
       return [];
     }
   }
 
-  // /**
-  //  * Delete a cached image file
-  //  */
-  // async deleteCachedImage(id: string): Promise<void> {
-  //   try {
-  //     await attachmentDb.attachmentCache.where('id').equals(id).delete();
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error(`Failed to delete cached image (${id}):`, error);
-  //     throw error;
-  //   }
-  // }
+  /**
+   * Delete a cached image file
+   */
+  async deleteCachedImages(ids: string[]): Promise<void> {
+    try {
+      await attachmentDb.attachmentCache.bulkDelete(ids);
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to delete cached images (${ids}):`, error);
+      throw error;
+    }
+  }
 
   // /**
   //  * Check if an image is cached
