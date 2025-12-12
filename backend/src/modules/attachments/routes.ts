@@ -2,10 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
+import { attachmentCreateManySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { baseElectrycSyncQuery, idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -29,49 +29,6 @@ const attachmentRoutes = {
         content: {
           'application/json': {
             schema: z.array(attachmentSchema),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
-  getAttachments: createCustomRoute({
-    operationId: 'getAttachments',
-    method: 'get',
-    path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
-    tags: ['attachments'],
-    summary: 'Get list of attachments',
-    description: 'Retrieves all *attachments* associated with a specific entity, such as an organization.',
-    request: {
-      params: inOrgParamSchema,
-      query: attachmentListQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'Attachments',
-        content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
-  getAttachment: createCustomRoute({
-    operationId: 'getAttachment',
-    method: 'get',
-    path: '/{id}',
-    guard: [isAuthenticated, hasOrgAccess],
-    tags: ['attachments'],
-    summary: 'Get attachment',
-    description: 'Fetches metadata and access details for a single *attachment* by ID.',
-    request: { params: idInOrgParamSchema },
-    responses: {
-      200: {
-        description: 'Attachment',
-        content: {
-          'application/json': {
-            schema: attachmentSchema,
           },
         },
       },

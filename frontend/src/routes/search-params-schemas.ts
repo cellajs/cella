@@ -1,7 +1,7 @@
 // Search query schemas
 
 import z from 'zod';
-import { zGetAttachmentsData, zGetMembersData, zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/api.gen/zod.gen';
+import { zGetMembersData, zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/api.gen/zod.gen';
 
 /**
  * Search params schema for members route.
@@ -31,7 +31,10 @@ export const requestsRouteSearchParamsSchema = zGetRequestsData.shape.query.unwr
 /**
  * Search params schema for attachments route.
  */
-export const attachmentsRouteSearchParamsSchema = zGetAttachmentsData.shape.query.unwrap().pick({ q: true, sort: true, order: true }).extend({
+export const attachmentsRouteSearchParamsSchema = z.object({
   attachmentDialogId: z.string().optional(),
   groupId: z.string().optional(),
+  q: z.string().optional(),
+  order: z.optional(z.enum(['asc', 'desc'])),
+  sort: z.enum(['id', 'name', 'size', 'createdAt']).default('createdAt').optional(),
 });

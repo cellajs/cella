@@ -32,7 +32,7 @@ const DeviceMockup = ({ lightItems, darkItems, type, className }: DeviceMockupPr
         type={type}
         inView={inView}
         renderCarousel={(className) => {
-          return <AttachmentsCarousel items={items} isDialog={false} classNameContainer={className} />;
+          return <AttachmentsCarousel items={items || []} isDialog={false} classNameContainer={className} />;
         }}
       />
     </div>
