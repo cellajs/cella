@@ -8,7 +8,6 @@ import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttach
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
 import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
-import { imagePreloader } from '~/modules/attachments/services/image-preloader';
 import { toaster } from '~/modules/common/toaster/service';
 import { offlineQueryConfig } from '~/query/provider';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
@@ -66,7 +65,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
           await createAttachment({ body: newAttachments, path: { orgIdOrSlug } });
 
           // Preload new image attachments in parallel
-          imagePreloader.preloadAttachments(newAttachments, orgIdOrSlug);
+          dexieAttachmentStorage.addCachedImage(newAttachments);
 
           const message =
             newAttachments.length === 1
@@ -120,9 +119,9 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
         try {
           for (const { changes: body, original } of transaction.mutations) {
             if (!body.name) continue;
-            const file = await dexieAttachmentStorage.updateFileName(original.id, body.name);
+            // const file = await dexieAttachmentStorage.updateFileName(original.id, body.name);
 
-            if (!file) throw new Error(`Failed to update file name (${original.id}):`);
+            // if (!file) throw new Error(`Failed to update file name (${original.id}):`);
 
             return { ...original, name: body.name };
           }
@@ -133,7 +132,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
       onDelete: async ({ transaction }) => {
         const ids = transaction.mutations.map(({ modified }) => modified.id);
         try {
-          await dexieAttachmentStorage.removeFiles(ids);
+          // await dexieAttachmentStorage.removeFiles(ids);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }

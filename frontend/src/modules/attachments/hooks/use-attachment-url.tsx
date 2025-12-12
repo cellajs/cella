@@ -43,7 +43,8 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string, orga
 
     const fetchLocal = async () => {
       try {
-        const attachmentFile = await dexieAttachmentStorage.getFile(id);
+        const attachmentFile = { file: null };
+        // const attachmentFile = await dexieAttachmentStorage.getFile(id);
         const file = attachmentFile?.file;
 
         if (attachmentFile && file && file.data) {

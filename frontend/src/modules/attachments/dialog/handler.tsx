@@ -18,7 +18,7 @@ const AttachmentDialogHandler = memo(() => {
     if (getDialog('attachment-dialog')) return;
 
     const loadAndCreateDialog = async () => {
-      const file = await dexieAttachmentStorage.getFile(attachmentDialogId);
+      // const file = await dexieAttachmentStorage.getFile(attachmentDialogId);
       const dialogTrigger = getTriggerRef(attachmentDialogId);
       const triggerRef = dialogTrigger || fallbackContentRef;
 

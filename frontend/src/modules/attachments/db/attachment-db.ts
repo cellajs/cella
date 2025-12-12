@@ -1,3 +1,4 @@
+import { appConfig } from 'config';
 import { Dexie, type EntityTable } from 'dexie';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
@@ -31,16 +32,24 @@ export interface AttachmentBatch {
   completedAt?: Date;
 }
 
+export interface CachedAttachment {
+  id: string;
+  file: File;
+}
+
 export class AttachmentDatabase extends Dexie {
-  attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
-  attachmentBatches!: EntityTable<AttachmentBatch, 'id'>;
+  attachmentCache!: EntityTable<CachedAttachment, 'id'>;
+  // attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
+
+  // attachmentBatches: EntityTable<AttachmentBatch, 'id'>;
 
   constructor() {
-    super('CellaAttachmentDatabase');
+    super(`${appConfig.name}-attachment-daatabase`);
 
     this.version(1).stores({
-      attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus], [batchId+syncStatus]',
-      attachmentBatches: '++id, batchId, organizationId, syncStatus, createdAt, updatedAt, fileCount, [organizationId+syncStatus]',
+      attachmentCache: '++id, file',
+      // attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus], [batchId+syncStatus]',
+      // attachmentBatches: '++id, batchId, organizationId, syncStatus, createdAt, updatedAt, fileCount, [organizationId+syncStatus]',
     });
   }
 }

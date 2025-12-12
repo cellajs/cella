@@ -17,7 +17,7 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
   const templateKey = template.use[0];
 
   // Save files to local storage
-  await dexieAttachmentStorage.addFiles(files, tokenQuery);
+  // await dexieAttachmentStorage.addFiles(files, tokenQuery);
 
   // Prepare files for a manual 'complete' event (successfully uploaded files)
   const localFiles = Object.values(files).map((el) => {

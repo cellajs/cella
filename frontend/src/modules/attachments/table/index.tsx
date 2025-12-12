@@ -8,8 +8,6 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
-import { useDexieLocalSync } from '~/modules/attachments/hooks/use-dexie-local-sync';
-import { useImagePreloader } from '~/modules/attachments/hooks/use-image-preloader';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
@@ -32,10 +30,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  useDexieLocalSync(entity.id);
-
-  // Preload all available images when component mounts
-  const { preloadAll } = useImagePreloader();
+  // useDexieLocalSync(entity.id);
 
   // Table state
   const { q, sort, order } = search;
@@ -77,9 +72,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [(entity.id, search)],
   );
 
-  useEffect(() => {
-    preloadAll(fetchedRows);
-  }, [fetchedRows]);
   const { data: localRows } = useLiveQuery(
     (liveQuery) => {
       return liveQuery
