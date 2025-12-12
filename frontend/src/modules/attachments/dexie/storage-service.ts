@@ -1,52 +1,42 @@
 import * as Sentry from '@sentry/react';
 import { Attachment, getPresignedUrl } from '~/api.gen';
-import { attachmentDb, CachedAttachment } from '~/modules/attachments/dexie/attachment-db';
+import { AttachmentFile, attachmentDb, CachedAttachment, SyncStatus } from '~/modules/attachments/dexie/attachment-db';
+import { CustomUppyFile } from '~/modules/common/uploader/types';
+import { UploadTokenQuery } from '~/modules/me/types';
+import { nanoid } from '~/utils/nanoid';
 
 /**
  * Dexie-based attachment storage service with enhanced offline capabilities
  */
 export class DexieAttachmentStorage {
-  // /**
-  //  * Add files to a batch for offline storage
-  //  */
-  // async addFiles(files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<string> {
-  //   if (!tokenQuery.organizationId) throw new Error('No organizationId provided');
-  //   const batchId = nanoid(8);
-  //   const now = new Date();
-  //   const organizationId = tokenQuery.organizationId;
-  //   try {
-  //     await attachmentDb.transaction('rw', attachmentDb.attachmentBatches, attachmentDb.attachmentFiles, async () => {
-  //       // Create batch record
-  //       await attachmentDb.attachmentBatches.add({
-  //         batchId,
-  //         organizationId,
-  //         tokenQuery,
-  //         syncStatus: 'idle',
-  //         fileCount: Object.keys(files).length,
-  //         createdAt: now,
-  //         updatedAt: now,
-  //       });
-  //       // Add file records
-  //       const fileRecords: AttachmentFile[] = Object.entries(files).map(([fileId, file]) => ({
-  //         fileId,
-  //         file,
-  //         organizationId,
-  //         batchId,
-  //         tokenQuery,
-  //         syncStatus: 'idle' as SyncStatus,
-  //         createdAt: now,
-  //         updatedAt: now,
-  //       }));
-  //       await attachmentDb.attachmentFiles.bulkAdd(fileRecords);
-  //     });
-  //     return batchId;
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error('Failed to save files:', error);
-  //     throw error;
-  //   }
-  // }
-  // /**
+  /**
+   * Add files to a batch for offline storage
+   */
+  async addFiles(files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<void> {
+    if (!tokenQuery.organizationId) throw new Error('No organizationId provided');
+    const batchId = nanoid(8);
+    const now = new Date();
+    const organizationId = tokenQuery.organizationId;
+    try {
+      // Add file records
+      const fileRecords: AttachmentFile[] = Object.entries(files).map(([fileId, file]) => ({
+        fileId,
+        file,
+        organizationId,
+        batchId,
+        tokenQuery,
+        syncStatus: 'idle' as SyncStatus,
+        createdAt: now,
+        updatedAt: now,
+      }));
+      await attachmentDb.attachmentFiles.bulkAdd(fileRecords);
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error('Failed to save offline uploaded files:', error);
+      throw error;
+    }
+  }
+  /**
   //  * Get all files for an organization
   //  */
   // async getFilesByOrganization(organizationId: string): Promise<AttachmentFile[]> {
@@ -85,15 +75,7 @@ export class DexieAttachmentStorage {
   // /**
   //  * Get batch information
   //  */
-  // async getBatch(batchId: string): Promise<AttachmentBatch | undefined> {
-  //   try {
-  //     return await attachmentDb.attachmentBatches.where('batchId').equals(batchId).first();
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error(`Failed to retrieve batch (${batchId}):`, error);
-  //     return undefined;
-  //   }
-  // }
+
   // /**
   //  * Get all files in a batch
   //  */

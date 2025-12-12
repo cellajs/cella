@@ -108,7 +108,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
       onDelete: async ({ transaction }) => {
         const ids = transaction.mutations.map(({ modified }) => modified.id);
         try {
-          // await attachmentStorage.removeFiles(ids);
+          attachmentStorage.deleteCachedImages(ids);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }

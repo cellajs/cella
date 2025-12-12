@@ -20,18 +20,6 @@ export interface AttachmentFile {
   errorMessage?: string;
 }
 
-export interface AttachmentBatch {
-  id?: number;
-  batchId: string;
-  organizationId: string;
-  tokenQuery: UploadTokenQuery;
-  syncStatus: SyncStatus;
-  fileCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
-}
-
 export interface CachedAttachment {
   id: string;
   file: File;
@@ -40,7 +28,7 @@ export interface CachedAttachment {
 
 export class AttachmentDatabase extends Dexie {
   attachmentCache!: EntityTable<CachedAttachment, 'id'>;
-  // attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
+  attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
 
   // attachmentBatches: EntityTable<AttachmentBatch, 'id'>;
 
@@ -49,8 +37,7 @@ export class AttachmentDatabase extends Dexie {
 
     this.version(1).stores({
       attachmentCache: '++id, file, groupId',
-      // attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus], [batchId+syncStatus]',
-      // attachmentBatches: '++id, batchId, organizationId, syncStatus, createdAt, updatedAt, fileCount, [organizationId+syncStatus]',
+      attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus]',
     });
   }
 }
