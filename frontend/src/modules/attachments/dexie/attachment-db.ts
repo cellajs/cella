@@ -35,6 +35,7 @@ export interface AttachmentBatch {
 export interface CachedAttachment {
   id: string;
   file: File;
+  groupId: string | null;
 }
 
 export class AttachmentDatabase extends Dexie {
@@ -47,7 +48,7 @@ export class AttachmentDatabase extends Dexie {
     super(`${appConfig.name}-attachment-daatabase`);
 
     this.version(1).stores({
-      attachmentCache: '++id, file',
+      attachmentCache: '++id, file, groupId',
       // attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus], [batchId+syncStatus]',
       // attachmentBatches: '++id, batchId, organizationId, syncStatus, createdAt, updatedAt, fileCount, [organizationId+syncStatus]',
     });

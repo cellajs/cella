@@ -7,7 +7,7 @@ import { t } from 'i18next';
 import { createAttachment, deleteAttachments, type GetAttachmentsData, getAttachments, updateAttachment } from '~/api.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
-import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
+import { attachmentStorage } from '~/modules/attachments/dexie/storage-service';
 import { toaster } from '~/modules/common/toaster/service';
 import { offlineQueryConfig } from '~/query/provider';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
@@ -65,7 +65,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
           await createAttachment({ body: newAttachments, path: { orgIdOrSlug } });
 
           // Preload new image attachments in parallel
-          dexieAttachmentStorage.addCachedImage(newAttachments);
+          attachmentStorage.addCachedImage(newAttachments);
 
           const message =
             newAttachments.length === 1
@@ -119,7 +119,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
         try {
           for (const { changes: body, original } of transaction.mutations) {
             if (!body.name) continue;
-            // const file = await dexieAttachmentStorage.updateFileName(original.id, body.name);
+            // const file = await attachmentStorage.updateFileName(original.id, body.name);
 
             // if (!file) throw new Error(`Failed to update file name (${original.id}):`);
 
@@ -132,7 +132,7 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
       onDelete: async ({ transaction }) => {
         const ids = transaction.mutations.map(({ modified }) => modified.id);
         try {
-          // await dexieAttachmentStorage.removeFiles(ids);
+          // await attachmentStorage.removeFiles(ids);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }

@@ -1,5 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
+import router from '~/lib/router';
 import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
@@ -26,4 +27,21 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
       showCloseButton: false,
     },
   );
+};
+
+/**
+ * Handler for attachment dialog.
+ * It creates and removes an attachment dialog by listening to `attachmentDialogId` in search parameters.
+ */
+export const clearAttachmentDialogSearchParams = () => {
+  router.navigate({
+    to: '.',
+    replace: true,
+    resetScroll: false,
+    search: (prev) => ({
+      ...prev,
+      attachmentDialogId: undefined,
+      groupId: undefined,
+    }),
+  });
 };

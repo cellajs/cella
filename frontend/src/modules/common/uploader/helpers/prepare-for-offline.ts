@@ -1,6 +1,6 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'config/templates';
-import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
+import { attachmentStorage } from '~/modules/attachments/dexie/storage-service';
 import type { CustomUppyFile, UploadedFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 
@@ -17,7 +17,7 @@ export const prepareFilesForOffline = async (files: Record<string, CustomUppyFil
   const templateKey = template.use[0];
 
   // Save files to local storage
-  // await dexieAttachmentStorage.addFiles(files, tokenQuery);
+  // await attachmentStorage.addFiles(files, tokenQuery);
 
   // Prepare files for a manual 'complete' event (successfully uploaded files)
   const localFiles = Object.values(files).map((el) => {

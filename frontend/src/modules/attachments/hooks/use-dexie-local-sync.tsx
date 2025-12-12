@@ -3,7 +3,7 @@
 // import { useEffect, useRef } from 'react';
 // import { useOnlineManager } from '~/hooks/use-online-manager';
 // import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-// import { dexieAttachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
+// import { attachmentStorage } from '~/modules/attachments/services/dexie-attachment-storage';
 // import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 // import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 // import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
@@ -23,7 +23,7 @@
 
 //       try {
 //         // Get batches that need syncing
-//         const batchesNeedingSync = await dexieAttachmentStorage.getBatchesNeedingSync(organizationId);
+//         const batchesNeedingSync = await attachmentStorage.getBatchesNeedingSync(organizationId);
 
 //         if (!batchesNeedingSync.length) {
 //           isSyncingRef.current = false;
@@ -44,13 +44,13 @@
 //     const syncBatch = async (batch: { batchId: string; tokenQuery: any }) => {
 //       try {
 //         // Mark batch as processing
-//         await dexieAttachmentStorage.updateBatchSyncStatus(batch.batchId, 'processing');
+//         await attachmentStorage.updateBatchSyncStatus(batch.batchId, 'processing');
 
-//         const batchFiles = await dexieAttachmentStorage.getBatchFiles(batch.batchId);
+//         const batchFiles = await attachmentStorage.getBatchFiles(batch.batchId);
 //         const files = batchFiles.map((f) => f.file);
 
 //         if (!files.length) {
-//           await dexieAttachmentStorage.updateBatchSyncStatus(batch.batchId, 'idle');
+//           await attachmentStorage.updateBatchSyncStatus(batch.batchId, 'idle');
 //           return;
 //         }
 
@@ -72,11 +72,11 @@
 //         localUppy
 //           .on('error', async (err) => {
 //             console.error('Sync files upload error:', err);
-//             await dexieAttachmentStorage.updateBatchSyncStatus(batch.batchId, 'failed', err.message);
+//             await attachmentStorage.updateBatchSyncStatus(batch.batchId, 'failed', err.message);
 //           })
 //           .on('upload', async () => {
 //             console.info('Sync files upload started for batch:', batch.batchId);
-//             await dexieAttachmentStorage.updateBatchSyncStatus(batch.batchId, 'processing');
+//             await attachmentStorage.updateBatchSyncStatus(batch.batchId, 'processing');
 //           })
 //           .on('transloadit:complete', async (assembly) => {
 //             if (assembly.error) throw new Error(assembly.error);
@@ -87,7 +87,7 @@
 
 //             // Clean up offline files from Dexie
 //             const fileIds = batchFiles.map((f) => f.fileId);
-//             await dexieAttachmentStorage.removeFiles(fileIds);
+//             await attachmentStorage.removeFiles(fileIds);
 //             console.info('Successfully removed uploaded files from Dexie.');
 //           });
 
@@ -100,7 +100,7 @@
 //         await localUppy.upload();
 //       } catch (error) {
 //         console.error('Error syncing batch:', batch.batchId, error);
-//         await dexieAttachmentStorage.updateBatchSyncStatus(batch.batchId, 'failed', error instanceof Error ? error.message : 'Unknown error');
+//         await attachmentStorage.updateBatchSyncStatus(batch.batchId, 'failed', error instanceof Error ? error.message : 'Unknown error');
 //       }
 //     };
 
@@ -111,10 +111,10 @@
 //   useEffect(() => {
 //     const handleBeforeUnload = async () => {
 //       try {
-//         const batchesNeedingSync = await dexieAttachmentStorage.getBatchesNeedingSync(organizationId);
+//         const batchesNeedingSync = await attachmentStorage.getBatchesNeedingSync(organizationId);
 //         for (const batch of batchesNeedingSync) {
 //           if (batch.syncStatus === 'processing') {
-//             await dexieAttachmentStorage.updateBatchSyncStatus(batch.batchId, 'idle');
+//             await attachmentStorage.updateBatchSyncStatus(batch.batchId, 'idle');
 //           }
 //         }
 //       } catch (error) {

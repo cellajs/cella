@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { Attachment, getPresignedUrl } from '~/api.gen';
-import { attachmentDb, CachedAttachment } from '../db/attachment-db';
+import { attachmentDb, CachedAttachment } from '~/modules/attachments/dexie/attachment-db';
 
 /**
  * Dexie-based attachment storage service with enhanced offline capabilities
@@ -250,8 +250,9 @@ export class DexieAttachmentStorage {
   //     },
   //   });
   // }
+
   /**
-   * Store a cached image file with optimized performance
+   * Store a cached image
    */
   async addCachedImage(attachments: Attachment[]): Promise<void> {
     if (!attachments.length) return;
@@ -267,7 +268,7 @@ export class DexieAttachmentStorage {
       for (let i = 0; i < uniqueAttachments.length; i += BATCH_SIZE) {
         const batch = uniqueAttachments.slice(i, i + BATCH_SIZE);
 
-        const batchPromises = batch.map(async ({ id, name, contentType, originalKey: key, public: isPublic }) => {
+        const batchPromises = batch.map(async ({ id, name, groupId, contentType, originalKey: key, public: isPublic }) => {
           try {
             const imageUrl = await getPresignedUrl({ query: { key, isPublic } });
 
@@ -294,7 +295,7 @@ export class DexieAttachmentStorage {
               lastModified: Date.now(),
             });
 
-            return { id, file };
+            return { id, file, groupId };
           } catch (error) {
             // Log individual failures but continue processing others
             console.warn(`Failed to cache image ${id}:`, error instanceof Error ? error.message : error);
@@ -326,19 +327,19 @@ export class DexieAttachmentStorage {
     }
   }
 
-  // /**
-  //  * Get a cached image file
-  //  */
-  // async getCachedImage(id: string): Promise<File | undefined> {
-  //   try {
-  //     const result = await attachmentDb.attachmentCache.where('id').equals(id).first();
-  //     return result?.file;
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error(`Failed to retrieve cached image (${id}):`, error);
-  //     return undefined;
-  //   }
-  // }
+  /**
+   * Get a cached images by groupId
+   */
+  async getCachedImages(id: string, groupId?: string | null): Promise<CachedAttachment[]> {
+    try {
+      if (!groupId) return attachmentDb.attachmentCache.where('id').equals(id).toArray();
+      return attachmentDb.attachmentCache.where('groupId').equals(groupId).toArray();
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to retrieve cached image (${id}):`, error);
+      return [];
+    }
+  }
 
   // /**
   //  * Delete a cached image file
@@ -368,4 +369,4 @@ export class DexieAttachmentStorage {
   // }
 }
 
-export const dexieAttachmentStorage = new DexieAttachmentStorage();
+export const attachmentStorage = new DexieAttachmentStorage();

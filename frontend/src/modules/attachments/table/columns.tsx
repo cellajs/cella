@@ -57,7 +57,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         if (isLocalAttachment(key)) {
           return (
             <div className={wrapClass}>
-              <AttachmentPreview id={id} name={filename} url={key} contentType={contentType} />
+              <AttachmentPreview name={filename} url={key} contentType={contentType} />
             </div>
           );
         }
@@ -67,7 +67,6 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
           queryKey: ['presigned-url', key, isPublic],
           queryFn: () => getPresignedUrl({ query: { key, isPublic } }),
         });
-
         // Blob URLs: wrap in a Link with custom behavior
         return (
           <Link
@@ -95,7 +94,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
               });
             }}
           >
-            <AttachmentPreview id={id} name={filename} url={url} contentType={contentType} />
+            <AttachmentPreview name={filename} url={url} contentType={contentType} />
           </Link>
         );
       },

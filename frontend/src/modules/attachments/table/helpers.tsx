@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';

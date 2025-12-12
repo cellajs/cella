@@ -3,3 +3,4 @@
  * Local attachments have blob URLs starting with 'blob:http'
  */
 export const isLocalAttachment = (key: string): boolean => key.startsWith('blob:http') ?? false;
+// TODO remove it after offline first attachment

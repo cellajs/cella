@@ -22,16 +22,16 @@ This module provides offline-first attachment storage using Dexie.js with enhanc
 ### Storage Service
 
 ```typescript
-import { dexieAttachmentStorage } from "~/modules/attachments/services/dexie-attachment-storage";
+import { attachmentStorage } from "~/modules/attachments/services/dexie-attachment-storage";
 
 // Add files offline
-const batchId = await dexieAttachmentStorage.addFiles(files, tokenQuery);
+const batchId = await attachmentStorage.addFiles(files, tokenQuery);
 
 // Get files needing sync
-const files = await dexieAttachmentStorage.getFilesBySyncStatus(orgId, "idle");
+const files = await attachmentStorage.getFilesBySyncStatus(orgId, "idle");
 
 // Update sync status
-await dexieAttachmentStorage.updateBatchSyncStatus(batchId, "processing");
+await attachmentStorage.updateBatchSyncStatus(batchId, "processing");
 ```
 
 ### React Hooks

@@ -3,8 +3,7 @@ import Autoplay from 'embla-carousel-autoplay';
 import { DownloadIcon, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
-import { clearAttachmentDialogSearchParams } from '~/modules/attachments/dialog/clear-search-params';
-import { openAttachmentDialog } from '~/modules/attachments/helpers/open-dialog';
+import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachments/dialog/lib';
 import { AttachmentRender } from '~/modules/attachments/render';
 import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -25,8 +24,8 @@ export type CarouselItemData = {
 };
 
 interface CarouselPropsBase {
+  items: CarouselItemData[];
   itemIndex?: number;
-  items?: CarouselItemData[];
   classNameContainer?: string;
 }
 
@@ -40,7 +39,7 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
-const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
+const AttachmentsCarousel = ({ items, isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
   const { attachmentDialogId } = useSearch({ strict: false });

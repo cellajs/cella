@@ -2,7 +2,7 @@ import { ilike, isNull, not, or, useLiveInfiniteQuery, useLiveQuery } from '@tan
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
@@ -72,6 +72,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [(entity.id, search)],
   );
 
+  // useEffect(() => {
+  //   attachmentStorage.addCachedImage(fetchedRows);
+  // }, [fetchedRows]);
   const { data: localRows } = useLiveQuery(
     (liveQuery) => {
       return liveQuery
