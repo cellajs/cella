@@ -1265,31 +1265,6 @@ export const zDeleteAttachmentsResponse = z.object({
   rejectedItems: z.array(z.string()),
 });
 
-export const zGetAttachmentsData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'size', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      attachmentId: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Attachments
- */
-export const zGetAttachmentsResponse = z.object({
-  items: z.array(zAttachment),
-  total: z.number(),
-});
-
 export const zCreateAttachmentData = z.object({
   body: z
     .array(
@@ -1326,20 +1301,6 @@ export const zCreateAttachmentData = z.object({
  * Attachment
  */
 export const zCreateAttachmentResponse = z.array(zAttachment);
-
-export const zGetAttachmentData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Attachment
- */
-export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({

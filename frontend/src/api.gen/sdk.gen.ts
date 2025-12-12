@@ -63,12 +63,6 @@ import type {
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
-  GetAttachmentData,
-  GetAttachmentErrors,
-  GetAttachmentResponses,
-  GetAttachmentsData,
-  GetAttachmentsErrors,
-  GetAttachmentsResponses,
   GetContextEntitiesData,
   GetContextEntitiesErrors,
   GetContextEntitiesResponses,
@@ -1962,40 +1956,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
 };
 
 /**
- * Get list of attachments
- *
- * 🛡️ Requires authentication (org access)
- *
- * Retrieves all *attachments* associated with a specific entity, such as an organization.
- *
- * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
- *
- * @param {getAttachmentsData} options
- * @param {string | string} options.path.orgidorslug - `string | string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.attachmentid - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachments = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments',
-    ...options,
-  });
-};
-
-/**
  * Create attachments
  *
  * 🛡️ Requires authentication (org access)
@@ -2024,35 +1984,6 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-};
-
-/**
- * Get attachment
- *
- * 🛡️ Requires authentication (org access)
- *
- * Fetches metadata and access details for a single *attachment* by ID.
- *
- * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
- *
- * @param {getAttachmentData} options
- * @param {string} options.path.id - `string`
- * @param {string | string} options.path.orgidorslug - `string | string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/{id}',
-    ...options,
   });
 };
 

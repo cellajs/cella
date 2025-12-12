@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { count, eq, inArray } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -8,15 +8,12 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { getOrderColumn } from '#/utils/order-column';
-import { prepareStringForILikeFilter } from '#/utils/sql';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -106,75 +103,6 @@ const attachmentsRouteHandlers = app
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
     return ctx.json(createdAttachments, 201);
-  })
-  /**
-   * Get attachments
-   */
-  .openapi(attachmentRoutes.getAttachments, async (ctx) => {
-    const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
-
-    const organization = getContextOrganization();
-
-    // Filter at least by valid organization
-    const filters = [eq(attachmentsTable.organizationId, organization.id)];
-
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      filters.push(or(ilike(attachmentsTable.filename, query), ilike(attachmentsTable.name, query)) as SQL);
-    }
-
-    const orderColumn = getOrderColumn(
-      {
-        id: attachmentsTable.id,
-        name: attachmentsTable.name,
-        size: attachmentsTable.size,
-        createdAt: attachmentsTable.createdAt,
-      },
-      sort,
-      attachmentsTable.id,
-      order,
-    );
-
-    if (attachmentId) {
-      // Retrieve target attachment
-      const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
-      if (!targetAttachment) {
-        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
-      }
-
-      const items = await processAttachmentUrlsBatch([targetAttachment]);
-      // return target attachment itself if no groupId
-      if (!targetAttachment.groupId) return ctx.json({ items, total: 1 }, 200);
-
-      // add filter attachments by groupId
-      filters.push(eq(attachmentsTable.groupId, targetAttachment.groupId));
-    }
-
-    const attachmentsQuery = db
-      .select()
-      .from(attachmentsTable)
-      .where(and(...filters))
-      .orderBy(orderColumn);
-
-    const attachments = await attachmentsQuery.offset(offset).limit(limit);
-
-    const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
-
-    const items = await processAttachmentUrlsBatch(attachments);
-
-    return ctx.json({ items, total }, 200);
-  })
-  /**
-   * Get attachment by id
-   */
-  .openapi(attachmentRoutes.getAttachment, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-
-    const attachment = await getValidProductEntity(id, 'attachment', 'organization', 'read');
-
-    const data = await processAttachmentUrls(attachment);
-
-    return ctx.json(data, 200);
   })
   /**
    * Update an attachment by id

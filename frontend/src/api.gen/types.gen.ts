@@ -2986,59 +2986,6 @@ export type DeleteAttachmentsResponses = {
 
 export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
 
-export type GetAttachmentsData = {
-  body?: never;
-  path: {
-    orgIdOrSlug: string;
-  };
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'size' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    attachmentId?: string;
-  };
-  url: '/{orgIdOrSlug}/attachments';
-};
-
-export type GetAttachmentsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
-
-export type GetAttachmentsResponses = {
-  /**
-   * Attachments
-   */
-  200: {
-    items: Array<Attachment>;
-    total: number;
-  };
-};
-
-export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
-
 export type CreateAttachmentData = {
   body: Array<{
     createdAt?: string;
@@ -3100,50 +3047,6 @@ export type CreateAttachmentResponses = {
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
-
-export type GetAttachmentData = {
-  body?: never;
-  path: {
-    id: string;
-    orgIdOrSlug: string;
-  };
-  query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}';
-};
-
-export type GetAttachmentErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
-
-export type GetAttachmentResponses = {
-  /**
-   * Attachment
-   */
-  200: Attachment;
-};
-
-export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
 
 export type UpdateAttachmentData = {
   body: {
