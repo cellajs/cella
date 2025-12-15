@@ -14,22 +14,20 @@ export class DexieAttachmentStorage {
    */
   async addFiles(files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<void> {
     if (!tokenQuery.organizationId) throw new Error('No organizationId provided');
-    const batchId = nanoid(8);
     const now = new Date();
     const organizationId = tokenQuery.organizationId;
     try {
       // Add file records
-      const fileRecords: AttachmentFile[] = Object.entries(files).map(([fileId, file]) => ({
-        fileId,
-        file,
+      const fileRecords: AttachmentFile = {
+        id: nanoid(8),
+        files,
         organizationId,
-        batchId,
         tokenQuery,
         syncStatus: 'idle' as SyncStatus,
         createdAt: now,
         updatedAt: now,
-      }));
-      await attachmentDb.attachmentFiles.bulkAdd(fileRecords);
+      };
+      await attachmentDb.attachmentFiles.add(fileRecords);
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to save offline uploaded files:', error);
@@ -113,9 +111,11 @@ export class DexieAttachmentStorage {
   /**
    * Remove files by IDs
    */
-  async removeFiles(fileIds: string[]): Promise<void> {
+  async removeFiles(files: AttachmentFile[]): Promise<void> {
     try {
-      await attachmentDb.attachmentFiles.where('fileId').anyOf(fileIds).delete();
+      const ids = files.map(({ id }) => id);
+
+      await attachmentDb.attachmentFiles.where('id').anyOf(ids).delete();
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to remove files:', error);

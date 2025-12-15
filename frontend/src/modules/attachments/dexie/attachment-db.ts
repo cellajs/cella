@@ -6,9 +6,8 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 export type SyncStatus = 'idle' | 'processing' | 'synced' | 'failed';
 
 export interface AttachmentFile {
-  id?: number;
-  fileId: string; // Uppy file ID
-  file: CustomUppyFile;
+  id: string;
+  files: Record<string, CustomUppyFile>;
   organizationId: string;
   tokenQuery: UploadTokenQuery;
   syncStatus: SyncStatus;

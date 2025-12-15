@@ -30,7 +30,7 @@ export const useDexieLocalSync = (organizationId: string) => {
           return;
         }
 
-        const files = filesNeedingSync.map(({ file }) => file);
+        const files = filesNeedingSync.map(({ files }) => Object.values(files)).flat();
 
         if (!files.length) return;
 
@@ -46,13 +46,14 @@ export const useDexieLocalSync = (organizationId: string) => {
               requiredMetaFields: [],
             },
           },
-          batch.tokenQuery,
+          filesNeedingSync[0].tokenQuery,
         );
 
         localUppy
           .on('error', async (err) => {
             console.error('Sync files upload error:', err);
             await attachmentStorage.updateFilesSyncStatus(organizationId, 'failed');
+            localUppy.destroy();
           })
           .on('upload', async () => {
             console.info('Sync files upload started for batch:', organizationId);
@@ -66,24 +67,19 @@ export const useDexieLocalSync = (organizationId: string) => {
             console.info('Successfully synced attachments to server:', attachments);
 
             // Clean up offline files from Dexie
-            const fileIds = filesNeedingSync.map(({ fileId }) => fileId);
-            await attachmentStorage.removeFiles(fileIds);
+            await attachmentStorage.removeFiles(filesNeedingSync);
             console.info('Successfully removed uploaded files from Dexie.');
           });
 
-        for (const file of files) {
-          // TODO(DAVID) all types around file/custom uppy file look a bit confusing. can we do something about it? Ensure `data` is non-null to satisfy Uppy types: fall back to a size-only object when missing.
-          const data = file.data ?? { size: file.size ?? null };
-          localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}`, data });
+        for (const uppyFile of files) {
+          // Ensure `data` is non-null to satisfy Uppy types: fall back to a size-only object when missing.
+          const data = uppyFile.data ?? { size: uppyFile.size ?? null };
+          localUppy.addFile({ ...uppyFile, name: uppyFile.name || `${uppyFile.type}-${uppyFile.id}`, data });
         }
 
         await localUppy.upload();
-        // } catch (error) {
-        //   console.error('Error syncing batch:', batch.batchId, error);
-        //   await attachmentStorage.updateFilesSyncStatus(batch.batchId, 'failed');
-        // }
-      } catch (error) {
-        console.error('Error during sync:', error);
+        localUppy.destroy();
+      } catch {
       } finally {
         isSyncingRef.current = false;
       }
