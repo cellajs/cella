@@ -26,6 +26,8 @@ export class DexieAttachmentStorage {
         syncStatus: 'idle' as SyncStatus,
         createdAt: now,
         updatedAt: now,
+        syncAttempts: 0,
+        maxRetries: 3,
       };
       await attachmentDb.attachmentFiles.add(fileRecords);
     } catch (error) {
@@ -123,15 +125,78 @@ export class DexieAttachmentStorage {
     }
   }
   /**
-   * Get files needing sync (idle status)
+   * Get files needing sync (idle status or ready for retry)
    */
   async getFilesNeedingSync(organizationId: string): Promise<AttachmentFile[]> {
     try {
-      return await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, 'idle']).toArray();
+      const now = new Date();
+
+      // Get idle files
+      const idleFiles = await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, 'idle']).toArray();
+
+      // Get failed files that are ready for retry
+      const retryFiles = await attachmentDb.attachmentFiles
+        .where('[organizationId+syncStatus]')
+        .equals([organizationId, 'failed'])
+        .filter((file) => file.syncAttempts < file.maxRetries && (!file.nextRetryAt || file.nextRetryAt <= now))
+        .toArray();
+
+      return [...idleFiles, ...retryFiles];
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to get local files that needing sync:', error);
       return [];
+    }
+  }
+
+  /**
+   * Mark file as failed and schedule retry with exponential backoff
+   */
+  async markFileForRetry(fileId: string): Promise<void> {
+    try {
+      const file = await attachmentDb.attachmentFiles.where('id').equals(fileId).first();
+      if (!file) return;
+
+      const newAttemptCount = file.syncAttempts + 1;
+      const isLastAttempt = newAttemptCount >= file.maxRetries;
+
+      // Exponential backoff: 1min, 5min, 15min
+      const retryDelays = [60000, 300000, 900000];
+      const delay = retryDelays[Math.min(newAttemptCount - 1, retryDelays.length - 1)];
+      const nextRetryAt = newAttemptCount < file.maxRetries ? new Date(Date.now() + delay) : undefined;
+
+      await attachmentDb.attachmentFiles
+        .where('id')
+        .equals(fileId)
+        .modify({
+          syncStatus: isLastAttempt ? 'failed' : 'idle',
+          syncAttempts: newAttemptCount,
+          lastSyncAttempt: new Date(),
+          nextRetryAt,
+          updatedAt: new Date(),
+        });
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to mark file for retry (${fileId}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset failed files to idle for manual retry
+   */
+  async resetFailedFiles(organizationId: string): Promise<void> {
+    try {
+      await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, 'failed']).modify({
+        syncStatus: 'idle',
+        syncAttempts: 0,
+        nextRetryAt: undefined,
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to reset failed files for org: ${organizationId}:`, error);
+      throw error;
     }
   }
 

@@ -13,8 +13,10 @@ export interface AttachmentFile {
   syncStatus: SyncStatus;
   createdAt: Date;
   updatedAt: Date;
-  syncAttempts?: number;
+  syncAttempts: number;
   lastSyncAttempt?: Date;
+  maxRetries: number;
+  nextRetryAt?: Date;
 }
 
 export interface CachedAttachment {
@@ -27,14 +29,13 @@ export class AttachmentDatabase extends Dexie {
   attachmentCache!: EntityTable<CachedAttachment, 'id'>;
   attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
 
-  // attachmentBatches: EntityTable<AttachmentBatch, 'id'>;
-
   constructor() {
     super(`${appConfig.name}-attachment-daatabase`);
 
     this.version(1).stores({
       attachmentCache: '++id, file, groupId',
-      attachmentFiles: '++id, fileId, organizationId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus]',
+      attachmentFiles:
+        '++id, fileId, organizationId, syncStatus, createdAt, updatedAt, syncAttempts, lastSyncAttempt, maxRetries, nextRetryAt, [organizationId+syncStatus]',
     });
   }
 }
