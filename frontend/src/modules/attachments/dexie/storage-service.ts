@@ -37,17 +37,18 @@ export class DexieAttachmentStorage {
     }
   }
   /**
-  //  * Get all files for an organization
-  //  */
-  // async getFilesByOrganization(organizationId: string): Promise<AttachmentFile[]> {
-  //   try {
-  //     return await attachmentDb.attachmentFiles.where('organizationId').equals(organizationId).toArray();
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error('Failed to retrieve files:', error);
-  //     return [];
-  //   }
-  // }
+   * Get all files for an organization
+   */
+  async getFilesByOrganization(organizationId: string): Promise<AttachmentFile[]> {
+    try {
+      return await attachmentDb.attachmentFiles.where('organizationId').equals(organizationId).toArray();
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error('Failed to retrieve files:', error);
+      return [];
+    }
+  }
+
   // /**
   //  * Get files by sync status for an organization
   //  */
@@ -72,78 +73,24 @@ export class DexieAttachmentStorage {
   //     return undefined;
   //   }
   // }
-  // /**
-  //  * Get batch information
-  //  */
+  /**
+   * Update sync status for a files
+   */
+  async updateFilesSyncStatus(organizationId: string, syncStatus: SyncStatus): Promise<void> {
+    const now = new Date();
+    try {
+      // Update all files in batch
+      await attachmentDb.attachmentFiles.where('organizationId').equals(organizationId).modify({
+        syncStatus,
+        updatedAt: now,
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to update files sync status for org: ${organizationId} | `, error);
+      throw error;
+    }
+  }
 
-  // /**
-  //  * Get all files in a batch
-  //  */
-  // async getBatchFiles(batchId: string): Promise<AttachmentFile[]> {
-  //   try {
-  //     return await attachmentDb.attachmentFiles.where('batchId').equals(batchId).toArray();
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error(`Failed to retrieve batch files (${batchId}):`, error);
-  //     return [];
-  //   }
-  // }
-  // /**
-  //  * Update sync status for a batch
-  //  */
-  // async updateBatchSyncStatus(batchId: string, syncStatus: SyncStatus, errorMessage?: string): Promise<void> {
-  //   const now = new Date();
-  //   try {
-  //     await attachmentDb.transaction('rw', attachmentDb.attachmentBatches, attachmentDb.attachmentFiles, async () => {
-  //       // Update batch
-  //       await attachmentDb.attachmentBatches
-  //         .where('batchId')
-  //         .equals(batchId)
-  //         .modify({
-  //           syncStatus,
-  //           updatedAt: now,
-  //           ...(syncStatus === 'synced' && { completedAt: now }),
-  //         });
-  //       // Update all files in batch
-  //       await attachmentDb.attachmentFiles
-  //         .where('batchId')
-  //         .equals(batchId)
-  //         .modify({
-  //           syncStatus,
-  //           updatedAt: now,
-  //           ...(errorMessage && { errorMessage }),
-  //         });
-  //     });
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error(`Failed to update batch sync status (${batchId}):`, error);
-  //     throw error;
-  //   }
-  // }
-  // /**
-  //  * Update sync status for individual files
-  //  */
-  // async updateFileSyncStatus(fileIds: string[], syncStatus: SyncStatus, errorMessage?: string): Promise<void> {
-  //   const now = new Date();
-  //   try {
-  //     await attachmentDb.attachmentFiles
-  //       .where('fileId')
-  //       .anyOf(fileIds)
-  //       .modify((file) => {
-  //         file.syncStatus = syncStatus;
-  //         file.updatedAt = now;
-  //         file.syncAttempts = (file.syncAttempts || 0) + 1;
-  //         file.lastSyncAttempt = now;
-  //         if (errorMessage) {
-  //           file.errorMessage = errorMessage;
-  //         }
-  //       });
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error('Failed to update file sync status:', error);
-  //     throw error;
-  //   }
-  // }
   // /**
   //  * Update file name
   //  */
@@ -163,75 +110,30 @@ export class DexieAttachmentStorage {
   //     return undefined;
   //   }
   // }
-  // /**
-  //  * Remove files by IDs
-  //  */
-  // async removeFiles(fileIds: string[]): Promise<void> {
-  //   try {
-  //     await attachmentDb.transaction('rw', attachmentDb.attachmentFiles, attachmentDb.attachmentBatches, async () => {
-  //       // Get affected batches
-  //       const files = await attachmentDb.attachmentFiles.where('fileId').anyOf(fileIds).toArray();
-  //       const batchIdsSet = new Set(files.map((f) => f.batchId));
-  //       const batchIds = Array.from(batchIdsSet);
-  //       // Delete files
-  //       await attachmentDb.attachmentFiles.where('fileId').anyOf(fileIds).delete();
-  //       // Update batch file counts
-  //       for (const batchId of batchIds) {
-  //         const remainingCount = await attachmentDb.attachmentFiles.where('batchId').equals(batchId).count();
-  //         if (remainingCount === 0) {
-  //           // Delete empty batch
-  //           await attachmentDb.attachmentBatches.where('batchId').equals(batchId).delete();
-  //         } else {
-  //           // Update batch file count
-  //           await attachmentDb.attachmentBatches.where('batchId').equals(batchId).modify({
-  //             fileCount: remainingCount,
-  //             updatedAt: new Date(),
-  //           });
-  //         }
-  //       }
-  //     });
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error('Failed to remove files:', error);
-  //     throw error;
-  //   }
-  // }
-  // /**
-  //  * Get batches needing sync (idle status)
-  //  */
-  // async getBatchesNeedingSync(organizationId: string): Promise<AttachmentBatch[]> {
-  //   try {
-  //     return await attachmentDb.attachmentBatches.where('[organizationId+syncStatus]').equals([organizationId, 'idle']).toArray();
-  //   } catch (error) {
-  //     Sentry.captureException(error);
-  //     console.error('Failed to get batches needing sync:', error);
-  //     return [];
-  //   }
-  // }
-  // /**
-  //  * Get live query for files by organization
-  //  */
-  // observeFilesByOrganization(organizationId: string): Subscription {
-  //   return liveQuery(() => attachmentDb.attachmentFiles.where('organizationId').equals(organizationId).toArray()).subscribe({
-  //     error: (error) => {
-  //       Sentry.captureException(error);
-  //       console.error('Live query error:', error);
-  //     },
-  //   });
-  // }
-  // /**
-  //  * Get live query for files by sync status
-  //  */
-  // observeFilesBySyncStatus(organizationId: string, syncStatus: SyncStatus): Subscription {
-  //   return liveQuery(() =>
-  //     attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, syncStatus]).toArray(),
-  //   ).subscribe({
-  //     error: (error) => {
-  //       Sentry.captureException(error);
-  //       console.error('Live query error:', error);
-  //     },
-  //   });
-  // }
+  /**
+   * Remove files by IDs
+   */
+  async removeFiles(fileIds: string[]): Promise<void> {
+    try {
+      await attachmentDb.attachmentFiles.where('fileId').anyOf(fileIds).delete();
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error('Failed to remove files:', error);
+      throw error;
+    }
+  }
+  /**
+   * Get files needing sync (idle status)
+   */
+  async getFilesNeedingSync(organizationId: string): Promise<AttachmentFile[]> {
+    try {
+      return await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, 'idle']).toArray();
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error('Failed to get local files that needing sync:', error);
+      return [];
+    }
+  }
 
   /**
    * Store a cached image

@@ -10,14 +10,12 @@ export interface AttachmentFile {
   fileId: string; // Uppy file ID
   file: CustomUppyFile;
   organizationId: string;
-  batchId: string; // Groups files uploaded together
   tokenQuery: UploadTokenQuery;
   syncStatus: SyncStatus;
   createdAt: Date;
   updatedAt: Date;
   syncAttempts?: number;
   lastSyncAttempt?: Date;
-  errorMessage?: string;
 }
 
 export interface CachedAttachment {
@@ -37,7 +35,7 @@ export class AttachmentDatabase extends Dexie {
 
     this.version(1).stores({
       attachmentCache: '++id, file, groupId',
-      attachmentFiles: '++id, fileId, organizationId, batchId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus]',
+      attachmentFiles: '++id, fileId, organizationId, syncStatus, createdAt, updatedAt, [organizationId+syncStatus]',
     });
   }
 }
