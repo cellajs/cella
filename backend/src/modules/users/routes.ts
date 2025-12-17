@@ -22,7 +22,7 @@ const userRoutes = {
     ],
     tags: ['users'],
     summary: 'Get list of users',
-    description: 'Returns a list of *users* at the system level.',
+    description: 'Returns a list of *users*.',
     request: { query: userListQuerySchema },
     responses: {
       200: {

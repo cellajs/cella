@@ -1,8 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { appConfig, type ContextEntityType } from 'config';
 import { useMemo } from 'react';
-import { type ContextEntityBase, getContextEntity, getUser, type UserBase } from '~/api.gen';
-import { entitiesKeys } from '~/modules/entities/query';
+import { type ContextEntityBase, type UserBase } from '~/api.gen';
 import { queryClient } from '~/query/query-client';
 import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
 import { useNavigationStore } from '~/store/navigation';
@@ -16,18 +14,16 @@ function isContextEntityType(t: ContextEntityType | 'user'): t is ContextEntityT
 type WithIdSlug = { id?: string | null; slug?: string | null };
 
 // user overload
-export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user'; cacheOnly?: boolean }): UserBase | undefined;
+export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user' }): UserBase | undefined;
 
 // context entities overload
-export function useGetEntityBaseData<T extends ContextEntityType>(args: {
-  idOrSlug: string;
-  entityType: T;
-  cacheOnly?: boolean;
-}): ContextEntityBase | undefined;
+export function useGetEntityBaseData<T extends ContextEntityType>(args: { idOrSlug: string; entityType: T }): ContextEntityBase | undefined;
 
-// ——— implementation ———
-export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user'; cacheOnly?: boolean }) {
-  const { idOrSlug, entityType, cacheOnly = false } = args;
+/**
+ * Get base data for an entity (context entity or user) from React Query cache or navigation menu
+ */
+export function useGetEntityBaseData(args: { idOrSlug: string; entityType: ContextEntityType | 'user' }) {
+  const { idOrSlug, entityType } = args;
 
   const menu = useNavigationStore((s) => s.menu);
   const isContext = isContextEntityType(entityType);
@@ -84,24 +80,5 @@ export function useGetEntityBaseData(args: { idOrSlug: string; entityType: Conte
     return undefined;
   }, [entityType, idOrSlug, menu]);
 
-  if (cacheOnly) return cachedEntity as UserBase | ContextEntityBase | undefined;
-
-  const { data } = useQuery({
-    queryKey: entitiesKeys.single(idOrSlug, entityType),
-    queryFn: async () => {
-      // Try to get user but fail gracefully if not found or forbidden
-      if (entityType === 'user') return await getUser({ path: { idOrSlug }, throwOnError: false });
-
-      // Or get context entity
-      return await getContextEntity({
-        path: { idOrSlug },
-        query: { entityType },
-        throwOnError: false,
-      });
-    },
-    enabled: !cachedEntity,
-    initialData: cachedEntity,
-  });
-
-  return data;
+  return cachedEntity as UserBase | ContextEntityBase | undefined;
 }

@@ -1169,21 +1169,6 @@ export const zGetContextEntitiesResponse = z.object({
   total: z.number(),
 });
 
-export const zGetContextEntityData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    idOrSlug: z.string(),
-  }),
-  query: z.object({
-    entityType: z.enum(['organization']),
-  }),
-});
-
-/**
- * Context entities
- */
-export const zGetContextEntityResponse = zContextEntityBase;
-
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),

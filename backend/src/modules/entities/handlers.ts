@@ -12,7 +12,6 @@ import entityRoutes from '#/modules/entities/routes';
 import { contextEntityWithCountsSchema } from '#/modules/entities/schema';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
-import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -154,17 +153,6 @@ const entityRouteHandlers = app
     );
 
     return ctx.json({ items, total }, 200);
-  })
-  /**
-   * Get base entity info
-   */
-  .openapi(entityRoutes.getContextEntity, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
-    const { entityType } = ctx.req.valid('query');
-
-    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
-
-    return ctx.json(entity, 200);
   })
   /**
    * Check if slug is available among page entities (context entities + users)

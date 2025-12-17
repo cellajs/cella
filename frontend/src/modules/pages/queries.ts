@@ -5,12 +5,9 @@ import { type GetPagesData, getPages, type Page } from '~/api.gen';
 import { parseBlocksText } from '~/lib/blocknote';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 
-/** Pages request limit */
 export const pagesLimit = appConfig.requestLimits.pages;
-/** Pages accepted cutoff days */
-// const ACCEPTED_CUTOFF_DAYS = 14;
 
-type PagesSortKey = NonNullable<NonNullable<GetPagesData['query']>['sort']>;
+type sortKey = NonNullable<NonNullable<GetPagesData['query']>['sort']>;
 
 type Options<TSortKey extends string = string> = {
   q?: string;
@@ -28,25 +25,24 @@ type InfiniteOptions<TSortKey extends string = string> = Options<TSortKey> & {
   limit: number;
 };
 
-type PagesQueryKeys = {
-  [K in keyof typeof pagesQueryKeys]: (typeof pagesQueryKeys)[K] extends (...args: any) => any
-    ? ReturnType<(typeof pagesQueryKeys)[K]>
-    : (typeof pagesQueryKeys)[K];
+type QueryKeys = {
+  [K in keyof typeof keys]: (typeof keys)[K] extends (...args: any) => any ? ReturnType<(typeof keys)[K]> : (typeof keys)[K];
 };
 
-export const pagesQueryKeys = {
+const keys = {
   all: [{ scope: 'pages' }] as const,
-  list: <TOptions extends InfiniteOptions<PagesSortKey> = InfiniteOptions<PagesSortKey>>(options: TOptions) =>
-    [{ ...pagesQueryKeys.all[0], mode: 'list', ...options }] as const,
-  details: <TOptions extends Options<PagesSortKey> = Options<PagesSortKey>>(options: TOptions) =>
-    [{ ...pagesQueryKeys.all[0], mode: 'details', ...options }] as const,
-  detail: <TOptions extends ByIdOptions<PagesSortKey> = ByIdOptions<PagesSortKey>>(options: TOptions) =>
-    [{ ...pagesQueryKeys.all[0], mode: 'detail', ...options }] as const,
+  list: <TOptions extends InfiniteOptions<sortKey> = InfiniteOptions<sortKey>>(options: TOptions) =>
+    [{ ...keys.all[0], mode: 'list', ...options }] as const,
+  details: <TOptions extends Options<sortKey> = Options<sortKey>>(options: TOptions) => [{ ...keys.all[0], mode: 'details', ...options }] as const,
+  detail: <TOptions extends ByIdOptions<sortKey> = ByIdOptions<sortKey>>(options: TOptions) =>
+    [{ ...keys.all[0], mode: 'detail', ...options }] as const,
 };
+
+export const pagesQueryKeys = keys;
 
 // #region Queries
 
-export const pagesListQueryOptions = <TQueryKey extends PagesQueryKeys['list']>(queryKey: TQueryKey) => {
+export const pagesListQueryOptions = <TQueryKey extends QueryKeys['list']>(queryKey: TQueryKey) => {
   const [{ scope, isPublic, limit, ...query }] = queryKey;
 
   return infiniteQueryOptions({

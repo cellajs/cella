@@ -78,9 +78,6 @@ import type {
   GetContextEntitiesData,
   GetContextEntitiesErrors,
   GetContextEntitiesResponses,
-  GetContextEntityData,
-  GetContextEntityErrors,
-  GetContextEntityResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -1239,7 +1236,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
  *
  * 🛡️ Requires authentication
  *
- * Returns a list of *users* at the system level.
+ * Returns a list of *users*.
  *
  * **GET /users** ·· [getUsers](https://api.cellajs.com/docs#tag/users/get/users) ·· _users_
  *
@@ -1368,9 +1365,9 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
 /**
  * Get list of organizations
  *
- * 🛡️ Requires authentication (system access)
+ * 🛡️ Requires authentication
  *
- * Returns a list of *organizations* at the system level.
+ * Returns a list of *organizations*.
  *
  * **GET /organizations** ·· [getOrganizations](https://api.cellajs.com/docs#tag/organizations/get/organizations) ·· _organizations_
  *
@@ -1725,35 +1722,6 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
       },
     ],
     url: '/entities/context-entities',
-    ...options,
-  });
-
-/**
- * Get a context entity
- *
- * 🛡️ Requires authentication
- *
- * Retrieve detailed information about a single context entity by its ID or slug.
- * Supports all context entity types configured in the system. Returns only base fields for the entity.
- *
- * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](https://api.cellajs.com/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
- *
- * @param {getContextEntityData} options
- * @param {string | string} options.path.idorslug - `string | string`
- * @param {enum} options.query.entitytype - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getContextEntity = <ThrowOnError extends boolean = true>(options: Options<GetContextEntityData, ThrowOnError>) =>
-  (options.client ?? client).get<GetContextEntityResponses, GetContextEntityErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/context/{idOrSlug}',
     ...options,
   });
 

@@ -2686,51 +2686,6 @@ export type GetContextEntitiesResponses = {
 
 export type GetContextEntitiesResponse = GetContextEntitiesResponses[keyof GetContextEntitiesResponses];
 
-export type GetContextEntityData = {
-  body?: never;
-  path: {
-    idOrSlug: string;
-  };
-  query: {
-    entityType: 'organization';
-  };
-  url: '/entities/context/{idOrSlug}';
-};
-
-export type GetContextEntityErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetContextEntityError = GetContextEntityErrors[keyof GetContextEntityErrors];
-
-export type GetContextEntityResponses = {
-  /**
-   * Context entities
-   */
-  200: ContextEntityBase;
-};
-
-export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
-
 export type CheckSlugData = {
   body: {
     slug: string;

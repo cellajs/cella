@@ -1,9 +1,6 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import { checkSlugBodySchema, contextEntitiesQuerySchema, contextEntityWithCountsSchema } from '#/modules/entities/schema';
-import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
-import { contextEntityTypeSchema, entityParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
 
@@ -46,24 +43,6 @@ const entityRoutes = {
       200: {
         description: 'Context entities',
         content: { 'application/json': { schema: paginationSchema(contextEntityWithCountsSchema) } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  getContextEntity: createCustomRoute({
-    operationId: 'getContextEntity',
-    method: 'get',
-    path: '/context/{idOrSlug}',
-    guard: isAuthenticated,
-    tags: ['entities'],
-    summary: 'Get a context entity',
-    description: `Retrieve detailed information about a single context entity by its ID or slug.
-      Supports all context entity types configured in the system. Returns only base fields for the entity.`,
-    request: { params: entityParamSchema, query: z.object({ entityType: contextEntityTypeSchema }) },
-    responses: {
-      200: {
-        description: 'Context entities',
-        content: { 'application/json': { schema: contextEntityBaseSchema } },
       },
       ...errorResponseRefs,
     },

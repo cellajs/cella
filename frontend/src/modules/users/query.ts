@@ -28,9 +28,6 @@ export const usersKeys = keys;
 
 /**
  * Query options for fetching a user by ID or slug.
- *
- * @param idOrSlug - The ID or slug of the user to fetch.
- * @returns Query options.
  */
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug } }) });
@@ -55,12 +52,6 @@ export const searchUsersQueryOptions = (query: Pick<NonNullable<GetUsersData['qu
 
 /**
  * Infinite query options to get a paginated list of users.
- *
- * @param param.q - Optional search query to filter users by (default is an empty string).
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.users`).
- * @returns Infinite query options.
  */
 export const usersQueryOptions = ({
   q = '',
