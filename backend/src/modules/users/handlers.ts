@@ -25,16 +25,18 @@ const usersRouteHandlers = app
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, mode, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
     const user = getContextUser();
+    const userSystemRole = getContextUserSystemRole();
+    const isSystemAdmin = userSystemRole === 'admin' && !targetEntityId;
 
     const filters = [
       // Filter by role if provided
       ...(role ? [eq(systemRolesTable.role, role)] : []),
 
       // Exclude self when fetching shared memberships
-      ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
+      ...(!isSystemAdmin ? [ne(usersTable.id, user.id)] : []),
 
       // Filter by search query if provided
       ...(q ? [or(ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q)))] : []),
@@ -59,17 +61,18 @@ const usersRouteHandlers = app
     const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
 
     const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
-    const baseUsersQuery =
-      mode === 'shared'
-        ? db
-            .selectDistinct(usersQuerySelect)
-            .from(usersTable)
-            .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
-            .innerJoin(
-              requesterMembership,
-              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
-            )
-        : db.select(usersQuerySelect).from(usersTable);
+
+    // If not system admin, only fetch users who share memberships with the requester
+    const baseUsersQuery = isSystemAdmin
+      ? db.select(usersQuerySelect).from(usersTable)
+      : db
+          .selectDistinct(usersQuerySelect)
+          .from(usersTable)
+          .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
+          .innerJoin(
+            requesterMembership,
+            and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
+          );
 
     const usersQuery = baseUsersQuery
       .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))

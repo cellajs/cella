@@ -1,10 +1,10 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -15,7 +15,6 @@ import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-en
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
-import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
@@ -83,34 +82,34 @@ const organizationRouteHandlers = app
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, userId, role, includeArchived } = ctx.req.valid('query');
 
-    const user = getContextUser();
     const entityType = 'organization';
 
-    const filter: SQL | undefined = q ? ilike(organizationsTable.name, prepareStringForILikeFilter(q)) : undefined;
+    const user = getContextUser();
+    const userSystemRole = getContextUserSystemRole();
+    const isSystemAdmin = userSystemRole === 'admin' && !userId;
 
-    const organizationsQuery = db.select().from(organizationsTable).where(filter);
+    const targetUserId = userId ?? user.id;
 
-    const [{ total }] = await db.select({ total: count() }).from(organizationsQuery.as('organizations'));
-
-    const memberships = db
-      .select(membershipBaseSelect)
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
-      .as('memberships');
-
-    const orderColumn = getOrderColumn(
-      {
-        id: organizationsTable.id,
-        name: organizationsTable.name,
-        createdAt: organizationsTable.createdAt,
-        userRole: memberships.role,
-      },
-      sort,
-      organizationsTable.id,
-      order,
+    // Base membership join key (who we're attaching membership for)
+    const membershipKeyOn = and(
+      eq(membershipsTable.organizationId, organizationsTable.id),
+      eq(membershipsTable.userId, targetUserId),
+      eq(membershipsTable.contextType, entityType),
     );
+
+    // Membership filters (role/archived) that should NOT restrict admins from seeing orgs.
+    // Put these in JOIN ON so they only control whether the membership row is present.
+    const membershipFilterOn = and(
+      ...(!includeArchived ? [eq(membershipsTable.archived, false)] : []),
+      ...(role ? [eq(membershipsTable.role, role)] : []),
+    );
+
+    const membershipOn = and(membershipKeyOn, membershipFilterOn);
+
+    // Org-only filters belong in WHERE (safe for both admin + non-admin)
+    const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
 
     const membershipCountsQuery = getMemberCountsQuery(entityType);
     const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
@@ -118,31 +117,76 @@ const organizationRouteHandlers = app
     const validEntities = getAssociatedEntities(entityType);
     const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
 
-    const organizations = await db
-      .select({
-        ...getTableColumns(organizationsTable),
-        membership: membershipBaseSelect,
-        counts: {
-          membership: sql<z.infer<typeof membershipCountSchema>>`
-            json_build_object(
-            'admin', COALESCE(${membershipCountsQuery.admin}, 0), 
-            'member', COALESCE(${membershipCountsQuery.member}, 0), 
-            'pending', COALESCE(${membershipCountsQuery.pending}, 0), 
-            'total', COALESCE(${membershipCountsQuery.total}, 0)
-            )`,
-          entities: sql<Record<(typeof validEntities)[number], number>>`json_build_object(${sql.raw(relatedJsonPairs)})`,
-        },
-      })
-      .from(organizationsQuery.as('organizations'))
-      .leftJoin(memberships, and(eq(organizationsTable.id, memberships.organizationId), eq(memberships.userId, user.id)))
-      .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
-      .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
-      .orderBy(orderColumn)
-      .limit(limit)
-      .offset(offset);
+    // Base query for total
+    const totalQuery = isSystemAdmin
+      ? db
+          .select({ orgId: organizationsTable.id })
+          .from(organizationsTable)
+          .leftJoin(membershipsTable, membershipOn)
+          .where(and(...orgWhere))
+          .as('base')
+      : db
+          .select({ orgId: organizationsTable.id })
+          .from(organizationsTable)
+          .innerJoin(membershipsTable, membershipOn)
+          .where(and(...orgWhere))
+          .as('base');
+
+    const [{ total }] = await db.select({ total: count() }).from(totalQuery);
+
+    const orderColumn = getOrderColumn(
+      {
+        id: organizationsTable.id,
+        name: organizationsTable.name,
+        createdAt: organizationsTable.createdAt,
+        userRole: membershipsTable.role,
+      },
+      sort,
+      organizationsTable.id,
+      order,
+    );
+
+    const selectShape = {
+      ...getTableColumns(organizationsTable),
+      membership: membershipBaseSelect,
+      counts: {
+        membership: sql`
+        json_build_object(
+          'admin', COALESCE(${membershipCountsQuery.admin}, 0),
+          'member', COALESCE(${membershipCountsQuery.member}, 0),
+          'pending', COALESCE(${membershipCountsQuery.pending}, 0),
+          'total', COALESCE(${membershipCountsQuery.total}, 0)
+        )`,
+        entities: sql`json_build_object(${sql.raw(relatedJsonPairs)})`,
+      },
+    } as const;
+
+    // Only difference is join type for memberships but due to drizzle TS types we need to repeat the query
+    const organizations = isSystemAdmin
+      ? await db
+          .select(selectShape)
+          .from(organizationsTable)
+          .leftJoin(membershipsTable, membershipOn)
+          .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
+          .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
+          .where(and(...orgWhere))
+          .orderBy(orderColumn)
+          .limit(limit)
+          .offset(offset)
+      : await db
+          .select(selectShape)
+          .from(organizationsTable)
+          .innerJoin(membershipsTable, membershipOn)
+          .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
+          .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
+          .where(and(...orgWhere))
+          .orderBy(orderColumn)
+          .limit(limit)
+          .offset(offset);
 
     return ctx.json({ items: organizations, total }, 200);
   })
+
   /**
    * Get organization by id or slug
    */

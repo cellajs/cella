@@ -12,14 +12,7 @@ const userRoutes = {
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    guard: [
-      isAuthenticated,
-      async (ctx, next) => {
-        const mode = ctx.req.query('mode');
-        if (mode === 'all') await hasSystemAccess(ctx, next);
-        else await next();
-      },
-    ],
+    guard: isAuthenticated,
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Returns a list of *users*.',

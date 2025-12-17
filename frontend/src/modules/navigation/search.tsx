@@ -1,21 +1,21 @@
-import { useQueries } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig, ContextEntityType } from 'config';
+import { appConfig } from 'config';
 import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ContextEntityBase, GetContextEntitiesResponse, UserBase } from '~/api.gen';
+import type { ContextEntityBase, UserBase } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { searchContextEntitiesQueryOptions } from '~/modules/entities/query';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { searchUsersQueryOptions } from '~/modules/users/query';
+import { usersQueryOptions } from '~/modules/users/query';
 import { getEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';
+import { organizationsQueryOptions } from '../organizations/query';
 
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
@@ -60,32 +60,17 @@ export const AppSearch = () => {
     });
   };
 
-  const { data, notFound, isFetching } = useQueries({
-    queries: [searchContextEntitiesQueryOptions({ q: searchValue }), searchUsersQueryOptions({ q: searchValue })],
-    combine: ([contextEntitiesResult, usersResult]) => {
-      const usersData = usersResult.data;
-      const entitiesData = contextEntitiesResult.data;
-      const combinedTotal = (usersData.total || 0) + (entitiesData.total || 0);
+  const orgQ = useInfiniteQuery(organizationsQueryOptions({ q: searchValue }));
+  const userQ = useInfiniteQuery(usersQueryOptions({ q: searchValue }));
 
-      const groupedEntities = entitiesData?.items?.reduce(
-        (acc, entity) => {
-          const type = entity.entityType;
-          (acc[type] ??= []).push(entity);
-          return acc;
-        },
-        {} as Record<ContextEntityType, GetContextEntitiesResponse['items'][number][]>,
-      );
+  const ready = (orgQ.isSuccess || orgQ.isError) && (userQ.isSuccess || userQ.isError);
 
-      return {
-        data: {
-          user: usersData.items,
-          ...groupedEntities,
-        },
-        notFound: combinedTotal === 0, // true if there are no results
-        isFetching: usersResult.isFetching || contextEntitiesResult.isFetching,
-      };
-    },
-  });
+  const organizations = orgQ.data?.pages.flatMap((p) => p.items) ?? [];
+  const users = userQ.data?.pages.flatMap((p) => p.items) ?? [];
+
+  const data = { user: users, organization: organizations };
+  const notFound = users.length === 0 && organizations.length === 0;
+  const isFetching = orgQ.isFetching || userQ.isFetching;
 
   const onSelectItem = (item: ContextEntityBase | UserBase) => {
     // Update recent searches with the search value
@@ -155,9 +140,10 @@ export const AppSearch = () => {
               ))}
             </CommandGroup>
           )}
-          {searchableEntityTypes.map((entityType) => (
-            <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} onSelect={onSelectItem} />
-          ))}
+          {ready &&
+            searchableEntityTypes.map((entityType) => (
+              <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} onSelect={onSelectItem} />
+            ))}
         </CommandList>
       </ScrollArea>
     </Command>

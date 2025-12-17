@@ -2,14 +2,14 @@ import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { EntityGridItem } from '~/modules/entities/types';
+import type { EntityPage } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent } from '~/modules/ui/card';
 import { getEntityRoute } from '~/routes-resolver';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
+export const EntityGridTile = ({ entity }: { entity: EntityPage }) => {
   const { to, params, search } = getEntityRoute(entity);
   return (
     <Card className="overflow-hidden p-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
@@ -37,12 +37,14 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
           )}
         </Link>
 
-        <div className="flex items-center justify-end gap-3 pt-6 text-sm opacity-80">
-          <div className="flex items-center gap-1">
-            <UserIcon size={16} />
-            {entity.membershipCounts.total}
+        {entity.counts && (
+          <div className="flex items-center justify-end gap-3 pt-6 text-sm opacity-80">
+            <div className="flex items-center gap-1">
+              <UserIcon size={16} />
+              {entity.counts.membership.total}
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

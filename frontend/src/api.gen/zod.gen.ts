@@ -6,6 +6,7 @@ export const zUserBase = z.object({
   id: z.string(),
   slug: z.string(),
   name: z.string(),
+  createdAt: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
   email: z.email(),
@@ -17,6 +18,7 @@ export const zContextEntityBase = z.object({
   entityType: z.enum(['organization']),
   slug: z.string(),
   name: z.string(),
+  createdAt: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
 });
@@ -156,16 +158,15 @@ export const zMenu = z.object({
       entityType: z.enum(['organization']),
       slug: z.string(),
       name: z.string(),
+      createdAt: z.string(),
       thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
       membership: zMembershipBase,
-      createdAt: z.string(),
       submenu: z.optional(
         z.array(
           zContextEntityBase.and(
             z.object({
               membership: zMembershipBase,
-              createdAt: z.string(),
             }),
           ),
         ),
@@ -865,7 +866,6 @@ export const zGetUsersData = z.object({
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
       role: z.optional(z.enum(['admin'])),
-      mode: z.optional(z.enum(['all', 'shared'])),
       targetEntityType: z.optional(z.enum(['organization'])),
       targetEntityId: z.optional(z.string()),
     }),
@@ -949,6 +949,9 @@ export const zGetOrganizationsData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
+      userId: z.optional(z.string()),
+      role: z.optional(z.enum(['member', 'admin'])),
+      includeArchived: z.optional(z.enum(['true', 'false'])),
     }),
   ),
 });
@@ -1127,47 +1130,6 @@ export const zUpdatePageData = z.object({
  * Page updated
  */
 export const zUpdatePageResponse = zPage;
-
-export const zGetContextEntitiesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['name', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      targetUserId: z.optional(z.string()),
-      targetOrgId: z.optional(z.string()),
-      role: z.optional(z.enum(['member', 'admin'])),
-      excludeArchived: z.optional(z.enum(['true', 'false'])),
-      types: z.optional(z.union([z.enum(['organization']), z.array(z.enum(['organization']))])),
-      orgAffiliated: z.optional(z.enum(['true', 'false'])),
-    }),
-  ),
-});
-
-/**
- * Context entities
- */
-export const zGetContextEntitiesResponse = z.object({
-  items: z.array(
-    zContextEntityBase.and(
-      z.object({
-        membership: z.union([zMembershipBase, z.null()]),
-        createdAt: z.string(),
-        membershipCounts: z.object({
-          admin: z.number(),
-          member: z.number(),
-          pending: z.number(),
-          total: z.number(),
-        }),
-      }),
-    ),
-  ),
-  total: z.number(),
-});
 
 export const zCheckSlugData = z.object({
   body: z.object({

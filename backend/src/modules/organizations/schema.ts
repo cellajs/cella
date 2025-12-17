@@ -91,4 +91,10 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
+  userId: z.string().optional(),
+  role: z.enum(appConfig.roles.entityRoles).optional(),
+  includeArchived: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
 });

@@ -15,7 +15,7 @@ import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -40,11 +40,7 @@ export const organizationsKeys = keys;
 
 /**
  * Query options for a single organization by id or slug.
- *
  * This function returns query options for fetching a single organization using its id or slug.
- *
- * @param idOrSlug - Organization id or slug.
- * @returns Query options.
  */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -54,40 +50,28 @@ export const organizationQueryOptions = (idOrSlug: string) =>
 
 /**
  * Query options to get a paginated list of organizations.
- *
  * This function returns infinite query options to fetch a list of organizations with support for pagination.
- *
- * @param param.q - Search query for filtering organizations(default is an empty string).
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default: `appConfig.requestLimits.organizations`).
- * @returns Infinite query options.
  */
 export const organizationsQueryOptions = ({
   q = '',
   sort = 'createdAt',
   order = 'desc',
+  userId,
+  includeArchived,
+  role,
   limit: baseLimit = appConfig.requestLimits.organizations,
 }: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = organizationsKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
-  const queryKey = organizationsKeys.table.entries({ q, sort, order });
+  const queryKey = organizationsKeys.table.entries({ q, sort, order, userId, includeArchived, role });
 
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
-      return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
+      return await getOrganizations({ query: { q, sort, order, limit, offset, userId, includeArchived, role }, signal });
     },
     ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<Organization>(baseQueryKey, {
-      q,
-      sort,
-      order,
-      searchIn: ['name'],
-      limit: baseLimit,
-    }),
   });
 };
 

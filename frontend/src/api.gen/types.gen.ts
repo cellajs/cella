@@ -8,6 +8,7 @@ export type UserBase = {
   id: string;
   slug: string;
   name: string;
+  createdAt: string;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   email: string;
@@ -19,6 +20,7 @@ export type ContextEntityBase = {
   entityType: 'organization';
   slug: string;
   name: string;
+  createdAt: string;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
 };
@@ -157,14 +159,13 @@ export type Menu = {
     entityType: 'organization';
     slug: string;
     name: string;
+    createdAt: string;
     thumbnailUrl?: string | null;
     bannerUrl?: string | null;
     membership: MembershipBase;
-    createdAt: string;
     submenu?: Array<
       ContextEntityBase & {
         membership: MembershipBase;
-        createdAt: string;
       }
     >;
   }>;
@@ -1946,7 +1947,6 @@ export type GetUsersData = {
     offset?: string;
     limit?: string;
     role?: 'admin';
-    mode?: 'all' | 'shared';
     targetEntityType?: 'organization';
     targetEntityId?: string;
   };
@@ -2144,6 +2144,9 @@ export type GetOrganizationsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    userId?: string;
+    role?: 'member' | 'admin';
+    includeArchived?: 'true' | 'false';
   };
   url: '/organizations';
 };
@@ -2618,73 +2621,6 @@ export type UpdatePageResponses = {
 };
 
 export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
-
-export type GetContextEntitiesData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'name' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    targetUserId?: string;
-    targetOrgId?: string;
-    role?: 'member' | 'admin';
-    excludeArchived?: 'true' | 'false';
-    types?: 'organization' | Array<'organization'>;
-    orgAffiliated?: 'true' | 'false';
-  };
-  url: '/entities/context-entities';
-};
-
-export type GetContextEntitiesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetContextEntitiesError = GetContextEntitiesErrors[keyof GetContextEntitiesErrors];
-
-export type GetContextEntitiesResponses = {
-  /**
-   * Context entities
-   */
-  200: {
-    items: Array<
-      ContextEntityBase & {
-        membership: MembershipBase | null;
-        createdAt: string;
-        membershipCounts: {
-          admin: number;
-          member: number;
-          pending: number;
-          total: number;
-        };
-      }
-    >;
-    total: number;
-  };
-};
-
-export type GetContextEntitiesResponse = GetContextEntitiesResponses[keyof GetContextEntitiesResponses];
 
 export type CheckSlugData = {
   body: {

@@ -1,7 +1,7 @@
 import useMounted from '~/hooks/use-mounted';
 import { Skeleton } from '~/modules/ui/skeleton';
 
-export const GridSkeleton = () => {
+export const EntityGridSkeleton = () => {
   const { hasStarted } = useMounted();
 
   const items = Array.from({ length: 6 }, () => ({
@@ -14,13 +14,13 @@ export const GridSkeleton = () => {
     >
       {items.map((item, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
-        <GridSkeletonItem key={index} membersCount={item.membersCount} />
+        <SkeletonItem key={index} membersCount={item.membersCount} />
       ))}
     </div>
   );
 };
 
-const GridSkeletonItem = ({ membersCount }: { membersCount: number }) => {
+const SkeletonItem = ({ membersCount }: { membersCount: number }) => {
   return (
     <Skeleton className="overflow-hidden py-6 px-4">
       <div className="w-full relative group">

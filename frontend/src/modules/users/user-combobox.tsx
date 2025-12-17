@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { CheckIcon, ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -14,7 +14,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { searchUsersQueryOptions } from '~/modules/users/query';
+import { usersQueryOptions } from '~/modules/users/query';
 
 interface Props {
   value: string[];
@@ -57,8 +57,21 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const queryOptions = searchUsersQueryOptions({ q: debouncedSearchQuery, targetEntityId: entity.id, targetEntityType: entity.entityType });
-  const { data, isFetching } = useQuery(queryOptions);
+  const queryOptions = usersQueryOptions({
+    q: debouncedSearchQuery,
+    targetEntityId: entity.id,
+    targetEntityType: entity.entityType,
+  });
+
+  const {
+    data,
+    isFetching,
+    // fetchNextPage,
+    // hasNextPage,
+    // isFetchingNextPage,
+  } = useInfiniteQuery(queryOptions);
+
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
 
   useEffect(() => {
     onChange(selected);
@@ -118,7 +131,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
 
           <CommandList className="px-1 h-full">
             <AnimatePresence mode="wait">
-              {!isFetching && !data.items.length ? (
+              {!isFetching && !items.length ? (
                 <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
@@ -135,7 +148,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   )}
                 </motion.div>
               ) : (
-                data.items.length > 0 && (
+                items.length > 0 && (
                   <motion.div
                     key="results"
                     initial="hidden"
@@ -146,7 +159,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   >
                     <ScrollArea>
                       <CommandGroup>
-                        {data.items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
+                        {items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
                           const alreadyMember = !!memberships.find((m) => m[entityIdField] === entity.id);
                           const disabled = !memberships || alreadyMember;
                           return (

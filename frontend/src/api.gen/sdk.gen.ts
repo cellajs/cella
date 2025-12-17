@@ -75,9 +75,6 @@ import type {
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
-  GetContextEntitiesData,
-  GetContextEntitiesErrors,
-  GetContextEntitiesResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -1247,7 +1244,6 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.mode - `enum` (optional)
  * @param {enum=} options.query.targetentitytype - `enum` (optional)
  * @param {string=} options.query.targetentityid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -1377,6 +1373,9 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.userid - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.includearchived - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganizations = <ThrowOnError extends boolean = true>(options?: Options<GetOrganizationsData, ThrowOnError>) =>
@@ -1683,46 +1682,6 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Get list of context entities
- *
- * 🛡️ Requires authentication
- *
- * Returns a paginated list of *context entities* (e.g. *users*, *organizations*) the current user has access to.
- * Can optionally include the current user's enrollment information for each entity (when applicable).
- * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
- * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
- *
- * **GET /entities/context-entities** ·· [getContextEntities](https://api.cellajs.com/docs#tag/entities/get/entities/context-entities) ·· _entities_
- *
- * @param {getContextEntitiesData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {string=} options.query.targetorgid - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.excludearchived - `enum` (optional)
- * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)
- * @param {enum=} options.query.orgaffiliated - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getContextEntities = <ThrowOnError extends boolean = true>(options?: Options<GetContextEntitiesData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/context-entities',
-    ...options,
   });
 
 /**

@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, keepPreviousData, queryOptions, useMutation } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
@@ -33,24 +33,6 @@ export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug } }) });
 
 /**
- *
- */
-export const searchUsersQueryOptions = (query: Pick<NonNullable<GetUsersData['query']>, 'q' | 'targetEntityId' | 'targetEntityType'>) => {
-  const searchQuery = query.q ?? '';
-
-  const queryKey = ['users', 'search', searchQuery];
-
-  return queryOptions({
-    queryKey,
-    queryFn: () => getUsers({ query }),
-    staleTime: 0,
-    initialData: { items: [], total: 0 },
-    enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
-    placeholderData: keepPreviousData,
-  });
-};
-
-/**
  * Infinite query options to get a paginated list of users.
  */
 export const usersQueryOptions = ({
@@ -59,7 +41,7 @@ export const usersQueryOptions = ({
   order = 'desc',
   role,
   limit: baseLimit = appConfig.requestLimits.users,
-}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset' | 'mode'> & { limit?: number }) => {
+}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
 
   const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
@@ -69,7 +51,7 @@ export const usersQueryOptions = ({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
-      return await getUsers({ query: { q, sort, order, role, limit, offset, mode: 'all' }, signal });
+      return await getUsers({ query: { q, sort, order, role, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
     ...infiniteQueryUseCachedIfCompleteOptions<UserWithRoleAndMemberships>(baseQueryKey, {
