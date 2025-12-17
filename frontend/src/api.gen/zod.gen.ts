@@ -151,30 +151,6 @@ export const zAttachment = z.object({
   convertedUrl: z.union([z.string(), z.null()]),
 });
 
-export const zMenu = z.object({
-  organization: z.array(
-    z.object({
-      id: z.string(),
-      entityType: z.enum(['organization']),
-      slug: z.string(),
-      name: z.string(),
-      createdAt: z.string(),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      membership: zMembershipBase,
-      submenu: z.optional(
-        z.array(
-          zContextEntityBase.and(
-            z.object({
-              membership: zMembershipBase,
-            }),
-          ),
-        ),
-      ),
-    }),
-  ),
-});
-
 export const zApiError = z.object({
   name: z.string(),
   message: z.string(),
@@ -743,17 +719,6 @@ export const zGetMyAuthResponse = z.object({
   ),
 });
 
-export const zGetMyMenuData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Menu of user
- */
-export const zGetMyMenuResponse = zMenu;
-
 export const zGetMyInvitationsData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -951,7 +916,7 @@ export const zGetOrganizationsData = z.object({
       limit: z.optional(z.string()),
       userId: z.optional(z.string()),
       role: z.optional(z.enum(['member', 'admin'])),
-      includeArchived: z.optional(z.enum(['true', 'false'])),
+      excludeArchived: z.optional(z.enum(['true', 'false'])),
     }),
   ),
 });

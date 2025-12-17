@@ -6,7 +6,7 @@ import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
+import { useCachedEntityItem } from '~/modules/entities/use-cached-entity-item';
 import { cn } from '~/utils/cn';
 
 interface BaseProps {
@@ -72,7 +72,7 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }
 export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
   if (!userId) return <span className="text-muted">-</span>;
 
-  const user = useGetEntityBaseData({ idOrSlug: userId, entityType: 'user' });
+  const user = useCachedEntityItem({ idOrSlug: userId, entityType: 'user' });
 
   return user ? <UserCell compactable={true} user={user} {...baseProps} /> : <span>{userId}</span>;
 };

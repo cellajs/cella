@@ -26,6 +26,7 @@ import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
+import { useMenu } from './helpers/use-menu';
 
 const pwaEnabled = appConfig.has.pwa;
 
@@ -33,7 +34,6 @@ export const MenuSheet = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
-  const menu = useNavigationStore((state) => state.menu);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
@@ -46,6 +46,8 @@ export const MenuSheet = () => {
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
   const accountButtonRef = useRef(null);
+
+  const { menu } = useMenu(user.id, { detailedMenu });
 
   // monitoring drop event
   useEffect(() => {

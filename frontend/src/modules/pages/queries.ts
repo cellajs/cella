@@ -4,71 +4,41 @@ import { appConfig } from 'config';
 import { type GetPagesData, getPages, type Page } from '~/api.gen';
 import { parseBlocksText } from '~/lib/blocknote';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
+import { createEntityKeys } from '../entities/create-query-keys';
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
-type sortKey = NonNullable<NonNullable<GetPagesData['query']>['sort']>;
+type PageFilters = Omit<GetPagesData['query'], 'limit' | 'offset'>;
 
-type Options<TSortKey extends string = string> = {
-  q?: string;
-  sort?: TSortKey;
-  order?: 'asc' | 'desc';
-  limit?: number;
-  isPublic?: boolean;
-};
+const keys = createEntityKeys<PageFilters>('page');
 
-type ByIdOptions<TSortKey extends string = string> = Options<TSortKey> & {
-  id: string;
-};
+export const pageQueryKeys = keys;
 
-type InfiniteOptions<TSortKey extends string = string> = Options<TSortKey> & {
-  limit: number;
-};
+type PagesListParams = Omit<NonNullable<GetPagesData['query']>, 'limit' | 'offset'> & { limit?: number };
 
-type QueryKeys = {
-  [K in keyof typeof keys]: (typeof keys)[K] extends (...args: any) => any ? ReturnType<(typeof keys)[K]> : (typeof keys)[K];
-};
+export const pagesListQueryOptions = (params: PagesListParams) => {
+  const { q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = pagesLimit } = params;
 
-const keys = {
-  all: [{ scope: 'pages' }] as const,
-  list: <TOptions extends InfiniteOptions<sortKey> = InfiniteOptions<sortKey>>(options: TOptions) =>
-    [{ ...keys.all[0], mode: 'list', ...options }] as const,
-  details: <TOptions extends Options<sortKey> = Options<sortKey>>(options: TOptions) => [{ ...keys.all[0], mode: 'details', ...options }] as const,
-  detail: <TOptions extends ByIdOptions<sortKey> = ByIdOptions<sortKey>>(options: TOptions) =>
-    [{ ...keys.all[0], mode: 'detail', ...options }] as const,
-};
+  const limit = String(baseLimit);
 
-export const pagesQueryKeys = keys;
+  const keyFilters = { q, sort, order };
 
-// #region Queries
-
-export const pagesListQueryOptions = <TQueryKey extends QueryKeys['list']>(queryKey: TQueryKey) => {
-  const [{ scope, isPublic, limit, ...query }] = queryKey;
+  const queryKey = keys.list.filtered(keyFilters);
+  const baseQuery = { ...keyFilters, limit };
 
   return infiniteQueryOptions({
     queryKey,
-    queryFn: async ({ pageParam, signal }) => {
-      // order of operations?
-      const offset = pageParam.offset || (pageParam.page || 0) * limit;
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
-      return await getPages({
-        // path: { orgIdOrSlug },
-        query: {
-          limit: limit.toString(),
-          offset: offset.toString(),
-          ...query,
-        },
+      return getPages({
+        query: { ...baseQuery, offset },
         signal,
       });
     },
     ...baseInfiniteQueryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 };
-
-// #endregion
-
-// #region Helpers
 
 /**
  *

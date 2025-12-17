@@ -153,24 +153,6 @@ export type Attachment = {
   convertedUrl: string | null;
 };
 
-export type Menu = {
-  organization: Array<{
-    id: string;
-    entityType: 'organization';
-    slug: string;
-    name: string;
-    createdAt: string;
-    thumbnailUrl?: string | null;
-    bannerUrl?: string | null;
-    membership: MembershipBase;
-    submenu?: Array<
-      ContextEntityBase & {
-        membership: MembershipBase;
-      }
-    >;
-  }>;
-};
-
 export type ApiError = {
   name: string;
   message: string;
@@ -1617,47 +1599,6 @@ export type GetMyAuthResponses = {
 
 export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
 
-export type GetMyMenuData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/menu';
-};
-
-export type GetMyMenuErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetMyMenuError = GetMyMenuErrors[keyof GetMyMenuErrors];
-
-export type GetMyMenuResponses = {
-  /**
-   * Menu of user
-   */
-  200: Menu;
-};
-
-export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
-
 export type GetMyInvitationsData = {
   body?: never;
   path?: never;
@@ -2146,7 +2087,7 @@ export type GetOrganizationsData = {
     limit?: string;
     userId?: string;
     role?: 'member' | 'admin';
-    includeArchived?: 'true' | 'false';
+    excludeArchived?: 'true' | 'false';
   };
   url: '/organizations';
 };

@@ -9,7 +9,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import type { EntityPage } from '~/modules/entities/types';
+import type { EntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -19,7 +19,7 @@ import { usersQueryOptions } from '~/modules/users/query';
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entity: EntityPage;
+  entity: EntityData;
 }
 
 export const UserCombobox = ({ value, onChange, entity }: Props) => {

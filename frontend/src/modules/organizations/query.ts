@@ -12,31 +12,16 @@ import {
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
+import { createEntityKeys } from '../entities/create-query-keys';
 
-/**
- * Keys for organizations related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
-export const keys = {
-  all: ['organizations'],
-  table: {
-    base: ['organizations', 'table'],
-    entries: (filters: Omit<GetOrganizationsData['query'], 'limit' | 'offset'>) => [...keys.table.base, filters],
-  },
-  single: {
-    base: ['organization'],
-    byIdOrSlug: (idOrSlug: string) => [...keys.single.base, idOrSlug],
-  },
-  create: ['organizations', 'create'],
-  update: ['organizations', 'update'],
-  delete: ['organizations', 'delete'],
-};
+type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
 
-export const organizationsKeys = keys;
+const keys = createEntityKeys<OrganizationFilters>('organization');
+
+export const organizationQueryKeys = keys;
 
 /**
  * Query options for a single organization by id or slug.
@@ -44,32 +29,43 @@ export const organizationsKeys = keys;
  */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
+    queryKey: keys.detail.byIdOrSlug(idOrSlug),
     queryFn: async () => getOrganization({ path: { idOrSlug } }),
   });
+
+type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number };
 
 /**
  * Query options to get a paginated list of organizations.
  * This function returns infinite query options to fetch a list of organizations with support for pagination.
  */
-export const organizationsQueryOptions = ({
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
-  userId,
-  includeArchived,
-  role,
-  limit: baseLimit = appConfig.requestLimits.organizations,
-}: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
+export const organizationsQueryOptions = (params: OrganizationsListParams) => {
+  const {
+    q = '',
+    sort = 'createdAt',
+    order = 'desc',
+    userId,
+    excludeArchived,
+    role,
+    limit: baseLimit = appConfig.requestLimits.organizations,
+  } = params;
+
   const limit = String(baseLimit);
 
-  const queryKey = organizationsKeys.table.entries({ q, sort, order, userId, includeArchived, role });
+  const keyFilters = { q, sort, order, userId, excludeArchived, role };
+
+  const queryKey = keys.list.filtered(keyFilters);
+  const baseQuery = { ...keyFilters, limit };
 
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
-      return await getOrganizations({ query: { q, sort, order, limit, offset, userId, includeArchived, role }, signal });
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
+
+      return getOrganizations({
+        query: { ...baseQuery, offset },
+        signal,
+      });
     },
     ...baseInfiniteQueryOptions,
   });
@@ -83,13 +79,12 @@ export const organizationsQueryOptions = ({
  */
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
-    mutationKey: organizationsKeys.create,
+    mutationKey: keys.create,
     mutationFn: (body) => createOrganization({ body }),
     onSuccess: (createdOrganization) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base);
+      const mutateCache = useMutateQueryData(keys.list.base);
 
       mutateCache.create([createdOrganization]);
-      addMenuItem(createdOrganization);
     },
   });
 };
@@ -103,14 +98,10 @@ export const useOrganizationCreateMutation = () => {
  */
 export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
-    mutationKey: organizationsKeys.update,
+    mutationKey: keys.update,
     mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
     onSuccess: (updatedOrganization) => {
-      // Update menuItem in store, only if it has membership is not null
-      if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });
-
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base, () => organizationsKeys.single.base, ['update']);
-
+      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
       mutateCache.update([updatedOrganization]);
     },
   });
@@ -124,16 +115,15 @@ export const useOrganizationUpdateMutation = () => {
  */
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({
-    mutationKey: organizationsKeys.delete,
+    mutationKey: keys.delete,
     mutationFn: async (organizations) => {
       const ids = organizations.map(({ id }) => id);
       await deleteOrganizations({ body: { ids } });
     },
     onSuccess: (_, organizations) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base, () => organizationsKeys.single.base, ['remove']);
+      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
 
       mutateCache.remove(organizations);
-      for (const { id } of organizations) deleteMenuItem(id);
     },
   });
 };

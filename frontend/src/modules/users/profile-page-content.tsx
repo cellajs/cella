@@ -1,6 +1,6 @@
 import { SquirrelIcon } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { OrganizationsGrid } from '../organizations/organizations-grid';
+import { OrganizationsGrid } from '~/modules/organizations/organizations-grid';
 
 interface Props {
   userId: string;

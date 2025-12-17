@@ -34,6 +34,7 @@ export const useColumns = () => {
     mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) => handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
     onSuccess: async (settledEntity, { acceptOrReject }) => {
       await getAndSetMenu();
+
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };

@@ -3,28 +3,24 @@ import { appConfig } from 'config';
 import type { Attachment } from '~/api.gen';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { createEntityKeys } from '../entities/create-query-keys';
 
-type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
-/**
- * Keys for attachments related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
+type AttachmentFilters = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
+
+const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
+
 const keys = {
-  all: ['attachments'],
+  ...baseKeys,
   list: {
-    base: ['attachments', 'list'],
-    table: (filters: GetAttachmentsParams) => [...keys.list.base, 'table', filters],
-    similarTable: (filters: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...keys.list.base, 'table', filters],
+    ...baseKeys.list,
+    similar: (filters: Pick<AttachmentFilters, 'orgIdOrSlug'>) => ['attachment', 'list', { ...filters, mode: 'similar' }] as const,
   },
-  create: ['attachments', 'create'],
-  update: ['attachments', 'update'],
-  delete: ['attachments', 'delete'],
 };
 
-export const attachmentsKeys = keys;
+export const attachmentQueryKeys = keys;
 
 /**
- * Query Options for fetching a grouped attachments.
+ * Query Options for fetching grouped attachments.
  *
  * This function returns the configuration for querying group of attachments from target organization.
  *
@@ -32,8 +28,8 @@ export const attachmentsKeys = keys;
  * @param param.attachmentId - attachmentId, to fetch all attachments of same group.
  * @returns  Query options.
  */
-export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<GetAttachmentsParams, 'attachmentId' | 'orgIdOrSlug'>) => {
-  const queryKey = attachmentsKeys.list.base;
+export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<AttachmentFilters, 'attachmentId' | 'orgIdOrSlug'>) => {
+  const queryKey = keys.list.base;
 
   return queryOptions({
     queryKey,
@@ -65,11 +61,11 @@ export const attachmentsQueryOptions = ({
   sort = 'createdAt',
   order = 'desc',
   limit: baseLimit = appConfig.requestLimits.attachments,
-}: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
+}: Omit<AttachmentFilters, 'groupId'> & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = attachmentsKeys.list.table({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
-  const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
+  const baseQueryKey = keys.list.filtered({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
+  const queryKey = keys.list.filtered({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,

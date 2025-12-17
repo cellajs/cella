@@ -3,7 +3,7 @@ import type { EntityType } from 'config';
 import type { ContextEntityBase } from '~/api.gen';
 import type {
   ArbitraryEntityQueryData,
-  EntityData,
+  EntityIdAndType,
   EntityQueryData,
   InfiniteEntityQueryData,
   ItemData,
@@ -93,7 +93,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
-  items: EntityData[] | ContextEntityBase[],
+  items: EntityIdAndType[] | ContextEntityBase[],
   action: QueryDataActions,
   entityType: EntityType,
   keyToOperateIn?: string,

@@ -6,31 +6,19 @@ import type { ApiError } from '~/lib/api';
 import type { UserWithRoleAndMemberships } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { createEntityKeys } from '../entities/create-query-keys';
 
-/**
- * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
- */
-const keys = {
-  all: ['users'],
-  table: {
-    base: ['users', 'table'],
-    entries: (filters?: Omit<GetUsersData['query'], 'limit' | 'offset'>) => [...keys.table.base, filters],
-  },
-  single: {
-    base: ['user'],
-    byIdOrSlug: (idOrSlug: string) => [...keys.single.base, idOrSlug],
-  },
-  update: ['users', 'update'],
-  delete: ['users', 'delete'],
-};
+type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;
 
-export const usersKeys = keys;
+const keys = createEntityKeys<UserFilters>('user');
+
+export const userQueryKeys = keys;
 
 /**
  * Query options for fetching a user by ID or slug.
  */
 export const userQueryOptions = (idOrSlug: string) =>
-  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug } }) });
+  queryOptions({ queryKey: keys.detail.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug } }) });
 
 /**
  * Infinite query options to get a paginated list of users.
@@ -44,8 +32,8 @@ export const usersQueryOptions = ({
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
-  const queryKey = usersKeys.table.entries({ q, sort, order, role });
+  const baseQueryKey = keys.list.filtered({ q: '', sort: 'createdAt', order: 'desc' });
+  const queryKey = keys.list.filtered({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
@@ -72,10 +60,10 @@ export const usersQueryOptions = ({
  */
 export const useUpdateUserMutation = () => {
   return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
-    mutationKey: usersKeys.update,
+    mutationKey: keys.update,
     mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body }),
     onSuccess: (updatedUser) => {
-      const mutateCache = useMutateQueryData(usersKeys.table.base, () => usersKeys.single.base, ['update']);
+      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
 
       mutateCache.update([updatedUser]);
     },
@@ -91,13 +79,13 @@ export const useUpdateUserMutation = () => {
  */
 export const useUserDeleteMutation = () => {
   return useMutation<void, ApiError, User[]>({
-    mutationKey: usersKeys.delete,
+    mutationKey: keys.delete,
     mutationFn: async (users) => {
       const ids = users.map(({ id }) => id);
       await deleteUsers({ body: { ids } });
     },
     onSuccess: (_, users) => {
-      const mutateCache = useMutateQueryData(usersKeys.table.base, () => usersKeys.single.base, ['remove']);
+      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
 
       mutateCache.remove(users);
     },

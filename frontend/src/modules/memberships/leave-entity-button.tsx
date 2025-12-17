@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { type ContextEntityBase, deleteMyMembership } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
-import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
@@ -32,12 +31,11 @@ export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfi
       navigate({ to: redirectPath, replace: true });
 
       // Clear related cache entries
-      // Note: works if queryKeys are structured like `organizationsKeys.single`
+      // Note: works if queryKeys are structured like `organizationQueryKeys.single`
       queryClient.removeQueries({
         predicate: ({ queryKey }) => queryKey.includes(entity.entityType) && queryKey.some((k) => k === entity.id || k === entity.slug),
       });
 
-      deleteMenuItem(entity.id);
       callback?.({ status: 'success' });
     },
   });

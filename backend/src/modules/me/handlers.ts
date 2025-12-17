@@ -1,5 +1,5 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider } from 'config';
 import { appConfig } from 'config';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
@@ -11,7 +11,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { env } from '#/env';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -22,20 +22,13 @@ import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
-import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
-import type { menuSchema } from '#/modules/me/schema';
 import { userSelect } from '#/modules/users/helpers/select';
-import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
-
-type UserMenu = z.infer<typeof menuSchema>;
-type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -113,45 +106,6 @@ const meRouteHandlers = app
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
     return ctx.json({ ...restInfo, enabledOAuth, sessions }, 200);
-  })
-  /**
-   * Get my user menu
-   */
-  .openapi(meRoutes.getMyMenu, async (ctx) => {
-    const user = getContextUser();
-    const memberships = getContextMemberships();
-
-    const emptyData = appConfig.menuStructure.reduce((acc, section) => {
-      acc[section.entityType] = [];
-      return acc;
-    }, {} as UserMenu);
-
-    if (!memberships.length) return ctx.json(emptyData, 200);
-
-    const buildMenuForSection = async ({ entityType, subentityType }: MenuSection): Promise<MenuItem[]> => {
-      const entities = await getUserMenuEntities(entityType, user.id);
-      const subentities = subentityType ? await getUserMenuEntities(subentityType, user.id) : [];
-
-      const allowedEntities = entities.filter((entity) => permissionManager.isPermissionAllowed([entity.membership], 'read', entity));
-
-      return allowedEntities.map((entity) => {
-        const entityIdField = appConfig.entityIdFields[entityType];
-
-        const submenu = subentities.filter(
-          (sub) =>
-            sub.membership[entityIdField] === entity.id && permissionManager.isPermissionAllowed([entity.membership, sub.membership], 'read', sub),
-        );
-        return { ...entity, submenu };
-      });
-    };
-
-    const menu = {} as UserMenu;
-
-    for (const section of appConfig.menuStructure) {
-      menu[section.entityType] = await buildMenuForSection(section);
-    }
-
-    return ctx.json(menu, 200);
   })
   /**
    * Get my invitations - a list with a combination of pending membership and entity data

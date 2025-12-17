@@ -1,3 +1,4 @@
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,8 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { useNavigationStore } from '~/store/navigation';
+import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { flattenInfiniteData } from '~/query/utils/flatten';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
@@ -26,7 +28,6 @@ interface OnboardingProps {
 const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProps) => {
   const { user } = useUserStore();
   const { hasStarted } = useMounted();
-  const { menu } = useNavigationStore();
   const { t } = useTranslation();
 
   const [steps, setSteps] = useState(onboardingSteps);
@@ -34,9 +35,14 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
 
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
+  // REVIEW Fetch organizations to determine if user has created any
+  const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
+  const organizations = flattenInfiniteData(orgQuery.data) satisfies Organization[];
+  const hasOrganizations = organizations.length > 0;
+
   useEffect(() => {
-    if (menu.organization.length > 0) setSteps([onboardingSteps[0]]);
-  }, []);
+    if (hasOrganizations) setSteps([onboardingSteps[0]]);
+  }, [hasOrganizations]);
 
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">

@@ -15,7 +15,7 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
-import { sendSSEToUsers } from '#/lib/sse';
+import { sendSSEByUserIds } from '#/lib/sse';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
@@ -394,11 +394,11 @@ const membershipRouteHandlers = app
       ),
     );
 
-    // Send the event to the user if they are a member of the organization
+    // Send event to users that had their membership deleted
     const memberIds = targets.map((el) => el.userId);
-    sendSSEToUsers(memberIds, 'membership_deleted', { id: entity.id, entityType: entity.entityType });
+    sendSSEByUserIds(memberIds, 'membership_deleted', { entityId: entity.id, entityType: entity.entityType });
 
-    logEvent('info', 'Deleted members', memberIds);
+    logEvent('info', 'Deleted memberships', memberIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -462,9 +462,9 @@ const membershipRouteHandlers = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    // Trigger SSE notification only if the update is for a different user
+    // Send event only if update is for a different user
     if (updatedMembership.userId !== user.id) {
-      sendSSEToUsers([updatedMembership.userId], 'membership_updated', {
+      sendSSEByUserIds([updatedMembership.userId], 'membership_updated', {
         ...membershipContext,
         membership: updatedMembership,
       });

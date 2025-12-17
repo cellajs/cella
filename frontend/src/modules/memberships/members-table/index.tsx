@@ -8,7 +8,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EntityPage } from '~/modules/entities/types';
+import type { EntityData } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/bar';
 import { useColumns } from '~/modules/memberships/members-table/columns';
 import { membersQueryOptions } from '~/modules/memberships/query';
@@ -18,7 +18,7 @@ import type { Member, MembersRouteSearchParams } from '~/modules/memberships/typ
 const LIMIT = appConfig.requestLimits.members;
 
 export interface MembersTableWrapperProps {
-  entity: EntityPage;
+  entity: EntityData;
   isSheet?: boolean;
   children?: React.ReactNode;
 }

@@ -1,7 +1,7 @@
 import type { ContextEntityBase, MembershipBase, Organization } from '~/api.gen';
 
-export type EntityPage = ContextEntityBase & {
+export type EntityData = ContextEntityBase & {
+  organizationId?: string;
   membership?: MembershipBase | null;
-  organizationId?: string | null;
   counts?: Organization['counts'];
 };

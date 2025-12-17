@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMatchRoute } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
-import { pagesLimit, pagesListQueryOptions, pagesQueryKeys } from '~/modules/pages/queries';
+import { pagesLimit, pagesListQueryOptions } from '~/modules/pages/queries';
 import type { PagesSearch } from '~/modules/pages/types';
 
 // #region Helpers
@@ -39,7 +39,7 @@ export const usePagesList = () => {
   const query = orgIdOrSlug ? { ...baseQuery } : { ...baseQuery };
 
   const { data, error, isLoading, isFetching, hasNextPage, ...queryProps } = useInfiniteQuery({
-    ...pagesListQueryOptions(pagesQueryKeys.list(query)),
+    ...pagesListQueryOptions(query),
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 

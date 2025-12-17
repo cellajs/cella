@@ -20,10 +20,14 @@ export const SSEProvider: FC<Props> = ({ children }) => {
     });
 
     source.onopen = async () => {
+      // On reconnect, refresh user and menu
       if (reconnectAttempt) {
         await Promise.all([getAndSetMe(), getAndSetMenu()]);
-        console.info('SSE reconnect successful!');
-      } else console.info('SSE stream connected.');
+        return console.info('SSE reconnect successful!');
+      }
+
+      // Initial connection established
+      console.info('SSE stream connected.');
     };
 
     source.onerror = () => {

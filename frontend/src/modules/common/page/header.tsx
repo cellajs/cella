@@ -7,14 +7,14 @@ import type { UserBase } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
-import type { EntityPage } from '~/modules/entities/types';
-import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
+import type { EntityData } from '~/modules/entities/types';
+import { useCachedEntityItem } from '~/modules/entities/use-cached-entity-item';
 import { Badge } from '~/modules/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: EntityPage | UserBase;
+  entity: EntityData | UserBase;
   panel?: React.ReactNode;
   parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
@@ -25,7 +25,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
 
   const scrollToRef = useRef<HTMLDivElement>(null);
 
-  const parentData = parent ? useGetEntityBaseData(parent) : null;
+  const parentData = parent ? useCachedEntityItem(parent) : null;
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);

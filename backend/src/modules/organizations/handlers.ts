@@ -6,7 +6,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { sendSSEToUsers } from '#/lib/sse';
+import { sendSSEByUserIds } from '#/lib/sse';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/counts';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
@@ -82,7 +82,7 @@ const organizationRouteHandlers = app
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
-    const { q, sort, order, offset, limit, userId, role, includeArchived } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, userId, role, excludeArchived } = ctx.req.valid('query');
 
     const entityType = 'organization';
 
@@ -102,7 +102,7 @@ const organizationRouteHandlers = app
     // Membership filters (role/archived) that should NOT restrict admins from seeing orgs.
     // Put these in JOIN ON so they only control whether the membership row is present.
     const membershipFilterOn = and(
-      ...(!includeArchived ? [eq(membershipsTable.archived, false)] : []),
+      ...(excludeArchived ? [eq(membershipsTable.archived, false)] : []),
       ...(role ? [eq(membershipsTable.role, role)] : []),
     );
 
@@ -240,7 +240,9 @@ const organizationRouteHandlers = app
           eq(membershipsTable.archived, false),
         ),
       );
-    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'entity_updated', { ...updatedOrganization, member });
+
+    // Send event to all members about the updated organization
+    for (const m of organizationMemberships) sendSSEByUserIds([m.userId], 'entity_updated', { ...updatedOrganization, membership: m });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
@@ -280,12 +282,12 @@ const organizationRouteHandlers = app
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
-    // Send SSE events to all members of organizations that were deleted
-    for (const id of allowedIds) {
+    // Send events to all members of all organizations that were deleted
+    for (const organizationId of allowedIds) {
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'entity_deleted', { id, entityType: 'organization' });
+      sendSSEByUserIds(userIds, 'entity_deleted', { entityId: organizationId, entityType: 'organization' });
     }
 
     logEvent('info', 'Organizations deleted', allowedIds);

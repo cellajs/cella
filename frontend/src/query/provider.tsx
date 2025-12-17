@@ -2,9 +2,9 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'config';
 import { useEffect } from 'react';
-import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
+import { meQueryOptions } from '~/modules/me/query';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { queriesToMap } from '~/offline-config';
+import { entityToPrefetchQueries } from '~/offline-config';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/query/utils';
@@ -39,10 +39,6 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       // Prefetch menu and user details
       const [menuResponse]: PromiseSettledResult<UserMenu>[] = await Promise.allSettled([
         prefetchQuery({
-          ...menuQueryOptions(),
-          ...offlineQueryConfig,
-        }),
-        prefetchQuery({
           ...meQueryOptions(),
           ...offlineQueryConfig,
         }),
@@ -58,7 +54,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
           if (item.membership.archived) continue; // Skip archived items
 
           // Fetch queries for this menu item in parallel
-          const queries = queriesToMap(item).map((query) =>
+          const queries = entityToPrefetchQueries(item.id, item.entityType, item.organizationId).map((query) =>
             prefetchQuery({
               ...query,
               ...offlineQueryConfig,

@@ -3,14 +3,7 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import {
-  meAuthDataSchema,
-  menuSchema,
-  mePendingInvitationSchema,
-  toggleMfaBodySchema,
-  uploadTokenQuerySchema,
-  uploadTokenSchema,
-} from '#/modules/me/schema';
+import { meAuthDataSchema, mePendingInvitationSchema, toggleMfaBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
@@ -33,24 +26,6 @@ const meRoutes = {
             schema: z.object({ user: userSchema, systemRole: z.enum([...appConfig.roles.systemRoles, 'user']) }),
           },
         },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
-  getMyMenu: createCustomRoute({
-    operationId: 'getMyMenu',
-    method: 'get',
-    path: '/menu',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get menu',
-    description:
-      'Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
-    responses: {
-      200: {
-        description: 'Menu of user',
-        content: { 'application/json': { schema: menuSchema } },
       },
       ...errorResponseRefs,
     },

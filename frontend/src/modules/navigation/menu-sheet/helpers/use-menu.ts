@@ -1,0 +1,40 @@
+import { useQueries } from '@tanstack/react-query';
+import { appConfig, type ContextEntityType } from 'config';
+import { useMemo } from 'react';
+import type { UserMenuItem } from '~/modules/me/types';
+import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { flattenInfiniteData } from '~/query/utils/flatten';
+import { buildMenuFromByType } from './build-menu';
+
+export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
+  const detailedMenu = !!opts?.detailedMenu;
+
+  const types = useMemo(
+    () => Array.from(new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean)))) as ContextEntityType[],
+    [],
+  );
+
+  const results = useQueries({
+    // @ts-ignore
+    queries: types.map((t) => getContextEntityTypeToListQueries()[t]({ userId })),
+  });
+
+  // Stable recompute key when query data changes
+  const recomputeKey = results.map((r) => r.dataUpdatedAt).join('|');
+
+  const menu = useMemo(() => {
+    const byType = new Map<ContextEntityType, UserMenuItem[]>();
+
+    types.forEach((t, i) => {
+      const data = results[i]?.data as any;
+      byType.set(t, data ? flattenInfiniteData<UserMenuItem>(data) : []);
+    });
+
+    return buildMenuFromByType(byType, appConfig.menuStructure, { detailedMenu });
+  }, [detailedMenu, types, recomputeKey]); // <- important
+
+  const isLoading = results.some((r) => r.isLoading);
+  const error = results.find((r) => r.error)?.error;
+
+  return { menu, isLoading, error };
+}

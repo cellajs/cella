@@ -7,7 +7,7 @@ import {
   changeQueryData,
   isArbitraryQueryData,
 } from '~/query/hooks/use-mutate-query-data/helpers';
-import type { EntityData, ItemData, QueryDataActions, UseMutateQueryDataReturn } from '~/query/hooks/use-mutate-query-data/types';
+import type { EntityIdAndType, ItemData, QueryDataActions, UseMutateQueryDataReturn } from '~/query/hooks/use-mutate-query-data/types';
 import { queryClient } from '~/query/query-client';
 import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
 
@@ -38,7 +38,7 @@ export function useMutateQueryData(
 ): UseMutateQueryDataReturn {
   // mutation function
   function dataMutation(
-    items: ItemData[] | EntityData[] | ContextEntityBase[],
+    items: ItemData[] | EntityIdAndType[] | ContextEntityBase[],
     action: QueryDataActions,
     entity?: EntityType,
     keyToOperateIn?: string,
@@ -53,7 +53,7 @@ export function useMutateQueryData(
       // Determine type of query and apply action
       if (isQueryData(queryData)) changeQueryData(queryKey, items, action);
       if (isInfiniteQueryData(queryData)) changeInfiniteQueryData(queryKey, items, action);
-      if (entity && isArbitraryQueryData(queryData)) changeArbitraryQueryData(queryKey, items as EntityData[], action, entity, keyToOperateIn);
+      if (entity && isArbitraryQueryData(queryData)) changeArbitraryQueryData(queryKey, items as EntityIdAndType[], action, entity, keyToOperateIn);
     }
 
     // Invalidate queries if invalidateKeyGetter is provided and the action is included in useInvalidateOnActions
@@ -68,15 +68,23 @@ export function useMutateQueryData(
   // Overload functions for action
   function create(items: ItemData[]): void;
   function create(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function create(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function create(items: ItemData[] | EntityData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function create(items: EntityIdAndType[], entityType: ProductEntityType, keyToOperateIn: string): void;
+  function create(
+    items: ItemData[] | EntityIdAndType[] | ContextEntityBase[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'create', entity, keyToOperateIn);
   }
 
   function update(items: ItemData[]): void;
   function update(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function update(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function update(items: ItemData[] | EntityData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function update(items: EntityIdAndType[], entityType: ProductEntityType, keyToOperateIn: string): void;
+  function update(
+    items: ItemData[] | EntityIdAndType[] | ContextEntityBase[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'update', entity, keyToOperateIn);
   }
 
@@ -88,8 +96,12 @@ export function useMutateQueryData(
 
   function remove(items: ItemData[]): void;
   function remove(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function remove(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function remove(items: ItemData[] | EntityData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function remove(items: EntityIdAndType[], entityType: ProductEntityType, keyToOperateIn: string): void;
+  function remove(
+    items: ItemData[] | EntityIdAndType[] | ContextEntityBase[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'remove', entity, keyToOperateIn);
   }
 

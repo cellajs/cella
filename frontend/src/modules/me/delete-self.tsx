@@ -5,7 +5,7 @@ import { deleteMe } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { usersKeys } from '~/modules/users/query';
+import { userQueryKeys } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
@@ -25,7 +25,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
       await deleteMe();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: usersKeys.single.byIdOrSlug(user.id) });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.detail.byIdOrSlug(user.id) });
 
       navigate({ to: '/sign-out', replace: true, search: { force: true } });
       if (isDialog) removeDialog();

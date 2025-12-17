@@ -90,9 +90,6 @@ import type {
   GetMyInvitationsData,
   GetMyInvitationsErrors,
   GetMyInvitationsResponses,
-  GetMyMenuData,
-  GetMyMenuErrors,
-  GetMyMenuResponses,
   GetOrganizationData,
   GetOrganizationErrors,
   GetOrganizationResponses,
@@ -1037,32 +1034,6 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
   });
 
 /**
- * Get menu
- *
- * 🛡️ Requires authentication
- *
- * Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
- *
- * **GET /me/menu** ·· [getMyMenu](https://api.cellajs.com/docs#tag/me/get/me/menu) ·· _me_
- *
- * @param {getMyMenuData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options<GetMyMenuData, ThrowOnError>) =>
-  (options?.client ?? client).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/menu',
-    ...options,
-  });
-
-/**
  * Get list of invitations
  *
  * 🛡️ Requires authentication
@@ -1375,7 +1346,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
  * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.userid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.includearchived - `enum` (optional)
+ * @param {enum=} options.query.excludearchived - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganizations = <ThrowOnError extends boolean = true>(options?: Options<GetOrganizationsData, ThrowOnError>) =>
