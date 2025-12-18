@@ -104,8 +104,14 @@ export const useMemberUpdateMutation = () =>
         context.toastMessage = t('common:success.update_item', { item: t('common:role') });
       } else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
+      // Update membership in member queries
       const { updateMembership } = useMutateQueryData(memberQueryKeys.list.base);
       updateMembership([membershipInfo], entityType);
+
+      // Update membership in entity cache (for menu)
+      const entityQueryKey = [entityType];
+      const { updateMembership: updateEntityMembership } = useMutateQueryData(entityQueryKey);
+      updateEntityMembership([membershipInfo], entityType);
 
       // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
@@ -135,6 +141,11 @@ export const useMemberUpdateMutation = () =>
       // Update membership of ContextEntityType query that was fetched after success
       const { updateMembership } = useMutateQueryData(memberQueryKeys.list.base);
       updateMembership([updatedMembership], entityType);
+
+      // Update membership in entity cache (for menu)
+      const entityQueryKey = [entityType];
+      const { updateMembership: updateEntityMembership } = useMutateQueryData(entityQueryKey);
+      updateEntityMembership([updatedMembership], entityType);
 
       // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
