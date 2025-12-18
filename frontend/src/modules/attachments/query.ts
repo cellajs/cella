@@ -23,10 +23,6 @@ export const attachmentQueryKeys = keys;
  * Query Options for fetching grouped attachments.
  *
  * This function returns the configuration for querying group of attachments from target organization.
- *
- * @param param.orgIdOrSlug - Organization ID or slug.
- * @param param.attachmentId - attachmentId, to fetch all attachments of same group.
- * @returns  Query options.
  */
 export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<AttachmentFilters, 'attachmentId' | 'orgIdOrSlug'>) => {
   const queryKey = keys.list.base;
@@ -47,13 +43,6 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
  * Infinite Query Options for fetching a paginated list of attachments.
  *
  * This function returns the configuration for querying attachments from target organization with pagination support.
- *
- * @param param.orgIdOrSlug - Organization ID or slug.
- * @param param.q - Optional search query for filtering attachments.
- * @param param.sort - Field to sort by (default: 'createdAt').
- * @param param.order - Order of sorting (default: 'desc').
- * @param param.limit - Number of items per page (default: `appConfig.requestLimits.attachments`).
- * @returns Infinite query options.
  */
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,

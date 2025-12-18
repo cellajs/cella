@@ -6,6 +6,13 @@ import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/utils/flatten';
 import { buildMenuFromByType } from './build-menu';
 
+/**
+ * React hook that fetches and builds the user menu based on their memberships.
+ *
+ * @param userId - The ID of the user to fetch menu data for
+ * @param opts - Optional configuration for building detailed menu with submenus
+ * @returns An object containing the menu, loading state, and any errors
+ */
 export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
   const detailedMenu = !!opts?.detailedMenu;
 

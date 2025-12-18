@@ -9,10 +9,11 @@ export const MenuSheetItemsEdit = ({ data, isArchived, options }: { data: UserMe
   const { t } = useTranslation();
   const { detailedMenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
-  const entityType = data[0].entityType;
 
-  if (data.length === 0) {
-    return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: entityType })}</li>;
+  if (options && data.length === 0) {
+    return (
+      <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: options.entityType })}</li>
+    );
   }
 
   const filteredItems = data

@@ -1,13 +1,11 @@
-import { appConfig, ContextEntityType } from 'config';
+import { appConfig, ContextEntityType, type MenuSection } from 'config';
 import { UserMenuItem } from '~/modules/me/types';
-
-type MenuSection = {
-  entityType: ContextEntityType;
-  subentityType?: ContextEntityType | null;
-};
 
 /**
  * Builds the initial menu state based on the provided menu structure.
+ *
+ * @param structure - The menu structure configuration defining entity types
+ * @returns An object with entity types as keys and empty arrays as values
  */
 function buildInitialMenu<const T extends readonly { entityType: ContextEntityType }[]>(
   structure: T,
@@ -19,15 +17,20 @@ function buildInitialMenu<const T extends readonly { entityType: ContextEntityTy
 }
 
 // Base menu
-export const baseMenu = buildInitialMenu(appConfig.menuStructure);
+const baseMenu = buildInitialMenu(appConfig.menuStructure);
 
 /**
  * Builds a user menu from a mapping of context entity types to their corresponding items.
+ *
+ * @param byType - A map of entity types to their menu items
+ * @param menuStructure - The menu structure configuration
+ * @param opts - Optional configuration for building detailed menu with submenus
+ * @returns The constructed user menu with items grouped by entity type
  */
 export function buildMenuFromByType(byType: Map<ContextEntityType, UserMenuItem[]>, menuStructure: MenuSection[], opts?: { detailedMenu?: boolean }) {
   const detailedMenu = !!opts?.detailedMenu;
 
-  const menu = baseMenu;
+  const menu = { ...baseMenu };
 
   for (const section of menuStructure) {
     const items = byType.get(section.entityType) ?? [];

@@ -2,7 +2,8 @@ import { appConfig } from 'config';
 import { createElement, type FC, useEffect, useState } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { SSEContext } from '~/modules/common/sse/use-sse';
-import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
+import { getAndSetMe } from '~/modules/me/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 
 type Props = React.PropsWithChildren;
 
@@ -22,7 +23,7 @@ export const SSEProvider: FC<Props> = ({ children }) => {
     source.onopen = async () => {
       // On reconnect, refresh user and menu
       if (reconnectAttempt) {
-        await Promise.all([getAndSetMe(), getAndSetMenu()]);
+        await Promise.all([getAndSetMe(), getMenuData()]);
         return console.info('SSE reconnect successful!');
       }
 

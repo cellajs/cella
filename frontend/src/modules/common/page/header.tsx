@@ -3,18 +3,18 @@ import { appConfig, ContextEntityType } from 'config';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserBase } from '~/api.gen';
+import type { ContextEntityBase, UserBase } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
-import type { EntityData } from '~/modules/entities/types';
-import { useCachedEntityItem } from '~/modules/entities/use-cached-entity-item';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
+import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
 import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: EntityData | UserBase;
+  entity: ContextEntityData | UserBase;
   panel?: React.ReactNode;
   parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
@@ -22,10 +22,12 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
   const { t } = useTranslation();
-
   const scrollToRef = useRef<HTMLDivElement>(null);
 
-  const parentData = parent ? useCachedEntityItem(parent) : null;
+  // Find parent entity from cache
+  const parentData = useFindInQueryCache<ContextEntityBase | UserBase>(parent ? [parent.entityType] : [], (item) =>
+    parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
+  );
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);

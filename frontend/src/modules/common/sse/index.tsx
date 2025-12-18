@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EntityType } from 'config';
 import { attachmentQueryKeys } from '~/modules/attachments/query';
 import { useSSE } from '~/modules/common/sse/use-sse';
-import type { EntityDataWithMembership } from '~/modules/me/types';
+import type { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { organizationQueryKeys } from '~/modules/organizations/query';
 import { pageQueryKeys } from '~/modules/pages/queries';
@@ -14,11 +14,11 @@ import { userQueryKeys } from '~/modules/users/query';
  */
 
 type SSEEventsMap = {
-  membership_created: EntityDataWithMembership;
-  membership_updated: EntityDataWithMembership;
+  membership_created: ContextEntityDataWithMembership;
+  membership_updated: ContextEntityDataWithMembership;
   membership_deleted: { entityType: EntityType; entityId: string };
-  entity_created: EntityDataWithMembership;
-  entity_updated: EntityDataWithMembership;
+  entity_created: ContextEntityDataWithMembership;
+  entity_updated: ContextEntityDataWithMembership;
   entity_deleted: { entityType: EntityType; entityId: string };
 };
 
@@ -56,7 +56,7 @@ export default function SSE() {
   const queryClient = useQueryClient();
 
   // Membership created: user now belongs to a new entity → invalidate its list
-  const onMembershipCreated = (entityData: EntityDataWithMembership) => {
+  const onMembershipCreated = (entityData: ContextEntityDataWithMembership) => {
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 
@@ -64,7 +64,7 @@ export default function SSE() {
   };
 
   // Membership updated: update the single entity cache (e.g. role changed) and invalidate its list
-  const onMembershipUpdated = (entityData: EntityDataWithMembership) => {
+  const onMembershipUpdated = (entityData: ContextEntityDataWithMembership) => {
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 
@@ -85,7 +85,7 @@ export default function SSE() {
   };
 
   // Entity created: a new entity was created → invalidate its list (if the creator immediately becomes a member)
-  const onEntityCreated = (entityData: EntityDataWithMembership) => {
+  const onEntityCreated = (entityData: ContextEntityDataWithMembership) => {
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 
@@ -93,7 +93,7 @@ export default function SSE() {
   };
 
   // Entity updated: update the single cache and invalidate list (e.g. name or avatar changed)
-  const onEntityUpdated = (entityData: EntityDataWithMembership) => {
+  const onEntityUpdated = (entityData: ContextEntityDataWithMembership) => {
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 

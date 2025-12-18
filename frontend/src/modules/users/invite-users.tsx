@@ -10,7 +10,7 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { EntityData } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
@@ -29,7 +29,7 @@ export const useInviteFormDraft = (entityId?: string) => {
 };
 
 interface InviteUsersProps {
-  entity?: EntityData;
+  entity?: ContextEntityData;
   dialog?: boolean;
   mode?: 'search' | 'email' | null;
   children?: React.ReactNode;

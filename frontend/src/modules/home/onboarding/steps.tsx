@@ -35,9 +35,9 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
 
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
-  // REVIEW Fetch organizations to determine if user has created any
+  // Fetch organizations to determine if user has created any
   const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
-  const organizations = flattenInfiniteData(orgQuery.data) satisfies Organization[];
+  const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganizations = organizations.length > 0;
 
   useEffect(() => {

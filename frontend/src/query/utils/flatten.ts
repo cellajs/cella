@@ -1,6 +1,13 @@
-import { InfiniteData } from '@tanstack/react-query';
-
-export function flattenInfiniteData<T>(data: InfiniteData<any> | undefined): T[] {
+/**
+ * Flatten query data - handles both infinite queries and regular queries
+ */
+export function flattenInfiniteData<T>(data: any): T[] {
   if (!data) return [];
-  return data.pages.flatMap((p: any) => (Array.isArray(p) ? p : (p.items ?? p.data ?? []))) as T[];
+
+  // Handle InfiniteQuery data: { pages: [...] }
+  if (data.pages && Array.isArray(data.pages)) {
+    return data.pages.flatMap((p: any) => (Array.isArray(p) ? p : (p.items ?? p.data ?? []))) as T[];
+  }
+
+  return [data] as T[];
 }

@@ -3,11 +3,11 @@ import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutatio
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { EntityData } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 interface Props {
-  entity: EntityData;
+  entity: ContextEntityData;
   attachments: Attachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<Attachment[]>) => void;

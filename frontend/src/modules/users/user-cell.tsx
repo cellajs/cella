@@ -6,7 +6,7 @@ import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import { useCachedEntityItem } from '~/modules/entities/use-cached-entity-item';
+import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
 import { cn } from '~/utils/cn';
 
 interface BaseProps {
@@ -67,12 +67,14 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }
 };
 
 /**
- * Wrapper around UserCell to get userCell by ID. Avoid trigger `Rendered more hooks than during the previous render.`
+ * Wrapper around UserCell to get userCell by ID from query cache.
+ * Searches in both 'user' and 'member' queries since members contain UserBase data.
  */
 export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
-  if (!userId) return <span className="text-muted">-</span>;
+  // Find user from cache (search in both 'user' and 'member' queries)
+  const user = useFindInQueryCache<UserBase>([['user'], ['member']], (item) => item.id === userId);
 
-  const user = useCachedEntityItem({ idOrSlug: userId, entityType: 'user' });
+  if (!userId) return <span className="text-muted">-</span>;
 
   return user ? <UserCell compactable={true} user={user} {...baseProps} /> : <span>{userId}</span>;
 };

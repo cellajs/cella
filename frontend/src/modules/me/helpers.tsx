@@ -1,12 +1,6 @@
-import { appConfig, ContextEntityType } from 'config';
 import { getMe, getMyAuth } from '~/api.gen';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { queryClient } from '~/query/query-client';
-import { flattenInfiniteData } from '~/query/utils/flatten';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
-import { buildMenuFromByType } from '../navigation/menu-sheet/helpers/build-menu';
-import { EntityDataWithMembership } from './types';
 
 /**
  * Retrieves the current user's information and updates the user store.
@@ -39,30 +33,8 @@ export const getAndSetMeAuthData = async () => {
 };
 
 /**
- * Retrieves user menu data and stores it in react query cache.
- *
- * @returns The menu data.
+ * Generates a random passkey name.
  */
-export async function getAndSetMenu(opts?: { detailedMenu?: boolean }) {
-  const userId = useUserStore.getState().user.id;
-
-  const byType = new Map<ContextEntityType, EntityDataWithMembership[]>();
-
-  await Promise.all(
-    appConfig.contextEntityTypes.map(async (entityType) => {
-      const factory = getContextEntityTypeToListQueries()[entityType];
-      if (!factory) return byType.set(entityType, []);
-
-      const data = await queryClient.ensureInfiniteQueryData(factory({ userId }));
-      byType.set(entityType, flattenInfiniteData<EntityDataWithMembership>(data));
-    }),
-  );
-
-  const menu = buildMenuFromByType(byType, appConfig.menuStructure, opts);
-
-  return menu;
-}
-
 export const generatePasskeyName = () => {
   const nouns = [
     'Phoenix',

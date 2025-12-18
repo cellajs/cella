@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
+import { getAndSetMe } from '~/modules/me/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
@@ -18,7 +19,7 @@ const StopImpersonation = () => {
   const stopImpersonation = async () => {
     await breakImpersonation();
     setImpersonating(false);
-    await Promise.all([getAndSetMe(), getAndSetMenu()]);
+    await Promise.all([getAndSetMe(), getMenuData()]);
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
     toaster(t('common:success.stopped_impersonation'), 'success');
   };

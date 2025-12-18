@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
-import { EntityGridSkeleton } from '~/modules/entities/entity-grid/skeleton';
+import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
 
 type BaseEntityGridProps<TEntity extends { id: string }> = {
   label: string;

@@ -20,7 +20,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
-import type { EntityData } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/users/user-cell';
@@ -28,7 +28,7 @@ import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
-export const useColumns = (entity: EntityData, isSheet: boolean, isCompact: boolean) => {
+export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const storeUserSystemRole = useUserStore((state) => state.systemRole);

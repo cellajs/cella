@@ -18,13 +18,13 @@ import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EntityData } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
 export interface AttachmentsTableProps {
-  entity: EntityData;
+  entity: ContextEntityData;
   isSheet?: boolean;
   canUpload?: boolean;
 }

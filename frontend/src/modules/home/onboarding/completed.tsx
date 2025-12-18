@@ -22,9 +22,9 @@ export const OnboardingCompleted = () => {
   const [isExploding] = useState(true);
   const didRun = useRef(false);
 
-  // REVIEW Fetch organizations to determine the last created organization
+  // Fetch organizations to determine the last created organization
   const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
-  const organizations = flattenInfiniteData(orgQuery.data) satisfies Organization[];
+  const organizations = flattenInfiniteData<Organization>(orgQuery.data);
 
   const lastCreatedOrganization = useMemo(() => {
     if (organizations.length === 0) return undefined;
