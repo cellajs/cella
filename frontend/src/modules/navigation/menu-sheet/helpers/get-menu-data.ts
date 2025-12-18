@@ -1,6 +1,6 @@
 import { appConfig, ContextEntityType } from 'config';
 import { ContextEntityDataWithMembership } from '~/modules/me/types';
-import { buildMenuFromByType } from '~/modules/navigation/menu-sheet/helpers/build-menu';
+import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { queryClient } from '~/query/query-client';
 import { flattenInfiniteData } from '~/query/utils/flatten';
@@ -26,7 +26,7 @@ export async function getMenuData(opts?: { detailedMenu?: boolean }) {
     }),
   );
 
-  const menu = buildMenuFromByType(byType, appConfig.menuStructure, opts);
+  const menu = buildMenu(byType, appConfig.menuStructure, opts);
 
   return menu;
 }

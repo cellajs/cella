@@ -156,7 +156,7 @@ const pagesRouteHandlers = app
     const user = getContextUser();
     const pageData = ctx.req.valid('json');
 
-    // todo: validation layer
+    // TODO: validation layer
     const [page] = await db
       .update(pagesTable)
       .set({

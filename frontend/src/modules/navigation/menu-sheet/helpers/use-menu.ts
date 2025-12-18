@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/utils/flatten';
-import { buildMenuFromByType } from './build-menu';
+import { buildMenu } from './build-menu';
 
 /**
  * React hook that fetches and builds the user menu based on their memberships.
@@ -37,7 +37,7 @@ export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
       byType.set(t, data ? flattenInfiniteData<UserMenuItem>(data) : []);
     });
 
-    return buildMenuFromByType(byType, appConfig.menuStructure, { detailedMenu });
+    return buildMenu(byType, appConfig.menuStructure, { detailedMenu });
   }, [detailedMenu, types, recomputeKey]); // <- important
 
   const isLoading = results.some((r) => r.isLoading);

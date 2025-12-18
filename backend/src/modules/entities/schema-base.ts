@@ -10,7 +10,7 @@ export const contextEntityBaseSchema = z
     entityType: contextEntityTypeSchema,
     slug: slugSchema,
     name: nameSchema,
-    createdAt: z.string(), // TODO
+    createdAt: z.string(),
     thumbnailUrl: imageUrlSchema.nullable().optional(),
     bannerUrl: imageUrlSchema.nullable().optional(),
   })
