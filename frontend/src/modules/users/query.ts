@@ -18,7 +18,10 @@ export const userQueryKeys = keys;
  * Query options for fetching a user by ID or slug.
  */
 export const userQueryOptions = (idOrSlug: string) =>
-  queryOptions({ queryKey: keys.detail.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug } }) });
+  queryOptions({
+    queryKey: keys.detail.byId(idOrSlug),
+    queryFn: () => getUser({ path: { idOrSlug } }),
+  });
 
 /**
  * Infinite query options to get a paginated list of users.

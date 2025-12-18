@@ -180,6 +180,6 @@ export const useDeleteTotpMutation = () => {
 const updateOnSuccesses = (updatedUser: User) => {
   const { updateUser } = useUserStore.getState();
 
-  queryClient.setQueryData(userQueryKeys.detail.byIdOrSlug(updatedUser.slug), updatedUser);
+  queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
   updateUser(updatedUser);
 };

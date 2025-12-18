@@ -69,7 +69,7 @@ const OrganizationsTable = () => {
 
       const newRole = membership.role;
       const partOfOrganization = !!membership.id;
-      const mutationVariables = { idOrSlug: organization.slug, entityType: organization.entityType };
+      const mutationVariables = { idOrSlug: organization.id, entityType: organization.entityType };
       const orgIdOrSlug = organization.id;
 
       try {

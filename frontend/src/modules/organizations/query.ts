@@ -29,7 +29,7 @@ export const organizationQueryKeys = keys;
  */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: keys.detail.byIdOrSlug(idOrSlug),
+    queryKey: keys.detail.byId(idOrSlug),
     queryFn: async () => getOrganization({ path: { idOrSlug } }),
   });
 

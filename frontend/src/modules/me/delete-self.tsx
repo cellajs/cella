@@ -25,7 +25,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
       await deleteMe();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.detail.byIdOrSlug(user.id) });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.detail.byId(user.id) });
 
       navigate({ to: '/sign-out', replace: true, search: { force: true } });
       if (isDialog) removeDialog();

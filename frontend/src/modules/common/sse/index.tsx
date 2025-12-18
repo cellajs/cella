@@ -71,7 +71,7 @@ export default function SSE() {
     if (!keys) return;
 
     // Update the single item
-    queryClient.setQueryData(keys.detail.byIdOrSlug(entityData.id), entityData);
+    queryClient.setQueryData(keys.detail.byId(entityData.id), entityData);
 
     // And mark the list stale
     queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
@@ -82,7 +82,7 @@ export default function SSE() {
     const keys = entityKeysMap[entityType];
     if (!keys) return;
 
-    queryClient.removeQueries({ queryKey: keys.detail.byIdOrSlug(entityId), exact: true });
+    queryClient.removeQueries({ queryKey: keys.detail.byId(entityId), exact: true });
     queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
   };
 
@@ -100,7 +100,7 @@ export default function SSE() {
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 
-    queryClient.setQueryData(keys.detail.byIdOrSlug(entityData.id), entityData);
+    queryClient.setQueryData(keys.detail.byId(entityData.id), entityData);
     queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
   };
 
@@ -109,7 +109,7 @@ export default function SSE() {
     const keys = entityKeysMap[entityType];
     if (!keys) return;
 
-    queryClient.removeQueries({ queryKey: keys.detail.byIdOrSlug(entityId), exact: true });
+    queryClient.removeQueries({ queryKey: keys.detail.byId(entityId), exact: true });
     queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
   };
 

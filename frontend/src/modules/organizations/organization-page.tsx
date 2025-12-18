@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useParams } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
@@ -17,12 +17,11 @@ const organizationTabs: PageTab[] = [
   { id: 'settings', label: 'common:settings', path: '/organization/$idOrSlug/settings' },
 ];
 
-const OrganizationPage = () => {
+const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
   const { t } = useTranslation();
-  const { idOrSlug } = useParams({ from: '/appLayout/organization/$idOrSlug' });
   const systemRole = useUserStore((state) => state.systemRole);
 
-  const orgQueryOptions = organizationQueryOptions(idOrSlug);
+  const orgQueryOptions = organizationQueryOptions(organizationId);
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
   const isAdmin = organization.membership?.role === 'admin' || systemRole === 'admin';
@@ -32,7 +31,7 @@ const OrganizationPage = () => {
 
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { idOrSlug: organization.slug, body: { bannerUrl } },
+      { idOrSlug: organization.id, body: { bannerUrl } },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

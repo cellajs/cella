@@ -8,7 +8,7 @@ export type StandardEntityKeys<E extends EntityType, LF extends object = {}, SID
   };
   detail: {
     base: [E, 'detail'];
-    byIdOrSlug: (idOrSlug: SID) => [E, 'detail', SID];
+    byId: (id: SID) => [E, 'detail', SID];
   };
   create: [E, 'create'];
   update: [E, 'update'];
@@ -31,7 +31,7 @@ export function createEntityKeys<LF extends object, SID extends string | number 
     },
     detail: {
       base: [entityType, 'detail'],
-      byIdOrSlug: (idOrSlug: SID) => [entityType, 'detail', idOrSlug],
+      byId: (id: SID) => [entityType, 'detail', id],
     },
     create: [entityType, 'create'],
     update: [entityType, 'update'],
