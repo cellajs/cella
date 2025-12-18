@@ -31,16 +31,16 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^6.0.1",
-    "axios": "^1.8.3",
+    "axios": "^1.13.2",
     "commander": "^12.1.0",
     "cross-spawn": "^7.0.6",
-    "giget": "^1.2.3",
-    "picocolors": "^1.1.0",
+    "giget": "^1.2.5",
+    "picocolors": "^1.1.1",
     "validate-npm-package-name": "^5.0.1",
-    "yocto-spinner": "^0.1.0"
+    "yocto-spinner": "^0.1.2"
   },
   "devDependencies": {
-    "tsup": "^8.3.5",
-    "tsx": "^4.19.2"
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0"
   }
 }

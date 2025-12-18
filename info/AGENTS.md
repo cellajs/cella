@@ -10,6 +10,7 @@ It prioritizes great UX, modularity, and open standards. OpenAPI is a central pa
 - **Backend**: Node.js (v24), Hono, Drizzle ORM, PostgreSQL (or PGlite for local dev), Scalar (API Docs).
 - **Frontend**: React, TanStack Router, TanStack Query, Zustand, Electric Sync, Shadcn UI, Tailwind CSS.
 - **Tools**: Pnpm (workspaces), Biome (lint/format), Vitest (testing), Vite.
+- **IDE Support**: Development with VSCode and WebStorm/JetBrains should be supported.  
 
 ## Architecture
 - **Flat-root Monorepo**:
@@ -50,6 +51,8 @@ It prioritizes great UX, modularity, and open standards. OpenAPI is a central pa
 - **API Client**: The frontend SDK in `frontend/src/api.gen/` is generated from the backend OpenAPI spec. **NEVER modify files in `api.gen` manually.** Run `pnpm generate:openapi` after changing backend routes or schemas.
 - **Database**: Drizzle ORM is mandatory. Schema definitions are in `backend/src/db/schema/`. Use `pnpm generate` in the root or backend to create migrations.
 - **Linting & Formatting**: Biome is used for code quality. Run `pnpm lint:fix` or `pnpm check` before finishing a task.
+  - **VSCode**: The `prepare` script attempts to install the Biome extension.
+  - **WebStorm**: Use the **Biome** plugin. It is listed in `.idea/externalDependencies.xml` so you should be prompted to install it when opening the project.
 - **Testing**: Use Vitest for tests. Ensure existing tests pass and add new ones for features/fixes.
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
 

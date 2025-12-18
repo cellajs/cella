@@ -35,8 +35,8 @@
     "yocto-spinner": "^0.1.2"
   },
   "devDependencies": {
-    "@types/micromatch": "^4.0.9",
+    "@types/micromatch": "^4.0.10",
     "@types/semver": "^7.7.1",
-    "tsx": "^4.20.3"
+    "tsx": "^4.21.0"
   }
 }
