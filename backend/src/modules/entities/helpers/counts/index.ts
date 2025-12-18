@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
-import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
+import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 
 /**
@@ -32,7 +32,7 @@ export const getEntityCounts = async (entityType: ContextEntityType, entityId: s
   const membershipCountsQuery = getMemberCountsQuery(entityType);
   const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
-  const validEntities = getAssociatedEntities(entityType);
+  const validEntities = getEntityTypesScopedByContextEntityType(entityType);
   const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
 
   const [counts] = await db

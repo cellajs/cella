@@ -116,7 +116,7 @@ const meRouteHandlers = app
     const pendingInvites = await Promise.all(
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
-        const entityIdField = appConfig.entityIdFields[entityType];
+        const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
         const contextEntityBaseSelect = makeContextEntityBaseSelect(entityType);
 
@@ -127,7 +127,7 @@ const meRouteHandlers = app
           })
           .from(inactiveMembershipsTable)
           .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdField]))
+          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdColumnKey]))
           .where(
             and(
               eq(inactiveMembershipsTable.contextType, entityType),
@@ -230,10 +230,10 @@ const meRouteHandlers = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
-    const entityIdField = appConfig.entityIdFields[entityType];
+    const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
     // Delete memberships
-    await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], entity.id)));
+    await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdColumnKey], entity.id)));
 
     logEvent('info', 'User left entity', { userId: user.id });
 

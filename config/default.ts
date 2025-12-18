@@ -184,7 +184,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /**
    * Define fields to identify an entity in a relationship
    */
-  entityIdFields: {
+  entityIdColumnKeys: {
     user: 'userId',
     organization: 'organizationId',
     attachment: 'attachmentId',

@@ -12,7 +12,7 @@ import { entityTables } from '#/entity-config';
 export const generateContextEntityIdColumns = () =>
   appConfig.contextEntityTypes.reduce((columns, entityType) => {
     const table = entityTables[entityType]; // Retrieve associated table for entity
-    const columnName = appConfig.entityIdFields[entityType]; // Determine the entity ID column name
+    const columnName = appConfig.entityIdColumnKeys[entityType]; // Determine the entity ID column name
 
     // Add the column with a foreign key reference, ensuring cascading deletion
     columns[columnName] = varchar().references(() => table.id, { onDelete: 'cascade' });

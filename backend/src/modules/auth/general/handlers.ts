@@ -243,9 +243,9 @@ const authGeneralRouteHandlers = app
         .from(inactiveMembershipsTable)
         .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
 
-      const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
-      if (!inactiveMembership[entityIdField]) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
-      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
+      const entityIdColumnKey = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
+      if (!inactiveMembership[entityIdColumnKey]) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdColumnKey]);
 
       if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
@@ -258,7 +258,7 @@ const authGeneralRouteHandlers = app
       };
 
       await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
-      logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });
+      logEvent('info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
     } else {
       await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
       logEvent('info', 'System invitation has been resent');

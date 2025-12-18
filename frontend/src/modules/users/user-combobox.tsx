@@ -26,7 +26,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdField = appConfig.entityIdFields[entity.entityType];
+  const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -160,7 +160,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     <ScrollArea>
                       <CommandGroup>
                         {items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
-                          const alreadyMember = !!memberships.find((m) => m[entityIdField] === entity.id);
+                          const alreadyMember = !!memberships.find((m) => m[entityIdColumnKey] === entity.id);
                           const disabled = !memberships || alreadyMember;
                           return (
                             <CommandItem

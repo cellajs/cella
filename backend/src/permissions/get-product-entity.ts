@@ -41,10 +41,10 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   if (!isAllowed && !isSystemAdmin) {
     // Step 3: Search for user's membership for context entity
-    const entityIdField = appConfig.entityIdFields[contextEntityType];
-    const entityId = (entity as Record<string, unknown>)[entityIdField];
+    const entityIdColumnKey = appConfig.entityIdColumnKeys[contextEntityType];
+    const entityId = (entity as Record<string, unknown>)[entityIdColumnKey];
 
-    const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId);
+    const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdColumnKey] === entityId);
     if (!membership)
       throw new AppError({ status: 403, type: 'membership_not_found', severity: 'error', entityType: contextEntityType, meta: entity });
 

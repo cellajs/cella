@@ -37,7 +37,7 @@ export function buildMenu(byType: Map<ContextEntityType, UserMenuItem[]>, menuSt
     }
 
     const subitems = byType.get(section.subentityType) ?? [];
-    const parentIdField = appConfig.entityIdFields[section.entityType];
+    const parentIdField = appConfig.entityIdColumnKeys[section.entityType];
 
     const subsByParent = new Map<string, UserMenuItem[]>();
     for (const s of subitems) {

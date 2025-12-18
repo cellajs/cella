@@ -92,7 +92,7 @@ const usersRouteHandlers = app
     // Fetch memberships for all these users
     const membershipFilters = [inArray(membershipsTable.userId, userIds)];
     if (targetEntityId && targetEntityType) {
-      const entityFieldId = appConfig.entityIdFields[targetEntityType];
+      const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
       membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(membershipsTable[entityFieldId], targetEntityId));
     }
 

@@ -11,7 +11,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/counts';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
-import { getAssociatedEntities } from '#/modules/entities/helpers/get-related-entities';
+import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
@@ -64,7 +64,7 @@ const organizationRouteHandlers = app
     const [createdMembership] = await insertMemberships([{ userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization }]);
 
     // Get default linked entities
-    const validEntities = getAssociatedEntities(createdOrganization.entityType);
+    const validEntities = getEntityTypesScopedByContextEntityType(createdOrganization.entityType);
     const entitiesCountsArray = validEntities.map((entityType) => [entityType, 0]);
     const entitiesCounts = Object.fromEntries(entitiesCountsArray) as Record<(typeof validEntities)[number], number>;
     // Default member counts
@@ -114,7 +114,7 @@ const organizationRouteHandlers = app
     const membershipCountsQuery = getMemberCountsQuery(entityType);
     const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
-    const validEntities = getAssociatedEntities(entityType);
+    const validEntities = getEntityTypesScopedByContextEntityType(entityType);
     const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
 
     // Base query for total
