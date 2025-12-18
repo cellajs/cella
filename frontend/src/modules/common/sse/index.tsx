@@ -6,7 +6,7 @@ import { useSSE } from '~/modules/common/sse/use-sse';
 import type { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { organizationQueryKeys } from '~/modules/organizations/query';
-import { pageQueryKeys } from '~/modules/pages/queries';
+import { pageQueryKeys } from '~/modules/pages/query';
 import { userQueryKeys } from '~/modules/users/query';
 
 /**
@@ -39,6 +39,8 @@ const entityKeysMap = {
  */
 const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: (data: SSEEventsMap[T]) => void) => {
   useSSE(type, (e: MessageEvent<string>) => {
+    console.debug('SSE event received', type, e.data);
+
     try {
       const data = JSON.parse(e.data) as SSEEventsMap[T];
       callback(data);
@@ -94,6 +96,7 @@ export default function SSE() {
 
   // Entity updated: update the single cache and invalidate list (e.g. name or avatar changed)
   const onEntityUpdated = (entityData: ContextEntityDataWithMembership) => {
+    console.debug('Entity updated', entityData);
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 

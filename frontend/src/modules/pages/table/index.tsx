@@ -7,7 +7,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { usePagesList } from '~/modules/pages/hooks';
-import { filterPages } from '~/modules/pages/queries';
+import { filterPages } from '~/modules/pages/query';
 import { PagesTableBar } from './table-bar';
 import { usePagesTableColumns } from './use-columns';
 

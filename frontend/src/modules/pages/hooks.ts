@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMatchRoute } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
-import { pagesLimit, pagesListQueryOptions } from '~/modules/pages/queries';
+import { pagesLimit, pagesListQueryOptions } from '~/modules/pages/query';
 import type { PagesSearch } from '~/modules/pages/types';
 
 // #region Helpers

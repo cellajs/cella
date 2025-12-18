@@ -13,9 +13,9 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersQueryOptions } from '~/modules/users/query';
+import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { getEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';
-import { organizationsQueryOptions } from '../organizations/query';
 
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
@@ -60,17 +60,37 @@ export const AppSearch = () => {
     });
   };
 
-  const orgQ = useInfiniteQuery(organizationsQueryOptions({ q: searchValue }));
-  const userQ = useInfiniteQuery(usersQueryOptions({ q: searchValue }));
+  const userQ = useInfiniteQuery({
+    ...usersQueryOptions({ q: searchValue }),
+    enabled: searchValue.length > 0,
+  });
 
-  const ready = (orgQ.isSuccess || orgQ.isError) && (userQ.isSuccess || userQ.isError);
+  // Get context entity queries from offline config
+  const contextEntityQueries = getContextEntityTypeToListQueries();
+  const contextEntityResults = Object.fromEntries(
+    Object.entries(contextEntityQueries).map(([entityType, queryOptions]) => [
+      entityType,
+      // biome-ignore lint: queryOptions typing is complex
+      useInfiniteQuery({
+        ...queryOptions({ q: searchValue }),
+        enabled: searchValue.length > 0,
+      }),
+    ]),
+  );
 
-  const organizations = orgQ.data?.pages.flatMap((p) => p.items) ?? [];
-  const users = userQ.data?.pages.flatMap((p) => p.items) ?? [];
+  const ready = (userQ.isSuccess || userQ.isError) && Object.values(contextEntityResults).every((q) => q.isSuccess || q.isError);
 
-  const data = { user: users, organization: organizations };
-  const notFound = users.length === 0 && organizations.length === 0;
-  const isFetching = orgQ.isFetching || userQ.isFetching;
+  const users = searchValue.length > 0 ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [];
+  const contextEntityData = Object.fromEntries(
+    Object.entries(contextEntityResults).map(([entityType, query]) => [
+      entityType,
+      searchValue.length > 0 ? (query.data?.pages.flatMap((p) => p.items) ?? []) : [],
+    ]),
+  );
+
+  const data: Record<string, (ContextEntityBase | UserBase)[]> = { user: users, ...contextEntityData };
+  const notFound = users.length === 0 && Object.values(contextEntityData).every((items) => items.length === 0);
+  const isFetching = userQ.isFetching || Object.values(contextEntityResults).some((q) => q.isFetching);
 
   const onSelectItem = (item: ContextEntityBase | UserBase) => {
     // Update recent searches with the search value
