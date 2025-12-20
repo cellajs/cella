@@ -50,7 +50,9 @@ const Combobox = ({
 
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(options.find((o) => o.value === value) || null);
+  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(
+    options.find((o) => o.value === value) || null,
+  );
 
   const { ref, bounds } = useMeasure<HTMLButtonElement>();
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -99,25 +101,45 @@ const Combobox = ({
           {selectedOption ? (
             <div className="flex items-center truncate gap-2">
               {renderAvatar && (
-                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
+                <AvatarWrap
+                  className="h-6 w-6 text-xs shrink-0"
+                  id={selectedOption.value}
+                  name={selectedOption.label}
+                  url={selectedOption.url}
+                />
               )}
               {renderOption(selectedOption)}
             </div>
           ) : (
             <span className="truncate text-muted-foreground">{t(placeholders.trigger)}</span>
           )}
-          <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDownIcon
+            className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+          />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
+      <PopoverContent
+        align="start"
+        style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }}
+        className="p-0"
+      >
         <Command shouldFilter={false}>
           {!isMobile && (
-            <CommandInput value={searchValue} onValueChange={setSearchValue} clearValue={setSearchValue} placeholder={t(placeholders.search)} />
+            <CommandInput
+              value={searchValue}
+              onValueChange={setSearchValue}
+              clearValue={setSearchValue}
+              placeholder={t(placeholders.search)}
+            />
           )}
 
           <CommandList className="h-[30vh]">
             <CommandEmpty>
-              <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleProps={{ resource: t(placeholders.resource).toLowerCase() }} />
+              <ContentPlaceholder
+                icon={SearchIcon}
+                title={placeholders.notFound}
+                titleProps={{ resource: t(placeholders.resource).toLowerCase() }}
+              />
             </CommandEmpty>
 
             <CommandGroup>
@@ -139,7 +161,11 @@ const Combobox = ({
                         {renderAvatar && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
                         {renderOption(option)}
                       </div>
-                      <CheckIcon size={16} strokeWidth={3} className={`text-success ${value !== option.value && 'invisible'}`} />
+                      <CheckIcon
+                        size={16}
+                        strokeWidth={3}
+                        className={`text-success ${value !== option.value && 'invisible'}`}
+                      />
                     </CommandItem>
                   ))}
                 </Virtualizer>

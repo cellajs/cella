@@ -12,7 +12,14 @@ interface Props {
   className?: ButtonProps['className'];
 }
 
-export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, variant = 'secondary', className }: Props) {
+export function DropdownActionItem({
+  isMobile,
+  onSelect,
+  icon: Icon,
+  children,
+  variant = 'secondary',
+  className,
+}: Props) {
   const sharedProps = {
     onClick: onSelect,
     onSelect,

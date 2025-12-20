@@ -9,7 +9,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/bar';
 import { useColumns } from '~/modules/memberships/pending-table/columns';
 import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
@@ -22,7 +22,7 @@ const pendingMembershipsSearchSchema = zGetPendingMembershipsData.shape.query.pi
 type PendingMembershipsSearch = z.infer<typeof pendingMembershipsSearchSchema>;
 
 export interface PendingMembershipsTableProps {
-  entity: EntityPage;
+  entity: ContextEntityData;
 }
 
 export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps) => {
@@ -83,7 +83,11 @@ export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:invites').toLowerCase() }} />
+            <ContentPlaceholder
+              icon={BirdIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:invites').toLowerCase() }}
+            />
           ),
         }}
       />

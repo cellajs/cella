@@ -8,7 +8,12 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { clientConfig } from '~/lib/api';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/helpers/sync-handlers';
 import { useSyncStore } from '~/store/sync';
-import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, handleSyncError, processMessages } from '~/utils/electric-utils';
+import {
+  baseBackoffOptions as backoffOptions,
+  type CamelToSnakeObject,
+  handleSyncError,
+  processMessages,
+} from '~/utils/electric-utils';
 
 // Configure ShapeStream options
 const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {

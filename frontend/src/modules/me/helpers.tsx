@@ -1,5 +1,4 @@
-import { getMe, getMyAuth, getMyMenu } from '~/api.gen';
-import { useNavigationStore } from '~/store/navigation';
+import { getMe, getMyAuth } from '~/api.gen';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -34,16 +33,8 @@ export const getAndSetMeAuthData = async () => {
 };
 
 /**
- * Retrieves the user's navigation menu and updates the navigation store.
- *
- * @returns The menu data.
+ * Generates a random passkey name.
  */
-export const getAndSetMenu = async () => {
-  const menu = await getMyMenu();
-  useNavigationStore.setState({ menu });
-  return menu;
-};
-
 export const generatePasskeyName = () => {
   const nouns = [
     'Phoenix',

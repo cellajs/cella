@@ -95,7 +95,14 @@ export const cards: AboutCard[] = [
 
 export const pricingPlans: PricingPlan[] = [
   { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },
-  { id: 'build', action: 'waitlist_request', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
+  {
+    id: 'build',
+    action: 'waitlist_request',
+    priceId: null,
+    featureCount: 4,
+    borderColor: 'ring-4 ring-primary/5',
+    popular: true,
+  },
   { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
@@ -126,14 +133,50 @@ export const counts = [
 export const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
 export const whyLightSlides = [
-  { id: nanoid(), url: '/static/screenshots/system-page.png', name: 'System page', filename: 'system-page.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/screenshots/org-page.png', name: 'Organization page', filename: 'org-page.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/screenshots/settings.png', name: 'User settings page', filename: 'settings.png', contentType: 'image/png' },
+  {
+    id: nanoid(),
+    url: '/static/screenshots/system-page.png',
+    name: 'System page',
+    filename: 'system-page.png',
+    contentType: 'image/png',
+  },
+  {
+    id: nanoid(),
+    url: '/static/screenshots/org-page.png',
+    name: 'Organization page',
+    filename: 'org-page.png',
+    contentType: 'image/png',
+  },
+  {
+    id: nanoid(),
+    url: '/static/screenshots/settings.png',
+    name: 'User settings page',
+    filename: 'settings.png',
+    contentType: 'image/png',
+  },
 ];
 export const whyDarkSlides = [
-  { id: nanoid(), url: '/static/screenshots/system-page-dark.png', name: 'System page', filename: 'system-page-dark.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/screenshots/org-page-dark.png', name: 'Organization page', filename: 'org-page-dark.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/screenshots/settings-dark.png', name: 'User settings page', filename: 'settings-dark.png', contentType: 'image/png' },
+  {
+    id: nanoid(),
+    url: '/static/screenshots/system-page-dark.png',
+    name: 'System page',
+    filename: 'system-page-dark.png',
+    contentType: 'image/png',
+  },
+  {
+    id: nanoid(),
+    url: '/static/screenshots/org-page-dark.png',
+    name: 'Organization page',
+    filename: 'org-page-dark.png',
+    contentType: 'image/png',
+  },
+  {
+    id: nanoid(),
+    url: '/static/screenshots/settings-dark.png',
+    name: 'User settings page',
+    filename: 'settings-dark.png',
+    contentType: 'image/png',
+  },
 ];
 
 /*************************************************************************************************

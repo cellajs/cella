@@ -87,7 +87,12 @@ export const MarketingNav = () => {
             >
               <Logo height={36} />
 
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="max-md:hidden absolute top-0.5 right-0.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                className="max-md:hidden absolute top-0.5 right-0.5"
+              >
                 <title>We support Ukraine</title>
                 <g fill="none">
                   <path
@@ -102,7 +107,9 @@ export const MarketingNav = () => {
               </svg>
             </Link>
 
-            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
+            {marketingNavConfig?.length && (
+              <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>
+            )}
           </div>
 
           <div

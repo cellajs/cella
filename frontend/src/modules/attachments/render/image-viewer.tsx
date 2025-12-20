@@ -151,7 +151,11 @@ export default class ImageViewer extends React.PureComponent<ImageViewerProps, I
     this.panStart(e.pageX, e.pageY, e);
   };
 
-  private panStart = (pageX: number, pageY: number, event: React.MouseEvent<EventTarget> | React.TouchEvent<EventTarget>) => {
+  private panStart = (
+    pageX: number,
+    pageY: number,
+    event: React.MouseEvent<EventTarget> | React.TouchEvent<EventTarget>,
+  ) => {
     if (!this.props.enablePan) {
       return;
     }

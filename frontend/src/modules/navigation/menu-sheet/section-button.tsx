@@ -18,7 +18,14 @@ interface MenuSectionButtonProps {
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
-export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, handleCreateAction, toggleIsEditing }: MenuSectionButtonProps) => {
+export const MenuSectionButton = ({
+  data,
+  options,
+  isEditing,
+  isSectionVisible,
+  handleCreateAction,
+  toggleIsEditing,
+}: MenuSectionButtonProps) => {
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
@@ -28,7 +35,12 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
     <StickyBox className="z-10">
       <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between">
         <LayoutGroup>
-          <Button onClick={() => toggleSection(options.entityType)} className="w-full justify-between shadow-none" variant="secondary" asChild>
+          <Button
+            onClick={() => toggleSection(options.entityType)}
+            className="w-full justify-between shadow-none"
+            variant="secondary"
+            asChild
+          >
             <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
                 <motion.span layout={'size'} className="flex items-center">
@@ -52,7 +64,12 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
           </Button>
           <AnimatePresence mode="popLayout">
             {isSectionVisible && data.length && (
-              <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10} className="max-sm:hidden">
+              <TooltipButton
+                toolTipContent={t('common:manage_content')}
+                side="bottom"
+                sideOffset={10}
+                className="max-sm:hidden"
+              >
                 <Button
                   className="w-12 px-2 shadow-none"
                   variant={isEditing ? 'plain' : 'secondary'}

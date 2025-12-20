@@ -13,7 +13,7 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
   if (messages.length === 0) return;
 
   // Display a toaster with a list of validation errors
-  toaster('Form field errors', 'error', {
+  toaster(t('error:form.invalid_form'), 'error', {
     description: createElement(
       'div',
       null,
@@ -25,7 +25,10 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
 };
 
 // Recursively build a list of readable error message from FieldErrors object
-const processErrors = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>, parentFieldName?: string): string[] => {
+const processErrors = <TFieldValues extends FieldValues>(
+  errors: FieldErrors<TFieldValues>,
+  parentFieldName?: string,
+): string[] => {
   const messages: string[] = [];
 
   for (const [name, value] of Object.entries(errors)) {

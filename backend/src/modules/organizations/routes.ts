@@ -1,5 +1,5 @@
 import { createCustomRoute } from '#/lib/custom-routes';
-import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated } from '#/middlewares/guard';
 import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
@@ -38,10 +38,10 @@ const organizationRoutes = {
     operationId: 'getOrganizations',
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, hasSystemAccess],
+    guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get list of organizations',
-    description: 'Returns a list of *organizations* at the system level.',
+    description: 'Returns a list of *organizations*.',
     request: { query: organizationListQuerySchema },
     responses: {
       200: {

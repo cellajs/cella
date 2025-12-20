@@ -1,10 +1,23 @@
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 
-import { FilePanelExtension, FormattingToolbarExtension, SideMenuExtension, SuggestionMenu } from '@blocknote/core/extensions';
+import {
+  FilePanelExtension,
+  FormattingToolbarExtension,
+  SideMenuExtension,
+  SuggestionMenu,
+} from '@blocknote/core/extensions';
 import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  type FocusEventHandler,
+  type KeyboardEventHandler,
+  type MouseEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 import { getPresignedUrl } from '~/api.gen';
@@ -96,7 +109,9 @@ const BlockNote = ({
 
   const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
   const allowedBlockTypes = defaultAllowedBlockTypes.filter(
-    (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
+    (type) =>
+      !excludeBlockTypes.includes(type as CustomBlockRegularTypes) &&
+      !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
 
   const collaborationConfig = collaborative
@@ -152,7 +167,10 @@ const BlockNote = ({
         const selection = editor.getSelection();
 
         const singleBlockSelected =
-          selection && selection.blocks.length === 1 && Array.isArray(selection.blocks[0].content) && selection.blocks[0].content.length > 0;
+          selection &&
+          selection.blocks.length === 1 &&
+          Array.isArray(selection.blocks[0].content) &&
+          selection.blocks[0].content.length > 0;
 
         if (singleBlockSelected) {
           event.preventDefault();

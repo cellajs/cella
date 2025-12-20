@@ -18,7 +18,11 @@ const Home = () => {
 
   return (
     <div className="px-3 md:px-6">
-      <SimpleHeader heading={t('common:home')} text={t('common:home.text', { appName: appConfig.name })} className="container pt-4 md:pt-6" />
+      <SimpleHeader
+        heading={t('common:home')}
+        text={t('common:home.text', { appName: appConfig.name })}
+        className="container pt-4 md:pt-6"
+      />
       <div className="container mt-6 mb-24 hidden has-[div[role='grid']]:block">
         <Card className="pb-0">
           <CardHeader>

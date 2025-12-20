@@ -25,7 +25,14 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} orgIdOrSlug={row.membership.organizationId} />,
+        renderCell: ({ row, tabIndex }) => (
+          <UserCell
+            user={row}
+            tabIndex={tabIndex}
+            orgIdOrSlug={row.membership.organizationId}
+            className="font-medium"
+          />
+        ),
       },
       {
         key: 'email',
@@ -38,7 +45,11 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         renderCell: ({ row, tabIndex }) => {
           if (!row.email) return <span className="text-muted">-</span>;
           return (
-            <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
+            <a
+              href={`mailto:${row.email}`}
+              tabIndex={tabIndex}
+              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+            >
               {row.email}
             </a>
           );

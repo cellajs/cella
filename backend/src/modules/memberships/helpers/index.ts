@@ -22,7 +22,7 @@ interface InsertMultipleProps<T> {
  * Returns an object mapping base membership entity IDs for the given entity.
  *
  * Each mapping corresponds to a context entity type defined in `appConfig.contextEntityTypes`.
- * The key of each mapping is derived from the values of `appConfig.entityIdFields`
+ * The key of each mapping is derived from the values of `appConfig.entityIdColumnKeys`
  * (e.g. `"organizationId"`, `"projectId"`), and the value is the corresponding string ID.
  *
  *
@@ -33,7 +33,7 @@ interface InsertMultipleProps<T> {
 export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: EntityModel<T>) => {
   return appConfig.contextEntityTypes.reduce(
     (acc, contextEntityType) => {
-      const entityFieldIdName = appConfig.entityIdFields[contextEntityType];
+      const entityFieldIdName = appConfig.entityIdColumnKeys[contextEntityType];
       if (!entityFieldIdName) return acc;
 
       if (entity.entityType === contextEntityType) {
@@ -45,7 +45,9 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 
       return acc;
     },
-    {} as Partial<Record<(typeof appConfig.entityIdFields)[ContextEntityType], string>> & { organizationId: string },
+    {} as Partial<Record<(typeof appConfig.entityIdColumnKeys)[ContextEntityType], string>> & {
+      organizationId: string;
+    },
   );
 };
 
@@ -63,7 +65,9 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
  * @param items - membership requests for existing users
  * @returns inserted target memberships (MembershipBaseModel)
  */
-export const insertMemberships = async <T extends BaseEntityModel>(items: Array<InsertMultipleProps<T>>): Promise<Array<MembershipBaseModel>> => {
+export const insertMemberships = async <T extends BaseEntityModel>(
+  items: Array<InsertMultipleProps<T>>,
+): Promise<Array<MembershipBaseModel>> => {
   // Early exit: nothing to insert
   if (!items.length) return [];
 
@@ -90,7 +94,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     const createdBy = info.createdBy ?? userId;
 
     // Get organizationId: prefer entity.organizationId if present, else entity.id (organization)
-    const targetEntitiesIdFields = getBaseMembershipEntityId(entity);
+    const targetEntitiesIdColumnKeys = getBaseMembershipEntityId(entity);
 
     // Compute incremental order per user: start from global max, then +10 per assignment
     const prevMax = maxOrdersByUser.get(userId) ?? 0;
@@ -108,7 +112,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
       order: nextOrder,
     } as const;
 
-    return { targetEntitiesIdFields, baseMembership, entity };
+    return { targetEntitiesIdColumnKeys, baseMembership, entity };
   });
 
   /**
@@ -118,9 +122,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
    */
   const orgRows: InsertMembershipModel[] = prepared
     .filter(({ entity }) => entity.entityType !== 'organization')
-    .map(({ baseMembership, targetEntitiesIdFields }) => {
+    .map(({ baseMembership, targetEntitiesIdColumnKeys }) => {
       // Extract only organizationId (ignore other entity IDs)
-      const { organizationId } = targetEntitiesIdFields;
+      const { organizationId } = targetEntitiesIdColumnKeys;
       return {
         ...baseMembership,
         role: 'member', // parent org membership is always 'member'
@@ -132,7 +136,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
 
   // Build associated entity membership rows (when an associated relationship exists)
   const associatedRows = prepared
-    .map(({ baseMembership, targetEntitiesIdFields, entity }) => {
+    .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
       // Find a associated relationship for this entity type
       const relation = appConfig.menuStructure.find((rel) => rel.subentityType === entity.entityType);
       if (!relation) return null;
@@ -141,18 +145,18 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
       const associatedType = relation.entityType;
       if (!associatedType) return null;
 
-      const associatedField = targetEntitiesIdFields[appConfig.entityIdFields[associatedType]];
+      const associatedField = targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[associatedType]];
       if (!associatedField) return null;
 
       // Get the target entity's ID field to exclude it, but always preserve organizationId
-      const targetEntityIdField = appConfig.entityIdFields[entity.entityType];
-      const { [targetEntityIdField]: _, organizationId, ...otherIdFields } = targetEntitiesIdFields;
+      const targetEntityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
+      const { [targetEntityIdColumnKey]: _, organizationId, ...otherIdColumnKeys } = targetEntitiesIdColumnKeys;
 
       return {
         ...baseMembership,
         role: 'member', // parent/associated membership is always 'member'
         organizationId,
-        ...otherIdFields,
+        ...otherIdColumnKeys,
         contextType: associatedType,
         uniqueKey: `${baseMembership.userId}-${associatedField}`,
       } satisfies InsertMembershipModel;
@@ -160,12 +164,14 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
   // Build target entity membership rows (the ones we return after insert)
-  const targetRows: InsertMembershipModel[] = prepared.map(({ baseMembership, targetEntitiesIdFields, entity }) => ({
-    ...baseMembership,
-    contextType: entity.entityType,
-    ...targetEntitiesIdFields,
-    uniqueKey: `${baseMembership.userId}-${targetEntitiesIdFields[appConfig.entityIdFields[entity.entityType]]}`,
-  }));
+  const targetRows: InsertMembershipModel[] = prepared.map(
+    ({ baseMembership, targetEntitiesIdColumnKeys, entity }) => ({
+      ...baseMembership,
+      contextType: entity.entityType,
+      ...targetEntitiesIdColumnKeys,
+      uniqueKey: `${baseMembership.userId}-${targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[entity.entityType]]}`,
+    }),
+  );
 
   const [insertedTarget] = await Promise.all([
     // targetRows → main insert (returns inserted memberships)
@@ -176,15 +182,17 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
 
     // optional org + associated inserts (safe upserts)
     orgRows.length ? db.insert(membershipsTable).values(orgRows).onConflictDoNothing() : Promise.resolve(),
-    associatedRows.length ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing() : Promise.resolve(),
+    associatedRows.length
+      ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing()
+      : Promise.resolve(),
   ]);
 
   // Emit a log for each inserted membership (keeps your original semantics)
   for (const row of insertedTarget) {
     const entityType = row.contextType;
-    const entityIdField = appConfig.entityIdFields[entityType];
-    const entityId = row[entityIdField];
-    logEvent('info', `User added to ${entityType}`, { userId: row.userId, [entityIdField]: entityId });
+    const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
+    const entityId = row[entityIdColumnKey];
+    logEvent('info', `User added to ${entityType}`, { userId: row.userId, [entityIdColumnKey]: entityId });
     eventManager.emit('instantMembershipCreation', row);
   }
 

@@ -7,7 +7,10 @@ import { useEffect } from 'react';
  * @param handler - Function to handle event.
  */
 
-export function useEventListener<K extends keyof WindowEventMap>(eventName: K, handler: (event: WindowEventMap[K]) => void) {
+export function useEventListener<K extends keyof WindowEventMap>(
+  eventName: K,
+  handler: (event: WindowEventMap[K]) => void,
+) {
   useEffect(() => {
     const listener = (event: WindowEventMap[K]) => handler(event);
 

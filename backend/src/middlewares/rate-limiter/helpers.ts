@@ -1,5 +1,10 @@
 import type { Context } from 'hono';
-import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgres, type RateLimiterRes } from 'rate-limiter-flexible';
+import {
+  type IRateLimiterPostgresOptions,
+  RateLimiterMemory,
+  RateLimiterPostgres,
+  type RateLimiterRes,
+} from 'rate-limiter-flexible';
 import { db } from '#/db/db';
 import { env } from '#/env';
 import { Env, getContextUser } from '#/lib/context';
@@ -42,7 +47,10 @@ export const getRetryAfter = (ms: number) => Math.round(ms / 1000).toString() ||
 /**
  * Extract email from multiple sources: body, query, params, headers
  */
-export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract: RateLimitIdentifier[]): Promise<Identifiers> => {
+export const extractIdentifiers = async (
+  ctx: Context<Env>,
+  identifiersToExtract: RateLimitIdentifier[],
+): Promise<Identifiers> => {
   const results: Identifiers = {
     email: null,
     ip: null,

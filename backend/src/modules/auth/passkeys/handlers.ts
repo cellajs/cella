@@ -35,7 +35,11 @@ const authPasskeysRouteHandlers = app
 
     if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
-    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
+    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(
+      clientDataJSON,
+      attestationObject,
+      challengeFromCookie,
+    );
 
     const device = deviceInfo(ctx);
     const passkeyValue = {
@@ -117,7 +121,10 @@ const authPasskeysRouteHandlers = app
     if (!user) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
 
     // Fetch all passkey credentials for this user
-    const credentials = await db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
+    const credentials = await db
+      .select({ credentialId: passkeysTable.credentialId })
+      .from(passkeysTable)
+      .where(eq(passkeysTable.userId, user.id));
 
     const credentialIds = credentials.map((c) => c.credentialId);
 

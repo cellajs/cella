@@ -46,7 +46,9 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
       })
       .returning();
 
-    await db.insert(unsubscribeTokensTable).values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
+    await db
+      .insert(unsubscribeTokensTable)
+      .values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
     // If user has invitation tokens, find the inactive membership from it
     const existingTokens = await db

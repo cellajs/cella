@@ -1,5 +1,12 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { DragHandleButton, SideMenu, SideMenuController, useComponentsContext, useExtension, useExtensionState } from '@blocknote/react';
+import {
+  DragHandleButton,
+  SideMenu,
+  SideMenuController,
+  useComponentsContext,
+  useExtension,
+  useExtensionState,
+} from '@blocknote/react';
 import { GripVerticalIcon } from 'lucide-react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';

@@ -27,7 +27,10 @@ import { logEvent } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../../emails/member-invite-with-token';
+import {
+  MemberInviteWithTokenEmail,
+  MemberInviteWithTokenEmailProps,
+} from '../../../../emails/member-invite-with-token';
 import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -63,7 +66,13 @@ const authGeneralRouteHandlers = app
       // Check if token exists and create a new single use token session
       const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
       if (!tokenRecord.singleUseToken)
-        throw new AppError({ status: 500, type: 'invalid_token', severity: 'error', shouldRedirect: true, meta: { errorPagePath: '/auth/error' } });
+        throw new AppError({
+          status: 500,
+          type: 'invalid_token',
+          severity: 'error',
+          shouldRedirect: true,
+          meta: { errorPagePath: '/auth/error' },
+        });
 
       // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
       await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
@@ -78,12 +87,17 @@ const authGeneralRouteHandlers = app
       let redirectUrl = appConfig.defaultRedirectPath;
 
       // If invitation, redirect to auth page with tokenId param
-      if (tokenRecord.type === 'invitation') redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
+      if (tokenRecord.type === 'invitation')
+        redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
       // If password reset, redirect to create password page with tokenId param
-      if (tokenRecord.type === 'password-reset') redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
+      if (tokenRecord.type === 'password-reset')
+        redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
-      logEvent('info', 'Token invoked, redirecting with single use token in cookie', { tokenId: tokenRecord.id, userId: tokenRecord.userId });
+      logEvent('info', 'Token invoked, redirecting with single use token in cookie', {
+        tokenId: tokenRecord.id,
+        userId: tokenRecord.userId,
+      });
 
       return ctx.redirect(redirectUrl, 302);
     } catch (err) {
@@ -136,7 +150,14 @@ const authGeneralRouteHandlers = app
 
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
 
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
+    if (!user)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { targetUserId },
+      });
 
     const adminUser = getContextUser();
     await setUserSession(ctx, user, 'password', 'impersonation');
@@ -162,7 +183,8 @@ const authGeneralRouteHandlers = app
       .orderBy(desc(sessionsTable.expiresAt))
       .limit(1);
 
-    if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    if (isExpiredDate(adminsLastSession.expiresAt))
+      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
     const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
     const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
@@ -231,7 +253,11 @@ const authGeneralRouteHandlers = app
 
     // Get original sender
     if (oldToken.createdBy) {
-      const [sender] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+      const [sender] = await db
+        .select(userSelect)
+        .from(usersTable)
+        .where(eq(usersTable.id, oldToken.createdBy))
+        .limit(1);
       defaultEmailProps.senderName = sender.name;
       defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
     }
@@ -243,13 +269,17 @@ const authGeneralRouteHandlers = app
         .from(inactiveMembershipsTable)
         .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
 
-      const entityIdField = appConfig.entityIdFields[inactiveMembership.contextType];
-      if (!inactiveMembership[entityIdField]) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
-      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdField]);
+      const entityIdColumnKey = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
+      if (!inactiveMembership[entityIdColumnKey])
+        throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+      const entity = await resolveEntity(inactiveMembership.contextType, inactiveMembership[entityIdColumnKey]);
 
       if (!entity) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
-      defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', { entityName: entity.name, lng: appConfig.defaultLanguage });
+      defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', {
+        entityName: entity.name,
+        lng: appConfig.defaultLanguage,
+      });
       const emailProps = {
         ...defaultEmailProps,
         entityName: entity.name,
@@ -257,10 +287,20 @@ const authGeneralRouteHandlers = app
         lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
       };
 
-      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
-      logEvent('info', 'Membership invitation has been resent', { [entityIdField]: entity.id });
+      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(
+        MemberInviteWithTokenEmail,
+        emailProps,
+        [recipient],
+        userEmail,
+      );
+      logEvent('info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
     } else {
-      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
+      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(
+        SystemInviteEmail,
+        defaultEmailProps,
+        [recipient],
+        userEmail,
+      );
       logEvent('info', 'System invitation has been resent');
     }
 
@@ -285,7 +325,9 @@ const authGeneralRouteHandlers = app
     const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
     const { session: currentSession } = await validateSession(sessionToken);
 
-    await db.delete(sessionsTable).where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
+    await db
+      .delete(sessionsTable)
+      .where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
 
     logEvent('info', 'User signed out', { userId: currentSession.userId });
 

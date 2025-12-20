@@ -166,7 +166,13 @@ const authPasswordsRouteHandlers = app
 
     // If the user is not found
     if (!user) {
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { userId: token.userId },
+      });
     }
 
     // Hash password

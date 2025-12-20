@@ -49,14 +49,14 @@ Receive a list of files that have diverged from cella itself. The files you have
 pnpm diverged
 ```
 
-### Pull upstream
+### Sync with upstream
 
-Pull upstream changes from cella. Changes in files that are in the cella ignore list will automatically be undone to reduce conflicts.
+Pull and sync upstream changes from cella repository.
 
 ```bash
-pnpm upstream:pull
+pnpm sync
 ```
 
 ### Troubleshooting
 
-when using `pnpm quick`, it could be that your local pglite is corrupted or has issues. Luckily its easy to clear it. Simply go to `/backend` and remove `.db` and retry.
+When using `pnpm quick`, it could be that your local pglite is corrupted or has issues. Luckily its easy to clear it. Simply go to `/backend` and remove `.db` and retry.

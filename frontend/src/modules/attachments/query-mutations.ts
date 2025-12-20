@@ -4,7 +4,7 @@ import { t } from 'i18next';
 import type { Attachment } from '~/api.gen';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
-import { attachmentsKeys } from '~/modules/attachments/query';
+import { attachmentQueryKeys } from '~/modules/attachments/query';
 import type {
   AttachmentContextProp,
   AttachmentInfiniteQueryData,
@@ -31,9 +31,12 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
 
+/**
+ * Custom hook to create an attachment.
+ */
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.create,
+    mutationKey: attachmentQueryKeys.create,
     mutationFn: async ({ localCreation, attachments, orgIdOrSlug }) => {
       if (localCreation) {
         console.info('Attachments uploaded locally:', attachments);
@@ -66,6 +69,7 @@ export const useAttachmentCreateMutation = () =>
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entityType: 'attachment',
+          description: '',
           createdAt: new Date().toISOString(),
           createdBy: null,
           modifiedAt: new Date().toISOString(),
@@ -78,7 +82,7 @@ export const useAttachmentCreateMutation = () =>
       }
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
+      const similarKey = attachmentQueryKeys.list.similar({ orgIdOrSlug });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -94,7 +98,8 @@ export const useAttachmentCreateMutation = () =>
 
           // Add new attachments and update total count
           const prevItems = getQueryItems(oldData);
-          const updatedItems = insertOrder === 'asc' ? [...prevItems, ...newAttachments] : [...newAttachments, ...prevItems];
+          const updatedItems =
+            insertOrder === 'asc' ? [...prevItems, ...newAttachments] : [...newAttachments, ...prevItems];
 
           return formatUpdatedCacheData(oldData, updatedItems, limit, newAttachments.length);
         });
@@ -110,7 +115,7 @@ export const useAttachmentCreateMutation = () =>
       if (localCreation) return;
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
+      const similarKey = attachmentQueryKeys.list.similar({ orgIdOrSlug });
       const queries = getSimilarQueries<Attachment>(similarKey);
 
       for (const query of queries) {
@@ -147,16 +152,22 @@ export const useAttachmentCreateMutation = () =>
       const message =
         createdAttachments.length === 1
           ? t('common:success.create_resource', { resource: t('common:attachment') })
-          : t('common:success.create_counted_resources', { count: createdAttachments.length, resources: t('common:attachments').toLowerCase() });
+          : t('common:success.create_counted_resources', {
+              count: createdAttachments.length,
+              resources: t('common:attachments').toLowerCase(),
+            });
 
       toaster(message, 'success');
     },
     onError: (_, __, context) => handleError('create', context),
   });
 
+/**
+ * Custom hook to update an attachment.
+ */
 export const useAttachmentUpdateMutation = () =>
   useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.update,
+    mutationKey: attachmentQueryKeys.update,
     mutationFn: async ({ id, orgIdOrSlug, localUpdate, ...body }) => {
       if (localUpdate && body.name) {
         const file = await LocalFileStorage.updateFileName(id, body.name);
@@ -166,6 +177,7 @@ export const useAttachmentUpdateMutation = () =>
         // TODO(IMPROVE)offline update responce(add createdAt/By, groupId into the file?)
         const localAttachment: Attachment = {
           id: file.id,
+          description: '',
           size: String(file.data?.size ?? 0),
           url: file.preview || '',
           thumbnailUrl: null,
@@ -195,7 +207,7 @@ export const useAttachmentUpdateMutation = () =>
       const optimisticIds: string[] = []; // IDs of optimistically updated items
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
+      const similarKey = attachmentQueryKeys.list.similar({ orgIdOrSlug });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -221,7 +233,7 @@ export const useAttachmentUpdateMutation = () =>
     },
     onSuccess: async (updatedAttachment, { orgIdOrSlug }, context) => {
       // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
+      const similarKey = attachmentQueryKeys.list.similar({ orgIdOrSlug });
       const queries = getSimilarQueries<Attachment>(similarKey);
 
       for (const query of queries) {
@@ -236,7 +248,9 @@ export const useAttachmentUpdateMutation = () =>
           const ids = optimisticIds || [];
 
           // Replace optimistic items with the updated attachment
-          const updatedAttachments = prevItems.map((item) => (ids.includes(item.id) ? { ...item, ...updatedAttachment } : item));
+          const updatedAttachments = prevItems.map((item) =>
+            ids.includes(item.id) ? { ...item, ...updatedAttachment } : item,
+          );
 
           return formatUpdatedCacheData(oldData, updatedAttachments);
         });
@@ -245,9 +259,12 @@ export const useAttachmentUpdateMutation = () =>
     onError: (_, __, context) => handleError('update', context),
   });
 
+/**
+ * Custom hook to delete an attachment.
+ */
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.delete,
+    mutationKey: attachmentQueryKeys.delete,
     mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
       const localResult = true;
       let serverResult = true;
@@ -269,7 +286,7 @@ export const useAttachmentDeleteMutation = () =>
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
+      const similarKey = attachmentQueryKeys.list.similar({ orgIdOrSlug });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -292,5 +309,6 @@ export const useAttachmentDeleteMutation = () =>
 
       return context;
     },
-    onError: (_, { serverDeletionIds }, context) => handleError(serverDeletionIds.length > 1 ? 'deleteMany' : 'delete', context),
+    onError: (_, { serverDeletionIds }, context) =>
+      handleError(serverDeletionIds.length > 1 ? 'deleteMany' : 'delete', context),
   });

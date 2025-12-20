@@ -48,7 +48,10 @@ const AboutCards = () => {
                 <div className="font-semibold group-hover:underline underline-offset-4">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
-                  <ArrowUpRightIcon size={12} className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100" />
+                  <ArrowUpRightIcon
+                    size={12}
+                    className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100"
+                  />
                 </div>
               </div>
             </a>

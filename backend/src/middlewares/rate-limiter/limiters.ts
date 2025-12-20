@@ -47,11 +47,16 @@ export const presignedUrlLimiter: MiddlewareHandler<Env> = rateLimiter('limit', 
 /**
  * TOTP verification rate limiter to prevent brute force attacks on MFA codes
  */
-export const totpVerificationLimiter: MiddlewareHandler<Env> = rateLimiter('failseries', 'totp_verification', ['email', 'ip'], {
-  points: 5, // 5 attempts per hour
-  duration: 60 * 60, // 1 hour window
-  blockDuration: 60 * 30, // 30 minute block
-});
+export const totpVerificationLimiter: MiddlewareHandler<Env> = rateLimiter(
+  'failseries',
+  'totp_verification',
+  ['email', 'ip'],
+  {
+    points: 5, // 5 attempts per hour
+    duration: 60 * 60, // 1 hour window
+    blockDuration: 60 * 30, // 30 minute block
+  },
+);
 
 /**
  * Passkey challenge rate limiter to prevent challenge generation abuse

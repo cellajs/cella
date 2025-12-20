@@ -2,29 +2,36 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from '~/api.gen';
 import type { Member, PendingMembership } from '~/modules/memberships/types';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import {
+  baseInfiniteQueryOptions,
+  infiniteQueryUseCachedIfCompleteOptions,
+} from '~/query/utils/infinite-query-options';
 
-type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> & GetPendingMembershipsData['path'];
+type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
+  GetPendingMembershipsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
-/**
- * Keys for members related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
 
 const keys = {
-  all: ['members'],
-  table: {
-    base: ['members', 'table'],
-    members: (filters: GetMembersParams) => [...keys.table.base, filters],
-    similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...keys.table.base, filters],
-    pending: (filters: GetPendingMembershipsParams) => ['invites', ...keys.table.base, filters],
-    similarPending: (filters: Pick<GetPendingMembershipsParams, 'idOrSlug' | 'entityType'>) => ['invites', ...keys.table.base, filters],
+  all: ['member'],
+  list: {
+    base: ['member', 'list'],
+    members: (filters: GetMembersParams) => [...keys.list.base, filters],
+    similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [
+      ...keys.list.base,
+      filters,
+    ],
+    pending: (filters: GetPendingMembershipsParams) => ['invites', ...keys.list.base, filters],
+    similarPending: (filters: Pick<GetPendingMembershipsParams, 'idOrSlug' | 'entityType'>) => [
+      'invites',
+      ...keys.list.base,
+      filters,
+    ],
   },
-  update: () => ['members', 'update'],
-  delete: () => ['members', 'delete'],
+  update: () => ['member', 'update'],
+  delete: () => ['member', 'delete'],
 };
 
-export const membersKeys = keys;
+export const memberQueryKeys = keys;
 
 /**
  * Infinite query options to fetch a paginated list of members.
@@ -53,8 +60,16 @@ export const membersQueryOptions = ({
 }: GetMembersParams & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined });
-  const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
+  const baseQueryKey = keys.list.members({
+    idOrSlug,
+    entityType,
+    orgIdOrSlug,
+    q: '',
+    sort: 'createdAt',
+    order: 'desc',
+    role: undefined,
+  });
+  const queryKey = keys.list.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
@@ -105,8 +120,15 @@ export const pendingMembershipsQueryOptions = ({
 }: GetPendingMembershipsParams & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
-  const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
+  const baseQueryKey = keys.list.pending({
+    idOrSlug,
+    entityType,
+    orgIdOrSlug,
+    q: '',
+    sort: 'createdAt',
+    order: 'desc',
+  });
+  const queryKey = keys.list.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
@@ -120,6 +142,12 @@ export const pendingMembershipsQueryOptions = ({
       });
     },
     ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<PendingMembership>(baseQueryKey, { q, sort, order, searchIn: ['email'], limit: baseLimit }),
+    ...infiniteQueryUseCachedIfCompleteOptions<PendingMembership>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['email'],
+      limit: baseLimit,
+    }),
   });
 };

@@ -7,7 +7,7 @@ import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/service';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/users/invite-users';
 
 interface Props {
-  entity?: EntityPage;
+  entity?: ContextEntityData;
   dialog?: boolean;
   children?: React.ReactNode;
 }
@@ -42,7 +42,8 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
       const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
       toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
     }
-    if (rejectedItems.length) toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
+    if (rejectedItems.length)
+      toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
 
     // Since this form is also used in onboarding, we need to call the next step
     // This should ideally be done through the callback, but we need to refactor stepper
@@ -68,7 +69,12 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <SelectEmails placeholder={t('common:add_email')} emails={value} onChange={onChange} autoComplete="off" />
+                <SelectEmails
+                  placeholder={t('common:add_email')}
+                  emails={value}
+                  onChange={onChange}
+                  autoComplete="off"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

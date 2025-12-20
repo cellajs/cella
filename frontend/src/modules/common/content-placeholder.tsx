@@ -14,7 +14,14 @@ interface Props {
   titleProps?: TOptions & { returnObjects?: false };
 }
 
-const ContentPlaceholder = ({ title, icon: Icon, text, textClassName = '', className = '', titleProps = {} }: Props) => {
+const ContentPlaceholder = ({
+  title,
+  icon: Icon,
+  text,
+  textClassName = '',
+  className = '',
+  titleProps = {},
+}: Props) => {
   const { t } = useTranslation();
 
   const titleText = t(title, { ...titleProps, returnObjects: false });

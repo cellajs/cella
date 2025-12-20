@@ -32,7 +32,13 @@ export const MfaSwitch = () => {
   return (
     <div className="mb-6">
       <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start">
-        <Switch id="mfaRequired" ref={triggerRef} disabled={!hasPasskey || !hasTotp} checked={user.mfaRequired} onCheckedChange={handleToggleMfa} />
+        <Switch
+          id="mfaRequired"
+          ref={triggerRef}
+          disabled={!hasPasskey || !hasTotp}
+          checked={user.mfaRequired}
+          onCheckedChange={handleToggleMfa}
+        />
         {user.mfaRequired && (
           <p className="flex gap-2 items-center">
             <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />

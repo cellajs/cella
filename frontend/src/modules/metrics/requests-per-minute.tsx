@@ -34,7 +34,9 @@ function RequestsPerMinute() {
             <XAxis
               dataKey="date"
               tickMargin={6}
-              tickFormatter={(value) => new Date(value).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' })}
+              tickFormatter={(value) =>
+                new Date(value).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' })
+              }
             />
             <Bar dataKey="count" fill="hsl(var(--primary))" radius={4} />
           </BarChart>

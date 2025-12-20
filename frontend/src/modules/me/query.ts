@@ -1,13 +1,21 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { DeletePasskeyData, DeletePasskeyResponse, ToggleMfaData, User } from '~/api.gen';
-import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, type UpdateMeData, updateMe } from '~/api.gen';
+import {
+  createPasskey,
+  deletePasskey,
+  deleteTotp,
+  getMyInvitations,
+  toggleMfa,
+  type UpdateMeData,
+  updateMe,
+} from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
-import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
+import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { MeAuthData, Passkey } from '~/modules/me/types';
-import { usersKeys } from '~/modules/users/query';
+import { userQueryKeys } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
@@ -48,18 +56,12 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
 /**
- * Query options for fetching the current user's menu.
- *
- * @returns Query options.
- */
-export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, queryFn: getAndSetMenu });
-
-/**
  * Query options for fetching the current user's invites.
  *
  * @returns Query options.
  */
-export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+export const meInvitationsQueryOptions = () =>
+  queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
 /**
  * Mutation hook for updating current user (self) info
@@ -187,6 +189,6 @@ export const useDeleteTotpMutation = () => {
 const updateOnSuccesses = (updatedUser: User) => {
   const { updateUser } = useUserStore.getState();
 
-  queryClient.setQueryData(usersKeys.single.byIdOrSlug(updatedUser.slug), updatedUser);
+  queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
   updateUser(updatedUser);
 };

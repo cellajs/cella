@@ -2,9 +2,9 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'config';
 import { useEffect } from 'react';
-import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
-import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { queriesToMap } from '~/offline-config';
+import type { UserMenuItem } from '~/modules/me/types';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
+import { entityToPrefetchQueries } from '~/offline-config';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/query/utils';
@@ -19,6 +19,36 @@ const offlineQueryConfig = {
   },
 };
 
+/**
+ * QueryClientProvider wrapper that handles two modes of operation:
+ *
+ * 1. **Standard Mode** (offlineAccess = false):
+ *    - Uses the base TanStack Query provider
+ *    - No cache persistence or prefetching
+ *
+ * 2. **Offline Mode** (offlineAccess = true):
+ *    - Uses PersistQueryClientProvider to persist cache to IndexedDB
+ *    - Automatically prefetches content for offline availability
+ *
+ * ## Offline Prefetch Strategy
+ *
+ * The prefetch logic operates in phases:
+ *
+ * 1. **Menu Structure**: Already cached from entity list queries (organizations, etc.)
+ *    via `getContextEntityTypeToListQueries()`. The menu is built from these entity
+ *    lists using `buildMenu()`.
+ *
+ * 2. **Menu Content**: This provider prefetches the *content within* each menu item:
+ *    - For each menu item entity (e.g., organization), fetch related data like
+ *      members, attachments, etc. as defined in `entityToPrefetchQueries()`
+ *    - Recursively processes submenus to prefetch their content as well
+ *    - Skips archived items to reduce unnecessary data transfer
+ *    - Rate-limited with delays to avoid overloading the server
+ *
+ * The separation ensures efficient caching: menu entities themselves are already
+ * available from the entity list queries used to build the menu, while this provider
+ * focuses on prefetching the detailed content users will need when navigating.
+ */
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
@@ -36,29 +66,17 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       await waitFor(1000); // Avoid overloading server with requests
       if (isCancelled) return; // If request was aborted, exit early
 
-      // Prefetch menu and user details
-      const [menuResponse]: PromiseSettledResult<UserMenu>[] = await Promise.allSettled([
-        prefetchQuery({
-          ...menuQueryOptions(),
-          ...offlineQueryConfig,
-        }),
-        prefetchQuery({
-          ...meQueryOptions(),
-          ...offlineQueryConfig,
-        }),
-      ]);
+      // Get menu from already-cached entity lists
+      const menu = await getMenuData();
 
-      // If menu query failed or request was aborted, return early
-      if (menuResponse.status !== 'fulfilled' || isCancelled) return;
-
-      // Recursive function to prefetch menu items
+      // Recursive function to prefetch content within menu items
       const prefetchMenuItems = async (items: UserMenuItem[]) => {
         for (const item of items) {
           if (isCancelled) return; // Check for abortion in each loop
           if (item.membership.archived) continue; // Skip archived items
 
-          // Fetch queries for this menu item in parallel
-          const queries = queriesToMap(item).map((query) =>
+          // Prefetch content within this menu item (e.g., members, attachments)
+          const queries = entityToPrefetchQueries(item.id, item.entityType, item.organizationId).map((query) =>
             prefetchQuery({
               ...query,
               ...offlineQueryConfig,
@@ -73,9 +91,8 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
         }
       };
 
-      // Access menu data and start prefetching each menu section
-      const menu = menuResponse.value;
-      Object.values(menu).map(prefetchMenuItems); // Start prefetching for each menu section
+      // Start prefetching content for each menu section
+      Object.values(menu).map(prefetchMenuItems);
     })();
 
     // Cleanup function to abort prefetch if component is unmounted

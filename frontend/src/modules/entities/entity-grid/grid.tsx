@@ -1,51 +1,63 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { BirdIcon, SearchIcon } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useCallback } from 'react';
-import type { GetContextEntitiesData } from '~/api.gen';
+
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
-import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid';
-import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
-import { EntityTile } from '~/modules/entities/entity-grid/tile';
-import type { contextEntitiesQueryOptions } from '~/modules/entities/query';
+import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
 
-export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 'sort' | 'q' | 'role'>;
+type BaseEntityGridProps<TEntity extends { id: string }> = {
+  label: string;
 
-interface Props extends EntityGridWrapperProps {
-  searchVars: EntitySearch;
-  queryOptions: ReturnType<typeof contextEntitiesQueryOptions>;
-}
+  // render
+  entities?: TEntity[];
+  tileComponent: ComponentType<{ entity: TEntity }>;
 
-export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = EntityTile, entityType, label, searchVars }: Props) => {
-  const {
-    data: entities,
-    isFetching,
-    isLoading,
-    error,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: (data) => data.pages.flatMap(({ items }) => items.filter((e) => e.entityType === entityType)),
-  });
+  // state
+  isLoading: boolean;
+  isFetching: boolean;
+  error: unknown;
 
-  const isFiltered = !!searchVars.q;
+  // pagination
+  hasNextPage?: boolean;
+  fetchNextPage: () => Promise<unknown>;
 
-  // isFetching already includes next page fetch scenario
+  // empty-state logic
+  isFiltered: boolean;
+};
+
+export function BaseEntityGrid<TEntity extends { id: string }>({
+  label,
+  entities,
+  tileComponent: TileComponent,
+  isLoading,
+  isFetching,
+  error,
+  hasNextPage,
+  fetchNextPage,
+  isFiltered,
+}: BaseEntityGridProps<TEntity>) {
   const fetchMore = useCallback(async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching]);
+  }, [hasNextPage, isLoading, isFetching, fetchNextPage]);
 
-  // Render skeleton only on initial load
-  if (isLoading || !entities) return <GridSkeleton />;
+  if (isLoading || !entities) return <EntityGridSkeleton />;
 
-  if (!isFetching && !error && !entities.length) {
+  if (!isFetching && !error && entities.length === 0) {
     return isFiltered ? (
-      <ContentPlaceholder icon={SearchIcon} title="common:no_resource_found" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder
+        icon={SearchIcon}
+        title="common:no_resource_found"
+        titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }}
+      />
     ) : (
-      <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder
+        icon={BirdIcon}
+        title="common:no_resource_yet"
+        titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }}
+      />
     );
   }
 
@@ -57,7 +69,12 @@ export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = En
         ))}
       </div>
 
-      <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} />
+      <InfiniteLoader
+        hasNextPage={!!hasNextPage}
+        isFetching={isFetching}
+        isFetchMoreError={!!error}
+        fetchMore={fetchMore}
+      />
     </div>
   );
-};
+}

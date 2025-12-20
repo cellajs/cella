@@ -17,9 +17,6 @@ export const booleanTransformSchema = z
 /** Enum schema for entity types */
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
-/** Enum schema for page entity types */
-export const pageEntityTypeSchema = z.enum(appConfig.pageEntityTypes);
-
 /** Enum schema for context entity types */
 export const contextEntityTypeSchema = z.enum(appConfig.contextEntityTypes);
 
@@ -182,7 +179,7 @@ export const validDomainsSchema = z
  * These are typically passed as query string parameters to define
  * the shape of a synchronization query used by ElectricSQL.
  */
-export const baseElectrycSyncQuery = z.object({
+export const baseElectricSyncQuery = z.object({
   table: z.string(),
   offset: z.string(),
   handle: z.string().optional(),

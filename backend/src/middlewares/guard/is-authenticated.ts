@@ -32,8 +32,15 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
     // Update user last seen date
     if (ctx.req.method === 'GET') {
       const newLastSeenAt = new Date();
-      const shouldUpdate = !user.lastSeenAt || new Date(user.lastSeenAt).getTime() < newLastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
-      if (shouldUpdate) await db.update(usersTable).set({ lastSeenAt: newLastSeenAt.toISOString() }).where(eq(usersTable.id, user.id)).returning();
+      const shouldUpdate =
+        !user.lastSeenAt ||
+        new Date(user.lastSeenAt).getTime() < newLastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
+      if (shouldUpdate)
+        await db
+          .update(usersTable)
+          .set({ lastSeenAt: newLastSeenAt.toISOString() })
+          .where(eq(usersTable.id, user.id))
+          .returning();
     }
 
     // Set user in context and add to monitoring
@@ -47,7 +54,11 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
     // Fetch the user's memberships and system role in parallel
     const [memberships, [userRoleRecord]] = await Promise.all([
       db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-      db.select({ role: systemRolesTable.role }).from(systemRolesTable).where(eq(systemRolesTable.userId, user.id)).limit(1),
+      db
+        .select({ role: systemRolesTable.role })
+        .from(systemRolesTable)
+        .where(eq(systemRolesTable.userId, user.id))
+        .limit(1),
     ]);
 
     // Store values in context for downstream use

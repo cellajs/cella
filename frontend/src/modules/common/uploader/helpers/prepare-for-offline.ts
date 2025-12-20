@@ -4,7 +4,10 @@ import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-stora
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 
-type PrepareFilesForOffline = (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery) => Promise<AssemblyResponse>;
+type PrepareFilesForOffline = (
+  files: Record<string, CustomUppyFile>,
+  tokenQuery: UploadTokenQuery,
+) => Promise<AssemblyResponse>;
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.

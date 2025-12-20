@@ -10,7 +10,7 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
@@ -29,7 +29,7 @@ export const useInviteFormDraft = (entityId?: string) => {
 };
 
 interface InviteUsersProps {
-  entity?: EntityPage;
+  entity?: ContextEntityData;
   dialog?: boolean;
   mode?: 'search' | 'email' | null;
   children?: React.ReactNode;
@@ -82,8 +82,18 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
       <AnimatePresence mode="popLayout">
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col w-full sm:h-40 py-3 gap-2 sm:gap-3">
-              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="py-6 sm:py-10">
+            <ToggleGroup
+              type="multiple"
+              onValueChange={updateMode}
+              className="max-sm:flex-col w-full sm:h-40 py-3 gap-2 sm:gap-3"
+            >
+              <ToggleGroupItem
+                size="tile"
+                variant="tile"
+                value="email"
+                aria-label="Add by email"
+                className="py-6 sm:py-10"
+              >
                 <AtSignIcon size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
                   <p>{t('common:invite_by_email')}</p>
@@ -93,7 +103,13 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
                   </div>
                 </div>
               </ToggleGroupItem>
-              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="py-6 sm:py-10">
+              <ToggleGroupItem
+                size="tile"
+                variant="tile"
+                value="search"
+                aria-label="Search users"
+                className="py-6 sm:py-10"
+              >
                 <SearchIcon size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
                   <div>{t('common:invite_by_name')}</div>
@@ -107,7 +123,12 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
           </motion.div>
         )}
         {inviteMode && (
-          <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
+          <motion.div
+            key="invite-form"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex flex-col gap-4"
+          >
             <AlertWrap id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AlertWrap>

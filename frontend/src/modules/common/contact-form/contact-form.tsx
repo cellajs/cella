@@ -62,8 +62,21 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
       <div className="w-full">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-            <InputFormField control={form.control} name="name" label={t('common:name')} icon={<UserIcon size={16} />} required />
-            <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<MailIcon size={16} />} required />
+            <InputFormField
+              control={form.control}
+              name="name"
+              label={t('common:name')}
+              icon={<UserIcon size={16} />}
+              required
+            />
+            <InputFormField
+              control={form.control}
+              name="email"
+              label={t('common:email')}
+              type="email"
+              icon={<MailIcon size={16} />}
+              required
+            />
             <InputFormField
               control={form.control}
               name="message"

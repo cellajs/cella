@@ -21,7 +21,9 @@ const meta = {
         <h3 className="font-semibold">Can I use this in my project?</h3>
         <InfoIcon className="size-6" />
       </CollapsibleTrigger>
-      <CollapsibleContent>Yes. Free to use for personal and commercial projects. No attribution required.</CollapsibleContent>
+      <CollapsibleContent>
+        Yes. Free to use for personal and commercial projects. No attribution required.
+      </CollapsibleContent>
     </Collapsible>
   ),
   parameters: {

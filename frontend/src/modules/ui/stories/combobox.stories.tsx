@@ -148,10 +148,22 @@ export const FullWidthContent: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={setValue} contentWidthMatchInput={args.contentWidthMatchInput} />
+        <Combobox
+          {...args}
+          options={args.options}
+          value={value}
+          onChange={setValue}
+          contentWidthMatchInput={args.contentWidthMatchInput}
+        />
       </div>
     );
   },
+};
+
+const placeholders = {
+  trigger: 'Select from 1000 options...',
+  search: 'Search options...',
+  notFound: 'No options found',
 };
 
 /**
@@ -173,7 +185,7 @@ export const LargeOptions: Story = {
           value={value}
           onChange={setValue}
           // @ts-ignore
-          placeholders={{ trigger: 'Select from 1000 options...', search: 'Search options...', notFound: 'No options found' }}
+          placeholders={placeholders}
         />
       </div>
     );

@@ -9,7 +9,8 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
-import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
+import { meQueryOptions } from '~/modules/me/query';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
@@ -125,8 +126,8 @@ export const AppLayoutRoute = createRoute({
       // Revalidate user if not already awaited above
       if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
 
-      // Get menu too but defer it so app doesnt need to hang while its is being retrieved
-      return await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true }));
+      // Get menu too but defer it so no need to hang while its being retrieved
+      return await defer(getMenuData());
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);

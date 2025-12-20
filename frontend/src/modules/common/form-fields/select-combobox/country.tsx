@@ -5,7 +5,13 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-const SelectCountry = <TFieldValues extends FieldValues>({ control, name, disabled, label, required }: BaseFormFieldProps<TFieldValues>) => {
+const SelectCountry = <TFieldValues extends FieldValues>({
+  control,
+  name,
+  disabled,
+  label,
+  required,
+}: BaseFormFieldProps<TFieldValues>) => {
   const options = countries.map(({ code, name }) => ({ value: code, label: name }));
 
   const renderCountryOption: ComboboxProps['renderOption'] = ({ value, label }) => (

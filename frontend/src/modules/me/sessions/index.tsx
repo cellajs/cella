@@ -39,7 +39,12 @@ const SessionsList = () => {
         };
       });
 
-      toaster(ids.length === 1 ? t('common:success.session_terminated', { id: ids[0] }) : t('common:success.sessions_terminated'), 'success');
+      toaster(
+        ids.length === 1
+          ? t('common:success.session_terminated', { id: ids[0] })
+          : t('common:success.sessions_terminated'),
+        'success',
+      );
     },
   });
 
@@ -66,7 +71,12 @@ const SessionsList = () => {
         <ExpandableList
           items={sessions}
           renderItem={(session) => (
-            <SessionTile session={session} key={session.id} handleDeleteSessions={handleDeleteSessions} isPending={isPending} />
+            <SessionTile
+              session={session}
+              key={session.id}
+              handleDeleteSessions={handleDeleteSessions}
+              isPending={isPending}
+            />
           )}
           initialDisplayCount={3}
           expandText="common:more_sessions"

@@ -16,7 +16,8 @@ const authGeneralRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['auth'],
     summary: 'Start impersonating',
-    description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
+    description:
+      'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { query: z.object({ targetUserId: z.string() }) },
     responses: {
       204: {
@@ -92,7 +93,8 @@ const authGeneralRoutes = {
     middleware: [isNoBot, tokenLimiter('token')],
     tags: ['auth'],
     summary: 'Get token data',
-    description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
+    description:
+      'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
       params: z.object({ type: z.enum(appConfig.tokenTypes), id: idSchema }),
     },

@@ -50,7 +50,8 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
   if (existingSessionToken) {
     // Get user from valid session
     const { user } = await validateSession(existingSessionToken);
-    if (user?.id && tokenRecord.userId !== user.id) throw new AppError({ status: 400, type: 'user_mismatch', severity: 'warn' });
+    if (user?.id && tokenRecord.userId !== user.id)
+      throw new AppError({ status: 400, type: 'user_mismatch', severity: 'warn' });
   }
 
   // Token expired

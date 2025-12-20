@@ -186,7 +186,18 @@ export const SelectEmails = (props: SelectEmailsProps) => {
         onChangeInput?.(inputValue);
       }
     },
-    [allowDisplayName, allowDuplicate, delimiter, emails, enable, onChange, onChangeInput, onDisabled, stripDisplayName, validateEmail],
+    [
+      allowDisplayName,
+      allowDuplicate,
+      delimiter,
+      emails,
+      enable,
+      onChange,
+      onChangeInput,
+      onDisabled,
+      stripDisplayName,
+      validateEmail,
+    ],
   );
 
   const onChangeInputValue = useCallback(

@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useFormState, useWatch } from 'react-hook-form';
+import {
+  type FieldPath,
+  type FieldValues,
+  type UseFormProps,
+  type UseFormReturn,
+  useForm,
+  useFormState,
+  useWatch,
+} from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -92,7 +100,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     const draftData = getDraftForm<TFieldValues>(formId);
 
     if (draftData) {
-      for (const [key, value] of Object.entries(draftData)) form.setValue(key as FieldPath<TFieldValues>, value, { shouldDirty: true });
+      for (const [key, value] of Object.entries(draftData))
+        form.setValue(key as FieldPath<TFieldValues>, value, { shouldDirty: true });
     }
 
     setLoading(false);

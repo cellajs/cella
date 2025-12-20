@@ -19,7 +19,7 @@ const InvitationsTable = () => {
     ...queryOptions,
   });
 
-  // Update rows
+  // TODO Update rows
   // const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
   //   if (column.key !== 'name') return;
 

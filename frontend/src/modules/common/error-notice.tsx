@@ -35,7 +35,8 @@ const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): s
 
   if (error instanceof SearchParamError) return 'invalid_param';
 
-  if (error instanceof ApiError) return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
+  if (error instanceof ApiError)
+    return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
 
   return error.name;
 };
@@ -133,7 +134,12 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
                     className="whitespace-pre-wrap w-full text-red-600 flex items-center"
                   >
                     <span>{showError ? t('common:hide_details') : t('common:show_details')}</span>
-                    {<ChevronUpIcon size={16} className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
+                    {
+                      <ChevronUpIcon
+                        size={16}
+                        className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`}
+                      />
+                    }
                   </Button>
                 )}
 

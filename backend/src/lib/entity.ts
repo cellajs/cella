@@ -12,7 +12,10 @@ export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$infer
  * @param entityType - The type of entity.
  * @param idOrSlug - The unique identifier (ID or Slug) of entity.
  */
-export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string): Promise<EntityModel<T> | undefined>;
+export async function resolveEntity<T extends EntityType>(
+  entityType: T,
+  idOrSlug: string,
+): Promise<EntityModel<T> | undefined>;
 export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlug: string) {
   const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
 
@@ -38,7 +41,10 @@ export async function resolveEntity<T extends EntityType>(entityType: T, idOrSlu
  * @param entityType - The type of the entity.
  * @param ids - An array of unique identifiers (IDs) of entities to resolve.
  */
-export async function resolveEntities<T extends EntityType>(entityType: T, ids: Array<string>): Promise<Array<EntityModel<T>>> {
+export async function resolveEntities<T extends EntityType>(
+  entityType: T,
+  ids: Array<string>,
+): Promise<Array<EntityModel<T>>> {
   // Get the corresponding table for the entity type
   const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
 
@@ -46,7 +52,8 @@ export async function resolveEntities<T extends EntityType>(entityType: T, ids: 
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
   // Validate presence of IDs
-  if (!Array.isArray(ids) || !ids.length) throw new Error(`Missing or invalid query identifiers for entityType: ${entityType}`);
+  if (!Array.isArray(ids) || !ids.length)
+    throw new Error(`Missing or invalid query identifiers for entityType: ${entityType}`);
 
   // Query for multiple entities by IDs
   const entities = await db.select().from(table).where(inArray(table.id, ids));

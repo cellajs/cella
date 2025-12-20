@@ -18,13 +18,13 @@ import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
 export interface AttachmentsTableProps {
-  entity: EntityPage;
+  entity: ContextEntityData;
   isSheet?: boolean;
   canUpload?: boolean;
 }
@@ -49,7 +49,12 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const [columns, setColumns] = useState(useColumns(entity, isSheet, isCompact));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: entity.membership?.organizationId || entity.id, ...search, limit });
+  const queryOptions = attachmentsQueryOptions({
+    orgIdOrSlug: entity.membership?.organizationId || entity.id,
+    ...search,
+    limit,
+  });
+
   const {
     data: fetchedRows,
     isLoading,
@@ -61,6 +66,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     ...queryOptions,
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
+
   const rows = useOfflineTableSearch({
     data: fetchedRows,
     filterFn: ({ q }, item) => {

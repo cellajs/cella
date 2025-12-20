@@ -64,7 +64,10 @@ export const MentionSchema = createReactInlineContentSpec(
 );
 
 // Function which gets all users for the mentions menu.
-export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor): DefaultReactGridSuggestionItem[] => {
+export const getMentionMenuItems = (
+  members: Member[],
+  editor: CustomBlockNoteEditor,
+): DefaultReactGridSuggestionItem[] => {
   return members.map((m) => ({
     id: m.id,
     onItemClick: () => {

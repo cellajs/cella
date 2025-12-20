@@ -16,7 +16,14 @@ const StepButtonContainer = ({
   isLoading: isLoadingProp,
   onClickStep,
 }: StepButtonContainerProps) => {
-  const { clickable, isLoading: isLoadingContext, variant, styles, setStep, onClickStep: onClickStepGeneral } = useStepper();
+  const {
+    clickable,
+    isLoading: isLoadingContext,
+    variant,
+    styles,
+    setStep,
+    onClickStep: onClickStepGeneral,
+  } = useStepper();
 
   const currentStepClickable = clickable || !!onClickStep;
 

@@ -2,7 +2,12 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type ResendInvitationWithTokenData, type ResendInvitationWithTokenResponse, resendInvitationWithToken } from '~/api.gen';
+import {
+  type ApiError,
+  type ResendInvitationWithTokenData,
+  type ResendInvitationWithTokenResponse,
+  resendInvitationWithToken,
+} from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
@@ -23,7 +28,11 @@ export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonPro
   const { t } = useTranslation();
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
 
-  const { mutate: resend, isPending } = useMutation<ResendInvitationWithTokenResponse, ApiError, ResendInvitationWithTokenData['body']>({
+  const { mutate: resend, isPending } = useMutation<
+    ResendInvitationWithTokenResponse,
+    ApiError,
+    ResendInvitationWithTokenData['body']
+  >({
     mutationFn: (body) => resendInvitationWithToken({ body }),
     onSuccess: () => {
       useDialoger.getState().remove();
@@ -50,7 +59,9 @@ export const ResendInvitationButton = ({ resendData, wrapperClassName, buttonPro
   return (
     <TooltipButton
       className={wrapperClassName}
-      toolTipContent={disabledResetPassword ? t('common:retry_resend_invitation.text') : t('common:resend_invitation.text')}
+      toolTipContent={
+        disabledResetPassword ? t('common:retry_resend_invitation.text') : t('common:resend_invitation.text')
+      }
     >
       <Button
         {...buttonProps}

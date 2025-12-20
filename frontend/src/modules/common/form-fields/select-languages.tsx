@@ -51,7 +51,9 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
           ) : (
             t('common:placeholder.select_languages')
           )}
-          <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDownIcon
+            className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+          />
         </Button>
       </PopoverTrigger>
 
@@ -70,7 +72,11 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
                     <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
                     <span className="truncate">{t(`common:${lang}`)}</span>
                   </div>
-                  <CheckIcon size={16} strokeWidth={3} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
+                  <CheckIcon
+                    size={16}
+                    strokeWidth={3}
+                    className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`}
+                  />
                 </CommandItem>
               ))}
             </CommandGroup>

@@ -6,7 +6,11 @@ import type { StepItem } from '~/modules/common/stepper/types';
  */
 export const onboardingSteps: StepItem[] = [
   { id: 'profile', label: i18n.t('common:tune_profile'), optional: true },
-  { id: 'organization', label: i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() }), optional: true },
+  {
+    id: 'organization',
+    label: i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() }),
+    optional: true,
+  },
   { id: 'invitation', label: i18n.t('common:invite_others'), optional: true },
 ];
 

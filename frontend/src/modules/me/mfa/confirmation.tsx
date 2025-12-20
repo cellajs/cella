@@ -65,7 +65,13 @@ export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => 
               {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
             </span>
           </Button>
-          <Button ref={totpTriggerRef} type="button" onClick={() => setIsOpen(true)} variant="plain" className="w-full gap-1.5 truncate">
+          <Button
+            ref={totpTriggerRef}
+            type="button"
+            onClick={() => setIsOpen(true)}
+            variant="plain"
+            className="w-full gap-1.5 truncate"
+          >
             <SmartphoneIcon size={16} />
             <span className="truncate">
               {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}

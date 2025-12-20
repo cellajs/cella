@@ -49,7 +49,11 @@ const ProfileForm = (args: Story['args']) => {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <input className="border-input bg-background w-full rounded-md border px-3 py-2" placeholder="username" {...field} />
+                <input
+                  className="border-input bg-background w-full rounded-md border px-3 py-2"
+                  placeholder="username"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>This is your public display name.</FormDescription>
               <FormMessage />

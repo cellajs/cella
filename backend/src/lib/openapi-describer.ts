@@ -142,7 +142,10 @@ function getHighestAuthLevel(descriptors: MiddlewareDescriptor[]): 'authenticate
  * @param category - Middleware category (e.g., 'auth', 'rate-limit')
  * @param level - Optional level for more specific icons (e.g., 'public' vs 'authenticated')
  */
-function getIcon(category: MiddlewareDescriptor['category'], level?: MiddlewareDescriptor['level']): string | undefined {
+function getIcon(
+  category: MiddlewareDescriptor['category'],
+  level?: MiddlewareDescriptor['level'],
+): string | undefined {
   if (category === 'auth') {
     if (level === 'public') return '🌐';
     if (level === 'authenticated') return '🛡️';

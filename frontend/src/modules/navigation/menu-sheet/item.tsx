@@ -64,7 +64,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
           className={cn(
             'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',
             !searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
-            searchResults ? '' : isSubitem ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : 'sm:group-hover/menuItem:pt-[0.3rem]!',
+            searchResults
+              ? ''
+              : isSubitem
+                ? 'sm:group-hover/menuItem:pt-[0.06rem]!'
+                : 'sm:group-hover/menuItem:pt-[0.3rem]!',
             'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
           )}
         >

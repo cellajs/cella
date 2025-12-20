@@ -1,38 +1,45 @@
-import { useMemo } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import type { ContextEntityType } from 'config';
 import type { FieldValues } from 'react-hook-form';
+import { ContextEntityBase } from '~/api.gen';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import type { UserMenu } from '~/modules/me/types';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { useNavigationStore } from '~/store/navigation';
+import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { flattenInfiniteData } from '~/query/utils/flatten';
+import { useUserStore } from '~/store/user';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
-  parentType: keyof UserMenu;
+  parentType: ContextEntityType;
   options?: ComboboxProps['options'];
 };
 
+/**
+ * Form field for selecting a parent entity.
+ */
 const SelectParentFormField = <TFieldValues extends FieldValues>({
   parentType,
   control,
   name,
   label,
-  options: passedOptions,
+  options: opts,
   required,
   disabled,
 }: SelectParentProps<TFieldValues>) => {
-  const { menu } = useNavigationStore();
+  const { user } = useUserStore();
 
-  // Derive combobox options
-  const options = useMemo(() => {
-    if (passedOptions) return passedOptions;
+  // Fetch entities using proper query
+  const queryFactory = getContextEntityTypeToListQueries()[parentType];
+  const query = useInfiniteQuery(queryFactory({ userId: user.id }));
+  const items = flattenInfiniteData<ContextEntityBase>(query.data);
 
-    const parentItems = menu[parentType] ?? [];
-    return parentItems.map(({ id, name, thumbnailUrl }) => ({
-      value: id,
-      label: name,
-      url: thumbnailUrl,
+  const options =
+    opts ??
+    items.map((i) => ({
+      value: i.id,
+      label: i.name,
+      url: i.thumbnailUrl ?? undefined,
     }));
-  }, [passedOptions, menu, parentType]);
 
   return (
     <FormField

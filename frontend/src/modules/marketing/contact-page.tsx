@@ -6,14 +6,29 @@ import ContactFormMap from '~/modules/common/contact-form/contact-form';
 import MarketingLayout from '~/modules/marketing/layout';
 
 const methods = [
-  { icon: MapPinIcon, title: 'common:visit', link: appConfig.company.googleMapsUrl, text: appConfig.company.streetAddress },
+  {
+    icon: MapPinIcon,
+    title: 'common:visit',
+    link: appConfig.company.googleMapsUrl,
+    text: appConfig.company.streetAddress,
+  },
   { icon: MailIcon, title: 'common:email', link: `mailto:${appConfig.company.email}`, text: appConfig.company.email },
 ];
 
 if (appConfig.company.scheduleCallUrl)
-  methods.push({ icon: CalendarCheckIcon, title: 'common:book', link: appConfig.company.scheduleCallUrl, text: 'common:schedule_call.text' });
+  methods.push({
+    icon: CalendarCheckIcon,
+    title: 'common:book',
+    link: appConfig.company.scheduleCallUrl,
+    text: 'common:schedule_call.text',
+  });
 if (appConfig.company.tel)
-  methods.push({ icon: PhoneCallIcon, title: 'common:call', link: `tel:${appConfig.company.tel}`, text: appConfig.company.tel });
+  methods.push({
+    icon: PhoneCallIcon,
+    title: 'common:call',
+    link: `tel:${appConfig.company.tel}`,
+    text: appConfig.company.tel,
+  });
 
 const ContactPage = () => {
   const { t } = useTranslation();
@@ -21,7 +36,9 @@ const ContactPage = () => {
   return (
     <MarketingLayout title="common:contact_us">
       <div className="container pb-16 pt-20">
-        <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">{t('common:leave_message.text')}</h1>
+        <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">
+          {t('common:leave_message.text')}
+        </h1>
         <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
         <ContactFormMap />
       </div>

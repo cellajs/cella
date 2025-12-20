@@ -1,50 +1,50 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
+import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 
 /**
  * Accessible resizable panel groups and layouts with keyboard support.
  */
-const meta: Meta<typeof ResizablePanelGroup> = {
-  title: 'ui/ResizablePanelGroup',
-  component: ResizablePanelGroup,
+const meta: Meta<typeof ResizableGroup> = {
+  title: 'ui/ResizableGroup',
+  component: ResizableGroup,
   tags: ['autodocs'],
   argTypes: {
-    onLayout: {
+    onLayoutChange: {
       control: false,
     },
   },
   args: {
-    onLayout: fn(),
+    onLayoutChange: fn(),
     className: 'max-w-96 rounded-lg border',
-    direction: 'horizontal',
+    orientation: 'horizontal',
   },
   render: (args) => (
-    <ResizablePanelGroup {...args}>
-      <ResizablePanel defaultSize={50}>
-        <div className="flex h-[200px] items-center justify-center p-6">
+    <ResizableGroup {...args}>
+      <ResizablePanel>
+        <div className="flex h-50 items-center justify-center p-6">
           <span className="font-semibold">One</span>
         </div>
       </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel defaultSize={50}>
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={25}>
+      <ResizableSeparator />
+      <ResizablePanel>
+        <ResizableGroup orientation="vertical">
+          <ResizablePanel>
             <div className="flex h-full items-center justify-center p-6">
               <span className="font-semibold">Two</span>
             </div>
           </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel defaultSize={75}>
+          <ResizableSeparator />
+          <ResizablePanel>
             <div className="flex h-full items-center justify-center p-6">
               <span className="font-semibold">Three</span>
             </div>
           </ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizableGroup>
       </ResizablePanel>
-    </ResizablePanelGroup>
+    </ResizableGroup>
   ),
-} satisfies Meta<typeof ResizablePanelGroup>;
+} satisfies Meta<typeof ResizableGroup>;
 
 export default meta;
 

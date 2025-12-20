@@ -1,32 +1,33 @@
+import type { ContextEntityType, EntityType } from 'config';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import type { UserMenuItem } from '~/modules/me/types';
 import { membersQueryOptions } from '~/modules/memberships/query';
-import { organizationQueryOptions } from '~/modules/organizations/query';
+import { organizationsQueryOptions } from '~/modules/organizations/query';
 
 /**
- * This function returns queries that need to be prefetched based on the entity of the item.
- *
- * It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled,
- * allowing the app to have entity and content data while offline.
+ * Map entity types to their corresponding list query options functions.
+ * This is used to generate the menu based on entity types defined in appConfig.menuStructure.
  */
-export const queriesToMap = (item: UserMenuItem) => {
-  const orgIdOrSlug = item.membership.organizationId ?? item.id;
+export const getContextEntityTypeToListQueries = () =>
+  ({
+    organization: organizationsQueryOptions,
+  }) satisfies Partial<Record<ContextEntityType, unknown>>;
 
-  // The entity type will decide which queries should be returned for prefetching.
-  switch (item.entityType) {
+/**
+ * Given an entity ID and type, return an array of query options to prefetch related data.
+ *
+ * When menu is done and offline access is enabled, this mapping function will execute
+ * for each entity type defined in the menu.
+ */
+export const entityToPrefetchQueries = (entityId: string, entityType: EntityType, _organizationId?: string) => {
+  switch (entityType) {
     case 'organization':
-      // As example for 'organization' we return the following queries:
-      // - queryOptions to fetch the organization itself
-      // - queryOptions to fetch members of the organization
-      // - queryOptions to fetch attachments related to the organization
       return [
-        organizationQueryOptions(item.slug),
         membersQueryOptions({
-          idOrSlug: item.slug,
-          orgIdOrSlug,
-          entityType: item.entityType,
+          idOrSlug: entityId,
+          orgIdOrSlug: entityId,
+          entityType: entityType,
         }),
-        attachmentsQueryOptions({ orgIdOrSlug }),
+        attachmentsQueryOptions({ orgIdOrSlug: entityId }),
       ];
 
     // Extend switch case for app-specific entity types ...

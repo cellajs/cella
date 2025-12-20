@@ -103,7 +103,11 @@ export const deleteVerificationTokens = async (
     .delete(tokensTable)
     .where(
       and(
-        ...[eq(tokensTable.userId, userId), eq(tokensTable.type, type), ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : [])],
+        ...[
+          eq(tokensTable.userId, userId),
+          eq(tokensTable.type, type),
+          ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
+        ],
       ),
     );
 };

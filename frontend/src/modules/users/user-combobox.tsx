@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { CheckIcon, ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -9,24 +9,24 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { searchUsersQueryOptions } from '~/modules/users/query';
+import { usersQueryOptions } from '~/modules/users/query';
 
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entity: EntityPage;
+  entity: ContextEntityData;
 }
 
 export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdField = appConfig.entityIdFields[entity.entityType];
+  const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -57,8 +57,21 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const queryOptions = searchUsersQueryOptions({ q: debouncedSearchQuery, targetEntityId: entity.id, targetEntityType: entity.entityType });
-  const { data, isFetching } = useQuery(queryOptions);
+  const queryOptions = usersQueryOptions({
+    q: debouncedSearchQuery,
+    targetEntityId: entity.id,
+    targetEntityType: entity.entityType,
+  });
+
+  const {
+    data,
+    isFetching,
+    // fetchNextPage,
+    // hasNextPage,
+    // isFetchingNextPage,
+  } = useInfiniteQuery(queryOptions);
+
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
 
   useEffect(() => {
     onChange(selected);
@@ -118,8 +131,15 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
 
           <CommandList className="px-1 h-full">
             <AnimatePresence mode="wait">
-              {!isFetching && !data.items.length ? (
-                <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
+              {!isFetching && !items.length ? (
+                <motion.div
+                  key="empty-state"
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={variants}
+                  className="h-full"
+                >
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
                       <ContentPlaceholder
@@ -130,12 +150,16 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Users2Icon} title="common:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
+                      <ContentPlaceholder
+                        icon={Users2Icon}
+                        title="common:invite_members_search.text"
+                        titleProps={{ appName: appConfig.name }}
+                      />
                     </CommandEmpty>
                   )}
                 </motion.div>
               ) : (
-                data.items.length > 0 && (
+                items.length > 0 && (
                   <motion.div
                     key="results"
                     initial="hidden"
@@ -146,8 +170,8 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   >
                     <ScrollArea>
                       <CommandGroup>
-                        {data.items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
-                          const alreadyMember = !!memberships.find((m) => m[entityIdField] === entity.id);
+                        {items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
+                          const alreadyMember = !!memberships.find((m) => m[entityIdColumnKey] === entity.id);
                           const disabled = !memberships || alreadyMember;
                           return (
                             <CommandItem
@@ -159,18 +183,32 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                               onSelect={() => onSelect(email)}
                             >
                               <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                                <AvatarWrap type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
+                                <AvatarWrap
+                                  type={entityType}
+                                  className="h-8 w-8"
+                                  id={id}
+                                  name={name}
+                                  url={thumbnailUrl}
+                                />
                                 <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
                                   {isMobile ? email : name}
                                 </span>
                               </div>
 
                               <div className="flex items-center gap-2 min-w-0">
-                                <Badge size="sm" variant="plain" className="group-data-[already-member=true]:flex hidden gap-1">
+                                <Badge
+                                  size="sm"
+                                  variant="plain"
+                                  className="group-data-[already-member=true]:flex hidden gap-1"
+                                >
                                   <UserIcon size={14} />
                                   <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
                                 </Badge>
-                                <CheckIcon size={16} strokeWidth={3} className="flex text-success group-data-[was-selected=false]:hidden" />
+                                <CheckIcon
+                                  size={16}
+                                  strokeWidth={3}
+                                  className="flex text-success group-data-[was-selected=false]:hidden"
+                                />
                                 <span className="font-light max-sm:hidden group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden">
                                   {email}
                                 </span>

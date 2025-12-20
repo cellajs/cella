@@ -8,7 +8,13 @@ import { TagInput } from '~/modules/ui/tag-input';
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   description?: string;
 };
-const DomainsFormField = <TFieldValues extends FieldValues>({ control, name, label, description, required }: DomainsFieldProps<TFieldValues>) => {
+const DomainsFormField = <TFieldValues extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  required,
+}: DomainsFieldProps<TFieldValues>) => {
   const { t } = useTranslation();
 
   const { getValues } = useFormContext();

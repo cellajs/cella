@@ -65,7 +65,13 @@ export const customSchema = BlockNoteSchema.create().extend({
 });
 
 // Blocks to witch can be switched by sidemenu btn or in formatting toolbar
-export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
+export const customBlockTypeSwitchItems: CustomBlockTypes[] = [
+  'heading',
+  'paragraph',
+  'bulletListItem',
+  'numberedListItem',
+  'checkListItem',
+];
 
 /**
  *  Side menu configuration
@@ -77,7 +83,15 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
  */
 
 // Indexed items (max 9 for quick number-based selection)
-export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
+export const customSlashIndexedItems: SlashIndexedItems = [
+  'image',
+  'video',
+  'file',
+  'bulletListItem',
+  'numberedListItem',
+  'checkListItem',
+  'notify',
+];
 
 // Generate the complete Slash menu items list
 export const getSlashMenuItems = (
@@ -117,7 +131,10 @@ export const getSlashMenuItems = (
   );
 
   return baseItems
-    .filter((item): item is DefaultSuggestionItem => 'key' in item && allowedKeys.includes(item.key as DefaultSuggestionItem['key']))
+    .filter(
+      (item): item is DefaultSuggestionItem =>
+        'key' in item && allowedKeys.includes(item.key as DefaultSuggestionItem['key']),
+    )
     .sort(({ key: first }, { key: second }) => {
       const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
       const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;

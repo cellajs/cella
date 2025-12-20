@@ -22,10 +22,9 @@ const isFilteredEntityType = (entityType: EntityType): entityType is FilteredEnt
 };
 
 const entityCountSchema = z.object(
-  Object.fromEntries(appConfig.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, z.number()])) as Record<
-    FilteredEntityType,
-    z.ZodNumber
-  >,
+  Object.fromEntries(
+    appConfig.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, z.number()]),
+  ) as Record<FilteredEntityType, z.ZodNumber>,
 );
 
 export const membershipCountSchema = z.object({
@@ -91,4 +90,10 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
+  userId: z.string().optional(),
+  role: z.enum(appConfig.roles.entityRoles).optional(),
+  excludeArchived: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
 });

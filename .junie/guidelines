@@ -1,0 +1,2 @@
+Please read info/AGENTS.md for comprehensive project guidelines, architecture, and coding standards. AI agents should always refer to that file as the primary source of truth for Cella's modular monorepo patterns, technology stack, and mandatory development commands.
+More info can be found in remaining markdown files in /info folder, such as info/ARCHITECTURE.md.

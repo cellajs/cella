@@ -28,7 +28,11 @@ function FooterLinks() {
                 const target = isCDNUrl(link.href) ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
-                    <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect">
+                    <Link
+                      to={link.href}
+                      target={target}
+                      className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect"
+                    >
                       {t(link.title)}
                     </Link>
                   </li>
@@ -69,8 +73,12 @@ export const MarketingFooter = () => {
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">
-              <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
-              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: appConfig.name })}</div>
+              <div className="font-display text-sm font-semibold tracking-wider text-white/50">
+                {t('common:request_info')}
+              </div>
+              <div className="mt-4 text-sm text-white/90">
+                {t('common:request_info.text', { appName: appConfig.name })}
+              </div>
               <SubscribeNewsletterForm />
             </div>
           </div>
@@ -91,7 +99,11 @@ export const MarketingFooter = () => {
           <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-4 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
             {legalLinks.map((link) => (
               <li key={link.title}>
-                <Link to={link.href} draggable="false" className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect">
+                <Link
+                  to={link.href}
+                  draggable="false"
+                  className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect"
+                >
                   {t(link.title)}
                 </Link>
               </li>

@@ -49,7 +49,10 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         triggerRef: deleteButtonRef,
         className: 'md:max-w-xl',
         title: t('common:delete_resource', { resource: t('common:organization').toLowerCase() }),
-        description: t('common:confirm.delete_resource', { name: organization.name, resource: t('common:organization').toLowerCase() }),
+        description: t('common:confirm.delete_resource', {
+          name: organization.name,
+          resource: t('common:organization').toLowerCase(),
+        }),
       },
     );
   };
@@ -121,7 +124,12 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+              <Button
+                ref={deleteButtonRef}
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={openDeleteDialog}
+              >
                 <TrashIcon className="mr-2 size-4" />
                 <span>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</span>
               </Button>

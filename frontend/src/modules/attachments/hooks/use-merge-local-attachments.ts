@@ -3,7 +3,11 @@ import { useEffect, useRef } from 'react';
 import type { Attachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import type { AttachmentInfiniteQueryData, AttachmentQueryData, AttachmentsRouteSearchParams } from '~/modules/attachments/types';
+import type {
+  AttachmentInfiniteQueryData,
+  AttachmentQueryData,
+  AttachmentsRouteSearchParams,
+} from '~/modules/attachments/types';
 import { queryClient } from '~/query/query-client';
 import { formatUpdatedCacheData, getQueryItems } from '~/query/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
@@ -28,9 +32,11 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
       const groupId = files.length > 1 ? nanoid() : null;
 
       // TODO(DAVID)(IMPROVE)local file info(add createdAt/By, groupId into the file?)
+      // TODO: can we derive this from shared schema?
       const localAttachments: Attachment[] = files.map(({ size, preview, id, type, data, name, meta }) => ({
         id,
         size: String(size || data?.size || 0),
+        description: '',
         url: preview || '',
         thumbnailUrl: null,
         convertedUrl: null,
@@ -49,22 +55,31 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         organizationId,
       }));
 
-      const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: organizationId, q, sort, order, limit });
+      const queryOptions = attachmentsQueryOptions({
+        orgIdOrSlug: organizationId,
+        q,
+        sort,
+        order,
+        limit,
+      });
 
       await queryClient.prefetchInfiniteQuery(queryOptions);
 
-      queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryOptions.queryKey, (existingData) => {
-        if (!existingData) return existingData;
+      queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(
+        queryOptions.queryKey,
+        (existingData) => {
+          if (!existingData) return existingData;
 
-        const existingItems = getQueryItems(existingData);
-        const existingIds = new Set(existingItems.map((item) => item.id));
+          const existingItems = getQueryItems(existingData);
+          const existingIds = new Set(existingItems.map((item) => item.id));
 
-        const filtered = localAttachments.filter((item) => !existingIds.has(item.id));
-        if (!filtered.length) return existingData;
+          const filtered = localAttachments.filter((item) => !existingIds.has(item.id));
+          if (!filtered.length) return existingData;
 
-        const updatedItems = order === 'asc' ? [...existingItems, ...filtered] : [...filtered, ...existingItems];
-        return formatUpdatedCacheData(existingData, updatedItems, limit, filtered.length);
-      });
+          const updatedItems = order === 'asc' ? [...existingItems, ...filtered] : [...filtered, ...existingItems];
+          return formatUpdatedCacheData(existingData, updatedItems, limit, filtered.length);
+        },
+      );
       enrichedRef.current = true;
     };
     mergeLocalAttachmentsIntoCache();

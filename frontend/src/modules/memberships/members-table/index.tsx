@@ -8,7 +8,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/bar';
 import { useColumns } from '~/modules/memberships/members-table/columns';
 import { membersQueryOptions } from '~/modules/memberships/query';
@@ -18,7 +18,7 @@ import type { Member, MembersRouteSearchParams } from '~/modules/memberships/typ
 const LIMIT = appConfig.requestLimits.members;
 
 export interface MembersTableWrapperProps {
-  entity: EntityPage;
+  entity: ContextEntityData;
   isSheet?: boolean;
   children?: React.ReactNode;
 }
@@ -129,7 +129,11 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={UsersIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:members').toLowerCase() }} />
+            <ContentPlaceholder
+              icon={UsersIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:members').toLowerCase() }}
+            />
           ),
         }}
       />

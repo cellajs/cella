@@ -8,7 +8,11 @@ import { pastIsoDate } from '../../mocks/utils';
 /**
  * Create a membership invitation token for a user to join an organization
  */
-export async function createMembershipInvitationToken(user: UserModel, organizationId: string, role: 'admin' | 'member' = 'member') {
+export async function createMembershipInvitationToken(
+  user: UserModel,
+  organizationId: string,
+  role: 'admin' | 'member' = 'member',
+) {
   // Create inactive membership first
   const inactiveMembership = {
     id: nanoid(),

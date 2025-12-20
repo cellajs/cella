@@ -63,13 +63,20 @@ describe('Membership Invitation', async () => {
   };
 
   const getInactiveMemberships = async (organizationId: string) => {
-    return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
+    return await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.organizationId, organizationId));
   };
 
   it('should invite new users to organization', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
-    const res = await makeInviteRequest(organization.id, { emails: ['user1@cella.com', 'user2@cella.com'], role: 'member' }, sessionCookie);
+    const res = await makeInviteRequest(
+      organization.id,
+      { emails: ['user1@cella.com', 'user2@cella.com'], role: 'member' },
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
     const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
@@ -89,7 +96,11 @@ describe('Membership Invitation', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
     const existingUser = await createPasswordUser('existing@cella.com', 'password123!');
 
-    const res = await makeInviteRequest(organization.id, { emails: ['existing@cella.com'], role: 'admin' }, sessionCookie);
+    const res = await makeInviteRequest(
+      organization.id,
+      { emails: ['existing@cella.com'], role: 'admin' },
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
     const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
@@ -107,7 +118,11 @@ describe('Membership Invitation', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
     const existingUser = await createPasswordUser('existing@cella.com', 'password123!');
 
-    const res = await makeInviteRequest(organization.id, { emails: ['existing@cella.com', 'newuser@cella.com'], role: 'member' }, sessionCookie);
+    const res = await makeInviteRequest(
+      organization.id,
+      { emails: ['existing@cella.com', 'newuser@cella.com'], role: 'member' },
+      sessionCookie,
+    );
 
     expect(res.status).toBe(200);
     const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(res);
@@ -134,7 +149,10 @@ describe('Membership Invitation', async () => {
 
     expect(res.status).toBe(200);
 
-    const inactiveMemberships = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organization.id));
+    const inactiveMemberships = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.organizationId, organization.id));
     expect(inactiveMemberships).toHaveLength(1);
     expect(inactiveMemberships[0].role).toBe('admin');
   });
@@ -146,7 +164,10 @@ describe('Membership Invitation', async () => {
 
     expect(res.status).toBe(200);
 
-    const inactiveMemberships = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organization.id));
+    const inactiveMemberships = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.organizationId, organization.id));
     expect(inactiveMemberships).toHaveLength(1);
     expect(inactiveMemberships[0].role).toBe('member');
   });
@@ -173,7 +194,11 @@ describe('Membership Invitation', async () => {
       { headers: defaultHeaders },
     );
 
-    const res = await makeInviteRequest(organization.id, { emails: ['newuser@cella.com'], role: 'member' }, signInRes.headers.get('set-cookie'));
+    const res = await makeInviteRequest(
+      organization.id,
+      { emails: ['newuser@cella.com'], role: 'member' },
+      signInRes.headers.get('set-cookie'),
+    );
 
     expect(res.status).toBe(403);
   });
@@ -189,7 +214,9 @@ describe('Membership Invitation', async () => {
     const secondRes = await makeInviteRequest(organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(secondRes);
+    const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(
+      secondRes,
+    );
     expect(response.success).toBe(false);
     expect(response.invitesSentCount).toBe(0);
     expect(response.rejectedItems).toHaveLength(0);

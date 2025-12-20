@@ -5,12 +5,12 @@ In this folder we manage the translations that is handled using i18next.
 * [react-i18next documentation](https://react.i18next.com/)
 * [i18n ally documentation](https://github.com/lokalise/i18n-ally/wiki)
 
-### Install i18n Ally
+### Install i18n Ally (VSCode)
 We recommend using the VSCode plugin `lokalise.i18n-ally` to manage translations in this `locales` folder.
 
 The recommended settings to put in your `.vscode/settings.json` or to edit in the settings page of your workspace:
 
-```
+```json
 {
   "i18n-ally.localesPaths": [".vscode/.locales-cache"],
   "i18n-ally.annotationDelimiter": ".",
@@ -25,6 +25,15 @@ The recommended settings to put in your `.vscode/settings.json` or to edit in th
   "i18n-ally.pathMatcher": "{locale}/{namespace}.json"
 }
 ```
+
+### WebStorm / JetBrains IDEs
+For WebStorm users, you can achieve similar inline translation previews using:
+
+1. **Interactive i18n plugin**: This is the closest equivalent to `i18n-ally`.
+   - Install the "Interactive i18n" plugin from the JetBrains Marketplace.
+   - Configure the locales path to `.vscode/.locales-cache` to benefit from the project's auto-merging logic (e.g., `common` + `app`).
+2. **Built-in Localization support**: Since version 2024.1, WebStorm includes a bundled "Localization" feature.
+   - It should automatically detect the `locales` folder, but you might need to enable "Inlay Hints" for i18n in `Settings > Editor > Inlay Hints`.
 
 ### Tips for consistency
 * Keep texts short

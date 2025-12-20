@@ -72,48 +72,61 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
         )}
       >
         <div className="hidden md:group-[.is-sticky]/sticky:flex absolute left-0 h-full items-center">
-          {avatar && <AvatarWrap className="m-3 h-5 w-5 text-xs" type="organization" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
+          {avatar && (
+            <AvatarWrap
+              className="m-3 h-5 w-5 text-xs"
+              type="organization"
+              id={avatar.id}
+              name={avatar.name}
+              url={avatar.thumbnailUrl}
+            />
+          )}
           {title && <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>}
         </div>
         <div className="inline-flex min-w-max gap-1 px-1 sm:justify-center sm:flex">
-          {tabs.map(({ id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } }, index) => (
-            <Link
-              key={id}
-              id={`tab-${id}`}
-              ref={(el) => {
-                if (el) tabRefs.current[id] = el;
-              }}
-              resetScroll={false}
-              className="relative last:mr-4 max-sm:py-3 max-sm:text-sm p-2 lg:px-4 rounded-sm font-medium focus-effect group"
-              to={path}
-              draggable="false"
-              data-active={fallbackToFirst && index === 0 ? true : undefined}
-              params={params}
-              search={search}
-              activeOptions={activeOptions}
-              activeProps={{ 'data-active': true }}
-              onClick={(e) => updateScrollPosition(e.currentTarget)}
-            >
-              {({ isActive }) => {
-                const showAsActive = isActive || (fallbackToFirst && index === 0);
-                if (showAsActive) scrollTabIntoView(id);
+          {tabs.map(
+            (
+              { id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } },
+              index,
+            ) => (
+              <Link
+                key={id}
+                id={`tab-${id}`}
+                ref={(el) => {
+                  if (el) tabRefs.current[id] = el;
+                }}
+                resetScroll={false}
+                className="relative last:mr-4 p-2 lg:px-4 rounded-sm font-medium focus-effect group"
+                to={path}
+                draggable="false"
+                data-active={fallbackToFirst && index === 0 ? true : undefined}
+                params={params}
+                search={search}
+                activeOptions={activeOptions}
+                activeProps={{ 'data-active': true }}
+                onClick={(e) => updateScrollPosition(e.currentTarget)}
+              >
+                {({ isActive }) => {
+                  const showAsActive = isActive || (fallbackToFirst && index === 0);
+                  if (showAsActive) scrollTabIntoView(id);
 
-                return (
-                  <>
-                    <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
-                    {showAsActive && (
-                      <motion.span
-                        initial={false}
-                        layoutId={layoutId}
-                        transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                        className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
-                      />
-                    )}
-                  </>
-                );
-              }}
-            </Link>
-          ))}
+                  return (
+                    <>
+                      <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
+                      {showAsActive && (
+                        <motion.span
+                          initial={false}
+                          layoutId={layoutId}
+                          transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                          className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
+                        />
+                      )}
+                    </>
+                  );
+                }}
+              </Link>
+            ),
+          )}
         </div>
       </StickyBox>
     </>

@@ -52,7 +52,15 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: (args) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    return <Calendar {...args} mode="single" selected={date} onSelect={(selectedDate) => setDate(selectedDate)} className="rounded-md border" />;
+    return (
+      <Calendar
+        {...args}
+        mode="single"
+        selected={date}
+        onSelect={(selectedDate) => setDate(selectedDate)}
+        className="rounded-md border"
+      />
+    );
   },
 };
 
@@ -207,7 +215,14 @@ export const FixedWeeks: Story = {
   render: (args) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
-      <Calendar {...args} mode="single" fixedWeeks selected={date} onSelect={(selectedDate) => setDate(selectedDate)} className="rounded-md border" />
+      <Calendar
+        {...args}
+        mode="single"
+        fixedWeeks
+        selected={date}
+        onSelect={(selectedDate) => setDate(selectedDate)}
+        className="rounded-md border"
+      />
     );
   },
 };
@@ -218,6 +233,15 @@ export const FixedWeeks: Story = {
 export const Disabled: Story = {
   render: (args) => {
     const [date] = useState<Date | undefined>(new Date());
-    return <Calendar {...args} mode="single" disabled selected={date} onSelect={() => {}} className="rounded-md border opacity-50" />;
+    return (
+      <Calendar
+        {...args}
+        mode="single"
+        disabled
+        selected={date}
+        onSelect={() => {}}
+        className="rounded-md border opacity-50"
+      />
+    );
   },
 };

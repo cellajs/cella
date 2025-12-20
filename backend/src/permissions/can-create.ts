@@ -11,7 +11,9 @@ import permissionManager from '#/permissions/permissions-config';
  *
  * @param entity - Entity that user wants to create.
  */
-export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(entity: EntityModel<K>) => {
+export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(
+  entity: EntityModel<K>,
+) => {
   const userSystemRole = getContextUserSystemRole();
   const memberships = getContextMemberships();
 
@@ -21,7 +23,8 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
   // Step 1: Permission check
   const isAllowed = permissionManager.isPermissionAllowed(memberships, 'create', entity);
 
-  if (!isAllowed && !isSystemAdmin) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+  if (!isAllowed && !isSystemAdmin)
+    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
 
   const org = getContextOrganization();
 

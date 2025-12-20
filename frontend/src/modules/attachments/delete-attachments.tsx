@@ -3,11 +3,11 @@ import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutatio
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 interface Props {
-  entity: EntityPage;
+  entity: ContextEntityData;
   attachments: Attachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<Attachment[]>) => void;
@@ -33,7 +33,9 @@ const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: 
     callback?.({ data: attachments, status: 'success' });
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
+  return (
+    <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />
+  );
 };
 
 export default DeleteAttachments;

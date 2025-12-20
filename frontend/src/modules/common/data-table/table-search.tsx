@@ -25,7 +25,10 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(value);
 
-  const isSearching = useMemo(() => tableFetchingCount > 0 && !!inputValue.length, [inputValue.length, tableFetchingCount]);
+  const isSearching = useMemo(
+    () => tableFetchingCount > 0 && !!inputValue.length,
+    [inputValue.length, tableFetchingCount],
+  );
   const debouncedQuery = useDebounce(inputValue, 250);
 
   // Update parent query only when debouncedQuery changes

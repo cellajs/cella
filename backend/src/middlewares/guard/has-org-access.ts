@@ -28,10 +28,12 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
   const [organization] = await db.select().from(organizationsTable).where(idOrSlugFilter);
 
-  if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+  if (!organization)
+    throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
   // Check if user has access to organization (or is a system admin)
-  const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
+  const orgMembership =
+    memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
   if (userSystemRole !== 'admin' && !orgMembership) {
     throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
   }

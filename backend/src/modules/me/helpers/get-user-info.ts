@@ -49,7 +49,11 @@ export const getAuthInfo = async (userId: string) => {
  * @returns A list of sessions, with an additional `isCurrent` flag indicating if the session is the current active session.
  */
 export const getUserSessions = async (ctx: Context<Env>, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
-  const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId)).orderBy(desc(sessionsTable.createdAt));
+  const sessions = await db
+    .select()
+    .from(sessionsTable)
+    .where(eq(sessionsTable.userId, userId))
+    .orderBy(desc(sessionsTable.createdAt));
   const { sessionToken } = await getParsedSessionCookie(ctx);
 
   // Destructure/remove token from response

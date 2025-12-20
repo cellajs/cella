@@ -8,8 +8,10 @@ const buttonGroupVariants = cva(
   {
     variants: {
       orientation: {
-        horizontal: '[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none',
-        vertical: 'flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none',
+        horizontal:
+          '[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none',
+        vertical:
+          'flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none',
       },
     },
     defaultVariants: {
@@ -18,7 +20,11 @@ const buttonGroupVariants = cva(
   },
 );
 
-function ButtonGroup({ className, orientation, ...props }: React.ComponentProps<'div'> & VariantProps<typeof buttonGroupVariants>) {
+function ButtonGroup({
+  className,
+  orientation,
+  ...props
+}: React.ComponentProps<'div'> & VariantProps<typeof buttonGroupVariants>) {
   return (
     <div
       role="group"
@@ -50,7 +56,11 @@ function ButtonGroupText({
   );
 }
 
-function ButtonGroupSeparator({ className, orientation = 'vertical', ...props }: React.ComponentProps<typeof Separator>) {
+function ButtonGroupSeparator({
+  className,
+  orientation = 'vertical',
+  ...props
+}: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
       data-slot="button-group-separator"

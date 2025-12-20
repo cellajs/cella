@@ -4,13 +4,17 @@ Each module has a similar setup: `routes`, `schema` and the business logic in th
 We recommend not to delete modules you do not need. Simply don't include in the hono app. Strong decoupling is not yet realized, so many modules can't be decoupled without breaking changes at this moment.
 
 ### Core modules
-* attachments
 * auth
 * entities
 * system
 * me
 * memberships
-* metrics
 * organizations
-* requests
 * users
+
+### Optional modules
+* attachments
+* metrics
+* requests
+* pages
+

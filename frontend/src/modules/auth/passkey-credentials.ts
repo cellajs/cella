@@ -16,7 +16,9 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const email = useUserStore.getState().user.email;
   const generatedName = generatePasskeyName();
-  const nameOnDevice = isDevelopment ? `${email} (${generatedName}) for ${appConfig.name}` : `${email} (${generatedName})`;
+  const nameOnDevice = isDevelopment
+    ? `${email} (${generatedName}) for ${appConfig.name}`
+    : `${email} (${generatedName})`;
 
   const credential = await navigator.credentials.create({
     publicKey: {
@@ -68,7 +70,9 @@ export const getPasskeyVerifyCredential = async (
   }));
 
   // Prompt user to authenticate with a passkey
-  const credential = await navigator.credentials.get({ publicKey: { challenge, allowCredentials, userVerification: 'required' } });
+  const credential = await navigator.credentials.get({
+    publicKey: { challenge, allowCredentials, userVerification: 'required' },
+  });
 
   const { response, rawId } = validateCredentials(credential);
 

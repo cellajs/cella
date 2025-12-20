@@ -14,7 +14,11 @@ import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => {
+export const CellaCustomBlockTypeSelect = ({
+  headingLevels,
+}: {
+  headingLevels: CustomBlockNoteMenuProps['headingLevels'];
+}) => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -43,7 +47,9 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   const selectedItem = useMemo(() => {
     return filteredItems.find(
       (el) =>
-        el.type === currentBlock.type && el.props?.level === currentBlock.props.level && !!el.props?.isToggleable === currentBlock.props.isToggleable,
+        el.type === currentBlock.type &&
+        el.props?.level === currentBlock.props.level &&
+        !!el.props?.isToggleable === currentBlock.props.isToggleable,
     );
   }, [filteredItems, currentBlock]);
 
@@ -67,7 +73,10 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
           title: name,
           icon: <Icon size={16} />,
           onClick: () => handleItemClick(item),
-          isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block as unknown as CustomBlock, name) : block.type === type,
+          isSelected:
+            block.type === 'heading'
+              ? isHeadingMenuItemActive(block as unknown as CustomBlock, name)
+              : block.type === type,
         };
       }),
     [block, filteredItems, editor, selectedBlocks],
@@ -88,14 +97,24 @@ export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: C
   return (
     <Components.Generic.Menu.Root>
       <Components.Generic.Menu.Trigger>
-        <Components.FormattingToolbar.Button className="bn-dropdown-button" label={selectedItem?.name ?? ''} mainTooltip="Select block type">
+        <Components.FormattingToolbar.Button
+          className="bn-dropdown-button"
+          label={selectedItem?.name ?? ''}
+          mainTooltip="Select block type"
+        >
           {selectedItem && <selectedItem.icon />}
           <ChevronDownIcon size={16} />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown className="p-2">
         {fullItems.map(({ title, icon, isSelected, onClick }) => (
-          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
+          <Components.Generic.Menu.Item
+            className="bn-menu-item"
+            key={title}
+            onClick={onClick}
+            icon={icon}
+            checked={isSelected}
+          >
             {title}
           </Components.Generic.Menu.Item>
         ))}

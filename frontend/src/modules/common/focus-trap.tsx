@@ -1,6 +1,14 @@
 import { useEffect, useRef } from 'react';
 
-const FocusTrap = ({ children, mainElementId, active = true }: { children: React.ReactNode; mainElementId?: string; active?: boolean }) => {
+const FocusTrap = ({
+  children,
+  mainElementId,
+  active = true,
+}: {
+  children: React.ReactNode;
+  mainElementId?: string;
+  active?: boolean;
+}) => {
   const focusTrapRef = useRef<HTMLDivElement | null>(null);
 
   const handleTabKey = (e: KeyboardEvent) => {

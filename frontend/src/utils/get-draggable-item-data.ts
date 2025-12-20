@@ -23,6 +23,11 @@ export type DraggableItemData<T, D extends string> = {
  *
  * @returns An object containing the item data for DnD functionality.
  */
-export const getDraggableItemData = <T, D extends string>(item: T, itemOrder: number, type: D, itemType: EntityType): DraggableItemData<T, D> => {
+export const getDraggableItemData = <T, D extends string>(
+  item: T,
+  itemOrder: number,
+  type: D,
+  itemType: EntityType,
+): DraggableItemData<T, D> => {
   return { dragItem: true, item, order: itemOrder, type, itemType };
 };

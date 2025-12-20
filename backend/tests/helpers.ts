@@ -65,7 +65,10 @@ export async function enableMFAForUser(userId: string) {
  * Verify email for a user
  */
 export async function verifyUserEmail(email: string) {
-  await db.update(emailsTable).set({ verified: true, verifiedAt: pastIsoDate() }).where(eq(emailsTable.email, email.toLowerCase()));
+  await db
+    .update(emailsTable)
+    .set({ verified: true, verifiedAt: pastIsoDate() })
+    .where(eq(emailsTable.email, email.toLowerCase()));
 }
 
 /**

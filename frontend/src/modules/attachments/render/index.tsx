@@ -50,13 +50,21 @@ export const AttachmentRender = ({
       <Suspense fallback={<Spinner className="mt-[45vh]" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
-            <ReactPanZoom image={url} alt={altName} onPanStateToggle={onPanStateToggle} imageClassName={itemClassName} showButtons={showButtons} />
+            <ReactPanZoom
+              image={url}
+              alt={altName}
+              onPanStateToggle={onPanStateToggle}
+              imageClassName={itemClassName}
+              showButtons={showButtons}
+            />
           ) : (
             <img src={url} alt={altName} className={`${itemClassName} w-full h-full`} />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="w-[80vw] mx-auto -mt-48 h-20" />}
         {type.includes('video') && <RenderVideo src={url} className="max-h-[90vh] max-w-[80rem] mx-auto" />}
-        {type.includes('pdf') && <RenderPDF file={url} className="w-[95vw] max-w-[70rem] mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />}
+        {type.includes('pdf') && (
+          <RenderPDF file={url} className="w-[95vw] max-w-[70rem] mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />
+        )}
       </Suspense>
     </div>
   );

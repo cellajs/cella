@@ -7,7 +7,11 @@ import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerPortal } from '~/modules/ui/drawer';
 
-export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number, allowedTypes: CustomBlockTypes[]) => {
+export const slashMenu = (
+  props: SuggestionMenuProps<DefaultReactSuggestionItem>,
+  originalItemCount: number,
+  allowedTypes: CustomBlockTypes[],
+) => {
   const { items, loadingState, selectedIndex, onItemClick } = props;
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
@@ -18,7 +22,14 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
     const { key: pressedKey } = e;
     const itemIndex = Number.parseInt(pressedKey, 10) - 1; // Convert pressed key to an index
 
-    if (isMobile || items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount) return;
+    if (
+      isMobile ||
+      items.length !== originalItemCount ||
+      Number.isNaN(itemIndex) ||
+      itemIndex < 0 ||
+      itemIndex >= indexedItemCount
+    )
+      return;
 
     const item = items[itemIndex];
     if (!item) return;
@@ -26,7 +37,10 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
     return triggerItemClick(item, e);
   };
 
-  const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const triggerItemClick = (
+    item: DefaultReactSuggestionItem,
+    event: KeyboardEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  ) => {
     event.preventDefault();
     onItemClick?.(item);
   };
@@ -60,7 +74,9 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
     <div className="slash-menu">
       {items.map((item, index) => (
         <div role="tablist" key={item.title}>
-          {!isMobile && index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
+          {!isMobile && index === indexedItemCount && items.length === originalItemCount && (
+            <hr className="slash-menu-separator" />
+          )}
           <button
             ref={(el) => {
               itemRefs.current[index] = el;

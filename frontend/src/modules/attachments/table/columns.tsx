@@ -20,7 +20,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/users/user-cell';
@@ -28,7 +28,7 @@ import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
-export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
+export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const storeUserSystemRole = useUserStore((state) => state.systemRole);
@@ -112,7 +112,11 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip="true"
             data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
           >
-            {isInCloud ? <CloudIcon className="text-success" size={16} /> : <CloudOffIcon className="opacity-50" size={16} />}
+            {isInCloud ? (
+              <CloudIcon className="text-success" size={16} />
+            ) : (
+              <CloudOffIcon className="opacity-50" size={16} />
+            )}
           </div>
         );
       },
@@ -227,7 +231,9 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
+        <span className="group-hover:underline underline-offset-4 truncate font-light">
+          {row.filename || <span className="text-muted">-</span>}
+        </span>
       ),
     },
     {
@@ -238,7 +244,9 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
+        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
+          {formatBytes(row.size)}
+        </div>
       ),
     },
     {

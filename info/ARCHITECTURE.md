@@ -3,7 +3,7 @@ This document describes the high-level architecture of Cella.
 
 ### Target product
 * frequent-use or heavy use web applications
-* focused on user generated content that requires some form of authentication/authorization. So either semi-public or private access.
+* focused on user-generated content that requires some form of authentication/authorization. So either semi-public or private access.
 * Requires a great UX on different devices, but native apps are not a direct priority
 * Development budget and time is limited
 * Fullstack development is seen as beneficial to work effectively and to provide engineering stability. 
@@ -14,7 +14,7 @@ This document describes the high-level architecture of Cella.
  * Stay humble and remain a template, not a framework. So prevent abstraction layers and leverage libraries to the fullest extent.
  * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
  * Modularity. As Cella will grow, we need to make sure you can scaffold only the modules that you need.
- * Open standards. Our long term vision is that each Cella - as in each cell - can speak fluently with other cells.
+ * Open standards. Our long-term vision is that each Cella - as in each cell - can speak fluently with other cells.
  * Focused on client-side rendering (CSR) and static site generation (SSG). These best support the hybrid idiom to support offline and sync capabilities to reduce 'server dependency'. 
 
 ### Backend
@@ -100,7 +100,7 @@ Both frontend and backend have business logic split in modules. Most of them are
 
 Zooming in on some of the frontend modules:
 * `common`: a large set of reusable react components and services 
-* `ui`: Full with shadcn UI components. They have some small tweaks, but not many.
+* `ui`: Full of shadcn UI components. They have some small tweaks, but not many.
 * `attachments`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
 ## API client

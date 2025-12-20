@@ -2,7 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CalendarIcon, CheckIcon, EyeIcon, EyeOffIcon, SearchIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea } from '~/modules/ui/input-group';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupText,
+  InputGroupTextarea,
+} from '~/modules/ui/input-group';
 
 /**
  * Flexible input group components that combine inputs with addons, buttons, and text for enhanced form interactions.
@@ -306,7 +313,12 @@ export const NumberInput: Story = {
             -
           </InputGroupButton>
         </InputGroupAddon>
-        <InputGroupInput type="number" value={value} onChange={(e) => setValue(e.target.value)} className="text-center" />
+        <InputGroupInput
+          type="number"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="text-center"
+        />
         <InputGroupAddon align="inline-end">
           <InputGroupButton type="button" onClick={increment}>
             +

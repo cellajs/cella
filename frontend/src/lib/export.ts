@@ -21,7 +21,11 @@ type Column = ColumnOrColumnGroup<Row>;
  *
  * @returns A promise that resolves when CSV is downloaded.
  */
-export async function exportToCsv<R extends Row>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
+export async function exportToCsv<R extends Row>(
+  columns: { key: string; name: ReactElement | string }[],
+  rows: R[],
+  fileName: string,
+) {
   if (!rows.length) return;
 
   const preparedColumns = columns.filter((column) => filterColumns(column));

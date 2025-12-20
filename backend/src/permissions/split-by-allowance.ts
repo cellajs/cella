@@ -16,7 +16,12 @@ import permissionManager, { type EntityAction } from '#/permissions/permissions-
  * @param memberships - The user's memberships.
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
-export const splitByAllowance = async (action: EntityAction, entityType: EntityType, ids: string[], memberships: MembershipBaseModel[]) => {
+export const splitByAllowance = async (
+  action: EntityAction,
+  entityType: EntityType,
+  ids: string[],
+  memberships: MembershipBaseModel[],
+) => {
   const userSystemRole = getContextUserSystemRole();
 
   // Resolve entities

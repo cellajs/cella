@@ -20,6 +20,7 @@ export type EntityAction = 'create' | 'read' | 'update' | 'delete';
 const organization = new Context('organization', ['admin', 'member']);
 
 new Product('attachment', new Set([organization]));
+new Product('page', new Set([]));
 
 /**
  * Initialize and configure access policies.
@@ -36,6 +37,8 @@ permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }:
     case 'attachment':
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1 });
+      break;
+    case 'page':
       break;
   }
 });

@@ -13,26 +13,28 @@ type Props = {
   badge?: ReactNode;
 } & ButtonProps;
 
-export const TableBarButton = forwardRef<HTMLButtonElement, Props>(({ icon: Icon, label, badge, className, ...props }, ref) => {
-  const { t } = useTranslation();
-  const id = slugify(label, { lower: true, strict: true });
-  return (
-    <Button asChild {...props}>
-      <motion.button
-        ref={ref}
-        layout="size"
-        layoutId={id}
-        className={className}
-        transition={{ bounce: 0, duration: 0.3, ease: 'easeOut' }}
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.6, opacity: 0 }}
-      >
-        {Icon && <motion.span className="flex items-center mr-2">{<Icon size={16} />}</motion.span>}
-        {label && <span>{t(label)}</span>}
+export const TableBarButton = forwardRef<HTMLButtonElement, Props>(
+  ({ icon: Icon, label, badge, className, ...props }, ref) => {
+    const { t } = useTranslation();
+    const id = slugify(label, { lower: true, strict: true });
+    return (
+      <Button asChild {...props}>
+        <motion.button
+          ref={ref}
+          layout="size"
+          layoutId={id}
+          className={className}
+          transition={{ bounce: 0, duration: 0.3, ease: 'easeOut' }}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.6, opacity: 0 }}
+        >
+          {Icon && <motion.span className="flex items-center mr-2">{<Icon size={16} />}</motion.span>}
+          {label && <span>{t(label)}</span>}
 
-        {badge && <Badge context="button">{badge}</Badge>}
-      </motion.button>
-    </Button>
-  );
-});
+          {badge && <Badge context="button">{badge}</Badge>}
+        </motion.button>
+      </Button>
+    );
+  },
+);

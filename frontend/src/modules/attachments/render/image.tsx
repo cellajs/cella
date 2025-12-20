@@ -26,7 +26,10 @@ interface ControlButtonProps {
 
 const ControlButton = ({ tooltipContent, onClick, icon, className }: ControlButtonProps) => (
   <TooltipButton toolTipContent={tooltipContent}>
-    <Button onClick={onClick} className={cn('bg-background border border-input rounded-none hover:bg-accent text-accent-foreground', className)}>
+    <Button
+      onClick={onClick}
+      className={cn('bg-background border border-input rounded-none hover:bg-accent text-accent-foreground', className)}
+    >
       {icon}
     </Button>
   </TooltipButton>
@@ -96,9 +99,24 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
       <>
         {showButtons && (
           <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-6.5rem)] bottom-3 gap-0 rounded-md text-sm shadow-xs bg-transparent ring-offset-background">
-            <ControlButton tooltipContent="Zoom in" onClick={zoomIn} icon={<PlusIcon size={14} />} className="rounded-l-md border-r-0 " />
-            <ControlButton tooltipContent="Zoom out" onClick={zoomOut} icon={<MinusIcon size={14} />} className="border-r-0 " />
-            <ControlButton tooltipContent="Rotate right" onClick={rotateRight} icon={<RotateCwSquareIcon size={14} />} className="border-r-0 " />
+            <ControlButton
+              tooltipContent="Zoom in"
+              onClick={zoomIn}
+              icon={<PlusIcon size={14} />}
+              className="rounded-l-md border-r-0 "
+            />
+            <ControlButton
+              tooltipContent="Zoom out"
+              onClick={zoomOut}
+              icon={<MinusIcon size={14} />}
+              className="border-r-0 "
+            />
+            <ControlButton
+              tooltipContent="Rotate right"
+              onClick={rotateRight}
+              icon={<RotateCwSquareIcon size={14} />}
+              className="border-r-0 "
+            />
 
             {onPanStateToggle && (
               <ControlButton
@@ -112,7 +130,12 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
               />
             )}
 
-            <ControlButton tooltipContent="Reset" onClick={resetAll} icon={<RefreshCwIcon size={14} />} className="rounded-r-md " />
+            <ControlButton
+              tooltipContent="Reset"
+              onClick={resetAll}
+              icon={<RefreshCwIcon size={14} />}
+              className="rounded-r-md "
+            />
           </div>
         )}
 
@@ -128,7 +151,13 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
           key={dx}
         >
           {/* Image */}
-          <img ref={imgRef} style={{ transform: `rotate(${rotation * 90}deg)`, width: '100%' }} className={imageClassName} src={image} alt={alt} />
+          <img
+            ref={imgRef}
+            style={{ transform: `rotate(${rotation * 90}deg)`, width: '100%' }}
+            className={imageClassName}
+            src={image}
+            alt={alt}
+          />
         </ImageViewer>
       </>
     );

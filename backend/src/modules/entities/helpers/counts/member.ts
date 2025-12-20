@@ -7,7 +7,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
 
 function getEntityIdColumn(entityType: ContextEntityType) {
-  const targetEntityIdField = appConfig.entityIdFields[entityType];
+  const targetEntityIdField = appConfig.entityIdColumnKeys[entityType];
   const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
   if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);
   return entityIdColumn;
@@ -21,7 +21,7 @@ function getEntityIdColumn(entityType: ContextEntityType) {
  * @returns Query object that can be executed
  */
 export const getMemberCountsQuery = (entityType: ContextEntityType) => {
-  const targetEntityIdField = appConfig.entityIdFields[entityType];
+  const targetEntityIdField = appConfig.entityIdColumnKeys[entityType];
   const entityIdColumn = getEntityIdColumn(entityType);
 
   if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);

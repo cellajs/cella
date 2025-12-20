@@ -16,7 +16,11 @@ import { CellaCustomBlockTypeSelect } from '~/modules/common/blocknote/custom-fo
 import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export const CustomFormattingToolbar = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => (
+export const CustomFormattingToolbar = ({
+  headingLevels,
+}: {
+  headingLevels: CustomBlockNoteMenuProps['headingLevels'];
+}) => (
   <FormattingToolbarController
     formattingToolbar={() => {
       // to be able to use in sheet
@@ -31,7 +35,9 @@ export const CustomFormattingToolbar = ({ headingLevels }: { headingLevels: Cust
       }, []);
       return (
         <FormattingToolbar>
-          {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect headingLevels={headingLevels} />}
+          {customFormattingToolBarConfig.blockTypeSelect && (
+            <CellaCustomBlockTypeSelect headingLevels={headingLevels} />
+          )}
           {customFormattingToolBarConfig.blockStyleSelect && (
             <>
               <BasicTextStyleButton basicTextStyle="bold" />
