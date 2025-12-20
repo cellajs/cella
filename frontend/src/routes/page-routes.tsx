@@ -1,11 +1,12 @@
 import { onlineManager } from '@tanstack/react-query';
-import { createRoute, notFound, useLoaderData } from '@tanstack/react-router';
+import { createRoute, notFound, useLoaderData, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 
 import ErrorNotice from '~/modules/common/error-notice';
 import { pageQueryOptions } from '~/modules/pages/query';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
+import { pageRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 import appTitle from '~/utils/app-title';
 
 const PagePage = lazy(() => import('~/modules/pages/page-page'));
@@ -13,6 +14,7 @@ const PagePage = lazy(() => import('~/modules/pages/page-page'));
 export const PageRoute = createRoute({
   path: '/page/$id',
   staticData: { isAuth: false },
+  validateSearch: pageRouteSearchParamsSchema,
   loader: async ({ params: { id } }) => {
     const opts = pageQueryOptions(id);
 
@@ -35,9 +37,10 @@ export const PageRoute = createRoute({
 
   component: () => {
     const page = useLoaderData({ from: PageRoute.id });
+    const { mode } = useSearch({ from: PageRoute.id });
     return (
       <Suspense>
-        <PagePage key={page.id} pageId={page.id} />
+        <PagePage key={page.id} pageId={page.id} mode={mode} />
       </Suspense>
     );
   },

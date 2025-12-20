@@ -37,39 +37,3 @@ export const usePagesList = () => {
     fetchNextPage,
   };
 };
-
-// #endregion
-
-// #region Mutations
-
-// export const useCreatePages = () => {
-//   return useTableMutation({
-//     table: 'pages',
-//     type: 'create',
-//     mutationFn: async (toCreate: Page[]): Promise<Page[]> => {
-//       return toCreate;
-//     },
-//   });
-// };
-
-// export const useUpdatePages = () => {
-//   return useTableMutation({
-//     table: 'pages',
-//     type: 'update',
-//     mutationFn: async (toUpdate: Page[]): Promise<Page[]> => {
-//       return toUpdate;
-//     },
-//   });
-// };
-
-// export const useDeletePages = () => {
-//   return useTableMutation({
-//     table: 'pages',
-//     type: 'delete',
-//     mutationFn: async (toDelete: Page[]): Promise<Page[]> => {
-//       return toDelete;
-//     },
-//   });
-// };
-
-// #endregion

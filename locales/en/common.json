@@ -34,6 +34,7 @@
   "authenticator_app": "Authenticator app",
   "backend_not_ready": "Backend initializing",
   "backend_not_ready.text": "It`s likely the backend is compiling and will be ready shortly.",
+  "back_to_app": "Back to app",
   "bio": "Bio",
   "board_view": "Board view",
   "book": "Book",

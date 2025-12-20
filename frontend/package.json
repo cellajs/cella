@@ -171,6 +171,7 @@
     "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/browser": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "cross-env": "^10.1.0",

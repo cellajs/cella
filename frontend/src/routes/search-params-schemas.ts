@@ -56,3 +56,10 @@ export const attachmentsRouteSearchParamsSchema = zGetAttachmentsData.shape.quer
     attachmentDialogId: z.string().optional(),
     groupId: z.string().optional(),
   });
+
+/**
+ * Search params schema for page route.
+ */
+export const pageRouteSearchParamsSchema = z.object({
+  mode: z.enum(['view', 'edit']).default('view').catch('view'),
+});
