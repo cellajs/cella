@@ -1,6 +1,4 @@
 import type z from 'zod';
-import { pagesListSearchSchema } from './schemas';
+import { pagesRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 
-export type PageStatus = 'unpublished' | 'published' | 'archived';
-
-export type PagesSearch = z.infer<typeof pagesListSearchSchema>;
+export type PagesRouteSearchParams = z.infer<typeof pagesRouteSearchParamsSchema>;

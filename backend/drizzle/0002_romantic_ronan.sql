@@ -1,0 +1,1 @@
+ALTER TABLE "pages" ALTER COLUMN "modified_by" DROP NOT NULL;

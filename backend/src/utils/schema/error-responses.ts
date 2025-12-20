@@ -92,7 +92,12 @@ export const errorResponseRefs: Record<ErrorCode, { $ref: Ref }> = errorResponse
 );
 
 // Registry helpers
-const registerResponseFromZod = (registry: OpenAPIRegistry, responseName: string, schemaName: string, response: ZodBackedResponse) => {
+const registerResponseFromZod = (
+  registry: OpenAPIRegistry,
+  responseName: string,
+  schemaName: string,
+  response: ZodBackedResponse,
+) => {
   const schema = response.content['application/json'].schema;
   registry.register(schemaName, schema);
   registry.registerComponent('responses', responseName, {

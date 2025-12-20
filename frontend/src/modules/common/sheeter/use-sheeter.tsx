@@ -49,7 +49,14 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   create: (content, data) => {
     // Add defaults and a key for reactivity
-    const defaults = { drawerOnMobile: true, showCloseButton: false, open: true, modal: true, key: Date.now(), closeSheetOnRouteChange: true };
+    const defaults = {
+      drawerOnMobile: true,
+      showCloseButton: false,
+      open: true,
+      modal: true,
+      key: Date.now(),
+      closeSheetOnRouteChange: true,
+    };
 
     set((state) => ({
       sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...defaults, ...data, content }],

@@ -132,7 +132,14 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
           <CommandList className="px-1 h-full">
             <AnimatePresence mode="wait">
               {!isFetching && !items.length ? (
-                <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
+                <motion.div
+                  key="empty-state"
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={variants}
+                  className="h-full"
+                >
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
                       <ContentPlaceholder
@@ -143,7 +150,11 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Users2Icon} title="common:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
+                      <ContentPlaceholder
+                        icon={Users2Icon}
+                        title="common:invite_members_search.text"
+                        titleProps={{ appName: appConfig.name }}
+                      />
                     </CommandEmpty>
                   )}
                 </motion.div>
@@ -172,18 +183,32 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                               onSelect={() => onSelect(email)}
                             >
                               <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                                <AvatarWrap type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
+                                <AvatarWrap
+                                  type={entityType}
+                                  className="h-8 w-8"
+                                  id={id}
+                                  name={name}
+                                  url={thumbnailUrl}
+                                />
                                 <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
                                   {isMobile ? email : name}
                                 </span>
                               </div>
 
                               <div className="flex items-center gap-2 min-w-0">
-                                <Badge size="sm" variant="plain" className="group-data-[already-member=true]:flex hidden gap-1">
+                                <Badge
+                                  size="sm"
+                                  variant="plain"
+                                  className="group-data-[already-member=true]:flex hidden gap-1"
+                                >
                                   <UserIcon size={14} />
                                   <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
                                 </Badge>
-                                <CheckIcon size={16} strokeWidth={3} className="flex text-success group-data-[was-selected=false]:hidden" />
+                                <CheckIcon
+                                  size={16}
+                                  strokeWidth={3}
+                                  className="flex text-success group-data-[was-selected=false]:hidden"
+                                />
                                 <span className="font-light max-sm:hidden group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden">
                                   {email}
                                 </span>

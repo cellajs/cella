@@ -5,7 +5,9 @@ import type { PgColumn, PgVarcharBuilderInitial } from 'drizzle-orm/pg-core';
  * Type representing the column names used to identify an entity using other entities' IDs' as foreign keys.
  */
 type ContextEntityTypeIdColumnNames = {
-  [K in keyof typeof appConfig.entityIdColumnKeys]: K extends ContextEntityType ? (typeof appConfig.entityIdColumnKeys)[K] : never;
+  [K in keyof typeof appConfig.entityIdColumnKeys]: K extends ContextEntityType
+    ? (typeof appConfig.entityIdColumnKeys)[K]
+    : never;
 }[keyof typeof appConfig.entityIdColumnKeys];
 
 /**
@@ -28,4 +30,7 @@ export type GeneratedColumn = PgColumn<{
   generated: undefined;
 }>;
 
-export type ContextEntityTypeColumns = Record<ContextEntityTypeIdColumnNames, PgVarcharBuilderInitial<'', [string, ...string[]], undefined>>;
+export type ContextEntityTypeColumns = Record<
+  ContextEntityTypeIdColumnNames,
+  PgVarcharBuilderInitial<'', [string, ...string[]], undefined>
+>;

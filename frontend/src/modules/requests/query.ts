@@ -15,7 +15,10 @@ import {
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import {
+  baseInfiniteQueryOptions,
+  infiniteQueryUseCachedIfCompleteOptions,
+} from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -24,7 +27,8 @@ export const requestsKeys = {
   all: ['requests'] as const,
   table: {
     base: () => ['requests', 'table'] as const,
-    entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) => [...requestsKeys.table.base(), filters] as const,
+    entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) =>
+      [...requestsKeys.table.base(), filters] as const,
   },
   approve: () => ['requests', 'approve'],
   create: () => ['requests', 'create'],

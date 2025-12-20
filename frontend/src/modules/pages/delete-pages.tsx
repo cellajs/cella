@@ -4,13 +4,13 @@ import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useTableMutation } from './utils/mutations';
 
-type DeletePagesFormProps = {
+type Props = {
   pages: Page[];
   isDialog?: boolean;
   callback?: (args: CallbackArgs<Page[]>) => void;
 };
 
-const DeletePagesForm = ({ pages, callback, isDialog }: DeletePagesFormProps) => {
+const DeletePages = ({ pages, callback, isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
 
   const mutation = useTableMutation({
@@ -38,4 +38,4 @@ const DeletePagesForm = ({ pages, callback, isDialog }: DeletePagesFormProps) =>
   );
 };
 
-export default DeletePagesForm;
+export default DeletePages;

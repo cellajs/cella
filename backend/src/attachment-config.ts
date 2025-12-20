@@ -13,4 +13,6 @@ export const attachmentEntityColumns = {
 /**
  * Include app-specific entity id indexes - or custom indexes - for attachments table.
  */
-export const attachmentEntityIndexes = (table: { organizationId: PgColumn }) => [index('attachments_organization_id_index').on(table.organizationId)];
+export const attachmentEntityIndexes = (table: { organizationId: PgColumn }) => [
+  index('attachments_organization_id_index').on(table.organizationId),
+];

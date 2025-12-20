@@ -26,7 +26,9 @@ const OrganizationsTable = () => {
   const updateMember = useMemberUpdateMutation();
 
   const mutateOrganizationsCache = useMutateQueryData(organizationQueryKeys.list.base);
-  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
+  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({
+    from: '/appLayout/system/organizations',
+  });
 
   // Table state
   const { q, sort, order } = search;
@@ -80,7 +82,11 @@ const OrganizationsTable = () => {
           const updatedOrganization = { ...organization, membership: { ...membership, role: newRole } };
           mutateOrganizationsCache.update([updatedOrganization]);
         } else {
-          await membershipInvite({ query: mutationVariables, path: { orgIdOrSlug }, body: { emails: [user.email], role: newRole } });
+          await membershipInvite({
+            query: mutationVariables,
+            path: { orgIdOrSlug },
+            body: { emails: [user.email], role: newRole },
+          });
 
           // TODO REVIEW
           // const targetMenuItem = menu.organization.find((org) => org.id === organization.id);
@@ -139,7 +145,11 @@ const OrganizationsTable = () => {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:organizations').toLowerCase() }} />
+            <ContentPlaceholder
+              icon={BirdIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:organizations').toLowerCase() }}
+            />
           ),
         }}
       />

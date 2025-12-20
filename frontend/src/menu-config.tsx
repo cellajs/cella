@@ -15,7 +15,8 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
   const callback = (args: CallbackArgs<Organization>) => {
     useDialoger.getState().remove('create-organization');
-    if (args.status === 'success') router.navigate({ to: '/organization/$idOrSlug/members', params: { idOrSlug: args.data.slug } });
+    if (args.status === 'success')
+      router.navigate({ to: '/organization/$idOrSlug/members', params: { idOrSlug: args.data.slug } });
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
@@ -23,7 +24,11 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
     id: 'create-organization',
     triggerRef,
     title: i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() }),
-    titleContent: <UnsavedBadge title={i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
+    titleContent: (
+      <UnsavedBadge
+        title={i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() })}
+      />
+    ),
     description: i18n.t('common:create_organization.text'),
   });
 };

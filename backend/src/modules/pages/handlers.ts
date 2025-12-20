@@ -1,9 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getTableColumns, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
-import { pagesTable } from '#/db/schema/pages';
+import { PageModel, pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity.ts';
 import { AppError } from '#/lib/errors';
 import pagesRoutes from '#/modules/pages/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
@@ -13,7 +15,6 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { Page } from './schema';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -36,13 +37,21 @@ const pagesRouteHandlers = app
    */
   .openapi(pagesRoutes.createPage, async (ctx) => {
     const pageData = ctx.req.valid('json');
+    console.log(pageData);
 
     const user = getContextUser();
 
     const newPage = {
-      createdBy: user.id,
-      modifiedBy: user.id,
       ...pageData,
+      id: nanoid(),
+      entityType: 'page' as const,
+      createdAt: getIsoDate(),
+      createdBy: user.id,
+      description: '',
+      displayOrder: 3,
+      keywords: '',
+      modifiedAt: null,
+      modifiedBy: null,
     };
 
     const [pageRecord] = await db.insert(pagesTable).values(newPage).returning();
@@ -55,32 +64,15 @@ const pagesRouteHandlers = app
    * Get Pages
    */
   .openapi(pagesRoutes.getPages, async (ctx) => {
-    const {
-      q,
-      // pageId,
-      sort,
-      order,
-      limit,
-      offset,
-      // matchMode,
-      // acceptedCutOff,
-    } = ctx.req.valid('query');
+    const { q, sort, order, limit, offset } = ctx.req.valid('query');
 
     const matchMode = 'all';
 
     const filters: SQL[] = [];
-    // const filters = [eq(attachmentsTable.organizationId, organization.id)];
 
     const trimmedQuery = q?.trim();
     if (trimmedQuery) {
       const searchTerms = trimmedQuery.split(/\s+/).filter(Boolean);
-
-      // maybe if page id, try to grab group?
-      // i.e., add to filters
-
-      // matching parents/children/groups?
-      // matchingUsers // does this need to be a separate thing?
-      // or should i just join
 
       const queryToken = prepareStringForILikeFilter(trimmedQuery);
       const qFilters =
@@ -106,11 +98,9 @@ const pagesRouteHandlers = app
 
     const orderColumn = getOrderColumn(
       {
-        displayOrder: pagesTable.displayOrder,
         status: pagesTable.status,
         createdAt: pagesTable.createdAt,
-        createdBy: pagesTable.createdBy,
-        modifiedAt: pagesTable.modifiedAt,
+        name: pagesTable.name,
       },
       sort,
       pagesTable.status,
@@ -123,7 +113,7 @@ const pagesRouteHandlers = app
       .leftJoin(usersTable, eq(usersTable.id, pagesTable.createdBy))
       .where(and(or(...filters)));
 
-    const promises: [Promise<Page[]>, Promise<number>] = [
+    const promises: [Promise<PageModel[]>, Promise<number>] = [
       pagesQuery.orderBy(orderColumn).limit(limit).offset(offset),
       db
         .select({ total: count() })
@@ -141,7 +131,8 @@ const pagesRouteHandlers = app
   .openapi(pagesRoutes.getPage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const page = await getValidProductEntity(id, 'page', 'organization', 'read');
+    const page = await resolveEntity('page', id);
+    if (!page) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'page' });
 
     return ctx.json(page, 200);
   })

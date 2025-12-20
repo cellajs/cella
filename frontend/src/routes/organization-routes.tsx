@@ -27,7 +27,9 @@ export const OrganizationRoute = createRoute({
     const bootstrap = organizationQueryOptions(idOrSlug);
     const bootstrapWithRevalidate = { ...bootstrap, revalidateIfStale: true };
 
-    const organization = isOnline ? await queryClient.ensureQueryData(bootstrapWithRevalidate) : queryClient.getQueryData(bootstrap.queryKey);
+    const organization = isOnline
+      ? await queryClient.ensureQueryData(bootstrapWithRevalidate)
+      : queryClient.getQueryData(bootstrap.queryKey);
 
     if (!organization) {
       if (!isOnline) useToastStore.getState().showToast(i18n.t('common:offline_cache_miss.text'), 'warning');

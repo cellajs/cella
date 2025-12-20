@@ -46,7 +46,10 @@ describe('System Invitation', async () => {
 
   // Helper function to make invite request
   async function makeInviteRequest(emails: string[], sessionCookie: string) {
-    return await client['system']['invite'].$post({ json: { emails } }, { headers: { ...defaultHeaders, Cookie: sessionCookie } });
+    return await client['system']['invite'].$post(
+      { json: { emails } },
+      { headers: { ...defaultHeaders, Cookie: sessionCookie } },
+    );
   }
 
   describe('Basic Functionality', () => {
@@ -55,7 +58,11 @@ describe('System Invitation', async () => {
       const res = await makeInviteRequest(['user1@cella.com', 'user2@cella.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as { success: boolean; rejectedItems: string[]; invitesSentCount: number };
+      const response = (await parseResponse(res)) as {
+        success: boolean;
+        rejectedItems: string[];
+        invitesSentCount: number;
+      };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(2);
       expect(response.rejectedItems).toHaveLength(0);
@@ -71,7 +78,11 @@ describe('System Invitation', async () => {
       const res = await makeInviteRequest(['existing@cella.com', 'newuser@cella.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as { success: boolean; rejectedItems: string[]; invitesSentCount: number };
+      const response = (await parseResponse(res)) as {
+        success: boolean;
+        rejectedItems: string[];
+        invitesSentCount: number;
+      };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(1); // Only new user
       expect(response.rejectedItems).toContain('existing@cella.com');
@@ -82,7 +93,11 @@ describe('System Invitation', async () => {
       const res = await makeInviteRequest(['user@cella.com', 'user@cella.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as { success: boolean; rejectedItems: string[]; invitesSentCount: number };
+      const response = (await parseResponse(res)) as {
+        success: boolean;
+        rejectedItems: string[];
+        invitesSentCount: number;
+      };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(1); // Only one invitation sent
       expect(response.rejectedItems).toHaveLength(0);
@@ -91,7 +106,10 @@ describe('System Invitation', async () => {
 
   describe('Security & Authorization', () => {
     it('should reject unauthenticated requests', async () => {
-      const res = await client['system']['invite'].$post({ json: { emails: ['user@cella.com'] } }, { headers: defaultHeaders });
+      const res = await client['system']['invite'].$post(
+        { json: { emails: ['user@cella.com'] } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(401);
     });
@@ -135,7 +153,9 @@ describe('System Invitation', async () => {
       const secondRes = await makeInviteRequest(['user@cella.com'], sessionCookie);
       expect(secondRes.status).toBe(200);
 
-      const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(secondRes);
+      const response = await parseResponse<{ success: boolean; rejectedItems: string[]; invitesSentCount: number }>(
+        secondRes,
+      );
       expect(response.success).toBe(false); // No new invitations
       expect(response.invitesSentCount).toBe(0);
       expect(response.rejectedItems).toContain('user@cella.com');
@@ -147,7 +167,11 @@ describe('System Invitation', async () => {
       const res = await makeInviteRequest(emails, sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as { success: boolean; rejectedItems: string[]; invitesSentCount: number };
+      const response = (await parseResponse(res)) as {
+        success: boolean;
+        rejectedItems: string[];
+        invitesSentCount: number;
+      };
       expect(response.success).toBe(true);
       expect(response.invitesSentCount).toBe(3);
       expect(response.rejectedItems).toHaveLength(0);

@@ -5,7 +5,10 @@ import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData,
 import type { ApiError } from '~/lib/api';
 import type { UserWithRoleAndMemberships } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import {
+  baseInfiniteQueryOptions,
+  infiniteQueryUseCachedIfCompleteOptions,
+} from '~/query/utils/infinite-query-options';
 import { createEntityKeys } from '../entities/create-query-keys';
 
 type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;

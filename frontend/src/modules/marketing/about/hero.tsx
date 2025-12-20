@@ -21,8 +21,11 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
   });
 
   const gradientClass =
-    theme === 'none' ? 'from-slate-600 via-neutral-400 to-stone-700 text-primary/50' : 'from-rose-800 via-rose-600 to-pink-800 text-transparent';
-  const sectionClass = 'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
+    theme === 'none'
+      ? 'from-slate-600 via-neutral-400 to-stone-700 text-primary/50'
+      : 'from-rose-800 via-rose-600 to-pink-800 text-transparent';
+  const sectionClass =
+    'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
   const headerClass = `transition-all will-change-transform duration-500 ease-out ${inView ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   return (
@@ -38,7 +41,9 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
             <h1 className="font-heading test-primary mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
               {title && <span>{t(title)}</span>}
               {title && subtitle && <br />}
-              {subtitle && <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>}
+              {subtitle && (
+                <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>
+              )}
             </h1>
             {text && (
               <h2 className="text-foreground/80 mx-auto mb-8 max-w-3xl text-xl md:text-2xl md:leading-10">
@@ -63,7 +68,12 @@ export const BackgroundCurve = () => {
   return (
     <svg viewBox="0 0 800 400" className="transition" aria-hidden="true">
       <title>Background curve</title>
-      <path id="curve" className="transition" fill={fillColor} d="M 800 300 Q 400 250 0 300 L 0 0 L 800 0 L 800 300 Z" />
+      <path
+        id="curve"
+        className="transition"
+        fill={fillColor}
+        d="M 800 300 Q 400 250 0 300 L 0 0 L 800 0 L 800 300 Z"
+      />
     </svg>
   );
 };

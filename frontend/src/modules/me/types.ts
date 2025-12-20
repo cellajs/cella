@@ -9,7 +9,9 @@ export type Passkey = MeAuthData['passkeys'][number];
 export type MeUser = User;
 export type UserMenu = Record<MenuSection['entityType'], UserMenuItem[]>;
 
-export type ContextEntityDataWithMembership = Omit<ContextEntityData, 'membership'> & { membership: NonNullable<ContextEntityData['membership']> };
+export type ContextEntityDataWithMembership = Omit<ContextEntityData, 'membership'> & {
+  membership: NonNullable<ContextEntityData['membership']>;
+};
 export type UserMenuItem = ContextEntityDataWithMembership & { submenu?: ContextEntityDataWithMembership[] };
 
 export type UploadTokenQuery = GetUploadTokenData['query'] & { public: boolean };

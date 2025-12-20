@@ -37,7 +37,11 @@ export const notifyBlock = createReactBlockSpec(
           <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger disabled={!editor.isEditable}>
               <div className={'notify-icon-wrapper'} contentEditable={false}>
-                <Icon className={`notify-icon ${!editor.isEditable && 'cursor-default'}`} data-notify-icon-type={block.props.type} size={32} />
+                <Icon
+                  className={`notify-icon ${!editor.isEditable && 'cursor-default'}`}
+                  data-notify-icon-type={block.props.type}
+                  size={32}
+                />
               </div>
             </DropdownMenuTrigger>
 

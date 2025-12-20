@@ -39,7 +39,8 @@ export const onError = (error: Error | ApiError) => {
     // Maintenance mode
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
     // Authentication service is unavailable
-    else if (statusCode === 500 && isCasualSessionAttempt) return useAlertStore.getState().setDownAlert('auth_unavailable');
+    else if (statusCode === 500 && isCasualSessionAttempt)
+      return useAlertStore.getState().setDownAlert('auth_unavailable');
     // Offline mode
     else if (statusCode === 504) return useAlertStore.getState().setDownAlert('offline');
 

@@ -50,7 +50,14 @@ const TableEllipsis = <T extends { id: string }>({ row, tabIndex, options }: Pro
   };
 
   return (
-    <Button ref={triggerRef} variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openDropdown}>
+    <Button
+      ref={triggerRef}
+      variant="cell"
+      size="icon"
+      tabIndex={tabIndex}
+      className="h-full w-full"
+      onClick={openDropdown}
+    >
       <EllipsisVerticalIcon size={16} />
     </Button>
   );

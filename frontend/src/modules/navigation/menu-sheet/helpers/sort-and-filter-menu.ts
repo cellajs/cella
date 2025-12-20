@@ -10,7 +10,12 @@ import type { UserMenuItem } from '~/modules/me/types';
  * @param reverse - Whether to reverse the sort order (default: false)
  * @returns The filtered and sorted array of menu items
  */
-export const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntityType, archived: boolean, reverse = false): UserMenuItem[] => {
+export const sortAndFilterMenu = (
+  data: UserMenuItem[],
+  entityType: ContextEntityType,
+  archived: boolean,
+  reverse = false,
+): UserMenuItem[] => {
   return (
     data
       //filter by type and archive state

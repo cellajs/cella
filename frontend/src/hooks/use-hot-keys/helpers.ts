@@ -53,7 +53,11 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   }
 
   // Check the actual key press
-  if (key && (pressedKey.toLowerCase() === key.toLowerCase() || event.code.replace('Key', '').toLowerCase() === key.toLowerCase())) {
+  if (
+    key &&
+    (pressedKey.toLowerCase() === key.toLowerCase() ||
+      event.code.replace('Key', '').toLowerCase() === key.toLowerCase())
+  ) {
     return true;
   }
 

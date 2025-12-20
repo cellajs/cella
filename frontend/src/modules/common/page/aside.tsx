@@ -53,7 +53,11 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
             key={id}
             ref={index === 0 ? firstTabRef : undefined}
             to="."
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, currentSection === id && 'bg-secondary')}
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'lg' }),
+              btnClass,
+              currentSection === id && 'bg-secondary',
+            )}
             hash={id}
             draggable="false"
             onClick={(e) => {

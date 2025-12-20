@@ -240,7 +240,7 @@ export type Page = {
   displayOrder: number;
   createdBy: string;
   modifiedAt: string | null;
-  modifiedBy: string;
+  modifiedBy: string | null;
 };
 
 export type CheckEmailData = {
@@ -500,7 +500,8 @@ export type ResendInvitationWithTokenResponses = {
   204: void;
 };
 
-export type ResendInvitationWithTokenResponse = ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
+export type ResendInvitationWithTokenResponse =
+  ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
 
 export type SignOutData = {
   body?: never;
@@ -1081,7 +1082,8 @@ export type GeneratePasskeyChallengeResponses = {
   };
 };
 
-export type GeneratePasskeyChallengeResponse = GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
+export type GeneratePasskeyChallengeResponse =
+  GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
 
 export type SignInWithPasskeyData = {
   body: {
@@ -2375,7 +2377,7 @@ export type GetPagesData = {
   path?: never;
   query?: {
     q?: string;
-    sort?: 'displayOrder' | 'status' | 'createdAt';
+    sort?: 'name' | 'status' | 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -2422,14 +2424,7 @@ export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
 export type CreatePageData = {
   body: {
-    id?: string;
-    entityType?: 'page';
     name?: string;
-    description: string;
-    keywords: string;
-    status?: 'unpublished' | 'published' | 'archived';
-    parentId?: string | null;
-    displayOrder: number;
   };
   path?: never;
   query?: never;
@@ -2465,7 +2460,7 @@ export type CreatePageResponses = {
   /**
    * Page
    */
-  201: Array<Page>;
+  201: Page;
 };
 
 export type CreatePageResponse = CreatePageResponses[keyof CreatePageResponses];
@@ -3563,7 +3558,8 @@ export type HandleMembershipInvitationResponses = {
   200: ContextEntityBase;
 };
 
-export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
+export type HandleMembershipInvitationResponse =
+  HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;

@@ -10,12 +10,17 @@ import { flattenInfiniteData } from './flatten';
  * @param matcher - Function that returns true when the entity is found
  * @returns The found entity or null
  */
-export function useFindInQueryCache<T>(queryKeys: Array<string | readonly unknown[]>, matcher: (item: T) => boolean): T | null {
+export function useFindInQueryCache<T>(
+  queryKeys: Array<string | readonly unknown[]>,
+  matcher: (item: T) => boolean,
+): T | null {
   const queryClient = useQueryClient();
 
   return useMemo(() => {
     for (const queryKey of queryKeys) {
-      const queries = queryClient.getQueryCache().findAll({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
+      const queries = queryClient
+        .getQueryCache()
+        .findAll({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
 
       for (const query of queries) {
         const data = query.state.data;

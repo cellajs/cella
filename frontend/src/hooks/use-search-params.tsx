@@ -58,7 +58,11 @@ const useSearchParams = <T extends Record<string, string | string[] | undefined>
       // Join array values into a string
       if (Array.isArray(updatedSearch[key])) {
         updatedSearch[key] = (
-          updatedSearch[key].length ? (updatedSearch[key].length === 1 ? updatedSearch[key][0] : updatedSearch[key].join('_')) : undefined
+          updatedSearch[key].length
+            ? updatedSearch[key].length === 1
+              ? updatedSearch[key][0]
+              : updatedSearch[key].join('_')
+            : undefined
         ) as T[keyof T];
       }
     }

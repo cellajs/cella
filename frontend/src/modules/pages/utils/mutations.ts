@@ -29,7 +29,11 @@ const optimistically = <T extends WithId, M extends MutationType>(type: M, cache
   return optimisticHandlers[type]<T>(cached, data);
 };
 
-const handleDetails = <T extends WithId, M extends MutationType>(type: M, cached: QueryData<T>, data: T[]): QueryData<T> => {
+const handleDetails = <T extends WithId, M extends MutationType>(
+  type: M,
+  cached: QueryData<T>,
+  data: T[],
+): QueryData<T> => {
   const updated = optimistically(type, cached.items, data);
 
   return {
@@ -38,7 +42,11 @@ const handleDetails = <T extends WithId, M extends MutationType>(type: M, cached
   };
 };
 
-const handleList = <T extends WithId, M extends MutationType>(type: M, cached: InfiniteQueryData<T>, data: T[]): InfiniteQueryData<T> => {
+const handleList = <T extends WithId, M extends MutationType>(
+  type: M,
+  cached: InfiniteQueryData<T>,
+  data: T[],
+): InfiniteQueryData<T> => {
   const original = cached.pages.flatMap(({ items }) => items);
 
   const updated = optimistically(type, original, data);

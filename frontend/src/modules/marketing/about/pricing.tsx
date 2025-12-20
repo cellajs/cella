@@ -29,7 +29,10 @@ const Pricing = () => {
 
   const buttonRefs = useRef<Array<RefObject<HTMLButtonElement | null>>>(pricingPlans.map(() => createRef()));
 
-  const handleActionClick = (action: 'sign_in' | 'contact_us' | 'waitlist_request', buttonRef: RefObject<HTMLButtonElement | null>) => {
+  const handleActionClick = (
+    action: 'sign_in' | 'contact_us' | 'waitlist_request',
+    buttonRef: RefObject<HTMLButtonElement | null>,
+  ) => {
     if (action === 'contact_us') return contactFormHandler(buttonRef);
 
     if (action === 'sign_in') {
@@ -48,7 +51,9 @@ const Pricing = () => {
   };
 
   return (
-    <div className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}>
+    <div
+      className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
+    >
       {pricingPlans.map(({ id, borderColor, featureCount, popular, discount, action }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}`;
         const text = `about:pricing.text_${planIndex + 1}`;
@@ -64,14 +69,19 @@ const Pricing = () => {
             }`}
           >
             {popular && (
-              <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-2/4 font-light -translate-y-2/4 py-1 px-4 text-center">
+              <Badge
+                size="sm"
+                className="absolute top-0 left-1/2 -translate-x-2/4 font-light -translate-y-2/4 py-1 px-4 text-center"
+              >
                 🚀 {t('about:pricing.popular')}
               </Badge>
             )}
             <div className="mt-4">
               <h3 className="text-center text-2xl flex w-full justify-center font-bold">
                 {t(title)}
-                {popular && <SparklesIcon className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />}
+                {popular && (
+                  <SparklesIcon className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />
+                )}
               </h3>
               <div className="flex items-center justify-center mt-4 text-gray-600 dark:text-gray-400">
                 {discount && (

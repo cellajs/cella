@@ -1,5 +1,11 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, useComponentsContext, useDictionary, useExtension, useExtensionState } from '@blocknote/react';
+import {
+  type BlockTypeSelectItem,
+  useComponentsContext,
+  useDictionary,
+  useExtension,
+  useExtensionState,
+} from '@blocknote/react';
 import { useMemo } from 'react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';

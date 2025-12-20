@@ -18,7 +18,9 @@ const extractBlockText = (block: Block): string => {
   } else if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
     const itemText = content.rows.flatMap((row) => {
       return row.cells.flatMap((cell) => {
-        return 'content' in cell && Array.isArray(cell.content) ? cell.content.map(extractItemText).join(' ').trim() : '';
+        return 'content' in cell && Array.isArray(cell.content)
+          ? cell.content.map(extractItemText).join(' ').trim()
+          : '';
       });
     });
 

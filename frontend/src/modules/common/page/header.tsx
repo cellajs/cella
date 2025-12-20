@@ -9,7 +9,13 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '~/modules/ui/breadcrumb';
 import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
 import { baseEntityRoutes } from '~/routes-config';
 
@@ -43,7 +49,9 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user' ? 'h-26 w-26 -mt-13 text-4xl mx-3 shadow-[0_0_0_4px_rgba(0,0,0,0.1)] rounded-full' : 'm-2 text-xl h-12 w-12'
+            entity.entityType === 'user'
+              ? 'h-26 w-26 -mt-13 text-4xl mx-3 shadow-[0_0_0_4px_rgba(0,0,0,0.1)] rounded-full'
+              : 'm-2 text-xl h-12 w-12'
           }
         />
 

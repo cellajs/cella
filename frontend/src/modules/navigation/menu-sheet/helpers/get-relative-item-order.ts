@@ -35,7 +35,9 @@ export const getRelativeItemOrder = (
     if (parentMenu) neededItems = sortAndFilterMenu(parentMenu.submenu ?? [], entityType, archived, isEdgeTop);
   }
   // Find the relative item based on the item's position and the edge (top or bottom)
-  const relativeItem = neededItems.find(({ membership }) => (isEdgeTop ? membership.order < itemOrder : membership.order > itemOrder));
+  const relativeItem = neededItems.find(({ membership }) =>
+    isEdgeTop ? membership.order < itemOrder : membership.order > itemOrder,
+  );
 
   // If no relative item found, return new order based on edge
   if (!relativeItem || relativeItem.membership.order === itemOrder) {

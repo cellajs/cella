@@ -249,7 +249,7 @@ export const zPage = z.object({
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   createdBy: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.string(),
+  modifiedBy: z.union([z.string(), z.null()]),
 });
 
 export const zCheckEmailData = z.object({
@@ -978,7 +978,9 @@ export const zUpdateOrganizationData = z.object({
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
       websiteUrl: z.optional(z.union([z.string(), z.null()])),
       welcomeText: z.optional(z.union([z.string(), z.null()])),
-      authStrategies: z.optional(z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']))),
+      authStrategies: z.optional(
+        z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
+      ),
       chatSupport: z.optional(z.boolean()),
     }),
   ),
@@ -1027,7 +1029,7 @@ export const zGetPagesData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      sort: z.optional(z.enum(['displayOrder', 'status', 'createdAt'])),
+      sort: z.optional(z.enum(['name', 'status', 'createdAt'])),
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
@@ -1045,14 +1047,7 @@ export const zGetPagesResponse = z.object({
 
 export const zCreatePageData = z.object({
   body: z.object({
-    id: z.optional(z.string()),
-    entityType: z.optional(z.enum(['page'])),
     name: z.optional(z.string()),
-    description: z.string(),
-    keywords: z.string(),
-    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
-    parentId: z.optional(z.union([z.string(), z.null()])),
-    displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -1061,7 +1056,7 @@ export const zCreatePageData = z.object({
 /**
  * Page
  */
-export const zCreatePageResponse = z.array(zPage);
+export const zCreatePageResponse = zPage;
 
 export const zGetPageData = z.object({
   body: z.optional(z.never()),

@@ -4,7 +4,10 @@ import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { entityTables } from '#/entity-config';
-import { getEntityTypesScopedByContextEntityType, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
+import {
+  getEntityTypesScopedByContextEntityType,
+  type ValidEntities,
+} from '#/modules/entities/helpers/get-related-entities';
 
 /**
  * Counts related entities (Context + Product) for the given entity instance
@@ -56,7 +59,8 @@ export const getRelatedEntityCountsQuery = (entityType: ContextEntityType) => {
 
   // Only keep entity types that actually contain the ID field we care about
   const validEntities = getEntityTypesScopedByContextEntityType(entityType);
-  if (!validEntities.length) return db.select({ id: entityIdColumn }).from(table).where(sql`false`).as('related_counts'); // returns zero rows
+  if (!validEntities.length)
+    return db.select({ id: entityIdColumn }).from(table).where(sql`false`).as('related_counts'); // returns zero rows
 
   const baseCounts: Record<string, SQL.Aliased<number>> = {};
   const joins: {
@@ -87,7 +91,9 @@ export const getRelatedEntityCountsQuery = (entityType: ContextEntityType) => {
 
     joins.push({ subquery, alias, join: eq(entityIdColumn, subquery[entityIdColumnKey]) });
 
-    baseCounts[relatedEntityType] = sql<number>`COALESCE(${sql.raw(`"${alias}"."${relatedEntityType}"`)}, 0)`.as(relatedEntityType);
+    baseCounts[relatedEntityType] = sql<number>`COALESCE(${sql.raw(`"${alias}"."${relatedEntityType}"`)}, 0)`.as(
+      relatedEntityType,
+    );
   }
 
   const query = db.select({ id: entityIdColumn, ...baseCounts }).from(organizationsTable);

@@ -75,11 +75,17 @@ const meRouteHandlers = app
       });
     }
 
-    const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({ mfaRequired })
+      .where(eq(usersTable.id, user.id))
+      .returning();
 
     if (updatedUser.mfaRequired) {
       // Invalidate all existing regular sessions
-      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
+      await db
+        .delete(sessionsTable)
+        .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
 
       // Clear session cookie to enforce fresh login
       deleteAuthCookie(ctx, 'session');
@@ -103,7 +109,9 @@ const meRouteHandlers = app
     // Filter only providers that are enabled in appConfig
     const enabledOAuth = oauth
       .map(({ provider }) => provider)
-      .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
+      .filter((provider): provider is EnabledOAuthProvider =>
+        appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider),
+      );
 
     return ctx.json({ ...restInfo, enabledOAuth, sessions }, 200);
   })
@@ -177,7 +185,14 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
+    if (!user)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: 'self' },
+      });
 
     const { userFlags, ...passedUpdates } = ctx.req.valid('json');
 
@@ -185,7 +200,8 @@ const meRouteHandlers = app
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable)
+        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
     // if userFlags is provided, merge it
     const updateData = {
@@ -209,7 +225,14 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
+    if (!user)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: 'self' },
+      });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
@@ -233,7 +256,9 @@ const meRouteHandlers = app
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
     // Delete memberships
-    await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdColumnKey], entity.id)));
+    await db
+      .delete(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdColumnKey], entity.id)));
 
     logEvent('info', 'User left entity', { userId: user.id });
 
@@ -247,7 +272,9 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = [appConfig.s3BucketPrefix, organizationId, user.id].filter((part): part is string => typeof part === 'string').join('/');
+    const sub = [appConfig.s3BucketPrefix, organizationId, user.id]
+      .filter((part): part is string => typeof part === 'string')
+      .join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);

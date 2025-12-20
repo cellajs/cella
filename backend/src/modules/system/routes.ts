@@ -15,7 +15,8 @@ const systemRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['system'],
     summary: 'Invite to system',
-    description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
+    description:
+      'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: {
       body: {
         required: true,
@@ -25,7 +26,9 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Invitations are sent',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
+        content: {
+          'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) },
+        },
       },
       ...errorResponseRefs,
     },

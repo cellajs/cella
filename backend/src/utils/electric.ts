@@ -48,7 +48,11 @@ const prepareElectricUrl = (table: string, query: ElectricUrlQuery): URL => {
  * @param {ElectricUrlQuery} query
  * @returns {Response}
  */
-export const proxyElectricSync = async (table: string, query: ElectricUrlQuery, entityType?: EntityType): Promise<Response> => {
+export const proxyElectricSync = async (
+  table: string,
+  query: ElectricUrlQuery,
+  entityType?: EntityType,
+): Promise<Response> => {
   try {
     const originUrl = prepareElectricUrl(table, query);
 

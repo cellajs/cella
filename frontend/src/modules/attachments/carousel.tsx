@@ -10,7 +10,14 @@ import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
-import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
+import {
+  Carousel as BaseCarousel,
+  CarouselContent,
+  CarouselDots,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
@@ -40,7 +47,13 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
-const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
+const AttachmentsCarousel = ({
+  items = [],
+  isDialog = false,
+  itemIndex = 0,
+  saveInSearchParams = false,
+  classNameContainer,
+}: CarouselProps) => {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
   const { attachmentDialogId } = useSearch({ strict: false });
@@ -101,7 +114,12 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
           {currentItem.name && (
             <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6 truncate max-sm:text-sm">
               {currentItem.contentType && (
-                <FilePlaceholder contentType={currentItem.contentType} iconSize={16} className="w-4 shrink-0" strokeWidth={2} />
+                <FilePlaceholder
+                  contentType={currentItem.contentType}
+                  iconSize={16}
+                  className="w-4 shrink-0"
+                  strokeWidth={2}
+                />
               )}
               <span className="truncate">{currentItem.name}</span>
             </h2>
@@ -126,11 +144,20 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               className="-my-1 size-8 opacity-70 hover:opacity-100"
               onClick={() => download(currentItem.url, currentItem.filename || 'file')}
             >
-              {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />}
+              {isInProgress ? (
+                <Spinner className="size-5 text-foreground/80" noDelay />
+              ) : (
+                <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />
+              )}
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="-my-1 size-8 opacity-70 hover:opacity-100" onClick={() => removeDialog()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="-my-1 size-8 opacity-70 hover:opacity-100"
+            onClick={() => removeDialog()}
+          >
             <XIcon className="h-6 w-6" strokeWidth={1.5} />
           </Button>
         </div>
@@ -148,7 +175,10 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             >
               <AttachmentRender
                 id={id}
-                containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center ', classNameContainer)}
+                containerClassName={cn(
+                  'overflow-hidden h-full relative flex items-center justify-center ',
+                  classNameContainer,
+                )}
                 itemClassName={isDialog ? 'object-contain' : ''}
                 type={convertedContentType ?? contentType}
                 imagePanZoom={isDialog}

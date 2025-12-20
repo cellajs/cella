@@ -1,4 +1,10 @@
-import { type BackoffOptions, type ChangeMessage, type ExternalParamsRecord, FetchError, type Row } from '@electric-sql/client';
+import {
+  type BackoffOptions,
+  type ChangeMessage,
+  type ExternalParamsRecord,
+  FetchError,
+  type Row,
+} from '@electric-sql/client';
 import { useSyncStore } from '~/store/sync';
 
 // Convert camelCase to snake_case
@@ -26,7 +32,9 @@ export const baseBackoffOptions: BackoffOptions = {
 export const processMessages = <T extends { id: string }>(messages: ChangeMessage<CamelToSnakeObject<T>>[]) => {
   return {
     insertData: messages.filter((m) => m.headers.operation === 'insert').map((message) => parseRawData(message.value)),
-    updateData: messages.filter((m) => m.headers.operation === 'update').map((message) => parseRawData<Partial<T> & { id: string }>(message.value)),
+    updateData: messages
+      .filter((m) => m.headers.operation === 'update')
+      .map((message) => parseRawData<Partial<T> & { id: string }>(message.value)),
     deleteIds: messages.filter((m) => m.headers.operation === 'delete').map(({ value }) => value.id),
   };
 };
@@ -45,7 +53,11 @@ const parseRawData = <T>(rawData: CamelToSnakeObject<T>): T => {
 
 export const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-export const handleSyncError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
+export const handleSyncError = (
+  error: Error,
+  storePrefix: string,
+  params: ExternalParamsRecord<Row<never>> | undefined,
+) => {
   if (error instanceof FetchError && error.json) {
     const responseJson = error.json;
 

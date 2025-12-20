@@ -74,7 +74,11 @@ export interface UseMutateQueryDataReturn {
   updateMembership: {
     (items: ItemData[]): void;
     (items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-    (items: ItemData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string): void;
+    (
+      items: ItemData[] | ContextEntityBase[],
+      entity?: ProductEntityType | ContextEntityType,
+      keyToOperateIn?: string,
+    ): void;
   };
 
   /**

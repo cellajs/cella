@@ -39,11 +39,19 @@ const organizationRouteHandlers = app
       return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
     }, 0);
 
-    if (createdOrgsCount === 5) throw new AppError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
+    if (createdOrgsCount === 5)
+      throw new AppError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
+    if (!slugAvailable)
+      throw new AppError({
+        status: 409,
+        type: 'slug_exists',
+        severity: 'warn',
+        entityType: 'organization',
+        meta: { slug },
+      });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -61,7 +69,9 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
-    const [createdMembership] = await insertMemberships([{ userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization }]);
+    const [createdMembership] = await insertMemberships([
+      { userId: user.id, createdBy: user.id, role: 'admin', entity: createdOrganization },
+    ]);
 
     // Get default linked entities
     const validEntities = getEntityTypesScopedByContextEntityType(createdOrganization.entityType);
@@ -115,7 +125,9 @@ const organizationRouteHandlers = app
     const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
     const validEntities = getEntityTypesScopedByContextEntityType(entityType);
-    const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
+    const relatedJsonPairs = validEntities
+      .map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`)
+      .join(', ');
 
     // Base query for total
     const totalQuery = isSystemAdmin
@@ -214,7 +226,14 @@ const organizationRouteHandlers = app
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
+      if (!slugAvailable)
+        throw new AppError({
+          status: 409,
+          type: 'slug_exists',
+          severity: 'warn',
+          entityType: 'organization',
+          meta: { slug },
+        });
     }
 
     // TODO sanitize blocknote blocks for welcomeText? How to only allow  image urls from our own cdn plus a list from allowed domains?
@@ -242,7 +261,8 @@ const organizationRouteHandlers = app
       );
 
     // Send event to all members about the updated organization
-    for (const m of organizationMemberships) sendSSEByUserIds([m.userId], 'entity_updated', { ...updatedOrganization, membership: m });
+    for (const m of organizationMemberships)
+      sendSSEByUserIds([m.userId], 'entity_updated', { ...updatedOrganization, membership: m });
 
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
@@ -261,11 +281,18 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
+    if (!toDeleteIds.length)
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
-    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
+      'delete',
+      'organization',
+      toDeleteIds,
+      memberships,
+    );
+    if (!allowedIds.length)
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
 
     // Get ids of members for organizations
     const memberIds = await db

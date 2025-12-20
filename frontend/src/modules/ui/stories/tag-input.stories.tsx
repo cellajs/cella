@@ -44,7 +44,9 @@ export const WithMaxTags: Story = {
 export const WithLengthValidation: Story = {
   render: () => {
     const [tags, setTags] = useState(['short', 'medium-length', 'very-long-tag-example']);
-    return <TagInput tags={tags} setTags={setTags} minLength={3} maxLength={20} placeholder="Tags must be 3-20 characters" />;
+    return (
+      <TagInput tags={tags} setTags={setTags} minLength={3} maxLength={20} placeholder="Tags must be 3-20 characters" />
+    );
   },
 };
 
@@ -87,7 +89,11 @@ export const CustomStyling: Story = {
  */
 export const WithTruncation: Story = {
   render: () => {
-    const [tags, setTags] = useState(['very-long-tag-name-that-should-be-truncated', 'another-extremely-long-tag-for-testing-purposes', 'short']);
+    const [tags, setTags] = useState([
+      'very-long-tag-name-that-should-be-truncated',
+      'another-extremely-long-tag-for-testing-purposes',
+      'short',
+    ]);
     return <TagInput tags={tags} setTags={setTags} truncate={15} placeholder="Add tags..." />;
   },
 };
@@ -114,7 +120,14 @@ export const CustomValidation: Story = {
       return /^[a-zA-Z0-9-]+$/.test(tag);
     };
 
-    return <TagInput tags={tags} setTags={setTags} validateTag={validateTag} placeholder="Only alphanumeric characters and hyphens allowed" />;
+    return (
+      <TagInput
+        tags={tags}
+        setTags={setTags}
+        validateTag={validateTag}
+        placeholder="Only alphanumeric characters and hyphens allowed"
+      />
+    );
   },
 };
 
@@ -129,7 +142,9 @@ export const WithTagClick: Story = {
       alert(`Clicked tag: ${tag}`);
     };
 
-    return <TagInput tags={tags} setTags={setTags} onTagClick={handleTagClick} placeholder="Click on tags to interact" />;
+    return (
+      <TagInput tags={tags} setTags={setTags} onTagClick={handleTagClick} placeholder="Click on tags to interact" />
+    );
   },
 };
 

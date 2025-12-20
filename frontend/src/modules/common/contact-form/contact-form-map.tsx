@@ -1,4 +1,12 @@
-import { AdvancedMarker, APIProvider, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
+import {
+  AdvancedMarker,
+  APIProvider,
+  ControlPosition,
+  Map as GMap,
+  InfoWindow,
+  MapControl,
+  useAdvancedMarkerRef,
+} from '@vis.gl/react-google-maps';
 import { appConfig } from 'config';
 import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -82,7 +90,12 @@ const CustomZoomControl = ({ controlPosition, zoom, onZoomChange }: CustomZoomCo
   return (
     <MapControl position={controlPosition}>
       <div className="flex flex-col m-2 p-1">
-        <Button onClick={() => onZoomChange(zoom + 0.5)} size="micro" variant="outlineGhost" className="border-b-0 rounded-b-none">
+        <Button
+          onClick={() => onZoomChange(zoom + 0.5)}
+          size="micro"
+          variant="outlineGhost"
+          className="border-b-0 rounded-b-none"
+        >
           <PlusIcon size={14} />
         </Button>
         <Button onClick={() => onZoomChange(zoom - 0.5)} size="micro" variant="outlineGhost" className="rounded-t-none">
@@ -103,7 +116,9 @@ const ContactFormMap = () => {
 
   return (
     <ErrorBoundary
-      fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />
+      )}
     >
       <div className="w-full h-full">
         <div className="w-full h-full rounded-sm overflow-hidden bg-accent">
@@ -128,7 +143,11 @@ const ContactFormMap = () => {
                     defaultZoom={appConfig.company.mapZoom}
                   >
                     <MarkerWithInfoWindow position={appConfig.company.coordinates} />
-                    <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={setZoom} />
+                    <CustomZoomControl
+                      controlPosition={ControlPosition.LEFT_BOTTOM}
+                      zoom={zoom}
+                      onZoomChange={setZoom}
+                    />
                   </GMap>
                 </motion.div>
               )}

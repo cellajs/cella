@@ -33,7 +33,9 @@ export const getEntityCounts = async (entityType: ContextEntityType, entityId: s
   const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
   const validEntities = getEntityTypesScopedByContextEntityType(entityType);
-  const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
+  const relatedJsonPairs = validEntities
+    .map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`)
+    .join(', ');
 
   const [counts] = await db
     .select({

@@ -38,7 +38,13 @@ const authTotpsRouteHandlers = app
     await setAuthCookie(ctx, 'totp-challenge', manualKey, new TimeSpan(5, 'm'));
 
     // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
+    const totpUri = createTOTPKeyURI(
+      appConfig.slug,
+      user.email,
+      secretBytes,
+      appConfig.totpConfig.intervalInSeconds,
+      appConfig.totpConfig.digits,
+    );
 
     return ctx.json({ totpUri, manualKey }, 200);
   })

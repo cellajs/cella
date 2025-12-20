@@ -14,7 +14,12 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
   return (
     <Card className="overflow-hidden p-0 transition [&:has(.tile-link:hover)]:shadow-sm shadow-xs [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background">
       <CardContent className="p-4">
-        <Link to={to} params={params} search={search} className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0">
+        <Link
+          to={to}
+          params={params}
+          search={search}
+          className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0"
+        >
           {typeof window !== 'undefined' && (
             <div
               className={`relative flex flex-col -mx-4 -mt-6 bg-cover min-h-30 bg-center aspect-3/1 bg-opacity-80 ${
@@ -24,11 +29,19 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
             >
               <div className="grow" />
               <div className="flex w-full items-center backdrop-blur-xs gap-3 px-4 py-2 min-h-14 bg-background/50 group-hover:bg-background/70 transition-colors">
-                <AvatarWrap className="h-10 w-10" type="organization" id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
+                <AvatarWrap
+                  className="h-10 w-10"
+                  type="organization"
+                  id={entity.id}
+                  name={entity.name}
+                  url={entity.thumbnailUrl}
+                />
                 <div className="flex flex-col grow gap-0.5 truncate">
                   <div className="font-semibold truncate leading-5 text-sm">{entity.name}</div>
                   <div className="text-sm font-light inline-flex items-center gap-2">
-                    {entity.membership?.role && <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>}
+                    {entity.membership?.role && (
+                      <Badge variant="plain">{t(entity.membership.role, { ns: ['app', 'common'] })}</Badge>
+                    )}
                     {dateShort(entity.createdAt)}
                   </div>
                 </div>

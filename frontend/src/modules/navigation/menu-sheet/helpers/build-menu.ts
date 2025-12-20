@@ -22,7 +22,11 @@ const baseMenu = buildInitialMenu(appConfig.menuStructure);
  * @param opts - Optional configuration for building detailed menu with submenus
  * @returns The constructed user menu with items grouped by entity type
  */
-export function buildMenu(byType: Map<ContextEntityType, UserMenuItem[]>, menuStructure: MenuSection[], opts?: { detailedMenu?: boolean }) {
+export function buildMenu(
+  byType: Map<ContextEntityType, UserMenuItem[]>,
+  menuStructure: MenuSection[],
+  opts?: { detailedMenu?: boolean },
+) {
   const detailedMenu = !!opts?.detailedMenu;
 
   const menu = { ...baseMenu };

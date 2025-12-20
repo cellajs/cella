@@ -16,7 +16,13 @@ interface ExpandableListProps<T> {
 /**
  * A list that can be expanded to show all items.
  */
-export const ExpandableList = <T,>({ items, renderItem, initialDisplayCount, alwaysShowAll = false, expandText }: ExpandableListProps<T>) => {
+export const ExpandableList = <T,>({
+  items,
+  renderItem,
+  initialDisplayCount,
+  alwaysShowAll = false,
+  expandText,
+}: ExpandableListProps<T>) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(alwaysShowAll);
 

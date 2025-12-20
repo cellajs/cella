@@ -17,7 +17,10 @@ export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
   const detailedMenu = !!opts?.detailedMenu;
 
   const types = useMemo(
-    () => Array.from(new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean)))) as ContextEntityType[],
+    () =>
+      Array.from(
+        new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean))),
+      ) as ContextEntityType[],
     [],
   );
 

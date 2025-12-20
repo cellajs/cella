@@ -45,7 +45,9 @@ const CreatePasswordPage = () => {
     mutationFn: ({ tokenId, password }) => createPassword({ path: { tokenId }, body: { password } }),
     onSuccess: ({ mfa }) => {
       toaster(t('common:success.password_reset'), 'success');
-      const navigateInfo = mfa ? { to: MfaRoute.to, search: { fromRoot: true } } : { to: appConfig.defaultRedirectPath };
+      const navigateInfo = mfa
+        ? { to: MfaRoute.to, search: { fromRoot: true } }
+        : { to: appConfig.defaultRedirectPath };
       navigate(navigateInfo);
     },
   });
@@ -90,7 +92,13 @@ const CreatePasswordPage = () => {
             <FormItem>
               <FormControl>
                 <div className="relative">
-                  <Input type="password" autoFocus={!isMobile} placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                  <Input
+                    type="password"
+                    autoFocus={!isMobile}
+                    placeholder={t('common:new_password')}
+                    autoComplete="new-password"
+                    {...field}
+                  />
                   <Suspense>
                     <PasswordStrength password={form.getValues('password')} minLength={8} />
                   </Suspense>

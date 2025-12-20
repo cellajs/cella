@@ -198,7 +198,12 @@ export const AuthForm: Story = {
         </div>
 
         <div className="space-y-4">
-          <InputOTP maxLength={6} value={value} onChange={(value) => setValue(value)} containerClassName="justify-center">
+          <InputOTP
+            maxLength={6}
+            value={value}
+            onChange={(value) => setValue(value)}
+            containerClassName="justify-center"
+          >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -215,7 +220,9 @@ export const AuthForm: Story = {
         </div>
 
         <div className="text-center">
-          <button className="text-sm text-muted-foreground hover:text-foreground underline">Didn't receive a code? Resend</button>
+          <button className="text-sm text-muted-foreground hover:text-foreground underline">
+            Didn't receive a code? Resend
+          </button>
         </div>
       </div>
     );

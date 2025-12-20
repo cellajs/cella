@@ -7,7 +7,10 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { processAttachmentUrls, processAttachmentUrlsInBatch } from '#/modules/attachments/helpers/process-attachment-urls';
+import {
+  processAttachmentUrls,
+  processAttachmentUrlsInBatch,
+} from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
@@ -38,7 +41,8 @@ const attachmentsRouteHandlers = app
     const organization = getContextOrganization();
 
     // Only allow validated organization ID
-    if (requestedOrganizationId !== organization.id) throw new AppError({ status: 400, type: 'sync_organization_mismatch', severity: 'error' });
+    if (requestedOrganizationId !== organization.id)
+      throw new AppError({ status: 400, type: 'sync_organization_mismatch', severity: 'error' });
 
     return await proxyElectricSync(table, query, 'attachment');
   })
@@ -114,9 +118,19 @@ const attachmentsRouteHandlers = app
 
     if (attachmentId) {
       // Retrieve target attachment
-      const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
+      const [targetAttachment] = await db
+        .select()
+        .from(attachmentsTable)
+        .where(eq(attachmentsTable.id, attachmentId))
+        .limit(1);
       if (!targetAttachment) {
-        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
+        throw new AppError({
+          status: 404,
+          type: 'not_found',
+          severity: 'warn',
+          entityType: 'attachment',
+          meta: { attachmentId },
+        });
       }
 
       const items = await processAttachmentUrlsInBatch([targetAttachment]);
@@ -190,11 +204,18 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
+    if (!toDeleteIds.length)
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
+      'delete',
+      'attachment',
+      toDeleteIds,
+      memberships,
+    );
 
-    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
+    if (!allowedIds.length)
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
@@ -212,8 +233,12 @@ const attachmentsRouteHandlers = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+    const [organization] = await db
+      .select()
+      .from(organizationsTable)
+      .where(eq(organizationsTable.id, attachment.organizationId));
+    if (!organization)
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
     const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);

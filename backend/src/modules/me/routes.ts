@@ -3,7 +3,13 @@ import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { meAuthDataSchema, mePendingInvitationSchema, toggleMfaBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from '#/modules/me/schema';
+import {
+  meAuthDataSchema,
+  mePendingInvitationSchema,
+  toggleMfaBodySchema,
+  uploadTokenQuerySchema,
+  uploadTokenSchema,
+} from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
@@ -60,7 +66,9 @@ const meRoutes = {
       body: {
         required: true,
         content: {
-          'application/json': { schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }) },
+          'application/json': {
+            schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }),
+          },
         },
       },
     },
@@ -95,7 +103,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get auth data',
-    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
+    description:
+      'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
     responses: {
       200: {
         description: 'User sign-up info',
@@ -192,7 +201,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Toggle MFA',
-    description: 'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
+    description:
+      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

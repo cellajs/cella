@@ -179,7 +179,7 @@ export const validDomainsSchema = z
  * These are typically passed as query string parameters to define
  * the shape of a synchronization query used by ElectricSQL.
  */
-export const baseElectrycSyncQuery = z.object({
+export const baseElectricSyncQuery = z.object({
   table: z.string(),
   offset: z.string(),
   handle: z.string().optional(),

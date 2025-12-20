@@ -32,9 +32,18 @@ export function useUploadUppy() {
     let localUppy: CustomUppy | null = null;
     const isUploadFullyEnabled = appConfig.has.uploadEnabled && onlineManager.isOnline();
 
-    const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
+    const {
+      isPublic,
+      templateId = 'attachment',
+      organizationId,
+      restrictions,
+      plugins = [],
+      statusEventHandler = {},
+    } = uploaderData;
 
-    const allowedFileTypes = isUploadFullyEnabled ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes) : ['image/*'];
+    const allowedFileTypes = isUploadFullyEnabled
+      ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes)
+      : ['image/*'];
 
     const uppyOptions: CustomUppyOpt = {
       restrictions: {
@@ -50,7 +59,8 @@ export function useUploadUppy() {
 
         localUppy
           .on('files-added', () => {
-            if (onlineManager.isOnline() && !appConfig.has.uploadEnabled) toaster(t('common:file_upload_warning'), 'warning');
+            if (onlineManager.isOnline() && !appConfig.has.uploadEnabled)
+              toaster(t('common:file_upload_warning'), 'warning');
           })
           .on('file-editor:complete', (file) => {
             console.info('File editor complete:', file);

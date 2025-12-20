@@ -248,7 +248,9 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
     inputRef.current?.focus();
   };
 
-  const truncatedTags = truncate ? tags.map((tag) => (tag.length > truncate ? `${tag.substring(0, truncate)}...` : tag)) : tags;
+  const truncatedTags = truncate
+    ? tags.map((tag) => (tag.length > truncate ? `${tag.substring(0, truncate)}...` : tag))
+    : tags;
 
   return (
     <div className="flex flex-col relative" ref={ref}>
@@ -301,7 +303,11 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
         </Badge>
       )}
       {showClearAllButton && (
-        <Button type="button" onClick={handleClearAll} className={cn('flex items-center gap-1 mt-2', styleClasses?.clearAllButton)}>
+        <Button
+          type="button"
+          onClick={handleClearAll}
+          className={cn('flex items-center gap-1 mt-2', styleClasses?.clearAllButton)}
+        >
           {t('common:clear_all')}
           <RefreshCwIcon size={16} />
         </Button>

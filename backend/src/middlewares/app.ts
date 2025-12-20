@@ -24,7 +24,13 @@ app.use('*', monitoringMiddleware);
 // Logger
 app.use('*', loggerMiddleware);
 
-const electricHeaders = ['electric-cursor', 'electric-handle', 'electric-schema', 'electric-offset', 'electric-up-to-date'];
+const electricHeaders = [
+  'electric-cursor',
+  'electric-handle',
+  'electric-schema',
+  'electric-offset',
+  'electric-up-to-date',
+];
 const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,

@@ -35,7 +35,14 @@ interface NavigationStoreState {
 interface InitStore
   extends Pick<
     NavigationStoreState,
-    'recentSearches' | 'keepMenuOpen' | 'detailedMenu' | 'navLoading' | 'focusView' | 'activeSections' | 'navSheetOpen' | 'keepOpenPreference'
+    | 'recentSearches'
+    | 'keepMenuOpen'
+    | 'detailedMenu'
+    | 'navLoading'
+    | 'focusView'
+    | 'activeSections'
+    | 'navSheetOpen'
+    | 'keepOpenPreference'
   > {}
 
 // Default state values
@@ -103,7 +110,8 @@ export const useNavigationStore = create<NavigationStoreState>()(
           toggleSection: (section) => {
             set((state) => {
               if (!state.activeSections) state.activeSections = { [section]: false };
-              else if (state.activeSections[section] !== undefined) state.activeSections[section] = !state.activeSections[section];
+              else if (state.activeSections[section] !== undefined)
+                state.activeSections[section] = !state.activeSections[section];
               else state.activeSections = { ...state.activeSections, ...{ [section]: false } };
             });
           },

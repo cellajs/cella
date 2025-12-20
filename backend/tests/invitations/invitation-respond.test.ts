@@ -39,7 +39,12 @@ describe('Invitation response', async () => {
     return signInRes.headers.get('set-cookie') || '';
   }
 
-  async function respondToInvitation(organizationId: string, inactiveMembershipId: string, action: 'accept' | 'reject', sessionCookie: string) {
+  async function respondToInvitation(
+    organizationId: string,
+    inactiveMembershipId: string,
+    action: 'accept' | 'reject',
+    sessionCookie: string,
+  ) {
     return await (client as any)[organizationId]['memberships'][inactiveMembershipId][action].$post(
       {},
       {
@@ -67,7 +72,10 @@ describe('Invitation response', async () => {
     expect(memberships[0].organizationId).toBe(organization.id);
     expect(memberships[0].role).toBe('member');
 
-    const remainingInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
+    const remainingInactive = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(remainingInactive).toHaveLength(0);
   });
 
@@ -102,7 +110,10 @@ describe('Invitation response', async () => {
     expect(memberships).toHaveLength(0);
 
     // Check that inactive membership is marked as rejected
-    const rejectedInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
+    const rejectedInactive = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(rejectedInactive).toHaveLength(1);
     expect(rejectedInactive[0].rejectedAt).toBeDefined();
   });

@@ -31,11 +31,11 @@ export const pagesTable = pgTable(
         onDelete: 'set null',
       }),
     modifiedAt: timestampColumns.modifiedAt,
-    modifiedBy: varchar()
-      .notNull()
-      .references(() => usersTable.id, {
-        onDelete: 'set null',
-      }),
+    modifiedBy: varchar().references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
   },
   (table) => [unique('group_order').on(table.parentId, table.displayOrder)],
 );
+
+export type PageModel = typeof pagesTable.$inferSelect;

@@ -28,7 +28,11 @@ const openUpdateSheet = (organization: Organization | Organization, buttonRef: R
       side: 'right',
       className: 'max-w-full lg:max-w-4xl',
       title: i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() }),
-      titleContent: <UnsavedBadge title={i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
+      titleContent: (
+        <UnsavedBadge
+          title={i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() })}
+        />
+      ),
       scrollableOverlay: true,
     },
   );

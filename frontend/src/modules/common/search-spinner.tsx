@@ -16,7 +16,10 @@ export function SearchSpinner({ isSearching, value }: { isSearching: boolean; va
         </motion.div>
       ) : (
         <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <SearchIcon className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+          <SearchIcon
+            className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0"
+            style={{ opacity: value ? 1 : 0.5 }}
+          />
         </motion.div>
       )}
     </AnimatePresence>

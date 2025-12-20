@@ -30,7 +30,7 @@ export const HomeAliasRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
   getParentRoute: () => AppLayoutRoute,
   onEnter: ({ search, cause }) => {
-    // REMARK this might cause a race condition (hence onEnter is used)
+    // this might cause a race condition (hence onEnter is used)
     if (cause !== 'enter' || search.skipWelcome) return;
     const { user } = useUserStore.getState();
     if (user.userFlags.finishedOnboarding) return;

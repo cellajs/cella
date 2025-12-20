@@ -34,8 +34,12 @@ export const Uploader = () => {
     >
       <DialogContent className="w-[70vw] h-[40vh] min-h-fit md:max-w-xl">
         <DialogHeader className={`${uploaderData.title || uploaderData.description ? '' : 'hidden'}`}>
-          <DialogTitle className={`${uploaderData.title || uploaderData.title ? '' : 'hidden'} leading-6 h-6`}>{uploaderData.title}</DialogTitle>
-          <DialogDescription className={`${uploaderData.description ? '' : 'hidden'}`}>{uploaderData.description}</DialogDescription>
+          <DialogTitle className={`${uploaderData.title || uploaderData.title ? '' : 'hidden'} leading-6 h-6`}>
+            {uploaderData.title}
+          </DialogTitle>
+          <DialogDescription className={`${uploaderData.description ? '' : 'hidden'}`}>
+            {uploaderData.description}
+          </DialogDescription>
         </DialogHeader>
 
         {/* For accessibility */}

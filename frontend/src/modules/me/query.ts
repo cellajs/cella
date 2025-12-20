@@ -1,7 +1,15 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { DeletePasskeyData, DeletePasskeyResponse, ToggleMfaData, User } from '~/api.gen';
-import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, type UpdateMeData, updateMe } from '~/api.gen';
+import {
+  createPasskey,
+  deletePasskey,
+  deleteTotp,
+  getMyInvitations,
+  toggleMfa,
+  type UpdateMeData,
+  updateMe,
+} from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
@@ -52,7 +60,8 @@ export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, qu
  *
  * @returns Query options.
  */
-export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+export const meInvitationsQueryOptions = () =>
+  queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
 /**
  * Mutation hook for updating current user (self) info

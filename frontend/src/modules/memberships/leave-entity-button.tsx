@@ -17,7 +17,12 @@ export type LeaveEntityButtonProps = {
   callback?: (args: CallbackArgs) => void;
 };
 
-export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfig.defaultRedirectPath, callback }: LeaveEntityButtonProps) => {
+export const LeaveEntityButton = ({
+  entity,
+  buttonProps,
+  redirectPath = appConfig.defaultRedirectPath,
+  callback,
+}: LeaveEntityButtonProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -33,7 +38,8 @@ export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfi
       // Clear related cache entries
       // Note: works if queryKeys are structured like `organizationQueryKeys.single`
       queryClient.removeQueries({
-        predicate: ({ queryKey }) => queryKey.includes(entity.entityType) && queryKey.some((k) => k === entity.id || k === entity.slug),
+        predicate: ({ queryKey }) =>
+          queryKey.includes(entity.entityType) && queryKey.some((k) => k === entity.id || k === entity.slug),
       });
 
       callback?.({ status: 'success' });

@@ -17,7 +17,20 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
  * A button that displays a tooltip when hovered.
  */
 export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(
-  ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = true, ...props }, _ref) => {
+  (
+    {
+      children,
+      toolTipContent,
+      disabled,
+      side = 'bottom',
+      sideOffset = 8,
+      className,
+      hideWhenDetached,
+      portal = true,
+      ...props
+    },
+    _ref,
+  ) => {
     if (disabled) return children;
 
     const content = (

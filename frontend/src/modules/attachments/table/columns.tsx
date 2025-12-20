@@ -112,7 +112,11 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
             data-tooltip="true"
             data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
           >
-            {isInCloud ? <CloudIcon className="text-success" size={16} /> : <CloudOffIcon className="opacity-50" size={16} />}
+            {isInCloud ? (
+              <CloudIcon className="text-success" size={16} />
+            ) : (
+              <CloudOffIcon className="opacity-50" size={16} />
+            )}
           </div>
         );
       },
@@ -227,7 +231,9 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
       minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
+        <span className="group-hover:underline underline-offset-4 truncate font-light">
+          {row.filename || <span className="text-muted">-</span>}
+        </span>
       ),
     },
     {
@@ -238,7 +244,9 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
       minWidth: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
+        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
+          {formatBytes(row.size)}
+        </div>
       ),
     },
     {

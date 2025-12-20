@@ -1,14 +1,14 @@
 import z from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
-import { baseElectrycSyncQuery, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { baseElectricSyncQuery, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
 import { pageCreateBodySchema, pageListQuerySchema, pageSchema, pageUpdateBodySchema } from './schema';
 
 const pagesRoutes = {
   /**
-   * Electric Shape Proxy?
+   * Electric Shape Proxy
    */
   shapeProxy: createCustomRoute({
     operationId: 'shapeProxy',
@@ -20,14 +20,14 @@ const pagesRoutes = {
     description: `Proxy requests to ElectricSQL's shape endpoint for the \`pages\` table.
       Used by clients to synchronize local data with server state via the shape log system.
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
-    request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
+    request: { query: baseElectricSyncQuery, params: inOrgParamSchema },
     responses: {
       200: { description: 'Success' },
       ...errorResponseRefs,
     },
   }),
   /**
-   * Create Pages
+   * Create a page
    */
   createPage: createCustomRoute({
     operationId: 'createPage',
@@ -48,7 +48,7 @@ const pagesRoutes = {
         description: 'Page',
         content: {
           'application/json': {
-            schema: pageSchema.array(),
+            schema: pageSchema,
           },
         },
       },
@@ -56,7 +56,7 @@ const pagesRoutes = {
     },
   }),
   /**
-   * Get Pages
+   * Get pages
    */
   getPages: createCustomRoute({
     operationId: 'getPages',
@@ -73,9 +73,7 @@ const pagesRoutes = {
       200: {
         description: 'Pages',
         content: {
-          'application/json': {
-            schema: paginationSchema(pageSchema),
-          },
+          'application/json': { schema: paginationSchema(pageSchema) },
         },
       },
       ...errorResponseRefs,

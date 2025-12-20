@@ -1,4 +1,12 @@
-import { FileArchiveIcon, FileAudioIcon, FileIcon, FileImageIcon, FileSpreadsheetIcon, FileTextIcon, FileVideoIcon } from 'lucide-react';
+import {
+  FileArchiveIcon,
+  FileAudioIcon,
+  FileIcon,
+  FileImageIcon,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  FileVideoIcon,
+} from 'lucide-react';
 
 const contentTypeMap = [
   { match: ['image'], icon: FileImageIcon },

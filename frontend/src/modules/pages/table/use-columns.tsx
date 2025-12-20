@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { FileArchiveIcon, FileCheckIcon, FilePenLineIcon, LucideProps } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
@@ -7,23 +6,8 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { PageStatus } from '~/modules/pages/types';
 import { UserCellById } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
-
-const statusColors = {
-  unpublished: 'text-blue-500',
-  published: 'text-green-500',
-  archived: 'text-grey-500',
-} as const satisfies Record<PageStatus, string>;
-
-type LucideIcon = React.ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & React.RefAttributes<SVGSVGElement>>;
-
-export const statusIcons = {
-  unpublished: FilePenLineIcon,
-  published: FileCheckIcon,
-  archived: FileArchiveIcon,
-} satisfies Record<PageStatus, LucideIcon>;
 
 export const usePagesTableColumns = (isCompact: boolean) => {
   const { t } = useTranslation();
@@ -32,7 +16,7 @@ export const usePagesTableColumns = (isCompact: boolean) => {
   const configs: ColumnOrColumnGroup<Page>[] = [
     CheckboxColumn,
     {
-      key: 'title',
+      key: 'name',
       name: t('common:title'),
       visible: true,
       minWidth: 200,
@@ -41,12 +25,10 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
-          // TODO
-          // @ts-ignore
-          to="/pages"
+          to="/page/$id"
           draggable="false"
           tabIndex={tabIndex}
-          // params={{ idOrSlug: row.slug }}
+          params={{ id: row.id }}
           className="flex space-x-2 items-center outline-0 ring-0 group"
         >
           {/* <AvatarWrap
@@ -72,15 +54,7 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       width: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        const colorClasses = statusColors[row.status];
-        const Icon = statusIcons[row.status];
-
-        return (
-          <>
-            <Icon className={`size-4 mr-2 fill-current ${colorClasses}`} aria-hidden="true" />
-            <span className={colorClasses}>{t(`app:${row.status}`)}</span>
-          </>
-        );
+        return <span className="font-light">{t(`app:${row.status}`)}</span>;
       },
     },
     {

@@ -45,7 +45,13 @@ const basicBlockTypes = {
   },
 };
 
-const UppyFilePanel = ({ onComplete, onError, organizationId, blockId, isPublic = false }: BaseUppyFilePanelProps & FilePanelProps) => {
+const UppyFilePanel = ({
+  onComplete,
+  onError,
+  organizationId,
+  blockId,
+  isPublic = false,
+}: BaseUppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { isOnline } = useOnlineManager();
@@ -85,7 +91,11 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, blockId, isPublic 
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: isPublic, templateId: 'attachment', organizationId });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, {
+          public: isPublic,
+          templateId: 'attachment',
+          organizationId,
+        });
 
         localUppy
           .on('error', (error) => {
@@ -154,7 +164,9 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, blockId, isPublic 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${blockType}`).toLowerCase() })}</DialogTitle>
+          <DialogTitle className="h-6">
+            {t('common:upload_item', { item: t(`common:${blockType}`).toLowerCase() })}
+          </DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
 

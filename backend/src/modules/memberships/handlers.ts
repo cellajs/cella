@@ -10,7 +10,13 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextMemberships, getContextOrganization, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import {
+  type Env,
+  getContextMemberships,
+  getContextOrganization,
+  getContextUser,
+  getContextUserSystemRole,
+} from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
@@ -97,7 +103,8 @@ const membershipRouteHandlers = app
       .select({
         email: emailsTable.email, // email identifier
         userId: usersTable.id, // nullable if no user
-        language: usersTable.language || ('defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage), // use user's language or entity's or app default
+        language:
+          usersTable.language || ('defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage), // use user's language or entity's or app default
         membershipId: membershipsTable.id, // nullable if no membership
         inactiveMembershipId: inactiveMembershipsTable.id, // nullable if no inactive membership
         orgMembershipId: orgMemberships.id,
@@ -123,7 +130,10 @@ const membershipRouteHandlers = app
         ),
       )
       // join tokens using inactiveMemberships.tokenId (type 'invitation' only)
-      .leftJoin(tokensTable, and(eq(tokensTable.id, inactiveMembershipsTable.tokenId), eq(tokensTable.type, 'invitation')))
+      .leftJoin(
+        tokensTable,
+        and(eq(tokensTable.id, inactiveMembershipsTable.tokenId), eq(tokensTable.type, 'invitation')),
+      )
       .leftJoin(
         orgMemberships,
         and(
@@ -294,10 +304,14 @@ const membershipRouteHandlers = app
     }
 
     if (inactiveMembershipsToInsert.length > 0) {
-      insertedInactiveMemberships = await db.insert(inactiveMembershipsTable).values(inactiveMembershipsToInsert).onConflictDoNothing().returning({
-        id: inactiveMembershipsTable.id,
-        email: inactiveMembershipsTable.email,
-      });
+      insertedInactiveMemberships = await db
+        .insert(inactiveMembershipsTable)
+        .values(inactiveMembershipsToInsert)
+        .onConflictDoNothing()
+        .returning({
+          id: inactiveMembershipsTable.id,
+          email: inactiveMembershipsTable.email,
+        });
     }
 
     // Step 6: Prepare "with-token" recipients (Scenario 3)
@@ -343,7 +357,9 @@ const membershipRouteHandlers = app
     const [{ currentOrgMemberships }] = await db
       .select({ currentOrgMemberships: count() })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(
+        and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)),
+      );
 
     const membersRestrictions = organization.restrictions.user;
     if (membersRestrictions !== 0 && currentOrgMemberships + invitesSentCount > membersRestrictions) {
@@ -462,7 +478,9 @@ const membershipRouteHandlers = app
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
-      const relevantMemberships = memberships.filter((membership) => membership.contextType === updatedType && membership.archived === archived);
+      const relevantMemberships = memberships.filter(
+        (membership) => membership.contextType === updatedType && membership.archived === archived,
+      );
 
       const lastOrderMembership = relevantMemberships.sort((a, b) => b.order - a.order)[0];
 
@@ -577,7 +595,12 @@ const membershipRouteHandlers = app
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
 
     // Build search filters
-    const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
+    const $or = q
+      ? [
+          ilike(usersTable.name, prepareStringForILikeFilter(q)),
+          ilike(usersTable.email, prepareStringForILikeFilter(q)),
+        ]
+      : [];
 
     const membersFilters = [
       eq(membershipsTable.organizationId, organization.id),

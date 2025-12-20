@@ -8,7 +8,19 @@ import { cn } from '~/utils/cn';
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
 export default function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
-  const { id, content, open, triggerRef, description, title, titleContent = title, className, showCloseButton, headerClassName, container } = dialog;
+  const {
+    id,
+    content,
+    open,
+    triggerRef,
+    description,
+    title,
+    titleContent = title,
+    className,
+    showCloseButton,
+    headerClassName,
+    container,
+  } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled

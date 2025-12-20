@@ -51,7 +51,12 @@ export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: str
           {t('common:send_reset_link')}
         </SubmitButton>
 
-        <Button type="reset" variant="secondary" onClick={() => setEmailValue('')} className={emailValue ? '' : 'invisible'}>
+        <Button
+          type="reset"
+          variant="secondary"
+          onClick={() => setEmailValue('')}
+          className={emailValue ? '' : 'invisible'}
+        >
           {t('common:cancel')}
         </Button>
       </div>

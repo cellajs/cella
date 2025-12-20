@@ -7,7 +7,13 @@ import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
 import LegalText from '~/modules/marketing/legal/legal-text';
 import { Button } from '~/modules/ui/button';
 
-export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; mode?: 'waitlist' | 'signup' | 'verify' }) => {
+export const LegalNotice = ({
+  email = '',
+  mode = 'signup',
+}: {
+  email?: string;
+  mode?: 'waitlist' | 'signup' | 'verify';
+}) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -34,11 +40,23 @@ export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; m
       {mode === 'signup' && <span>{t('common:legal_notice.text', { email })}</span>}
       {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
       {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
-      <Button ref={termsButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('terms', termsButtonRef)}>
+      <Button
+        ref={termsButtonRef}
+        type="button"
+        variant="link"
+        className="p-0 text-base h-auto"
+        onClick={openDialog('terms', termsButtonRef)}
+      >
         {t('common:terms').toLocaleLowerCase()}
       </Button>
       <span>&</span>
-      <Button ref={privacyButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('privacy', privacyButtonRef)}>
+      <Button
+        ref={privacyButtonRef}
+        type="button"
+        variant="link"
+        className="p-0 text-base h-auto"
+        onClick={openDialog('privacy', privacyButtonRef)}
+      >
         {t('common:privacy_policy').toLocaleLowerCase()}
       </Button>
       <span>of {appConfig.company.name}.</span>

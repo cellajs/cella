@@ -45,7 +45,9 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
 
       return acc;
     },
-    {} as Partial<Record<(typeof appConfig.entityIdColumnKeys)[ContextEntityType], string>> & { organizationId: string },
+    {} as Partial<Record<(typeof appConfig.entityIdColumnKeys)[ContextEntityType], string>> & {
+      organizationId: string;
+    },
   );
 };
 
@@ -63,7 +65,9 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
  * @param items - membership requests for existing users
  * @returns inserted target memberships (MembershipBaseModel)
  */
-export const insertMemberships = async <T extends BaseEntityModel>(items: Array<InsertMultipleProps<T>>): Promise<Array<MembershipBaseModel>> => {
+export const insertMemberships = async <T extends BaseEntityModel>(
+  items: Array<InsertMultipleProps<T>>,
+): Promise<Array<MembershipBaseModel>> => {
   // Early exit: nothing to insert
   if (!items.length) return [];
 
@@ -160,12 +164,14 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
   // Build target entity membership rows (the ones we return after insert)
-  const targetRows: InsertMembershipModel[] = prepared.map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => ({
-    ...baseMembership,
-    contextType: entity.entityType,
-    ...targetEntitiesIdColumnKeys,
-    uniqueKey: `${baseMembership.userId}-${targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[entity.entityType]]}`,
-  }));
+  const targetRows: InsertMembershipModel[] = prepared.map(
+    ({ baseMembership, targetEntitiesIdColumnKeys, entity }) => ({
+      ...baseMembership,
+      contextType: entity.entityType,
+      ...targetEntitiesIdColumnKeys,
+      uniqueKey: `${baseMembership.userId}-${targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[entity.entityType]]}`,
+    }),
+  );
 
   const [insertedTarget] = await Promise.all([
     // targetRows → main insert (returns inserted memberships)
@@ -176,7 +182,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(items: Array<
 
     // optional org + associated inserts (safe upserts)
     orgRows.length ? db.insert(membershipsTable).values(orgRows).onConflictDoNothing() : Promise.resolve(),
-    associatedRows.length ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing() : Promise.resolve(),
+    associatedRows.length
+      ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing()
+      : Promise.resolve(),
   ]);
 
   // Emit a log for each inserted membership (keeps your original semantics)

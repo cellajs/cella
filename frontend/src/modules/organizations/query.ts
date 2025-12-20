@@ -21,11 +21,13 @@ type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset
 
 const keys = createEntityKeys<OrganizationFilters>('organization');
 
+/**
+ * Organization query keys.
+ */
 export const organizationQueryKeys = keys;
 
 /**
  * Query options for a single organization by id or slug.
- * This function returns query options for fetching a single organization using its id or slug.
  */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -33,11 +35,12 @@ export const organizationQueryOptions = (idOrSlug: string) =>
     queryFn: async () => getOrganization({ path: { idOrSlug } }),
   });
 
-type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number };
+type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {
+  limit?: number;
+};
 
 /**
- * Query options to get a paginated list of organizations.
- * This function returns infinite query options to fetch a list of organizations with support for pagination.
+ * Infinite query options to get a paginated list of organizations.
  */
 export const organizationsQueryOptions = (params: OrganizationsListParams) => {
   const {
@@ -73,9 +76,6 @@ export const organizationsQueryOptions = (params: OrganizationsListParams) => {
 
 /**
  * Custom hook to create a new organization.
- * This hook provides the functionality to create a new organization.
- *
- * @returns The mutation hook for creating an organization.
  */
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
@@ -91,10 +91,6 @@ export const useOrganizationCreateMutation = () => {
 
 /**
  * Custom hook to update an existing organization.
- * This hook provides the functionality to update an organization. After a successful update,
- * it updates the local cache and invalidates relevant queries to keep the data fresh.
- *
- * @returns The mutation hook for updating an organization.
  */
 export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
@@ -109,9 +105,6 @@ export const useOrganizationUpdateMutation = () => {
 
 /**
  * Custom hook to delete organizations.
- * This hook provides the functionality to delete one or more organizations.
- *
- * @returns The mutation hook for deleting organizations.
  */
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({

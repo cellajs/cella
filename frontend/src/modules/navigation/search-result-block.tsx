@@ -42,8 +42,16 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlock
               onSelect={() => onSelect(item)}
             >
               <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                <AvatarWrap type={entityType} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-                <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">{item.name}</span>
+                <AvatarWrap
+                  type={entityType}
+                  className="h-8 w-8"
+                  id={item.id}
+                  name={item.name}
+                  url={item.thumbnailUrl}
+                />
+                <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
+                  {item.name}
+                </span>
               </div>
 
               <div className="flex items-center">

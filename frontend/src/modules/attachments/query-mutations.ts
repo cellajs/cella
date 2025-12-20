@@ -31,6 +31,9 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
 
+/**
+ * Custom hook to create an attachment.
+ */
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentQueryKeys.create,
@@ -95,7 +98,8 @@ export const useAttachmentCreateMutation = () =>
 
           // Add new attachments and update total count
           const prevItems = getQueryItems(oldData);
-          const updatedItems = insertOrder === 'asc' ? [...prevItems, ...newAttachments] : [...newAttachments, ...prevItems];
+          const updatedItems =
+            insertOrder === 'asc' ? [...prevItems, ...newAttachments] : [...newAttachments, ...prevItems];
 
           return formatUpdatedCacheData(oldData, updatedItems, limit, newAttachments.length);
         });
@@ -148,13 +152,19 @@ export const useAttachmentCreateMutation = () =>
       const message =
         createdAttachments.length === 1
           ? t('common:success.create_resource', { resource: t('common:attachment') })
-          : t('common:success.create_counted_resources', { count: createdAttachments.length, resources: t('common:attachments').toLowerCase() });
+          : t('common:success.create_counted_resources', {
+              count: createdAttachments.length,
+              resources: t('common:attachments').toLowerCase(),
+            });
 
       toaster(message, 'success');
     },
     onError: (_, __, context) => handleError('create', context),
   });
 
+/**
+ * Custom hook to update an attachment.
+ */
 export const useAttachmentUpdateMutation = () =>
   useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentQueryKeys.update,
@@ -238,7 +248,9 @@ export const useAttachmentUpdateMutation = () =>
           const ids = optimisticIds || [];
 
           // Replace optimistic items with the updated attachment
-          const updatedAttachments = prevItems.map((item) => (ids.includes(item.id) ? { ...item, ...updatedAttachment } : item));
+          const updatedAttachments = prevItems.map((item) =>
+            ids.includes(item.id) ? { ...item, ...updatedAttachment } : item,
+          );
 
           return formatUpdatedCacheData(oldData, updatedAttachments);
         });
@@ -247,6 +259,9 @@ export const useAttachmentUpdateMutation = () =>
     onError: (_, __, context) => handleError('update', context),
   });
 
+/**
+ * Custom hook to delete an attachment.
+ */
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
     mutationKey: attachmentQueryKeys.delete,
@@ -294,5 +309,6 @@ export const useAttachmentDeleteMutation = () =>
 
       return context;
     },
-    onError: (_, { serverDeletionIds }, context) => handleError(serverDeletionIds.length > 1 ? 'deleteMany' : 'delete', context),
+    onError: (_, { serverDeletionIds }, context) =>
+      handleError(serverDeletionIds.length > 1 ? 'deleteMany' : 'delete', context),
   });

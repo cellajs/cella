@@ -37,7 +37,8 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusVie
 
   const onSearch = (searchString: string) => setSearch({ q: searchString });
   const onSortChange = (sort: (typeof entityGridSortOptions)[number]['value']) => setSearch({ sort });
-  const onRoleChange = (role?: string) => setSearch({ role: role === 'all' ? undefined : (role as EntityGridBarSearch['role']) });
+  const onRoleChange = (role?: string) =>
+    setSearch({ role: role === 'all' ? undefined : (role as EntityGridBarSearch['role']) });
 
   const onResetFilters = () => setSearch({ q: '' });
 
@@ -51,8 +52,18 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusVie
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
           <TableSearch name="entitySearch" value={q} setQuery={onSearch} />
-          <SelectSort value={sort ?? 'name'} onChange={onSortChange} className="h-10" sortOptions={entityGridSortOptions} />
-          <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+          <SelectSort
+            value={sort ?? 'name'}
+            onChange={onSortChange}
+            className="h-10"
+            sortOptions={entityGridSortOptions}
+          />
+          <SelectRole
+            entity
+            value={role === undefined ? 'all' : role}
+            onChange={onRoleChange}
+            className="h-10 sm:min-w-32"
+          />
         </FilterBarContent>
       </TableFilterBar>
 

@@ -15,8 +15,6 @@ const PagesTable = () => {
   const { t } = useTranslation();
   const [isCompact, setIsCompact] = useState(false);
 
-  // const { user } = useUserStore();
-
   const { search, setSearch, data, isLoading, isFetching, error, hasNextPage, fetchNextPage } = usePagesList();
 
   const rows = useOfflineTableSearch({
@@ -67,16 +65,20 @@ const PagesTable = () => {
         hasNextPage={hasNextPage}
         fetchMore={fetchNextPage}
         selectedRows={new Set(selected.map((row) => row.id))}
-        onSelectedRowsChange={(_selectedIds) => {
-          // if (rows) {
-          //   const selectedRows = rows.filter((row) => selectedIds.has(row.id));
-          //   setSelected(selectedRows);
-          // }
+        onSelectedRowsChange={(selectedIds) => {
+          if (rows) {
+            const selectedRows = rows.filter((row) => selectedIds.has(row.id));
+            setSelected(selectedRows);
+          }
         }}
         sortColumns={sortColumns}
         onSortColumnsChange={setSortColumns}
         NoRowsComponent={
-          <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:pages').toLowerCase() }} />
+          <ContentPlaceholder
+            icon={BirdIcon}
+            title="common:no_resource_yet"
+            titleProps={{ resource: t('common:pages').toLowerCase() }}
+          />
         }
       />
     </div>

@@ -253,7 +253,10 @@ describe('Password Authentication', async () => {
       expect(firstResponse.emailVerified).toBe(false);
 
       // Verify the email
-      await db.update(emailsTable).set({ verified: true, verifiedAt: pastIsoDate() }).where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
+      await db
+        .update(emailsTable)
+        .set({ verified: true, verifiedAt: pastIsoDate() })
+        .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
 
       // Second signin should succeed
       const secondRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });

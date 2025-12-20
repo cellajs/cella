@@ -19,7 +19,9 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
     </div>,
     {
       id: 'attachment-dialog',
-      triggerRef: triggerRef || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null },
+      triggerRef: triggerRef || {
+        current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
+      },
       drawerOnMobile: false,
       className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
       headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',

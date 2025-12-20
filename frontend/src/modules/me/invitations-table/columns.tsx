@@ -30,8 +30,13 @@ export const useColumns = () => {
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
-  const { mutate: handleInvitation } = useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
-    mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) => handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
+  const { mutate: handleInvitation } = useMutation<
+    HandleMembershipInvitationResponse,
+    ApiError,
+    HandleMembershipInvitationData['path']
+  >({
+    mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) =>
+      handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
     onSuccess: async (settledEntity, { acceptOrReject }) => {
       await getMenuData();
 
@@ -40,7 +45,10 @@ export const useColumns = () => {
         return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
       });
 
-      toaster(t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
+      toaster(
+        t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }),
+        'success',
+      );
     },
   });
 
@@ -53,7 +61,13 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
-          <AvatarWrap type={row.entity.entityType} className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
+          <AvatarWrap
+            type={row.entity.entityType}
+            className="h-8 w-8"
+            id={row.entity.id}
+            name={row.entity.name}
+            url={row.entity.thumbnailUrl}
+          />
           <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
         </>
       ),
@@ -75,7 +89,11 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative group h-full w-full">
-          {row.inactiveMembership.role ? t(`common:${row.inactiveMembership.role}`) : <span className="text-muted">-</span>}
+          {row.inactiveMembership.role ? (
+            t(`common:${row.inactiveMembership.role}`)
+          ) : (
+            <span className="text-muted">-</span>
+          )}
         </div>
       ),
     },
@@ -87,7 +105,11 @@ export const useColumns = () => {
       minWidth: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) =>
-        row.inactiveMembership.createdAt ? dateShort(row.inactiveMembership.createdAt) : <span className="text-muted">-</span>,
+        row.inactiveMembership.createdAt ? (
+          dateShort(row.inactiveMembership.createdAt)
+        ) : (
+          <span className="text-muted">-</span>
+        ),
     },
     {
       key: 'createdBy',
@@ -96,7 +118,9 @@ export const useColumns = () => {
       visible: !isMobile,
       minWidth: 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => (
+        <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />
+      ),
     },
     {
       key: 'actions',
@@ -114,7 +138,11 @@ export const useColumns = () => {
               size="xs"
               variant={variant}
               onClick={() =>
-                handleInvitation({ id: row.inactiveMembership.id, acceptOrReject: action, orgIdOrSlug: row.inactiveMembership.organizationId })
+                handleInvitation({
+                  id: row.inactiveMembership.id,
+                  acceptOrReject: action,
+                  orgIdOrSlug: row.inactiveMembership.organizationId,
+                })
               }
             >
               {label}

@@ -66,7 +66,9 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     closeSheet();
   };
 
-  const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
+  const handleInteractOutside = (
+    event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>,
+  ) => {
     // Dont close if interact outside is caused by dropdown
     const dropdown = useDropdowner.getState().dropdown;
     if (dropdown) return event.preventDefault();

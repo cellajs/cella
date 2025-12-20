@@ -1,11 +1,11 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import type { Attachment } from '~/api.gen';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 import { createEntityKeys } from '../entities/create-query-keys';
 
-type AttachmentFilters = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
+type AttachmentFilters = GetAttachmentsData['path'] &
+  Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 
 const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
 
@@ -13,18 +13,23 @@ const keys = {
   ...baseKeys,
   list: {
     ...baseKeys.list,
-    similar: (filters: Pick<AttachmentFilters, 'orgIdOrSlug'>) => ['attachment', 'list', { ...filters, mode: 'similar' }] as const,
+    similar: (filters: Pick<AttachmentFilters, 'orgIdOrSlug'>) =>
+      ['attachment', 'list', { ...filters, mode: 'similar' }] as const,
   },
 };
 
+/**
+ * Attachment query keys.
+ */
 export const attachmentQueryKeys = keys;
 
 /**
- * Query Options for fetching grouped attachments.
- *
- * This function returns the configuration for querying group of attachments from target organization.
+ * Query options for fetching grouped attachments.
  */
-export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<AttachmentFilters, 'attachmentId' | 'orgIdOrSlug'>) => {
+export const groupedAttachmentsQueryOptions = ({
+  orgIdOrSlug,
+  attachmentId,
+}: Pick<AttachmentFilters, 'attachmentId' | 'orgIdOrSlug'>) => {
   const queryKey = keys.list.base;
 
   return queryOptions({
@@ -41,8 +46,6 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
 
 /**
  * Infinite Query Options for fetching a paginated list of attachments.
- *
- * This function returns the configuration for querying attachments from target organization with pagination support.
  */
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,
@@ -53,7 +56,6 @@ export const attachmentsQueryOptions = ({
 }: Omit<AttachmentFilters, 'groupId'> & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const baseQueryKey = keys.list.filtered({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = keys.list.filtered({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
@@ -63,12 +65,5 @@ export const attachmentsQueryOptions = ({
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
     ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<Attachment>(baseQueryKey, {
-      q,
-      sort,
-      order,
-      searchIn: ['name', 'filename'],
-      limit: baseLimit,
-    }),
   });
 };

@@ -10,7 +10,6 @@ import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
-import { sendSlackMessage } from '#/lib/notifications/send-slack-message';
 import requestRoutes from '#/modules/requests/routes';
 import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -81,16 +80,13 @@ const requestRouteHandlers = app
     // Send message to Matrix
     const matrixResp = await sendMatrixMessage({ msgtype: 'm.notice', textMessage });
 
-    // Send message to Slack
-    const slackResp = await sendSlackMessage(title, normalizedEmail);
-
     // Send email
     const lng = appConfig.defaultLanguage;
     const subject = i18n.t('backend:email.request.subject', { lng, appName: appConfig.name, requestType: type });
     const staticProps = { lng, subject, type, message };
     const recipients = [{ email: normalizedEmail }];
 
-    if ((!matrixResp || !matrixResp.ok) && !slackResp) {
+    if (!matrixResp || !matrixResp.ok) {
       mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestInfoEmail, { ...staticProps, subject: title }, [
         { email: appConfig.company.email },
       ]);
@@ -118,7 +114,10 @@ const requestRouteHandlers = app
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
     const requestsQuery = db
-      .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited') })
+      .select({
+        ...requestsSelect,
+        wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited'),
+      })
       .from(requestsTable)
       .where(filter);
 

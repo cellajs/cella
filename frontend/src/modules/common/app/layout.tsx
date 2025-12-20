@@ -16,7 +16,9 @@ const AppLayout = () => {
   return (
     <div id="appLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">
       <ErrorBoundary
-        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />}
+        fallbackRender={({ error, resetErrorBoundary }) => (
+          <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />
+        )}
       >
         <SSEProvider>
           <AppNav />

@@ -20,9 +20,11 @@ export type StandardEntityKeys<E extends EntityType, LF extends object = {}, SID
  * Usage:
  *   createEntityKeys<OrgFilters>('organization')
  */
-export function createEntityKeys<LF extends object, SID extends string | number = string, E extends EntityType = EntityType>(
-  entityType: E,
-): StandardEntityKeys<E, LF, SID> {
+export function createEntityKeys<
+  LF extends object,
+  SID extends string | number = string,
+  E extends EntityType = EntityType,
+>(entityType: E): StandardEntityKeys<E, LF, SID> {
   return {
     all: [entityType],
     list: {

@@ -22,10 +22,9 @@ const isFilteredEntityType = (entityType: EntityType): entityType is FilteredEnt
 };
 
 const entityCountSchema = z.object(
-  Object.fromEntries(appConfig.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, z.number()])) as Record<
-    FilteredEntityType,
-    z.ZodNumber
-  >,
+  Object.fromEntries(
+    appConfig.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, z.number()]),
+  ) as Record<FilteredEntityType, z.ZodNumber>,
 );
 
 export const membershipCountSchema = z.object({

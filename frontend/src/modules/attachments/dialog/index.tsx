@@ -30,7 +30,13 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug, localAttachment }: Attach
   }, [attachmentId, attachments]);
 
   if (localAttachment?.preview) {
-    return <AttachmentsCarousel items={[{ ...localAttachment, url: localAttachment.preview }]} isDialog saveInSearchParams={false} />;
+    return (
+      <AttachmentsCarousel
+        items={[{ ...localAttachment, url: localAttachment.preview }]}
+        isDialog
+        saveInSearchParams={false}
+      />
+    );
   }
 
   if (error) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;

@@ -7,7 +7,14 @@ import { lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SignUpData, type SignUpResponses, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
+import {
+  type SignUpData,
+  type SignUpResponses,
+  type SignUpWithTokenData,
+  type SignUpWithTokenResponse,
+  signUp,
+  signUpWithToken,
+} from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { LegalNotice } from '~/modules/auth/legal-notice';
@@ -80,7 +87,11 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
             ? t('common:invite_create_account')
             : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
         <br />
-        <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
+        <Button
+          variant="ghost"
+          onClick={resetSteps}
+          className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
+        >
           <span className="truncate">{email}</span>
           <ChevronDownIcon size={16} className="ml-1" />
         </Button>
@@ -112,7 +123,13 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
                   <FormItem className="gap-0">
                     <FormControl>
                       <div className="relative">
-                        <Input type="password" autoFocus={!isMobile} placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                        <Input
+                          type="password"
+                          autoFocus={!isMobile}
+                          placeholder={t('common:new_password')}
+                          autoComplete="new-password"
+                          {...field}
+                        />
                         <Suspense>
                           <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
                         </Suspense>

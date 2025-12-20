@@ -3,7 +3,11 @@ import type { AttachmentToInsert } from '~/modules/attachments/types';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { nanoid } from '~/utils/nanoid';
 
-export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, groupId = nanoid()) => {
+export const parseUploadedAttachments = (
+  result: UploadedUppyFile<'attachment'>,
+  organizationId: string,
+  groupId = nanoid(),
+) => {
   const uploadedAttachments: AttachmentToInsert[] = [];
 
   // Process original files
@@ -42,5 +46,7 @@ export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>,
     }
   }
 
-  return uploadedAttachments.length > 1 ? uploadedAttachments.map((attachment) => ({ ...attachment, groupId })) : uploadedAttachments;
+  return uploadedAttachments.length > 1
+    ? uploadedAttachments.map((attachment) => ({ ...attachment, groupId }))
+    : uploadedAttachments;
 };

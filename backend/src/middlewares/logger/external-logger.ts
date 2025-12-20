@@ -4,7 +4,9 @@ import { getNodeLoggerLevel } from '#/utils/logger';
 import { env } from '../../env';
 
 const opts = env.BETTERSTACK_INGESTING_HOST ? { endpoint: `https://${env.BETTERSTACK_INGESTING_HOST}` } : {};
-const externalLogger = env.BETTERSTACK_SOURCE_TOKEN ? new BetterStackLogger(env.BETTERSTACK_SOURCE_TOKEN, opts) : undefined;
+const externalLogger = env.BETTERSTACK_SOURCE_TOKEN
+  ? new BetterStackLogger(env.BETTERSTACK_SOURCE_TOKEN, opts)
+  : undefined;
 
 /**
  * Logs to BetterStack if logger is configured.

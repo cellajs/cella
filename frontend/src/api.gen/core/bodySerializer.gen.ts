@@ -58,7 +58,8 @@ export const formDataBodySerializer = {
 };
 
 export const jsonBodySerializer = {
-  bodySerializer: <T>(body: T): string => JSON.stringify(body, (_key, value) => (typeof value === 'bigint' ? value.toString() : value)),
+  bodySerializer: <T>(body: T): string =>
+    JSON.stringify(body, (_key, value) => (typeof value === 'bigint' ? value.toString() : value)),
 };
 
 export const urlSearchParamsBodySerializer = {

@@ -129,7 +129,11 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={UsersIcon} title="common:no_resource_yet" titleProps={{ resource: t('common:members').toLowerCase() }} />
+            <ContentPlaceholder
+              icon={UsersIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:members').toLowerCase() }}
+            />
           ),
         }}
       />

@@ -91,10 +91,12 @@ export const rateLimiter = (
     const slowLimitState = await slowLimiter.get(rateLimitKey);
 
     // If already rate limited, return 429
-    if (limitState !== null && limitState.consumedPoints > limiter.points) return rateLimitError(ctx, limitState, rateLimitKey);
+    if (limitState !== null && limitState.consumedPoints > limiter.points)
+      return rateLimitError(ctx, limitState, rateLimitKey);
 
     // If slow brute forcing, return 429
-    if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) return rateLimitError(ctx, slowLimitState, rateLimitKey);
+    if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points)
+      return rateLimitError(ctx, slowLimitState, rateLimitKey);
 
     // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
     if (mode === 'limit') {

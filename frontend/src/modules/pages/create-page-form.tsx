@@ -1,157 +1,69 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { SaveIcon } from 'lucide-react';
-import { Suspense, useRef } from 'react';
+import { useMemo } from 'react';
+import { type UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { createPage, type Page } from '~/api.gen';
+import type { z } from 'zod';
+import type { Page } from '~/api.gen';
 import { zCreatePageData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
-import Spinner from '~/modules/common/spinner';
-import { useTableMutation } from '~/modules/pages/utils/mutations';
-import { Form, type LabelDirectionType } from '~/modules/ui/form';
-import { useUserStore } from '~/store/user';
-import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
-import { nanoid } from '~/utils/nanoid';
-import { CallbackArgs } from '../common/data-table/types';
-import InputFormField from '../common/form-fields/input';
-import { toaster } from '../common/toaster/service';
-import { Button, SubmitButton } from '../ui/button';
-import { Separator } from '../ui/separator';
+import { CallbackArgs } from '~/modules/common/data-table/types';
+import InputFormField from '~/modules/common/form-fields/input';
+import { toaster } from '~/modules/common/toaster/service';
+import { usePageCreateMutation } from '~/modules/pages/query';
+import { Button, SubmitButton } from '~/modules/ui/button';
+import { Form } from '~/modules/ui/form';
 
-// type FormValues = z.infer<typeof schema>;
-const schema = zCreatePageData.shape.body;
-
-type CreatePageFormProps = {
-  organizationId: string;
+interface Props {
   callback?: (args: CallbackArgs<Page>) => void;
-  isDialog?: boolean;
-  labelDirection?: LabelDirectionType;
-  // children?: React.ReactNode;
-};
+}
 
-type PageData = Partial<Page> & Pick<Page, 'name' | 'description' | 'keywords'>;
+const formSchema = zCreatePageData.shape.body;
+type FormValues = z.infer<typeof formSchema>;
 
-// TODO can we get this derived from zod schema?
-const prepareCreatePage = (pageData: PageData, createdBy: string): Page => {
-  const createdAt = new Date().toISOString();
-  return {
-    id: nanoid(),
-    entityType: 'page',
-    status: 'unpublished',
-    parentId: null,
-    displayOrder: 0,
-    createdAt,
-    createdBy,
-    modifiedAt: createdAt,
-    modifiedBy: createdBy,
-    ...pageData,
-  };
-};
-
-export const CreatePageForm = ({ organizationId, callback, isDialog, labelDirection }: CreatePageFormProps) => {
+export const CreatePageForm = ({ callback }: Props) => {
   const { t } = useTranslation();
 
-  const isFocused = true; // TODO grab from context?
+  const defaultValues = { name: '' };
 
-  // TODO can we offload this to the blocknote component
-  const blocknoteId = useRef(`blocknote-${nanoid()}`);
+  const formOptions: UseFormProps<FormValues> = useMemo(
+    () => ({
+      resolver: zodResolver(formSchema),
+      defaultValues,
+    }),
+    [],
+  );
 
   const formContainerId = 'create-page';
-  const form = useFormWithDraft(formContainerId, {
-    formOptions: {
-      resolver: zodResolver(schema),
-      defaultValues: {
-        id: nanoid(),
-        name: '',
-        description: '',
-        keywords: '',
-        status: 'unpublished',
-        parentId: null,
-        displayOrder: 0,
-      },
-    },
-  });
+  const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
-  const isDirty = form.isDirty
-    ? (() => {
-        const { name, description } = form.watch();
-        return [name].some((s) => s?.length) || blocknoteFieldIsDirty(description ?? '');
-      })()
-    : false;
+  const { mutate, isPending } = usePageCreateMutation();
 
-  const mutation = useTableMutation({
-    table: 'pages',
-    type: 'create',
-    mutationFn: async (body: Page) => {
-      console.log(body);
-      return await createPage({ body: body });
-    },
-  });
-
-  const { user } = useUserStore();
-  const handleSubmit = form.handleSubmit((data) => {
-    // TODO
-    const page = prepareCreatePage(
-      {
-        entityType: 'page',
-        name: data.name || '',
-        description: data.description,
-        keywords: 'test-tag',
-        status: 'unpublished',
-      },
-      user.id,
-    );
-
-    return mutation.mutate(page, {
-      onSuccess: ([data]) => {
+  const onSubmit = (values: FormValues) => {
+    mutate(values, {
+      onSuccess: (createdPage) => {
         form.reset();
-        toaster(t('common:success.create_newsletter'), 'success');
-        // useSheeter.getState().remove(formContainerId);
-        callback?.({ status: 'success', data });
+        toaster(t('common:success.create_resource', { resource: t('common:page') }), 'success');
+        callback?.({ data: createdPage, status: 'success' }); // Trigger callback
       },
     });
-  });
+  };
 
   return (
-    <Form {...form} labelDirection={labelDirection}>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <InputFormField
-          control={form.control}
-          name="name"
-          label={t('common:title')}
-          // placeholder={t('common:placeholder.subject')}
-          required
-          inputClassName="font-bold"
-        />
-        <Separator />
-        <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-          <BlockNoteContent
-            control={form.control}
-            name="description"
-            baseBlockNoteProps={{
-              id: blocknoteId.current,
-              editable: isFocused || isDialog,
-              members: [], // project members
-              className: 'min-h-64 [&>.bn-editor]:min-h-64',
-              // { isPublic, organizationId, onComplete }
-              baseFilePanelProps: { organizationId },
-              trailingBlock: false,
-              // onEnterClick: form.handleSubmit(onSubmit),
-            }}
-          />
-        </Suspense>
+    <Form {...form} labelDirection="top">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <InputFormField control={form.control} name="name" label={t('common:title')} required />
 
-        <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
-          <SubmitButton disabled={!isDirty} loading={mutation.isPending}>
-            <SaveIcon size={16} className="mr-2" />
-            {t('common:save')}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <SubmitButton disabled={!form.isDirty} loading={isPending}>
+            {t('common:create')}
           </SubmitButton>
+
           <Button
             type="reset"
-            onClick={() => form.reset()}
-            className={isDirty ? undefined : 'invisible'}
             variant="secondary"
-            aria-label={t('common:cancel')}
+            className={form.isDirty ? '' : 'invisible'}
+            aria-label="Cancel"
+            onClick={() => form.reset()}
           >
             {t('common:cancel')}
           </Button>

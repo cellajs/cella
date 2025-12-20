@@ -5,14 +5,24 @@ import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-w
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/store/navigation';
 
-export const MenuSheetItemsEdit = ({ data, isArchived, options }: { data: UserMenuItem[]; options?: MenuSectionOptions; isArchived: boolean }) => {
+export const MenuSheetItemsEdit = ({
+  data,
+  isArchived,
+  options,
+}: {
+  data: UserMenuItem[];
+  options?: MenuSectionOptions;
+  isArchived: boolean;
+}) => {
   const { t } = useTranslation();
   const { detailedMenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
 
   if (options && data.length === 0) {
     return (
-      <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: options.entityType })}</li>
+      <li className="py-2 text-muted-foreground text-sm text-light text-center">
+        {t('common:no_resource_yet', { resource: options.entityType })}
+      </li>
     );
   }
 

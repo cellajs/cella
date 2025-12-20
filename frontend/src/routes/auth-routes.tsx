@@ -67,7 +67,9 @@ export const RequestPasswordRoute = createRoute({
   getParentRoute: () => AuthLayoutRoute,
   component: () => (
     <>
-      <h1 className="text-2xl text-center">{i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase() })}</h1>
+      <h1 className="text-2xl text-center">
+        {i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase() })}
+      </h1>
       <p className="font-light text-center space-x-1">{i18n.t('common:reset_password.text')}</p>
       <RequestPasswordForm />
     </>

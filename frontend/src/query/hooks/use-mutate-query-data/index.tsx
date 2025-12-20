@@ -7,7 +7,12 @@ import {
   changeQueryData,
   isArbitraryQueryData,
 } from '~/query/hooks/use-mutate-query-data/helpers';
-import type { EntityIdAndType, ItemData, QueryDataActions, UseMutateQueryDataReturn } from '~/query/hooks/use-mutate-query-data/types';
+import type {
+  EntityIdAndType,
+  ItemData,
+  QueryDataActions,
+  UseMutateQueryDataReturn,
+} from '~/query/hooks/use-mutate-query-data/types';
 import { queryClient } from '~/query/query-client';
 import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
 
@@ -53,7 +58,8 @@ export function useMutateQueryData(
       // Determine type of query and apply action
       if (isQueryData(queryData)) changeQueryData(queryKey, items, action);
       if (isInfiniteQueryData(queryData)) changeInfiniteQueryData(queryKey, items, action);
-      if (entity && isArbitraryQueryData(queryData)) changeArbitraryQueryData(queryKey, items as EntityIdAndType[], action, entity, keyToOperateIn);
+      if (entity && isArbitraryQueryData(queryData))
+        changeArbitraryQueryData(queryKey, items as EntityIdAndType[], action, entity, keyToOperateIn);
     }
 
     // Invalidate queries if invalidateKeyGetter is provided and the action is included in useInvalidateOnActions
@@ -90,7 +96,11 @@ export function useMutateQueryData(
 
   function updateMembership(items: ItemData[]): void;
   function updateMembership(items: ContextEntityBase[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function updateMembership(items: ItemData[] | ContextEntityBase[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function updateMembership(
+    items: ItemData[] | ContextEntityBase[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'updateMembership', entity, keyToOperateIn);
   }
 

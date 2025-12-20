@@ -106,7 +106,9 @@ export const changeArbitraryQueryData = (
     for (const [key, value] of Object.entries(data)) {
       if (keyToOperateIn === key) {
         // If the value is an array, use updateArrayItems; otherwise, update the item directly
-        updatedData[key] = Array.isArray(value) ? updateArrayItems(value, items, action) : updateItem(value, items[0], action);
+        updatedData[key] = Array.isArray(value)
+          ? updateArrayItems(value, items, action)
+          : updateItem(value, items[0], action);
         continue;
       }
 
@@ -135,7 +137,12 @@ export const changeArbitraryQueryData = (
  * @param action - `"create" | "update" | "remove" | "updateMembership"`
  * @returns The updated array of items.
  */
-const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions, insertOrder?: 'asc' | 'desc') => {
+const updateArrayItems = <T extends ItemData>(
+  items: T[],
+  dataItems: T[],
+  action: QueryDataActions,
+  insertOrder?: 'asc' | 'desc',
+) => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {
     case 'create': {

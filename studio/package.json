@@ -16,7 +16,7 @@
   "devDependencies": {
     "chalk": "^5.6.2",
     "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.30.6",
+    "drizzle-kit": "^0.31.8",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

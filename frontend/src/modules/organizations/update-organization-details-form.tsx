@@ -89,7 +89,12 @@ const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet 
           <SubmitButton disabled={!isDirty()} loading={isPending}>
             {t('common:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={isDirty() ? '' : 'invisible'}>
+          <Button
+            type="reset"
+            variant="secondary"
+            onClick={() => form.reset()}
+            className={isDirty() ? '' : 'invisible'}
+          >
             {t('common:cancel')}
           </Button>
         </div>

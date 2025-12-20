@@ -24,7 +24,11 @@ import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/quer
 
 const limit = appConfig.requestLimits.members;
 
-const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
+const onError = (
+  _: ApiError,
+  __: InviteMember | MutationUpdateMembership | DeleteMembership,
+  context?: MemberContextProp[],
+) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
@@ -49,15 +53,21 @@ export const useInviteMemberMutation = () =>
           queryClient.setQueryData<ContextEntityData>([orgEntityType], (oldOrg) => {
             if (!oldOrg || !oldOrg.counts || oldOrg.id !== organizationId) return oldOrg;
 
-            const orgPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ idOrSlug: oldOrg.slug, entityType }));
-            for (const [queryKey] of orgPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
+            const orgPendingTableQueries = getSimilarQueries(
+              memberQueryKeys.list.similarPending({ idOrSlug: oldOrg.slug, entityType }),
+            );
+            for (const [queryKey] of orgPendingTableQueries)
+              queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
             return updateMembershipCounts(oldOrg, invitesSentCount);
           });
         }
 
-        const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ idOrSlug: slug, entityType }));
-        for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
+        const entityPendingTableQueries = getSimilarQueries(
+          memberQueryKeys.list.similarPending({ idOrSlug: slug, entityType }),
+        );
+        for (const [queryKey] of entityPendingTableQueries)
+          queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
         // Try cache update for both id and slug
         queryClient.setQueryData<ContextEntityData>([entityType], (oldEntity) => {
@@ -75,7 +85,9 @@ export const useInviteMemberMutation = () =>
         });
 
         for (const [key] of queries) {
-          queryClient.setQueryData<ContextEntityData>(key, (entity) => (entity ? updateMembershipCounts(entity, invitesSentCount) : entity));
+          queryClient.setQueryData<ContextEntityData>(key, (entity) =>
+            entity ? updateMembershipCounts(entity, invitesSentCount) : entity,
+          );
         }
       }
     },
@@ -93,16 +105,24 @@ export const useMemberUpdateMutation = () =>
       const { archived, muted, role, order } = membershipInfo;
 
       // Store previous query data for rollback if an Apierror occurs
-      const context = { queryContext: [] as MemberContextProp[], toastMessage: t('common:success.update_item', { item: t('common:membership') }) };
+      const context = {
+        queryContext: [] as MemberContextProp[],
+        toastMessage: t('common:success.update_item', { item: t('common:membership') }),
+      };
 
       // Set toast message based on what was updated
       if (archived !== undefined) {
-        context.toastMessage = t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entityType}`) });
+        context.toastMessage = t(`common:success.${archived ? 'archived' : 'restore'}_resource`, {
+          resource: t(`common:${entityType}`),
+        });
       } else if (muted !== undefined) {
-        context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entityType}`) });
+        context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, {
+          resource: t(`common:${entityType}`),
+        });
       } else if (role) {
         context.toastMessage = t('common:success.update_item', { item: t('common:role') });
-      } else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
+      } else if (order !== undefined)
+        context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
       // Update membership in member queries
       const { updateMembership } = useMutateQueryData(memberQueryKeys.list.base);
@@ -219,7 +239,10 @@ export const useMembershipsDeleteMutation = () =>
     onError,
   });
 
-const updateMembers = (members: Member[], variables: Omit<MutationUpdateMembership, 'idOrSlug' | 'entityType' | 'orgIdOrSlug'>) => {
+const updateMembers = (
+  members: Member[],
+  variables: Omit<MutationUpdateMembership, 'idOrSlug' | 'entityType' | 'orgIdOrSlug'>,
+) => {
   return members.map((member) => {
     // Update the task itself
     if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };
@@ -241,7 +264,10 @@ const deletedMembers = (members: Member[], ids: string[]) => {
 /**
  * Update the memberships and pending membership count in the cache for a given entity.
  */
-const updateMembershipCounts = (oldEntity: ContextEntityData | undefined, updateCount: number): ContextEntityData | undefined => {
+const updateMembershipCounts = (
+  oldEntity: ContextEntityData | undefined,
+  updateCount: number,
+): ContextEntityData | undefined => {
   if (!oldEntity || !oldEntity.counts) return oldEntity;
 
   return {

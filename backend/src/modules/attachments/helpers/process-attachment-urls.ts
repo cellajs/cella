@@ -10,9 +10,15 @@ export const processAttachmentUrlsInBatch = async (attachments: AttachmentSelect
   return Promise.all(attachments.map(processAttachment));
 };
 
-export const processAttachmentUrls = async (attachment: AttachmentSelect): Promise<Attachment> => processAttachment(attachment);
+export const processAttachmentUrls = async (attachment: AttachmentSelect): Promise<Attachment> =>
+  processAttachment(attachment);
 
-const processAttachment = async ({ convertedKey, thumbnailKey, originalKey, ...attachment }: AttachmentSelect): Promise<Attachment> => {
+const processAttachment = async ({
+  convertedKey,
+  thumbnailKey,
+  originalKey,
+  ...attachment
+}: AttachmentSelect): Promise<Attachment> => {
   const urlOptions = { isPublic: attachment.public, bucketName: attachment.bucketName };
 
   const [url, thumbnailUrl, convertedUrl] = await Promise.all([

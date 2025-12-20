@@ -16,7 +16,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import DeleteMembershipsForm from '~/modules/memberships/delete-memberships-form';
+import DeleteMembershipsForm from '~/modules/memberships/delete-memberships';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
 import { PendingMemberships } from '~/modules/memberships/pending-table/pending-memberships';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
@@ -151,7 +151,14 @@ export const MembersTableBar = ({
               </>
             ) : (
               !isFiltered &&
-              isAdmin && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="common:invite" onClick={() => openInviteDialog()} />
+              isAdmin && (
+                <TableBarButton
+                  ref={inviteButtonRef}
+                  icon={MailIcon}
+                  label="common:invite"
+                  onClick={() => openInviteDialog()}
+                />
+              )
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
@@ -164,7 +171,12 @@ export const MembersTableBar = ({
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
-            <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 w-auto sm:min-w-32" />
+            <SelectRole
+              entity
+              value={role === undefined ? 'all' : role}
+              onChange={onRoleChange}
+              className="h-10 w-auto sm:min-w-32"
+            />
           </FilterBarContent>
         </TableFilterBar>
 
@@ -173,7 +185,13 @@ export const MembersTableBar = ({
 
         {/* Export */}
         {!isSheet && (
-          <Export className="max-lg:hidden" filename={`${entityType} members`} columns={columns} selectedRows={selected} fetchRows={fetchExport} />
+          <Export
+            className="max-lg:hidden"
+            filename={`${entityType} members`}
+            columns={columns}
+            selectedRows={selected}
+            fetchRows={fetchExport}
+          />
         )}
 
         {/* Focus view */}

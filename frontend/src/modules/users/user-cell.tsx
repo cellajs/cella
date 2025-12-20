@@ -53,7 +53,13 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }
         });
       }}
     >
-      <AvatarWrap type="user" className="h-8 w-8 group-active:translate-y-[.05rem]" id={user.id} name={user.name} url={user.thumbnailUrl} />
+      <AvatarWrap
+        type="user"
+        className="h-8 w-8 group-active:translate-y-[.05rem]"
+        id={user.id}
+        name={user.name}
+        url={user.thumbnailUrl}
+      />
       <span
         className={cn(
           'group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate',
@@ -70,7 +76,11 @@ export const UserCell = ({ user, tabIndex, compactable, orgIdOrSlug, className }
  * Wrapper around UserCell to get userCell by ID from query cache.
  * Searches in both 'user' and 'member' queries since members contain UserBase data.
  */
-export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
+export const UserCellById = ({
+  userId,
+  cacheOnly,
+  ...baseProps
+}: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
   // Find user from cache (search in both 'user' and 'member' queries)
   const user = useFindInQueryCache<UserBase>([['user'], ['member']], (item) => item.id === userId);
 

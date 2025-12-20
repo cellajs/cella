@@ -10,7 +10,13 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; setIsActive: (active: boolean) => void }) => {
+export const TotpStrategy = ({
+  isActive,
+  setIsActive,
+}: {
+  isActive: boolean;
+  setIsActive: (active: boolean) => void;
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -18,7 +24,11 @@ export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; set
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const { mutate: totpSignIn } = useMutation<SignInWithTotpResponse, ApiError | Error, NonNullable<SignInWithTotpData['body']>>({
+  const { mutate: totpSignIn } = useMutation<
+    SignInWithTotpResponse,
+    ApiError | Error,
+    NonNullable<SignInWithTotpData['body']>
+  >({
     mutationFn: async (body) => await signInWithTotp({ body }),
     onSuccess: () => {
       navigate({ to: appConfig.defaultRedirectPath, replace: true });
@@ -29,7 +39,13 @@ export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; set
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {!isActive && (
-        <Button ref={triggerRef} type="button" onClick={() => setIsActive(true)} variant="plain" className="w-full gap-1.5 truncate">
+        <Button
+          ref={triggerRef}
+          type="button"
+          onClick={() => setIsActive(true)}
+          variant="plain"
+          className="w-full gap-1.5 truncate"
+        >
           <SmartphoneIcon size={16} />
           <span className="truncate">
             {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
@@ -37,7 +53,13 @@ export const TotpStrategy = ({ isActive, setIsActive }: { isActive: boolean; set
         </Button>
       )}
 
-      {isActive && <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => setIsActive(false)} label={t('common:totp_verify')} />}
+      {isActive && (
+        <TotpConfirmationForm
+          onSubmit={totpSignIn}
+          onCancel={() => setIsActive(false)}
+          label={t('common:totp_verify')}
+        />
+      )}
     </div>
   );
 };

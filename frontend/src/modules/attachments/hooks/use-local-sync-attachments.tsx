@@ -75,7 +75,10 @@ export const useLocalSyncAttachments = (organizationId: string) => {
           })
           .on('transloadit:complete', async (assembly) => {
             if (assembly.error) throw new Error(assembly.error);
-            const attachments = parseUploadedAttachments(assembly.results as UploadedUppyFile<'attachment'>, organizationId);
+            const attachments = parseUploadedAttachments(
+              assembly.results as UploadedUppyFile<'attachment'>,
+              organizationId,
+            );
 
             const ids = files.map(({ id }) => id);
             onComplete(attachments, ids);

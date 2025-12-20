@@ -18,7 +18,8 @@ const authPasswordsRoutes = {
     middleware: [isNoBot, spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Sign up with password',
-    description: 'Registers a new user using an email and password. Sends a verification email upon successful sign up.',
+    description:
+      'Registers a new user using an email and password. Sends a verification email upon successful sign up.',
     request: {
       body: {
         content: { 'application/json': { schema: emailPasswordBodySchema } },
@@ -94,7 +95,8 @@ const authPasswordsRoutes = {
     middleware: [tokenLimiter('password-reset'), hasValidSingleUseToken('password-reset')],
     tags: ['auth'],
     summary: 'Create password',
-    description: 'Sets a new password using a single-use session token in cookie and grants a session immediately upon success.',
+    description:
+      'Sets a new password using a single-use session token in cookie and grants a session immediately upon success.',
     request: {
       params: z.object({ tokenId: z.string() }),
       body: {

@@ -78,7 +78,8 @@ export const AppSearch = () => {
     ]),
   );
 
-  const ready = (userQ.isSuccess || userQ.isError) && Object.values(contextEntityResults).every((q) => q.isSuccess || q.isError);
+  const ready =
+    (userQ.isSuccess || userQ.isError) && Object.values(contextEntityResults).every((q) => q.isSuccess || q.isError);
 
   const users = searchValue.length > 0 ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [];
   const contextEntityData = Object.fromEntries(
@@ -135,7 +136,9 @@ export const AppSearch = () => {
           </CommandEmpty>
           {notFound && !searchValue.length && !!recentSearches.length && (
             <CommandGroup>
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
+              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
+                {t('common:history')}
+              </div>
               {recentSearches.map((search, index) => (
                 <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
                   <div className="flex gap-2 items-center outline-0 ring-0 group">
@@ -162,7 +165,12 @@ export const AppSearch = () => {
           )}
           {ready &&
             searchableEntityTypes.map((entityType) => (
-              <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} onSelect={onSelectItem} />
+              <SearchResultBlock
+                key={entityType}
+                results={data[entityType] ?? []}
+                entityType={entityType}
+                onSelect={onSelectItem}
+              />
             ))}
         </CommandList>
       </ScrollArea>

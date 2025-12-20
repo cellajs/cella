@@ -47,9 +47,17 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
 
   if (!isFetching && !error && entities.length === 0) {
     return isFiltered ? (
-      <ContentPlaceholder icon={SearchIcon} title="common:no_resource_found" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder
+        icon={SearchIcon}
+        title="common:no_resource_found"
+        titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }}
+      />
     ) : (
-      <ContentPlaceholder icon={BirdIcon} title="common:no_resource_yet" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder
+        icon={BirdIcon}
+        title="common:no_resource_yet"
+        titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }}
+      />
     );
   }
 
@@ -61,7 +69,12 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
         ))}
       </div>
 
-      <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} />
+      <InfiniteLoader
+        hasNextPage={!!hasNextPage}
+        isFetching={isFetching}
+        isFetchMoreError={!!error}
+        fetchMore={fetchMore}
+      />
     </div>
   );
 }

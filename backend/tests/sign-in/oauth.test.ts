@@ -11,7 +11,14 @@ import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/help
 import { mockEmail, mockUser } from '../../mocks/basic';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders } from '../fixtures';
-import { clearDatabase, migrateDatabase, mockArcticLibrary, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import {
+  clearDatabase,
+  migrateDatabase,
+  mockArcticLibrary,
+  mockFetchRequest,
+  mockRateLimiter,
+  setTestConfig,
+} from '../setup';
 
 mockArcticLibrary();
 
@@ -42,7 +49,9 @@ beforeAll(async () => {
       validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: () => 'mock-access-token' }),
     },
     microsoftAuth: {
-      createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')),
+      createAuthorizationURL: vi
+        .fn()
+        .mockReturnValue(new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')),
       validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: () => 'mock-access-token' }),
     },
   }));
@@ -162,7 +171,10 @@ describe('OAuth Authentication', async () => {
 
     it('should handle OAuth flow with redirect parameter', async () => {
       const redirectAfter = '/dashboard';
-      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirectAfter } }, { headers: defaultHeaders });
+      const res = await client['auth']['github'].$get(
+        { query: { type: 'auth', redirectAfter } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(302);
       // Should set oauth-redirect cookie
@@ -274,7 +286,10 @@ describe('OAuth Authentication', async () => {
       // Set up the state cookie manually for the test
       mockCookies.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
-      const res = await client['auth']['github']['callback'].$get({ query: { state, code: 'mock-auth-code' } }, { headers: defaultHeaders });
+      const res = await client['auth']['github']['callback'].$get(
+        { query: { state, code: 'mock-auth-code' } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
@@ -352,7 +367,10 @@ describe('OAuth Authentication', async () => {
   describe('Security & Input Validation', () => {
     it('should handle very long redirect URL', async () => {
       const longRedirect = 'a'.repeat(2000);
-      const res = await client['auth']['github'].$get({ query: { type: 'auth', redirectAfter: longRedirect } }, { headers: defaultHeaders });
+      const res = await client['auth']['github'].$get(
+        { query: { type: 'auth', redirectAfter: longRedirect } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(302);
     });
@@ -459,7 +477,10 @@ describe('OAuth Authentication', async () => {
       expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
 
       // Make authenticated request (sign-out to test session)
-      const protectedRes = await client['auth']['sign-out'].$post({}, { headers: { ...defaultHeaders, Cookie: setCookieHeader || '' } });
+      const protectedRes = await client['auth']['sign-out'].$post(
+        {},
+        { headers: { ...defaultHeaders, Cookie: setCookieHeader || '' } },
+      );
 
       // Should succeed if session is valid (sign-out returns 204)
       expect(protectedRes.status).toBe(204);

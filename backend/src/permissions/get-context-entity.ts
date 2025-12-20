@@ -44,7 +44,8 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
 
   // Step 3: Search for user's membership for this entity
   const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
-  const membership = memberships.find((m) => m[entityIdColumnKey] === entity.id && m.contextType === entityType) || null;
+  const membership =
+    memberships.find((m) => m[entityIdColumnKey] === entity.id && m.contextType === entityType) || null;
 
   if (!isAllowed) {
     if (!membership) throw new AppError({ status: 403, type: 'membership_not_found', severity: 'error', entityType });
