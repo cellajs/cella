@@ -19,23 +19,29 @@ const AttachmentDialogHandler = memo(() => {
 
     const loadAndCreateDialog = async () => {
       const cahcedAttachments = await attachmentStorage.getCachedImages(attachmentDialogId, groupId);
-      const validAttachments = cahcedAttachments.map((cache) => ({ id: cache.id, url: URL.createObjectURL(cache.file) }));
+      const validAttachments = cahcedAttachments.map((cache) => ({
+        id: cache.id,
+        url: URL.createObjectURL(cache.file),
+      }));
 
       const dialogTrigger = getTriggerRef(attachmentDialogId);
       const triggerRef = dialogTrigger || fallbackContentRef;
 
-      createDialog(<AttachmentDialog key={attachmentDialogId} attachmentId={attachmentDialogId} attachments={validAttachments} />, {
-        id: 'attachment-dialog',
-        triggerRef,
-        drawerOnMobile: false,
-        className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
-        headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
-        showCloseButton: false,
-        onClose: (isCleanup) => {
-          if (!isCleanup && dialogTrigger) return history.back();
-          clearAttachmentDialogSearchParams();
+      createDialog(
+        <AttachmentDialog key={attachmentDialogId} attachmentId={attachmentDialogId} attachments={validAttachments} />,
+        {
+          id: 'attachment-dialog',
+          triggerRef,
+          drawerOnMobile: false,
+          className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
+          headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
+          showCloseButton: false,
+          onClose: (isCleanup) => {
+            if (!isCleanup && dialogTrigger) return history.back();
+            clearAttachmentDialogSearchParams();
+          },
         },
-      });
+      );
     };
 
     loadAndCreateDialog();

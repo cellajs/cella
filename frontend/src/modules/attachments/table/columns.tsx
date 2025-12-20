@@ -22,14 +22,14 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
+export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const storeUserSystemRole = useUserStore((state) => state.systemRole);
@@ -46,7 +46,10 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: async ({ row: { id, filename, contentType, thumbnailKey, public: isPublic, originalKey, groupId }, tabIndex }) => {
+      renderCell: async ({
+        row: { id, filename, contentType, thumbnailKey, public: isPublic, originalKey, groupId },
+        tabIndex,
+      }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
         const wrapClass = 'flex space-x-2 items-center justify-center w-full h-full';
@@ -131,7 +134,11 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             data-tooltip="true"
             data-tooltip-content={isLocal ? t('common:local_only') : t('common:online')}
           >
-            {isLocal ? <CloudOffIcon className="opacity-50" size={16} /> : <CloudIcon className="text-success" size={16} />}
+            {isLocal ? (
+              <CloudOffIcon className="opacity-50" size={16} />
+            ) : (
+              <CloudIcon className="text-success" size={16} />
+            )}
           </div>
         );
       },
@@ -190,7 +197,11 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
             aria-label="Download"
             data-tooltip="true"
             data-tooltip-content={t('common:download')}
-            onClick={() => getPresignedUrl({ query: { key: row.originalKey, isPublic: row.public } }).then((url) => download(url, row.filename))}
+            onClick={() =>
+              getPresignedUrl({ query: { key: row.originalKey, isPublic: row.public } }).then((url) =>
+                download(url, row.filename),
+              )
+            }
           >
             {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon size={16} />}
           </Button>
@@ -256,7 +267,9 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
+        <span className="group-hover:underline underline-offset-4 truncate font-light">
+          {row.filename || <span className="text-muted">-</span>}
+        </span>
       ),
     },
     {
@@ -268,7 +281,9 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
-        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
+        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">
+          {formatBytes(row.size)}
+        </div>
       ),
     },
     {

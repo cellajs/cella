@@ -34,7 +34,13 @@ export const FilterBarActions = ({ children, className = '' }: FilterBarChildPro
 export const FilterBarContent = ({ children, className = '' }: FilterBarChildProps) => {
   const { isFilterActive } = useContext(TableFilterBarContext);
   return (
-    <div className={cn('flex items-center max-sm:w-full gap-2 max-sm:relative max-sm:mr-2', className, !isFilterActive && 'max-sm:hidden')}>
+    <div
+      className={cn(
+        'flex items-center max-sm:w-full gap-2 max-sm:relative max-sm:mr-2',
+        className,
+        !isFilterActive && 'max-sm:hidden',
+      )}
+    >
       {children}
     </div>
   );
@@ -54,7 +60,9 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
 
   return (
     <>
-      <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
+      <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>
+        {children}
+      </TableFilterBarContext.Provider>
       <AnimatePresence>
         {!isFilterActive && (
           <Button className="sm:hidden text-primary/80" variant="ghost" onClick={() => setFilterActive(true)} asChild>
@@ -77,7 +85,9 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
         {isFilterActive && (
           <Button className="sm:hidden" variant="secondary" onClick={clearFilters} asChild>
             <motion.button key={key} layoutId="table-filter-bar-button">
-              <motion.span layoutId="table-filter-bar-icon">{isFiltered ? <FilterXIcon size={16} /> : <XIcon size={16} />}</motion.span>
+              <motion.span layoutId="table-filter-bar-icon">
+                {isFiltered ? <FilterXIcon size={16} /> : <XIcon size={16} />}
+              </motion.span>
             </motion.button>
           </Button>
         )}

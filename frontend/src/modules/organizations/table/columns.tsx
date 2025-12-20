@@ -55,7 +55,8 @@ export const useColumns = (isCompact: boolean) => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0) return <UpdateRow organization={row} tabIndex={tabIndex} />;
+          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
+            return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
       {
@@ -67,7 +68,11 @@ export const useColumns = (isCompact: boolean) => {
         width: 120,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) =>
-          row.membership?.role ? t(`${row.membership.role}`, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>,
+          row.membership?.role ? (
+            t(`${row.membership.role}`, { ns: ['app', 'common'] })
+          ) : (
+            <span className="text-muted">-</span>
+          ),
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({
             row,
@@ -104,7 +109,9 @@ export const useColumns = (isCompact: boolean) => {
         minWidth: isCompact ? null : 120,
         width: isCompact ? 50 : null,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => (
+          <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />
+        ),
       },
       {
         key: 'memberCount',

@@ -132,7 +132,10 @@ export class DexieAttachmentStorage {
       const now = new Date();
 
       // Get idle files
-      const idleFiles = await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, 'idle']).toArray();
+      const idleFiles = await attachmentDb.attachmentFiles
+        .where('[organizationId+syncStatus]')
+        .equals([organizationId, 'idle'])
+        .toArray();
 
       // Get failed files that are ready for retry
       const retryFiles = await attachmentDb.attachmentFiles
@@ -187,12 +190,15 @@ export class DexieAttachmentStorage {
    */
   async resetFailedFiles(organizationId: string): Promise<void> {
     try {
-      await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, 'failed']).modify({
-        syncStatus: 'idle',
-        syncAttempts: 0,
-        nextRetryAt: undefined,
-        updatedAt: new Date(),
-      });
+      await attachmentDb.attachmentFiles
+        .where('[organizationId+syncStatus]')
+        .equals([organizationId, 'failed'])
+        .modify({
+          syncStatus: 'idle',
+          syncAttempts: 0,
+          nextRetryAt: undefined,
+          updatedAt: new Date(),
+        });
     } catch (error) {
       Sentry.captureException(error);
       console.error(`Failed to reset failed files for org: ${organizationId}:`, error);
@@ -208,7 +214,9 @@ export class DexieAttachmentStorage {
 
     try {
       // Deduplicate attachments by ID to avoid downloading the same image multiple times
-      const uniqueAttachments = attachments.filter((attachment, index, self) => self.findIndex((a) => a.id === attachment.id) === index);
+      const uniqueAttachments = attachments.filter(
+        (attachment, index, self) => self.findIndex((a) => a.id === attachment.id) === index,
+      );
 
       // Process attachments in batches to control memory usage
       const BATCH_SIZE = 5;
@@ -217,40 +225,42 @@ export class DexieAttachmentStorage {
       for (let i = 0; i < uniqueAttachments.length; i += BATCH_SIZE) {
         const batch = uniqueAttachments.slice(i, i + BATCH_SIZE);
 
-        const batchPromises = batch.map(async ({ id, name, groupId, contentType, originalKey: key, public: isPublic }) => {
-          try {
-            const imageUrl = await getPresignedUrl({ query: { key, isPublic } });
+        const batchPromises = batch.map(
+          async ({ id, name, groupId, contentType, originalKey: key, public: isPublic }) => {
+            try {
+              const imageUrl = await getPresignedUrl({ query: { key, isPublic } });
 
-            // Download with better error handling and timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+              // Download with better error handling and timeout
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-            const imageResponse = await fetch(imageUrl, {
-              signal: controller.signal,
-              headers: { 'Cache-Control': 'public, max-age=31536000' }, // Leverage browser cache
-            });
+              const imageResponse = await fetch(imageUrl, {
+                signal: controller.signal,
+                headers: { 'Cache-Control': 'public, max-age=31536000' }, // Leverage browser cache
+              });
 
-            clearTimeout(timeoutId);
+              clearTimeout(timeoutId);
 
-            //TODO switch to apiError
-            if (!imageResponse.ok) throw new Error(`HTTP ${imageResponse.status}: ${imageResponse.statusText}`);
+              //TODO switch to apiError
+              if (!imageResponse.ok) throw new Error(`HTTP ${imageResponse.status}: ${imageResponse.statusText}`);
 
-            const blob = await imageResponse.blob();
+              const blob = await imageResponse.blob();
 
-            // Create file with better type handling
-            const finalContentType = contentType || blob.type || 'application/octet-stream';
-            const file = new File([blob], name || `image-${id}`, {
-              type: finalContentType,
-              lastModified: Date.now(),
-            });
+              // Create file with better type handling
+              const finalContentType = contentType || blob.type || 'application/octet-stream';
+              const file = new File([blob], name || `image-${id}`, {
+                type: finalContentType,
+                lastModified: Date.now(),
+              });
 
-            return { id, file, groupId };
-          } catch (error) {
-            // Log individual failures but continue processing others
-            console.warn(`Failed to cache image ${id}:`, error instanceof Error ? error.message : error);
-            return null; // Return null for failed downloads
-          }
-        });
+              return { id, file, groupId };
+            } catch (error) {
+              // Log individual failures but continue processing others
+              console.warn(`Failed to cache image ${id}:`, error instanceof Error ? error.message : error);
+              return null; // Return null for failed downloads
+            }
+          },
+        );
 
         const batchResults = await Promise.all(batchPromises);
 

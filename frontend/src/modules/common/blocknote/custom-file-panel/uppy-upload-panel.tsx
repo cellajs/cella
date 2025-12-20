@@ -1,5 +1,6 @@
 import type { PartialBlock } from '@blocknote/core';
-import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
+import { FilePanelExtension } from '@blocknote/core/extensions';
+import { type FilePanelProps, useBlockNoteEditor, useExtension } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
 import * as Sentry from '@sentry/react';
 import Audio from '@uppy/audio';
@@ -44,10 +45,21 @@ const basicBlockTypes = {
   },
 };
 
-const UppyFilePanel = ({ onComplete, onError, organizationId, block, isPublic = false }: BaseUppyFilePanelProps & FilePanelProps) => {
+const UppyFilePanel = ({
+  onComplete,
+  onError,
+  organizationId,
+  blockId,
+  isPublic = false,
+}: BaseUppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { isOnline } = useOnlineManager();
+
+  const filePanel = useExtension(FilePanelExtension);
+  const editor = useBlockNoteEditor(customSchema);
+
+  const block = editor.getBlock(blockId)!;
 
   const blockType = (block.type as keyof typeof basicBlockTypes) || 'file';
   const uppyOptions: CustomUppyOpt = {
@@ -56,14 +68,13 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block, isPublic = 
       allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
     },
   };
-  const editor = useBlockNoteEditor(customSchema);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
-  const [open, setOpen] = useState(editor.filePanel?.shown);
+  const [open, setOpen] = useState(!!blockId);
 
   useEffect(() => {
     if (open) return;
-    editor.filePanel?.closeMenu();
+    filePanel.closeMenu();
     focusEditor(editor);
   }, [open]);
 
@@ -80,7 +91,11 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block, isPublic = 
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: isPublic, templateId: 'attachment', organizationId });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, {
+          public: isPublic,
+          templateId: 'attachment',
+          organizationId,
+        });
 
         localUppy
           .on('error', (error) => {
@@ -149,7 +164,9 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block, isPublic = 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${blockType}`).toLowerCase() })}</DialogTitle>
+          <DialogTitle className="h-6">
+            {t('common:upload_item', { item: t(`common:${blockType}`).toLowerCase() })}
+          </DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
 

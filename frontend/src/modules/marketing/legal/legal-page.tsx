@@ -51,7 +51,7 @@ export const LegalPage = () => {
         {tabs.map(({ id }) => (
           <TabsContent key={id} value={id} className="mb-40">
             <section className="bg-background">
-              <div className="mx-auto max-w-3xl pt-8 font-light px-4 md:px-8 min-h-screen">
+              <div className="mx-auto max-w-3xl pt-8 antialiased px-4 md:px-8 min-h-screen">
                 <LegalText subject={id} />
               </div>
             </section>

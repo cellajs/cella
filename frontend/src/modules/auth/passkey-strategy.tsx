@@ -24,7 +24,11 @@ const PasskeyStrategy = ({
   const { redirect } = useSearch({ strict: false });
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
-  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['email']>({
+  const { mutate: passkeyAuth } = useMutation<
+    SignInWithPasskeyResponse,
+    ApiError | Error,
+    NonNullable<SignInWithPasskeyData['body']>['email']
+  >({
     mutationFn: async (email) => {
       const body = await getPasskeyVerifyCredential({ email, type });
       // Send signed response to BE to complete authentication
@@ -43,7 +47,12 @@ const PasskeyStrategy = ({
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button type="button" variant={type === 'mfa' ? 'default' : 'outline'} onClick={() => passkeyAuth(email)} className="w-full gap-1.5 truncate">
+      <Button
+        type="button"
+        variant={type === 'mfa' ? 'default' : 'outline'}
+        onClick={() => passkeyAuth(email)}
+        className="w-full gap-1.5 truncate"
+      >
         <FingerprintIcon size={16} />
         <span className="truncate">
           {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}

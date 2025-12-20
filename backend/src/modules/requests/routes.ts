@@ -16,7 +16,8 @@ const requestRoutes = {
     middleware: [isNoBot, emailEnumLimiter, spamLimiter],
     tags: ['requests'],
     summary: 'Create request',
-    description: 'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
+    description:
+      'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
     request: {
       body: {
         required: true,

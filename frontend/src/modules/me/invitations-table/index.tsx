@@ -19,7 +19,7 @@ const InvitationsTable = () => {
     ...queryOptions,
   });
 
-  // Update rows
+  // TODO Update rows
   // const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
   //   if (column.key !== 'name') return;
 
@@ -41,6 +41,7 @@ const InvitationsTable = () => {
       <AnimatePresence initial={false}>
         {
           <motion.div
+            className="empty:hidden"
             key="alert"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}

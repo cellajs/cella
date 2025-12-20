@@ -58,12 +58,25 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-6 md:flex-row">
-      <div className="w-full md:flex-[0_0_calc(50%-0.75rem)]">
+    <div className="flex w-full flex-col gap-6 md:flex-row md:gap-10">
+      <div className="w-full">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-            <InputFormField control={form.control} name="name" label={t('common:name')} icon={<UserIcon size={16} />} required />
-            <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<MailIcon size={16} />} required />
+            <InputFormField
+              control={form.control}
+              name="name"
+              label={t('common:name')}
+              icon={<UserIcon size={16} />}
+              required
+            />
+            <InputFormField
+              control={form.control}
+              name="email"
+              label={t('common:email')}
+              type="email"
+              icon={<MailIcon size={16} />}
+              required
+            />
             <InputFormField
               control={form.control}
               name="message"
@@ -84,11 +97,11 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         </Form>
       </div>
       {isMediumScreen && (
-        <Suspense>
-          <div className="md:flex-[0_0_calc(50%-0.75rem)]">
+        <div className="w-full rounded-sm overflow-hidden bg-accent md:mb-12">
+          <Suspense>
             <ContactFormMap />
-          </div>
-        </Suspense>
+          </Suspense>
+        </div>
       )}
     </div>
   );

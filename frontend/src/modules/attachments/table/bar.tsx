@@ -42,7 +42,9 @@ export const AttachmentsTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog();
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
 
   const total = attachmentsCollection.size + localAttachmentsCollection.size;
 
@@ -92,15 +94,22 @@ export const AttachmentsTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={t('common:delete')}
+                  label="common:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
-              showUpload && <TableBarButton icon={UploadIcon} label={t('common:upload')} onClick={() => open(entity.id)} />
+              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open(entity.id)} />
             )}
-            {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {selected.length === 0 && (
+              <TableCount
+                count={total}
+                label="common:attachment"
+                isFiltered={isFiltered}
+                onResetFilters={onResetFilters}
+              />
+            )}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
@@ -109,7 +118,13 @@ export const AttachmentsTableBar = ({
         </TableFilterBar>
 
         {/* Columns view */}
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
+        <ColumnsView
+          className="max-lg:hidden"
+          columns={columns}
+          setColumns={setColumns}
+          isCompact={isCompact}
+          setIsCompact={setIsCompact}
+        />
 
         {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}

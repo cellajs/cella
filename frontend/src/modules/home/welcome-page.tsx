@@ -11,7 +11,9 @@ import { isElementInteractive } from '~/utils/is-el-interactive';
 const WelcomePage = () => {
   const { user } = useUserStore();
 
-  const [onboarding, setOnboardingState] = useState<OnboardingStates>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
+  const [onboarding, setOnboardingState] = useState<OnboardingStates>(
+    user.userFlags.finishedOnboarding ? 'completed' : 'start',
+  );
 
   const onOpenChange = (openState: boolean) => {
     if (!openState) setOnboardingState('completed');

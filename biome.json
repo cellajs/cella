@@ -63,7 +63,7 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "lineWidth": 150,
+    "lineWidth": 120,
     "bracketSpacing": true
   },
   "javascript": {

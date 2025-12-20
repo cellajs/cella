@@ -18,7 +18,14 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
 
   // Get user
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'user', meta: { userId: token.userId } });
+  if (!user)
+    throw new AppError({
+      status: 404,
+      type: 'not_found',
+      severity: 'error',
+      entityType: 'user',
+      meta: { userId: token.userId },
+    });
 
   // Set email verified if it exists
   await db

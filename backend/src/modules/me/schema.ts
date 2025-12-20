@@ -1,10 +1,9 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/schema';
 import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
-import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { inactiveMembershipSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
@@ -19,25 +18,6 @@ export const meAuthDataSchema = z.object({
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
   passkeys: z.array(passkeySchema),
 });
-
-const menuSectionSchema = z.array(
-  z.object({
-    ...contextEntityWithMembershipSchema.shape,
-    submenu: z.array(contextEntityWithMembershipSchema).optional(),
-  }),
-);
-
-export const menuSchema = z
-  .object(
-    appConfig.menuStructure.reduce(
-      (acc, { entityType }) => {
-        acc[entityType] = menuSectionSchema;
-        return acc;
-      },
-      {} as Record<ContextEntityType, typeof menuSectionSchema>,
-    ),
-  )
-  .openapi('Menu');
 
 export const uploadTokenSchema = z.object({
   public: z.boolean(),

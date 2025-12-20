@@ -53,13 +53,19 @@ export const SignInStep = () => {
     onSuccess: ({ emailVerified, mfa }) => {
       if (mfa || !emailVerified) {
         if (mfa) setLastUser({ email, mfaRequired: true });
-        const navigateInfo = !emailVerified ? { to: EmailVerificationRoute.to, params: { reason: 'signin' } } : { to: MfaRoute.to };
+        const navigateInfo = !emailVerified
+          ? { to: EmailVerificationRoute.to, params: { reason: 'signin' } }
+          : { to: MfaRoute.to };
         navigate({ ...navigateInfo, replace: true });
         return;
       }
 
       // Go to pending invitation in home if token is provided, otherwise use provided redirect or default path
-      const redirectPath = tokenId ? `/home?skipWelcome=true` : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+      const redirectPath = tokenId
+        ? `/home?skipWelcome=true`
+        : redirect?.startsWith('/')
+          ? redirect
+          : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,

@@ -2,17 +2,19 @@ import type { appConfig, ContextEntityType } from 'config';
 import type { PgColumn, PgVarcharBuilderInitial } from 'drizzle-orm/pg-core';
 
 /**
- * Type representing the fields used to identify an entity within a context entity.
+ * Type representing the column names used to identify an entity using other entities' IDs' as foreign keys.
  */
-export type ContextEntityTypeIdFields = {
-  [K in keyof typeof appConfig.entityIdFields]: K extends ContextEntityType ? (typeof appConfig.entityIdFields)[K] : never;
-}[keyof typeof appConfig.entityIdFields];
+type ContextEntityTypeIdColumnNames = {
+  [K in keyof typeof appConfig.entityIdColumnKeys]: K extends ContextEntityType
+    ? (typeof appConfig.entityIdColumnKeys)[K]
+    : never;
+}[keyof typeof appConfig.entityIdColumnKeys];
 
 /**
- * Necessary to pass type-checking for the generated columns.
+ * Necessary to pass type-checking for the generated entity ID columns.
  */
 export type GeneratedColumn = PgColumn<{
-  name: ContextEntityTypeIdFields;
+  name: ContextEntityTypeIdColumnNames;
   tableName: string;
   dataType: 'string';
   columnType: 'PgVarchar';
@@ -28,4 +30,7 @@ export type GeneratedColumn = PgColumn<{
   generated: undefined;
 }>;
 
-export type ContextEntityTypeColumns = Record<ContextEntityTypeIdFields, PgVarcharBuilderInitial<'', [string, ...string[]], undefined>>;
+export type ContextEntityTypeColumns = Record<
+  ContextEntityTypeIdColumnNames,
+  PgVarcharBuilderInitial<'', [string, ...string[]], undefined>
+>;

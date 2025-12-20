@@ -47,7 +47,10 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
         ) : navItem.id === 'home' ? (
           <AppNavLoader />
         ) : (
-          <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={appConfig.theme.strokeWidth} />
+          <navItem.icon
+            className="group-hover:scale-110 transition-transform"
+            strokeWidth={appConfig.theme.strokeWidth}
+          />
         )}
       </Button>
     </TooltipButton>

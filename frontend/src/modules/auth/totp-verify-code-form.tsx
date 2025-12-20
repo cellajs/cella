@@ -60,7 +60,12 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: P
                   <InputOTPGroup>
                     {Array.from({ length: appConfig.totpConfig.digits }).map((_, index) => (
                       // biome-ignore lint/suspicious/noArrayIndexKey: static list
-                      <InputOTPSlot key={index} inputMode="numeric" index={index} className="sm:h-12 bg-background sm:w-10 text-lg" />
+                      <InputOTPSlot
+                        key={index}
+                        inputMode="numeric"
+                        index={index}
+                        className="sm:h-12 bg-background sm:w-10 text-lg"
+                      />
                     ))}
                   </InputOTPGroup>
                 </InputOTP>

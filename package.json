@@ -52,25 +52,28 @@
     "upstream:pull": "tsx ./cli/sync-cella/index.ts pull-upstream --config-file cella.config.js",
     "fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",
     "diverged": "tsx ./cli/sync-cella/index.ts diverged --config-file cella.config.js",
-    "test": "pnpm -r --parallel test"
+    "test": "pnpm -r --parallel test",
+    "sync": "tsx ./cli/sync/src/index.ts",
+    "deps:update": "pnpm -r update",
+    "deps:outdated": "pnpm -r outdated"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.5",
-    "@evilmartians/lefthook": "^1.13.6",
-    "@typescript/native-preview": "7.0.0-dev.20250910.1",
+    "@biomejs/biome": "^2.3.10",
+    "@evilmartians/lefthook": "^2.0.12",
+    "@typescript/native-preview": "7.0.0-dev.20251219.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.69.1",
-    "rimraf": "^6.1.0",
-    "tsx": "^4.20.6",
+    "knip": "^5.76.1",
+    "rimraf": "^6.1.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "dotenv": "^17.2.3"
   },
   "overrides": {
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.4",
+    "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3"
   }
 }

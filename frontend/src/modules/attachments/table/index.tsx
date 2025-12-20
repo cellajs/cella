@@ -14,20 +14,22 @@ import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { EntityPage } from '~/modules/entities/types';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
 export interface AttachmentsTableProps {
-  entity: EntityPage;
+  entity: ContextEntityData;
   isSheet?: boolean;
   canUpload?: boolean;
 }
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   // useDexieLocalSync(entity.id);
@@ -55,7 +57,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
       return liveQuery
         .from({ attachment: attachmentsCollection })
         .where(({ attachment }) =>
-          q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
+          q
+            ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
+            : not(isNull(attachment.id)),
         )
         .orderBy(({ attachment }) => attachment[sort || 'id'], order);
     },
@@ -75,12 +79,15 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   // useEffect(() => {
   //   attachmentStorage.addCachedImage(fetchedRows);
   // }, [fetchedRows]);
+
   const { data: localRows } = useLiveQuery(
     (liveQuery) => {
       return liveQuery
         .from({ attachment: localAttachmentsCollection })
         .where(({ attachment }) =>
-          q ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`)) : not(isNull(attachment.id)),
+          q
+            ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
+            : not(isNull(attachment.id)),
         )
         .orderBy(({ attachment }) => attachment[sort || 'id'], order);
     },
@@ -105,7 +112,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     for (const index of indexes) {
       const attachment = changedRows[index];
 
-      const collection = attachment.originalKey.startsWith('blob:http') ? localAttachmentsCollection : attachmentsCollection;
+      const collection = attachment.originalKey.startsWith('blob:http')
+        ? localAttachmentsCollection
+        : attachmentsCollection;
 
       collection.update(attachment.id, (draft) => {
         draft.name = attachment.name;
@@ -157,7 +166,11 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={PaperclipIcon} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+            <ContentPlaceholder
+              icon={PaperclipIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:attachments').toLowerCase() }}
+            />
           ),
         }}
       />

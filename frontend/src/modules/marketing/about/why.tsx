@@ -23,7 +23,7 @@ const Why = () => {
                   </div>
                   <div className="w-full">
                     <h3 className="mb-2 text-xl font-medium 2xl:text-[1.38rem]">{t(title)}</h3>
-                    <p className="leading-relaxed font-light">{t(text)}</p>
+                    <p className="leading-relaxed">{t(text)}</p>
                   </div>
                 </div>
               </div>
@@ -33,7 +33,12 @@ const Why = () => {
       </div>
       <div className="w-full lg:w-7/12">
         <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-          <DeviceMockup className="lg:relative -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
+          <DeviceMockup
+            className="lg:relative -top-2 lg:ml-8 lg:w-[54vw]"
+            type="pc"
+            lightItems={whyLightSlides}
+            darkItems={whyDarkSlides}
+          />
         </Suspense>
       </div>
     </div>

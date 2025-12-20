@@ -16,11 +16,17 @@ interface Props {
 
 const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
 
   const [isPending, setIsPending] = React.useState(false);
-  const serverDeletionIds: string[] = attachments.filter(({ originalKey }) => isLocalAttachment(originalKey)).map(({ id }) => id);
-  const localDeletionIds: string[] = attachments.filter(({ originalKey }) => !isLocalAttachment(originalKey)).map(({ id }) => id);
+  const serverDeletionIds: string[] = attachments
+    .filter(({ originalKey }) => isLocalAttachment(originalKey))
+    .map(({ id }) => id);
+  const localDeletionIds: string[] = attachments
+    .filter(({ originalKey }) => !isLocalAttachment(originalKey))
+    .map(({ id }) => id);
 
   const onDelete = async () => {
     setIsPending(true);
@@ -37,7 +43,9 @@ const DeleteAttachments = ({ attachments, callback, dialog: isDialog }: Props) =
     }
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
+  return (
+    <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />
+  );
 };
 
 export default DeleteAttachments;

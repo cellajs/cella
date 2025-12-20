@@ -12,121 +12,92 @@ import {
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
+import { createEntityKeys } from '../entities/create-query-keys';
+
+type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
+
+const keys = createEntityKeys<OrganizationFilters>('organization');
 
 /**
- * Keys for organizations related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
+ * Organization query keys.
  */
-export const keys = {
-  all: ['organizations'],
-  table: {
-    base: ['organizations', 'table'],
-    entries: (filters: Omit<GetOrganizationsData['query'], 'limit' | 'offset'>) => [...keys.table.base, filters],
-  },
-  single: {
-    base: ['organization'],
-    byIdOrSlug: (idOrSlug: string) => [...keys.single.base, idOrSlug],
-  },
-  create: ['organizations', 'create'],
-  update: ['organizations', 'update'],
-  delete: ['organizations', 'delete'],
-};
-
-export const organizationsKeys = keys;
+export const organizationQueryKeys = keys;
 
 /**
  * Query options for a single organization by id or slug.
- *
- * This function returns query options for fetching a single organization using its id or slug.
- *
- * @param idOrSlug - Organization id or slug.
- * @returns Query options.
  */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
+    queryKey: keys.detail.byId(idOrSlug),
     queryFn: async () => getOrganization({ path: { idOrSlug } }),
   });
 
+type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {
+  limit?: number;
+};
+
 /**
- * Query options to get a paginated list of organizations.
- *
- * This function returns infinite query options to fetch a list of organizations with support for pagination.
- *
- * @param param.q - Search query for filtering organizations(default is an empty string).
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default: `appConfig.requestLimits.organizations`).
- * @returns Infinite query options.
+ * Infinite query options to get a paginated list of organizations.
  */
-export const organizationsQueryOptions = ({
-  q = '',
-  sort = 'createdAt',
-  order = 'desc',
-  limit: baseLimit = appConfig.requestLimits.organizations,
-}: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
+export const organizationsQueryOptions = (params: OrganizationsListParams) => {
+  const {
+    q = '',
+    sort = 'createdAt',
+    order = 'desc',
+    userId,
+    excludeArchived,
+    role,
+    limit: baseLimit = appConfig.requestLimits.organizations,
+  } = params;
+
   const limit = String(baseLimit);
 
-  const baseQueryKey = organizationsKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
-  const queryKey = organizationsKeys.table.entries({ q, sort, order });
+  const keyFilters = { q, sort, order, userId, excludeArchived, role };
+
+  const queryKey = keys.list.filtered(keyFilters);
+  const baseQuery = { ...keyFilters, limit };
 
   return infiniteQueryOptions({
     queryKey,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
-      return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
+      const offset = String(_offset ?? (page ?? 0) * Number(limit));
+
+      return getOrganizations({
+        query: { ...baseQuery, offset },
+        signal,
+      });
     },
     ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<Organization>(baseQueryKey, {
-      q,
-      sort,
-      order,
-      searchIn: ['name'],
-      limit: baseLimit,
-    }),
   });
 };
 
 /**
  * Custom hook to create a new organization.
- * This hook provides the functionality to create a new organization.
- *
- * @returns The mutation hook for creating an organization.
  */
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
-    mutationKey: organizationsKeys.create,
+    mutationKey: keys.create,
     mutationFn: (body) => createOrganization({ body }),
     onSuccess: (createdOrganization) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base);
+      const mutateCache = useMutateQueryData(keys.list.base);
 
       mutateCache.create([createdOrganization]);
-      addMenuItem(createdOrganization);
     },
   });
 };
 
 /**
  * Custom hook to update an existing organization.
- * This hook provides the functionality to update an organization. After a successful update,
- * it updates the local cache and invalidates relevant queries to keep the data fresh.
- *
- * @returns The mutation hook for updating an organization.
  */
 export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
-    mutationKey: organizationsKeys.update,
+    mutationKey: keys.update,
     mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
     onSuccess: (updatedOrganization) => {
-      // Update menuItem in store, only if it has membership is not null
-      if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });
-
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base, () => organizationsKeys.single.base, ['update']);
-
+      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
       mutateCache.update([updatedOrganization]);
     },
   });
@@ -134,22 +105,18 @@ export const useOrganizationUpdateMutation = () => {
 
 /**
  * Custom hook to delete organizations.
- * This hook provides the functionality to delete one or more organizations.
- *
- * @returns The mutation hook for deleting organizations.
  */
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({
-    mutationKey: organizationsKeys.delete,
+    mutationKey: keys.delete,
     mutationFn: async (organizations) => {
       const ids = organizations.map(({ id }) => id);
       await deleteOrganizations({ body: { ids } });
     },
     onSuccess: (_, organizations) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base, () => organizationsKeys.single.base, ['remove']);
+      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
 
       mutateCache.remove(organizations);
-      for (const { id } of organizations) deleteMenuItem(id);
     },
   });
 };

@@ -46,7 +46,9 @@ const AboutPage = () => {
               className="block w-80 sm:w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20"
             />
             {copied && (
-              <div className="absolute font-mono top-2.5 text-sm left-8 text-left bg-background right-2 py-2 rounded-full">copied! bon voyage 🚀</div>
+              <div className="absolute font-mono top-2.5 text-sm left-8 text-left bg-background right-2 py-2 rounded-full">
+                copied! bon voyage 🚀
+              </div>
             )}
 
             <Button
@@ -72,11 +74,11 @@ const AboutPage = () => {
                 navigate({ hash: 'why', replace: true });
               }, 20);
             }}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'group')}
             aria-label="Read more"
           >
-            <span className="font-light">{t('about:why')}</span>
-            <ArrowDownIcon size={16} className="ml-2 animate-bounce" />
+            <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>
+            <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
           </Link>
         </Hero>
 
@@ -87,7 +89,13 @@ const AboutPage = () => {
           </AboutSection>
 
           {/* Features */}
-          <AboutSection key={'features'} sectionId="features" title="about:title_3" text="about:text_3" alternate={true}>
+          <AboutSection
+            key={'features'}
+            sectionId="features"
+            title="about:title_3"
+            text="about:text_3"
+            alternate={true}
+          >
             <Features />
           </AboutSection>
 

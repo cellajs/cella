@@ -16,7 +16,14 @@ const StepButtonContainer = ({
   isLoading: isLoadingProp,
   onClickStep,
 }: StepButtonContainerProps) => {
-  const { clickable, isLoading: isLoadingContext, variant, styles, setStep, onClickStep: onClickStepGeneral } = useStepper();
+  const {
+    clickable,
+    isLoading: isLoadingContext,
+    variant,
+    styles,
+    setStep,
+    onClickStep: onClickStepGeneral,
+  } = useStepper();
 
   const currentStepClickable = clickable || !!onClickStep;
 
@@ -34,7 +41,7 @@ const StepButtonContainer = ({
       className={cn(
         'stepper__step-button-container',
         'rounded-full p-0 pointer-events-none',
-        'w-[var(--step-icon-size)] h-[var(--step-icon-size)]',
+        'w-(--step-icon-size) h-(--step-icon-size)',
         'border-2 flex rounded-full justify-center items-center',
         'data-[clickable=true]:pointer-events-auto',
         'data-[active=true]:bg-primary data-[active=true]:border-primary data-[active=true]:text-primary-foreground',

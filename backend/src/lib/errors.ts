@@ -14,9 +14,7 @@ const isProduction = appConfig.mode === 'production';
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & { errorPagePath?: string };
 
-type CellaErrorKeys = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
-type AppSpecificErrorKeys = Exclude<keyof (typeof locales)['en']['appError'], `${string}.text`>;
-type ErrorKey = CellaErrorKeys | AppSpecificErrorKeys;
+type ErrorKey = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
 
 export type ConstructedError = {
   type: ErrorKey;
@@ -42,7 +40,9 @@ export class AppError extends Error {
   originalError?: Error;
 
   constructor(error: ConstructedError) {
-    const messageFallback = error.message ?? i18n.t(`${error.type}`, { ns: ['appError', 'error'], defaultValue: error.name ?? 'Unknown error' });
+    const messageFallback =
+      error.message ??
+      i18n.t(`${error.type}`, { ns: ['appError', 'error'], defaultValue: error.name ?? 'Unknown error' });
     const message = i18n.t(`${error.type}.text`, { ns: ['appError', 'error'], defaultValue: messageFallback });
     super(message);
     this.name = error.name ?? i18n.t(`${error.type}`, { ns: ['appError', 'error'], defaultValue: 'ApiError' });
@@ -109,7 +109,8 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   }
 
   // Log the error
-  if (!isProduction) eventLogger[severity]({ msg: detailedError.name, ...(detailsRequired ? { error: detailedError } : {}) });
+  if (!isProduction)
+    eventLogger[severity]({ msg: detailedError.name, ...(detailsRequired ? { error: detailedError } : {}) });
   else eventLogger[severity]({ ...(meta ?? {}), ...(detailsRequired ? { ...detailedError } : {}) });
 
   // Redirect to the frontend error page with query parameters for error details

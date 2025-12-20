@@ -18,7 +18,13 @@ interface MenuSheetSearchProps {
   className?: string;
 }
 
-export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchResultsChange, className }: MenuSheetSearchProps) => {
+export const MenuSheetSearchInput = ({
+  menu,
+  searchTerm,
+  setSearchTerm,
+  searchResultsChange,
+  className,
+}: MenuSheetSearchProps) => {
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isMobile = useBreakpoints('max', 'sm');

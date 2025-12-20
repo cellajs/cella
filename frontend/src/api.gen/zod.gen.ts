@@ -6,6 +6,7 @@ export const zUserBase = z.object({
   id: z.string(),
   slug: z.string(),
   name: z.string(),
+  createdAt: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
   email: z.email(),
@@ -17,6 +18,7 @@ export const zContextEntityBase = z.object({
   entityType: z.enum(['organization']),
   slug: z.string(),
   name: z.string(),
+  createdAt: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
 });
@@ -92,6 +94,7 @@ export const zOrganization = z.object({
     }),
     entities: z.object({
       attachment: z.number(),
+      page: z.number(),
     }),
   }),
 });
@@ -109,24 +112,29 @@ export const zMembership = z.object({
   muted: z.boolean(),
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
+  uniqueKey: z.string(),
 });
 
 export const zInactiveMembership = z.object({
   createdAt: z.string(),
   id: z.string(),
   contextType: z.enum(['organization']),
+  email: z.string(),
   userId: z.union([z.string(), z.null()]),
+  tokenId: z.union([z.string(), z.null()]),
   role: z.enum(['member', 'admin']),
   rejectedAt: z.union([z.string(), z.null()]),
   createdBy: z.string(),
   organizationId: z.string(),
+  uniqueKey: z.string(),
 });
 
 export const zAttachment = z.object({
   createdAt: z.string(),
   id: z.string(),
-  name: z.string(),
   entityType: z.enum(['attachment']),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
   public: z.boolean(),
   bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
@@ -141,31 +149,6 @@ export const zAttachment = z.object({
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
   organizationId: z.string(),
-});
-
-export const zMenu = z.object({
-  organization: z.array(
-    z.object({
-      id: z.string(),
-      entityType: z.enum(['organization']),
-      slug: z.string(),
-      name: z.string(),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      membership: zMembershipBase,
-      createdAt: z.string(),
-      submenu: z.optional(
-        z.array(
-          zContextEntityBase.and(
-            z.object({
-              membership: zMembershipBase,
-              createdAt: z.string(),
-            }),
-          ),
-        ),
-      ),
-    }),
-  ),
 });
 
 export const zApiError = z.object({
@@ -215,7 +198,7 @@ export const zApiError = z.object({
     z.literal(511),
   ]),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  entityType: z.optional(z.enum(['user', 'organization', 'attachment'])),
+  entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
   logId: z.optional(z.string()),
   path: z.optional(z.string()),
   method: z.optional(z.string()),
@@ -253,6 +236,21 @@ export const zTooManyRequestsError = zApiError.and(
     status: z.optional(z.literal(429)),
   }),
 );
+
+export const zPage = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  entityType: z.enum(['page']),
+  name: z.string(),
+  description: z.string(),
+  keywords: z.string(),
+  status: z.enum(['unpublished', 'published', 'archived']),
+  parentId: z.union([z.string(), z.null()]),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
+  createdBy: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+});
 
 export const zCheckEmailData = z.object({
   body: z.object({
@@ -721,17 +719,6 @@ export const zGetMyAuthResponse = z.object({
   ),
 });
 
-export const zGetMyMenuData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Menu of user
- */
-export const zGetMyMenuResponse = zMenu;
-
 export const zGetMyInvitationsData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -844,7 +831,6 @@ export const zGetUsersData = z.object({
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
       role: z.optional(z.enum(['admin'])),
-      mode: z.optional(z.enum(['all', 'shared'])),
       targetEntityType: z.optional(z.enum(['organization'])),
       targetEntityId: z.optional(z.string()),
     }),
@@ -859,6 +845,7 @@ export const zGetUsersResponse = z.object({
     zUser.and(
       z.object({
         memberships: z.array(zMembershipBase),
+        role: z.optional(z.enum(['admin'])),
       }),
     ),
   ),
@@ -927,6 +914,9 @@ export const zGetOrganizationsData = z.object({
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
+      userId: z.optional(z.string()),
+      role: z.optional(z.enum(['member', 'admin'])),
+      excludeArchived: z.optional(z.enum(['true', 'false'])),
     }),
   ),
 });
@@ -988,7 +978,9 @@ export const zUpdateOrganizationData = z.object({
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
       websiteUrl: z.optional(z.union([z.string(), z.null()])),
       welcomeText: z.optional(z.union([z.string(), z.null()])),
-      authStrategies: z.optional(z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']))),
+      authStrategies: z.optional(
+        z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
+      ),
       chatSupport: z.optional(z.boolean()),
     }),
   ),
@@ -1003,66 +995,106 @@ export const zUpdateOrganizationData = z.object({
  */
 export const zUpdateOrganizationResponse = zOrganization;
 
-export const zGetContextEntitiesData = z.object({
+export const zShapeProxyData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.object({
+    table: z.string(),
+    offset: z.string(),
+    handle: z.optional(z.string()),
+    cursor: z.optional(z.string()),
+    live: z.optional(z.string()),
+    where: z.optional(z.string()),
+  }),
+});
+
+export const zDeletePagesData = z.object({
+  body: z.object({
+    ids: z.array(z.string()).min(1).max(50),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page(s) deleted
+ */
+export const zDeletePagesResponse = z.void();
+
+export const zGetPagesData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      sort: z.optional(z.enum(['name', 'createdAt'])),
+      sort: z.optional(z.enum(['name', 'status', 'createdAt'])),
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
-      targetUserId: z.optional(z.string()),
-      targetOrgId: z.optional(z.string()),
-      role: z.optional(z.enum(['member', 'admin'])),
-      excludeArchived: z.optional(z.enum(['true', 'false'])),
-      types: z.optional(z.union([z.enum(['organization']), z.array(z.enum(['organization']))])),
-      orgAffiliated: z.optional(z.enum(['true', 'false'])),
     }),
   ),
 });
 
 /**
- * Context entities
+ * Pages
  */
-export const zGetContextEntitiesResponse = z.object({
-  items: z.array(
-    zContextEntityBase.and(
-      z.object({
-        membership: z.union([zMembershipBase, z.null()]),
-        createdAt: z.string(),
-        membershipCounts: z.object({
-          admin: z.number(),
-          member: z.number(),
-          pending: z.number(),
-          total: z.number(),
-        }),
-      }),
-    ),
-  ),
+export const zGetPagesResponse = z.object({
+  items: z.array(zPage),
   total: z.number(),
 });
 
-export const zGetContextEntityData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    idOrSlug: z.string(),
+export const zCreatePageData = z.object({
+  body: z.object({
+    name: z.optional(z.string()),
   }),
-  query: z.object({
-    entityType: z.enum(['organization']),
-  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
 });
 
 /**
- * Context entities
+ * Page
  */
-export const zGetContextEntityResponse = zContextEntityBase;
+export const zCreatePageResponse = zPage;
+
+export const zGetPageData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page
+ */
+export const zGetPageResponse = zPage;
+
+export const zUpdatePageData = z.object({
+  body: z.object({
+    name: z.optional(z.string()),
+    description: z.optional(z.string()),
+    keywords: z.optional(z.string()),
+    displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
+    status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
+    parentId: z.optional(z.union([z.string(), z.null()])),
+  }),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Page updated
+ */
+export const zUpdatePageResponse = zPage;
 
 export const zCheckSlugData = z.object({
   body: z.object({
     slug: z.string(),
-    entityType: z.enum(['user', 'organization', 'attachment']),
+    entityType: z.enum(['user', 'organization']),
   }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -1230,9 +1262,10 @@ export const zGetPublicCountsResponse = z.object({
   user: z.number(),
   organization: z.number(),
   attachment: z.number(),
+  page: z.number(),
 });
 
-export const zShapeProxyData = z.object({
+export const zShapeProxy2Data = z.object({
   body: z.optional(z.never()),
   path: z.object({
     orgIdOrSlug: z.string(),
@@ -1271,8 +1304,9 @@ export const zCreateAttachmentData = z.object({
       z.object({
         createdAt: z.optional(z.string()),
         id: z.optional(z.string()),
-        name: z.optional(z.string()),
         entityType: z.optional(z.enum(['attachment'])),
+        name: z.optional(z.string()),
+        description: z.optional(z.union([z.string(), z.null()])),
         public: z.optional(z.boolean()),
         bucketName: z.string(),
         groupId: z.optional(z.union([z.string(), z.null()])),

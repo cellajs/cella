@@ -62,7 +62,10 @@ export const useDexieLocalSync = (organizationId: string) => {
             acc[tokenKey].batchRecords.push(file);
             return acc;
           },
-          {} as Record<string, { tokenQuery: UploadTokenQuery; files: CustomUppyFile[]; batchRecords: AttachmentFile[] }>,
+          {} as Record<
+            string,
+            { tokenQuery: UploadTokenQuery; files: CustomUppyFile[]; batchRecords: AttachmentFile[] }
+          >,
         );
 
         // Process each batch separately
@@ -104,7 +107,10 @@ export const useDexieLocalSync = (organizationId: string) => {
               })
               .on('transloadit:complete', async (assembly: any) => {
                 if (assembly.error) throw new Error(assembly.error);
-                const attachments = parseUploadedAttachments(assembly.results as UploadedUppyFile<'attachment'>, organizationId);
+                const attachments = parseUploadedAttachments(
+                  assembly.results as UploadedUppyFile<'attachment'>,
+                  organizationId,
+                );
 
                 attachmentsCollection.insert(attachments);
                 console.info('Successfully synced attachments to server:', attachments);

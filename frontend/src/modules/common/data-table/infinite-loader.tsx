@@ -11,7 +11,13 @@ type InfiniteLoaderProps = {
   fetchMore?: () => Promise<unknown>;
 };
 
-export const InfiniteLoader = ({ hasNextPage, isFetching, measureStyle, isFetchMoreError, fetchMore }: InfiniteLoaderProps) => {
+export const InfiniteLoader = ({
+  hasNextPage,
+  isFetching,
+  measureStyle,
+  isFetchMoreError,
+  fetchMore,
+}: InfiniteLoaderProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
@@ -25,10 +31,12 @@ export const InfiniteLoader = ({ hasNextPage, isFetching, measureStyle, isFetchM
   });
 
   // Error state
-  if (isFetchMoreError) return <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>;
+  if (isFetchMoreError)
+    return <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>;
 
   // Offline but more data is available
-  if (!isOnline && hasNextPage) return <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>;
+  if (!isOnline && hasNextPage)
+    return <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>;
 
   return (
     <>

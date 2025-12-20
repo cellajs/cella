@@ -26,7 +26,12 @@ export const OfflineAccessSwitch = () => {
 
   return (
     <div className="flex items-center gap-4 ml-1">
-      <Switch id="offlineMode" checked={offlineAccess} onCheckedChange={onCheckedChange} aria-label={t('common:keep_menu_open')} />
+      <Switch
+        id="offlineMode"
+        checked={offlineAccess}
+        onCheckedChange={onCheckedChange}
+        aria-label={t('common:keep_menu_open')}
+      />
       <label htmlFor="offlineMode" className="cursor-pointer select-none text-sm font-medium leading-none">
         {t('common:offline_access')}
       </label>

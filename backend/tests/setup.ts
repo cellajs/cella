@@ -141,11 +141,13 @@ export function mockArcticLibrary() {
 export function setTestConfig(overrides: ConfigOverride) {
   if (overrides.enabledAuthStrategies) {
     // Maybe not the best way to cast, but config.enabledAuthStrategies is a readonly fixed
-    appConfig.enabledAuthStrategies = overrides.enabledAuthStrategies as unknown as typeof appConfig.enabledAuthStrategies;
+    appConfig.enabledAuthStrategies =
+      overrides.enabledAuthStrategies as unknown as typeof appConfig.enabledAuthStrategies;
   }
 
   if (overrides.enabledOAuthProviders) {
-    appConfig.enabledOAuthProviders = overrides.enabledOAuthProviders as unknown as typeof appConfig.enabledOAuthProviders;
+    appConfig.enabledOAuthProviders =
+      overrides.enabledOAuthProviders as unknown as typeof appConfig.enabledOAuthProviders;
   }
 
   if (overrides.registrationEnabled !== undefined) {

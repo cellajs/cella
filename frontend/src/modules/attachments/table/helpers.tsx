@@ -11,13 +11,16 @@ const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
 export const useAttachmentsUploadDialog = () => {
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
 
   const open = (organizationId: string) => {
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
 
-      const collection = appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
+      const collection =
+        appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
 
       collection.insert(attachments);
       useUploader.getState().remove();

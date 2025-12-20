@@ -5,7 +5,8 @@ import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import router from '~/lib/router';
 import { toaster } from '~/modules/common/toaster/service';
-import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
+import { getAndSetMe } from '~/modules/me/helpers';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
@@ -18,7 +19,7 @@ const handleStartImpersonation = async (targetUserId: string) => {
   try {
     await startImpersonation({ query: { targetUserId } });
     useUIStore.getState().setImpersonating(true);
-    await Promise.all([getAndSetMe(), getAndSetMenu()]);
+    await Promise.all([getAndSetMe(), getMenuData()]);
     toaster(i18n.t('common:success.impersonated'), 'success');
     router.navigate({ to: appConfig.defaultRedirectPath, replace: true });
   } catch (error) {

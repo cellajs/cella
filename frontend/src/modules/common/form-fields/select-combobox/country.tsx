@@ -1,13 +1,17 @@
 import type { FieldValues } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
 import countries from '#json/countries.json';
 import CountryFlag from '~/modules/common/country-flag';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-const SelectCountry = <TFieldValues extends FieldValues>({ control, name, disabled, label, required }: BaseFormFieldProps<TFieldValues>) => {
-  const { t } = useTranslation();
+const SelectCountry = <TFieldValues extends FieldValues>({
+  control,
+  name,
+  disabled,
+  label,
+  required,
+}: BaseFormFieldProps<TFieldValues>) => {
   const options = countries.map(({ code, name }) => ({ value: code, label: name }));
 
   const renderCountryOption: ComboboxProps['renderOption'] = ({ value, label }) => (
@@ -35,9 +39,10 @@ const SelectCountry = <TFieldValues extends FieldValues>({ control, name, disabl
               onChange={onChange}
               renderOption={renderCountryOption}
               placeholders={{
-                trigger: t('common:placeholder.select_country'),
-                search: t('common:placeholder.search_country'),
-                notFound: t('common:no_resource_found', { resource: t('common:country').toLowerCase() }),
+                trigger: 'common:placeholder.select_country',
+                search: 'common:placeholder.search_country',
+                notFound: 'common:no_resource_found',
+                resource: 'common:country',
               }}
             />
           </FormControl>

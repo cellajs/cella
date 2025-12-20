@@ -24,9 +24,15 @@ export const handleSyncError = (error: Error) => {
     // Handle generic backend sync error response
     const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
 
-    const apiError = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown error during sync', ...responseJson });
+    const apiError = new ApiError({
+      name: error.name,
+      status,
+      message: error.message ?? 'Unknown error during sync',
+      ...responseJson,
+    });
 
-    const toastMsg = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
+    const toastMsg =
+      typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
 
     toaster(toastMsg, 'warning');
     return;

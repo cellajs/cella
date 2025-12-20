@@ -43,7 +43,10 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
           const message =
             newAttachments.length === 1
               ? t('common:success.create_resource', { resource: t('common:attachment') })
-              : t('common:success.create_counted_resources', { count: newAttachments.length, resources: t('common:attachments').toLowerCase() });
+              : t('common:success.create_counted_resources', {
+                  count: newAttachments.length,
+                  resources: t('common:attachments').toLowerCase(),
+                });
 
           toaster(message, 'success');
         } catch (err) {
@@ -65,7 +68,10 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
         try {
           // 1. Delete attachments on the server (remote API)
           // 2. Delete cached attachment files in IndexedDB(Dexie) (local storage)
-          await Promise.all([deleteAttachments({ body: { ids }, path: { orgIdOrSlug } }), attachmentStorage.deleteCachedImages(ids)]);
+          await Promise.all([
+            deleteAttachments({ body: { ids }, path: { orgIdOrSlug } }),
+            attachmentStorage.deleteCachedImages(ids),
+          ]);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }
@@ -87,7 +93,10 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
         const message =
           newAttachments.length === 1
             ? t('common:success.create_resource', { resource: t('common:attachment') })
-            : t('common:success.create_counted_resources', { count: newAttachments.length, resources: t('common:attachments').toLowerCase() });
+            : t('common:success.create_counted_resources', {
+                count: newAttachments.length,
+                resources: t('common:attachments').toLowerCase(),
+              });
 
         toaster(message, 'success');
       },

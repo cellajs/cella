@@ -3,18 +3,24 @@ import { appConfig, ContextEntityType } from 'config';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserBase } from '~/api.gen';
+import type { ContextEntityBase, UserBase } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
-import type { EntityPage } from '~/modules/entities/types';
-import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '~/modules/ui/breadcrumb';
+import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
 import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: EntityPage | UserBase;
+  entity: ContextEntityData | UserBase;
   panel?: React.ReactNode;
   parent?: { idOrSlug: string; entityType: ContextEntityType | 'user' };
   disableScroll?: boolean;
@@ -22,10 +28,12 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
   const { t } = useTranslation();
-
   const scrollToRef = useRef<HTMLDivElement>(null);
 
-  const parentData = parent ? useGetEntityBaseData(parent) : null;
+  // Find parent entity from cache
+  const parentData = useFindInQueryCache<ContextEntityBase | UserBase>(parent ? [parent.entityType] : [], (item) =>
+    parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
+  );
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
@@ -41,7 +49,9 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user' ? 'h-26 w-26 -mt-13 text-4xl mx-3 shadow-[0_0_0_4px_rgba(0,0,0,0.1)] rounded-full' : 'm-2 text-xl h-12 w-12'
+            entity.entityType === 'user'
+              ? 'h-26 w-26 -mt-13 text-4xl mx-3 shadow-[0_0_0_4px_rgba(0,0,0,0.1)] rounded-full'
+              : 'm-2 text-xl h-12 w-12'
           }
         />
 

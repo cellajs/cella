@@ -5,13 +5,13 @@ import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
-import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
+import { proxyElectricSync } from '#/utils/electric';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 
@@ -23,58 +23,30 @@ const attachmentsRouteHandlers = app
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
-    const { live, handle, offset, cursor, where, table } = ctx.req.valid('query');
+    const { table, ...query } = ctx.req.valid('query');
 
-    if (table !== 'attachments') {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
+    // Validate query params
+    if (table !== 'attachments') throw new AppError({ status: 400, type: 'sync_table_mismatch', severity: 'error' });
+
+    if (query.where && /organization_id\s*=/.test(query.where)) {
+      throw new AppError({ status: 400, type: 'sync_organization_mismatch', severity: 'error' });
     }
-
-    if (where && /organization_id\s*=/.test(where)) {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: forbidden filter.' } });
-    }
-
     const organization = getContextOrganization();
 
-    const baseWhere = `organization_id = '${organization.id}'`;
-    const finalWhere = where ? `${where} AND ${baseWhere}` : `${baseWhere}`;
+    const clientWhere = query.where || '';
 
-    // Construct the upstream URL
-    const originUrl = new URL(`${appConfig.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
+    query.where = clientWhere
+      ? `organization_id = $1 AND (${clientWhere})`
+      : `organization_id = $1`;
 
-    // Copy over the relevant query params that the Electric client adds
-    // so that we return the right part of the Shape log.
-    originUrl.searchParams.set('offset', offset);
-    originUrl.searchParams.set('live', live ?? 'false');
-    originUrl.searchParams.set('where', finalWhere);
-    if (handle) originUrl.searchParams.set('handle', handle);
-    if (cursor) originUrl.searchParams.set('cursor', cursor);
-
-    try {
-      const { body, headers, status, statusText } = await fetch(originUrl.toString());
-
-      // Fetch decompresses the body but doesn't remove the
-      // content-encoding & content-length headers which would
-      // break decoding in the browser.
-      //
-      // See https://github.com/whatwg/fetch/issues/1729
-      const newHeaders = new Headers(headers);
-      newHeaders.delete('content-encoding');
-      newHeaders.delete('content-length');
-
-      // Construct a new Response you control
-      return new Response(body, { status, statusText, headers: newHeaders });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown electric error');
-      throw new AppError({
-        name: error.name,
-        message: error.message,
-        status: 500,
-        type: 'sync_failed',
-        severity: 'error',
-        entityType: 'attachment',
-        originalError: error,
-      });
+    // Provide the organization ID as params for the parameterized query
+    // Electric SQL expects object format: {"1": "value"} for $1 placeholder
+    const enrichedQuery = {
+      ...query,
+      params: JSON.stringify({ '1': organization.id })
     }
+
+    return await proxyElectricSync(table, enrichedQuery, 'attachment');
   })
   /**
    * Create one or more attachments
@@ -85,6 +57,7 @@ const attachmentsRouteHandlers = app
     const organization = getContextOrganization();
     const attachmentRestrictions = organization.restrictions.attachment;
 
+    // Check restriction limits
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
@@ -139,11 +112,18 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
+    if (!toDeleteIds.length)
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
+      'delete',
+      'attachment',
+      toDeleteIds,
+      memberships,
+    );
 
-    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
+    if (!allowedIds.length)
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
@@ -161,8 +141,12 @@ const attachmentsRouteHandlers = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+    const [organization] = await db
+      .select()
+      .from(organizationsTable)
+      .where(eq(organizationsTable.id, attachment.organizationId));
+    if (!organization)
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
     const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);

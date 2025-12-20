@@ -148,7 +148,10 @@ export const buildUrl: Client['buildUrl'] = (options) =>
     baseUrl: options.baseUrl as string,
     path: options.path,
     query: options.query,
-    querySerializer: typeof options.querySerializer === 'function' ? options.querySerializer : createQuerySerializer(options.querySerializer),
+    querySerializer:
+      typeof options.querySerializer === 'function'
+        ? options.querySerializer
+        : createQuerySerializer(options.querySerializer),
     url: options.url,
   });
 
@@ -195,7 +198,12 @@ export const mergeHeaders = (...headers: Array<Required<Config>['headers'] | und
   return mergedHeaders;
 };
 
-type ErrInterceptor<Err, Res, Req, Options> = (error: Err, response: Res, request: Req, options: Options) => Err | Promise<Err>;
+type ErrInterceptor<Err, Res, Req, Options> = (
+  error: Err,
+  response: Res,
+  request: Req,
+  options: Options,
+) => Err | Promise<Err>;
 
 type ReqInterceptor<Req, Options> = (request: Req, options: Options) => Req | Promise<Req>;
 

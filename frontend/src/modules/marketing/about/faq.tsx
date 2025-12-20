@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/
 const FAQ = () => {
   const { t } = useTranslation();
   return (
-    <div className="mx-auto max-w-[48rem]">
+    <div className="mx-auto max-w-3xl">
       <Accordion type="single" className="w-full" collapsible>
         {faqsData.map((faq, index) => {
           const question = `about:faq.question_${index + 1}`;
@@ -17,6 +17,7 @@ const FAQ = () => {
               <AccordionTrigger className="px-3 sm:text-xl text-left">{t(question)}</AccordionTrigger>
               <AccordionContent className="px-3 pb-8 sm:text-lg font-light">
                 <Trans
+                  t={t}
                   i18nKey={answer}
                   components={{
                     Link: (

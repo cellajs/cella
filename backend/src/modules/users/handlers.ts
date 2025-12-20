@@ -25,19 +25,28 @@ const usersRouteHandlers = app
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, mode, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
     const user = getContextUser();
+    const userSystemRole = getContextUserSystemRole();
+    const isSystemAdmin = userSystemRole === 'admin' && !targetEntityId;
 
     const filters = [
       // Filter by role if provided
       ...(role ? [eq(systemRolesTable.role, role)] : []),
 
       // Exclude self when fetching shared memberships
-      ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
+      ...(!isSystemAdmin ? [ne(usersTable.id, user.id)] : []),
 
       // Filter by search query if provided
-      ...(q ? [or(ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q)))] : []),
+      ...(q
+        ? [
+            or(
+              ilike(usersTable.name, prepareStringForILikeFilter(q)),
+              ilike(usersTable.email, prepareStringForILikeFilter(q)),
+            ),
+          ]
+        : []),
     ];
 
     // Base user query with ordering
@@ -59,17 +68,21 @@ const usersRouteHandlers = app
     const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
 
     const usersQuerySelect = { ...userSelect, role: systemRolesTable.role };
-    const baseUsersQuery =
-      mode === 'shared'
-        ? db
-            .selectDistinct(usersQuerySelect)
-            .from(usersTable)
-            .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
-            .innerJoin(
-              requesterMembership,
-              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
-            )
-        : db.select(usersQuerySelect).from(usersTable);
+
+    // If not system admin, only fetch users who share memberships with the requester
+    const baseUsersQuery = isSystemAdmin
+      ? db.select(usersQuerySelect).from(usersTable)
+      : db
+          .selectDistinct(usersQuerySelect)
+          .from(usersTable)
+          .innerJoin(targetMembership, and(eq(usersTable.id, targetMembership.userId)))
+          .innerJoin(
+            requesterMembership,
+            and(
+              eq(requesterMembership.organizationId, targetMembership.organizationId),
+              eq(requesterMembership.userId, user.id),
+            ),
+          );
 
     const usersQuery = baseUsersQuery
       .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
@@ -89,8 +102,11 @@ const usersRouteHandlers = app
     // Fetch memberships for all these users
     const membershipFilters = [inArray(membershipsTable.userId, userIds)];
     if (targetEntityId && targetEntityType) {
-      const entityFieldId = appConfig.entityIdFields[targetEntityType];
-      membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(membershipsTable[entityFieldId], targetEntityId));
+      const entityFieldId = appConfig.entityIdColumnKeys[targetEntityType];
+      membershipFilters.push(
+        eq(membershipsTable.contextType, targetEntityType),
+        eq(membershipsTable[entityFieldId], targetEntityId),
+      );
     }
 
     const memberships = await db
@@ -123,7 +139,8 @@ const usersRouteHandlers = app
 
     // Convert the user ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
+    if (!toDeleteIds.length)
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
     // Fetch users by IDs
 
@@ -146,7 +163,8 @@ const usersRouteHandlers = app
     }
 
     // Ifuser doesn't have permission to delete, return error
-    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
+    if (!allowedIds.length)
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
 
     // Delete allowed users
     await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
@@ -172,9 +190,18 @@ const usersRouteHandlers = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 
-    if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: idOrSlug },
+      });
 
-    const requesterOrgIds = requesterMemberships.filter((m) => m.contextType === 'organization').map((m) => m.organizationId);
+    const requesterOrgIds = requesterMemberships
+      .filter((m) => m.contextType === 'organization')
+      .map((m) => m.organizationId);
 
     const [sharedMembership] = await db
       .select({ id: membershipsTable.id })
@@ -214,14 +241,22 @@ const usersRouteHandlers = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
       .limit(1);
 
-    if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: idOrSlug },
+      });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable)
+        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db

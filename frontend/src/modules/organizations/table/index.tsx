@@ -10,12 +10,12 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
-import { getAndSetMenu } from '~/modules/me/helpers';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { organizationsQueryOptions } from '~/modules/organizations/query';
+import { organizationQueryKeys, organizationsQueryOptions } from '~/modules/organizations/query';
 import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
 import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { useUserStore } from '~/store/user';
 
 const LIMIT = appConfig.requestLimits.organizations;
@@ -23,9 +23,12 @@ const LIMIT = appConfig.requestLimits.organizations;
 const OrganizationsTable = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const updateMember = useMemberUpdateMutation();
 
-  const updateMemberMembership = useMemberUpdateMutation();
-  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
+  const mutateOrganizationsCache = useMutateQueryData(organizationQueryKeys.list.base);
+  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({
+    from: '/appLayout/system/organizations',
+  });
 
   // Table state
   const { q, sort, order } = search;
@@ -39,6 +42,7 @@ const OrganizationsTable = () => {
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = organizationsQueryOptions({ ...search, limit });
+
   const {
     data: rows,
     isLoading,
@@ -67,16 +71,29 @@ const OrganizationsTable = () => {
 
       const newRole = membership.role;
       const partOfOrganization = !!membership.id;
-      const mutationVariables = { idOrSlug: organization.slug, entityType: organization.entityType };
+      const mutationVariables = { idOrSlug: organization.id, entityType: organization.entityType };
       const orgIdOrSlug = organization.id;
 
       try {
+        // TODO re-check and add mutation or invalidation all connected queries(members table, single organization query)
         if (partOfOrganization) {
-          await updateMemberMembership.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
+          await updateMember.mutateAsync({ id: membership.id, role: newRole, orgIdOrSlug, ...mutationVariables });
+          // Update organizations cache to reflect membership change
+          const updatedOrganization = { ...organization, membership: { ...membership, role: newRole } };
+          mutateOrganizationsCache.update([updatedOrganization]);
         } else {
-          await membershipInvite({ query: mutationVariables, path: { orgIdOrSlug }, body: { emails: [user.email], role: newRole } });
-          // TODO add cache mutation for organization tables
-          await getAndSetMenu();
+          await membershipInvite({
+            query: mutationVariables,
+            path: { orgIdOrSlug },
+            body: { emails: [user.email], role: newRole },
+          });
+
+          // TODO REVIEW
+          // const targetMenuItem = menu.organization.find((org) => org.id === organization.id);
+          // if (targetMenuItem) {
+          //   const updatedOrganization = { ...organization, membership: targetMenuItem.membership };
+          //   mutateOrganizationsCache.update([updatedOrganization]);
+          // }
           toaster(t('common:success.role_updated'), 'success');
         }
       } catch (err) {
@@ -128,7 +145,11 @@ const OrganizationsTable = () => {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={BirdIcon} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
+            <ContentPlaceholder
+              icon={BirdIcon}
+              title="common:no_resource_yet"
+              titleProps={{ resource: t('common:organizations').toLowerCase() }}
+            />
           ),
         }}
       />

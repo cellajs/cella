@@ -1,7 +1,7 @@
-<div align="center">
+<div style="text-align: center">
 
-  <img src="./info/screenshot-dark.png#gh-dark-mode-only" />
-  <img src="./info/screenshot.png#gh-light-mode-only" />
+  <img alt="screenshot" src="./info/screenshot-dark.png#gh-dark-mode-only" />
+  <img alt="screenshot" src="./info/screenshot.png#gh-light-mode-only" />
 
 <br />
 
@@ -15,8 +15,7 @@
  -->
 
 
-<p>
-	<h1><b>Cella</b></h1>
+<h1><b>Cella</b></h1>
 <p>
     <b>TypeScript template to build collaborative web apps with sync & offline capabilities. Europe-first.</b>
     <br />
@@ -26,39 +25,42 @@
     Prerelease
     ·
     MIT license
-  </p>
-  <br />
 </p>
-
+<br />
 </div>
 
 > [!CAUTION]
-> This is a prerelease. Versioned releases will start once we have enough tests for authentication, authorization and data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
+> This is a prerelease. Versioned releases will start once we have enough tests for authentication, authorization and
+> data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
 
 #### Contents
-- [Create app](#create-app)
+
+- [Agent Guidelines](/info/AGENTS.md)
 - [Architecture](/info/ARCHITECTURE.md)
 - [Roadmap](/info/ROADMAP.md)
-- [Deployment](/info/DEPLOYMENT.md)
 
 ## Requirements
+
 - Make sure you have node installed with `node -v`. Install Node 24.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 - Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
 <br>
 
 ## Create app
+
 Do **not fork** this repo directly. Use the create CLI to get started:
 
 ```bash
 pnpm create @cellajs/cella
 ```
 
-You now have an implementation-ready web app 🤯. But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
+You now have an implementation-ready web app 🤯. But ... without any unique functionality 🤓. Read
+the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
 <p>&nbsp;</p>
 
 ## Contribute
+
 For those that (also) want to participate in development:
 
 ```bash
@@ -66,14 +68,18 @@ git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
 ### A. Quick setup
-Run your db using a local pglite. Its fast to build and to clean up. Simply remove `backend/.db`. However, you need to use the full setup to run electric-sync.
+
+Run your db using a local pglite. Its fast to build and to clean up. Simply remove `backend/.db`. However, you need to
+use the full setup to run electric-sync.
 
 ```bash
 pnpm install && pnpm quick
 ```
 
 ### B. Full setup
-For a full setup with sync capabilities, you need to run postgres + electric-sync. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
+
+For a full setup with sync capabilities, you need to run postgres + electric-sync.
+Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 pnpm install
@@ -87,8 +93,11 @@ Start all servers:
 pnpm dev
 ```
 
-Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
+Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found
+at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db
+with [local.drizzle.studio](http://local.drizzle.studio).
 
 <p>&nbsp;</p>
 
-💙💛 Big thank you to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [electric](https://github.com/electric-sql/electric).
+💙💛 Big thank you
+to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [electric](https://github.com/electric-sql/electric).

@@ -15,7 +15,10 @@ interface AlertStoreState {
 }
 
 // Initial store state, using config to determine maintenance mode
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = {
+  downAlert: appConfig.maintenance ? 'maintenance' : null,
+  alertsSeen: [],
+};
 
 /**
  * Store for app-wide alerts and UI specific alerts in `alertsSeen`.

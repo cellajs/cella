@@ -36,6 +36,38 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> => {
 };
 
 /**
+ * Presigned URL rate limiter to prevent, falls back to IP address for anonymous requests
+ */
+export const presignedUrlLimiter: MiddlewareHandler<Env> = rateLimiter('limit', 'presigned_url', ['userId', 'ip'], {
+  points: 20, // 20 requests per hour
+  duration: 60 * 60, // 1 hour window
+  blockDuration: 60 * 15, // 15 minute block
+});
+
+/**
+ * TOTP verification rate limiter to prevent brute force attacks on MFA codes
+ */
+export const totpVerificationLimiter: MiddlewareHandler<Env> = rateLimiter(
+  'failseries',
+  'totp_verification',
+  ['email', 'ip'],
+  {
+    points: 5, // 5 attempts per hour
+    duration: 60 * 60, // 1 hour window
+    blockDuration: 60 * 30, // 30 minute block
+  },
+);
+
+/**
+ * Passkey challenge rate limiter to prevent challenge generation abuse
+ */
+export const passkeyChallengeLimiter: MiddlewareHandler<Env> = rateLimiter('limit', 'passkey_challenge', ['ip'], {
+  points: 5, // 5 challenges per hour
+  duration: 60 * 60, // 1 hour window
+  blockDuration: 60 * 15, // 15 minute block
+});
+
+/**
  * Registers the ratelimmiters middleware for OpenAPI documentation.
  * This allows the middleware to be recognized and described in the API documentation.
  */
@@ -58,4 +90,25 @@ registerMiddlewareDescription({
   middleware: passwordLimiter,
   category: 'rate-limit',
   label: 'Password (5/h)',
+});
+
+registerMiddlewareDescription({
+  name: 'presignedUrlLimiter',
+  middleware: presignedUrlLimiter,
+  category: 'rate-limit',
+  label: 'Presigned URL (20/h)',
+});
+
+registerMiddlewareDescription({
+  name: 'totpVerificationLimiter',
+  middleware: totpVerificationLimiter,
+  category: 'rate-limit',
+  label: 'TOTP Verification (5/h)',
+});
+
+registerMiddlewareDescription({
+  name: 'passkeyChallengeLimiter',
+  middleware: passkeyChallengeLimiter,
+  category: 'rate-limit',
+  label: 'Passkey Challenge (5/h)',
 });

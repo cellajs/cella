@@ -22,7 +22,13 @@ interface SelectSortProps<T extends readonly SortOptionBase[]> {
   iconOnly?: boolean;
 }
 
-function SelectSort<T extends readonly SortOptionBase[]>({ sortOptions, onChange, value, className, iconOnly = true }: SelectSortProps<T>) {
+function SelectSort<T extends readonly SortOptionBase[]>({
+  sortOptions,
+  onChange,
+  value,
+  className,
+  iconOnly = true,
+}: SelectSortProps<T>) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 

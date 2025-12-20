@@ -1,6 +1,13 @@
 import { appConfig } from 'config';
 import { type Key, type ReactNode, useRef } from 'react';
-import { type CellMouseArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import {
+  type CellMouseArgs,
+  type CellMouseEvent,
+  DataGrid,
+  type RenderRowProps,
+  type RowsChangeData,
+  type SortColumn,
+} from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
@@ -66,7 +73,11 @@ export const DataTable = <TData,>({
     <div className="w-full h-full mb-4 md:mb-8 focus-view-scroll">
       {isLoading || !rows ? (
         // Render skeleton only on initial load
-        <DataTableSkeleton cellsWidths={['3rem', '10rem', '4rem']} cellHeight={Number(rowHeight)} columnCount={columns.length} />
+        <DataTableSkeleton
+          cellsWidths={['3rem', '10rem', '4rem']}
+          cellHeight={Number(rowHeight)}
+          columnCount={columns.length}
+        />
       ) : (
         <>
           {error && rows.length === 0 ? (

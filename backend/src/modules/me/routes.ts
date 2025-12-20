@@ -5,7 +5,6 @@ import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
-  menuSchema,
   mePendingInvitationSchema,
   toggleMfaBodySchema,
   uploadTokenQuerySchema,
@@ -33,24 +32,6 @@ const meRoutes = {
             schema: z.object({ user: userSchema, systemRole: z.enum([...appConfig.roles.systemRoles, 'user']) }),
           },
         },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
-  getMyMenu: createCustomRoute({
-    operationId: 'getMyMenu',
-    method: 'get',
-    path: '/menu',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get menu',
-    description:
-      'Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
-    responses: {
-      200: {
-        description: 'Menu of user',
-        content: { 'application/json': { schema: menuSchema } },
       },
       ...errorResponseRefs,
     },
@@ -85,7 +66,9 @@ const meRoutes = {
       body: {
         required: true,
         content: {
-          'application/json': { schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }) },
+          'application/json': {
+            schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }),
+          },
         },
       },
     },
@@ -120,7 +103,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get auth data',
-    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
+    description:
+      'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
     responses: {
       200: {
         description: 'User sign-up info',
@@ -217,7 +201,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Toggle MFA',
-    description: 'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
+    description:
+      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

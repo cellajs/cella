@@ -33,8 +33,8 @@ type UserBaseSelect = Pick<TableColumns, UserBaseKeys>;
 /**
  * User select for base data only.
  */
-export const userBaseSelect = (() => {
-  const cols = getTableColumns(usersTable) satisfies TableColumns;
+export const userBaseSelect: UserBaseSelect = (() => {
+  const cols = getTableColumns(usersTable);
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pickColumns(cols, keys);
-})() satisfies UserBaseSelect;
+})();

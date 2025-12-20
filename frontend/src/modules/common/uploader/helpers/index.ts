@@ -19,7 +19,10 @@ import { nanoid } from '~/utils/nanoid';
  * @param withTransloadit - Optional flag to control whether to integrate Transloadit plugin. Defaults to true.
  * @returns A new Uppy instance configured with the specified options, and Transloadit if enabled.
  */
-export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
+export const createBaseTransloaditUppy = async (
+  uppyOptions: CustomUppyOpt,
+  tokenQuery: UploadTokenQuery,
+): Promise<CustomUppy> => {
   const uppy = new Uppy({
     ...uppyOptions,
     meta: {

@@ -9,7 +9,11 @@ const SystemPage = () => {
 
   return (
     <>
-      <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} className="container pt-4 md:pt-6 md:px-6" />
+      <SimpleHeader
+        heading={t('common:system_panel')}
+        text={t('common:system_panel.text')}
+        className="container pt-4 md:pt-6 md:px-6"
+      />
 
       <PageNav
         className="mt-4"
@@ -17,6 +21,7 @@ const SystemPage = () => {
           { id: 'users', label: 'common:users', path: '/system/users' },
           { id: 'organizations', label: 'common:organizations', path: '/system/organizations' },
           { id: 'requests', label: 'common:requests', path: '/system/requests' },
+          { id: 'pages', label: 'common:pages', path: '/system/pages' },
           { id: 'metrics', label: 'common:metrics', path: '/system/metrics' },
         ]}
       />

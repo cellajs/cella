@@ -158,7 +158,12 @@ const systemRouteHandlers = app
     type Recipient = (typeof recipients)[number];
 
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
-    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
+    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(
+      SystemInviteEmail,
+      staticProps,
+      recipients,
+      user.email,
+    );
 
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
@@ -170,10 +175,18 @@ const systemRouteHandlers = app
   .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
     const { key, isPublic: queryPublic } = ctx.req.valid('query');
 
+    // TODO: can this tight coupling with attachments module be prevented?
+    // Or move this handler to attachments module?
     const [attachment] = await db
       .select()
       .from(attachmentsTable)
-      .where(or(eq(attachmentsTable.originalKey, key), eq(attachmentsTable.thumbnailKey, key), eq(attachmentsTable.convertedKey, key)))
+      .where(
+        or(
+          eq(attachmentsTable.originalKey, key),
+          eq(attachmentsTable.thumbnailKey, key),
+          eq(attachmentsTable.convertedKey, key),
+        ),
+      )
       .limit(1);
 
     const { bucketName, public: isPublic } = attachment ?? {
@@ -188,12 +201,16 @@ const systemRouteHandlers = app
       const userSystemRole = getContextUserSystemRole();
 
       if (attachment) {
-        const memberships = await db.select(membershipBaseSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+        const memberships = await db
+          .select(membershipBaseSelect)
+          .from(membershipsTable)
+          .where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = userSystemRole === 'admin';
         const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
 
-        if (!isSystemAdmin && !isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
+        if (!isSystemAdmin && !isAllowed)
+          throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
       }
     }
 
@@ -257,7 +274,8 @@ const systemRouteHandlers = app
       );
 
     // Stop if no recipients
-    if (!recipientsRecords.length && !toSelf) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!recipientsRecords.length && !toSelf)
+      throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({

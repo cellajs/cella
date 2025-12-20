@@ -116,7 +116,8 @@ const authOAuthRoutes = {
     middleware: [tokenLimiter('microsoft')],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
-    description: 'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
+    description:
+      'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {

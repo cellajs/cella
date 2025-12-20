@@ -1,6 +1,5 @@
 import { FlameKindlingIcon } from 'lucide-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import AttachmentsCarousel, { CarouselItemData } from '~/modules/attachments/carousel';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 
@@ -10,8 +9,6 @@ interface AttachmentDialogProps {
 }
 
 const AttachmentDialog = ({ attachmentId, attachments }: AttachmentDialogProps) => {
-  const { t } = useTranslation();
-
   const itemIndex = useMemo(() => {
     const index = attachments.findIndex(({ id }) => id === attachmentId);
     return index === -1 ? 0 : index;
@@ -22,7 +19,7 @@ const AttachmentDialog = ({ attachmentId, attachments }: AttachmentDialogProps) 
       <AttachmentsCarousel items={attachments} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
     </div>
   ) : (
-    <ContentPlaceholder icon={FlameKindlingIcon} title={t('error:not_found.text')} />
+    <ContentPlaceholder icon={FlameKindlingIcon} title="error:not_found.text" />
   );
 };
 

@@ -23,7 +23,11 @@ export const useColumns = () => {
         renderCell: ({ row, tabIndex }) => {
           if (!row.email) return <span className="text-muted">-</span>;
           return (
-            <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
+            <a
+              href={`mailto:${row.email}`}
+              tabIndex={tabIndex}
+              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+            >
               {row.email}
             </a>
           );
@@ -58,7 +62,9 @@ export const useColumns = () => {
         visible: !isMobile,
         minWidth: 80,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => (
+          <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />
+        ),
       },
     ];
 

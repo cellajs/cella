@@ -1,5 +1,5 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider } from 'config';
 import { appConfig } from 'config';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
@@ -11,7 +11,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { env } from '#/env';
-import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
+import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -22,20 +22,13 @@ import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
-import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
-import type { menuSchema } from '#/modules/me/schema';
 import { userSelect } from '#/modules/users/helpers/select';
-import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
-
-type UserMenu = z.infer<typeof menuSchema>;
-type MenuItem = z.infer<typeof contextEntityWithMembershipSchema>;
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -82,11 +75,17 @@ const meRouteHandlers = app
       });
     }
 
-    const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({ mfaRequired })
+      .where(eq(usersTable.id, user.id))
+      .returning();
 
     if (updatedUser.mfaRequired) {
       // Invalidate all existing regular sessions
-      await db.delete(sessionsTable).where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
+      await db
+        .delete(sessionsTable)
+        .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
 
       // Clear session cookie to enforce fresh login
       deleteAuthCookie(ctx, 'session');
@@ -110,48 +109,11 @@ const meRouteHandlers = app
     // Filter only providers that are enabled in appConfig
     const enabledOAuth = oauth
       .map(({ provider }) => provider)
-      .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
+      .filter((provider): provider is EnabledOAuthProvider =>
+        appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider),
+      );
 
     return ctx.json({ ...restInfo, enabledOAuth, sessions }, 200);
-  })
-  /**
-   * Get my user menu
-   */
-  .openapi(meRoutes.getMyMenu, async (ctx) => {
-    const user = getContextUser();
-    const memberships = getContextMemberships();
-
-    const emptyData = appConfig.menuStructure.reduce((acc, section) => {
-      acc[section.entityType] = [];
-      return acc;
-    }, {} as UserMenu);
-
-    if (!memberships.length) return ctx.json(emptyData, 200);
-
-    const buildMenuForSection = async ({ entityType, subentityType }: MenuSection): Promise<MenuItem[]> => {
-      const entities = await getUserMenuEntities(entityType, user.id);
-      const subentities = subentityType ? await getUserMenuEntities(subentityType, user.id) : [];
-
-      const allowedEntities = entities.filter((entity) => permissionManager.isPermissionAllowed([entity.membership], 'read', entity));
-
-      return allowedEntities.map((entity) => {
-        const entityIdField = appConfig.entityIdFields[entityType];
-
-        const submenu = subentities.filter(
-          (sub) =>
-            sub.membership[entityIdField] === entity.id && permissionManager.isPermissionAllowed([entity.membership, sub.membership], 'read', sub),
-        );
-        return { ...entity, submenu };
-      });
-    };
-
-    const menu = {} as UserMenu;
-
-    for (const section of appConfig.menuStructure) {
-      menu[section.entityType] = await buildMenuForSection(section);
-    }
-
-    return ctx.json(menu, 200);
   })
   /**
    * Get my invitations - a list with a combination of pending membership and entity data
@@ -162,7 +124,7 @@ const meRouteHandlers = app
     const pendingInvites = await Promise.all(
       appConfig.contextEntityTypes.map((entityType) => {
         const entityTable = entityTables[entityType];
-        const entityIdField = appConfig.entityIdFields[entityType];
+        const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
         const contextEntityBaseSelect = makeContextEntityBaseSelect(entityType);
 
@@ -173,7 +135,7 @@ const meRouteHandlers = app
           })
           .from(inactiveMembershipsTable)
           .leftJoin(usersTable, eq(usersTable.id, inactiveMembershipsTable.createdBy))
-          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdField]))
+          .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable[entityIdColumnKey]))
           .where(
             and(
               eq(inactiveMembershipsTable.contextType, entityType),
@@ -223,7 +185,14 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
+    if (!user)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: 'self' },
+      });
 
     const { userFlags, ...passedUpdates } = ctx.req.valid('json');
 
@@ -231,7 +200,8 @@ const meRouteHandlers = app
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable)
+        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
     // if userFlags is provided, merge it
     const updateData = {
@@ -255,7 +225,14 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
+    if (!user)
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: 'self' },
+      });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
@@ -276,10 +253,12 @@ const meRouteHandlers = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
-    const entityIdField = appConfig.entityIdFields[entityType];
+    const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
     // Delete memberships
-    await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], entity.id)));
+    await db
+      .delete(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdColumnKey], entity.id)));
 
     logEvent('info', 'User left entity', { userId: user.id });
 
@@ -293,7 +272,9 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = [appConfig.s3BucketPrefix, organizationId, user.id].filter((part): part is string => typeof part === 'string').join('/');
+    const sub = [appConfig.s3BucketPrefix, organizationId, user.id]
+      .filter((part): part is string => typeof part === 'string')
+      .join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);

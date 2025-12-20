@@ -13,7 +13,10 @@ export const getNestedValue = <TObject extends object, TPath extends Array<strin
   if (obj == null || typeof obj !== 'object') return undefined;
 
   // Early return if path is neither string nor array
-  if (typeof path !== 'string' && !(Array.isArray(path) && path.every((key) => typeof key === 'string' || typeof key === 'number'))) {
+  if (
+    typeof path !== 'string' &&
+    !(Array.isArray(path) && path.every((key) => typeof key === 'string' || typeof key === 'number'))
+  ) {
     return undefined;
   }
 
@@ -33,7 +36,10 @@ export const getNestedValue = <TObject extends object, TPath extends Array<strin
     if (result == null) return undefined;
 
     // Either index into an array or property lookup on object
-    if ((typeof key === 'number' && Array.isArray(result) && key in result) || (typeof key === 'string' && Object.hasOwn(result, key))) {
+    if (
+      (typeof key === 'number' && Array.isArray(result) && key in result) ||
+      (typeof key === 'string' && Object.hasOwn(result, key))
+    ) {
       result = result[key];
     } else return undefined; // Invalid path
   }

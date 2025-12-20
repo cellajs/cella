@@ -21,16 +21,20 @@ export type LabelDirectionType = 'top' | 'left';
 const LabelDirectionContext = React.createContext<LabelDirectionType>('top');
 
 // === Form props with generics ===
-type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<
-  TFieldValues,
-  TContext,
-  TTransformedValues
-> & {
+type FormProps<
+  TFieldValues extends FieldValues,
+  TContext = unknown,
+  TTransformedValues extends FieldValues = TFieldValues,
+> = FormProviderProps<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges?: boolean;
   labelDirection?: LabelDirectionType;
 };
 
-const Form = <TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues>({
+const Form = <
+  TFieldValues extends FieldValues,
+  TContext = unknown,
+  TTransformedValues extends FieldValues = TFieldValues,
+>({
   children,
   unsavedChanges,
   labelDirection = 'top',
@@ -45,13 +49,19 @@ const Form = <TFieldValues extends FieldValues, TContext = unknown, TTransformed
   );
 };
 
-type FormFieldContextValue<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> = {
+type FormFieldContextValue<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> = {
   name: TName;
 };
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
-const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({
+const FormField = <
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
   ...props
 }: ControllerProps<TFieldValues, TName>) => {
   return (
@@ -110,7 +120,9 @@ function FormItem({ className, name, ...props }: React.ComponentProps<'div'> & {
 
 function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField();
-  return <Label data-slot="form-label" data-error={!!error} className={cn('', className)} htmlFor={formItemId} {...props} />;
+  return (
+    <Label data-slot="form-label" data-error={!!error} className={cn('', className)} htmlFor={formItemId} {...props} />
+  );
 }
 
 function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
@@ -137,7 +149,11 @@ function FormDescription({ className, children, ...props }: React.ComponentProps
 
   // EDIT: This is customized to allow for collapsible descriptions
   return (
-    <div id={formDescriptionId} className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)} {...props}>
+    <div
+      id={formDescriptionId}
+      className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)}
+      {...props}
+    >
       <div className="flex justify-between">
         <Button
           type="button"

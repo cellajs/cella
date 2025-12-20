@@ -8,7 +8,10 @@ interface HamburgerButtonProps {
   className?: string;
 }
 const HamburgerLine = ({ className, lineColor }: { className: string; lineColor: string }) => (
-  <div className={cn('ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300', className)} style={{ backgroundColor: lineColor }} />
+  <div
+    className={cn('ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300', className)}
+    style={{ backgroundColor: lineColor }}
+  />
 );
 
 const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) => {
@@ -23,7 +26,11 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
     <Button
       size="lg"
       variant="ghost"
-      className={cn('group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center', className, isOpen && 'pointer-events-none')}
+      className={cn(
+        'group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center',
+        className,
+        isOpen && 'pointer-events-none',
+      )}
       type="button"
       onClick={() => toggle()}
       aria-expanded={isOpen}

@@ -9,6 +9,7 @@ import meRouteHandlers from '#/modules/me/handlers';
 import membershipRouteHandlers from '#/modules/memberships/handlers';
 import metricRouteHandlers from '#/modules/metrics/handlers';
 import organizationRouteHandlers from '#/modules/organizations/handlers';
+import pagesRouteHandlers from '#/modules/pages/handlers';
 import requestRouteHandlers from '#/modules/requests/handlers';
 import systemRouteHandlers from '#/modules/system/handlers';
 import userRouteHandlers from '#/modules/users/handlers';
@@ -24,6 +25,7 @@ const app = baseApp
   .route('/me', meRouteHandlers)
   .route('/users', userRouteHandlers)
   .route('/organizations', organizationRouteHandlers)
+  .route('/pages', pagesRouteHandlers)
   .route('/entities', entityRouteHandlers)
   .route('/system', systemRouteHandlers)
   .route('/requests', requestRouteHandlers)

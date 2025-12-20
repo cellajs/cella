@@ -22,7 +22,11 @@ export const WaitlistStep = () => {
         <div className="text-2xl text-center">
           <h1 className="text-xxl">{t('common:request_access')}</h1>
           {email.length > 0 && (
-            <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
+            <Button
+              variant="ghost"
+              onClick={resetSteps}
+              className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
+            >
               <span className="truncate">{email}</span>
               <ChevronDownIcon size={16} className="ml-1" />
             </Button>

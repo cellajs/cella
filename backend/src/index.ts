@@ -62,7 +62,8 @@ const main = async () => {
 Frontend: ${chalk.cyanBright.bold(appConfig.frontendUrl)} 
 Backend: ${chalk.cyanBright.bold(appConfig.backendUrl)} 
 Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}
-Docs: ${chalk.cyanBright(`${appConfig.backendUrl}/docs`)}`);
+Docs: ${chalk.cyanBright(`${appConfig.backendUrl}/docs`)}
+Storybook: ${chalk.cyanBright(`http://localhost:6006/`)}`);
 
       console.info(' ');
     },

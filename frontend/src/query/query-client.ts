@@ -17,7 +17,7 @@ window.addEventListener('offline', handleOnlineStatus);
 handleOnlineStatus();
 
 /**
- * Our queryClient instance
+ * Our queryClient instance.
  *
  * @link https://tanstack.com/query/latest/docs/reference/QueryClient
  */
@@ -26,10 +26,12 @@ export const queryClient = new QueryClient({
   queryCache: new QueryCache(queryClientConfig),
   defaultOptions: {
     queries: {
+      // TODO research this option
       // networkMode: 'offlineFirst',
       gcTime: 1000 * 60 * 60 * 24, // 24 hours
       staleTime: 1000 * 60 * 1, // 1 minutes
 
+      refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
 

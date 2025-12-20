@@ -119,7 +119,8 @@ const authOAuthRouteHandlers = app
      */
     try {
       const parsedState = JSON.parse(atob(state));
-      if (parsedState.redirectUrl) return ctx.redirect(`${parsedState.redirectUrl}?code=${code}&state=${state}&error=${error}`, 302);
+      if (parsedState.redirectUrl)
+        return ctx.redirect(`${parsedState.redirectUrl}?code=${code}&state=${state}&error=${error}`, 302);
     } catch (_) {
       // Ignore parsing errors; continue with standard OAuth handling
     }

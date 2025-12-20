@@ -26,7 +26,9 @@ const AppNav = () => {
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const triggerNavItem: TriggerNavItemFn = (id, ref) => {
-    const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
+    const triggerRef = ref || {
+      current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
+    };
 
     // If nav item is already open, close it
     if (id === navSheetOpen) {

@@ -3,7 +3,13 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { attachmentCreateManySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
-import { baseElectrycSyncQuery, idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import {
+  baseElectricSyncQuery,
+  idInOrgParamSchema,
+  idSchema,
+  idsBodySchema,
+  inOrgParamSchema,
+} from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
@@ -15,7 +21,8 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Create attachments',
-    description: 'Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.',
+    description:
+      'Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.',
     request: {
       params: inOrgParamSchema,
       body: {
@@ -102,7 +109,7 @@ const attachmentRoutes = {
     description: `Proxies requests to ElectricSQL's shape endpoint for the \`attachments\` table.
       Used by clients to synchronize local data with server state via the shape log system.
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
-    request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
+    request: { query: baseElectricSyncQuery, params: inOrgParamSchema },
     responses: {
       200: { description: 'Success' },
       ...errorResponseRefs,

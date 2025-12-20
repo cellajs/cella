@@ -36,5 +36,10 @@ export const Confetti = ({ fire, options }: ConfettiProps) => {
     }
   }, [fire, options]);
 
-  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+    />
+  );
 };

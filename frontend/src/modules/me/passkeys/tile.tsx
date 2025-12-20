@@ -41,10 +41,16 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
             <p className="truncate" aria-describedby={t('common:created_at')}>
               {dateShort(passkey.createdAt)}
             </p>
-            <p className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline" aria-describedby="OS">
+            <p
+              className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
+              aria-describedby="OS"
+            >
               {passkey.deviceOs}
             </p>
-            <p className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline" aria-describedby={t('common:browser')}>
+            <p
+              className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
+              aria-describedby={t('common:browser')}
+            >
               {passkey.browser}
             </p>
 

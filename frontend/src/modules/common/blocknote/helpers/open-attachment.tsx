@@ -1,3 +1,5 @@
+import { FormattingToolbarExtension } from '@blocknote/core/extensions';
+import { useExtension } from '@blocknote/react';
 import type { CarouselItemData } from '~/modules/attachments/carousel';
 import { openAttachmentDialog } from '~/modules/attachments/dialog/lib';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -8,7 +10,8 @@ export const openAttachment = async (
   blockNoteRef: React.RefObject<HTMLDivElement | null>,
 ) => {
   event.preventDefault();
-  editor.formattingToolbar.closeMenu();
+  const formattingToolbar = useExtension(FormattingToolbarExtension);
+  formattingToolbar.store.setState(false);
 
   const {
     block: { props },

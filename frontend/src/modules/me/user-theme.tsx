@@ -2,7 +2,13 @@ import { appConfig } from 'config';
 import { BanIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/modules/ui/dropdown-menu';
 import { Switch } from '~/modules/ui/switch';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
@@ -23,7 +29,7 @@ const UserTheme = ({ size = 16, buttonClassName = '', contentClassName = '' }: U
     { id: 'dark', label: t('common:dark'), icon: MoonIcon },
   ] as const;
 
-  const themes = objectEntries(appConfig.theme.colors);
+  const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
   function Icon({ icon: Icon }: { icon: React.ElementType<LucideProps> }) {
     return <Icon size={size} strokeWidth={appConfig.theme.strokeWidth} />;

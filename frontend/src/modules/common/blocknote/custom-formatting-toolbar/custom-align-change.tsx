@@ -13,7 +13,11 @@ export const CustomTextAlignSelect = () => {
   return (
     <Components.Generic.Menu.Root>
       <Components.Generic.Menu.Trigger>
-        <Components.FormattingToolbar.Button className="bn-dropdown-button" label="Text align select" mainTooltip="Select text align">
+        <Components.FormattingToolbar.Button
+          className="bn-dropdown-button"
+          label="Text align select"
+          mainTooltip="Select text align"
+        >
           <MoveHorizontalIcon size={20} />
           <ChevronDownIcon size={14} />
         </Components.FormattingToolbar.Button>

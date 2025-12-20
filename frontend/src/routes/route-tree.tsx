@@ -13,8 +13,21 @@ import {
 import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing-routes';
-import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organization-routes';
-import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system-routes';
+import {
+  OrganizationAttachmentsRoute,
+  OrganizationMembersRoute,
+  OrganizationRoute,
+  OrganizationSettingsRoute,
+} from '~/routes/organization-routes';
+import { PageRoute } from '~/routes/page-routes';
+import {
+  MetricsRoute,
+  OrganizationsTableRoute,
+  PagesTableRoute,
+  RequestsTableRoute,
+  SystemRoute,
+  UsersTableRoute,
+} from '~/routes/system-routes';
 import { UserAccountRoute, UserInOrganizationProfileRoute, UserProfileRoute } from '~/routes/user-routes';
 
 //App-specific route imports here
@@ -31,6 +44,7 @@ export const routeTree = RootRoute.addChildren([
     AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
+    PageRoute,
     AuthLayoutRoute.addChildren([
       AuthenticateRoute,
       MfaRoute,
@@ -45,7 +59,13 @@ export const routeTree = RootRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,
-    SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
+    SystemRoute.addChildren([
+      UsersTableRoute,
+      OrganizationsTableRoute,
+      RequestsTableRoute,
+      PagesTableRoute,
+      MetricsRoute,
+    ]),
     UserProfileRoute,
     UserInOrganizationProfileRoute,
     UserAccountRoute,

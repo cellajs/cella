@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
+import { appConfig } from 'config';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -110,7 +111,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
           label={t('common:message')}
           required
           baseBlockNoteProps={{
-            id: 'blocknote-newsletter',
+            id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,
             className:
               'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
@@ -147,11 +148,22 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
             <SendIcon size={16} className="mr-2" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('common:cancel')} onClick={cancel}>
+          <Button
+            type="reset"
+            variant="secondary"
+            className={isDirty() ? '' : 'invisible'}
+            aria-label={t('common:cancel')}
+            onClick={cancel}
+          >
             {t('common:cancel')}
           </Button>
           <div className="max-sm:mt-2 flex gap-2 items-center">
-            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="size-4 ml-4" />
+            <Checkbox
+              id="testOnly"
+              checked={testOnly}
+              onCheckedChange={(value) => setTestOnly(value)}
+              className="size-4 ml-4"
+            />
             <label htmlFor="testOnly" className="items-center text-sm">
               {t('common:test_email')}
             </label>

@@ -28,7 +28,9 @@ export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content
     sameSite: appConfig.mode === 'tunnel' ? 'none' : 'lax', // ATTENTION: Strict is possible if you use a proxy for api
     maxAge: timeSpan.seconds(),
   } satisfies CookieOptions;
-  isProduction ? await setSignedCookie(ctx, versionedName, content, env.COOKIE_SECRET, options) : setCookie(ctx, versionedName, content, options);
+  isProduction
+    ? await setSignedCookie(ctx, versionedName, content, env.COOKIE_SECRET, options)
+    : setCookie(ctx, versionedName, content, options);
 };
 
 /**
@@ -41,7 +43,9 @@ export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content
 export const getAuthCookie = async (ctx: Context<Env>, name: CookieName) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
-  const content = isProduction ? await getSignedCookie(ctx, env.COOKIE_SECRET, versionedName) : getCookie(ctx, versionedName);
+  const content = isProduction
+    ? await getSignedCookie(ctx, env.COOKIE_SECRET, versionedName)
+    : getCookie(ctx, versionedName);
   return content;
 };
 

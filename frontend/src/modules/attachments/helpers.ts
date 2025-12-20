@@ -13,7 +13,10 @@ const baseAttachmentValues = {
   modifiedBy: null,
 };
 
-export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string): Attachment[] => {
+export const parseUploadedAttachments = (
+  result: UploadedUppyFile<'attachment'>,
+  organizationId: string,
+): Attachment[] => {
   const createdBy = useUserStore.getState().user.id;
   const createdAt = new Date().toDateString();
 
@@ -38,6 +41,7 @@ export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>,
       contentType: mime,
       filename,
       name,
+      description: '',
       public: user_meta?.public === 'true',
       bucketName: user_meta?.bucketName,
       originalKey: url,

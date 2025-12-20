@@ -55,7 +55,9 @@ const StepLabel = ({ isCurrentStep, opacity, label, description }: StepLabelProp
         opacity,
       }}
     >
-      {!!label && <span className={cn('stepper__step-label', labelVariants({ size }), styles?.['step-label'])}>{label}</span>}
+      {!!label && (
+        <span className={cn('stepper__step-label', labelVariants({ size }), styles?.['step-label'])}>{label}</span>
+      )}
       {!!description && (
         <span
           className={cn(

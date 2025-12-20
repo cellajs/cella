@@ -52,7 +52,14 @@ const Totp = () => {
         </div>
       )}
       {hasTotp ? (
-        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
+        <Button
+          key="deleteTotp"
+          type="button"
+          variant="plain"
+          loading={isPending}
+          disabled={user.mfaRequired}
+          onClick={handleDeleteTOTP}
+        >
           <UnlinkIcon className="size-4 mr-2" />
           <span>{t('common:unlink')}</span>
         </Button>

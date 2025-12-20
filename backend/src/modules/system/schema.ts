@@ -1,5 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
+import { systemRolesTable } from '#/db/schema/system-roles';
 import { userSchema } from '#/modules/users/schema';
 
 export const inviteBodySchema = z.object({
@@ -21,3 +23,12 @@ export const sendNewsletterBodySchema = z.object({
   subject: z.string(),
   content: z.string(),
 });
+
+export const systemRoleSchema = z.object(createSelectSchema(systemRolesTable).shape).openapi('SystemRole');
+
+export const systemRoleBaseSchema = systemRoleSchema
+  .omit({
+    createdAt: true,
+    modifiedAt: true,
+  })
+  .openapi('SystemRoleBase');

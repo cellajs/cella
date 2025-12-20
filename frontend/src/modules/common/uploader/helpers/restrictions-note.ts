@@ -19,7 +19,10 @@ const formatCategories = (categories: string[]) => {
 };
 
 export const generateRestrictionNote = (passedRestrictions?: Partial<CustomUppyOpt['restrictions']>): string => {
-  const { allowedFileTypes, minNumberOfFiles, maxNumberOfFiles, maxFileSize } = { ...appConfig.uppy.defaultRestrictions, ...passedRestrictions };
+  const { allowedFileTypes, minNumberOfFiles, maxNumberOfFiles, maxFileSize } = {
+    ...appConfig.uppy.defaultRestrictions,
+    ...passedRestrictions,
+  };
 
   const categories = (() => {
     // If '*/*' is present, allow all categories
@@ -43,7 +46,11 @@ export const generateRestrictionNote = (passedRestrictions?: Partial<CustomUppyO
   if (categories.length) parts.push(formatCategories(categories));
 
   if (minNumberOfFiles != null && maxNumberOfFiles != null) {
-    parts.push(minNumberOfFiles === maxNumberOfFiles ? pluralize(maxNumberOfFiles, 'file') : `${minNumberOfFiles}-${maxNumberOfFiles} files`);
+    parts.push(
+      minNumberOfFiles === maxNumberOfFiles
+        ? pluralize(maxNumberOfFiles, 'file')
+        : `${minNumberOfFiles}-${maxNumberOfFiles} files`,
+    );
   } else if (maxNumberOfFiles != null) {
     parts.push(`up to ${pluralize(maxNumberOfFiles, 'file')}`);
   } else if (minNumberOfFiles != null) {

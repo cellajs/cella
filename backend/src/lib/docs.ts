@@ -7,7 +7,6 @@ import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { attachmentSchema } from '#/modules/attachments/schema';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
-import { menuSchema } from '#/modules/me/schema';
 import { inactiveMembershipSchema, membershipBaseSchema, membershipSchema } from '#/modules/memberships/schema';
 import { organizationSchema } from '#/modules/organizations/schema';
 import { userSchema } from '#/modules/users/schema';
@@ -59,7 +58,6 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('InactiveMembership', inactiveMembershipSchema);
   registry.register('Attachment', attachmentSchema);
 
-  registry.register('Menu', menuSchema);
   registry.register('ApiError', apiErrorSchema);
 
   // Register error responses

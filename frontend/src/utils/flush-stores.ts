@@ -2,7 +2,6 @@ import type { MeUser } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
-import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -16,7 +15,6 @@ export const flushStores = (removeAccount?: boolean) => {
   queryClient.clear();
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
-  useNavigationStore.getState().clearNavigationStore();
   useUIStore.getState().setImpersonating(false);
 
   if (!removeAccount) return;

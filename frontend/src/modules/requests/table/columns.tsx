@@ -28,7 +28,10 @@ export const useColumns = () => {
           <div className="flex flew-row gap-2 items-center">
             {t(`common:${type}`)}
             {type === 'waitlist' && (
-              <TooltipButton toolTipContent={t(`common:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
+              <TooltipButton
+                toolTipContent={t(`common:${wasInvited ? 'pending' : 'not_processed'}`)}
+                disabled={type !== 'waitlist'}
+              >
                 <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />
               </TooltipButton>
             )}
@@ -45,7 +48,11 @@ export const useColumns = () => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
           return (
-            <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
+            <a
+              href={`mailto:${row.email}`}
+              tabIndex={tabIndex}
+              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+            >
               {row.email || <span className="text-muted">-</span>}
             </a>
           );
@@ -60,7 +67,11 @@ export const useColumns = () => {
         minWidth: 200,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) =>
-          row.message ? <span className="font-light whitespace-pre-wrap leading-5">{row.message}</span> : <span className="text-muted">-</span>,
+          row.message ? (
+            <span className="font-light whitespace-pre-wrap leading-5">{row.message}</span>
+          ) : (
+            <span className="text-muted">-</span>
+          ),
       },
       {
         key: 'createdAt',
