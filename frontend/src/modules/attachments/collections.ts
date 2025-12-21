@@ -23,7 +23,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
       schema: zAttachment,
       getKey: (item) => item.id,
       shapeOptions: {
-        url: new URL(`/${orgIdOrSlug}/attachments/shape-proxy`, appConfig.backendUrl).href,
+        url: new URL(`/${orgIdOrSlug}/attachments/sync-attachments`, appConfig.backendUrl).href,
         params: { table: 'attachments' },
         backoffOptions,
         fetchClient: clientConfig.fetch,

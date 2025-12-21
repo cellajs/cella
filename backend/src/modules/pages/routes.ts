@@ -1,26 +1,24 @@
 import z from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
-import { baseElectricSyncQuery, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { baseElectricSyncQuery, idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
 import { pageCreateBodySchema, pageListQuerySchema, pageSchema, pageUpdateBodySchema } from './schema';
 
 const pagesRoutes = {
   /**
-   * Electric Shape Proxy
+   * Sync pages using Electric shape proxy
    */
-  shapeProxy: createCustomRoute({
-    operationId: 'shapeProxy',
+  syncPages: createCustomRoute({
+    operationId: 'syncPages',
     method: 'get',
-    path: '/shape-proxy',
+    path: '/sync-pages',
     guard: [isAuthenticated],
     tags: ['pages'],
-    summary: 'Shape proxy',
-    description: `Proxy requests to ElectricSQL's shape endpoint for the \`pages\` table.
-      Used by clients to synchronize local data with server state via the shape log system.
-      This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
-    request: { query: baseElectricSyncQuery, params: inOrgParamSchema },
+    summary: 'Sync pages',
+    description: `Sync page data by proxying requests to ElectricSQL's shape endpoint for \`pages\` table.`,
+    request: { query: baseElectricSyncQuery },
     responses: {
       200: { description: 'Success' },
       ...errorResponseRefs,

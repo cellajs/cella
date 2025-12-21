@@ -22,7 +22,7 @@ const attachmentsRouteHandlers = app
    * Proxy to electric for syncing to client
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
-  .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
+  .openapi(attachmentRoutes.syncAttachments, async (ctx) => {
     const { table, ...query } = ctx.req.valid('query');
 
     // Validate query params
@@ -35,16 +35,14 @@ const attachmentsRouteHandlers = app
 
     const clientWhere = query.where || '';
 
-    query.where = clientWhere
-      ? `organization_id = $1 AND (${clientWhere})`
-      : `organization_id = $1`;
+    query.where = clientWhere ? `organization_id = $1 AND (${clientWhere})` : `organization_id = $1`;
 
     // Provide the organization ID as params for the parameterized query
     // Electric SQL expects object format: {"1": "value"} for $1 placeholder
     const enrichedQuery = {
       ...query,
-      params: JSON.stringify({ '1': organization.id })
-    }
+      params: JSON.stringify({ '1': organization.id }),
+    };
 
     return await proxyElectricSync(table, enrichedQuery, 'attachment');
   })

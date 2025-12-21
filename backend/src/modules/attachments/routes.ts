@@ -14,6 +14,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const attachmentRoutes = {
+  /**
+   * Create one or more attachments
+   */
   createAttachments: createCustomRoute({
     operationId: 'createAttachment',
     method: 'post',
@@ -42,7 +45,9 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Update an attachment
+   */
   updateAttachment: createCustomRoute({
     operationId: 'updateAttachment',
     method: 'put',
@@ -70,7 +75,9 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete one or more attachments
+   */
   deleteAttachments: createCustomRoute({
     operationId: 'deleteAttachments',
     method: 'delete',
@@ -98,24 +105,27 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-
-  shapeProxy: createCustomRoute({
-    operationId: 'shapeProxy',
+  /**
+   * Sync attachments using Electric shape proxy
+   */
+  syncAttachments: createCustomRoute({
+    operationId: 'syncAttachments',
     method: 'get',
-    path: '/shape-proxy',
+    path: '/sync-attachments',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
-    summary: 'Shape proxy',
-    description: `Proxies requests to ElectricSQL's shape endpoint for the \`attachments\` table.
-      Used by clients to synchronize local data with server state via the shape log system.
-      This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
+    summary: 'Sync attachments',
+    description: `Sync attachment data by proxying requests to ElectricSQL's shape endpoint for \`attachments\` table.
+      Organization parameter is required to scope the data.`,
     request: { query: baseElectricSyncQuery, params: inOrgParamSchema },
     responses: {
       200: { description: 'Success' },
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Redirect to attachment
+   */
   redirectToAttachment: createCustomRoute({
     operationId: 'redirectToAttachment',
     method: 'get',

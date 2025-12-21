@@ -16,6 +16,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const meRoutes = {
+  /**
+   * Get self
+   */
   getMe: createCustomRoute({
     operationId: 'getMe',
     method: 'get',
@@ -36,7 +39,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get list of invitations
+   */
   getMyInvitations: createCustomRoute({
     operationId: 'getMyInvitations',
     method: 'get',
@@ -53,7 +58,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Update self
+   */
   updateMe: createCustomRoute({
     operationId: 'updateMe',
     method: 'put',
@@ -80,7 +87,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete self
+   */
   deleteMe: createCustomRoute({
     operationId: 'deleteMe',
     method: 'delete',
@@ -95,7 +104,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get auth data
+   */
   getMyAuth: createCustomRoute({
     operationId: 'getMyAuth',
     method: 'get',
@@ -113,7 +124,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Terminate sessions
+   */
   deleteMySessions: createCustomRoute({
     operationId: 'deleteMySessions',
     method: 'delete',
@@ -137,7 +150,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Leave entity
+   */
   deleteMyMembership: createCustomRoute({
     operationId: 'deleteMyMembership',
     method: 'delete',
@@ -154,7 +169,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Unsubscribe
+   */
   unsubscribeMe: createCustomRoute({
     operationId: 'unsubscribeMe',
     method: 'get',
@@ -174,7 +191,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get upload token
+   */
   getUploadToken: createCustomRoute({
     operationId: 'getUploadToken',
     method: 'get',
@@ -193,7 +212,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Toggle MFA
+   */
   toggleMfa: createCustomRoute({
     operationId: 'toggleMfa',
     method: 'put',

@@ -995,11 +995,9 @@ export const zUpdateOrganizationData = z.object({
  */
 export const zUpdateOrganizationResponse = zOrganization;
 
-export const zShapeProxyData = z.object({
+export const zSyncPagesData = z.object({
   body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
+  path: z.optional(z.never()),
   query: z.object({
     table: z.string(),
     offset: z.string(),
@@ -1265,7 +1263,7 @@ export const zGetPublicCountsResponse = z.object({
   page: z.number(),
 });
 
-export const zShapeProxy2Data = z.object({
+export const zSyncAttachmentsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     orgIdOrSlug: z.string(),

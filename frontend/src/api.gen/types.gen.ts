@@ -2281,11 +2281,9 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type ShapeProxyData = {
+export type SyncPagesData = {
   body?: never;
-  path: {
-    orgIdOrSlug: string;
-  };
+  path?: never;
   query: {
     table: string;
     offset: string;
@@ -2294,10 +2292,10 @@ export type ShapeProxyData = {
     live?: string;
     where?: string;
   };
-  url: '/pages/shape-proxy';
+  url: '/pages/sync-pages';
 };
 
-export type ShapeProxyErrors = {
+export type SyncPagesErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2320,9 +2318,9 @@ export type ShapeProxyErrors = {
   429: TooManyRequestsError;
 };
 
-export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
+export type SyncPagesError = SyncPagesErrors[keyof SyncPagesErrors];
 
-export type ShapeProxyResponses = {
+export type SyncPagesResponses = {
   /**
    * Success
    */
@@ -3024,7 +3022,7 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
-export type ShapeProxy2Data = {
+export type SyncAttachmentsData = {
   body?: never;
   path: {
     orgIdOrSlug: string;
@@ -3037,10 +3035,10 @@ export type ShapeProxy2Data = {
     live?: string;
     where?: string;
   };
-  url: '/{orgIdOrSlug}/attachments/shape-proxy';
+  url: '/{orgIdOrSlug}/attachments/sync-attachments';
 };
 
-export type ShapeProxy2Errors = {
+export type SyncAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -3063,9 +3061,9 @@ export type ShapeProxy2Errors = {
   429: TooManyRequestsError;
 };
 
-export type ShapeProxy2Error = ShapeProxy2Errors[keyof ShapeProxy2Errors];
+export type SyncAttachmentsError = SyncAttachmentsErrors[keyof SyncAttachmentsErrors];
 
-export type ShapeProxy2Responses = {
+export type SyncAttachmentsResponses = {
   /**
    * Success
    */

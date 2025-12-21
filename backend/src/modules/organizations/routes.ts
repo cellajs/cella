@@ -12,6 +12,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const organizationRoutes = {
+  /**
+   * Create an organization
+   */
   createOrganization: createCustomRoute({
     operationId: 'createOrganization',
     method: 'post',
@@ -34,6 +37,9 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get list of organizations
+   */
   getOrganizations: createCustomRoute({
     operationId: 'getOrganizations',
     method: 'get',
@@ -51,6 +57,9 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Update an organization
+   */
   updateOrganization: createCustomRoute({
     operationId: 'updateOrganization',
     method: 'put',
@@ -73,6 +82,9 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get an organization
+   */
   getOrganization: createCustomRoute({
     operationId: 'getOrganization',
     method: 'get',
@@ -90,6 +102,9 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Delete organizations
+   */
   deleteOrganizations: createCustomRoute({
     operationId: 'deleteOrganizations',
     method: 'delete',

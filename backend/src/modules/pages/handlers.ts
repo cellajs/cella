@@ -24,7 +24,7 @@ const pagesRouteHandlers = app
    * Hono handlers are executed in registration order,
    * so registered first to avoid route collisions.
    */
-  .openapi(pagesRoutes.shapeProxy, async (ctx) => {
+  .openapi(pagesRoutes.syncPages, async (ctx) => {
     const { table, ...query } = ctx.req.valid('query');
 
     // Validate query params

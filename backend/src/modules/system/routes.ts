@@ -8,6 +8,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const systemRoutes = {
+  /**
+   * Invite to system
+   */
   createInvite: createCustomRoute({
     operationId: 'systemInvite',
     method: 'post',
@@ -33,7 +36,9 @@ const systemRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Send newsletter to members
+   */
   sendNewsletter: createCustomRoute({
     operationId: 'sendNewsletter',
     method: 'post',
@@ -56,7 +61,9 @@ const systemRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get presigned URL
+   */
   getPresignedUrl: createCustomRoute({
     operationId: 'getPresignedUrl',
     method: 'get',
@@ -75,7 +82,9 @@ const systemRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Paddle webhook (WIP)
+   */
   paddleWebhook: createCustomRoute({
     operationId: 'paddleWebhook',
     method: 'post',
