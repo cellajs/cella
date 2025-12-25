@@ -28,7 +28,7 @@ export const entityToPrefetchQueries = (entityId: string, entityType: EntityType
           orgIdOrSlug: entityId,
           entityType: entityType,
         }),
-        attachmentsCollection.preload,
+        () => attachmentsCollection.preload(), // Wrap to preserve 'this' context
       ];
 
     // Extend switch case for app-specific entity types ...
