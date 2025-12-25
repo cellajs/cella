@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
+import { useOfflineAttachments } from '~/modules/attachments/offline';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
@@ -32,7 +33,12 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  // useDexieLocalSync(entity.id);
+  // Initialize offline transactions for attachments
+  // TODO: Use offlineState to show pending sync indicator in UI
+  const { updateOffline, state: _offlineState } = useOfflineAttachments({
+    attachmentsCollection,
+    organizationId: entity.id,
+  });
 
   // Table state
   const { q, sort, order } = search;
@@ -104,21 +110,24 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     },
   });
 
-  // Update rows
+  // Update rows with offline support
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
     if (column.key !== 'name') return;
 
-    // If name is changed, update the attachment
+    // If name is changed, update the attachment with offline transaction support
     for (const index of indexes) {
       const attachment = changedRows[index];
+      const isLocalAttachment = attachment.originalKey?.startsWith('blob:http');
 
-      const collection = attachment.originalKey.startsWith('blob:http')
-        ? localAttachmentsCollection
-        : attachmentsCollection;
-
-      collection.update(attachment.id, (draft) => {
-        draft.name = attachment.name;
-      });
+      if (isLocalAttachment) {
+        // Local attachments update directly (not synced to server yet)
+        localAttachmentsCollection.update(attachment.id, (draft: Attachment) => {
+          draft.name = attachment.name;
+        });
+      } else {
+        // Server attachments use offline transactions for guaranteed sync
+        updateOffline(attachment.id, { name: attachment.name });
+      }
     }
   };
 

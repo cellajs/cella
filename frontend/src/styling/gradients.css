@@ -8,7 +8,7 @@
   z-index: 0;
   width: 0.05rem;
   height: 14px;
-  background-color: hsl(var(--foreground));
+  background-color: var(--foreground);
 }
 
 .rich-gradient:after {

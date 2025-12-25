@@ -84,7 +84,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     colors: {
       rose: '#e11d48',
     },
-    colorDarkBackground: 'hsl(240 10% 9%)',
+    colorDarkBackground: 'oklch(0.145 0.0092 275.5)',
     strokeWidth: 1.5,
     screenSizes: {
       xs: '420px',

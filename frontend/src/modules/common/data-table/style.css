@@ -1,19 +1,19 @@
 .grid.rdg-wrapper > .rdg {
-  --rdg-color: hsl(var(--foreground));
-  --rdg-border-color: hsl(var(--border));
-  --rdg-summary-border-color: hsl(var(--border));
-  --rdg-background-color: hsl(var(--background));
-  --rdg-header-background-color: hsl(var(--background));
-  --rdg-header-draggable-background-color: hsl(var(--accent));
-  --rdg-row-hover-background-color: hsla(var(--accent) / 0.2);
-  --rdg-row-selected-background-color: hsla(var(--accent) / 0.4);
-  --rdg-row-selected-hover-background-color: hsla(var(--accent) / 0.6);
-  --rdg-checkbox-color: hsl(var(--muted-foreground));
-  --rdg-checkbox-focus-color: hsl(var(--ring));
-  --rdg-checkbox-disabled-border-color: hsl(var(--muted-foreground));
-  --rdg-checkbox-disabled-background-color: hsl(var(--muted));
+  --rdg-color: var(--foreground);
+  --rdg-border-color: var(--border);
+  --rdg-summary-border-color: var(--border);
+  --rdg-background-color: var(--background);
+  --rdg-header-background-color: var(--background);
+  --rdg-header-draggable-background-color: var(--accent);
+  --rdg-row-hover-background-color: oklch(from var(--accent) l c h / 0.2);
+  --rdg-row-selected-background-color: oklch(from var(--accent) l c h / 0.4);
+  --rdg-row-selected-hover-background-color: oklch(from var(--accent) l c h / 0.6);
+  --rdg-checkbox-color: var(--muted-foreground);
+  --rdg-checkbox-focus-color: var(--ring);
+  --rdg-checkbox-disabled-border-color: var(--muted-foreground);
+  --rdg-checkbox-disabled-background-color: var(--muted);
   --rdg-font-size: 0.888rem;
-  --rdg-selection-color: hsl(var(--ring));
+  --rdg-selection-color: var(--ring);
 
   border: none;
   grid-template-rows: none !important;
@@ -56,7 +56,7 @@
 }
 
 .rdg-cell[role="columnheader"] {
-  color: hsla(var(--foreground) / 0.7);
+  color: oklch(from var(--foreground) l c h / 0.7);
   font-weight: 600;
 }
 
@@ -97,5 +97,5 @@
   z-index: -1;
   right: 0;
   pointer-events: none;
-  border-right: 2px solid hsl(var(--accent));
+  border-right: 2px solid var(--accent);
 }

@@ -1,0 +1,227 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Attachment } from '~/api.gen';
+import {
+  type AttachmentOfflineExecutor,
+  createAttachmentOfflineExecutor,
+} from '~/modules/attachments/offline/executor';
+
+interface UseOfflineAttachmentsProps {
+  // biome-ignore lint/suspicious/noExplicitAny: TanStack DB collection types are complex
+  attachmentsCollection: any;
+  organizationId: string;
+}
+
+interface OfflineState {
+  isLeader: boolean;
+  pendingCount: number;
+  isProcessing: boolean;
+}
+
+/**
+ * Hook to manage offline-first attachment operations using TanStack Offline Transactions.
+ *
+ * Provides:
+ * - Automatic offline persistence and sync when back online
+ * - Multi-tab coordination (only one tab handles sync)
+ * - Exponential backoff retry for failed operations
+ *
+ * @example
+ * ```tsx
+ * const { insertOffline, updateOffline, deleteOffline, state } = useOfflineAttachments({
+ *   attachmentsCollection,
+ *   organizationId,
+ * });
+ *
+ * // Insert with offline support
+ * await insertOffline([newAttachment]);
+ *
+ * // Update with offline support
+ * await updateOffline(attachmentId, { name: 'New name' });
+ *
+ * // Delete with offline support
+ * await deleteOffline([attachmentId]);
+ * ```
+ */
+export const useOfflineAttachments = ({ attachmentsCollection, organizationId }: UseOfflineAttachmentsProps) => {
+  const executorRef = useRef<AttachmentOfflineExecutor | null>(null);
+  const [state, setState] = useState<OfflineState>({
+    isLeader: false,
+    pendingCount: 0,
+    isProcessing: false,
+  });
+
+  // Initialize the offline executor
+  useEffect(() => {
+    const executor = createAttachmentOfflineExecutor({
+      attachmentsCollection,
+      orgIdOrSlug: organizationId,
+    });
+
+    executorRef.current = executor;
+
+    // Update pending count periodically
+    const updatePendingCount = async () => {
+      if (!executorRef.current) return;
+      const outbox = await executorRef.current.peekOutbox();
+      setState((prev) => ({
+        ...prev,
+        pendingCount: outbox.length,
+        isLeader: executorRef.current?.isOfflineEnabled ?? false,
+      }));
+    };
+
+    // Initial check
+    updatePendingCount();
+
+    // Check periodically
+    const interval = setInterval(updatePendingCount, 5000);
+
+    return () => {
+      clearInterval(interval);
+      executorRef.current?.dispose();
+      executorRef.current = null;
+    };
+  }, [attachmentsCollection, organizationId]);
+
+  /**
+   * Insert attachments with offline support
+   */
+  const insertOffline = useCallback(
+    async (attachments: Attachment[]) => {
+      if (!executorRef.current) {
+        console.warn('[Offline] Executor not initialized, falling back to direct insert');
+        for (const attachment of attachments) {
+          attachmentsCollection.insert(attachment);
+        }
+        return;
+      }
+
+      const tx = executorRef.current.createOfflineTransaction({
+        mutationFnName: 'createAttachments',
+        autoCommit: false,
+      });
+
+      tx.mutate(() => {
+        for (const attachment of attachments) {
+          attachmentsCollection.insert(attachment);
+        }
+      });
+
+      setState((prev) => ({ ...prev, isProcessing: true }));
+
+      try {
+        await tx.commit();
+      } finally {
+        setState((prev) => ({ ...prev, isProcessing: false }));
+      }
+    },
+    [attachmentsCollection],
+  );
+
+  /**
+   * Update an attachment with offline support
+   */
+  const updateOffline = useCallback(
+    async (id: string, changes: Partial<Attachment>) => {
+      if (!executorRef.current) {
+        console.warn('[Offline] Executor not initialized, falling back to direct update');
+        attachmentsCollection.update(id, (draft: Attachment) => {
+          Object.assign(draft, changes);
+        });
+        return;
+      }
+
+      const tx = executorRef.current.createOfflineTransaction({
+        mutationFnName: 'updateAttachment',
+        autoCommit: false,
+      });
+
+      tx.mutate(() => {
+        attachmentsCollection.update(id, (draft: Attachment) => {
+          Object.assign(draft, changes);
+        });
+      });
+
+      setState((prev) => ({ ...prev, isProcessing: true }));
+
+      try {
+        await tx.commit();
+      } finally {
+        setState((prev) => ({ ...prev, isProcessing: false }));
+      }
+    },
+    [attachmentsCollection],
+  );
+
+  /**
+   * Delete attachments with offline support
+   */
+  const deleteOffline = useCallback(
+    async (ids: string[]) => {
+      if (!executorRef.current) {
+        console.warn('[Offline] Executor not initialized, falling back to direct delete');
+        for (const id of ids) {
+          attachmentsCollection.delete(id);
+        }
+        return;
+      }
+
+      const tx = executorRef.current.createOfflineTransaction({
+        mutationFnName: 'deleteAttachments',
+        autoCommit: false,
+      });
+
+      tx.mutate(() => {
+        for (const id of ids) {
+          attachmentsCollection.delete(id);
+        }
+      });
+
+      setState((prev) => ({ ...prev, isProcessing: true }));
+
+      try {
+        await tx.commit();
+      } finally {
+        setState((prev) => ({ ...prev, isProcessing: false }));
+      }
+    },
+    [attachmentsCollection],
+  );
+
+  /**
+   * Manually trigger sync (useful after coming back online)
+   */
+  const triggerSync = useCallback(() => {
+    executorRef.current?.notifyOnline();
+  }, []);
+
+  /**
+   * Get all pending transactions
+   */
+  const getPendingTransactions = useCallback(async () => {
+    return executorRef.current?.peekOutbox() ?? [];
+  }, []);
+
+  /**
+   * Wait for a specific transaction to complete
+   */
+  const waitForTransaction = useCallback(async (transactionId: string) => {
+    return executorRef.current?.waitForTransactionCompletion(transactionId);
+  }, []);
+
+  return {
+    // State
+    state,
+    isOfflineEnabled: executorRef.current?.isOfflineEnabled ?? false,
+
+    // Actions
+    insertOffline,
+    updateOffline,
+    deleteOffline,
+
+    // Utilities
+    triggerSync,
+    getPendingTransactions,
+    waitForTransaction,
+  };
+};

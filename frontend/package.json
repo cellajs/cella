@@ -71,6 +71,7 @@
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/electric-db-collection": "^0.2.18",
+    "@tanstack/offline-transactions": "^1.0.6",
     "@tanstack/query-sync-storage-persister": "^5.90.14",
     "@tanstack/react-db": "^0.1.59",
     "@tanstack/react-query": "^5.90.12",
