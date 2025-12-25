@@ -3,6 +3,7 @@ import { electricCollectionOptions } from '@tanstack/electric-db-collection';
 import { createCollection, localStorageCollectionOptions } from '@tanstack/react-db';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import type { Attachment } from '~/api.gen';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
 import { zAttachment } from '~/api.gen/zod.gen';
 import { clientConfig } from '~/lib/api';
@@ -14,6 +15,56 @@ import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/e
 const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
   if (action === 'deleteMany') toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
   else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
+};
+
+/**
+ * Show success toast for attachment operations
+ */
+const showSuccessToast = (count: number, action: 'create' | 'delete') => {
+  const resourceKey = count === 1 ? 'common:attachment' : 'common:attachments';
+  const messageKey =
+    count === 1 ? `common:success.${action}_resource` : `common:success.${action}_counted_resources`;
+
+  const message =
+    count === 1
+      ? t(messageKey, { resource: t(resourceKey) })
+      : t(messageKey, { count, resources: t(resourceKey).toLowerCase() });
+
+  toaster(message, 'success');
+};
+
+/**
+ * Creates an attachment via API with error handling
+ * Exported for use by offline executor
+ */
+export const syncCreateAttachments = async (attachments: Attachment[], orgIdOrSlug: string): Promise<void> => {
+  await createAttachment({ body: attachments, path: { orgIdOrSlug } });
+  attachmentStorage.addCachedImage(attachments);
+  showSuccessToast(attachments.length, 'create');
+};
+
+/**
+ * Updates an attachment via API with error handling
+ * Exported for use by offline executor
+ */
+export const syncUpdateAttachment = async (
+  id: string,
+  changes: Partial<Attachment>,
+  orgIdOrSlug: string,
+): Promise<void> => {
+  await updateAttachment({ body: changes, path: { id, orgIdOrSlug } });
+};
+
+/**
+ * Deletes attachments via API with error handling
+ * Exported for use by offline executor
+ */
+export const syncDeleteAttachments = async (ids: string[], orgIdOrSlug: string): Promise<void> => {
+  await Promise.all([
+    deleteAttachments({ body: { ids }, path: { orgIdOrSlug } }),
+    attachmentStorage.deleteCachedImages(ids),
+  ]);
+  showSuccessToast(ids.length, 'delete');
 };
 
 export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetch = false) =>
@@ -35,20 +86,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
       onInsert: async ({ transaction }) => {
         const newAttachments = transaction.mutations.map(({ modified }) => modified);
         try {
-          await createAttachment({ body: newAttachments, path: { orgIdOrSlug } });
-
-          // Preload new image attachments in parallel
-          attachmentStorage.addCachedImage(newAttachments);
-
-          const message =
-            newAttachments.length === 1
-              ? t('common:success.create_resource', { resource: t('common:attachment') })
-              : t('common:success.create_counted_resources', {
-                  count: newAttachments.length,
-                  resources: t('common:attachments').toLowerCase(),
-                });
-
-          toaster(message, 'success');
+          await syncCreateAttachments(newAttachments, orgIdOrSlug);
         } catch (err) {
           handleError('create');
         }
@@ -56,7 +94,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
       onUpdate: async ({ transaction }) => {
         try {
           for (const { changes: body, original } of transaction.mutations) {
-            await updateAttachment({ body, path: { id: original.id, orgIdOrSlug } });
+            await syncUpdateAttachment(original.id, body, orgIdOrSlug);
           }
         } catch (err) {
           handleError('update');
@@ -66,12 +104,7 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
         const ids = transaction.mutations.map(({ modified }) => modified.id);
 
         try {
-          // 1. Delete attachments on the server (remote API)
-          // 2. Delete cached attachment files in IndexedDB(Dexie) (local storage)
-          await Promise.all([
-            deleteAttachments({ body: { ids }, path: { orgIdOrSlug } }),
-            attachmentStorage.deleteCachedImages(ids),
-          ]);
+          await syncDeleteAttachments(ids, orgIdOrSlug);
         } catch (err) {
           handleError(ids.length > 1 ? 'deleteMany' : 'delete');
         }
@@ -94,9 +127,9 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
           newAttachments.length === 1
             ? t('common:success.create_resource', { resource: t('common:attachment') })
             : t('common:success.create_counted_resources', {
-                count: newAttachments.length,
-                resources: t('common:attachments').toLowerCase(),
-              });
+              count: newAttachments.length,
+              resources: t('common:attachments').toLowerCase(),
+            });
 
         toaster(message, 'success');
       },

@@ -4,6 +4,7 @@ import {
   type AttachmentOfflineExecutor,
   createAttachmentOfflineExecutor,
 } from '~/modules/attachments/offline/executor';
+import { registerExecutor, unregisterExecutor } from '~/query/offline-manager';
 
 interface UseOfflineAttachmentsProps {
   // biome-ignore lint/suspicious/noExplicitAny: TanStack DB collection types are complex
@@ -52,12 +53,17 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
 
   // Initialize the offline executor
   useEffect(() => {
+    const executorKey = `attachments-${organizationId}`;
+
     const executor = createAttachmentOfflineExecutor({
       attachmentsCollection,
       orgIdOrSlug: organizationId,
     });
 
     executorRef.current = executor;
+
+    // Register with the global offline manager for coordinated lifecycle
+    registerExecutor(executorKey, executor);
 
     // Update pending count periodically
     const updatePendingCount = async () => {
@@ -78,7 +84,7 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
 
     return () => {
       clearInterval(interval);
-      executorRef.current?.dispose();
+      unregisterExecutor(executorKey);
       executorRef.current = null;
     };
   }, [attachmentsCollection, organizationId]);

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
+import { useOfflineManager } from '~/query/offline-manager';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/query/utils';
@@ -56,6 +57,16 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
 
+  // Initialize offline manager for network status tracking and executor coordination
+  // This handles online/offline events and notifies executors when back online
+  const { isOnline, pendingCount } = useOfflineManager(offlineAccess);
+
+  // Log offline status changes for debugging
+  useEffect(() => {
+    if (!offlineAccess) return;
+    console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}, Pending mutations: ${pendingCount}`);
+  }, [offlineAccess, isOnline, pendingCount]);
+
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available
     if (!offlineAccess || !user) return;
@@ -81,9 +92,9 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
               typeof source === 'function'
                 ? source()
                 : prefetchQuery({
-                    ...source,
-                    ...offlineQueryConfig,
-                  }),
+                  ...source,
+                  ...offlineQueryConfig,
+                }),
           );
           await Promise.allSettled(prefetchPromises);
 

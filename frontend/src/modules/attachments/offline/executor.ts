@@ -1,6 +1,6 @@
 import { NonRetriableError, startOfflineExecutor } from '@tanstack/offline-transactions';
 import type { Attachment } from '~/api.gen';
-import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
+import { syncCreateAttachments, syncDeleteAttachments, syncUpdateAttachment } from '~/modules/attachments/collections';
 
 interface AttachmentOfflineConfig {
   // biome-ignore lint/suspicious/noExplicitAny: TanStack DB collection types are complex
@@ -16,6 +16,9 @@ interface AttachmentOfflineConfig {
  * - Automatic retry with exponential backoff and jitter
  * - Multi-tab coordination via leader election
  * - FIFO sequential processing
+ *
+ * Uses shared sync functions from collections.ts to ensure consistency
+ * between collection callbacks and offline executor behavior.
  */
 export const createAttachmentOfflineExecutor = ({ attachmentsCollection, orgIdOrSlug }: AttachmentOfflineConfig) => {
   return startOfflineExecutor({
@@ -30,12 +33,7 @@ export const createAttachmentOfflineExecutor = ({ attachmentsCollection, orgIdOr
         const newAttachments = transaction.mutations.map(({ modified }) => modified as Attachment);
 
         try {
-          await createAttachment({
-            body: newAttachments,
-            path: { orgIdOrSlug },
-            // TODO: Add idempotency key header when backend supports it
-          });
-
+          await syncCreateAttachments(newAttachments, orgIdOrSlug);
           console.info(`[Offline] Created ${newAttachments.length} attachments (key: ${idempotencyKey})`);
         } catch (error: unknown) {
           const err = error as { status?: number };
@@ -54,12 +52,8 @@ export const createAttachmentOfflineExecutor = ({ attachmentsCollection, orgIdOr
         try {
           for (const { changes: body, original } of transaction.mutations) {
             const originalAttachment = original as Attachment;
-            await updateAttachment({
-              body,
-              path: { id: originalAttachment.id, orgIdOrSlug },
-            });
+            await syncUpdateAttachment(originalAttachment.id, body, orgIdOrSlug);
           }
-
           console.info(`[Offline] Updated ${transaction.mutations.length} attachments`);
         } catch (error: unknown) {
           const err = error as { status?: number };
@@ -77,11 +71,7 @@ export const createAttachmentOfflineExecutor = ({ attachmentsCollection, orgIdOr
         const ids = transaction.mutations.map(({ modified }) => (modified as Attachment).id);
 
         try {
-          await deleteAttachments({
-            body: { ids },
-            path: { orgIdOrSlug },
-          });
-
+          await syncDeleteAttachments(ids, orgIdOrSlug);
           console.info(`[Offline] Deleted ${ids.length} attachments`);
         } catch (error: unknown) {
           const err = error as { status?: number };
