@@ -3,6 +3,7 @@ import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
+import { useOfflineAttachments } from '~/modules/attachments/offline';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
@@ -10,19 +11,28 @@ import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-export const useAttachmentsUploadDialog = () => {
+export const useAttachmentsUploadDialog = (organizationId: string) => {
   const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
     from: OrganizationAttachmentsRoute.id,
   });
 
-  const open = (organizationId: string) => {
-    const onComplete = (result: UploadedUppyFile<'attachment'>) => {
+  // Use offline attachments hook to properly wrap inserts in transactions
+  const { insertOffline } = useOfflineAttachments({
+    attachmentsCollection,
+    organizationId,
+  });
+
+  const open = () => {
+    const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
 
-      const collection =
-        appConfig.has.uploadEnabled && onlineManager.isOnline() ? attachmentsCollection : localAttachmentsCollection;
-
-      collection.insert(attachments);
+      if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
+        // Use insertOffline which wraps the insert in a proper transaction
+        await insertOffline(attachments);
+      } else {
+        // Local collection has onInsert handler configured
+        localAttachmentsCollection.insert(attachments);
+      }
       useUploader.getState().remove();
     };
 

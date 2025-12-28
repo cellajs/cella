@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Attachment } from '~/api.gen';
 import {
   type AttachmentOfflineExecutor,
@@ -28,7 +28,7 @@ interface OfflineState {
  *
  * @example
  * ```tsx
- * const { insertOffline, updateOffline, deleteOffline, state } = useOfflineAttachments({
+ * const { insertOffline, updateOffline, deleteOffline, getState } = useOfflineAttachments({
  *   attachmentsCollection,
  *   organizationId,
  * });
@@ -41,11 +41,16 @@ interface OfflineState {
  *
  * // Delete with offline support
  * await deleteOffline([attachmentId]);
+ *
+ * // Get current state (doesn't trigger re-renders)
+ * const state = getState();
  * ```
  */
 export const useOfflineAttachments = ({ attachmentsCollection, organizationId }: UseOfflineAttachmentsProps) => {
   const executorRef = useRef<AttachmentOfflineExecutor | null>(null);
-  const [state, setState] = useState<OfflineState>({
+  // Use ref instead of state to avoid periodic re-renders
+  // Consumers can call getState() when they need the current state
+  const stateRef = useRef<OfflineState>({
     isLeader: false,
     pendingCount: 0,
     isProcessing: false,
@@ -65,15 +70,15 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
     // Register with the global offline manager for coordinated lifecycle
     registerExecutor(executorKey, executor);
 
-    // Update pending count periodically
+    // Update pending count periodically (stored in ref, no re-renders)
     const updatePendingCount = async () => {
       if (!executorRef.current) return;
       const outbox = await executorRef.current.peekOutbox();
-      setState((prev) => ({
-        ...prev,
+      stateRef.current = {
+        ...stateRef.current,
         pendingCount: outbox.length,
         isLeader: executorRef.current?.isOfflineEnabled ?? false,
-      }));
+      };
     };
 
     // Initial check
@@ -113,12 +118,12 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
         }
       });
 
-      setState((prev) => ({ ...prev, isProcessing: true }));
+      stateRef.current = { ...stateRef.current, isProcessing: true };
 
       try {
         await tx.commit();
       } finally {
-        setState((prev) => ({ ...prev, isProcessing: false }));
+        stateRef.current = { ...stateRef.current, isProcessing: false };
       }
     },
     [attachmentsCollection],
@@ -148,12 +153,12 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
         });
       });
 
-      setState((prev) => ({ ...prev, isProcessing: true }));
+      stateRef.current = { ...stateRef.current, isProcessing: true };
 
       try {
         await tx.commit();
       } finally {
-        setState((prev) => ({ ...prev, isProcessing: false }));
+        stateRef.current = { ...stateRef.current, isProcessing: false };
       }
     },
     [attachmentsCollection],
@@ -183,12 +188,12 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
         }
       });
 
-      setState((prev) => ({ ...prev, isProcessing: true }));
+      stateRef.current = { ...stateRef.current, isProcessing: true };
 
       try {
         await tx.commit();
       } finally {
-        setState((prev) => ({ ...prev, isProcessing: false }));
+        stateRef.current = { ...stateRef.current, isProcessing: false };
       }
     },
     [attachmentsCollection],
@@ -215,9 +220,14 @@ export const useOfflineAttachments = ({ attachmentsCollection, organizationId }:
     return executorRef.current?.waitForTransactionCompletion(transactionId);
   }, []);
 
+  /**
+   * Get current offline state (doesn't trigger re-renders)
+   */
+  const getState = useCallback(() => stateRef.current, []);
+
   return {
-    // State
-    state,
+    // State (use getState() to access without triggering re-renders)
+    getState,
     isOfflineEnabled: executorRef.current?.isOfflineEnabled ?? false,
 
     // Actions

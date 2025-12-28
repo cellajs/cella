@@ -92,9 +92,9 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
               typeof source === 'function'
                 ? source()
                 : prefetchQuery({
-                  ...source,
-                  ...offlineQueryConfig,
-                }),
+                    ...source,
+                    ...offlineQueryConfig,
+                  }),
           );
           await Promise.allSettled(prefetchPromises);
 

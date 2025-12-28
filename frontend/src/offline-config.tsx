@@ -18,17 +18,18 @@ export const getContextEntityTypeToListQueries = () =>
  * When menu is done and offline access is enabled, this mapping function will execute
  * for each entity type defined in the menu.
  */
+// TODO: attachment.preload is not scalable, need a better way to prefetch attachments. perhaps empty where should be a personalized query that fetches attachments from all entities you are member off?
 export const entityToPrefetchQueries = (entityId: string, entityType: EntityType, _organizationId?: string) => {
   switch (entityType) {
     case 'organization':
-      const attachmentsCollection = initAttachmentsCollection(entityId, true);
+      // const attachmentsCollection = initAttachmentsCollection(entityId, true);
       return [
         membersQueryOptions({
           idOrSlug: entityId,
           orgIdOrSlug: entityId,
           entityType: entityType,
         }),
-        () => attachmentsCollection.preload(), // Wrap to preserve 'this' context
+        // () => attachmentsCollection.preload(), // Wrap to preserve 'this' context
       ];
 
     // Extend switch case for app-specific entity types ...

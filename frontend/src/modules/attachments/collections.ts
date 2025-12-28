@@ -22,8 +22,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany') => {
  */
 const showSuccessToast = (count: number, action: 'create' | 'delete') => {
   const resourceKey = count === 1 ? 'common:attachment' : 'common:attachments';
-  const messageKey =
-    count === 1 ? `common:success.${action}_resource` : `common:success.${action}_counted_resources`;
+  const messageKey = count === 1 ? `common:success.${action}_resource` : `common:success.${action}_counted_resources`;
 
   const message =
     count === 1
@@ -67,7 +66,8 @@ export const syncDeleteAttachments = async (ids: string[], orgIdOrSlug: string):
   showSuccessToast(ids.length, 'delete');
 };
 
-export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetch = false) =>
+// Internal implementation for creating attachments collection
+const createAttachmentsCollectionImpl = (orgIdOrSlug: string, forOfflinePrefetch = false) =>
   createCollection(
     electricCollectionOptions({
       id: `${orgIdOrSlug}-attachments`,
@@ -82,38 +82,20 @@ export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetc
         onError: (error) => handleSyncError(error),
       },
       ...(forOfflinePrefetch ? offlineQueryConfig : {}),
-      syncMode: 'progressive',
-      onInsert: async ({ transaction }) => {
-        const newAttachments = transaction.mutations.map(({ modified }) => modified);
-        try {
-          await syncCreateAttachments(newAttachments, orgIdOrSlug);
-        } catch (err) {
-          handleError('create');
-        }
-      },
-      onUpdate: async ({ transaction }) => {
-        try {
-          for (const { changes: body, original } of transaction.mutations) {
-            await syncUpdateAttachment(original.id, body, orgIdOrSlug);
-          }
-        } catch (err) {
-          handleError('update');
-        }
-      },
-      onDelete: async ({ transaction }) => {
-        const ids = transaction.mutations.map(({ modified }) => modified.id);
-
-        try {
-          await syncDeleteAttachments(ids, orgIdOrSlug);
-        } catch (err) {
-          handleError(ids.length > 1 ? 'deleteMany' : 'delete');
-        }
-      },
+      // Note: Electric collections use on-demand syncMode by default.
+      // Data is loaded via live queries, not preload(). See:
+      // https://tanstack.com/blog/tanstack-db-0.5-query-driven-sync
+      //
+      // Note: onInsert, onUpdate, onDelete callbacks are intentionally omitted.
+      // All CRUD operations go through the offline executor (useOfflineAttachments hook)
+      // which handles sync via its mutationFns. Having both would cause duplicate API calls.
+      // For direct collection operations that don't need server sync (e.g., adding data
+      // received from Electric sync), the callbacks should NOT fire anyway.
     }),
   );
 
-// TODO(DAVID) create custom events for local store ?
-export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
+// Internal implementation for creating local attachments collection
+const createLocalAttachmentsCollectionImpl = (orgIdOrSlug: string) =>
   createCollection(
     localStorageCollectionOptions({
       id: `${orgIdOrSlug}-local-attachments`,
@@ -137,10 +119,6 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
         try {
           for (const { changes: body, original } of transaction.mutations) {
             if (!body.name) continue;
-            // const file = await attachmentStorage.updateFileName(original.id, body.name);
-
-            // if (!file) throw new Error(`Failed to update file name (${original.id}):`);
-
             return { ...original, name: body.name };
           }
         } catch (err) {
@@ -157,3 +135,38 @@ export const initLocalAttachmentsCollection = (orgIdOrSlug: string) =>
       },
     }),
   );
+
+// Cache collections to avoid recreating them on every call
+// This prevents breaking the sync connection when routes re-render
+type AttachmentsCollection = ReturnType<typeof createAttachmentsCollectionImpl>;
+type LocalAttachmentsCollection = ReturnType<typeof createLocalAttachmentsCollectionImpl>;
+
+const attachmentsCollectionCache = new Map<string, AttachmentsCollection>();
+const localAttachmentsCollectionCache = new Map<string, LocalAttachmentsCollection>();
+
+/**
+ * Get or create an attachments collection for an organization.
+ * Collections are cached to maintain sync connections across route changes.
+ */
+export const initAttachmentsCollection = (orgIdOrSlug: string, forOfflinePrefetch = false): AttachmentsCollection => {
+  const cacheKey = `${orgIdOrSlug}-${forOfflinePrefetch}`;
+  const cached = attachmentsCollectionCache.get(cacheKey);
+  if (cached) return cached;
+
+  const collection = createAttachmentsCollectionImpl(orgIdOrSlug, forOfflinePrefetch);
+  attachmentsCollectionCache.set(cacheKey, collection);
+  return collection;
+};
+
+/**
+ * Get or create a local attachments collection for an organization.
+ * Collections are cached to maintain state across route changes.
+ */
+export const initLocalAttachmentsCollection = (orgIdOrSlug: string): LocalAttachmentsCollection => {
+  const cached = localAttachmentsCollectionCache.get(orgIdOrSlug);
+  if (cached) return cached;
+
+  const collection = createLocalAttachmentsCollectionImpl(orgIdOrSlug);
+  localAttachmentsCollectionCache.set(orgIdOrSlug, collection);
+  return collection;
+};

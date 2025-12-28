@@ -82,11 +82,15 @@ export const OrganizationAttachmentsRoute = createRoute({
   validateSearch: attachmentsRouteSearchParamsSchema,
   staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  // Note: Don't use loaderDeps here - collections are created once and live queries
+  // react to search param changes automatically. Using loaderDeps would recreate
+  // collections on every search param change, breaking the sync connection.
   async loader({ params: { idOrSlug } }) {
     const attachmentsCollection = initAttachmentsCollection(idOrSlug);
     const localAttachmentsCollection = initLocalAttachmentsCollection(idOrSlug);
-    await Promise.all([attachmentsCollection.preload(), localAttachmentsCollection.preload()]);
+    // Note: Don't call .preload() on collections with electric sync - they use on-demand mode
+    // where data is loaded via live queries. Calling preload() is a no-op in on-demand mode.
+    // See: https://tanstack.com/blog/tanstack-db-0.5-query-driven-sync
     return { attachmentsCollection, localAttachmentsCollection };
   },
   component: () => {

@@ -59,10 +59,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
-    "@evilmartians/lefthook": "^2.0.12",
+    "@evilmartians/lefthook": "^2.0.13",
     "@typescript/native-preview": "7.0.0-dev.20251219.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.76.1",
+    "knip": "^5.78.0",
     "rimraf": "^6.1.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

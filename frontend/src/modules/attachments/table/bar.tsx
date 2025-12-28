@@ -41,7 +41,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog();
+  const { open } = useAttachmentsUploadDialog(entity.id);
   const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
     from: OrganizationAttachmentsRoute.id,
   });
@@ -67,7 +67,7 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(<DeleteAttachments dialog attachments={selected} callback={clearSelection} />, {
+    createDialog(<DeleteAttachments dialog attachments={selected} organizationId={entity.id} callback={clearSelection} />, {
       id: 'delete-attachments',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
@@ -100,7 +100,7 @@ export const AttachmentsTableBar = ({
                 <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
-              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open(entity.id)} />
+              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open()} />
             )}
             {selected.length === 0 && (
               <TableCount

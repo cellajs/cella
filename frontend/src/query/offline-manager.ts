@@ -58,7 +58,7 @@ export const getPendingCount = async (): Promise<number> => {
 
 /**
  * Hook to manage network status and offline executor coordination.
- * 
+ *
  * Features:
  * - Tracks online/offline status
  * - Notifies executors when coming back online
