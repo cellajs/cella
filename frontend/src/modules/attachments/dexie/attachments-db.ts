@@ -5,6 +5,7 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 
 export type SyncStatus = 'idle' | 'processing' | 'synced' | 'failed';
 
+// TODO van we use parts of Attachment model from api.gen.ts?
 export interface AttachmentFile {
   id: string;
   files: Record<string, CustomUppyFile>;
@@ -25,12 +26,12 @@ export interface CachedAttachment {
   groupId: string | null;
 }
 
-export class AttachmentDatabase extends Dexie {
+export class AttachmentsDatabase extends Dexie {
   attachmentCache!: EntityTable<CachedAttachment, 'id'>;
   attachmentFiles!: EntityTable<AttachmentFile, 'id'>;
 
   constructor() {
-    super(`${appConfig.name}-attachment-daatabase`);
+    super(`${appConfig.slug}-attachments`);
 
     this.version(1).stores({
       attachmentCache: '++id, file, groupId',
@@ -40,4 +41,4 @@ export class AttachmentDatabase extends Dexie {
   }
 }
 
-export const attachmentDb = new AttachmentDatabase();
+export const attachmentsDb = new AttachmentsDatabase();

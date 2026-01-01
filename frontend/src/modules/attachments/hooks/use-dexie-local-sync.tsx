@@ -2,7 +2,7 @@ import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { useEffect, useRef, useState } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import type { AttachmentFile } from '~/modules/attachments/dexie/attachment-db';
+import type { AttachmentFile } from '~/modules/attachments/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachments/dexie/storage-service';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';

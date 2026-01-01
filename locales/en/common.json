@@ -248,7 +248,7 @@
   "offline_cache_miss.text": "Resource unavailable while offline.",
   "offline.load_more": "Can't load more while offline",
   "offline.text": "Connection lost. Limited functionality available.",
-  "offline.text_with_info": "Connection lost. Limited functionality available. Data entered in forms will be saved.",
+  "offline.text_with_info": "Connection lost. Limited functionality available. Changes will be saved as a draft.",
   "onboarding_completed": "Great! Let's go.",
   "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",
   "onboarding_welcome": "Welcome to {{appName}}",

@@ -1,6 +1,11 @@
 import * as Sentry from '@sentry/react';
 import { Attachment, getPresignedUrl } from '~/api.gen';
-import { AttachmentFile, attachmentDb, CachedAttachment, SyncStatus } from '~/modules/attachments/dexie/attachment-db';
+import {
+  AttachmentFile,
+  attachmentsDb,
+  CachedAttachment,
+  SyncStatus,
+} from '~/modules/attachments/dexie/attachments-db';
 import { CustomUppyFile } from '~/modules/common/uploader/types';
 import { UploadTokenQuery } from '~/modules/me/types';
 import { nanoid } from '~/utils/nanoid';
@@ -29,7 +34,7 @@ export class DexieAttachmentStorage {
         syncAttempts: 0,
         maxRetries: 3,
       };
-      await attachmentDb.attachmentFiles.add(fileRecords);
+      await attachmentsDb.attachmentFiles.add(fileRecords);
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to save offline uploaded files:', error);
@@ -41,7 +46,7 @@ export class DexieAttachmentStorage {
    */
   async getFilesByOrganization(organizationId: string): Promise<AttachmentFile[]> {
     try {
-      return await attachmentDb.attachmentFiles.where('organizationId').equals(organizationId).toArray();
+      return await attachmentsDb.attachmentFiles.where('organizationId').equals(organizationId).toArray();
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to retrieve files:', error);
@@ -54,7 +59,7 @@ export class DexieAttachmentStorage {
   //  */
   // async getFilesBySyncStatus(organizationId: string, syncStatus: SyncStatus): Promise<AttachmentFile[]> {
   //   try {
-  //     return await attachmentDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, syncStatus]).toArray();
+  //     return await attachmentsDb.attachmentFiles.where('[organizationId+syncStatus]').equals([organizationId, syncStatus]).toArray();
   //   } catch (error) {
   //     Sentry.captureException(error);
   //     console.error('Failed to retrieve files by sync status:', error);
@@ -66,7 +71,7 @@ export class DexieAttachmentStorage {
   //  */
   // async getFile(fileId: string): Promise<AttachmentFile | undefined> {
   //   try {
-  //     return await attachmentDb.attachmentFiles.where('fileId').equals(fileId).first();
+  //     return await attachmentsDb.attachmentFiles.where('fileId').equals(fileId).first();
   //   } catch (error) {
   //     Sentry.captureException(error);
   //     console.error(`Failed to retrieve file (${fileId}):`, error);
@@ -80,7 +85,7 @@ export class DexieAttachmentStorage {
     const now = new Date();
     try {
       // Update all files in batch
-      await attachmentDb.attachmentFiles.where('organizationId').equals(organizationId).modify({
+      await attachmentsDb.attachmentFiles.where('organizationId').equals(organizationId).modify({
         syncStatus,
         updatedAt: now,
       });
@@ -96,7 +101,7 @@ export class DexieAttachmentStorage {
   //  */
   // async updateFileName(fileId: string, newName: string): Promise<AttachmentFile | undefined> {
   //   try {
-  //     await attachmentDb.attachmentFiles
+  //     await attachmentsDb.attachmentFiles
   //       .where('fileId')
   //       .equals(fileId)
   //       .modify((file) => {
@@ -117,7 +122,7 @@ export class DexieAttachmentStorage {
     try {
       const ids = files.map(({ id }) => id);
 
-      await attachmentDb.attachmentFiles.where('id').anyOf(ids).delete();
+      await attachmentsDb.attachmentFiles.where('id').anyOf(ids).delete();
     } catch (error) {
       Sentry.captureException(error);
       console.error('Failed to remove files:', error);
@@ -132,13 +137,13 @@ export class DexieAttachmentStorage {
       const now = new Date();
 
       // Get idle files
-      const idleFiles = await attachmentDb.attachmentFiles
+      const idleFiles = await attachmentsDb.attachmentFiles
         .where('[organizationId+syncStatus]')
         .equals([organizationId, 'idle'])
         .toArray();
 
       // Get failed files that are ready for retry
-      const retryFiles = await attachmentDb.attachmentFiles
+      const retryFiles = await attachmentsDb.attachmentFiles
         .where('[organizationId+syncStatus]')
         .equals([organizationId, 'failed'])
         .filter((file) => file.syncAttempts < file.maxRetries && (!file.nextRetryAt || file.nextRetryAt <= now))
@@ -157,7 +162,7 @@ export class DexieAttachmentStorage {
    */
   async markFileForRetry(fileId: string): Promise<void> {
     try {
-      const file = await attachmentDb.attachmentFiles.where('id').equals(fileId).first();
+      const file = await attachmentsDb.attachmentFiles.where('id').equals(fileId).first();
       if (!file) return;
 
       const newAttemptCount = file.syncAttempts + 1;
@@ -168,7 +173,7 @@ export class DexieAttachmentStorage {
       const delay = retryDelays[Math.min(newAttemptCount - 1, retryDelays.length - 1)];
       const nextRetryAt = newAttemptCount < file.maxRetries ? new Date(Date.now() + delay) : undefined;
 
-      await attachmentDb.attachmentFiles
+      await attachmentsDb.attachmentFiles
         .where('id')
         .equals(fileId)
         .modify({
@@ -190,7 +195,7 @@ export class DexieAttachmentStorage {
    */
   async resetFailedFiles(organizationId: string): Promise<void> {
     try {
-      await attachmentDb.attachmentFiles
+      await attachmentsDb.attachmentFiles
         .where('[organizationId+syncStatus]')
         .equals([organizationId, 'failed'])
         .modify({
@@ -218,12 +223,31 @@ export class DexieAttachmentStorage {
         (attachment, index, self) => self.findIndex((a) => a.id === attachment.id) === index,
       );
 
-      // Process attachments in batches to control memory usage
-      const BATCH_SIZE = 5;
+      // Check which attachments are already cached
+      const existingIds = await attachmentsDb.attachmentCache
+        .where('id')
+        .anyOf(uniqueAttachments.map((a) => a.id))
+        .primaryKeys();
+      const existingIdSet = new Set(existingIds);
+      const attachmentsToCache = uniqueAttachments.filter((a) => !existingIdSet.has(a.id));
+
+      if (!attachmentsToCache.length) {
+        console.log('All attachments already cached');
+        return;
+      }
+
+      // Process attachments in smaller batches with delays to avoid rate limiting
+      const BATCH_SIZE = 3;
+      const BATCH_DELAY_MS = 500;
       const filesToAdd: CachedAttachment[] = [];
 
-      for (let i = 0; i < uniqueAttachments.length; i += BATCH_SIZE) {
-        const batch = uniqueAttachments.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < attachmentsToCache.length; i += BATCH_SIZE) {
+        const batch = attachmentsToCache.slice(i, i + BATCH_SIZE);
+
+        // Add delay between batches (except for the first batch)
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+        }
 
         const batchPromises = batch.map(
           async ({ id, name, groupId, contentType, originalKey: key, public: isPublic }) => {
@@ -273,9 +297,9 @@ export class DexieAttachmentStorage {
       // Only store if we have successful files
       if (filesToAdd.length > 0) {
         // Use bulkPut instead of bulkAdd to handle potential duplicates gracefully
-        await attachmentDb.attachmentCache.bulkPut(filesToAdd);
+        await attachmentsDb.attachmentCache.bulkPut(filesToAdd);
 
-        console.log(`Successfully cached ${filesToAdd.length}/${uniqueAttachments.length} images`);
+        console.log(`Successfully cached ${filesToAdd.length}/${attachmentsToCache.length} images`);
       } else {
         console.warn('No images were cached');
       }
@@ -291,8 +315,8 @@ export class DexieAttachmentStorage {
    */
   async getCachedImages(id: string, groupId?: string | null): Promise<CachedAttachment[]> {
     try {
-      if (!groupId) return attachmentDb.attachmentCache.where('id').equals(id).toArray();
-      return attachmentDb.attachmentCache.where('groupId').equals(groupId).toArray();
+      if (!groupId) return attachmentsDb.attachmentCache.where('id').equals(id).toArray();
+      return attachmentsDb.attachmentCache.where('groupId').equals(groupId).toArray();
     } catch (error) {
       Sentry.captureException(error);
       console.error(`Failed to retrieve cached image${groupId ? `s groupId: ${groupId}` : ` id:${id}`} | `, error);
@@ -305,7 +329,7 @@ export class DexieAttachmentStorage {
    */
   async deleteCachedImages(ids: string[]): Promise<void> {
     try {
-      await attachmentDb.attachmentCache.bulkDelete(ids);
+      await attachmentsDb.attachmentCache.bulkDelete(ids);
     } catch (error) {
       Sentry.captureException(error);
       console.error(`Failed to delete cached images (${ids}):`, error);
@@ -318,7 +342,7 @@ export class DexieAttachmentStorage {
   //  */
   // async isImageCached(id: string): Promise<boolean> {
   //   try {
-  //     const count = await attachmentDb.attachmentCache.where('id').equals(id).count();
+  //     const count = await attachmentsDb.attachmentCache.where('id').equals(id).count();
   //     return count > 0;
   //   } catch (error) {
   //     Sentry.captureException(error);

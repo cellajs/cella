@@ -14,6 +14,8 @@ import {
 import type { ApiError } from '~/lib/api';
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { queryClient } from '~/query/query-client';
+import { flattenInfiniteData } from '~/query/utils/flatten';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 import { createEntityKeys } from '../entities/create-query-keys';
 
@@ -27,12 +29,34 @@ const keys = createEntityKeys<OrganizationFilters>('organization');
 export const organizationQueryKeys = keys;
 
 /**
+ * Find an organization in the list cache by id or slug.
+ * Searches through all cached organization list queries.
+ */
+export const findOrganizationInListCache = (idOrSlug: string): Organization | undefined => {
+  const queries = queryClient.getQueryCache().findAll({ queryKey: keys.list.base });
+
+  for (const query of queries) {
+    const items = flattenInfiniteData<Organization>(query.state.data);
+    const found = items.find((org) => org.id === idOrSlug || org.slug === idOrSlug);
+    if (found) return found;
+  }
+
+  return undefined;
+};
+
+/**
  * Query options for a single organization by id or slug.
+ * Uses initialData from the organizations list cache (e.g., menu data) to provide
+ * instant loading while revalidating in the background.
  */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: keys.detail.byId(idOrSlug),
     queryFn: async () => getOrganization({ path: { idOrSlug } }),
+    // Seed from list cache (e.g., organizations loaded for menu) for instant display
+    initialData: () => findOrganizationInListCache(idOrSlug),
+    // Treat list data as fresh for 30 seconds to avoid unnecessary refetches
+    staleTime: 30_000,
   });
 
 type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {

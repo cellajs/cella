@@ -4,7 +4,11 @@ import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { initAttachmentsCollection, initLocalAttachmentsCollection } from '~/modules/attachments/collections';
 import ErrorNotice from '~/modules/common/error-notice';
-import { organizationQueryKeys, organizationQueryOptions } from '~/modules/organizations/query';
+import {
+  findOrganizationInListCache,
+  organizationQueryKeys,
+  organizationQueryOptions,
+} from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { attachmentsRouteSearchParamsSchema, membersRouteSearchParamsSchema } from '~/routes/search-params-schemas';
@@ -30,7 +34,7 @@ export const OrganizationRoute = createRoute({
 
     const organization = isOnline
       ? await queryClient.ensureQueryData(bootstrapWithRevalidate)
-      : queryClient.getQueryData(bootstrap.queryKey);
+      : (queryClient.getQueryData(bootstrap.queryKey) ?? findOrganizationInListCache(idOrSlug));
 
     if (!organization) {
       if (!isOnline) useToastStore.getState().showToast(i18n.t('common:offline_cache_miss.text'), 'warning');

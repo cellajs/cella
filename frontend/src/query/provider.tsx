@@ -89,12 +89,10 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
           // Prefetch data (e.g., members as a react query, attachments as a collection, etc.)
           const prefetchPromises = entityToPrefetchQueries(item.id, item.entityType, item.organizationId).map(
             (source) =>
-              typeof source === 'function'
-                ? source()
-                : prefetchQuery({
-                    ...source,
-                    ...offlineQueryConfig,
-                  }),
+              prefetchQuery({
+                ...source,
+                ...offlineQueryConfig,
+              }),
           );
           await Promise.allSettled(prefetchPromises);
 

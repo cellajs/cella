@@ -67,16 +67,19 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(<DeleteAttachments dialog attachments={selected} organizationId={entity.id} callback={clearSelection} />, {
-      id: 'delete-attachments',
-      triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
-      description: t('common:confirm.delete_counted_resource', {
-        count: selected.length,
-        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
-      }),
-    });
+    createDialog(
+      <DeleteAttachments dialog attachments={selected} organizationId={entity.id} callback={clearSelection} />,
+      {
+        id: 'delete-attachments',
+        triggerRef: deleteButtonRef,
+        className: 'max-w-xl',
+        title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
+        description: t('common:confirm.delete_counted_resource', {
+          count: selected.length,
+          resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
+        }),
+      },
+    );
   };
 
   return (

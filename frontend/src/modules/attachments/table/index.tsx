@@ -17,6 +17,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
+import { attachmentStorage } from '../dexie/storage-service';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -93,9 +94,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [entity.id, q, sort, order],
   );
 
-  // useEffect(() => {
-  //   attachmentStorage.addCachedImage(fetchedRows);
-  // }, [fetchedRows]);
+  useEffect(() => {
+    attachmentStorage.addCachedImage(fetchedRows);
+  }, [fetchedRows]);
 
   const { data: localRows } = useLiveQuery(
     (liveQuery) => {
@@ -112,10 +113,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   );
 
   // Memoize combined rows to prevent unnecessary recalculations
-  const combinedData = useMemo(
-    () => [...fetchedRows, ...localRows],
-    [fetchedRows, localRows],
-  );
+  const combinedData = useMemo(() => [...fetchedRows, ...localRows], [fetchedRows, localRows]);
 
   // TODO(tanstackDB) add ordering
   const rows = useOfflineTableSearch({
@@ -174,10 +172,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   // Memoize error object
-  const error = useMemo(
-    () => (isError ? new Error(t('common:failed_to_load_attachments')) : undefined),
-    [isError, t],
-  );
+  const error = useMemo(() => (isError ? new Error(t('common:failed_to_load_attachments')) : undefined), [isError, t]);
 
   // Memoize NoRowsComponent
   const NoRowsComponent = useMemo(

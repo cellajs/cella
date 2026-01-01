@@ -109,9 +109,9 @@ const createLocalAttachmentsCollectionImpl = (orgIdOrSlug: string) =>
           newAttachments.length === 1
             ? t('common:success.create_resource', { resource: t('common:attachment') })
             : t('common:success.create_counted_resources', {
-              count: newAttachments.length,
-              resources: t('common:attachments').toLowerCase(),
-            });
+                count: newAttachments.length,
+                resources: t('common:attachments').toLowerCase(),
+              });
 
         toaster(message, 'success');
       },

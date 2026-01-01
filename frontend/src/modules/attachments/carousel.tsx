@@ -54,9 +54,11 @@ const AttachmentsCarousel = ({
   classNameContainer,
 }: CarouselProps) => {
   const navigate = useNavigate();
+
   const removeDialog = useDialoger((state) => state.remove);
-  const { attachmentDialogId } = useSearch({ strict: false });
   const { download, isInProgress } = useDownloader();
+
+  const { attachmentDialogId } = useSearch({ strict: false });
 
   const nextButtonRef = useRef(null);
   const [watchDrag, setWatchDrag] = useState(items.length > 1);
