@@ -10,7 +10,7 @@ import { AppError } from '#/lib/errors';
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId and oauthAccountId
   if (!token.userId || !token.oauthAccountId)
-    throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
 
   const [oauthAccount] = await db
     .select()
