@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ContextEntityType } from 'config';
+import router from '~/lib/router';
 import { useSSE } from '~/modules/common/sse/use-sse';
 import type { ContextEntityData } from '~/modules/entities/types';
 import type { ContextEntityDataWithMembership } from '~/modules/me/types';
