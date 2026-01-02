@@ -18,7 +18,7 @@ const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
 export const hasSystemAccess: MiddlewareHandler = every(
   isSystemAdmin,
   ipRestriction(getIp, { allowList }, async () => {
-    throw new AppError({ status: 422, type: 'forbidden', severity: 'warn' });
+    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
   }),
 );
 

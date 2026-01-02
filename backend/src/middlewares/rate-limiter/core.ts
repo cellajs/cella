@@ -61,7 +61,7 @@ export const rateLimiter = (
 
     // Stop if required identifiers are not available
     if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
     }
 
     // Generate rate limit key with fallback logic

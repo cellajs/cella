@@ -458,9 +458,9 @@ const membershipRouteHandlers = app
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId)
       throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+        status: 500,
+        type: 'server_error',
+        severity: 'error',
         entityType: updatedType,
       });
 
@@ -541,8 +541,8 @@ const membershipRouteHandlers = app
       const entityFieldId = inactiveMembership[entityFieldIdName];
       if (!entityFieldId)
         throw new AppError({
-          status: 404,
-          type: 'not_found',
+          status: 500,
+          type: 'server_error',
           severity: 'error',
           entityType: inactiveMembership.contextType,
         });

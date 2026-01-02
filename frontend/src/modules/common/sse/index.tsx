@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ContextEntityType } from 'config';
 import { useSSE } from '~/modules/common/sse/use-sse';
+import type { ContextEntityData } from '~/modules/entities/types';
 import type { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { organizationQueryKeys } from '~/modules/organizations/query';
@@ -93,13 +94,31 @@ export default function SSE() {
   };
 
   // Entity updated: update the single cache and invalidate list (e.g. name or avatar changed)
+  // If slug changed, update URL for users viewing entity page
   const onEntityUpdated = (entityData: ContextEntityDataWithMembership) => {
     console.debug('Entity updated', entityData);
     const keys = entityKeysMap[entityData.entityType];
     if (!keys) return;
 
+    // Get current cached data to check for slug change
+    const cachedData = queryClient.getQueryData<ContextEntityData>(keys.detail.byId(entityData.id));
+    const oldSlug = cachedData?.slug;
+    const newSlug = entityData.slug;
+
+    // Update cache
     queryClient.setQueryData(keys.detail.byId(entityData.id), entityData);
     queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+
+    // If slug changed, update URL if user is on the entity page
+    if (oldSlug && newSlug && oldSlug !== newSlug) {
+      const { pathname, search, hash } = router.state.location;
+
+      const slugSegmentRegex = new RegExp(`(/)${oldSlug}(/|$)`);
+      if (!slugSegmentRegex.test(pathname)) return;
+
+      const newPath = pathname.replace(slugSegmentRegex, `$1${newSlug}$2`);
+      router.navigate({ to: newPath, replace: true, search, hash });
+    }
   };
 
   // Entity deleted: remove its caches
