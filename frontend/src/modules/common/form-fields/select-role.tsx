@@ -18,7 +18,10 @@ const SelectRole = ({ entity = false, onChange, value, className }: SelectRolePr
   const roles = entity ? appConfig.roles.entityRoles : appConfig.roles.systemRoles;
 
   return (
-    <Select value={value === undefined || value === 'all' ? 'all' : value} onValueChange={(role) => onChange(role === 'all' ? undefined : role)}>
+    <Select
+      value={value === undefined || value === 'all' ? 'all' : value}
+      onValueChange={(role) => onChange(role === 'all' ? undefined : role)}
+    >
       <SelectTrigger disabled={!isOnline} className={cn('w-full', className)}>
         <SelectValue placeholder={t('common:placeholder.select_role')} />
       </SelectTrigger>

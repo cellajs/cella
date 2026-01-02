@@ -3,7 +3,7 @@ import { getContextMemberships, getContextOrganization, getContextUserSystemRole
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import type { PermittedAction } from '#/permissions/permissions-config';
+import type { EntityAction } from '#/permissions/permissions-config';
 import permissionManager from '#/permissions/permissions-config';
 
 /**
@@ -24,7 +24,7 @@ import permissionManager from '#/permissions/permissions-config';
 export const getValidContextEntity = async <T extends ContextEntityType>(
   idOrSlug: string,
   entityType: T,
-  action: Exclude<PermittedAction, 'create'>,
+  action: Exclude<EntityAction, 'create'>,
 ): Promise<{ entity: EntityModel<T>; membership: MembershipBaseModel | null }> => {
   // Get current user role and memberships from request context
   const userSystemRole = getContextUserSystemRole();
@@ -43,8 +43,9 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!isAllowed && isSystemAdmin) return { entity, membership: null };
 
   // Step 3: Search for user's membership for this entity
-  const entityIdField = appConfig.entityIdFields[entity.entityType];
-  const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
+  const entityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
+  const membership =
+    memberships.find((m) => m[entityIdColumnKey] === entity.id && m.contextType === entityType) || null;
 
   if (!isAllowed) {
     if (!membership) throw new AppError({ status: 403, type: 'membership_not_found', severity: 'error', entityType });

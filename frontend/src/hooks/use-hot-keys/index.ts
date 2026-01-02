@@ -22,7 +22,9 @@ export function useHotkeys(
   useEffect(() => {
     const keydownListener = (event: KeyboardEvent) => {
       // Check if the event target is within an ignored HTML element
-      const isFormElement = tagsToIgnore.some((tag) => event.target instanceof HTMLElement && event.target.closest(tag));
+      const isFormElement = tagsToIgnore.some(
+        (tag) => event.target instanceof HTMLElement && event.target.closest(tag),
+      );
       if (isFormElement) return; // Skip handling if within ignored element
 
       // Iterate through hotkeys and check if any match the event

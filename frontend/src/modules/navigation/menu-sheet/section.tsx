@@ -97,8 +97,15 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
               <MenuSheetItems type={options.entityType} data={data} isArchived={false} options={options} />
             )}
             {!!data.length && (
-              <div className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
-                {(!!archivedCount || isEditing) && <SectionArchiveButton archiveToggleClick={archiveToggleClick} archivedCount={archivedCount} />}
+              <div
+                className="group/archived"
+                data-has-archived={!!archivedCount}
+                data-submenu={false}
+                data-archived-visible={isArchivedVisible}
+              >
+                {(!!archivedCount || isEditing) && (
+                  <SectionArchiveButton archiveToggleClick={archiveToggleClick} archivedCount={archivedCount} />
+                )}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
                     <motion.ul

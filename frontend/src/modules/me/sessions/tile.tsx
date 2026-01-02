@@ -54,10 +54,16 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
                 {t(session.authStrategy)}
               </p>
             )}
-            <p className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline" aria-describedby={t('common:os')}>
+            <p
+              className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
+              aria-describedby={t('common:os')}
+            >
               {session.deviceOs}
             </p>
-            <p className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline" aria-describedby={t('common:browser')}>
+            <p
+              className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
+              aria-describedby={t('common:browser')}
+            >
               {session.browser}
             </p>
             <Button
@@ -75,7 +81,13 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
         </div>
 
         {!session.isCurrent && (
-          <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => handleDeleteSessions([session.id])}>
+          <Button
+            variant="plain"
+            size="sm"
+            className="text-sm ml-auto"
+            disabled={isPending}
+            onClick={() => handleDeleteSessions([session.id])}
+          >
             <ZapOffIcon size={16} />
             <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
           </Button>

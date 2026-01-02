@@ -17,7 +17,7 @@ export const WelcomeText = ({ onboardingToStepper }: WelcomeTextProps) => {
       <div className="text-foreground/90 md:text-2xl font-light leading-7 pb-8">
         <TextEffect
           text={t('common:onboarding_welcome.text', { appName: appConfig.name })}
-          className="text-2xl text-center font-medium sm:text-4xl md:text-5xl sm:leading-[3rem] md:leading-[4rem]"
+          className="text-2xl text-center font-medium sm:text-4xl md:text-5xl sm:leading-12 md:leading-16"
         />
       </div>
       <Button onClick={onboardingToStepper} className="max-sm:w-full">

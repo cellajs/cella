@@ -20,7 +20,11 @@ export const SetupTotp = () => {
   const [formVersion, setFormVersion] = useState(0);
 
   // Mutation to validate and activate TOTP with provided code
-  const { mutate, isPending } = useMutation<CreateTotpResponses[201], ApiError | Error, NonNullable<CreateTotpData['body']>>({
+  const { mutate, isPending } = useMutation<
+    CreateTotpResponses[201],
+    ApiError | Error,
+    NonNullable<CreateTotpData['body']>
+  >({
     mutationFn: async (body) => await createTotp({ body }),
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
@@ -63,7 +67,12 @@ export const SetupTotp = () => {
         <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
         <div className="text-sm text-muted-foreground">
           <span>{t('common:totp_manual.footer_description')}</span>
-          <Button ref={triggerRef} variant="none" className="p-0 h-auto underline inline cursor-pointer" onClick={openManualKey}>
+          <Button
+            ref={triggerRef}
+            variant="none"
+            className="p-0 h-auto underline inline cursor-pointer"
+            onClick={openManualKey}
+          >
             {t('common:totp_manual.button_text')}
           </Button>
         </div>

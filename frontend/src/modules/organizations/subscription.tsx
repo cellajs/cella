@@ -40,7 +40,11 @@ const Subscription = ({ organization }: { organization: Organization }) => {
 
   return (
     <>
-      <Button variant="plain" className="max-sm:w-full w-40" onClick={() => openCheckout(appConfig.paddlePriceIds.donate)}>
+      <Button
+        variant="plain"
+        className="max-sm:w-full w-40"
+        onClick={() => openCheckout(appConfig.paddlePriceIds.donate)}
+      >
         {t('common:checkout')}
       </Button>
     </>

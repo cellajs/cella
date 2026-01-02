@@ -1,4 +1,5 @@
-import { defaultProps, insertOrUpdateBlock } from '@blocknote/core';
+import { defaultProps } from '@blocknote/core';
+import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 
 import { MessageCircleIcon } from 'lucide-react';
@@ -36,7 +37,11 @@ export const notifyBlock = createReactBlockSpec(
           <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger disabled={!editor.isEditable}>
               <div className={'notify-icon-wrapper'} contentEditable={false}>
-                <Icon className={`notify-icon ${!editor.isEditable && 'cursor-default'}`} data-notify-icon-type={block.props.type} size={32} />
+                <Icon
+                  className={`notify-icon ${!editor.isEditable && 'cursor-default'}`}
+                  data-notify-icon-type={block.props.type}
+                  size={32}
+                />
               </div>
             </DropdownMenuTrigger>
 
@@ -71,7 +76,7 @@ export const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Notify',
   key: 'notify',
   onItemClick: () => {
-    insertOrUpdateBlock(editor, {
+    insertOrUpdateBlockForSlashMenu(editor, {
       type: 'notify',
     });
   },

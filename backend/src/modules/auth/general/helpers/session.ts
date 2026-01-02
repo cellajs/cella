@@ -24,7 +24,12 @@ import { createDate, TimeSpan } from '#/utils/time-span';
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
+export const setUserSession = async (
+  ctx: Context<Env>,
+  user: UserModel,
+  strategy: AuthStrategy,
+  type: SessionTypes = 'regular',
+): Promise<void> => {
   const isSystemAdmin = await db
     .select()
     .from(systemRolesTable)
@@ -37,7 +42,8 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
-    if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
+    if (!allowAll && (!ip || !allowList.includes(ip)))
+      throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
 
   // Get device information
@@ -87,7 +93,9 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
  * @param sessionToken - Hashed session token to validate.
  * @returns The session and user data if valid, otherwise null.
  */
-export const validateSession = async (hashedSessionToken: string): Promise<{ session: SessionModel; user: UserModel }> => {
+export const validateSession = async (
+  hashedSessionToken: string,
+): Promise<{ session: SessionModel; user: UserModel }> => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)

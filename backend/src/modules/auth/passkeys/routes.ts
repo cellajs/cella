@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { passkeyChallengeLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   passkeyChallengeBodySchema,
   passkeyChallengeSchema,
@@ -13,13 +13,15 @@ import { cookieSchema, idSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authPasskeysRoutes = {
+  /**
+   * Generate passkey challenge
+   */
   generatePasskeyChallenge: createCustomRoute({
     operationId: 'generatePasskeyChallenge',
     method: 'post',
     path: '/passkey/generate-challenge',
     guard: isPublicAccess,
-    // TODO look into rate limit customized for passkeys
-    middleware: [spamLimiter],
+    middleware: [passkeyChallengeLimiter],
     tags: ['auth'],
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
@@ -37,7 +39,9 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Create passkey
+   */
   createPasskey: createCustomRoute({
     operationId: 'createPasskey',
     method: 'post',
@@ -61,7 +65,9 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete passkey
+   */
   deletePasskey: createCustomRoute({
     operationId: 'deletePasskey',
     method: 'delete',
@@ -78,7 +84,9 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Verify passkey
+   */
   signInWithPasskey: createCustomRoute({
     operationId: 'signInWithPasskey',
     method: 'post',

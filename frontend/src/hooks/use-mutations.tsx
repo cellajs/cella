@@ -3,4 +3,5 @@ import type { ApiError } from '~/lib/api';
 
 export const useMutation = <TData = unknown, TError = ApiError, TVariables = void, TContext = unknown>(
   options: UseMutationOptions<TData, TError, TVariables, TContext>,
-): UseMutationResult<TData, TError, TVariables, TContext> => useBaseMutation<TData, TError, TVariables, TContext>(options);
+): UseMutationResult<TData, TError, TVariables, TContext> =>
+  useBaseMutation<TData, TError, TVariables, TContext>(options);

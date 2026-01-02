@@ -14,11 +14,18 @@ import { getIsoDate } from '#/utils/iso-date';
 
 export const handleEmailVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId
-  if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (!token.userId) throw new AppError({ status: 500, type: 'server_error', severity: 'error' });
 
   // Get user
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'user', meta: { userId: token.userId } });
+  if (!user)
+    throw new AppError({
+      status: 404,
+      type: 'not_found',
+      severity: 'error',
+      entityType: 'user',
+      meta: { userId: token.userId },
+    });
 
   // Set email verified if it exists
   await db

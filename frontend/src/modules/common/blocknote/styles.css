@@ -55,8 +55,9 @@
 
 .bn-shadcn p {
   font-size: 0.888rem;
-  font-weight: 300;
   line-height: 1.3;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
   min-height: 1.3rem;
   overflow-wrap: anywhere;
   padding: 0;
@@ -67,7 +68,7 @@
 }
 
 .bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
-  color: hsl(var(--blocknote-placeholder));
+  color: var(--blocknote-placeholder);
 }
 
 .bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
@@ -77,15 +78,15 @@
 .bn-shadcn code {
   font-size: 0.85em;
   line-height: 1rem;
-  background: hsl(var(--input) / 0.5);
+  background: var(--input) / 0.5;
   padding: 0.15rem;
   border-radius: 0.25rem;
   color: #e8912d;
 }
 
 .bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
-  background: hsl(var(--input) / 0.5);
-  border: 0.05rem solid hsl(var(--ring) / 0.4);
+  background: oklch(var(--input) l c h / 0.5);
+  border: 0.05rem solid oklch(var(--ring) l c h / 0.4);
 }
 
 .bn-block-content[data-content-type="codeBlock"] code {
@@ -110,7 +111,7 @@
 
 .bn-grid-suggestion-menu-item[aria-selected="true"],
 .bn-grid-suggestion-menu-item:hover {
-  background-color: hsl(var(--accent)) !important;
+  background-color: var(--accent) !important;
 }
 
 .bn-grid-suggestion-menu-empty-item,
@@ -120,8 +121,8 @@
 
 .bn-grid-suggestion-menu {
   max-height: 25rem !important;
-  background-color: hsl(var(--popover)) !important;
-  border: 0.05rem solid hsl(var(--border)) !important;
+  background-color: var(--popover) !important;
+  border: 0.05rem solid var(--border) !important;
   border-radius: 8px !important;
   box-shadow: 0 0.05rem 4px 0 rgb(0 0 0 / 0.1) !important;
   gap: 0.75rem !important;
@@ -140,7 +141,7 @@
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 0.2rem;
-  text-decoration-color: hsl(var(--foreground) / 0.2);
+  text-decoration-color: oklch(var(--foreground) / 0.2);
 }
 
 .bn-link-toolbar > button.px-3 {
@@ -150,11 +151,11 @@
 }
 
 .bn-link-toolbar > button:hover {
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
 }
 
 .bn-container.bn-shadcn a:hover {
-  text-decoration-color: hsl(var(--foreground));
+  text-decoration-color: var(--foreground);
 }
 
 .bn-container.bn-shadcn b,
@@ -200,7 +201,7 @@
 }
 
 .bn-toolbar.bn-formatting-toolbar button:hover {
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
 }
 
 .bn-menu-item {
@@ -219,8 +220,8 @@
 .slash-menu {
   max-height: 40vh;
   overflow-y: auto;
-  background-color: hsl(var(--popover));
-  border: 0.05rem solid hsl(var(--border)) !important;
+  background-color: var(--popover);
+  border: 0.05rem solid var(--border) !important;
   border-radius: 0.5rem;
   box-shadow: 0 0.05rem 0.3rem 0 rgb(0 0 0 / 0.1) !important;
   display: flex;
@@ -244,7 +245,7 @@
   font-size: 0.8rem;
   min-width: 1rem;
   align-items: center;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   opacity: 0.5 !important;
   display: flex;
   padding: 0.125rem 0 0.125rem 0.25rem;
@@ -256,10 +257,21 @@
 }
 
 .slash-menu-item[aria-selected="true"] {
-  background-color: hsl(var(--accent));
+  background-color: var(--accent);
 }
 .slash-menu-item:hover {
-  background-color: hsl(var(--accent) / 0.6);
+  background-color: oklch(var(--accent) l c h / 0.6);
+}
+
+/* Mobile-specific styles for slash menu */
+@media (max-width: 640px) {
+  .slash-menu {
+    align-items: center;
+    padding: 24px 0px;
+  }
+  .slash-menu-item {
+    justify-content: center;
+  }
 }
 
 .notify {
@@ -351,12 +363,12 @@
 }
 
 .bn-shadcn th {
-  border: 0.05rem solid hsl(var(--table-border));
+  border: 0.05rem solid var(--table-border);
   border-collapse: collapse;
 }
 .bn-shadcn td {
   padding: 4px;
-  border: 0.05rem solid hsl(var(--table-border));
+  border: 0.05rem solid var(--table-border);
   border-collapse: collapse;
 }
 

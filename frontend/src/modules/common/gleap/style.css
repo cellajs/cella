@@ -3,12 +3,12 @@
 }
 
 .bb-feedback-button > .bb-feedback-button-icon {
-  background-color: hsl(var(--secondary));
+  background-color: var(--secondary);
 }
 
 .bb-feedback-button > .bb-feedback-button-icon > svg {
-  fill: hsl(var(--primary));
-  color: hsl(var(--primary));
+  fill: var(--primary);
+  color: var(--primary);
 }
 
 .bb-feedback-button .bb-logo-logo--default path {

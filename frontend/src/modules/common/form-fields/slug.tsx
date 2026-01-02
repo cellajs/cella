@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { appConfig, type EntityType } from 'config';
+import { appConfig, ContextEntityType } from 'config';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
@@ -18,7 +18,7 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  entityType: EntityType;
+  entityType: ContextEntityType | 'user';
 };
 
 export const SlugFormField = <TFieldValues extends FieldValues>({
@@ -73,7 +73,8 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
 
   // Check on change
   useEffect(() => {
-    if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug)) return setSlugAvailable('blank');
+    if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug))
+      return setSlugAvailable('blank');
     if (isValidSlug(slug)) {
       if (!isOnline) return;
 
@@ -106,7 +107,12 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
           {description && <FormDescription>{description}</FormDescription>}
           <FormControl>
             <InputGroup className={cn('', inputClassName)}>
-              <InputGroupInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
+              <InputGroupInput
+                type={entityType}
+                onFocus={() => setDeviating(true)}
+                value={formFieldValue || ''}
+                {...rest}
+              />
               <InputGroupAddon>
                 <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
                   {prefix}
@@ -115,7 +121,13 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
 
               {previousSlug && previousSlug !== slug && (
                 <InputGroupAddon align="inline-end">
-                  <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={t('common:revert_handle')}
+                    onClick={revertSlug}
+                    className="h-full"
+                  >
                     <UndoIcon size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
                   </Button>
                 </InputGroupAddon>

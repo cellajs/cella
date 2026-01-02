@@ -17,7 +17,11 @@ export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>(as
   const isJson = contentType.includes('application/json');
   const isMultipart = contentType.includes('multipart/form-data');
 
-  const maxSize = isJson ? appConfig.jsonBodyLimit : isMultipart ? appConfig.fileUploadLimit : appConfig.defaultBodyLimit;
+  const maxSize = isJson
+    ? appConfig.jsonBodyLimit
+    : isMultipart
+      ? appConfig.fileUploadLimit
+      : appConfig.defaultBodyLimit;
 
   const limit = bodyLimit({
     maxSize,

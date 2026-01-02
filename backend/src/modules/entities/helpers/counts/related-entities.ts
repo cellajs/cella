@@ -4,7 +4,10 @@ import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { entityTables } from '#/entity-config';
-import { getAssociatedEntities, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
+import {
+  getEntityTypesScopedByContextEntityType,
+  type ValidEntities,
+} from '#/modules/entities/helpers/get-related-entities';
 
 /**
  * Counts related entities (Context + Product) for the given entity instance
@@ -21,17 +24,17 @@ export const getRelatedEntityCounts = async (
   entityId: string,
   countConditions: Partial<Record<ProductEntityType | ContextEntityType, SQL>> = {},
 ) => {
-  const entityIdField = appConfig.entityIdFields[entityType];
+  const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
   // Only keep entity types that actually contain the ID field we care about
-  const validEntities = getAssociatedEntities(entityType);
-  if (!validEntities.length) return {} as Record<ValidEntities<typeof entityIdField>, number>;
+  const validEntities = getEntityTypesScopedByContextEntityType(entityType);
+  if (!validEntities.length) return {} as Record<ValidEntities<typeof entityIdColumnKey>, number>;
 
   // Run one COUNT query per entity type in parallel
   const counts = await Promise.all(
     validEntities.map(async (entityType) => {
       const table = entityTables[entityType];
-      const idColumn = table[entityIdField as keyof typeof table] as SQLWrapper;
+      const idColumn = table[entityIdColumnKey as keyof typeof table] as SQLWrapper;
       const extraCondition = countConditions[entityType];
 
       const [row] = await db
@@ -44,19 +47,20 @@ export const getRelatedEntityCounts = async (
   );
 
   // Convert array of tuples → Record<'entityType', number>
-  return Object.fromEntries(counts) as Record<ValidEntities<typeof entityIdField>, number>;
+  return Object.fromEntries(counts) as Record<ValidEntities<typeof entityIdColumnKey>, number>;
 };
 
 export const getRelatedEntityCountsQuery = (entityType: ContextEntityType) => {
-  const entityIdField = appConfig.entityIdFields[entityType];
+  const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
   const table = entityTables[entityType];
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 
   const entityIdColumn = table.id; // the target table must match the context — adapt as needed
 
   // Only keep entity types that actually contain the ID field we care about
-  const validEntities = getAssociatedEntities(entityType);
-  if (!validEntities.length) return db.select({ id: entityIdColumn }).from(table).where(sql`false`).as('related_counts'); // returns zero rows
+  const validEntities = getEntityTypesScopedByContextEntityType(entityType);
+  if (!validEntities.length)
+    return db.select({ id: entityIdColumn }).from(table).where(sql`false`).as('related_counts'); // returns zero rows
 
   const baseCounts: Record<string, SQL.Aliased<number>> = {};
   const joins: {
@@ -72,22 +76,24 @@ export const getRelatedEntityCountsQuery = (entityType: ContextEntityType) => {
 
   for (const relatedEntityType of validEntities) {
     const relatedTable = entityTables[relatedEntityType];
-    if (!relatedTable || !(entityIdField in relatedTable)) continue;
+    if (!relatedTable || !(entityIdColumnKey in relatedTable)) continue;
     const alias = `${relatedEntityType}_counts`;
-    const fkColumn = relatedTable[entityIdField as keyof typeof relatedTable] as PgColumn;
+    const fkColumn = relatedTable[entityIdColumnKey as keyof typeof relatedTable] as PgColumn;
 
     const subquery = db
       .select<SelectedFields<PgColumn, typeof relatedTable>>({
-        [entityIdField]: fkColumn,
+        [entityIdColumnKey]: fkColumn,
         [relatedEntityType]: count().as(relatedEntityType),
       })
       .from(relatedTable)
       .groupBy(fkColumn)
       .as(alias);
 
-    joins.push({ subquery, alias, join: eq(entityIdColumn, subquery[entityIdField]) });
+    joins.push({ subquery, alias, join: eq(entityIdColumn, subquery[entityIdColumnKey]) });
 
-    baseCounts[relatedEntityType] = sql<number>`COALESCE(${sql.raw(`"${alias}"."${relatedEntityType}"`)}, 0)`.as(relatedEntityType);
+    baseCounts[relatedEntityType] = sql<number>`COALESCE(${sql.raw(`"${alias}"."${relatedEntityType}"`)}, 0)`.as(
+      relatedEntityType,
+    );
   }
 
   const query = db.select({ id: entityIdColumn, ...baseCounts }).from(organizationsTable);

@@ -11,7 +11,11 @@ import type { TokenData } from '~/modules/auth/types';
  * @param tokenId Token ID to check
  * @param enabled (Default true) Enable the query
  */
-export const useGetTokenData = (type: TokenType, tokenId?: string, enabled = true): UseQueryResult<TokenData | undefined, ApiError> => {
+export const useGetTokenData = (
+  type: TokenType,
+  tokenId?: string,
+  enabled = true,
+): UseQueryResult<TokenData | undefined, ApiError> => {
   return useQuery({
     queryKey: [],
     queryFn: async () => {

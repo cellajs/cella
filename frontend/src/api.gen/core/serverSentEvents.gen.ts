@@ -102,7 +102,10 @@ export const createSseClient = <TData = unknown>({
 
       attempt++;
 
-      const headers = options.headers instanceof Headers ? options.headers : new Headers(options.headers as Record<string, string> | undefined);
+      const headers =
+        options.headers instanceof Headers
+          ? options.headers
+          : new Headers(options.headers as Record<string, string> | undefined);
 
       if (lastEventId !== undefined) {
         headers.set('Last-Event-ID', lastEventId);
@@ -148,6 +151,8 @@ export const createSseClient = <TData = unknown>({
             const { done, value } = await reader.read();
             if (done) break;
             buffer += value;
+            // Normalize line endings: CRLF -> LF, then CR -> LF
+            buffer = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
             const chunks = buffer.split('\n\n');
             buffer = chunks.pop() ?? '';

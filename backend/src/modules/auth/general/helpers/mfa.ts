@@ -70,7 +70,12 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
     });
 
   // Fetch token record and associated user
-  const tokenRecord = await getValidToken({ ctx, token: tokenFromCookie, invokeToken: false, tokenType: 'confirm-mfa' });
+  const tokenRecord = await getValidToken({
+    ctx,
+    token: tokenFromCookie,
+    invokeToken: false,
+    tokenType: 'confirm-mfa',
+  });
 
   // Sanity check
   if (!tokenRecord.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });

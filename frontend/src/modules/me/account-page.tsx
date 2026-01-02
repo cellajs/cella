@@ -4,7 +4,13 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword, User } from '~/api.gen';
+import {
+  type ApiError,
+  type RequestPasswordData,
+  type RequestPasswordResponse,
+  requestPassword,
+  User,
+} from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { CallbackArgs } from '~/modules/common/data-table/types';
@@ -49,7 +55,11 @@ const UserAccountPage = () => {
 
   const invertClass = mode === 'dark' ? 'invert' : '';
 
-  const { mutate: requestPasswordChange } = useMutation<RequestPasswordResponse, ApiError | Error, NonNullable<RequestPasswordData['body']>>({
+  const { mutate: requestPasswordChange } = useMutation<
+    RequestPasswordResponse,
+    ApiError | Error,
+    NonNullable<RequestPasswordData['body']>
+  >({
     mutationFn: async (body) => await requestPassword({ body }),
     onSuccess: () => toaster(t('common:success.reset_password_email', { email: user.email }), 'success'),
     onSettled: () => setTimeout(() => setDisabledResetPassword(false), 60000),
@@ -69,7 +79,8 @@ const UserAccountPage = () => {
       <DeleteSelf
         dialog
         callback={({ status }: CallbackArgs<User>) => {
-          if (status === 'success') toaster(t('common:success.delete_resource', { resource: t('common:account') }), 'success');
+          if (status === 'success')
+            toaster(t('common:success.delete_resource', { resource: t('common:account') }), 'success');
         }}
       />,
       {
@@ -90,7 +101,10 @@ const UserAccountPage = () => {
       setLoadingProvider(provider);
 
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams({ type: 'connect', redirectAfter: window.location.pathname + window.location.hash });
+      const params = new URLSearchParams({
+        type: 'connect',
+        redirectAfter: window.location.pathname + window.location.hash,
+      });
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
@@ -151,7 +165,11 @@ const UserAccountPage = () => {
                       <div className="flex items-center">
                         <p className="font-semibold">{t('common:mfa')}</p>
                         {!user.mfaRequired && (
-                          <Badge size="xs" variant="outline" className="max-sm:hidden ml-2 text-green-600 border-green-600">
+                          <Badge
+                            size="xs"
+                            variant="outline"
+                            className="max-sm:hidden ml-2 text-green-600 border-green-600"
+                          >
                             {t('common:recommended')}
                           </Badge>
                         )}
@@ -240,14 +258,23 @@ const UserAccountPage = () => {
                 enabledStrategies.includes('password') && (
                   <>
                     <HelpText content={t('common:request_password.text')}>
-                      <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
+                      <p className="font-semibold">
+                        {t('common:reset_resource', { resource: t('common:password').toLowerCase() })}
+                      </p>{' '}
                     </HelpText>
                     <div className="mb-6">
-                      <Button className="w-full sm:w-auto" variant="plain" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
+                      <Button
+                        className="w-full sm:w-auto"
+                        variant="plain"
+                        disabled={disabledResetPassword}
+                        onClick={requestResetPasswordClick}
+                      >
                         <SendIcon size={16} className="mr-2" />
                         {t('common:send_reset_link')}
                       </Button>
-                      {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
+                      {disabledResetPassword && (
+                        <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>
+                      )}
                     </div>
                   </>
                 )
@@ -263,7 +290,12 @@ const UserAccountPage = () => {
               <CardDescription>{t('common:delete_account.text', { appName: appConfig.name })}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+              <Button
+                ref={deleteButtonRef}
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={openDeleteDialog}
+              >
                 <TrashIcon size={16} className="mr-2" />
                 {t('common:delete_account')}
               </Button>

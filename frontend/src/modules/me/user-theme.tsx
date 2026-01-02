@@ -2,7 +2,13 @@ import { appConfig } from 'config';
 import { BanIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/modules/ui/dropdown-menu';
 import { Switch } from '~/modules/ui/switch';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';

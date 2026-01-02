@@ -2,7 +2,7 @@ import { appConfig, type ContextEntityType, type ProductEntityType } from 'confi
 import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import type { PermittedAction } from '#/permissions/permissions-config';
+import type { EntityAction } from '#/permissions/permissions-config';
 import permissionManager from '#/permissions/permissions-config';
 
 /**
@@ -24,7 +24,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   idOrSlug: string,
   entityType: K,
   contextEntityType: ContextEntityType,
-  action: Exclude<PermittedAction, 'create'>,
+  action: Exclude<EntityAction, 'create'>,
 ): Promise<EntityModel<K>> => {
   // Get current user role and memberships from request context
   const userSystemRole = getContextUserSystemRole();
@@ -41,12 +41,20 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   if (!isAllowed && !isSystemAdmin) {
     // Step 3: Search for user's membership for context entity
-    const entityIdField = appConfig.entityIdFields[contextEntityType];
-    const entityId = (entity as Record<string, unknown>)[entityIdField];
+    const entityIdColumnKey = appConfig.entityIdColumnKeys[contextEntityType];
+    const entityId = (entity as Record<string, unknown>)[entityIdColumnKey];
 
-    const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId);
+    const membership = memberships.find(
+      (m) => m.contextType === contextEntityType && m[entityIdColumnKey] === entityId,
+    );
     if (!membership)
-      throw new AppError({ status: 403, type: 'membership_not_found', severity: 'error', entityType: contextEntityType, meta: entity });
+      throw new AppError({
+        status: 403,
+        type: 'membership_not_found',
+        severity: 'error',
+        entityType: contextEntityType,
+        meta: entity,
+      });
 
     // Step 4: Validate organization alignment
     const organization = getContextOrganization();
@@ -56,7 +64,13 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
       // Reject if entity belongs to a different organization or membership is from a different org
       if (!organizationMatches || !membershipOrgMatches) {
-        throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType: contextEntityType, meta: entity });
+        throw new AppError({
+          status: 409,
+          type: 'organization_mismatch',
+          severity: 'error',
+          entityType: contextEntityType,
+          meta: entity,
+        });
       }
     }
 

@@ -24,7 +24,11 @@ const AuthErrorPage = () => {
     <ErrorNotice error={error} level={'public'}>
       {showResendButton && resendData && <ResendInvitationButton resendData={resendData} />}
 
-      <Link to="/auth/authenticate" replace className={buttonVariants({ variant: showResendButton ? 'plain' : 'default' })}>
+      <Link
+        to="/auth/authenticate"
+        replace
+        className={buttonVariants({ variant: showResendButton ? 'plain' : 'default' })}
+      >
         <LogInIcon size={16} className="mr-2" />
         {t('common:sign_in')}
       </Link>

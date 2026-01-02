@@ -9,6 +9,9 @@ import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } fro
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authGeneralRoutes = {
+  /**
+   * Start impersonating
+   */
   startImpersonation: createCustomRoute({
     operationId: 'startImpersonation',
     method: 'get',
@@ -16,7 +19,8 @@ const authGeneralRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['auth'],
     summary: 'Start impersonating',
-    description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
+    description:
+      'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { query: z.object({ targetUserId: z.string() }) },
     responses: {
       204: {
@@ -26,7 +30,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Stop impersonating
+   */
   stopImpersonation: createCustomRoute({
     operationId: 'stopImpersonation',
     method: 'get',
@@ -40,7 +46,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Check if email exists
+   */
   checkEmail: createCustomRoute({
     operationId: 'checkEmail',
     method: 'post',
@@ -61,7 +69,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Invoke token session
+   */
   invokeToken: createCustomRoute({
     operationId: 'invokeToken',
     method: 'get',
@@ -83,7 +93,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get token data
+   */
   getTokenData: createCustomRoute({
     operationId: 'getTokenData',
     method: 'get',
@@ -92,7 +104,8 @@ const authGeneralRoutes = {
     middleware: [isNoBot, tokenLimiter('token')],
     tags: ['auth'],
     summary: 'Get token data',
-    description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
+    description:
+      'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
       params: z.object({ type: z.enum(appConfig.tokenTypes), id: idSchema }),
     },
@@ -104,7 +117,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Resend invitation
+   */
   resendInvitationWithToken: createCustomRoute({
     operationId: 'resendInvitationWithToken',
     method: 'post',
@@ -124,7 +139,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Sign out
+   */
   signOut: createCustomRoute({
     operationId: 'signOut',
     method: 'post',

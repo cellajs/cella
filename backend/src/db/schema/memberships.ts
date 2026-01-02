@@ -1,14 +1,14 @@
 import { appConfig } from 'config';
 import { boolean, doublePrecision, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
+import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = appConfig.roles.entityRoles;
 
-const { organizationId, ...otherEntityIdColumns } = generateContextEntityTypeFields();
+const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns();
 
 const baseColumns = {
   createdAt: timestampColumns.createdAt,
@@ -27,6 +27,7 @@ const baseColumns = {
   muted: boolean().default(false).notNull(),
   order: doublePrecision().notNull(),
   organizationId: organizationId.notNull(),
+  uniqueKey: varchar().unique().notNull(),
 };
 
 // Generate entity id columns based on entity-config

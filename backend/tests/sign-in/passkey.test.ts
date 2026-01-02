@@ -80,7 +80,10 @@ describe('Passkey Authentication', async () => {
       // MFA challenge requires confirm-mfa token which is set during password authentication
       // Since we don't have the full MFA flow set up, this test verifies the endpoint exists
       // and handles the missing token appropriately
-      const res = await client['auth']['passkey']['generate-challenge'].$post({ json: { type: 'mfa' } }, { headers: defaultHeaders });
+      const res = await client['auth']['passkey']['generate-challenge'].$post(
+        { json: { type: 'mfa' } },
+        { headers: defaultHeaders },
+      );
 
       // The endpoint should redirect to error page when confirm-mfa token is missing
       expect(res.status).toBe(302);
@@ -99,7 +102,10 @@ describe('Passkey Authentication', async () => {
     });
 
     it('should require email for authentication type', async () => {
-      const res = await client['auth']['passkey']['generate-challenge'].$post({ json: { type: 'authentication' } }, { headers: defaultHeaders });
+      const res = await client['auth']['passkey']['generate-challenge'].$post(
+        { json: { type: 'authentication' } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(403);
       const error = await parseResponse<ErrorResponse>(res);
@@ -107,7 +113,10 @@ describe('Passkey Authentication', async () => {
     });
 
     it('should reject invalid challenge type', async () => {
-      const res = await client['auth']['passkey']['generate-challenge'].$post({ json: { type: 'invalid' as any } }, { headers: defaultHeaders });
+      const res = await client['auth']['passkey']['generate-challenge'].$post(
+        { json: { type: 'invalid' as any } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(403);
       const error = await parseResponse<ErrorResponse>(res);
@@ -117,7 +126,10 @@ describe('Passkey Authentication', async () => {
 
   describe('Passkey Verification', () => {
     it('should reject verification with missing fields', async () => {
-      const res = await client['auth']['passkey-verification'].$post({ json: { type: 'authentication' } as any }, { headers: defaultHeaders });
+      const res = await client['auth']['passkey-verification'].$post(
+        { json: { type: 'authentication' } as any },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(403);
       const error = await parseResponse<ErrorResponse>(res);

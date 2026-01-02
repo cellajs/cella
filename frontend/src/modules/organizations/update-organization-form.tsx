@@ -92,7 +92,12 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}
         />
-        <DomainsFormField control={form.control} name="emailDomains" label={t('common:email_domains')} description={t('common:email_domains.text')} />
+        <DomainsFormField
+          control={form.control}
+          name="emailDomains"
+          label={t('common:email_domains')}
+          description={t('common:email_domains.text')}
+        />
         <InputFormField
           control={form.control}
           type="email"
@@ -101,7 +106,13 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           label={t('common:notification_email')}
           description={t('common:notification_email.text')}
         />
-        <InputFormField control={form.control} name="websiteUrl" label={t('common:website_url')} placeholder="https://" type="url" />
+        <InputFormField
+          control={form.control}
+          name="websiteUrl"
+          label={t('common:website_url')}
+          placeholder="https://"
+          type="url"
+        />
         <FormField
           control={form.control}
           name="languages"
@@ -127,7 +138,8 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
 
             // If defaultLanguage is not selected languages, set first language
             const languages = form.getValues('languages') || [];
-            const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
+            const correctValue =
+              field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
 
             return (
               <FormItem name="defaultLanguage">
@@ -137,7 +149,11 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
                 </FormLabel>
                 <FormDescription>{t('common:default_language.text')}</FormDescription>
                 <FormControl>
-                  <SelectLanguage options={form.getValues('languages') || []} value={correctValue} onChange={(val) => field.onChange(val)} />
+                  <SelectLanguage
+                    options={form.getValues('languages') || []}
+                    value={correctValue}
+                    onChange={(val) => field.onChange(val)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -167,7 +183,12 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('common:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
+          <Button
+            type="reset"
+            variant="secondary"
+            onClick={() => form.reset()}
+            className={form.isDirty ? '' : 'invisible'}
+          >
             {t('common:cancel')}
           </Button>
         </div>

@@ -32,7 +32,7 @@ export const config = {
   cookieVersion: 'v1',
 
   // Which scripts to run when seeding the database
-  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
+  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:pages'],
 
   // API docs settings
   apiVersion: 'v1',
@@ -84,7 +84,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     colors: {
       rose: '#e11d48',
     },
-    colorDarkBackground: 'hsl(240 10% 9%)',
+    colorDarkBackground: 'oklch(0.145 0.0092 275.5)',
     strokeWidth: 1.5,
     screenSizes: {
       xs: '420px',
@@ -169,12 +169,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /**
    * All entity types used in the app
    */
-  entityTypes: ['user', 'organization', 'attachment'] as const,
-
-  /**
-   * Page entity types (pages with memberships + users)
-   */
-  pageEntityTypes: ['user', 'organization'] as const,
+  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
   /**
    * Context entity types (memberships)
@@ -184,15 +179,16 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /**
    * Product entity types (mostly content)
    */
-  productEntityTypes: ['attachment'] as const,
+  productEntityTypes: ['attachment', 'page'] as const,
 
   /**
    * Define fields to identify an entity in a relationship
    */
-  entityIdFields: {
+  entityIdColumnKeys: {
     user: 'userId',
     organization: 'organizationId',
     attachment: 'attachmentId',
+    page: 'pageId',
   } as const,
 
   /**
@@ -228,6 +224,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     organizations: 40,
     requests: 40,
     attachments: 40,
+    pages: 40,
     pendingMemberships: 20,
   },
   /**

@@ -117,7 +117,11 @@ export const handleOAuthCallback = async (
  * Handles the basic OAuth authentication/signup flow.
  * Determines if the user has an existing verified/unverified account or needs to register.
  */
-const authCallbackFlow = async ({ providerUser, provider, oauthAccount = null }: BaseCallbackProps): Promise<OAuthFlowResult> => {
+const authCallbackFlow = async ({
+  providerUser,
+  provider,
+  oauthAccount = null,
+}: BaseCallbackProps): Promise<OAuthFlowResult> => {
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
@@ -248,8 +252,7 @@ const inviteCallbackFlow = async ({
   // TODO User already signed up meanwhile?
 
   // No user match → create a new user
-  const inactiveMembershipId = invitationToken.inactiveMembershipId || null;
-  const user = await handleCreateUser({ newUser: providerUser, inactiveMembershipId, emailVerified: false });
+  const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
 
   // link user to new OAuth account and prompt email verification
   const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
@@ -295,7 +298,10 @@ const verifyCallbackFlow = async ({
     );
 
   // Add email to emails table if it doesn't exist
-  await db.insert(emailsTable).values({ email: verifyToken.email, userId: user.id, verified: true, verifiedAt: getIsoDate() }).onConflictDoNothing();
+  await db
+    .insert(emailsTable)
+    .values({ email: verifyToken.email, userId: user.id, verified: true, verifiedAt: getIsoDate() })
+    .onConflictDoNothing();
 
   // Set email verified if it exists
   await db
@@ -372,10 +378,17 @@ const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; 
     return ctx.redirect(redirectUrl, 302);
   } else {
     // For unverified accounts, send an OAuth verification email
-    sendOAuthVerificationEmail({ userId: oauthAccount.userId, oauthAccountId: oauthAccount.id, redirectPath: redirectAfterPath });
+    sendOAuthVerificationEmail({
+      userId: oauthAccount.userId,
+      oauthAccountId: oauthAccount.id,
+      redirectPath: redirectAfterPath,
+    });
 
     // Redirect to client explaining next step for email verification
-    const redirectUrl = new URL(`/auth/email-verification/${info.reason}?provider=${oauthAccount.provider}`, appConfig.frontendUrl);
+    const redirectUrl = new URL(
+      `/auth/email-verification/${info.reason}?provider=${oauthAccount.provider}`,
+      appConfig.frontendUrl,
+    );
 
     return ctx.redirect(redirectUrl, 302);
   }

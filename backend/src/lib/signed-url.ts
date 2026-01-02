@@ -31,7 +31,10 @@ interface GetUrlOptions {
  *   - expiresIn: seconds until the presigned URL expires (only used if private, default: 86400)
  * @returns A promise resolving to the URL string.
  */
-export async function getSignedUrlFromKey(Key: string, { isPublic, bucketName, expiresIn = 86400 }: GetUrlOptions): Promise<string> {
+export async function getSignedUrlFromKey(
+  Key: string,
+  { isPublic, bucketName, expiresIn = 86400 }: GetUrlOptions,
+): Promise<string> {
   // Already a local blob URL (e.g. from File API)
   if (Key.startsWith('blob:http')) return Key;
 

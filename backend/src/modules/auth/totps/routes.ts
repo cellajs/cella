@@ -1,12 +1,15 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
 import { cookieSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authTotpsRoutes = {
+  /**
+   * Generate TOTP key
+   */
   generateTotpKey: createCustomRoute({
     operationId: 'generateTotpKey',
     method: 'post',
@@ -23,7 +26,9 @@ const authTotpsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Set TOTP
+   */
   createTotp: createCustomRoute({
     operationId: 'createTotp',
     method: 'post',
@@ -47,7 +52,9 @@ const authTotpsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete TOTP
+   */
   deleteTotp: createCustomRoute({
     operationId: 'deleteTotp',
     method: 'delete',
@@ -61,14 +68,15 @@ const authTotpsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Verify TOTP
+   */
   signInWithTotp: createCustomRoute({
     operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
     guard: isPublicAccess,
-    // TODO look into rate limit customized for totp
-    middleware: [spamLimiter],
+    middleware: [totpVerificationLimiter],
     tags: ['auth'],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',

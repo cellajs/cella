@@ -15,6 +15,9 @@ import type {
   CreateOrganizationData,
   CreateOrganizationErrors,
   CreateOrganizationResponses,
+  CreatePageData,
+  CreatePageErrors,
+  CreatePageResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -45,6 +48,9 @@ import type {
   DeleteOrganizationsData,
   DeleteOrganizationsErrors,
   DeleteOrganizationsResponses,
+  DeletePagesData,
+  DeletePagesErrors,
+  DeletePagesResponses,
   DeletePasskeyData,
   DeletePasskeyErrors,
   DeletePasskeyResponses,
@@ -63,18 +69,6 @@ import type {
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
-  GetAttachmentData,
-  GetAttachmentErrors,
-  GetAttachmentResponses,
-  GetAttachmentsData,
-  GetAttachmentsErrors,
-  GetAttachmentsResponses,
-  GetContextEntitiesData,
-  GetContextEntitiesErrors,
-  GetContextEntitiesResponses,
-  GetContextEntityData,
-  GetContextEntityErrors,
-  GetContextEntityResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -90,15 +84,18 @@ import type {
   GetMyInvitationsData,
   GetMyInvitationsErrors,
   GetMyInvitationsResponses,
-  GetMyMenuData,
-  GetMyMenuErrors,
-  GetMyMenuResponses,
   GetOrganizationData,
   GetOrganizationErrors,
   GetOrganizationResponses,
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
+  GetPageData,
+  GetPageErrors,
+  GetPageResponses,
+  GetPagesData,
+  GetPagesErrors,
+  GetPagesResponses,
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
@@ -158,9 +155,6 @@ import type {
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
-  ShapeProxyData,
-  ShapeProxyErrors,
-  ShapeProxyResponses,
   SignInData,
   SignInErrors,
   SignInResponses,
@@ -185,6 +179,12 @@ import type {
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
+  SyncAttachmentsData,
+  SyncAttachmentsErrors,
+  SyncAttachmentsResponses,
+  SyncPagesData,
+  SyncPagesErrors,
+  SyncPagesResponses,
   SystemInviteData,
   SystemInviteErrors,
   SystemInviteResponses,
@@ -205,12 +205,18 @@ import type {
   UpdateOrganizationData,
   UpdateOrganizationErrors,
   UpdateOrganizationResponses,
+  UpdatePageData,
+  UpdatePageErrors,
+  UpdatePageResponses,
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
 } from './types.gen';
 
-export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<
+  TData,
+  ThrowOnError
+> & {
   /**
    * You can provide a client instance returned by `createClient()` instead of
    * individual options. This might be also useful if you want to implement a
@@ -238,8 +244,8 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const checkEmail = <ThrowOnError extends boolean = true>(options: Options<CheckEmailData, ThrowOnError>) => {
-  return (options.client ?? client).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
+export const checkEmail = <ThrowOnError extends boolean = true>(options: Options<CheckEmailData, ThrowOnError>) =>
+  (options.client ?? client).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/check-email',
     ...options,
@@ -248,7 +254,6 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
       ...options.headers,
     },
   });
-};
 
 /**
  * Invoke token session
@@ -265,13 +270,12 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
  * @param {string} options.path.token - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
+export const invokeToken = <ThrowOnError extends boolean = true>(options: Options<InvokeTokenData, ThrowOnError>) =>
+  (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/invoke-token/{type}/{token}',
     ...options,
   });
-};
 
 /**
  * Get token data
@@ -288,13 +292,12 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
+export const getTokenData = <ThrowOnError extends boolean = true>(options: Options<GetTokenDataData, ThrowOnError>) =>
+  (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/token/{type}/{id}',
     ...options,
   });
-};
 
 /**
  * Start impersonating
@@ -309,8 +312,10 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
  * @param {string} options.query.targetuserid - `string`
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
-  return (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
+export const startImpersonation = <ThrowOnError extends boolean = true>(
+  options: Options<StartImpersonationData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -322,7 +327,6 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
     url: '/auth/impersonation/start',
     ...options,
   });
-};
 
 /**
  * Stop impersonating
@@ -336,8 +340,10 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
  * @param {stopImpersonationData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
-  return (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
+export const stopImpersonation = <ThrowOnError extends boolean = true>(
+  options?: Options<StopImpersonationData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -349,7 +355,6 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
     url: '/auth/impersonation/stop',
     ...options,
   });
-};
 
 /**
  * Resend invitation
@@ -364,8 +369,15 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
  * @param {resendInvitationWithTokenData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(options: Options<ResendInvitationWithTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<ResendInvitationWithTokenResponses, ResendInvitationWithTokenErrors, ThrowOnError, 'data'>({
+export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
+  options: Options<ResendInvitationWithTokenData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    ResendInvitationWithTokenResponses,
+    ResendInvitationWithTokenErrors,
+    ThrowOnError,
+    'data'
+  >({
     responseStyle: 'data',
     url: '/auth/resend-invitation',
     ...options,
@@ -374,7 +386,6 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(o
       ...options.headers,
     },
   });
-};
 
 /**
  * Sign out
@@ -388,13 +399,12 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(o
  * @param {signOutData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
+export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) =>
+  (options?.client ?? client).post<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-out',
     ...options,
   });
-};
 
 /**
  * Generate TOTP key
@@ -408,8 +418,10 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  * @param {generateTotpKeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: Options<GenerateTotpKeyData, ThrowOnError>) => {
-  return (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
+export const generateTotpKey = <ThrowOnError extends boolean = true>(
+  options?: Options<GenerateTotpKeyData, ThrowOnError>,
+) =>
+  (options?.client ?? client).post<GenerateTotpKeyResponses, GenerateTotpKeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -421,7 +433,6 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
     url: '/auth/totp/generate-key',
     ...options,
   });
-};
 
 /**
  * Delete TOTP
@@ -435,8 +446,8 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(options?: O
  * @param {deleteTotpData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
+export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) =>
+  (options?.client ?? client).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -448,7 +459,6 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
     url: '/auth/totp',
     ...options,
   });
-};
 
 /**
  * Set TOTP
@@ -463,8 +473,8 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
  * @param {string=} options.body.code - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
+export const createTotp = <ThrowOnError extends boolean = true>(options: Options<CreateTotpData, ThrowOnError>) =>
+  (options.client ?? client).post<CreateTotpResponses, CreateTotpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -480,13 +490,12 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
       ...options.headers,
     },
   });
-};
 
 /**
  * Verify TOTP
  *
  * 🌐 Public access
- * ⏳ Spam (10/h)
+ * ⏳ TOTP Verification (5/h)
  *
  * Validates the TOTP code and completes TOTP based authentication.
  *
@@ -496,8 +505,10 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
  * @param {string=} options.body.code - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Options<SignInWithTotpData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+export const signInWithTotp = <ThrowOnError extends boolean = true>(
+  options: Options<SignInWithTotpData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/totp-verification',
     ...options,
@@ -506,7 +517,6 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Opt
       ...options.headers,
     },
   });
-};
 
 /**
  * Sign up with password
@@ -523,8 +533,8 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 201, 302, 400, 401, 403, 404, 429
  */
-export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
-  return (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
+export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) =>
+  (options?.client ?? client).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-up',
     ...options,
@@ -533,7 +543,6 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
       ...options?.headers,
     },
   });
-};
 
 /**
  * Sign up to accept invite
@@ -551,8 +560,10 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
+export const signUpWithToken = <ThrowOnError extends boolean = true>(
+  options: Options<SignUpWithTokenData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-up/{tokenId}',
     ...options,
@@ -561,7 +572,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
       ...options.headers,
     },
   });
-};
 
 /**
  * Request new password
@@ -577,8 +587,10 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const requestPassword = <ThrowOnError extends boolean = true>(options: Options<RequestPasswordData, ThrowOnError>) => {
-  return (options.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
+export const requestPassword = <ThrowOnError extends boolean = true>(
+  options: Options<RequestPasswordData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/request-password',
     ...options,
@@ -587,7 +599,6 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options: Op
       ...options.headers,
     },
   });
-};
 
 /**
  * Create password
@@ -604,8 +615,10 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options: Op
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
+export const createPassword = <ThrowOnError extends boolean = true>(
+  options: Options<CreatePasswordData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/create-password/{tokenId}',
     ...options,
@@ -614,7 +627,6 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
       ...options.headers,
     },
   });
-};
 
 /**
  * Sign in with password
@@ -631,8 +643,8 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string=} options.body.password - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const signIn = <ThrowOnError extends boolean = true>(options: Options<SignInData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
+export const signIn = <ThrowOnError extends boolean = true>(options: Options<SignInData, ThrowOnError>) =>
+  (options.client ?? client).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-in',
     ...options,
@@ -641,7 +653,6 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
       ...options.headers,
     },
   });
-};
 
 /**
  * Create passkey
@@ -658,8 +669,8 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
  * @param {string=} options.body.nameOnDevice - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
+export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) =>
+  (options.client ?? client).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -675,7 +686,6 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
       ...options.headers,
     },
   });
-};
 
 /**
  * Delete passkey
@@ -690,8 +700,8 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -703,13 +713,12 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
     url: '/auth/passkey/{id}',
     ...options,
   });
-};
 
 /**
  * Generate passkey challenge
  *
  * 🌐 Public access
- * ⏳ Spam (10/h)
+ * ⏳ Passkey Challenge (5/h)
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
@@ -720,8 +729,15 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(options: Options<GeneratePasskeyChallengeData, ThrowOnError>) => {
-  return (options.client ?? client).post<GeneratePasskeyChallengeResponses, GeneratePasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
+  options: Options<GeneratePasskeyChallengeData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    GeneratePasskeyChallengeResponses,
+    GeneratePasskeyChallengeErrors,
+    ThrowOnError,
+    'data'
+  >({
     responseStyle: 'data',
     url: '/auth/passkey/generate-challenge',
     ...options,
@@ -730,7 +746,6 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
       ...options.headers,
     },
   });
-};
 
 /**
  * Verify passkey
@@ -751,8 +766,10 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(op
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: Options<SignInWithPasskeyData, ThrowOnError>) => {
-  return (options.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
+export const signInWithPasskey = <ThrowOnError extends boolean = true>(
+  options: Options<SignInWithPasskeyData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-verification',
     ...options,
@@ -761,7 +778,6 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: 
       ...options.headers,
     },
   });
-};
 
 /**
  * Authenticate with GitHub
@@ -777,13 +793,12 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options: 
  * @param {string=} options.query.redirectafter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const github = <ThrowOnError extends boolean = true>(options?: Options<GithubData, ThrowOnError>) => {
-  return (options?.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
+export const github = <ThrowOnError extends boolean = true>(options?: Options<GithubData, ThrowOnError>) =>
+  (options?.client ?? client).get<unknown, GithubErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github',
     ...options,
   });
-};
 
 /**
  * Authenticate with Google
@@ -799,13 +814,12 @@ export const github = <ThrowOnError extends boolean = true>(options?: Options<Gi
  * @param {string=} options.query.redirectafter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const google = <ThrowOnError extends boolean = true>(options?: Options<GoogleData, ThrowOnError>) => {
-  return (options?.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
+export const google = <ThrowOnError extends boolean = true>(options?: Options<GoogleData, ThrowOnError>) =>
+  (options?.client ?? client).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google',
     ...options,
   });
-};
 
 /**
  * Authenticate with Microsoft
@@ -821,13 +835,12 @@ export const google = <ThrowOnError extends boolean = true>(options?: Options<Go
  * @param {string=} options.query.redirectafter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const microsoft = <ThrowOnError extends boolean = true>(options?: Options<MicrosoftData, ThrowOnError>) => {
-  return (options?.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
+export const microsoft = <ThrowOnError extends boolean = true>(options?: Options<MicrosoftData, ThrowOnError>) =>
+  (options?.client ?? client).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft',
     ...options,
   });
-};
 
 /**
  * Callback for GitHub
@@ -847,13 +860,14 @@ export const microsoft = <ThrowOnError extends boolean = true>(options?: Options
  * @param {string=} options.query.error_uri - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const githubCallback = <ThrowOnError extends boolean = true>(options: Options<GithubCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
+export const githubCallback = <ThrowOnError extends boolean = true>(
+  options: Options<GithubCallbackData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github/callback',
     ...options,
   });
-};
 
 /**
  * Callback for Google
@@ -870,13 +884,14 @@ export const githubCallback = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string} options.query.state - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const googleCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
+export const googleCallback = <ThrowOnError extends boolean = true>(
+  options: Options<GoogleCallbackData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google/callback',
     ...options,
   });
-};
 
 /**
  * Callback for Microsoft
@@ -893,13 +908,14 @@ export const googleCallback = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string} options.query.state - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const microsoftCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftCallbackData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
+export const microsoftCallback = <ThrowOnError extends boolean = true>(
+  options: Options<MicrosoftCallbackData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft/callback',
     ...options,
   });
-};
 
 /**
  * Delete self
@@ -913,8 +929,8 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(options: 
  * @param {deleteMeData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<DeleteMeData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
+export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<DeleteMeData, ThrowOnError>) =>
+  (options?.client ?? client).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -926,7 +942,6 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
     url: '/me',
     ...options,
   });
-};
 
 /**
  * Get self
@@ -940,8 +955,8 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
  * @param {getMeData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getMe = <ThrowOnError extends boolean = true>(options?: Options<GetMeData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
+export const getMe = <ThrowOnError extends boolean = true>(options?: Options<GetMeData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -953,7 +968,6 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
     url: '/me',
     ...options,
   });
-};
 
 /**
  * Update self
@@ -975,8 +989,8 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  * @param {object=} options.body.userFlags - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const updateMe = <ThrowOnError extends boolean = true>(options: Options<UpdateMeData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
+export const updateMe = <ThrowOnError extends boolean = true>(options: Options<UpdateMeData, ThrowOnError>) =>
+  (options.client ?? client).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -992,7 +1006,6 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
       ...options.headers,
     },
   });
-};
 
 /**
  * Toggle MFA
@@ -1009,8 +1022,8 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
  * @param {boolean=} options.body.mfaRequired - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options<ToggleMfaData, ThrowOnError>) => {
-  return (options?.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options<ToggleMfaData, ThrowOnError>) =>
+  (options?.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1026,7 +1039,6 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
       ...options?.headers,
     },
   });
-};
 
 /**
  * Get auth data
@@ -1040,8 +1052,8 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
  * @param {getMyAuthData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options<GetMyAuthData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
+export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options<GetMyAuthData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1053,34 +1065,6 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
     url: '/me/auth',
     ...options,
   });
-};
-
-/**
- * Get menu
- *
- * 🛡️ Requires authentication
- *
- * Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
- *
- * **GET /me/menu** ·· [getMyMenu](https://api.cellajs.com/docs#tag/me/get/me/menu) ·· _me_
- *
- * @param {getMyMenuData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options<GetMyMenuData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/me/menu',
-    ...options,
-  });
-};
 
 /**
  * Get list of invitations
@@ -1094,8 +1078,10 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  * @param {getMyInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: Options<GetMyInvitationsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'>({
+export const getMyInvitations = <ThrowOnError extends boolean = true>(
+  options?: Options<GetMyInvitationsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1107,7 +1093,6 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
     url: '/me/invitations',
     ...options,
   });
-};
 
 /**
  * Terminate sessions
@@ -1122,8 +1107,10 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: 
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: Options<DeleteMySessionsData, ThrowOnError>) => {
-  return (options?.client ?? client).delete<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'>({
+export const deleteMySessions = <ThrowOnError extends boolean = true>(
+  options?: Options<DeleteMySessionsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).delete<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1139,7 +1126,6 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
       ...options?.headers,
     },
   });
-};
 
 /**
  * Leave entity
@@ -1155,8 +1141,10 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const deleteMyMembership = <ThrowOnError extends boolean = true>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
+export const deleteMyMembership = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteMyMembershipData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1168,7 +1156,6 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
     url: '/me/leave',
     ...options,
   });
-};
 
 /**
  * Get upload token
@@ -1185,8 +1172,10 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
  * @param {enum} options.query.templateid - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getUploadToken = <ThrowOnError extends boolean = true>(options: Options<GetUploadTokenData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
+export const getUploadToken = <ThrowOnError extends boolean = true>(
+  options: Options<GetUploadTokenData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1198,7 +1187,6 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
     url: '/me/upload-token',
     ...options,
   });
-};
 
 /**
  * Unsubscribe
@@ -1214,13 +1202,12 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string} options.query.token - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
-  return (options.client ?? client).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
+export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Options<UnsubscribeMeData, ThrowOnError>) =>
+  (options.client ?? client).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/unsubscribe',
     ...options,
   });
-};
 
 /**
  * Delete users
@@ -1235,8 +1222,8 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deleteUsers = <ThrowOnError extends boolean = true>(options: Options<DeleteUsersData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
+export const deleteUsers = <ThrowOnError extends boolean = true>(options: Options<DeleteUsersData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1252,14 +1239,13 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
       ...options.headers,
     },
   });
-};
 
 /**
  * Get list of users
  *
  * 🛡️ Requires authentication
  *
- * Returns a list of *users* at the system level.
+ * Returns a list of *users*.
  *
  * **GET /users** ·· [getUsers](https://api.cellajs.com/docs#tag/users/get/users) ·· _users_
  *
@@ -1270,13 +1256,12 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.mode - `enum` (optional)
  * @param {enum=} options.query.targetentitytype - `enum` (optional)
  * @param {string=} options.query.targetentityid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
+export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1288,7 +1273,6 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
     url: '/users',
     ...options,
   });
-};
 
 /**
  * Get user
@@ -1303,8 +1287,8 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
  * @param {string | string} options.path.idorslug - `string | string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
+export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) =>
+  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1316,7 +1300,6 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
     url: '/users/{idOrSlug}',
     ...options,
   });
-};
 
 /**
  * Update user
@@ -1338,8 +1321,8 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @param {string=} options.body.slug - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
+export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) =>
+  (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1355,7 +1338,6 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
       ...options.headers,
     },
   });
-};
 
 /**
  * Delete organizations
@@ -1370,8 +1352,10 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deleteOrganizations = <ThrowOnError extends boolean = true>(options: Options<DeleteOrganizationsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
+export const deleteOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteOrganizationsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1387,14 +1371,13 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
       ...options.headers,
     },
   });
-};
 
 /**
  * Get list of organizations
  *
- * 🛡️ Requires authentication (system access)
+ * 🛡️ Requires authentication
  *
- * Returns a list of *organizations* at the system level.
+ * Returns a list of *organizations*.
  *
  * **GET /organizations** ·· [getOrganizations](https://api.cellajs.com/docs#tag/organizations/get/organizations) ·· _organizations_
  *
@@ -1404,10 +1387,15 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.userid - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.excludearchived - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getOrganizations = <ThrowOnError extends boolean = true>(options?: Options<GetOrganizationsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
+export const getOrganizations = <ThrowOnError extends boolean = true>(
+  options?: Options<GetOrganizationsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1419,7 +1407,6 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
     url: '/organizations',
     ...options,
   });
-};
 
 /**
  * Create organization
@@ -1435,8 +1422,10 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
  * @param {string=} options.body.slug - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createOrganization = <ThrowOnError extends boolean = true>(options: Options<CreateOrganizationData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
+export const createOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<CreateOrganizationData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1452,7 +1441,6 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
       ...options.headers,
     },
   });
-};
 
 /**
  * Get organization
@@ -1467,8 +1455,10 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
  * @param {string | string} options.path.idorslug - `string | string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getOrganization = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
+export const getOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<GetOrganizationData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1480,7 +1470,6 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
     url: '/organizations/{idOrSlug}',
     ...options,
   });
-};
 
 /**
  * Update organization
@@ -1512,8 +1501,10 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
  * @param {boolean=} options.body.chatSupport - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const updateOrganization = <ThrowOnError extends boolean = true>(options: Options<UpdateOrganizationData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
+export const updateOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateOrganizationData, ThrowOnError>,
+) =>
+  (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1529,66 +1520,109 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
       ...options.headers,
     },
   });
-};
 
 /**
- * Get list of context entities
+ * Sync pages
  *
  * 🛡️ Requires authentication
  *
- * Returns a paginated list of *context entities* (e.g. *users*, *organizations*) the current user has access to.
- * Can optionally include the current user's enrollment information for each entity (when applicable).
- * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
- * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
+ * Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.
  *
- * **GET /entities/context-entities** ·· [getContextEntities](https://api.cellajs.com/docs#tag/entities/get/entities/context-entities) ·· _entities_
+ * **GET /pages/sync-pages** ·· [syncPages](https://api.cellajs.com/docs#tag/pages/get/pages/sync-pages) ·· _pages_
  *
- * @param {getContextEntitiesData} options
+ * @param {syncPagesData} options
+ * @param {string} options.query.table - `string`
+ * @param {string} options.query.offset - `string`
+ * @param {string=} options.query.handle - `string` (optional)
+ * @param {string=} options.query.cursor - `string` (optional)
+ * @param {string=} options.query.live - `string` (optional)
+ * @param {string=} options.query.where - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const syncPages = <ThrowOnError extends boolean = true>(options: Options<SyncPagesData, ThrowOnError>) =>
+  (options.client ?? client).get<SyncPagesResponses, SyncPagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages/sync-pages',
+    ...options,
+  });
+
+/**
+ * Delete pages
+ *
+ * 🛡️ Requires authentication (system access)
+ *
+ * Delete one or more *pages* by ID.
+ *
+ * **DELETE /pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/pages) ·· _pages_
+ *
+ * @param {deletePagesData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deletePages = <ThrowOnError extends boolean = true>(options: Options<DeletePagesData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get pages
+ *
+ * 🌐 Public access
+ *
+ * Get all matching *pages*.
+ *
+ * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· _pages_
+ *
+ * @param {getPagesData} options
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {string=} options.query.targetorgid - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.excludearchived - `enum` (optional)
- * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)
- * @param {enum=} options.query.orgaffiliated - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getContextEntities = <ThrowOnError extends boolean = true>(options?: Options<GetContextEntitiesData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
+export const getPages = <ThrowOnError extends boolean = true>(options?: Options<GetPagesData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/context-entities',
+    url: '/pages',
     ...options,
   });
-};
 
 /**
- * Get a context entity
+ * Create pages
  *
- * 🛡️ Requires authentication
+ * 🛡️ Requires authentication (system access)
  *
- * Retrieve detailed information about a single context entity by its ID or slug.
- * Supports all context entity types configured in the system. Returns only table fields for the entity type.
+ * Insert one or more new *pages*.
  *
- * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](https://api.cellajs.com/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
+ * **POST /pages** ·· [createPage](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
  *
- * @param {getContextEntityData} options
- * @param {string | string} options.path.idorslug - `string | string`
- * @param {enum} options.query.entitytype - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @param {createPageData} options
+ * @param {string=} options.body.name - `string` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const getContextEntity = <ThrowOnError extends boolean = true>(options: Options<GetContextEntityData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetContextEntityResponses, GetContextEntityErrors, ThrowOnError, 'data'>({
+export const createPage = <ThrowOnError extends boolean = true>(options: Options<CreatePageData, ThrowOnError>) =>
+  (options.client ?? client).post<CreatePageResponses, CreatePageErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1597,10 +1631,70 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
         type: 'apiKey',
       },
     ],
-    url: '/entities/context/{idOrSlug}',
+    url: '/pages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get page
+ *
+ * 🌐 Public access
+ *
+ * Get a single *page* by ID.
+ *
+ * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
+ *
+ * @param {getPageData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getPage = <ThrowOnError extends boolean = true>(options: Options<GetPageData, ThrowOnError>) =>
+  (options.client ?? client).get<GetPageResponses, GetPageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/pages/{id}',
     ...options,
   });
-};
+
+/**
+ * Update page
+ *
+ * 🛡️ Requires authentication (system access)
+ *
+ * Update a single *page* by ID.
+ *
+ * **PUT /pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/pages/{id}) ·· _pages_
+ *
+ * @param {updatePageData} options
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.description - `string` (optional)
+ * @param {string=} options.body.keywords - `string` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.parentId - `string | null` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const updatePage = <ThrowOnError extends boolean = true>(options: Options<UpdatePageData, ThrowOnError>) =>
+  (options.client ?? client).put<UpdatePageResponses, UpdatePageErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/pages/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
 
 /**
  * Check slug availability
@@ -1617,8 +1711,8 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
  * @param {enum=} options.body.entityType - `enum` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<CheckSlugData, ThrowOnError>) => {
-  return (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
+export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<CheckSlugData, ThrowOnError>) =>
+  (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1634,7 +1728,6 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
       ...options.headers,
     },
   });
-};
 
 /**
  * Invite to system
@@ -1649,8 +1742,8 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
  * @param {any[]=} options.body.emails - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const systemInvite = <ThrowOnError extends boolean = true>(options: Options<SystemInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
+export const systemInvite = <ThrowOnError extends boolean = true>(options: Options<SystemInviteData, ThrowOnError>) =>
+  (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1666,12 +1759,12 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
       ...options.headers,
     },
   });
-};
 
 /**
  * Get presigned URL
  *
  * 🌐 Public access
+ * ⏳ Presigned URL (20/h)
  *
  * Generates and returns a presigned URL for uploading files to an S3 bucket.
  *
@@ -1682,13 +1775,14 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
  * @param {boolean | string=} options.query.ispublic - `boolean | string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
+export const getPresignedUrl = <ThrowOnError extends boolean = true>(
+  options: Options<GetPresignedUrlData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/system/presigned-url',
     ...options,
   });
-};
 
 /**
  * Paddle webhook (WIP)
@@ -1703,8 +1797,10 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
  * @param {paddleWebhookData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
-  return (options?.client ?? client).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
+export const paddleWebhook = <ThrowOnError extends boolean = true>(
+  options?: Options<PaddleWebhookData, ThrowOnError>,
+) =>
+  (options?.client ?? client).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/system/paddle-webhook',
     ...options,
@@ -1713,7 +1809,6 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
       ...options?.headers,
     },
   });
-};
 
 /**
  * Newsletter to members
@@ -1732,8 +1827,10 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
  * @param {string=} options.body.content - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Options<SendNewsletterData, ThrowOnError>) => {
-  return (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
+export const sendNewsletter = <ThrowOnError extends boolean = true>(
+  options: Options<SendNewsletterData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1749,7 +1846,6 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
       ...options.headers,
     },
   });
-};
 
 /**
  * Delete requests
@@ -1764,8 +1860,10 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
-export const deleteRequests = <ThrowOnError extends boolean = true>(options: Options<DeleteRequestsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
+export const deleteRequests = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteRequestsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1781,7 +1879,6 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options: Opt
       ...options.headers,
     },
   });
-};
 
 /**
  * Get list of requests
@@ -1800,8 +1897,8 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string=} options.query.limit - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getRequests = <ThrowOnError extends boolean = true>(options?: Options<GetRequestsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
+export const getRequests = <ThrowOnError extends boolean = true>(options?: Options<GetRequestsData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1813,7 +1910,6 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
     url: '/requests',
     ...options,
   });
-};
 
 /**
  * Create request
@@ -1831,8 +1927,8 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
  * @param {string | null=} options.body.message - `string | null` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createRequest = <ThrowOnError extends boolean = true>(options: Options<CreateRequestData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
+export const createRequest = <ThrowOnError extends boolean = true>(options: Options<CreateRequestData, ThrowOnError>) =>
+  (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/requests',
     ...options,
@@ -1841,7 +1937,6 @@ export const createRequest = <ThrowOnError extends boolean = true>(options: Opti
       ...options.headers,
     },
   });
-};
 
 /**
  * Get metrics
@@ -1856,8 +1951,8 @@ export const createRequest = <ThrowOnError extends boolean = true>(options: Opti
  * @param {getMetricsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getMetrics = <ThrowOnError extends boolean = true>(options?: Options<GetMetricsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
+export const getMetrics = <ThrowOnError extends boolean = true>(options?: Options<GetMetricsData, ThrowOnError>) =>
+  (options?.client ?? client).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1869,7 +1964,6 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
     url: '/metrics',
     ...options,
   });
-};
 
 /**
  * Get public counts
@@ -1884,26 +1978,26 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
  * @param {getPublicCountsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
-  return (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
+export const getPublicCounts = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPublicCountsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/metrics/public',
     ...options,
   });
-};
 
 /**
- * Shape proxy
+ * Sync attachments
  *
  * 🛡️ Requires authentication (org access)
  *
- * Proxies requests to ElectricSQL's shape endpoint for the `attachments` table.
- * Used by clients to synchronize local data with server state via the shape log system.
- * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
+ * Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.
+ * Organization parameter is required to scope the data.
  *
- * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments/sync-attachments** ·· [syncAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/sync-attachments) ·· _attachments_
  *
- * @param {shapeProxyData} options
+ * @param {syncAttachmentsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @param {string} options.query.table - `string`
  * @param {string} options.query.offset - `string`
@@ -1913,8 +2007,10 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * @param {string=} options.query.where - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
-  return (options.client ?? client).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
+export const syncAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<SyncAttachmentsData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<SyncAttachmentsResponses, SyncAttachmentsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1923,10 +2019,9 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
         type: 'apiKey',
       },
     ],
-    url: '/{orgIdOrSlug}/attachments/shape-proxy',
+    url: '/{orgIdOrSlug}/attachments/sync-attachments',
     ...options,
   });
-};
 
 /**
  * Delete attachments
@@ -1942,8 +2037,10 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deleteAttachments = <ThrowOnError extends boolean = true>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
+export const deleteAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteAttachmentsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1959,41 +2056,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
       ...options.headers,
     },
   });
-};
-
-/**
- * Get list of attachments
- *
- * 🛡️ Requires authentication (org access)
- *
- * Retrieves all *attachments* associated with a specific entity, such as an organization.
- *
- * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
- *
- * @param {getAttachmentsData} options
- * @param {string | string} options.path.orgidorslug - `string | string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.attachmentid - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachments = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments',
-    ...options,
-  });
-};
 
 /**
  * Create attachments
@@ -2008,8 +2070,10 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
-export const createAttachment = <ThrowOnError extends boolean = true>(options: Options<CreateAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
+export const createAttachment = <ThrowOnError extends boolean = true>(
+  options: Options<CreateAttachmentData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2025,36 +2089,6 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
       ...options.headers,
     },
   });
-};
-
-/**
- * Get attachment
- *
- * 🛡️ Requires authentication (org access)
- *
- * Fetches metadata and access details for a single *attachment* by ID.
- *
- * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
- *
- * @param {getAttachmentData} options
- * @param {string} options.path.id - `string`
- * @param {string | string} options.path.orgidorslug - `string | string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/{id}',
-    ...options,
-  });
-};
 
 /**
  * Update attachment
@@ -2072,8 +2106,10 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string=} options.body.originalKey - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const updateAttachment = <ThrowOnError extends boolean = true>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
+export const updateAttachment = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateAttachmentData, ThrowOnError>,
+) =>
+  (options.client ?? client).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2089,7 +2125,6 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
       ...options.headers,
     },
   });
-};
 
 /**
  * Redirect to attachment
@@ -2105,13 +2140,14 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const redirectToAttachment = <ThrowOnError extends boolean = true>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
-  return (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
+export const redirectToAttachment = <ThrowOnError extends boolean = true>(
+  options: Options<RedirectToAttachmentData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/{orgIdOrSlug}/attachments/{id}/link',
     ...options,
   });
-};
 
 /**
  * Delete memberships
@@ -2129,8 +2165,10 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deleteMemberships = <ThrowOnError extends boolean = true>(options: Options<DeleteMembershipsData, ThrowOnError>) => {
-  return (options.client ?? client).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
+export const deleteMemberships = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteMembershipsData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2146,7 +2184,6 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
       ...options.headers,
     },
   });
-};
 
 /**
  * Create memberships
@@ -2165,8 +2202,10 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
  * @param {enum=} options.body.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const membershipInvite = <ThrowOnError extends boolean = true>(options: Options<MembershipInviteData, ThrowOnError>) => {
-  return (options.client ?? client).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
+export const membershipInvite = <ThrowOnError extends boolean = true>(
+  options: Options<MembershipInviteData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2182,7 +2221,6 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
       ...options.headers,
     },
   });
-};
 
 /**
  * Update membership
@@ -2202,8 +2240,10 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
  * @param {number=} options.body.order - `number` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const updateMembership = <ThrowOnError extends boolean = true>(options: Options<UpdateMembershipData, ThrowOnError>) => {
-  return (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
+export const updateMembership = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateMembershipData, ThrowOnError>,
+) =>
+  (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2219,7 +2259,6 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
       ...options.headers,
     },
   });
-};
 
 /**
  * Respond to membership invitation
@@ -2228,7 +2267,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
- * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/membership/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _membership_
+ * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/memberships/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _memberships_
  *
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
@@ -2236,8 +2275,15 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(options: Options<HandleMembershipInvitationData, ThrowOnError>) => {
-  return (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
+export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<HandleMembershipInvitationData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    HandleMembershipInvitationResponses,
+    HandleMembershipInvitationErrors,
+    ThrowOnError,
+    'data'
+  >({
     responseStyle: 'data',
     security: [
       {
@@ -2249,7 +2295,6 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
     url: '/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}',
     ...options,
   });
-};
 
 /**
  * Get list of members
@@ -2272,8 +2317,8 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getMembers = <ThrowOnError extends boolean = true>(options: Options<GetMembersData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
+export const getMembers = <ThrowOnError extends boolean = true>(options: Options<GetMembersData, ThrowOnError>) =>
+  (options.client ?? client).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2285,7 +2330,6 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
     url: '/{orgIdOrSlug}/memberships/members',
     ...options,
   });
-};
 
 /**
  * Get list of pending memberships
@@ -2307,8 +2351,10 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPendingMemberships = <ThrowOnError extends boolean = true>(options: Options<GetPendingMembershipsData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'>({
+export const getPendingMemberships = <ThrowOnError extends boolean = true>(
+  options: Options<GetPendingMembershipsData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2320,4 +2366,3 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(optio
     url: '/{orgIdOrSlug}/memberships/pending',
     ...options,
   });
-};

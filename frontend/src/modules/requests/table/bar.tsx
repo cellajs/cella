@@ -22,7 +22,15 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
-export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
+export const RequestsTableBar = ({
+  selected,
+  queryKey,
+  searchVars,
+  setSearch,
+  columns,
+  setColumns,
+  clearSelection,
+}: RequestsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -57,7 +65,10 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
         const message =
           args.data.length === 1
             ? t('common:success.delete_resource', { resource: t('common:request') })
-            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:requests').toLowerCase() });
+            : t('common:success.delete_counted_resources', {
+                count: args.data.length,
+                resources: t('common:requests').toLowerCase(),
+              });
         toaster(message, 'success');
       }
       clearSelection();
@@ -114,7 +125,7 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
                   badge={selectedToWaitlist.length}
                   variant="darkSuccess"
                   className="relative"
-                  label={t('common:invite')}
+                  label="common:invite"
                   icon={PartyPopperIcon}
                   onClick={approveSelectedRequests}
                 />
@@ -123,15 +134,17 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
                 ref={deleteButtonRef}
                 variant="destructive"
                 icon={TrashIcon}
-                label={t('common:remove')}
+                label="common:remove"
                 badge={selected.length}
                 className="relative"
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
             </>
           )}
-          {selected.length === 0 && <TableCount count={total} label="common:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && (
+            <TableCount count={total} label="common:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          )}
         </FilterBarActions>
 
         <div className="sm:grow" />
@@ -145,7 +158,12 @@ export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, co
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
       {/* Export */}
-      <Export className="max-lg:hidden" filename={`${appConfig.slug}-requests`} columns={columns} fetchRows={fetchExport} />
+      <Export
+        className="max-lg:hidden"
+        filename={`${appConfig.slug}-requests`}
+        columns={columns}
+        fetchRows={fetchExport}
+      />
 
       {/* Focus view */}
       <FocusView iconOnly />

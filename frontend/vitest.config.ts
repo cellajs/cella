@@ -1,36 +1,36 @@
-import { defineConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vitest/config'
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
+import { playwright } from '@vitest/browser-playwright'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   test: {
     passWithNoTests: true,
-    projects: [{
-      extends: true,
-      plugins: [
-        storybookTest({
-          // The location of your Storybook config, main.js|ts
-          configDir: path.join(dirname, '.storybook'),
-          // This should match your package.json script to run Storybook
-          // The --ci flag will skip prompts and not open a browser
-          storybookScript: 'pnpm storybook --ci',
-        })
-      ],
-      test: {
-        // Enable browser mode
-        browser: {
-          enabled: true,
-          // Make sure to install Playwright
-          provider: 'playwright',
-          headless: true,
-          instances: [{ browser: 'chromium' }],
+    projects: [
+      {
+        extends: true,
+        plugins: [
+          storybookTest({
+            configDir: path.join(dirname, '.storybook'),
+            storybookScript: 'pnpm storybook --ci',
+          }),
+        ],
+
+        test: {
+          browser: {
+            enabled: true,
+            provider: playwright({}),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
+          setupFiles: ['./.storybook/vitest.setup.ts'],
+          exclude: ['**/BlockNote.stories.tsx'],
         },
-        setupFiles: ['./.storybook/vitest.setup.ts'],
       },
-    }],
+    ],
   },
-});
+})

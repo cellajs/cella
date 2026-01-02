@@ -7,6 +7,9 @@ import { locationSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authOAuthRoutes = {
+  /**
+   * Authenticate with GitHub
+   */
   github: createCustomRoute({
     operationId: 'github',
     method: 'get',
@@ -25,7 +28,9 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Callback for GitHub
+   */
   githubCallback: createCustomRoute({
     operationId: 'githubCallback',
     method: 'get',
@@ -50,7 +55,9 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Authenticate with Google
+   */
   google: createCustomRoute({
     operationId: 'google',
     method: 'get',
@@ -69,7 +76,9 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Callback for Google
+   */
   googleCallback: createCustomRoute({
     operationId: 'googleCallback',
     method: 'get',
@@ -88,7 +97,9 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Authenticate with Microsoft
+   */
   microsoft: createCustomRoute({
     operationId: 'microsoft',
     method: 'get',
@@ -107,7 +118,9 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Callback for Microsoft
+   */
   microsoftCallback: createCustomRoute({
     operationId: 'microsoftCallback',
     method: 'get',
@@ -116,7 +129,8 @@ const authOAuthRoutes = {
     middleware: [tokenLimiter('microsoft')],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
-    description: 'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
+    description:
+      'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {

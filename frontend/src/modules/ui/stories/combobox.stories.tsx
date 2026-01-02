@@ -148,10 +148,22 @@ export const FullWidthContent: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={setValue} contentWidthMatchInput={args.contentWidthMatchInput} />
+        <Combobox
+          {...args}
+          options={args.options}
+          value={value}
+          onChange={setValue}
+          contentWidthMatchInput={args.contentWidthMatchInput}
+        />
       </div>
     );
   },
+};
+
+const placeholders = {
+  trigger: 'Select from 1000 options...',
+  search: 'Search options...',
+  notFound: 'No options found',
 };
 
 /**
@@ -172,11 +184,8 @@ export const LargeOptions: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          placeholders={{
-            trigger: 'Select from 1000 options...',
-            search: 'Search options...',
-            notFound: 'No options found',
-          }}
+          // @ts-ignore
+          placeholders={placeholders}
         />
       </div>
     );
@@ -201,11 +210,8 @@ export const CustomPlaceholders: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          placeholders={{
-            trigger: 'Choose a person...',
-            search: 'Search people...',
-            notFound: 'No people found',
-          }}
+          // @ts-ignore
+          placeholders={{ trigger: 'Choose a person...', search: 'Search people...', notFound: 'No people found' }}
         />
       </div>
     );
@@ -247,23 +253,9 @@ export const Multiple: Story = {
 
     return (
       <div className="space-y-4 w-80">
-        <Combobox {...args} options={args.options} value={value1} onChange={setValue1} placeholders={{ trigger: 'First selection...' }} />
-        <Combobox
-          {...args}
-          options={args.options}
-          value={value2}
-          onChange={setValue2}
-          renderAvatar={true}
-          placeholders={{ trigger: 'Second selection...' }}
-        />
-        <Combobox
-          {...args}
-          options={args.options}
-          value={value3}
-          onChange={setValue3}
-          contentWidthMatchInput={false}
-          placeholders={{ trigger: 'Third selection...' }}
-        />
+        <Combobox {...args} options={args.options} value={value1} onChange={setValue1} />
+        <Combobox {...args} options={args.options} value={value2} onChange={setValue2} renderAvatar={true} />
+        <Combobox {...args} options={args.options} value={value3} onChange={setValue3} contentWidthMatchInput={false} />
       </div>
     );
   },

@@ -1,6 +1,6 @@
 import { SquirrelIcon } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import EntityGrid from '~/modules/entities/entity-grid';
+import { OrganizationsGrid } from '~/modules/organizations/organizations-grid';
 
 interface Props {
   userId: string;
@@ -13,9 +13,9 @@ interface Props {
  **/
 const ProfilePageContent = ({ isSheet, userId, orgIdOrSlug }: Props) => {
   if (!orgIdOrSlug)
-    return <EntityGrid entityType="organization" label="common:organization" userId={userId} saveDataInSearch={!isSheet} focusView={!isSheet} />;
+    return <OrganizationsGrid fixedQuery={{ userId }} saveDataInSearch={!isSheet} focusView={!isSheet} />;
 
-  return <ContentPlaceholder icon={SquirrelIcon} title={'Default user page'} />;
+  return <ContentPlaceholder icon={SquirrelIcon} title="common:no_resource_yet" />;
 };
 
 export default ProfilePageContent;

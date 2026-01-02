@@ -1,11 +1,17 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
+import PagesTable from '~/modules/pages/table';
 import SystemPage from '~/modules/system/system-page';
 import { AppLayoutRoute } from '~/routes/base-routes';
-import { organizationsRouteSearchParamsSchema, requestsRouteSearchParamsSchema, usersRouteSearchParamsSchema } from '~/routes/search-params-schemas';
+import {
+  organizationsRouteSearchParamsSchema,
+  pagesRouteSearchParamsSchema,
+  requestsRouteSearchParamsSchema,
+  usersRouteSearchParamsSchema,
+} from '~/routes/search-params-schemas';
 import appTitle from '~/utils/app-title';
-import { noDirectAccess } from '~/utils/no-direct-access';
+import { noDirectAccess } from '~/utils/no-direct-access'; // Lazy-loaded route components
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/table'));
@@ -66,9 +72,22 @@ export const RequestsTableRoute = createRoute({
   ),
 });
 
+export const PagesTableRoute = createRoute({
+  path: '/pages',
+  validateSearch: pagesRouteSearchParamsSchema,
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: appTitle('Pages') }] }),
+  getParentRoute: () => SystemRoute,
+  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  component: () => (
+    <Suspense>
+      <PagesTable />
+    </Suspense>
+  ),
+});
+
 export const MetricsRoute = createRoute({
   path: '/metrics',
-  validateSearch: requestsRouteSearchParamsSchema,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Metrics') }] }),
   getParentRoute: () => SystemRoute,

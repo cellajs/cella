@@ -1,4 +1,10 @@
-import { decodePKIXECDSASignature, decodeSEC1PublicKey, ECDSAPublicKey, p256, verifyECDSASignature } from '@oslojs/crypto/ecdsa';
+import {
+  decodePKIXECDSASignature,
+  decodeSEC1PublicKey,
+  ECDSAPublicKey,
+  p256,
+  verifyECDSASignature,
+} from '@oslojs/crypto/ecdsa';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import {
@@ -42,17 +48,20 @@ export const parseAndValidatePasskeyAttestation = (
 
   const { attestationStatement, authenticatorData } = parseAttestationObject(decodedAttestationObject);
 
-  if (attestationStatement.format !== AttestationStatementFormat.None) throw new Error('Invalid attestation statement format');
+  if (attestationStatement.format !== AttestationStatementFormat.None)
+    throw new Error('Invalid attestation statement format');
   // Use "localhost" for localhost
   if (!authenticatorData.verifyRelyingPartyIdHash(appConfig.mode === 'development' ? 'localhost' : appConfig.domain)) {
     throw new Error('Invalid relying party ID hash');
   }
 
-  if (!authenticatorData.userPresent || !authenticatorData.userVerified) throw new Error('User must be present and verified');
+  if (!authenticatorData.userPresent || !authenticatorData.userVerified)
+    throw new Error('User must be present and verified');
 
   if (authenticatorData.credential === null) throw new Error('Missing credential');
 
-  if (authenticatorData.credential.publicKey.algorithm() !== coseAlgorithmES256) throw new Error('Unsupported algorithm');
+  if (authenticatorData.credential.publicKey.algorithm() !== coseAlgorithmES256)
+    throw new Error('Unsupported algorithm');
 
   // Parse the COSE key as an EC2 key
   // .rsa() for RSA, .okp() for EdDSA, etc
@@ -88,7 +97,10 @@ type PasskeyData = {
   clientDataJSON: string;
 };
 
-export const validatePasskey = async (ctx: Context, passkeyData: Omit<PasskeyData, 'publicKey'> & { credentialId: string; userId: string }) => {
+export const validatePasskey = async (
+  ctx: Context,
+  passkeyData: Omit<PasskeyData, 'publicKey'> & { credentialId: string; userId: string },
+) => {
   const { userId, credentialId, ...restPasskeyData } = passkeyData;
 
   // Retrieve the passkey challenge stored in a secure cookie
@@ -106,7 +118,11 @@ export const validatePasskey = async (ctx: Context, passkeyData: Omit<PasskeyDat
   if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
 
   // Verify signature against public key and challenge
-  const isValid = await verifyPassKeyPublic({ ...restPasskeyData, publicKey: passkeyRecord.publicKey, challengeFromCookie });
+  const isValid = await verifyPassKeyPublic({
+    ...restPasskeyData,
+    publicKey: passkeyRecord.publicKey,
+    challengeFromCookie,
+  });
 
   if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 };
@@ -142,7 +158,8 @@ const verifyPassKeyPublic = async ({
   if (!authenticatorData.verifyRelyingPartyIdHash(appConfig.mode === 'development' ? 'localhost' : appConfig.domain)) {
     throw new Error('Invalid relying party ID hash');
   }
-  if (!authenticatorData.userPresent || !authenticatorData.userVerified) throw new Error('User must be present and verified');
+  if (!authenticatorData.userPresent || !authenticatorData.userVerified)
+    throw new Error('User must be present and verified');
 
   const clientData = parseClientDataJSON(decodedClientDataJSON);
   if (clientData.type !== ClientDataType.Get) throw new Error('Invalid client data type');

@@ -10,11 +10,15 @@ export const blocknoteFieldIsDirty = (strBlocks: string): boolean => {
 
       const hasTableContent =
         type === 'table' &&
-        content?.rows?.some((row) => row.cells.some((cell) => 'content' in cell && Array.isArray(cell.content) && cell.content.length > 0));
+        content?.rows?.some((row) =>
+          row.cells.some((cell) => 'content' in cell && Array.isArray(cell.content) && cell.content.length > 0),
+        );
 
-      const hasMediaProps = (type === 'audio' || type === 'video' || type === 'file' || type === 'image') && typeof props.name === 'string';
+      const hasMediaProps =
+        (type === 'audio' || type === 'video' || type === 'file' || type === 'image') && typeof props.name === 'string';
 
-      const hasChildContent = children?.some((child) => Array.isArray(child.content) && child.content.length > 0) ?? false;
+      const hasChildContent =
+        children?.some((child) => Array.isArray(child.content) && child.content.length > 0) ?? false;
 
       return hasInlineContent || hasTableContent || hasMediaProps || hasChildContent;
     });

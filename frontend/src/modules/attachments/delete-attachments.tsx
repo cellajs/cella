@@ -1,39 +1,67 @@
+import { useLoaderData } from '@tanstack/react-router';
+import React from 'react';
 import type { Attachment } from '~/api.gen';
-import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
+import { ApiError } from '~/lib/api';
+import { useOfflineAttachments } from '~/modules/attachments/offline';
+import { isLocalAttachment } from '~/modules/attachments/utils';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { EntityPage } from '~/modules/entities/types';
-import { isCDNUrl } from '~/utils/is-cdn-url';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 
 interface Props {
-  entity: EntityPage;
   attachments: Attachment[];
+  organizationId: string;
   dialog?: boolean;
   callback?: (args: CallbackArgs<Attachment[]>) => void;
 }
 
-const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
+const DeleteAttachments = ({ attachments, organizationId, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation();
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
 
-  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+  // Use offline executor for server attachment deletions
+  const { deleteOffline } = useOfflineAttachments({
+    attachmentsCollection,
+    organizationId,
+  });
+
+  const [isPending, setIsPending] = React.useState(false);
+
+  // Separate local (blob) attachments from server attachments
+  const localDeletionIds: string[] = attachments
+    .filter(({ originalKey }) => isLocalAttachment(originalKey))
+    .map(({ id }) => id);
+  const serverDeletionIds: string[] = attachments
+    .filter(({ originalKey }) => !isLocalAttachment(originalKey))
+    .map(({ id }) => id);
 
   const onDelete = async () => {
-    const localDeletionIds: string[] = [];
-    const serverDeletionIds: string[] = [];
-
-    for (const attachment of attachments) {
-      if (isCDNUrl(attachment.url)) serverDeletionIds.push(attachment.id);
-      else localDeletionIds.push(attachment.id);
+    setIsPending(true);
+    try {
+      // Delete server attachments via offline executor (handles sync)
+      if (serverDeletionIds.length > 0) {
+        await deleteOffline(serverDeletionIds);
+      }
+      // Delete local attachments directly (not synced to server yet)
+      if (localDeletionIds.length > 0) {
+        localAttachmentsCollection.delete(localDeletionIds);
+      }
+      callback?.({ data: attachments, status: 'success' });
+    } catch (error) {
+      if (error instanceof Error || error instanceof ApiError) callback?.({ status: 'fail', error });
+    } finally {
+      callback?.({ status: 'settle' });
+      if (isDialog) removeDialog();
+      setIsPending(false);
     }
-    deleteAttachments({ localDeletionIds, serverDeletionIds, orgIdOrSlug });
-
-    if (isDialog) removeDialog();
-    callback?.({ data: attachments, status: 'success' });
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
+  return (
+    <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />
+  );
 };
 
 export default DeleteAttachments;

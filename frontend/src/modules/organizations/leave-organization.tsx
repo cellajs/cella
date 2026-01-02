@@ -19,7 +19,12 @@ const LeaveOrgButton = (props: LeaveEntityButtonProps) => {
             <span className="max-xs:hidden ml-1">{t('common:joined')}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-44 p-0 rounded-lg pointer" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4} align="end">
+        <PopoverContent
+          className="w-44 p-0 rounded-lg pointer"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          sideOffset={4}
+          align="end"
+        >
           <Command className="relative rounded-lg">
             <CommandList>
               <CommandGroup>

@@ -13,7 +13,7 @@ import { observabilityMiddleware } from '#/middlewares/observability';
 const app = new OpenAPIHono<Env>();
 
 // Secure headers
-app.use('*', secureHeaders());
+app.use('*', secureHeaders({ referrerPolicy: 'strict-origin-when-cross-origin' }));
 
 // Get metrics and trace
 app.use('*', observabilityMiddleware);
@@ -24,7 +24,13 @@ app.use('*', monitoringMiddleware);
 // Logger
 app.use('*', loggerMiddleware);
 
-const electricHeaders = ['electric-cursor', 'electric-handle', 'electric-schema', 'electric-offset', 'electric-up-to-date'];
+const electricHeaders = [
+  'electric-cursor',
+  'electric-handle',
+  'electric-schema',
+  'electric-offset',
+  'electric-up-to-date',
+];
 const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,

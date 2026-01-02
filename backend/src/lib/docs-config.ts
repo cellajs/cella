@@ -26,7 +26,8 @@ export const apiModulesList = [
   },
   {
     name: 'requests',
-    description: 'Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.',
+    description:
+      'Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.',
   },
   {
     name: 'entities',

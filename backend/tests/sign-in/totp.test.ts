@@ -55,7 +55,10 @@ describe('TOTP Authentication', async () => {
       const sessionCookie = signInRes.headers.get('set-cookie');
 
       // Request TOTP key generation
-      const res = await client['auth']['totp']['generate-key'].$post({}, { headers: { ...defaultHeaders, Cookie: sessionCookie || '' } });
+      const res = await client['auth']['totp']['generate-key'].$post(
+        {},
+        { headers: { ...defaultHeaders, Cookie: sessionCookie || '' } },
+      );
 
       expect(res.status).toBe(200);
       const response = await parseResponse<{ totpUri: string; manualKey: string }>(res);
@@ -76,7 +79,10 @@ describe('TOTP Authentication', async () => {
       const sessionCookie = signInRes.headers.get('set-cookie');
 
       // First generate TOTP key
-      const generateRes = await client['auth']['totp']['generate-key'].$post({}, { headers: { ...defaultHeaders, Cookie: sessionCookie || '' } });
+      const generateRes = await client['auth']['totp']['generate-key'].$post(
+        {},
+        { headers: { ...defaultHeaders, Cookie: sessionCookie || '' } },
+      );
 
       expect(generateRes.status).toBe(200);
 
@@ -85,7 +91,10 @@ describe('TOTP Authentication', async () => {
       const allCookies = [sessionCookie, generateCookies].filter(Boolean).join('; ');
 
       // Create TOTP with verification code
-      const createRes = await client['auth']['totp'].$post({ json: { code: '123456' } }, { headers: { ...defaultHeaders, Cookie: allCookies } });
+      const createRes = await client['auth']['totp'].$post(
+        { json: { code: '123456' } },
+        { headers: { ...defaultHeaders, Cookie: allCookies } },
+      );
 
       expect(createRes.status).toBe(201);
 
@@ -187,7 +196,10 @@ describe('TOTP Authentication', async () => {
     });
 
     it('should reject TOTP verification for non-existent user', async () => {
-      const res = await client['auth']['totp-verification'].$post({ json: { code: '123456' } }, { headers: defaultHeaders });
+      const res = await client['auth']['totp-verification'].$post(
+        { json: { code: '123456' } },
+        { headers: defaultHeaders },
+      );
 
       expect(res.status).toBe(302);
     });

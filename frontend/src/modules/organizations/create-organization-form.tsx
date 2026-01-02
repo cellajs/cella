@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Organization } from '~/api.gen';
 import { zCreateOrganizationData } from '~/api.gen/zod.gen';
-// Change this in the future on current schema
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -83,7 +82,13 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
           {children}
 
           {!children && (
-            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} aria-label="Cancel" onClick={() => form.reset()}>
+            <Button
+              type="reset"
+              variant="secondary"
+              className={form.isDirty ? '' : 'invisible'}
+              aria-label="Cancel"
+              onClick={() => form.reset()}
+            >
               {t('common:cancel')}
             </Button>
           )}

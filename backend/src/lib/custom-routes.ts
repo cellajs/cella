@@ -11,7 +11,9 @@ type RouteOptions = Parameters<typeof createRoute>[0] & {
   middleware?: MiddlewareHandler<Env> | NonEmptyArray<MiddlewareHandler<Env>>;
 };
 
-type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<typeof createRoute<P, Omit<R, 'guard'>>>;
+type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
+  typeof createRoute<P, Omit<R, 'guard'>>
+>;
 
 /**
  * Custom wrapper around hono/zod-openapi createRoute to extend it with setting guard and other middleware.
@@ -25,7 +27,11 @@ export const createCustomRoute = <P extends string, R extends Omit<RouteOptions,
   ...routeConfig
 }: R): Route<P, R> => {
   const initGuard = Array.isArray(guard) ? guard : [guard];
-  const initMiddleware = routeConfig.middleware ? (Array.isArray(routeConfig.middleware) ? routeConfig.middleware : [routeConfig.middleware]) : [];
+  const initMiddleware = routeConfig.middleware
+    ? Array.isArray(routeConfig.middleware)
+      ? routeConfig.middleware
+      : [routeConfig.middleware]
+    : [];
   const middleware = [...initGuard, ...initMiddleware];
 
   // Extend the OpenAPI description with authentication details

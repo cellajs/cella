@@ -8,6 +8,7 @@ export type UserBase = {
   id: string;
   slug: string;
   name: string;
+  createdAt: string;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   email: string;
@@ -19,6 +20,7 @@ export type ContextEntityBase = {
   entityType: 'organization';
   slug: string;
   name: string;
+  createdAt: string;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
 };
@@ -94,6 +96,7 @@ export type Organization = {
     };
     entities: {
       attachment: number;
+      page: number;
     };
   };
 };
@@ -111,24 +114,29 @@ export type Membership = {
   muted: boolean;
   order: number;
   organizationId: string;
+  uniqueKey: string;
 };
 
 export type InactiveMembership = {
   createdAt: string;
   id: string;
   contextType: 'organization';
+  email: string;
   userId: string | null;
+  tokenId: string | null;
   role: 'member' | 'admin';
   rejectedAt: string | null;
   createdBy: string;
   organizationId: string;
+  uniqueKey: string;
 };
 
 export type Attachment = {
   createdAt: string;
   id: string;
-  name: string;
   entityType: 'attachment';
+  name: string;
+  description: string | null;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -136,32 +144,13 @@ export type Attachment = {
   contentType: string;
   convertedContentType: string | null;
   size: string;
+  originalKey: string;
+  convertedKey: string | null;
+  thumbnailKey: string | null;
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
   organizationId: string;
-  url: string;
-  thumbnailUrl: string | null;
-  convertedUrl: string | null;
-};
-
-export type Menu = {
-  organization: Array<{
-    id: string;
-    entityType: 'organization';
-    slug: string;
-    name: string;
-    thumbnailUrl?: string | null;
-    bannerUrl?: string | null;
-    membership: MembershipBase;
-    createdAt: string;
-    submenu?: Array<
-      ContextEntityBase & {
-        membership: MembershipBase;
-        createdAt: string;
-      }
-    >;
-  }>;
 };
 
 export type ApiError = {
@@ -210,7 +199,7 @@ export type ApiError = {
     | 510
     | 511;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  entityType?: 'user' | 'organization' | 'attachment';
+  entityType?: 'user' | 'organization' | 'attachment' | 'page';
   logId?: string;
   path?: string;
   method?: string;
@@ -237,6 +226,21 @@ export type NotFoundError = ApiError & {
 
 export type TooManyRequestsError = ApiError & {
   status?: 429;
+};
+
+export type Page = {
+  createdAt: string;
+  id: string;
+  entityType: 'page';
+  name: string;
+  description: string;
+  keywords: string;
+  status: 'unpublished' | 'published' | 'archived';
+  parentId: string | null;
+  displayOrder: number;
+  createdBy: string;
+  modifiedAt: string | null;
+  modifiedBy: string | null;
 };
 
 export type CheckEmailData = {
@@ -496,7 +500,8 @@ export type ResendInvitationWithTokenResponses = {
   204: void;
 };
 
-export type ResendInvitationWithTokenResponse = ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
+export type ResendInvitationWithTokenResponse =
+  ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
 
 export type SignOutData = {
   body?: never;
@@ -1077,7 +1082,8 @@ export type GeneratePasskeyChallengeResponses = {
   };
 };
 
-export type GeneratePasskeyChallengeResponse = GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
+export type GeneratePasskeyChallengeResponse =
+  GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
 
 export type SignInWithPasskeyData = {
   body: {
@@ -1595,47 +1601,6 @@ export type GetMyAuthResponses = {
 
 export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
 
-export type GetMyMenuData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/menu';
-};
-
-export type GetMyMenuErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetMyMenuError = GetMyMenuErrors[keyof GetMyMenuErrors];
-
-export type GetMyMenuResponses = {
-  /**
-   * Menu of user
-   */
-  200: Menu;
-};
-
-export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
-
 export type GetMyInvitationsData = {
   body?: never;
   path?: never;
@@ -1925,7 +1890,6 @@ export type GetUsersData = {
     offset?: string;
     limit?: string;
     role?: 'admin';
-    mode?: 'all' | 'shared';
     targetEntityType?: 'organization';
     targetEntityId?: string;
   };
@@ -1965,6 +1929,7 @@ export type GetUsersResponses = {
     items: Array<
       User & {
         memberships: Array<MembershipBase>;
+        role?: 'admin';
       }
     >;
     total: number;
@@ -2122,6 +2087,9 @@ export type GetOrganizationsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
+    userId?: string;
+    role?: 'member' | 'admin';
+    excludeArchived?: 'true' | 'false';
   };
   url: '/organizations';
 };
@@ -2313,26 +2281,109 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type GetContextEntitiesData = {
+export type SyncPagesData = {
+  body?: never;
+  path?: never;
+  query: {
+    table: string;
+    offset: string;
+    handle?: string;
+    cursor?: string;
+    live?: string;
+    where?: string;
+  };
+  url: '/pages/sync-pages';
+};
+
+export type SyncPagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SyncPagesError = SyncPagesErrors[keyof SyncPagesErrors];
+
+export type SyncPagesResponses = {
+  /**
+   * Success
+   */
+  200: unknown;
+};
+
+export type DeletePagesData = {
+  body: {
+    ids: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/pages';
+};
+
+export type DeletePagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeletePagesError = DeletePagesErrors[keyof DeletePagesErrors];
+
+export type DeletePagesResponses = {
+  /**
+   * Page(s) deleted
+   */
+  204: void;
+};
+
+export type DeletePagesResponse = DeletePagesResponses[keyof DeletePagesResponses];
+
+export type GetPagesData = {
   body?: never;
   path?: never;
   query?: {
     q?: string;
-    sort?: 'name' | 'createdAt';
+    sort?: 'name' | 'status' | 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    targetUserId?: string;
-    targetOrgId?: string;
-    role?: 'member' | 'admin';
-    excludeArchived?: 'true' | 'false';
-    types?: 'organization' | Array<'organization'>;
-    orgAffiliated?: 'true' | 'false';
   };
-  url: '/entities/context-entities';
+  url: '/pages';
 };
 
-export type GetContextEntitiesErrors = {
+export type GetPagesErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2355,43 +2406,30 @@ export type GetContextEntitiesErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetContextEntitiesError = GetContextEntitiesErrors[keyof GetContextEntitiesErrors];
+export type GetPagesError = GetPagesErrors[keyof GetPagesErrors];
 
-export type GetContextEntitiesResponses = {
+export type GetPagesResponses = {
   /**
-   * Context entities
+   * Pages
    */
   200: {
-    items: Array<
-      ContextEntityBase & {
-        membership: MembershipBase | null;
-        createdAt: string;
-        membershipCounts: {
-          admin: number;
-          member: number;
-          pending: number;
-          total: number;
-        };
-      }
-    >;
+    items: Array<Page>;
     total: number;
   };
 };
 
-export type GetContextEntitiesResponse = GetContextEntitiesResponses[keyof GetContextEntitiesResponses];
+export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
-export type GetContextEntityData = {
-  body?: never;
-  path: {
-    idOrSlug: string;
+export type CreatePageData = {
+  body: {
+    name?: string;
   };
-  query: {
-    entityType: 'organization';
-  };
-  url: '/entities/context/{idOrSlug}';
+  path?: never;
+  query?: never;
+  url: '/pages';
 };
 
-export type GetContextEntityErrors = {
+export type CreatePageErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2414,21 +2452,114 @@ export type GetContextEntityErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetContextEntityError = GetContextEntityErrors[keyof GetContextEntityErrors];
+export type CreatePageError = CreatePageErrors[keyof CreatePageErrors];
 
-export type GetContextEntityResponses = {
+export type CreatePageResponses = {
   /**
-   * Context entities
+   * Page
    */
-  200: ContextEntityBase;
+  201: Page;
 };
 
-export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
+export type CreatePageResponse = CreatePageResponses[keyof CreatePageResponses];
+
+export type GetPageData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/pages/{id}';
+};
+
+export type GetPageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPageError = GetPageErrors[keyof GetPageErrors];
+
+export type GetPageResponses = {
+  /**
+   * Page
+   */
+  200: Page;
+};
+
+export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
+
+export type UpdatePageData = {
+  body: {
+    name?: string;
+    description?: string;
+    keywords?: string;
+    displayOrder?: number;
+    status?: 'unpublished' | 'published' | 'archived';
+    parentId?: string | null;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/pages/{id}';
+};
+
+export type UpdatePageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdatePageError = UpdatePageErrors[keyof UpdatePageErrors];
+
+export type UpdatePageResponses = {
+  /**
+   * Page updated
+   */
+  200: Page;
+};
+
+export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
 
 export type CheckSlugData = {
   body: {
     slug: string;
-    entityType: 'user' | 'organization' | 'attachment';
+    entityType: 'user' | 'organization';
   };
   path?: never;
   query?: never;
@@ -2885,12 +3016,13 @@ export type GetPublicCountsResponses = {
     user: number;
     organization: number;
     attachment: number;
+    page: number;
   };
 };
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
-export type ShapeProxyData = {
+export type SyncAttachmentsData = {
   body?: never;
   path: {
     orgIdOrSlug: string;
@@ -2903,10 +3035,10 @@ export type ShapeProxyData = {
     live?: string;
     where?: string;
   };
-  url: '/{orgIdOrSlug}/attachments/shape-proxy';
+  url: '/{orgIdOrSlug}/attachments/sync-attachments';
 };
 
-export type ShapeProxyErrors = {
+export type SyncAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2929,9 +3061,9 @@ export type ShapeProxyErrors = {
   429: TooManyRequestsError;
 };
 
-export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
+export type SyncAttachmentsError = SyncAttachmentsErrors[keyof SyncAttachmentsErrors];
 
-export type ShapeProxyResponses = {
+export type SyncAttachmentsResponses = {
   /**
    * Success
    */
@@ -2986,62 +3118,13 @@ export type DeleteAttachmentsResponses = {
 
 export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
 
-export type GetAttachmentsData = {
-  body?: never;
-  path: {
-    orgIdOrSlug: string;
-  };
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'size' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    attachmentId?: string;
-  };
-  url: '/{orgIdOrSlug}/attachments';
-};
-
-export type GetAttachmentsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
-
-export type GetAttachmentsResponses = {
-  /**
-   * Attachments
-   */
-  200: {
-    items: Array<Attachment>;
-    total: number;
-  };
-};
-
-export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
-
 export type CreateAttachmentData = {
   body: Array<{
+    createdAt?: string;
     id?: string;
+    entityType?: 'attachment';
+    name?: string;
+    description?: string | null;
     public?: boolean;
     bucketName: string;
     groupId?: string | null;
@@ -3052,6 +3135,9 @@ export type CreateAttachmentData = {
     originalKey: string;
     convertedKey?: string | null;
     thumbnailKey?: string | null;
+    createdBy?: string | null;
+    modifiedAt?: string | null;
+    modifiedBy?: string | null;
     organizationId: string;
   }>;
   path: {
@@ -3094,50 +3180,6 @@ export type CreateAttachmentResponses = {
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
-
-export type GetAttachmentData = {
-  body?: never;
-  path: {
-    id: string;
-    orgIdOrSlug: string;
-  };
-  query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}';
-};
-
-export type GetAttachmentErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
-
-export type GetAttachmentResponses = {
-  /**
-   * Attachment
-   */
-  200: Attachment;
-};
-
-export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
 
 export type UpdateAttachmentData = {
   body: {
@@ -3423,7 +3465,8 @@ export type HandleMembershipInvitationResponses = {
   200: ContextEntityBase;
 };
 
-export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
+export type HandleMembershipInvitationResponse =
+  HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;

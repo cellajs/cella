@@ -5,6 +5,9 @@ import { metricListSchema, publicCountsSchema } from '#/modules/metrics/schema';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const metricRouteConfig = {
+  /**
+   * Get metrics
+   */
   getMetrics: createCustomRoute({
     operationId: 'getMetrics',
     method: 'get',
@@ -22,6 +25,9 @@ const metricRouteConfig = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get public counts
+   */
   getPublicCounts: createCustomRoute({
     operationId: 'getPublicCounts',
     method: 'get',

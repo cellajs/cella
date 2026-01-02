@@ -8,21 +8,28 @@ import { TagInput } from '~/modules/ui/tag-input';
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   description?: string;
 };
-const DomainsFormField = <TFieldValues extends FieldValues>({ control, name, label, description, required }: DomainsFieldProps<TFieldValues>) => {
+const DomainsFormField = <TFieldValues extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  required,
+}: DomainsFieldProps<TFieldValues>) => {
   const { t } = useTranslation();
 
   const { getValues } = useFormContext();
   const formValue = getValues(name);
 
-  const [fieldActive, setFieldActive] = useState(false);
   const [domains, setDomains] = useState<string[]>(formValue.map((dom: string) => dom));
   const [currentValue, setCurrentValue] = useState('');
 
-  const checkValidInput = (value: string) => {
+  // Validate input while typing
+  const isValidInput = (value: string) => {
     if (!value || value.trim().length < 2) return true;
     return checkValidDomain(value);
   };
 
+  // Domain validation regex
   const checkValidDomain = (domain: string) => {
     return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
   };
@@ -43,17 +50,14 @@ const DomainsFormField = <TFieldValues extends FieldValues>({ control, name, lab
             {description && <FormDescription>{description}</FormDescription>}
             <FormControl>
               <TagInput
-                inputProps={{ value: currentValue }}
-                tagListPlacement="inside"
+                inputProps={{ value: currentValue, 'aria-invalid': !isValidInput(currentValue) }}
                 onInputChange={(newValue) => setCurrentValue(newValue)}
-                onFocus={() => setFieldActive(true)}
                 onBlur={() => {
                   if (checkValidDomain(currentValue)) {
                     setDomains((prev) => [...prev, currentValue]);
                     onChange([...domains, currentValue]);
                   }
                   setCurrentValue('');
-                  setFieldActive(false);
                 }}
                 maxLength={100}
                 minLength={4}
@@ -65,16 +69,6 @@ const DomainsFormField = <TFieldValues extends FieldValues>({ control, name, lab
                   setCurrentValue('');
                 }}
                 validateTag={checkValidDomain}
-                // TODO handle this with tailwind and data-attributes in TagInput
-                styleClasses={{
-                  input: `${
-                    fieldActive
-                      ? !checkValidInput(currentValue)
-                        ? 'ring-2 sm:focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500'
-                        : 'max-sm:ring-offset-0 max-sm:ring-transparent ring-2 ring-offset-2 ring-white'
-                      : ''
-                  }`,
-                }}
               />
             </FormControl>
             <FormMessage />

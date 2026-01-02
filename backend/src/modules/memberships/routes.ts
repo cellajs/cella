@@ -11,11 +11,21 @@ import {
   pendingMembershipSchema,
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
-import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import {
+  entityWithTypeQuerySchema,
+  idInOrgParamSchema,
+  idOrSlugSchema,
+  idSchema,
+  idsBodySchema,
+  inOrgParamSchema,
+} from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const membershipRoutes = {
+  /**
+   * Create memberships
+   */
   createMemberships: createCustomRoute({
     operationId: 'membershipInvite',
     method: 'post',
@@ -23,7 +33,8 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Create memberships',
-    description: 'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
+    description:
+      'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
     request: {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -35,12 +46,16 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Number of sent invitations',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
+        content: {
+          'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) },
+        },
       },
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete memberships
+   */
   deleteMemberships: createCustomRoute({
     operationId: 'deleteMemberships',
     method: 'delete',
@@ -48,7 +63,8 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Delete memberships',
-    description: 'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
+    description:
+      'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
     request: {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -69,7 +85,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Update membership
+   */
   updateMembership: createCustomRoute({
     operationId: 'updateMembership',
     method: 'put',
@@ -92,16 +110,20 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Respond to membership invitation
+   */
   handleMembershipInvitation: createCustomRoute({
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
     guard: [isAuthenticated],
-    tags: ['membership'],
+    tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
-    request: { params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }) },
+    request: {
+      params: z.object({ id: idSchema, acceptOrReject: z.enum(['accept', 'reject']), orgIdOrSlug: idOrSlugSchema }),
+    },
     responses: {
       200: {
         description: 'Invitation was accepted',
@@ -110,7 +132,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get list of members
+   */
   getMembers: createCustomRoute({
     operationId: 'getMembers',
     method: 'get',
@@ -118,7 +142,8 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of members',
-    description: 'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
+    description:
+      'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
     request: {
       params: inOrgParamSchema,
       query: memberListQuerySchema,
@@ -135,6 +160,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get list of pending memberships
+   */
   getPendingMemberships: createCustomRoute({
     operationId: 'getPendingMemberships',
     method: 'get',

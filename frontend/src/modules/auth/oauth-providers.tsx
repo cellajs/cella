@@ -28,7 +28,8 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
-  const actionText = authStep === 'signIn' ? t('common:sign_in') : authStep === 'signUp' ? t('common:sign_up') : t('common:continue');
+  const actionText =
+    authStep === 'signIn' ? t('common:sign_in') : authStep === 'signUp' ? t('common:sign_up') : t('common:continue');
 
   const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
     try {
@@ -56,7 +57,9 @@ const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {appConfig.enabledOAuthProviders.map((provider) => {
         // Map provider data
-        const providerData = mapOAuthProviders.find((p): p is OAuthProvider & { id: typeof provider } => p.id === provider);
+        const providerData = mapOAuthProviders.find(
+          (p): p is OAuthProvider & { id: typeof provider } => p.id === provider,
+        );
 
         if (!providerData) return null;
 

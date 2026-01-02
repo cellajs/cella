@@ -3,14 +3,12 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-import type { UserMenu } from '~/modules/me/types';
 import type { NavItemId } from '~/modules/navigation/types';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
-  menu: UserMenu; // User menu
   navSheetOpen: NavItemId | null; // Currently open navigation sheet
   setNavSheetOpen: (sheet: NavItemId | null) => void; // Sets navigation sheet
 
@@ -32,15 +30,7 @@ interface NavigationStoreState {
 
   focusView: boolean; // Focused view mode state
   setFocusView: (status: boolean) => void; // Toggles focus view state
-
-  clearNavigationStore: () => void; // Resets navigation store to initial state
 }
-
-// Defines the initial menu structure, excluding submenu items
-const initialMenuState: UserMenu = appConfig.menuStructure.reduce((acc, { entityType }) => {
-  acc[entityType] = [];
-  return acc;
-}, {} as UserMenu);
 
 interface InitStore
   extends Pick<
@@ -50,7 +40,6 @@ interface InitStore
     | 'detailedMenu'
     | 'navLoading'
     | 'focusView'
-    | 'menu'
     | 'activeSections'
     | 'navSheetOpen'
     | 'keepOpenPreference'
@@ -65,7 +54,6 @@ const initStore: InitStore = {
   detailedMenu: false,
   navLoading: false,
   focusView: false,
-  menu: initialMenuState,
   activeSections: null,
 };
 
@@ -122,7 +110,8 @@ export const useNavigationStore = create<NavigationStoreState>()(
           toggleSection: (section) => {
             set((state) => {
               if (!state.activeSections) state.activeSections = { [section]: false };
-              else if (state.activeSections[section] !== undefined) state.activeSections[section] = !state.activeSections[section];
+              else if (state.activeSections[section] !== undefined)
+                state.activeSections[section] = !state.activeSections[section];
               else state.activeSections = { ...state.activeSections, ...{ [section]: false } };
             });
           },
@@ -131,16 +120,11 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.activeSections = null;
             });
           },
-          clearNavigationStore: () =>
-            set((state) => {
-              state.menu = initialMenuState;
-            }),
         }),
         {
           version: 8,
           name: `${appConfig.slug}-navigation`,
           partialize: (state) => ({
-            menu: state.menu,
             keepOpenPreference: state.keepOpenPreference,
             detailedMenu: state.detailedMenu,
             activeSections: state.activeSections,

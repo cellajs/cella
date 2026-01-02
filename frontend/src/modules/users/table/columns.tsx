@@ -31,7 +31,7 @@ export const useColumns = () => {
         sortable: true,
         resizable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} className="font-medium" />,
       },
       {
         key: 'impersonate',
@@ -96,7 +96,11 @@ export const useColumns = () => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
           return (
-            <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
+            <a
+              href={`mailto:${row.email}`}
+              tabIndex={tabIndex}
+              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+            >
               {row.email || <span className="text-muted">-</span>}
             </a>
           );

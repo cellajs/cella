@@ -39,5 +39,5 @@ export const SignOut = () => {
     handleSignOut();
   }, []);
 
-  return <ContentPlaceholder className="h-screen" icon={HeartIcon} title={t('common:signing_out')} />;
+  return <ContentPlaceholder className="h-screen" icon={HeartIcon} title="common:signing_out" />;
 };

@@ -79,13 +79,11 @@ const authPasswordsRouteHandlers = app
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
-    // add token if it's membership invitation
-    const inactiveMembershipId = validToken.inactiveMembershipId || null;
     const slug = slugFromEmail(validToken.email);
 
     // Create user
     const newUser = { slug, name: slug, email: validToken.email };
-    const user = await handleCreateUser({ newUser, inactiveMembershipId, emailVerified: true });
+    const user = await handleCreateUser({ newUser, emailVerified: true });
 
     // Separately insert password
     const hashedPassword = await hashPassword(password);
@@ -168,7 +166,13 @@ const authPasswordsRouteHandlers = app
 
     // If the user is not found
     if (!user) {
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
+      throw new AppError({
+        status: 404,
+        type: 'not_found',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { userId: token.userId },
+      });
     }
 
     // Hash password

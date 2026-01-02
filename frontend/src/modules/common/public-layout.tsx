@@ -9,7 +9,9 @@ import { Sheeter } from '~/modules/common/sheeter/provider';
 function PublicLayout() {
   return (
     <ErrorBoundary
-      fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />}
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />
+      )}
     >
       <Alerter mode="public" />
       <Dialoger />

@@ -34,7 +34,9 @@ export const PendingMemberships = ({ entity }: PendingMembershipsTableProps) => 
         side: 'right',
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:pending_invitations'),
-        description: t('common:pending_invitations.text', { entityType: t(`common:${entity.entityType}`).toLowerCase() }),
+        description: t('common:pending_invitations.text', {
+          entityType: t(`common:${entity.entityType}`).toLowerCase(),
+        }),
         scrollableOverlay: true,
       },
     );
@@ -43,7 +45,14 @@ export const PendingMemberships = ({ entity }: PendingMembershipsTableProps) => 
   if (!entity.counts) return null;
 
   return (
-    <Button ref={buttonRef} disabled={entity.counts.membership.pending < 1} variant="ghost" size="xs" className="font-light" onClick={openSheet}>
+    <Button
+      ref={buttonRef}
+      disabled={entity.counts.membership.pending < 1}
+      variant="ghost"
+      size="xs"
+      className="font-light"
+      onClick={openSheet}
+    >
       {new Intl.NumberFormat('de-DE').format(entity.counts.membership.pending)} {t('common:pending').toLowerCase()}
     </Button>
   );

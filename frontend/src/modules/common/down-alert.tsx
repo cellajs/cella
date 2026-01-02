@@ -1,6 +1,13 @@
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon, ShieldAlertIcon, XIcon } from 'lucide-react';
+import {
+  AlertTriangleIcon,
+  ClockAlertIcon,
+  CloudOffIcon,
+  ConstructionIcon,
+  ShieldAlertIcon,
+  XIcon,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -17,7 +24,9 @@ const downAlertConfig = {
     getContent: (dismissAlert: () => void) => {
       const offlineAccess = useUIStore.getState().offlineAccess;
       const i18nKey = offlineAccess ? 'common:offline_access.offline' : 'common:offline.text';
-      const components = offlineAccess ? { site_anchor: <button type="button" className="underline" onClick={dismissAlert} /> } : undefined;
+      const components = offlineAccess
+        ? { site_anchor: <button type="button" className="underline" onClick={dismissAlert} /> }
+        : undefined;
       return <Trans t={t} className="max-sm:hidden" i18nKey={i18nKey} components={components} />;
     },
     textKey: 'common:offline.text',
@@ -87,7 +96,12 @@ export const DownAlert = () => {
     const controller = new AbortController();
 
     (async () => {
-      const isBackendResponsive = await healthCheck({ url: `${appConfig.backendUrl}/ping`, initDelay: 5000, factor: 1, signal: controller.signal });
+      const isBackendResponsive = await healthCheck({
+        url: `${appConfig.backendUrl}/ping`,
+        initDelay: 5000,
+        factor: 1,
+        signal: controller.signal,
+      });
 
       if (isBackendResponsive && !controller.signal.aborted) setDownAlert(null);
     })();

@@ -1,16 +1,10 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
-import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
-import { getIp } from '#/utils/get-ip';
-
-type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
-type RateLimitIdentifier = 'ip' | 'email';
-
-type RateLimitOptions = Partial<RateLimiterPostgres> | Partial<RateLimiterMemory>;
+import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
+import { RateLimitIdentifier, RateLimitMode, RateLimitOptions } from '#/middlewares/rate-limiter/types';
 
 // Default options
 export const defaultOptions = {
@@ -18,6 +12,9 @@ export const defaultOptions = {
   points: 10, // 10 requests
   duration: 60 * 60, // within 1 hour
   blockDuration: 60 * 30, // Block for 30 minutes
+  successStatusCodes: [200, 201],
+  failStatusCodes: [401, 403, 404],
+  ignoredStatusCodes: [429],
 };
 
 // Slow brute force options
@@ -54,41 +51,52 @@ export const rateLimiter = (
   identifiers: RateLimitIdentifier[],
   options?: RateLimitOptions,
 ): MiddlewareHandler<Env> => {
-  const limiter = getRateLimiterInstance({ ...defaultOptions, ...options, keyPrefix: `${key}_${mode}` });
+  const config = { ...defaultOptions, ...options };
+  const limiter = getRateLimiterInstance({ ...config, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 
   return createMiddleware<Env>(async (ctx, next) => {
-    const ipAddr = getIp(ctx);
-    let body: { email?: string } | undefined;
+    // Extract identifiers from multiple sources
+    const extractedIdentifiers = await extractIdentifiers(ctx, identifiers);
 
-    // Only try to parse JSON if there's actually a body
-    if (ctx.req.header('content-type') === 'application/json') {
-      try {
-        const contentLength = ctx.req.header('content-length');
-        if (contentLength && contentLength !== '0') {
-          body = (await ctx.req.raw.clone().json()) as { email?: string };
-        }
-      } catch {
-        // Ignore JSON parsing errors - body will remain undefined
-        body = undefined;
-      }
+    // Stop if required identifiers are not available
+    if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
     }
 
-    // Stop if ip is an identifier and not available
-    if (!ipAddr && identifiers.includes('ip')) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
-    // Generate rate limit key
+    // Generate rate limit key with fallback logic
     let rateLimitKey = '';
-    if (identifiers.includes('email')) rateLimitKey += body?.email || '';
-    if (identifiers.includes('ip')) rateLimitKey += `#${ipAddr}`;
+
+    for (const identifier of identifiers) {
+      const value = extractedIdentifiers[identifier];
+      if (!value) continue;
+
+      switch (identifier) {
+        case 'ip': {
+          rateLimitKey += `ip:${value}`;
+          break;
+        }
+        case 'email': {
+          rateLimitKey += `email:${value}`;
+          break;
+        }
+        case 'userId': {
+          rateLimitKey += `userId:${value}`;
+          break;
+        }
+      }
+    }
 
     const limitState = await limiter.get(rateLimitKey);
     const slowLimitState = await slowLimiter.get(rateLimitKey);
 
     // If already rate limited, return 429
-    if (limitState !== null && limitState.consumedPoints > limiter.points) return rateLimitError(ctx, limitState, rateLimitKey);
+    if (limitState !== null && limitState.consumedPoints > limiter.points)
+      return rateLimitError(ctx, limitState, rateLimitKey);
 
     // If slow brute forcing, return 429
-    if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) return rateLimitError(ctx, slowLimitState, rateLimitKey);
+    if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points)
+      return rateLimitError(ctx, slowLimitState, rateLimitKey);
 
     // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
     if (mode === 'limit') {
@@ -103,7 +111,11 @@ export const rateLimiter = (
     // Continue with request itself
     await next();
 
-    if (ctx.res.status === 200) {
+    const isSuccess = config.successStatusCodes?.includes(ctx.res.status) ?? false;
+    const isFail = config.failStatusCodes?.includes(ctx.res.status) ?? false;
+    const isIgnored = config.ignoredStatusCodes?.includes(ctx.res.status) ?? false;
+
+    if (isSuccess && !isIgnored) {
       // If the mode is 'success', consume points on successful requests
       if (mode === 'success') {
         try {
@@ -113,10 +125,8 @@ export const rateLimiter = (
       } else if (mode === 'failseries') {
         await limiter.delete(rateLimitKey);
       }
-
-      // If the request is unauthorized or not found, consume point
-    } else if (['fail', 'failseries'].includes(mode) && [401, 403, 404].includes(ctx.res.status)) {
-      const slowRateLimitKey = ipAddr || rateLimitKey;
+    } else if (isFail && !isIgnored && ['fail', 'failseries'].includes(mode)) {
+      const slowRateLimitKey = extractedIdentifiers.ip || rateLimitKey;
 
       // To prevent slow brute force attacks, consume points on every failed request during 24 hours window duration
       try {

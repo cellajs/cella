@@ -5,7 +5,9 @@ import type { InferType } from '~/query/types';
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
+export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(
+  options: T,
+): Promise<InferType<T>>;
 
 /**
  * Prefetches a query and returns cached data if available.

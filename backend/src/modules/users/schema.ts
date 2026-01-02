@@ -3,7 +3,13 @@ import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
-import { contextEntityTypeSchema, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import {
+  contextEntityTypeSchema,
+  paginationQuerySchema,
+  validCDNUrlSchema,
+  validNameSchema,
+  validSlugSchema,
+} from '#/utils/schema/common';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
@@ -51,10 +57,12 @@ export const userListQuerySchema = paginationQuerySchema
   .extend({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
     role: z.enum(appConfig.roles.systemRoles).optional(),
-    mode: z.enum(['all', 'shared']).default('shared'),
     targetEntityType: contextEntityTypeSchema.optional(),
     targetEntityId: z.string().optional(),
   })
-  .refine((data) => (data.targetEntityType && data.targetEntityId) || (!data.targetEntityType && !data.targetEntityId), {
-    message: 'Both targetEntityType and targetEntityId must be provided together',
-  });
+  .refine(
+    (data) => (data.targetEntityType && data.targetEntityId) || (!data.targetEntityType && !data.targetEntityId),
+    {
+      message: 'Both targetEntityType and targetEntityId must be provided together',
+    },
+  );

@@ -81,7 +81,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       { idOrSlug: user.id, ...values },
       {
         onSuccess: (updatedUser) => {
-          const message = isSelf ? t('common:success.profile_updated') : t('common:success.update_item', { item: t('common:user') });
+          const message = isSelf
+            ? t('common:success.profile_updated')
+            : t('common:success.update_item', { item: t('common:user') });
           toaster(message, 'success');
 
           form.reset(updatedUser);
@@ -100,10 +102,28 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <AvatarFormField form={form} label={children ? '' : t('common:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
+        <AvatarFormField
+          form={form}
+          label={children ? '' : t('common:profile_picture')}
+          type="user"
+          name="thumbnailUrl"
+          entity={user}
+        />
         <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
-          <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('common:first_name')} required />
-          <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('common:last_name')} required />
+          <InputFormField
+            inputClassName="border"
+            control={form.control}
+            name="firstName"
+            label={t('common:first_name')}
+            required
+          />
+          <InputFormField
+            inputClassName="border"
+            control={form.control}
+            name="lastName"
+            label={t('common:last_name')}
+            required
+          />
         </div>
         {(!hiddenFields || !hiddenFields.includes('slug')) && (
           <SlugFormField
@@ -130,7 +150,11 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
                 <span className="ml-1 opacity-50">*</span>
               </FormLabel>
               <FormControl>
-                <SelectLanguage options={[...appConfig.languages]} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
+                <SelectLanguage
+                  options={[...appConfig.languages]}
+                  value={field.value ?? appConfig.defaultLanguage}
+                  onChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -151,11 +175,19 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!hiddenFields?.length && (!form.isDirty || Object.keys(form.formState.errors).length > 0)} loading={isPending}>
+          <SubmitButton
+            disabled={!hiddenFields?.length && (!form.isDirty || Object.keys(form.formState.errors).length > 0)}
+            loading={isPending}
+          >
             {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={() => form.reset()}
+              className={form.isDirty ? '' : 'invisible'}
+            >
               {t('common:cancel')}
             </Button>
           )}

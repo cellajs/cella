@@ -5,7 +5,6 @@ import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
-  menuSchema,
   mePendingInvitationSchema,
   toggleMfaBodySchema,
   uploadTokenQuerySchema,
@@ -17,6 +16,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const meRoutes = {
+  /**
+   * Get self
+   */
   getMe: createCustomRoute({
     operationId: 'getMe',
     method: 'get',
@@ -37,25 +39,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
-  getMyMenu: createCustomRoute({
-    operationId: 'getMyMenu',
-    method: 'get',
-    path: '/menu',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get menu',
-    description:
-      'Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
-    responses: {
-      200: {
-        description: 'Menu of user',
-        content: { 'application/json': { schema: menuSchema } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
+  /**
+   * Get list of invitations
+   */
   getMyInvitations: createCustomRoute({
     operationId: 'getMyInvitations',
     method: 'get',
@@ -72,7 +58,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Update self
+   */
   updateMe: createCustomRoute({
     operationId: 'updateMe',
     method: 'put',
@@ -85,7 +73,9 @@ const meRoutes = {
       body: {
         required: true,
         content: {
-          'application/json': { schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }) },
+          'application/json': {
+            schema: userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() }),
+          },
         },
       },
     },
@@ -97,7 +87,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete self
+   */
   deleteMe: createCustomRoute({
     operationId: 'deleteMe',
     method: 'delete',
@@ -112,7 +104,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get auth data
+   */
   getMyAuth: createCustomRoute({
     operationId: 'getMyAuth',
     method: 'get',
@@ -120,7 +114,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get auth data',
-    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
+    description:
+      'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
     responses: {
       200: {
         description: 'User sign-up info',
@@ -129,7 +124,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Terminate sessions
+   */
   deleteMySessions: createCustomRoute({
     operationId: 'deleteMySessions',
     method: 'delete',
@@ -153,7 +150,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Leave entity
+   */
   deleteMyMembership: createCustomRoute({
     operationId: 'deleteMyMembership',
     method: 'delete',
@@ -170,7 +169,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Unsubscribe
+   */
   unsubscribeMe: createCustomRoute({
     operationId: 'unsubscribeMe',
     method: 'get',
@@ -190,7 +191,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get upload token
+   */
   getUploadToken: createCustomRoute({
     operationId: 'getUploadToken',
     method: 'get',
@@ -209,7 +212,9 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Toggle MFA
+   */
   toggleMfa: createCustomRoute({
     operationId: 'toggleMfa',
     method: 'put',
@@ -217,7 +222,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Toggle MFA',
-    description: 'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
+    description:
+      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

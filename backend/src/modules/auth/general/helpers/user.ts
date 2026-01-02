@@ -1,8 +1,9 @@
 import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
+import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
@@ -23,11 +24,10 @@ interface HandleCreateUserProps {
  * Sets a user session upon successful sign-up.
  *
  * @param newUser - New user data for registration(InsertUserModel).
- * @param membershipInviteTokenId - Optional, token ID to associate with the new user.
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ newUser, inactiveMembershipId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
+export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -46,10 +46,31 @@ export const handleCreateUser = async ({ newUser, inactiveMembershipId, emailVer
       })
       .returning();
 
-    await db.insert(unsubscribeTokensTable).values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
+    await db
+      .insert(unsubscribeTokensTable)
+      .values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
-    // If signing up with token with an inactive membership, update it with new user id
-    if (inactiveMembershipId) await handleSetUserOnInactiveMembership(user.id, inactiveMembershipId);
+    // If user has invitation tokens, find the inactive membership from it
+    const existingTokens = await db
+      .select()
+      .from(tokensTable)
+      .where(
+        and(
+          eq(tokensTable.email, normalizedEmail),
+          eq(tokensTable.type, 'invitation'),
+          isNull(tokensTable.userId),
+          isNotNull(tokensTable.inactiveMembershipId),
+        ),
+      )
+      .limit(1);
+
+    // If there are existing invitation tokens, set the user ID on the associated inactive memberships
+    if (existingTokens.length > 0) {
+      await handleSetUserOnInactiveMemberships(
+        user.id,
+        existingTokens.map((t) => t.inactiveMembershipId!),
+      );
+    }
 
     // If email is verified, create verified email record
     if (emailVerified) {
@@ -73,16 +94,22 @@ export const handleCreateUser = async ({ newUser, inactiveMembershipId, emailVer
 };
 
 /**
- * Handles updating an inactive membership with the new user ID upon user creation.
+ * Handles updating inactive memberships with the new user ID upon user creation.
+ * Deletes associated tokens after updating the memberships.
  *
  * @param userId - The ID of the newly created user.
- * @param inactiveMembershipId - The ID of the inactive membership to update.
+ * @param inactiveMembershipIds - The IDs of the inactive memberships to update.
  */
-export const handleSetUserOnInactiveMembership = async (userId: string, inactiveMembershipId: string) => {
-  const [inactiveMembership] = await db
+export const handleSetUserOnInactiveMemberships = async (userId: string, inactiveMembershipIds: string[]) => {
+  await db
     .update(inactiveMembershipsTable)
-    .set({ userId })
-    .where(eq(inactiveMembershipsTable.id, inactiveMembershipId))
-    .returning();
-  if (!inactiveMembership) throw new Error('No inactive membership found for token.');
+    .set({
+      userId,
+      uniqueKey: sql`concat(${userId}, '-', ${inactiveMembershipsTable.contextType})`,
+      // Postgres string concatenation
+    })
+    .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
+
+  // Delete associated tokens
+  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };

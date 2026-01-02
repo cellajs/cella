@@ -91,7 +91,9 @@ export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQuery
  * @param passedQueryKey - Query key to search for similar queries.
  * @returns An array with query key and its corresponding data.
  */
-export const getExactQuery = <TItem, TPageParam = PageParams>(passedQueryKey: QueryKey): BaseQueryResponce<TItem, TPageParam> => {
+export const getExactQuery = <TItem, TPageParam = PageParams>(
+  passedQueryKey: QueryKey,
+): BaseQueryResponce<TItem, TPageParam> => {
   return [passedQueryKey, queryClient.getQueryData<BaseQueryItem<TItem, TPageParam>>(passedQueryKey)];
 };
 
@@ -101,6 +103,8 @@ export const getExactQuery = <TItem, TPageParam = PageParams>(passedQueryKey: Qu
  * @param passedQueryKey - Query key to search for similar queries.
  * @returns An array of matching query keys and their corresponding data.
  */
-export const getSimilarQueries = <TItem, TPageParam = PageParams>(passedQueryKey: QueryKey): BaseQueryResponce<TItem, TPageParam>[] => {
+export const getSimilarQueries = <TItem, TPageParam = PageParams>(
+  passedQueryKey: QueryKey,
+): BaseQueryResponce<TItem, TPageParam>[] => {
   return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey: passedQueryKey });
 };

@@ -1,0 +1,3 @@
+# Cursor Rules
+Please refer to [info/AGENTS.md](info/AGENTS.md) for comprehensive project architecture, coding standards, and development commands. This file is the source of truth for AI agents working on Cella.
+More info can be found in remaining markdown files in /info folder, such as [info/ARCHITECTURE.md](info/ARCHITECTURE.md)

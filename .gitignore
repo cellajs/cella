@@ -41,8 +41,10 @@ backend/openapi.cache.json
 .wrangler
 frontend/stats.html
 .trigger
+.junie
 
 # Cella
 cella.diverged.txt
 *storybook.log
 storybook-static
+.locales-cache

@@ -1,4 +1,5 @@
 import { createReactInlineContentSpec, type DefaultReactGridSuggestionItem } from '@blocknote/react';
+import { Link } from '@tanstack/react-router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
@@ -8,22 +9,65 @@ export const MentionSchema = createReactInlineContentSpec(
   {
     type: 'mention',
     propSchema: {
-      name: {
+      id: {
         default: 'Unknown',
       },
-      id: {
+      slug: {
+        default: 'Unknown',
+      },
+      name: {
         default: 'Unknown',
       },
     },
     content: 'none',
   },
   {
-    render: (props) => <span style={{ backgroundColor: '#E11D48', borderRadius: '2px', padding: '0px 2px' }}>@{props.inlineContent.props.name}</span>,
+    render: (props) => {
+      const { name, slug } = props.inlineContent.props;
+
+      const mentionContent = (
+        <span
+          style={{
+            backgroundColor: '#1F2937',
+            color: '#FFFFFF',
+            borderRadius: '4px',
+            padding: '2px 6px',
+            fontWeight: '600',
+            fontSize: '0.875em',
+            border: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          @ {name}
+        </span>
+      );
+
+      // If slug is available, make it clickable to navigate to user profile
+      if (slug) {
+        return (
+          <Link
+            to="/user/$idOrSlug"
+            params={{ idOrSlug: slug }}
+            style={{ textDecoration: 'none', cursor: 'pointer' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {mentionContent}
+          </Link>
+        );
+      }
+
+      return mentionContent;
+    },
   },
 );
 
 // Function which gets all users for the mentions menu.
-export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor): DefaultReactGridSuggestionItem[] => {
+export const getMentionMenuItems = (
+  members: Member[],
+  editor: CustomBlockNoteEditor,
+): DefaultReactGridSuggestionItem[] => {
   return members.map((m) => ({
     id: m.id,
     onItemClick: () => {
@@ -33,9 +77,9 @@ export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEd
           props: {
             name: m.name,
             id: m.id,
+            slug: m.slug,
           },
         },
-        ' ', // add a space after the mention
       ]);
     },
     icon: <AvatarWrap type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="h-5 w-5 text-xs" />,

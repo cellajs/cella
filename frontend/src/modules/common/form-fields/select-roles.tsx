@@ -24,8 +24,14 @@ const SelectRoles = ({ onChange, value = [], className }: SelectRoleProps) => {
       {appConfig.roles.entityRoles.map((role) => (
         // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
-          <Checkbox checked={value.includes(role)} onCheckedChange={() => handleCheckboxChange(role)} className="size-5" />
-          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t(role)}</span>
+          <Checkbox
+            checked={value.includes(role)}
+            onCheckedChange={() => handleCheckboxChange(role)}
+            className="size-5"
+          />
+          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            {t(role)}
+          </span>
         </label>
       ))}
     </div>

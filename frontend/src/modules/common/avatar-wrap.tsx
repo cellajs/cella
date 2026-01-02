@@ -20,7 +20,10 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
     return (
       <Avatar
         {...props}
-        className={cn('group bg-background flex justify-center items-center rounded-md data-[type=user]:rounded-full overflow-hidden', className)}
+        className={cn(
+          'group bg-background flex justify-center items-center rounded-md data-[type=user]:rounded-full overflow-hidden',
+          className,
+        )}
       >
         <Icon size={16} className="opacity-70 fill-accent" />
       </Avatar>
@@ -41,7 +44,9 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
       ) : (
         <AvatarFallback className={avatarBackground}>
           <span className="sr-only">{name}</span>
-          <div className="text-black opacity-40 font-semibold flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
+          <div className="text-black opacity-40 font-semibold flex h-full items-center justify-center">
+            {name?.charAt(0).toUpperCase() || '-'}
+          </div>
         </AvatarFallback>
       )}
     </Avatar>

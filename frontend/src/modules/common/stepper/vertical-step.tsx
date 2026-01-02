@@ -117,7 +117,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         verticalStepVariants({
           variant: variant?.includes('circle') ? 'circle' : 'line',
         }),
-        isLastStepCurrentStep && 'gap-[var(--step-gap)]',
+        isLastStepCurrentStep && 'gap-(--step-gap)',
         styles?.['vertical-step'],
       )}
       data-optional={steps[index || 0]?.optional}

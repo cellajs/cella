@@ -44,7 +44,11 @@ const MfaPage = () => {
     <>
       <h1 className="text-2xl text-center">{t('common:mfa_header')}</h1>
 
-      <Button variant="ghost" onClick={handleCancelMfa} className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10">
+      <Button
+        variant="ghost"
+        onClick={handleCancelMfa}
+        className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10"
+      >
         <span className="truncate">{lastUser.email}</span>
         <ChevronDownIcon size={16} className="ml-1" />
       </Button>

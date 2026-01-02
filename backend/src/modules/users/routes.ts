@@ -1,40 +1,45 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { systemRoleBaseSchema } from '#/modules/system/schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const userRoutes = {
+  /**
+   * Get list of users
+   */
   getUsers: createCustomRoute({
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    guard: [
-      isAuthenticated,
-      async (ctx, next) => {
-        const mode = ctx.req.query('mode');
-        if (mode === 'all') await hasSystemAccess(ctx, next);
-        else await next();
-      },
-    ],
+    guard: isAuthenticated,
     tags: ['users'],
     summary: 'Get list of users',
-    description: 'Returns a list of *users* at the system level.',
+    description: 'Returns a list of *users*.',
     request: { query: userListQuerySchema },
     responses: {
       200: {
         description: 'Users',
         content: {
           'application/json': {
-            schema: paginationSchema(userSchema.extend({ memberships: membershipBaseSchema.array() })),
+            schema: paginationSchema(
+              userSchema.extend({
+                memberships: membershipBaseSchema.array(),
+                role: systemRoleBaseSchema.shape.role.optional(),
+              }),
+            ),
           },
         },
       },
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Delete users
+   */
   deleteUsers: createCustomRoute({
     operationId: 'deleteUsers',
     method: 'delete',
@@ -58,6 +63,9 @@ const userRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get a user
+   */
   getUser: createCustomRoute({
     operationId: 'getUser',
     method: 'get',
@@ -75,6 +83,9 @@ const userRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Update a user
+   */
   updateUser: createCustomRoute({
     operationId: 'updateUser',
     method: 'put',

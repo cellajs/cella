@@ -5,6 +5,7 @@ import { Virtualizer } from 'virtua';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
+import { TKey } from '~/lib/i18n-locales';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
@@ -27,9 +28,10 @@ export interface ComboboxProps {
   contentWidthMatchInput?: boolean;
   disabled?: boolean;
   placeholders?: {
-    trigger?: string;
-    search?: string;
-    notFound?: string;
+    trigger?: TKey;
+    search?: TKey;
+    notFound?: TKey;
+    resource?: TKey;
   };
 }
 
@@ -48,17 +50,20 @@ const Combobox = ({
 
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(options.find((o) => o.value === value) || null);
+  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(
+    options.find((o) => o.value === value) || null,
+  );
 
   const { ref, bounds } = useMeasure<HTMLButtonElement>();
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchValue, 300);
 
-  const placeholders = {
-    trigger: t('common:select'),
-    search: t('common:placeholder.search'),
-    notFound: t('common:no_resource_found', { resource: t('common:item').toLowerCase() }),
+  const placeholders: Record<keyof typeof passedPlaseholders, TKey> = {
+    trigger: 'common:select',
+    search: 'common:placeholder.search',
+    notFound: 'common:no_resource_found',
+    resource: 'common:item',
     ...passedPlaseholders,
   };
 
@@ -96,27 +101,45 @@ const Combobox = ({
           {selectedOption ? (
             <div className="flex items-center truncate gap-2">
               {renderAvatar && (
-                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
+                <AvatarWrap
+                  className="h-6 w-6 text-xs shrink-0"
+                  id={selectedOption.value}
+                  name={selectedOption.label}
+                  url={selectedOption.url}
+                />
               )}
               {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate text-muted-foreground">{placeholders.trigger}</span>
+            <span className="truncate text-muted-foreground">{t(placeholders.trigger)}</span>
           )}
-          <ChevronDownIcon className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
+          <ChevronDownIcon
+            className={`ml-2 size-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`}
+          />
         </Button>
       </PopoverTrigger>
-      {/* bounds.width + bounds.x * 2 to also include padding */}
-      {/* TODO has scaling effect issue */}
-      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
+      <PopoverContent
+        align="start"
+        style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }}
+        className="p-0"
+      >
         <Command shouldFilter={false}>
           {!isMobile && (
-            <CommandInput value={searchValue} onValueChange={setSearchValue} clearValue={setSearchValue} placeholder={placeholders.search} />
+            <CommandInput
+              value={searchValue}
+              onValueChange={setSearchValue}
+              clearValue={setSearchValue}
+              placeholder={t(placeholders.search)}
+            />
           )}
 
           <CommandList className="h-[30vh]">
             <CommandEmpty>
-              <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} />
+              <ContentPlaceholder
+                icon={SearchIcon}
+                title={placeholders.notFound}
+                titleProps={{ resource: t(placeholders.resource).toLowerCase() }}
+              />
             </CommandEmpty>
 
             <CommandGroup>
@@ -138,7 +161,11 @@ const Combobox = ({
                         {renderAvatar && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
                         {renderOption(option)}
                       </div>
-                      <CheckIcon size={16} strokeWidth={3} className={`text-success ${value !== option.value && 'invisible'}`} />
+                      <CheckIcon
+                        size={16}
+                        strokeWidth={3}
+                        className={`text-success ${value !== option.value && 'invisible'}`}
+                      />
                     </CommandItem>
                   ))}
                 </Virtualizer>

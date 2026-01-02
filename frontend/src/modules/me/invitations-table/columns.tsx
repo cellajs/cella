@@ -12,9 +12,9 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
-import { getAndSetMenu } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { Invitation } from '~/modules/me/types';
+import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { Button } from '~/modules/ui/button';
 import { UserCellById } from '~/modules/users/user-cell';
 import { queryClient } from '~/query/query-client';
@@ -30,16 +30,25 @@ export const useColumns = () => {
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
-  const { mutate: handleInvitation } = useMutation<HandleMembershipInvitationResponse, ApiError, HandleMembershipInvitationData['path']>({
-    mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) => handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
+  const { mutate: handleInvitation } = useMutation<
+    HandleMembershipInvitationResponse,
+    ApiError,
+    HandleMembershipInvitationData['path']
+  >({
+    mutationFn: ({ id, acceptOrReject, orgIdOrSlug }) =>
+      handleMembershipInvitation({ path: { id, acceptOrReject, orgIdOrSlug } }),
     onSuccess: async (settledEntity, { acceptOrReject }) => {
-      await getAndSetMenu();
+      await getMenuData();
+
       queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
       });
 
-      toaster(t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
+      toaster(
+        t(`common:invitation_settled`, { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }),
+        'success',
+      );
     },
   });
 
@@ -52,7 +61,13 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
-          <AvatarWrap type={row.entity.entityType} className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
+          <AvatarWrap
+            type={row.entity.entityType}
+            className="h-8 w-8"
+            id={row.entity.id}
+            name={row.entity.name}
+            url={row.entity.thumbnailUrl}
+          />
           <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
         </>
       ),
@@ -63,7 +78,7 @@ export const useColumns = () => {
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <span>{t(`app:${row.entity.entityType}`)}</span>,
+      renderCell: ({ row }) => <span>{t(`common:${row.entity.entityType}`)}</span>,
     },
     {
       key: 'role',
@@ -74,7 +89,11 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative group h-full w-full">
-          {row.inactiveMembership.role ? t(row.inactiveMembership.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
+          {row.inactiveMembership.role ? (
+            t(`common:${row.inactiveMembership.role}`)
+          ) : (
+            <span className="text-muted">-</span>
+          )}
         </div>
       ),
     },
@@ -86,7 +105,11 @@ export const useColumns = () => {
       minWidth: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) =>
-        row.inactiveMembership.createdAt ? dateShort(row.inactiveMembership.createdAt) : <span className="text-muted">-</span>,
+        row.inactiveMembership.createdAt ? (
+          dateShort(row.inactiveMembership.createdAt)
+        ) : (
+          <span className="text-muted">-</span>
+        ),
     },
     {
       key: 'createdBy',
@@ -95,7 +118,9 @@ export const useColumns = () => {
       visible: !isMobile,
       minWidth: 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => (
+        <UserCellById userId={row.inactiveMembership.createdBy} cacheOnly={false} tabIndex={tabIndex} />
+      ),
     },
     {
       key: 'actions',
@@ -113,7 +138,11 @@ export const useColumns = () => {
               size="xs"
               variant={variant}
               onClick={() =>
-                handleInvitation({ id: row.inactiveMembership.id, acceptOrReject: action, orgIdOrSlug: row.inactiveMembership.organizationId })
+                handleInvitation({
+                  id: row.inactiveMembership.id,
+                  acceptOrReject: action,
+                  orgIdOrSlug: row.inactiveMembership.organizationId,
+                })
               }
             >
               {label}

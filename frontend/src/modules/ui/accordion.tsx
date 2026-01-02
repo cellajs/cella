@@ -8,7 +8,13 @@ function Accordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.
 }
 
 function AccordionItem({ className, ...props }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
-  return <AccordionPrimitive.Item data-slot="accordion-item" className={cn('border-b last:border-b-0', className)} {...props} />;
+  return (
+    <AccordionPrimitive.Item
+      data-slot="accordion-item"
+      className={cn('border-b last:border-b-0', className)}
+      {...props}
+    />
+  );
 }
 
 function AccordionTrigger({ className, children, ...props }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {

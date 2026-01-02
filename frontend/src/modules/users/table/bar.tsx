@@ -21,7 +21,15 @@ import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 type UsersTableBarProps = BaseTableBarProps<UserWithRoleAndMemberships, UsersRouteSearchParams>;
 
-export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
+export const UsersTableBar = ({
+  selected,
+  queryKey,
+  searchVars,
+  setSearch,
+  columns,
+  setColumns,
+  clearSelection,
+}: UsersTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -70,7 +78,10 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
         const message =
           args.data.length === 1
             ? t('common:success.delete_resource', { resource: t('common:user') })
-            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:users').toLowerCase() });
+            : t('common:success.delete_counted_resources', {
+                count: args.data.length,
+                resources: t('common:users').toLowerCase(),
+              });
         toaster(message, 'success');
       }
       clearSelection();
@@ -103,22 +114,35 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={t('common:delete')}
+                  label="common:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
-              !isFiltered && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label={t('common:invite')} onClick={() => openInviteDialog()} />
+              !isFiltered && (
+                <TableBarButton
+                  ref={inviteButtonRef}
+                  icon={MailIcon}
+                  label="common:invite"
+                  onClick={() => openInviteDialog()}
+                />
+              )
             )}
-            {selected.length === 0 && <TableCount count={total} label="common:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {selected.length === 0 && (
+              <TableCount count={total} label="common:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
 
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch name="userSearch" value={q} setQuery={onSearch} />
-            <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+            <SelectRole
+              value={role === undefined ? 'all' : role}
+              onChange={onRoleChange}
+              className="h-10 sm:min-w-32"
+            />
           </FilterBarContent>
         </TableFilterBar>
 

@@ -1,17 +1,14 @@
-import { useAttachmentUrl } from '~/modules/attachments/hooks/use-attachment-url';
 import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
 
 interface Props {
-  id: string;
-  url: string;
   contentType: string;
   name: string;
+  url?: string;
 }
 
-const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
-  const { url, error } = useAttachmentUrl(id, baseUrl, contentType);
-
-  if (!url || error || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;
+// TODO review mb move quey here out of column
+const AttachmentPreview = ({ url, contentType, name }: Props) => {
+  if (!url || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;
 
   return (
     <img

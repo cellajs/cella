@@ -186,7 +186,18 @@ export const SelectEmails = (props: SelectEmailsProps) => {
         onChangeInput?.(inputValue);
       }
     },
-    [allowDisplayName, allowDuplicate, delimiter, emails, enable, onChange, onChangeInput, onDisabled, stripDisplayName, validateEmail],
+    [
+      allowDisplayName,
+      allowDuplicate,
+      delimiter,
+      emails,
+      enable,
+      onChange,
+      onChangeInput,
+      onDisabled,
+      stripDisplayName,
+      validateEmail,
+    ],
   );
 
   const onChangeInputValue = useCallback(
@@ -322,7 +333,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
               <span className="truncate">{email}</span>
               <button
                 type="button"
-                className={cn('py-1 m-[-.25rem] ml-1 rounded-full focus-effect')}
+                className={cn('py-1 -m-1 ml-1 rounded-full focus-effect')}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     removeEmail(index);

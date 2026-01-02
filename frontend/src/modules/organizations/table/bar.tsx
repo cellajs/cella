@@ -41,6 +41,7 @@ export const OrganizationsTableBar = ({
   setIsCompact,
 }: OrganizationsTableBarProps) => {
   const { t } = useTranslation();
+
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
 
@@ -53,7 +54,7 @@ export const OrganizationsTableBar = ({
   const { q, order, sort } = searchVars;
 
   const isFiltered = !!q;
-  // Drop selected Rows on search
+  // Drop selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
@@ -74,7 +75,10 @@ export const OrganizationsTableBar = ({
         const message =
           args.data.length === 1
             ? t('common:success.delete_resource', { resource: t('common:organization') })
-            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:organizations').toLowerCase() });
+            : t('common:success.delete_counted_resources', {
+                count: args.data.length,
+                resources: t('common:organizations').toLowerCase(),
+              });
         toaster(message, 'success');
       }
       clearSelection();
@@ -87,7 +91,8 @@ export const OrganizationsTableBar = ({
       title: t('common:delete'),
       description: t('common:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('common:organizations').toLowerCase() : t('common:organization').toLowerCase(),
+        resource:
+          selected.length > 1 ? t('common:organizations').toLowerCase() : t('common:organization').toLowerCase(),
       }),
     });
   };
@@ -95,7 +100,11 @@ export const OrganizationsTableBar = ({
   const openNewsletterSheet = () => {
     const ids = selected.map((o) => o.id);
     const newsletterTabs = [
-      { id: 'write', label: 'common:write', element: <CreateNewsletterForm organizationIds={ids} callback={clearSelection} /> },
+      {
+        id: 'write',
+        label: 'common:write',
+        element: <CreateNewsletterForm organizationIds={ids} callback={clearSelection} />,
+      },
       { id: 'preview', label: 'common:preview', element: <NewsletterPreview /> },
     ];
 
@@ -130,25 +139,25 @@ export const OrganizationsTableBar = ({
               <TableBarButton
                 ref={newsletterButtonRef}
                 onClick={openNewsletterSheet}
-                label={t('common:newsletter')}
+                label="common:newsletter"
                 icon={MailboxIcon}
                 badge={selected.length}
                 className="relative"
               />
               <TableBarButton
                 variant="destructive"
-                label={t('common:remove')}
+                label="common:remove"
                 icon={TrashIcon}
                 className="relative"
                 badge={selected.length}
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label={t('common:clear')} />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
             </>
           ) : (
             !isFiltered && (
               <TableBarButton
-                label={t('common:create')}
+                label="common:create"
                 icon={PlusIcon}
                 onClick={() => {
                   createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
@@ -156,13 +165,24 @@ export const OrganizationsTableBar = ({
                     triggerRef: createButtonRef,
                     className: 'md:max-w-2xl',
                     title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
-                    titleContent: <UnsavedBadge title={t('common:create_resource', { resource: t('common:organization').toLowerCase() })} />,
+                    titleContent: (
+                      <UnsavedBadge
+                        title={t('common:create_resource', { resource: t('common:organization').toLowerCase() })}
+                      />
+                    ),
                   });
                 }}
               />
             )
           )}
-          {selected.length === 0 && <TableCount count={total} label="common:organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && (
+            <TableCount
+              count={total}
+              label="common:organization"
+              isFiltered={isFiltered}
+              onResetFilters={onResetFilters}
+            />
+          )}
         </FilterBarActions>
 
         <div className="sm:grow" />
@@ -173,7 +193,13 @@ export const OrganizationsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
+      <ColumnsView
+        className="max-lg:hidden"
+        columns={columns}
+        setColumns={setColumns}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
+      />
 
       {/* Export */}
       <Export

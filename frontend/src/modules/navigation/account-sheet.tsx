@@ -106,7 +106,14 @@ export const AccountSheet = () => {
             action="/system/users"
           />
         )}
-        <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
+        <AccountButton
+          offlineAccess={false}
+          isOnline={isOnline}
+          icon={LogOutIcon}
+          id="btn-signout"
+          label={t('common:sign_out')}
+          action="/sign-out"
+        />
       </div>
       <div className="grow border-b border-dashed" />
       <AppFooter className="items-center" />

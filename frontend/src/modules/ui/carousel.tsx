@@ -171,7 +171,12 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
+function CarouselPrevious({
+  className,
+  variant = 'outline',
+  size = 'icon',
+  ...props
+}: React.ComponentProps<typeof Button>) {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
   return (
@@ -181,7 +186,9 @@ function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...pr
       size={size}
       className={cn(
         'absolute size-8 rounded-full',
-        orientation === 'horizontal' ? 'top-1/2 -left-12 -translate-y-1/2' : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
+        orientation === 'horizontal'
+          ? 'top-1/2 -left-12 -translate-y-1/2'
+          : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
         className,
       )}
       disabled={!canScrollPrev}
@@ -194,7 +201,12 @@ function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...pr
   );
 }
 
-function CarouselNext({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
+function CarouselNext({
+  className,
+  variant = 'outline',
+  size = 'icon',
+  ...props
+}: React.ComponentProps<typeof Button>) {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
@@ -204,7 +216,9 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
       size={size}
       className={cn(
         'absolute size-8 rounded-full',
-        orientation === 'horizontal' ? 'top-1/2 -right-12 -translate-y-1/2' : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
+        orientation === 'horizontal'
+          ? 'top-1/2 -right-12 -translate-y-1/2'
+          : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
         className,
       )}
       disabled={!canScrollNext}
@@ -279,4 +293,13 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
   );
 }
 
-export { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious, useCarousel, type CarouselApi };
+export {
+  Carousel,
+  CarouselContent,
+  CarouselDots,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  useCarousel,
+  type CarouselApi,
+};

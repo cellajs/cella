@@ -25,7 +25,7 @@ const organizationName = new UniqueEnforcer();
 const userSlug = new UniqueEnforcer();
 const userEmail = new UniqueEnforcer();
 
-// Tracks the current order offset for memberships per context
+// Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
 
 /**
@@ -176,6 +176,7 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
     order: getMembershipOrderOffset(organization.id) * 10,
     createdAt: pastIsoDate(),
     createdBy: user.id,
+    uniqueKey: `${user.id}-${organization.id}`
   }
 }
 

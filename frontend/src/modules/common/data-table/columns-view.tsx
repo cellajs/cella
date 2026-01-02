@@ -6,7 +6,12 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '~/modules/ui/dropdown-menu';
 
 interface Props<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -23,7 +28,10 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
   const filteredColumns = useMemo(
     () =>
       columns.filter(
-        (column) => typeof column.name === 'string' && column.name && column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
+        (column) =>
+          typeof column.name === 'string' &&
+          column.name &&
+          column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
       ),
     [columns, columnSearch],
   );
@@ -37,7 +45,9 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
       <TooltipButton className={className} toolTipContent={t('common:columns_view')}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="relative flex">
-            {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />}
+            {filteredColumns.some((column) => !column.visible) && (
+              <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />
+            )}
             <SlidersHorizontalIcon className="size-4" />
             <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
           </Button>

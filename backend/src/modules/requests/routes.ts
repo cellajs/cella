@@ -8,6 +8,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
 
 const requestRoutes = {
+  /**
+   * Create request
+   */
   createRequest: createCustomRoute({
     operationId: 'createRequest',
     method: 'post',
@@ -16,7 +19,8 @@ const requestRoutes = {
     middleware: [isNoBot, emailEnumLimiter, spamLimiter],
     tags: ['requests'],
     summary: 'Create request',
-    description: 'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
+    description:
+      'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
     request: {
       body: {
         required: true,
@@ -31,6 +35,9 @@ const requestRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get list of requests
+   */
   getRequests: createCustomRoute({
     operationId: 'getRequests',
     method: 'get',
@@ -52,6 +59,9 @@ const requestRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Delete requests
+   */
   deleteRequests: createCustomRoute({
     operationId: 'deleteRequests',
     method: 'delete',

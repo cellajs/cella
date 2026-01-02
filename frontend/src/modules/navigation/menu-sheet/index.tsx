@@ -26,6 +26,7 @@ import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
+import { useMenu } from './helpers/use-menu';
 
 const pwaEnabled = appConfig.has.pwa;
 
@@ -33,7 +34,6 @@ export const MenuSheet = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
-  const menu = useNavigationStore((state) => state.menu);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
@@ -46,6 +46,8 @@ export const MenuSheet = () => {
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
   const accountButtonRef = useRef(null);
+
+  const { menu } = useMenu(user.id, { detailedMenu });
 
   // monitoring drop event
   useEffect(() => {
@@ -71,10 +73,17 @@ export const MenuSheet = () => {
 
           const { item: sourceItem } = sourceData;
           const edge: Edge | null = extractClosestEdge(targetData);
-          const newOrder = getRelativeItemOrder(menu, sourceItem.entityType, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
+          const newOrder = getRelativeItemOrder(
+            menu,
+            sourceItem.entityType,
+            sourceItem.membership.archived,
+            sourceItem.id,
+            targetData.order,
+            edge,
+          );
 
           // Exit early if order remains the same
-          if (targetData.order === sourceItem.membership.order || newOrder === sourceItem.membership.order) return;
+          if (newOrder === sourceItem.membership.order) return;
 
           await mutateAsync({
             id: sourceItem.membership.id,
@@ -90,7 +99,9 @@ export const MenuSheet = () => {
   }, [menu]);
 
   const searchResultsListItems = useCallback(() => {
-    return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />) : [];
+    return searchResults.length > 0
+      ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />)
+      : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
@@ -106,7 +117,10 @@ export const MenuSheet = () => {
   }, [menu]);
 
   return (
-    <div data-search={!!searchTerm} className="group/menu w-full py-3 px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
+    <div
+      data-search={!!searchTerm}
+      className="group/menu w-full py-3 px-3 gap-1 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col"
+    >
       {/* Only visible when floating nav is present. To return to home */}
       <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2 pt-3">
         <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
@@ -149,7 +163,11 @@ export const MenuSheet = () => {
         {searchResultsListItems().length > 0 ? (
           searchResultsListItems()
         ) : (
-          <ContentPlaceholder icon={SearchIcon} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          <ContentPlaceholder
+            icon={SearchIcon}
+            title="common:no_resource_found"
+            titleProps={{ resource: t('common:results').toLowerCase() }}
+          />
         )}
       </div>
       {!searchTerm && (
@@ -171,7 +189,12 @@ export const MenuSheet = () => {
             {pwaEnabled && <OfflineAccessSwitch />}
             {appConfig.menuStructure.some(({ subentityType }) => subentityType) && (
               <div className="flex items-center gap-4 ml-1">
-                <Switch id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('common:detailed_menu')} />
+                <Switch
+                  id="detailedMenu"
+                  checked={detailedMenu}
+                  onCheckedChange={toggleDetailedMenu}
+                  aria-label={t('common:detailed_menu')}
+                />
                 <label htmlFor="detailedMenu" className="cursor-pointer select-none text-sm font-medium leading-none">
                   {t('common:detailed_menu')}
                 </label>

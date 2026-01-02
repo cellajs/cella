@@ -7,7 +7,9 @@ const listeners = new Set<(breakpoint: string) => void>();
 
 // Sort breakpoints once for efficiency
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
-const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10));
+const sortedBreakpoints = Object.keys(breakpoints).sort(
+  (a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10),
+);
 
 // Function to get the matched breakpoint based on window width
 const getMatchedBreakpoints = () => {
@@ -49,7 +51,11 @@ if (typeof window !== 'undefined') {
  * Optimized breakpoint hook with shared state.
  * Prevents multiple instances from causing unnecessary state updates.
  */
-export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) => {
+export const useBreakpoints = (
+  mustBe: 'min' | 'max',
+  breakpoint: keyof typeof breakpoints,
+  enableReactivity = true,
+) => {
   const [breakpointState, setBreakpointState] = useState(currentBreakpoint);
 
   useEffect(() => {
@@ -68,5 +74,7 @@ export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: keyof typeof b
   const currentBreakpointIndex = sortedBreakpoints.indexOf(breakpointState);
   const targetBreakpointIndex = sortedBreakpoints.indexOf(breakpoint as string);
 
-  return mustBe === 'min' ? currentBreakpointIndex > targetBreakpointIndex : currentBreakpointIndex <= targetBreakpointIndex;
+  return mustBe === 'min'
+    ? currentBreakpointIndex > targetBreakpointIndex
+    : currentBreakpointIndex <= targetBreakpointIndex;
 };

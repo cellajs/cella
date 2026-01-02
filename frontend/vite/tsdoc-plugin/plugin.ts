@@ -1,4 +1,3 @@
-// TODO how can we import appConfig here without causing build issues?
 import { config } from '../../../config/default';
 import type { TsdocPlugin } from './types';
 
@@ -31,7 +30,9 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
     ];
 
     // Generate @see links to docs
-    const seeTags = tags.map((tag) => `[${operation.id}](${config.backendUrl}/docs#tag/${tag}/${operation.method}${path})`);
+    const seeTags = tags.map(
+      (tag) => `[${operation.id}](${config.backendUrl}/docs#tag/${tag}/${operation.method}${path})`,
+    );
 
     // Compose TSDoc enhancements
     const tsdocEnhancements = [

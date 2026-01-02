@@ -9,7 +9,10 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
   return (
     <CommandPrimitive
       data-slot="command"
-      className={cn('bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md', className)}
+      className={cn(
+        'bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md',
+        className,
+      )}
       {...props}
     />
   );
@@ -52,7 +55,14 @@ interface ZeroValSet {
   isSearching?: boolean;
 }
 
-function CommandInput({ className, value, clearValue, wrapClassName, isSearching, ...props }: CommandInputProps & ZeroValSet) {
+function CommandInput({
+  className,
+  value,
+  clearValue,
+  wrapClassName,
+  isSearching,
+  ...props
+}: CommandInputProps & ZeroValSet) {
   return (
     <div
       data-slot="command-input-wrapper"
@@ -104,7 +114,13 @@ function CommandGroup({ className, ...props }: React.ComponentProps<typeof Comma
 }
 
 function CommandSeparator({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Separator>) {
-  return <CommandPrimitive.Separator data-slot="command-separator" className={cn('bg-border -mx-1 h-px', className)} {...props} />;
+  return (
+    <CommandPrimitive.Separator
+      data-slot="command-separator"
+      className={cn('bg-border -mx-1 h-px', className)}
+      {...props}
+    />
+  );
 }
 
 function CommandItem({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {
@@ -121,13 +137,22 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
 }
 
 function CommandShortcut({ className, ...props }: React.ComponentProps<'span'>) {
-  return <span data-slot="command-shortcut" className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)} {...props} />;
+  return (
+    <span
+      data-slot="command-shortcut"
+      className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)}
+      {...props}
+    />
+  );
 }
 
 function CommandLoading({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Loading>) {
   return (
     <CommandPrimitive.Loading
-      className={cn('overflow-hidden absolute inset-0 flex justify-center items-center bg-opacity-30 bg-background z-50', className)}
+      className={cn(
+        'overflow-hidden absolute inset-0 flex justify-center items-center bg-opacity-30 bg-background z-50',
+        className,
+      )}
       {...props}
     />
   );

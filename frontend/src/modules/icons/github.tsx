@@ -2,7 +2,14 @@ import * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const GithubIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true" className={cn('size-6', className)} {...props}>
+  <svg
+    viewBox="0 0 98 96"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="currentColor"
+    aria-hidden="true"
+    className={cn('size-6', className)}
+    {...props}
+  >
     <path
       fillRule="evenodd"
       clipRule="evenodd"
