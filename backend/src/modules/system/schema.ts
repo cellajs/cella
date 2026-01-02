@@ -24,7 +24,7 @@ export const sendNewsletterBodySchema = z.object({
   content: z.string(),
 });
 
-export const systemRoleSchema = createSelectSchema(systemRolesTable).openapi('SystemRole');
+export const systemRoleSchema = z.object(createSelectSchema(systemRolesTable).shape).openapi('SystemRole');
 
 export const systemRoleBaseSchema = systemRoleSchema
   .omit({

@@ -4,6 +4,9 @@ import { checkSlugBodySchema } from '#/modules/entities/schema';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const entityRoutes = {
+  /**
+   * Check slug availability
+   */
   checkSlug: createCustomRoute({
     operationId: 'checkSlug',
     method: 'post',

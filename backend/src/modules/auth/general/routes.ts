@@ -9,6 +9,9 @@ import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } fro
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authGeneralRoutes = {
+  /**
+   * Start impersonating
+   */
   startImpersonation: createCustomRoute({
     operationId: 'startImpersonation',
     method: 'get',
@@ -27,7 +30,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Stop impersonating
+   */
   stopImpersonation: createCustomRoute({
     operationId: 'stopImpersonation',
     method: 'get',
@@ -41,7 +46,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Check if email exists
+   */
   checkEmail: createCustomRoute({
     operationId: 'checkEmail',
     method: 'post',
@@ -62,7 +69,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Invoke token session
+   */
   invokeToken: createCustomRoute({
     operationId: 'invokeToken',
     method: 'get',
@@ -84,7 +93,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get token data
+   */
   getTokenData: createCustomRoute({
     operationId: 'getTokenData',
     method: 'get',
@@ -106,7 +117,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Resend invitation
+   */
   resendInvitationWithToken: createCustomRoute({
     operationId: 'resendInvitationWithToken',
     method: 'post',
@@ -126,7 +139,9 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Sign out
+   */
   signOut: createCustomRoute({
     operationId: 'signOut',
     method: 'post',

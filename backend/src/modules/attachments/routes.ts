@@ -2,12 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import {
-  attachmentCreateManySchema,
-  attachmentListQuerySchema,
-  attachmentSchema,
-  attachmentUpdateBodySchema,
-} from '#/modules/attachments/schema';
+import { attachmentCreateManySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import {
   baseElectricSyncQuery,
   idInOrgParamSchema,
@@ -16,9 +11,12 @@ import {
   inOrgParamSchema,
 } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const attachmentRoutes = {
+  /**
+   * Create one or more attachments
+   */
   createAttachments: createCustomRoute({
     operationId: 'createAttachment',
     method: 'post',
@@ -47,50 +45,9 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-
-  getAttachments: createCustomRoute({
-    operationId: 'getAttachments',
-    method: 'get',
-    path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
-    tags: ['attachments'],
-    summary: 'Get list of attachments',
-    description: 'Retrieves all *attachments* associated with a specific entity, such as an organization.',
-    request: {
-      params: inOrgParamSchema,
-      query: attachmentListQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'Attachments',
-        content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
-  getAttachment: createCustomRoute({
-    operationId: 'getAttachment',
-    method: 'get',
-    path: '/{id}',
-    guard: [isAuthenticated, hasOrgAccess],
-    tags: ['attachments'],
-    summary: 'Get attachment',
-    description: 'Fetches metadata and access details for a single *attachment* by ID.',
-    request: { params: idInOrgParamSchema },
-    responses: {
-      200: {
-        description: 'Attachment',
-        content: {
-          'application/json': {
-            schema: attachmentSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
+  /**
+   * Update an attachment
+   */
   updateAttachment: createCustomRoute({
     operationId: 'updateAttachment',
     method: 'put',
@@ -118,7 +75,9 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete one or more attachments
+   */
   deleteAttachments: createCustomRoute({
     operationId: 'deleteAttachments',
     method: 'delete',
@@ -146,24 +105,27 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-
-  shapeProxy: createCustomRoute({
-    operationId: 'shapeProxy',
+  /**
+   * Sync attachments using Electric shape proxy
+   */
+  syncAttachments: createCustomRoute({
+    operationId: 'syncAttachments',
     method: 'get',
-    path: '/shape-proxy',
+    path: '/sync-attachments',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
-    summary: 'Shape proxy',
-    description: `Proxies requests to ElectricSQL's shape endpoint for the \`attachments\` table.
-      Used by clients to synchronize local data with server state via the shape log system.
-      This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
+    summary: 'Sync attachments',
+    description: `Sync attachment data by proxying requests to ElectricSQL's shape endpoint for \`attachments\` table.
+      Organization parameter is required to scope the data.`,
     request: { query: baseElectricSyncQuery, params: inOrgParamSchema },
     responses: {
       200: { description: 'Success' },
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Redirect to attachment
+   */
   redirectToAttachment: createCustomRoute({
     operationId: 'redirectToAttachment',
     method: 'get',

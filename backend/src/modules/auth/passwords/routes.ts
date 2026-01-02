@@ -10,6 +10,9 @@ import { cookieSchema, locationSchema, passwordSchema } from '#/utils/schema/com
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authPasswordsRoutes = {
+  /**
+   * Sign up with password
+   */
   signUp: createCustomRoute({
     operationId: 'signUp',
     method: 'post',
@@ -37,7 +40,9 @@ const authPasswordsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Sign up to accept invite
+   */
   signUpWithToken: createCustomRoute({
     operationId: 'signUpWithToken',
     method: 'post',
@@ -63,7 +68,9 @@ const authPasswordsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Request new password
+   */
   requestPassword: createCustomRoute({
     operationId: 'requestPassword',
     method: 'post',
@@ -86,7 +93,9 @@ const authPasswordsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Create password
+   */
   createPasswordWithToken: createCustomRoute({
     operationId: 'createPassword',
     method: 'post',
@@ -112,7 +121,9 @@ const authPasswordsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Sign in with password
+   */
   signIn: createCustomRoute({
     operationId: 'signIn',
     method: 'post',

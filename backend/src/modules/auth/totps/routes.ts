@@ -7,6 +7,9 @@ import { cookieSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authTotpsRoutes = {
+  /**
+   * Generate TOTP key
+   */
   generateTotpKey: createCustomRoute({
     operationId: 'generateTotpKey',
     method: 'post',
@@ -23,7 +26,9 @@ const authTotpsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Set TOTP
+   */
   createTotp: createCustomRoute({
     operationId: 'createTotp',
     method: 'post',
@@ -47,7 +52,9 @@ const authTotpsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete TOTP
+   */
   deleteTotp: createCustomRoute({
     operationId: 'deleteTotp',
     method: 'delete',
@@ -61,7 +68,9 @@ const authTotpsRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Verify TOTP
+   */
   signInWithTotp: createCustomRoute({
     operationId: 'signInWithTotp',
     method: 'post',

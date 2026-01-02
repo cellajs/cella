@@ -69,12 +69,6 @@ import type {
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
-  GetAttachmentData,
-  GetAttachmentErrors,
-  GetAttachmentResponses,
-  GetAttachmentsData,
-  GetAttachmentsErrors,
-  GetAttachmentsResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -161,12 +155,6 @@ import type {
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
-  ShapeProxy2Data,
-  ShapeProxy2Errors,
-  ShapeProxy2Responses,
-  ShapeProxyData,
-  ShapeProxyErrors,
-  ShapeProxyResponses,
   SignInData,
   SignInErrors,
   SignInResponses,
@@ -191,6 +179,12 @@ import type {
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
+  SyncAttachmentsData,
+  SyncAttachmentsErrors,
+  SyncAttachmentsResponses,
+  SyncPagesData,
+  SyncPagesErrors,
+  SyncPagesResponses,
   SystemInviteData,
   SystemInviteErrors,
   SystemInviteResponses,
@@ -1528,18 +1522,15 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Shape proxy
+ * Sync pages
  *
  * 🛡️ Requires authentication
  *
- * Proxy requests to ElectricSQL's shape endpoint for the `pages` table.
- * Used by clients to synchronize local data with server state via the shape log system.
- * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
+ * Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.
  *
- * **GET /pages/shape-proxy** ·· [shapeProxy](https://api.cellajs.com/docs#tag/pages/get/pages/shape-proxy) ·· _pages_
+ * **GET /pages/sync-pages** ·· [syncPages](https://api.cellajs.com/docs#tag/pages/get/pages/sync-pages) ·· _pages_
  *
- * @param {shapeProxyData} options
- * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {syncPagesData} options
  * @param {string} options.query.table - `string`
  * @param {string} options.query.offset - `string`
  * @param {string=} options.query.handle - `string` (optional)
@@ -1548,8 +1539,8 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.where - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) =>
-  (options.client ?? client).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
+export const syncPages = <ThrowOnError extends boolean = true>(options: Options<SyncPagesData, ThrowOnError>) =>
+  (options.client ?? client).get<SyncPagesResponses, SyncPagesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1558,7 +1549,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
         type: 'apiKey',
       },
     ],
-    url: '/pages/shape-proxy',
+    url: '/pages/sync-pages',
     ...options,
   });
 
@@ -1997,17 +1988,16 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Shape proxy
+ * Sync attachments
  *
  * 🛡️ Requires authentication (org access)
  *
- * Proxies requests to ElectricSQL's shape endpoint for the `attachments` table.
- * Used by clients to synchronize local data with server state via the shape log system.
- * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
+ * Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.
+ * Organization parameter is required to scope the data.
  *
- * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy2](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
+ * **GET /{orgIdOrSlug}/attachments/sync-attachments** ·· [syncAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/sync-attachments) ·· _attachments_
  *
- * @param {shapeProxy2Data} options
+ * @param {syncAttachmentsData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @param {string} options.query.table - `string`
  * @param {string} options.query.offset - `string`
@@ -2017,8 +2007,10 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.where - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const shapeProxy2 = <ThrowOnError extends boolean = true>(options: Options<ShapeProxy2Data, ThrowOnError>) =>
-  (options.client ?? client).get<ShapeProxy2Responses, ShapeProxy2Errors, ThrowOnError, 'data'>({
+export const syncAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<SyncAttachmentsData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<SyncAttachmentsResponses, SyncAttachmentsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -2027,7 +2019,7 @@ export const shapeProxy2 = <ThrowOnError extends boolean = true>(options: Option
         type: 'apiKey',
       },
     ],
-    url: '/{orgIdOrSlug}/attachments/shape-proxy',
+    url: '/{orgIdOrSlug}/attachments/sync-attachments',
     ...options,
   });
 
@@ -2066,41 +2058,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get list of attachments
- *
- * 🛡️ Requires authentication (org access)
- *
- * Retrieves all *attachments* associated with a specific entity, such as an organization.
- *
- * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
- *
- * @param {getAttachmentsData} options
- * @param {string | string} options.path.orgidorslug - `string | string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.attachmentid - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachments = <ThrowOnError extends boolean = true>(
-  options: Options<GetAttachmentsData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments',
-    ...options,
-  });
-
-/**
  * Create attachments
  *
  * 🛡️ Requires authentication (org access)
@@ -2131,34 +2088,6 @@ export const createAttachment = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Get attachment
- *
- * 🛡️ Requires authentication (org access)
- *
- * Fetches metadata and access details for a single *attachment* by ID.
- *
- * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
- *
- * @param {getAttachmentData} options
- * @param {string} options.path.id - `string`
- * @param {string | string} options.path.orgidorslug - `string | string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) =>
-  (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/{id}',
-    ...options,
   });
 
 /**

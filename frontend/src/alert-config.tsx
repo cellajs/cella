@@ -40,5 +40,7 @@ if (appConfig.mode === 'production') {
   });
 }
 
-// Here you can set app-specific global alerts
+/**
+ * Array of app-specific global alerts.
+ */
 export const alertsConfig = alerts;

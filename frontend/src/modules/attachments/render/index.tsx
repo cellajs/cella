@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useAttachmentUrl } from '~/modules/attachments/hooks/use-attachment-url';
 import Spinner from '~/modules/common/spinner';
 
 // Lazy-loaded components
@@ -22,8 +21,7 @@ interface AttachmentRenderProps {
 }
 
 export const AttachmentRender = ({
-  id,
-  url: baseUrl,
+  url,
   type,
   altName,
   showButtons,
@@ -33,15 +31,6 @@ export const AttachmentRender = ({
   onPanStateToggle,
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpoints('max', 'sm');
-  const { url, error } = useAttachmentUrl(id, baseUrl, type);
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-        <div className="text-center my-8 text-sm text-red-600">{error}</div>
-      </div>
-    );
-  }
 
   if (!url) return <Spinner className="h-12 w-12 mt-[45vh]" />;
 
@@ -61,9 +50,9 @@ export const AttachmentRender = ({
             <img src={url} alt={altName} className={`${itemClassName} w-full h-full`} />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="w-[80vw] mx-auto -mt-48 h-20" />}
-        {type.includes('video') && <RenderVideo src={url} className="max-h-[90vh] max-w-[80rem] mx-auto" />}
+        {type.includes('video') && <RenderVideo src={url} className="max-h-[90vh] max-w-7xl mx-auto" />}
         {type.includes('pdf') && (
-          <RenderPDF file={url} className="w-[95vw] max-w-[70rem] mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />
+          <RenderPDF file={url} className="w-[95vw] max-w-280 mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />
         )}
       </Suspense>
     </div>

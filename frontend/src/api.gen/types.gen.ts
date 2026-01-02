@@ -144,13 +144,13 @@ export type Attachment = {
   contentType: string;
   convertedContentType: string | null;
   size: string;
+  originalKey: string;
+  convertedKey: string | null;
+  thumbnailKey: string | null;
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
   organizationId: string;
-  url: string;
-  thumbnailUrl: string | null;
-  convertedUrl: string | null;
 };
 
 export type ApiError = {
@@ -2281,11 +2281,9 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type ShapeProxyData = {
+export type SyncPagesData = {
   body?: never;
-  path: {
-    orgIdOrSlug: string;
-  };
+  path?: never;
   query: {
     table: string;
     offset: string;
@@ -2294,10 +2292,10 @@ export type ShapeProxyData = {
     live?: string;
     where?: string;
   };
-  url: '/pages/shape-proxy';
+  url: '/pages/sync-pages';
 };
 
-export type ShapeProxyErrors = {
+export type SyncPagesErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2320,9 +2318,9 @@ export type ShapeProxyErrors = {
   429: TooManyRequestsError;
 };
 
-export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
+export type SyncPagesError = SyncPagesErrors[keyof SyncPagesErrors];
 
-export type ShapeProxyResponses = {
+export type SyncPagesResponses = {
   /**
    * Success
    */
@@ -3024,7 +3022,7 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
-export type ShapeProxy2Data = {
+export type SyncAttachmentsData = {
   body?: never;
   path: {
     orgIdOrSlug: string;
@@ -3037,10 +3035,10 @@ export type ShapeProxy2Data = {
     live?: string;
     where?: string;
   };
-  url: '/{orgIdOrSlug}/attachments/shape-proxy';
+  url: '/{orgIdOrSlug}/attachments/sync-attachments';
 };
 
-export type ShapeProxy2Errors = {
+export type SyncAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -3063,9 +3061,9 @@ export type ShapeProxy2Errors = {
   429: TooManyRequestsError;
 };
 
-export type ShapeProxy2Error = ShapeProxy2Errors[keyof ShapeProxy2Errors];
+export type SyncAttachmentsError = SyncAttachmentsErrors[keyof SyncAttachmentsErrors];
 
-export type ShapeProxy2Responses = {
+export type SyncAttachmentsResponses = {
   /**
    * Success
    */
@@ -3120,62 +3118,12 @@ export type DeleteAttachmentsResponses = {
 
 export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
 
-export type GetAttachmentsData = {
-  body?: never;
-  path: {
-    orgIdOrSlug: string;
-  };
-  query?: {
-    q?: string;
-    sort?: 'id' | 'name' | 'size' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    attachmentId?: string;
-  };
-  url: '/{orgIdOrSlug}/attachments';
-};
-
-export type GetAttachmentsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
-
-export type GetAttachmentsResponses = {
-  /**
-   * Attachments
-   */
-  200: {
-    items: Array<Attachment>;
-    total: number;
-  };
-};
-
-export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
-
 export type CreateAttachmentData = {
   body: Array<{
+    createdAt?: string;
     id?: string;
+    entityType?: 'attachment';
+    name?: string;
     description?: string | null;
     public?: boolean;
     bucketName: string;
@@ -3187,6 +3135,9 @@ export type CreateAttachmentData = {
     originalKey: string;
     convertedKey?: string | null;
     thumbnailKey?: string | null;
+    createdBy?: string | null;
+    modifiedAt?: string | null;
+    modifiedBy?: string | null;
     organizationId: string;
   }>;
   path: {
@@ -3229,50 +3180,6 @@ export type CreateAttachmentResponses = {
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
-
-export type GetAttachmentData = {
-  body?: never;
-  path: {
-    id: string;
-    orgIdOrSlug: string;
-  };
-  query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}';
-};
-
-export type GetAttachmentErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
-
-export type GetAttachmentResponses = {
-  /**
-   * Attachment
-   */
-  200: Attachment;
-};
-
-export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
 
 export type UpdateAttachmentData = {
   body: {

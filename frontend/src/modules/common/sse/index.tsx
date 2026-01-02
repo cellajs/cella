@@ -1,8 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { EntityType } from 'config';
-import router from '~/lib/router';
-import { attachmentQueryKeys } from '~/modules/attachments/query';
+import type { ContextEntityType } from 'config';
 import { useSSE } from '~/modules/common/sse/use-sse';
 import type { ContextEntityData } from '~/modules/entities/types';
 import type { ContextEntityDataWithMembership } from '~/modules/me/types';
@@ -18,10 +16,10 @@ import { userQueryKeys } from '~/modules/users/query';
 type SSEEventsMap = {
   membership_created: ContextEntityDataWithMembership;
   membership_updated: ContextEntityDataWithMembership;
-  membership_deleted: { entityType: EntityType; entityId: string };
+  membership_deleted: { entityType: ContextEntityType; entityId: string };
   entity_created: ContextEntityDataWithMembership;
   entity_updated: ContextEntityDataWithMembership;
-  entity_deleted: { entityType: EntityType; entityId: string };
+  entity_deleted: { entityType: ContextEntityType; entityId: string };
 };
 
 /**
@@ -31,7 +29,6 @@ type SSEEventsMap = {
 const entityKeysMap = {
   organization: organizationQueryKeys,
   page: pageQueryKeys,
-  attachment: attachmentQueryKeys,
   user: userQueryKeys,
   membership: memberQueryKeys,
 } as const;
@@ -80,7 +77,7 @@ export default function SSE() {
   };
 
   // Membership deleted: user no longer belongs to the entity → remove single cache and invalidate list
-  const onMembershipDeleted = ({ entityType, entityId }: { entityType: EntityType; entityId: string }) => {
+  const onMembershipDeleted = ({ entityType, entityId }: { entityType: ContextEntityType; entityId: string }) => {
     const keys = entityKeysMap[entityType];
     if (!keys) return;
 
@@ -125,7 +122,7 @@ export default function SSE() {
   };
 
   // Entity deleted: remove its caches
-  const onEntityDeleted = ({ entityType, entityId }: { entityType: EntityType; entityId: string }) => {
+  const onEntityDeleted = ({ entityType, entityId }: { entityType: ContextEntityType; entityId: string }) => {
     const keys = entityKeysMap[entityType];
     if (!keys) return;
 

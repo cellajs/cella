@@ -142,13 +142,13 @@ export const zAttachment = z.object({
   contentType: z.string(),
   convertedContentType: z.union([z.string(), z.null()]),
   size: z.string(),
+  originalKey: z.string(),
+  convertedKey: z.union([z.string(), z.null()]),
+  thumbnailKey: z.union([z.string(), z.null()]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
   organizationId: z.string(),
-  url: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  convertedUrl: z.union([z.string(), z.null()]),
 });
 
 export const zApiError = z.object({
@@ -995,11 +995,9 @@ export const zUpdateOrganizationData = z.object({
  */
 export const zUpdateOrganizationResponse = zOrganization;
 
-export const zShapeProxyData = z.object({
+export const zSyncPagesData = z.object({
   body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
+  path: z.optional(z.never()),
   query: z.object({
     table: z.string(),
     offset: z.string(),
@@ -1265,7 +1263,7 @@ export const zGetPublicCountsResponse = z.object({
   page: z.number(),
 });
 
-export const zShapeProxy2Data = z.object({
+export const zSyncAttachmentsData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     orgIdOrSlug: z.string(),
@@ -1298,36 +1296,14 @@ export const zDeleteAttachmentsResponse = z.object({
   rejectedItems: z.array(z.string()),
 });
 
-export const zGetAttachmentsData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'size', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()),
-      limit: z.optional(z.string()),
-      attachmentId: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Attachments
- */
-export const zGetAttachmentsResponse = z.object({
-  items: z.array(zAttachment),
-  total: z.number(),
-});
-
 export const zCreateAttachmentData = z.object({
   body: z
     .array(
       z.object({
+        createdAt: z.optional(z.string()),
         id: z.optional(z.string()),
+        entityType: z.optional(z.enum(['attachment'])),
+        name: z.optional(z.string()),
         description: z.optional(z.union([z.string(), z.null()])),
         public: z.optional(z.boolean()),
         bucketName: z.string(),
@@ -1339,6 +1315,9 @@ export const zCreateAttachmentData = z.object({
         originalKey: z.string(),
         convertedKey: z.optional(z.union([z.string(), z.null()])),
         thumbnailKey: z.optional(z.union([z.string(), z.null()])),
+        createdBy: z.optional(z.union([z.string(), z.null()])),
+        modifiedAt: z.optional(z.union([z.string(), z.null()])),
+        modifiedBy: z.optional(z.union([z.string(), z.null()])),
         organizationId: z.string(),
       }),
     )
@@ -1354,20 +1333,6 @@ export const zCreateAttachmentData = z.object({
  * Attachment
  */
 export const zCreateAttachmentResponse = z.array(zAttachment);
-
-export const zGetAttachmentData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
-/**
- * Attachment
- */
-export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({

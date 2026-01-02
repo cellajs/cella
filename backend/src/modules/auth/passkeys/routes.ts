@@ -13,6 +13,9 @@ import { cookieSchema, idSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const authPasskeysRoutes = {
+  /**
+   * Generate passkey challenge
+   */
   generatePasskeyChallenge: createCustomRoute({
     operationId: 'generatePasskeyChallenge',
     method: 'post',
@@ -36,7 +39,9 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Create passkey
+   */
   createPasskey: createCustomRoute({
     operationId: 'createPasskey',
     method: 'post',
@@ -60,7 +65,9 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete passkey
+   */
   deletePasskey: createCustomRoute({
     operationId: 'deletePasskey',
     method: 'delete',
@@ -77,7 +84,9 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Verify passkey
+   */
   signInWithPasskey: createCustomRoute({
     operationId: 'signInWithPasskey',
     method: 'post',

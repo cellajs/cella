@@ -23,6 +23,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const membershipRoutes = {
+  /**
+   * Create memberships
+   */
   createMemberships: createCustomRoute({
     operationId: 'membershipInvite',
     method: 'post',
@@ -50,7 +53,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Delete memberships
+   */
   deleteMemberships: createCustomRoute({
     operationId: 'deleteMemberships',
     method: 'delete',
@@ -80,7 +85,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Update membership
+   */
   updateMembership: createCustomRoute({
     operationId: 'updateMembership',
     method: 'put',
@@ -103,7 +110,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Respond to membership invitation
+   */
   handleMembershipInvitation: createCustomRoute({
     operationId: 'handleMembershipInvitation',
     method: 'post',
@@ -123,7 +132,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-
+  /**
+   * Get list of members
+   */
   getMembers: createCustomRoute({
     operationId: 'getMembers',
     method: 'get',
@@ -149,6 +160,9 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get list of pending memberships
+   */
   getPendingMemberships: createCustomRoute({
     operationId: 'getPendingMemberships',
     method: 'get',

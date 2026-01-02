@@ -11,6 +11,7 @@ type ElectricUrlQuery = {
   handle?: string;
   cursor?: string;
   where?: string;
+  params?: string;
 };
 
 /**
@@ -20,7 +21,7 @@ type ElectricUrlQuery = {
  * @returns {URL} Proxy URL
  */
 const prepareElectricUrl = (table: string, query: ElectricUrlQuery): URL => {
-  const { offset, live, handle, cursor, where } = query;
+  const { offset, live, handle, cursor, where, params: queryParams } = query;
 
   // Construct the upstream URL
   const originUrl = new URL(`${appConfig.electricUrl}/v1/shape`);
@@ -37,6 +38,14 @@ const prepareElectricUrl = (table: string, query: ElectricUrlQuery): URL => {
   if (handle) params.set('handle', handle);
   if (cursor) params.set('cursor', cursor);
   if (where) params.set('where', where);
+
+  // Electric SQL uses exploded object format: params[1]=value1&params[2]=value2
+  if (queryParams) {
+    const parsedParams: Record<string, string> = JSON.parse(queryParams);
+    for (const [key, value] of Object.entries(parsedParams)) {
+      params.set(`params[${key}]`, value);
+    }
+  }
 
   return originUrl;
 };

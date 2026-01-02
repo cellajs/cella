@@ -8,6 +8,9 @@ import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const userRoutes = {
+  /**
+   * Get list of users
+   */
   getUsers: createCustomRoute({
     operationId: 'getUsers',
     method: 'get',
@@ -34,6 +37,9 @@ const userRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Delete users
+   */
   deleteUsers: createCustomRoute({
     operationId: 'deleteUsers',
     method: 'delete',
@@ -57,6 +63,9 @@ const userRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Get a user
+   */
   getUser: createCustomRoute({
     operationId: 'getUser',
     method: 'get',
@@ -74,6 +83,9 @@ const userRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Update a user
+   */
   updateUser: createCustomRoute({
     operationId: 'updateUser',
     method: 'put',

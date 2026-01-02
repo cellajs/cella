@@ -11,9 +11,11 @@ import {
   validEmailSchema,
 } from '#/utils/schema/common';
 
-export const membershipSchema = createSelectSchema(membershipsTable).openapi('Membership');
+export const membershipSchema = z.object(createSelectSchema(membershipsTable).shape).openapi('Membership');
 
-export const inactiveMembershipSchema = createSelectSchema(inactiveMembershipsTable).openapi('InactiveMembership');
+export const inactiveMembershipSchema = z
+  .object(createSelectSchema(inactiveMembershipsTable).shape)
+  .openapi('InactiveMembership');
 
 export const membershipBaseSchema = membershipSchema
   .omit({

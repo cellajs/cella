@@ -1,3 +1,4 @@
+import { useLoaderData } from '@tanstack/react-router';
 import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
@@ -17,17 +18,16 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
-  BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & {
+  Omit<BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>, 'queryKey'> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
   entity,
-  queryKey,
   selected,
   searchVars,
   setSearch,
@@ -41,9 +41,12 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog();
+  const { open } = useAttachmentsUploadDialog(entity.id);
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
 
-  const total = useInfiniteQueryTotal(queryKey);
+  const total = attachmentsCollection.size + localAttachmentsCollection.size;
 
   const deleteButtonRef = useRef(null);
 
@@ -64,16 +67,19 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(<DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} />, {
-      id: 'delete-attachments',
-      triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
-      description: t('common:confirm.delete_counted_resource', {
-        count: selected.length,
-        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
-      }),
-    });
+    createDialog(
+      <DeleteAttachments dialog attachments={selected} organizationId={entity.id} callback={clearSelection} />,
+      {
+        id: 'delete-attachments',
+        triggerRef: deleteButtonRef,
+        className: 'max-w-xl',
+        title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
+        description: t('common:confirm.delete_counted_resource', {
+          count: selected.length,
+          resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
+        }),
+      },
+    );
   };
 
   return (
@@ -97,7 +103,7 @@ export const AttachmentsTableBar = ({
                 <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
               </>
             ) : (
-              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open(entity.id)} />
+              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open()} />
             )}
             {selected.length === 0 && (
               <TableCount

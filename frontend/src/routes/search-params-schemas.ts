@@ -2,7 +2,6 @@
 
 import z from 'zod';
 import {
-  zGetAttachmentsData,
   zGetMembersData,
   zGetOrganizationsData,
   zGetPagesData,
@@ -49,13 +48,13 @@ export const requestsRouteSearchParamsSchema = zGetRequestsData.shape.query
 /**
  * Search params schema for attachments route.
  */
-export const attachmentsRouteSearchParamsSchema = zGetAttachmentsData.shape.query
-  .unwrap()
-  .pick({ q: true, sort: true, order: true })
-  .extend({
-    attachmentDialogId: z.string().optional(),
-    groupId: z.string().optional(),
-  });
+export const attachmentsRouteSearchParamsSchema = z.object({
+  attachmentDialogId: z.string().optional(),
+  groupId: z.string().optional(),
+  q: z.string().optional(),
+  order: z.optional(z.enum(['asc', 'desc'])),
+  sort: z.enum(['id', 'name', 'size', 'createdAt']).default('createdAt').optional(),
+});
 
 /**
  * Search params schema for page route.

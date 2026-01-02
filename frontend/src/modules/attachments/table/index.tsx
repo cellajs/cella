@@ -1,17 +1,14 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { ilike, isNull, not, or, useLiveInfiniteQuery, useLiveQuery } from '@tanstack/react-db';
+import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
-import { useElectricSyncAttachments } from '~/modules/attachments/hooks/use-electric-sync-attachments';
-import { useLocalSyncAttachments } from '~/modules/attachments/hooks/use-local-sync-attachments';
-import { useMergeLocalAttachments } from '~/modules/attachments/hooks/use-merge-local-attachments';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
+import { useOfflineAttachments } from '~/modules/attachments/offline';
 import { AttachmentsTableBar } from '~/modules/attachments/table/bar';
 import { useColumns } from '~/modules/attachments/table/columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachments/types';
@@ -19,7 +16,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ContextEntityData } from '~/modules/entities/types';
-import { isCDNUrl } from '~/utils/is-cdn-url';
+import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
+import { attachmentStorage } from '../dexie/storage-service';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -31,12 +29,17 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const attachmentUpdateMutation = useAttachmentUpdateMutation();
+  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
+    from: OrganizationAttachmentsRoute.id,
+  });
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  useElectricSyncAttachments(entity.id);
-  useLocalSyncAttachments(entity.id);
-  useMergeLocalAttachments(entity.id, search);
+  // Initialize offline transactions for attachments
+  // TODO: Use getState() to show pending sync indicator in UI when needed
+  const { updateOffline } = useOfflineAttachments({
+    attachmentsCollection,
+    organizationId: entity.id,
+  });
 
   // Table state
   const { q, sort, order } = search;
@@ -46,29 +49,75 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
 
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
-  const [columns, setColumns] = useState(useColumns(entity, isSheet, isCompact));
+  const columnsFromHook = useColumns(entity, isSheet, isCompact);
+  const [columns, setColumns] = useState(columnsFromHook);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = attachmentsQueryOptions({
-    orgIdOrSlug: entity.membership?.organizationId || entity.id,
-    ...search,
-    limit,
-  });
+  // Sync columns when isCompact changes (preserve visibility settings)
+  useEffect(() => {
+    setColumns((prev) =>
+      columnsFromHook.map((col) => ({
+        ...col,
+        visible: prev.find((p) => p.key === col.key)?.visible ?? col.visible,
+      })),
+    );
+  }, [isCompact]);
 
   const {
     data: fetchedRows,
     isLoading,
-    isFetching,
-    error,
+    isError,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+    isFetchingNextPage,
+  } = useLiveInfiniteQuery(
+    (liveQuery) => {
+      return liveQuery
+        .from({ attachment: attachmentsCollection })
+        .where(({ attachment }) =>
+          q
+            ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
+            : not(isNull(attachment.id)),
+        )
+        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+    },
+    {
+      pageSize: limit,
+      getNextPageParam: (lastPage, allPages) => {
+        const total = lastPage.length;
+        const fetchedCount = allPages.reduce((acc, page) => acc + page.length, 0);
 
+        if (fetchedCount >= total) return undefined;
+        return fetchedCount;
+      },
+    },
+    [entity.id, q, sort, order],
+  );
+
+  useEffect(() => {
+    attachmentStorage.addCachedImage(fetchedRows);
+  }, [fetchedRows]);
+
+  const { data: localRows } = useLiveQuery(
+    (liveQuery) => {
+      return liveQuery
+        .from({ attachment: localAttachmentsCollection })
+        .where(({ attachment }) =>
+          q
+            ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
+            : not(isNull(attachment.id)),
+        )
+        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+    },
+    [entity.id, q, sort, order],
+  );
+
+  // Memoize combined rows to prevent unnecessary recalculations
+  const combinedData = useMemo(() => [...fetchedRows, ...localRows], [fetchedRows, localRows]);
+
+  // TODO(tanstackDB) add ordering
   const rows = useOfflineTableSearch({
-    data: fetchedRows,
+    data: combinedData,
     filterFn: ({ q }, item) => {
       if (!q) return true;
       const query = q.trim().toLowerCase(); // Normalize query
@@ -76,43 +125,80 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     },
   });
 
-  // Update rows
-  const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-    if (column.key !== 'name') return;
+  // Update rows with offline support
+  const onRowsChange = useCallback(
+    (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
+      if (column.key !== 'name') return;
 
-    // If name is changed, update the attachment
-    for (const index of indexes) {
-      const attachment = changedRows[index];
-      attachmentUpdateMutation.mutate({
-        id: attachment.id,
-        orgIdOrSlug: entity.id,
-        name: attachment.name,
-        localUpdate: !isCDNUrl(attachment.url),
-      });
-    }
-  };
+      // If name is changed, update the attachment with offline transaction support
+      for (const index of indexes) {
+        const attachment = changedRows[index];
+        const isLocalAttachment = attachment.originalKey?.startsWith('blob:http');
+
+        if (isLocalAttachment) {
+          // Local attachments update directly (not synced to server yet)
+          localAttachmentsCollection.update(attachment.id, (draft: Attachment) => {
+            draft.name = attachment.name;
+          });
+        } else {
+          // Server attachments use offline transactions for guaranteed sync
+          updateOffline(attachment.id, { name: attachment.name });
+        }
+      }
+    },
+    [localAttachmentsCollection, updateOffline],
+  );
 
   // isFetching already includes next page fetch scenario
   const fetchMore = useCallback(async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching]);
+    if (!hasNextPage || isLoading || isFetchingNextPage) return;
+    fetchNextPage();
+  }, [hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]);
 
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
+  const onSelectedRowsChange = useCallback(
+    (value: Set<string>) => {
+      if (rows) setSelected(rows.filter((row) => value.has(row.id)));
+    },
+    [rows],
+  );
+
+  // Memoize row key getter to prevent rerenders
+  const rowKeyGetter = useCallback((row: Attachment) => row.id, []);
+
+  // Memoize selected rows Set
+  const selectedRows = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+
+  // Memoize visible columns
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+
+  // Memoize error object
+  const error = useMemo(() => (isError ? new Error(t('common:failed_to_load_attachments')) : undefined), [isError, t]);
+
+  // Memoize NoRowsComponent
+  const NoRowsComponent = useMemo(
+    () => (
+      <ContentPlaceholder
+        icon={PaperclipIcon}
+        title="common:no_resource_yet"
+        titleProps={{ resource: t('common:attachments').toLowerCase() }}
+      />
+    ),
+    [t],
+  );
+
+  // Memoize clearSelection callback
+  const clearSelection = useCallback(() => setSelected([]), []);
 
   return (
     <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
       <AttachmentsTableBar
         entity={entity}
-        queryKey={queryOptions.queryKey}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
-        clearSelection={() => setSelected([])}
+        clearSelection={clearSelection}
         isSheet={isSheet}
         canUpload={canUpload}
         isCompact={isCompact}
@@ -123,27 +209,20 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           rows,
           rowHeight: 52,
           onRowsChange,
-          rowKeyGetter: (row) => row.id,
-          columns: columns.filter((column) => column.visible),
+          rowKeyGetter,
+          columns: visibleColumns,
           enableVirtualization: false,
           limit,
           error,
           isLoading,
-          isFetching,
           isFiltered: !!q,
           hasNextPage,
           fetchMore,
-          selectedRows: new Set(selected.map((s) => s.id)),
+          selectedRows,
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,
-          NoRowsComponent: (
-            <ContentPlaceholder
-              icon={PaperclipIcon}
-              title="common:no_resource_yet"
-              titleProps={{ resource: t('common:attachments').toLowerCase() }}
-            />
-          ),
+          NoRowsComponent,
         }}
       />
     </div>

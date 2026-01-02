@@ -1,5 +1,4 @@
 import type { ContextEntityType, EntityType } from 'config';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 
@@ -27,7 +26,6 @@ export const entityToPrefetchQueries = (entityId: string, entityType: EntityType
           orgIdOrSlug: entityId,
           entityType: entityType,
         }),
-        attachmentsQueryOptions({ orgIdOrSlug: entityId }),
       ];
 
     // Extend switch case for app-specific entity types ...

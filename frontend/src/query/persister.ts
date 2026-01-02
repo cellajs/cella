@@ -1,19 +1,38 @@
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
-import { del, get, set } from 'idb-keyval';
+import { Dexie } from 'dexie';
+
+// Create a simple Dexie instance for react-query persistence
+class QueryPersisterDB extends Dexie {
+  persist!: Dexie.Table<any, string>;
+
+  constructor() {
+    super('CellaQueryPersister');
+    this.version(1).stores({
+      persist: 'key',
+    });
+  }
+}
+
+const queryDb = new QueryPersisterDB();
 
 /**
- * Create an IndexedDB persister for react-query
+ * Create an IndexedDB persister for react-query using Dexie
  */
-function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
+function createIDBPersister(idbValidKey: string = 'reactQuery') {
   return {
     persistClient: async (client: PersistedClient) => {
-      await set(idbValidKey, client);
+      await queryDb.persist.put({ key: idbValidKey, ...client }, idbValidKey);
     },
     restoreClient: async () => {
-      return await get<PersistedClient>(idbValidKey);
+      const persisted = await queryDb.persist.get(idbValidKey);
+      if (persisted) {
+        const { key, ...client } = persisted;
+        return client as PersistedClient;
+      }
+      return undefined;
     },
     removeClient: async () => {
-      await del(idbValidKey);
+      await queryDb.persist.delete(idbValidKey);
     },
   } as Persister;
 }
