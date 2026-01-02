@@ -40,7 +40,7 @@ if (appConfig.mode === 'production') {
   });
 }
 
-/** 
+/**
  * Array of app-specific global alerts.
  */
 export const alertsConfig = alerts;
