@@ -34,7 +34,9 @@ interface SidebarNavProps {
   sheetContainerRef: RefObject<HTMLDivElement | null>;
 }
 
-/** Desktop sidebar: icon bar + sheet panel */
+/**
+ * Sidebar navigation: icon bar + sheet panel
+ */
 export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProps) {
   const { hasStarted } = useMounted();
   const isDesktop = useBreakpoints('min', 'xl', true);

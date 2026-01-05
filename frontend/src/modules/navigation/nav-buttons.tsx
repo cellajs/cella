@@ -27,7 +27,7 @@ export function AppNavIcon({ navItem, className }: { navItem: NavItem; className
       <AvatarWrap
         type="user"
         className={cn(
-          'border-[0.1rem] size-6 -m-0.5 shrink-0 rounded-full sm:ml-0 text-base border-primary group-hover:scale-110 transition-transform',
+          'border-[0.1rem] size-7 -m-0.5 shrink-0 rounded-full text-base border-primary group-hover:scale-110 transition-transform',
           className,
         )}
         id={user.id}
