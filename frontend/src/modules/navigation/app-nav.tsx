@@ -24,6 +24,7 @@ export const navSheetClassName =
 const AppNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
+  const isDesktop = useBreakpoints('min', 'xl', true);
 
   // Ref for the sidebar sheet container (for inline rendering on desktop)
   const sheetContainerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +43,7 @@ const AppNav = () => {
 
     // If nav item is already open, close it
     if (id === navSheetOpen) {
-      setNavSheetOpen(null);
+      setNavSheetOpen(null, isDesktop);
       updateSheet('nav-sheet', { open: false });
       return;
     }
@@ -56,7 +57,7 @@ const AppNav = () => {
     // If its a route, navigate to it
     if (navItem.href) {
       if (!useNavigationStore.getState().keepMenuOpen) {
-        setNavSheetOpen(null);
+        setNavSheetOpen(null, isDesktop);
         updateSheet('nav-sheet', { open: false });
       }
       return navigate({ to: navItem.href });
@@ -64,7 +65,7 @@ const AppNav = () => {
 
     // If it has a sheet, use sheeter service (both mobile and desktop)
     if (navItem.sheet) {
-      setNavSheetOpen(navItem.id);
+      setNavSheetOpen(navItem.id, isDesktop);
 
       const sheetSide = isMobile && navItem.mirrorOnMobile ? 'right' : 'left';
 
@@ -81,7 +82,7 @@ const AppNav = () => {
         closeSheetOnRouteChange: false,
         className: navSheetClassName,
         container,
-        onClose: () => setNavSheetOpen(null),
+        onClose: () => setNavSheetOpen(null, isDesktop),
       });
     }
   };

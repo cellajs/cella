@@ -1,10 +1,9 @@
 import { appConfig } from 'config';
-import { lazy, type RefObject, Suspense, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { lazy, type RefObject, Suspense } from 'react';
+import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import SidebarLoader from '~/modules/navigation/sidebar-loader';
+import { MobileNavButton, NavButton } from '~/modules/navigation/nav-buttons';
 import StopImpersonation from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import {
@@ -14,13 +13,10 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from '~/modules/ui/sidebar';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
 const DebugToolbars =
@@ -50,6 +46,9 @@ export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProp
 
   const theme = useUIStore((state) => state.theme);
   const { navSheetOpen, keepMenuOpen } = useNavigationStore();
+
+  // Apply body class for keep-menu-open styling
+  useBodyClass({ 'keep-menu-open': keepMenuOpen });
 
   // Mobile: Render bottom navigation bar
   if (isMobile) {
@@ -170,10 +169,10 @@ export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProp
           {/* Non-overlay mode: uses width animation to push content */}
           <div
             className={cn(
-              'flex flex-col bg-background h-full',
+              'flex flex-col bg-background h-full sm:left-14.5',
               sheetOverlay
                 ? cn(
-                    'absolute top-0 z-100 shadow-lg w-80 transition-[left,opacity] duration-200 linear',
+                    'absolute top-0 z-100 w-80 transition-[left,opacity] duration-200 linear',
                     isCollapsed ? 'left-full opacity-100' : 'left-0 opacity-0 pointer-events-none',
                   )
                 : cn(
@@ -189,107 +188,6 @@ export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProp
         </div>
       </Sidebar>
     </>
-  );
-}
-
-interface NavButtonProps {
-  navItem: NavItem;
-  isActive: boolean;
-  isCollapsed: boolean;
-  onClick: TriggerNavItemFn;
-}
-
-/**
- * Renders the appropriate icon for a nav item
- */
-function NavItemIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
-  const { user } = useUserStore();
-
-  if (navItem.id === 'account' && user) {
-    return (
-      <AvatarWrap
-        type="user"
-        className={cn(
-          'border-[0.1rem] size-6 -m-0.5 shrink-0 rounded-full sm:ml-0 text-base border-primary group-hover:scale-110 transition-transform',
-          className,
-        )}
-        id={user.id}
-        name={user.name}
-        url={user.thumbnailUrl}
-      />
-    );
-  }
-
-  if (navItem.id === 'home') {
-    return <SidebarLoader className={'size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0'} />;
-  }
-
-  return (
-    <navItem.icon
-      className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0', className)}
-      strokeWidth={appConfig.theme.strokeWidth}
-    />
-  );
-}
-
-function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
-  const { t } = useTranslation();
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const theme = useUIStore((state) => state.theme);
-
-  return (
-    <SidebarMenuItem className="flex transform grow-0 justify-start pb-2">
-      <SidebarMenuButton
-        ref={buttonRef}
-        size="lg"
-        tooltip={{ children: t(`common:${navItem.id}`), hidden: !isCollapsed }}
-        onClick={() => onClick(navItem.id, buttonRef)}
-        isActive={isActive}
-        data-theme={theme}
-        className={cn(
-          'h-12 ring-inset pl-3 focus-visible:ring-offset-0 group transition-[width] duration-200 linear',
-          'data-[active=true]:bg-background/50 hover:bg-background/30',
-          'text-primary-foreground data-[theme=none]:text-inherit',
-          isCollapsed ? 'w-12' : 'w-full',
-        )}
-      >
-        <NavItemIcon navItem={navItem} />
-        <span
-          className={cn(
-            'pl-1 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden',
-            isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto',
-          )}
-        >
-          {t(`common:${navItem.id}`)}
-        </span>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
-}
-
-/**
- * Mobile navigation button - used in the bottom bar on mobile
- */
-function MobileNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const theme = useUIStore((state) => state.theme);
-
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      id={`${navItem.id}-nav`}
-      data-theme={theme}
-      data-active={isActive}
-      onClick={() => onClick(navItem.id, buttonRef)}
-      className={cn(
-        'ring-inset focus-visible:ring-offset-0 group size-14 flex items-center justify-center rounded-md',
-        'data-[active=true]:bg-background/50 hover:bg-background/30',
-        'text-primary-foreground data-[theme=none]:text-inherit',
-      )}
-    >
-      <NavItemIcon navItem={navItem} />
-    </button>
   );
 }
 

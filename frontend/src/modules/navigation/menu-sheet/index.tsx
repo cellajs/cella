@@ -7,6 +7,7 @@ import { appConfig } from 'config';
 import { ArrowLeftIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -39,6 +40,8 @@ export const MenuSheet = () => {
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
   const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
   const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
+
+  const isDesktop = useBreakpoints('min', 'xl', true);
 
   const { mutateAsync } = useMemberUpdateMutation();
 
@@ -179,7 +182,7 @@ export const MenuSheet = () => {
               <Switch
                 id="keepMenuOpen"
                 checked={keepOpenPreference}
-                onCheckedChange={toggleKeepOpenPreference}
+                onCheckedChange={(checked) => toggleKeepOpenPreference(checked, isDesktop)}
                 aria-label={t('common:keep_menu_open')}
               />
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
