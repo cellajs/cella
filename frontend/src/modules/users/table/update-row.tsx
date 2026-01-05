@@ -32,7 +32,6 @@ export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonE
       className: 'max-w-full lg:max-w-4xl',
       title,
       titleContent: <UnsavedBadge title={title} />,
-      scrollableOverlay: true,
     },
   );
 };

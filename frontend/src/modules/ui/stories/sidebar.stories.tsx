@@ -13,8 +13,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
   SidebarTrigger,
+  SidebarWrapper,
 } from '~/modules/ui/sidebar';
 
 /**
@@ -48,13 +48,13 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <SidebarProvider>
+      <SidebarWrapper>
         <Story />
         <section className="m-4">
           <SidebarTrigger />
           <div className="size-full" />
         </section>
-      </SidebarProvider>
+      </SidebarWrapper>
     ),
   ],
 } satisfies Meta<typeof Sidebar>;

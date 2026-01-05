@@ -4,8 +4,9 @@ import { HomeIcon } from 'lucide-react';
 import useMounted from '~/hooks/use-mounted';
 import Logo from '~/modules/common/logo';
 import { useNavigationStore } from '~/store/navigation';
+import { cn } from '~/utils/cn';
 
-const AppNavLoader = () => {
+const SidebarLoader = ({ className }: { className?: string }) => {
   const isFetching = useIsFetching({
     predicate: (query) => {
       if (query.meta === undefined || !('offlinePrefetch' in query.meta) || !query.meta.offlinePrefetch) return true;
@@ -22,16 +23,22 @@ const AppNavLoader = () => {
     <>
       <Logo
         iconOnly
-        className={`w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0
-                    ${appConfig.navLogoAnimation} ${!isLoading && hasWaited && 'ease-in-out opacity-0 scale-0'}`}
+        className={cn(
+          `w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0
+                    ${appConfig.navLogoAnimation} ${!isLoading && hasWaited && 'ease-in-out opacity-0 scale-0'}`,
+          className,
+        )}
       />
       <HomeIcon
         strokeWidth={appConfig.theme.strokeWidth}
-        className={`transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 
-                    ${!hasWaited && 'scale-0 opacity-0'} ${isLoading && 'scale-0 opacity-0'}`}
+        className={cn(
+          `transition-all ease-in-out group-hover:scale-110 size-5 min-h-5 min-w-5 group-hover:opacity-100 
+                    ${!hasWaited && 'scale-0 opacity-0'} ${isLoading && 'scale-0 opacity-0'}`,
+          className,
+        )}
       />
     </>
   );
 };
 
-export default AppNavLoader;
+export default SidebarLoader;

@@ -116,8 +116,6 @@ export const OrganizationsTableBar = ({
       title: t('common:newsletter'),
       titleContent: <UnsavedBadge title={t('common:newsletter')} />,
       description: t('common:newsletter.text'),
-
-      scrollableOverlay: true,
       onClose: clearSelection,
     });
   };

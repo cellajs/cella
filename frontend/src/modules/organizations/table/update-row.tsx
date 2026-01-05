@@ -33,7 +33,6 @@ const openUpdateSheet = (organization: Organization | Organization, buttonRef: R
           title={i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() })}
         />
       ),
-      scrollableOverlay: true,
     },
   );
 };

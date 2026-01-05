@@ -3,6 +3,11 @@ import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 
+/**
+ * Manages the application navigation state, particularly the sidebar menu's open/close behavior.
+ * - On desktop, keeps the menu open based on user preference and previous state.
+ * - Applies relevant CSS classes to the body element for styling based on navigation state.
+ */
 export const AppNavState = () => {
   const { navSheetOpen, setKeepMenuOpen, keepOpenPreference } = useNavigationStore();
   const isDesktop = useBreakpoints('min', 'xl', true);
