@@ -4,9 +4,9 @@ import { configure } from 'onedollarstats';
 import { Suspense, useEffect } from 'react';
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { ToastManager } from '~/modules/common//toaster';
 import { DownAlert } from '~/modules/common/down-alert';
 import ReloadPrompt from '~/modules/common/reload-prompt';
+import { ToastManager } from '~/modules/common/toaster';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
 function Root() {

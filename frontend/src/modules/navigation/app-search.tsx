@@ -20,6 +20,9 @@ import { useNavigationStore } from '~/store/navigation';
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
 
+/**
+ * Application search component.
+ */
 export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

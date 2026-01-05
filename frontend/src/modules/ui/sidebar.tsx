@@ -19,7 +19,7 @@ import { cn } from '~/utils/cn';
  */
 
 const SIDEBAR_WIDTH = '12rem';
-const SIDEBAR_WIDTH_ICON = '3.5rem';
+const SIDEBAR_WIDTH_ICON = '4rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
 type SidebarState = 'expanded' | 'collapsed';

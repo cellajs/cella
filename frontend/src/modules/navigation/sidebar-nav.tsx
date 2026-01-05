@@ -113,7 +113,7 @@ export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProp
           {/* Sheet panel */}
           <div
             className={cn(
-              'flex flex-col bg-background h-full sm:left-14.5',
+              'flex flex-col bg-background h-full sm:left-16',
               sheetOverlay
                 ? cn(
                     'absolute top-0 z-100 w-80 transition-[left,opacity] duration-200 linear',

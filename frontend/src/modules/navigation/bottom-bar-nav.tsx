@@ -1,5 +1,5 @@
 import useMounted from '~/hooks/use-mounted';
-import { MobileNavButton } from '~/modules/navigation/nav-buttons';
+import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
@@ -17,7 +17,9 @@ interface BottomBarNavProps {
   triggerNavItem: TriggerNavItemFn;
 }
 
-/** Mobile bottom navigation bar */
+/**
+ * Mobile bottom navigation bar.
+ */
 export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
   const { hasStarted } = useMounted();
   const theme = useUIStore((state) => state.theme);
@@ -43,7 +45,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
                 isSecondItem && 'xs:absolute xs:left-1/2 xs:-translate-x-1/2',
               )}
             >
-              <MobileNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
+              <BottomBarNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
             </li>
           );
         })}

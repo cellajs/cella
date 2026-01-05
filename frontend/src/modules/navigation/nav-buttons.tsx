@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import SidebarLoader from '~/modules/navigation/sidebar-loader';
+import AppNavLoader from '~/modules/navigation/app-nav-loader';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { useUIStore } from '~/store/ui';
@@ -16,8 +16,10 @@ export interface NavButtonProps {
   onClick: TriggerNavItemFn;
 }
 
-/** Nav item icon (avatar for account, loader for home, or item icon) */
-export function NavItemIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
+/**
+ * App nav icon (avatar for account, loader for home, or item icon) used by both sidebar and bottom bar.
+ */
+export function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
   const { user } = useUserStore();
 
   if (navItem.id === 'account' && user) {
@@ -36,18 +38,22 @@ export function NavItemIcon({ navItem, className }: { navItem: NavItem; classNam
   }
 
   if (navItem.id === 'home') {
-    return <SidebarLoader className={'size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0'} />;
+    return <AppNavLoader className={'size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0'} />;
   }
 
+  const NavItemIcon = navItem.icon;
+
   return (
-    <navItem.icon
+    <NavItemIcon
       className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0', className)}
       strokeWidth={appConfig.theme.strokeWidth}
     />
   );
 }
 
-/** Desktop sidebar button */
+/**
+ * App sidebar nav button.
+ */
 export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -63,16 +69,16 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
         isActive={isActive}
         data-theme={theme}
         className={cn(
-          'h-12 ring-inset pl-3 focus-visible:ring-offset-0 group transition-[width] duration-200 linear',
+          'h-14 ring-inset pl-3.5 focus-visible:ring-offset-0 group transition-[width] duration-200 linear',
           'data-[active=true]:bg-background/50 hover:bg-background/30',
           'text-primary-foreground data-[theme=none]:text-inherit',
-          isCollapsed ? 'w-12' : 'w-full',
+          isCollapsed ? 'w-14' : 'w-full',
         )}
       >
-        <NavItemIcon navItem={navItem} />
+        <AppNavIcon navItem={navItem} />
         <span
           className={cn(
-            'pl-1 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden',
+            'pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden',
             isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto',
           )}
         >
@@ -83,8 +89,10 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
   );
 }
 
-/** Mobile bottom bar button */
-export function MobileNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
+/**
+ * Mobile bottom bar nav button
+ */
+export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const theme = useUIStore((state) => state.theme);
 
@@ -102,7 +110,7 @@ export function MobileNavButton({ navItem, isActive, onClick }: Omit<NavButtonPr
         'text-primary-foreground data-[theme=none]:text-inherit',
       )}
     >
-      <NavItemIcon navItem={navItem} />
+      <AppNavIcon navItem={navItem} />
     </button>
   );
 }

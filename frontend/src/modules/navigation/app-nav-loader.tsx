@@ -6,7 +6,10 @@ import Logo from '~/modules/common/logo';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
-const SidebarLoader = ({ className }: { className?: string }) => {
+/**
+ * Navigation loader component shown during data fetching.
+ */
+const AppNavLoader = ({ className }: { className?: string }) => {
   const isFetching = useIsFetching({
     predicate: (query) => {
       if (query.meta === undefined || !('offlinePrefetch' in query.meta) || !query.meta.offlinePrefetch) return true;
@@ -41,4 +44,4 @@ const SidebarLoader = ({ className }: { className?: string }) => {
   );
 };
 
-export default SidebarLoader;
+export default AppNavLoader;
