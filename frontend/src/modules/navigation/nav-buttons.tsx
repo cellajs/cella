@@ -16,9 +16,7 @@ export interface NavButtonProps {
   onClick: TriggerNavItemFn;
 }
 
-/**
- * Renders the appropriate icon for a nav item
- */
+/** Nav item icon (avatar for account, loader for home, or item icon) */
 export function NavItemIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
   const { user } = useUserStore();
 
@@ -49,9 +47,7 @@ export function NavItemIcon({ navItem, className }: { navItem: NavItem; classNam
   );
 }
 
-/**
- * Desktop navigation button - used in the sidebar
- */
+/** Desktop sidebar button */
 export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -87,9 +83,7 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
   );
 }
 
-/**
- * Mobile navigation button - used in the bottom bar on mobile
- */
+/** Mobile bottom bar button */
 export function MobileNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const theme = useUIStore((state) => state.theme);

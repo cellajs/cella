@@ -3,7 +3,7 @@ import { lazy, type RefObject, Suspense } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import { MobileNavButton, NavButton } from '~/modules/navigation/nav-buttons';
+import { NavButton } from '~/modules/navigation/nav-buttons';
 import StopImpersonation from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import {
@@ -22,124 +22,70 @@ import { cn } from '~/utils/cn';
 const DebugToolbars =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
-// Base nav items for sidebar/bottom bar navigation (lazy to avoid circular dep issues)
+// Cached base nav items
 let baseNavItems: NavItem[] | null = null;
 const getBaseNavItems = () => {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
 };
 
-interface AppSidebarProps {
+interface SidebarNavProps {
   triggerNavItem: TriggerNavItemFn;
   sheetContainerRef: RefObject<HTMLDivElement | null>;
 }
 
-/**
- * App sidebar using shadcn sidebar-09 nested pattern.
- * - Desktop: Nested sidebars - icon bar + sheet content panel
- * - Mobile: Bottom navigation bar (sheets rendered via sheeter service as drawers)
- */
-export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProps) {
+/** Desktop sidebar: icon bar + sheet panel */
+export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProps) {
   const { hasStarted } = useMounted();
-  const isMobile = useBreakpoints('max', 'sm');
   const isDesktop = useBreakpoints('min', 'xl', true);
 
   const theme = useUIStore((state) => state.theme);
   const { navSheetOpen, keepMenuOpen } = useNavigationStore();
 
-  // Apply body class for keep-menu-open styling
   useBodyClass({ 'keep-menu-open': keepMenuOpen });
 
-  // Mobile: Render bottom navigation bar
-  if (isMobile) {
-    return (
-      <nav
-        id="bar-nav"
-        data-theme={theme}
-        data-started={hasStarted}
-        className="in-[.floating-nav]:hidden fixed z-100 flex justify-between flex-row w-full bottom-0 transition-transform ease-out shadow-xs bg-primary data-[theme=none]:bg-secondary data-[started=false]:translate-y-full group-[.focus-view]/body:hidden"
-      >
-        <ul className="flex flex-row justify-between p-1 w-full px-2">
-          {getBaseNavItems().map((navItem: NavItem, index: number) => {
-            const isSecondItem = index === 1;
-            const isActive = navSheetOpen === navItem.id;
-
-            return (
-              <li
-                key={navItem.id}
-                className={cn(
-                  'flex transform justify-start',
-                  isSecondItem && 'xs:absolute xs:left-1/2 xs:-translate-x-1/2',
-                )}
-              >
-                <MobileNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
-              </li>
-            );
-          })}
-          <div className={`hidden xs:flex xs:grow`} />
-        </ul>
-      </nav>
-    );
-  }
-
-  // Desktop: Collapsible sidebar with nested sheet content panel
-  // - isDesktop (xl+): Show icons+text when no sheet, icons only when sheet open
-  // - Smaller screens: Always show icons only
-  // - Sheet panel overlays content unless isDesktop AND keepMenuOpen
+  // Desktop sidebar: xl+ shows icons+text when collapsed, sheet overlays unless keepMenuOpen
   const isCollapsed = !!navSheetOpen;
-
-  // Only show expanded (icons+text) on desktop-sized screens when not collapsed
   const showExpandedBar = isDesktop && !isCollapsed;
   const iconBarWidth = showExpandedBar ? 'var(--sidebar-width)' : 'var(--sidebar-width-icon)';
   const sheetPanelWidth = isCollapsed ? '20rem' : '0px';
 
-  // Sheet overlay mode: sheet panel overlays content instead of pushing it
-  // Only push content when on desktop AND keepMenuOpen is enabled
+  // Sheet overlays content unless desktop + keepMenuOpen
   const sheetOverlay = !isDesktop || !keepMenuOpen;
 
-  // Spacer width: for content positioning
-  // In desktop overlay mode, stay at expanded width so content doesn't shift when sheet opens
+  // Spacer keeps content positioned (stays expanded in overlay mode)
   const spacerWidth = sheetOverlay
     ? isDesktop
-      ? 'calc(var(--sidebar-width) + 1px)' // Desktop overlay: stay expanded
-      : 'calc(var(--sidebar-width-icon) + 1px)' // Non-desktop overlay: icons only
-    : `calc(${iconBarWidth} + ${sheetPanelWidth} + 1px)`; // Non-overlay: include sheet
+      ? 'var(--sidebar-width)'
+      : 'var(--sidebar-width-icon)'
+    : `calc(${iconBarWidth} + ${sheetPanelWidth})`;
 
-  // Sidebar visual width: icon bar + sheet panel when not overlaying
-  const sidebarWidth = sheetOverlay
-    ? `calc(${iconBarWidth} + 1px)`
-    : `calc(${iconBarWidth} + ${sheetPanelWidth} + 1px)`;
+  const sidebarWidth = sheetOverlay ? iconBarWidth : `calc(${iconBarWidth} + ${sheetPanelWidth})`;
 
   return (
     <>
-      {/* Spacer div - stays in document flow to push content */}
+      {/* Spacer to push content */}
       <div
         data-slot="sidebar-spacer"
         className="relative bg-transparent transition-[width] duration-200 linear group-[.focus-view]/body:hidden"
         style={{ width: spacerWidth }}
       />
-      {/* Fixed sidebar - positioned over the spacer */}
+      {/* Fixed sidebar */}
       <Sidebar
         collapsible="none"
         data-theme={theme}
         data-started={hasStarted}
         data-collapsed={isCollapsed}
-        className={cn(
-          'fixed inset-y-0 left-0 z-100',
-          'transition-[width] duration-200 linear',
-          'border-r-0 bg-primary data-[theme=none]:bg-secondary',
-          'group-[.focus-view]/body:hidden',
-          'data-[started=false]:-translate-x-full',
-        )}
+        className="fixed inset-y-0 left-0 z-100 transition-[width] duration-200 linear border-r-0 bg-primary data-[theme=none]:bg-secondary group-[.focus-view]/body:hidden data-[started=false]:-translate-x-full"
         style={{
           width: sidebarWidth,
         }}
       >
         <div className="flex flex-row h-full relative">
-          {/* Icon navigation bar - expands to show text when no sheet open */}
+          {/* Icon bar */}
           <div
             className="flex flex-col h-full border-r border-r-background/20 transition-[width] duration-200 linear overflow-hidden"
-            style={{ width: `calc(${iconBarWidth} + 1px)` }}
+            style={{ width: iconBarWidth }}
           >
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
@@ -164,9 +110,7 @@ export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProp
             </SidebarFooter>
           </div>
 
-          {/* Sheet content panel (shows when navSheetOpen) */}
-          {/* Overlay mode: slides in from behind icon bar */}
-          {/* Non-overlay mode: uses width animation to push content */}
+          {/* Sheet panel */}
           <div
             className={cn(
               'flex flex-col bg-background h-full sm:left-14.5',
@@ -182,7 +126,7 @@ export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProp
             )}
             style={!sheetOverlay ? { width: sheetPanelWidth } : undefined}
           >
-            {/* Portal target for sheeter inline content */}
+            {/* Sheeter portal */}
             <div ref={sheetContainerRef} className="flex flex-col h-full min-w-80" />
           </div>
         </div>
@@ -191,4 +135,4 @@ export function AppSidebar({ triggerNavItem, sheetContainerRef }: AppSidebarProp
   );
 }
 
-export default AppSidebar;
+export default SidebarNav;

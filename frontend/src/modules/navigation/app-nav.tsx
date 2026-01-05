@@ -5,8 +5,9 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { AppSidebar } from '~/modules/navigation/app-sidebar';
+import BottomBarNav from '~/modules/navigation/bottom-bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
+import SidebarNav from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
@@ -16,7 +17,7 @@ export const navSheetClassName =
   'sm:w-80 linear sm:z-105 sm:inset-0 xs:max-w-80 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
 
 /** Application navigation component.
- * - Renders the floating nav or sidebar.
+ * - Renders floating, sidebar, or bottom bar nav.
  * - Manages navigation item triggering, including routing and sheet handling.
  * - Sets up hotkeys for quick navigation access.
  * - Listens to route changes to close dialogs and sheets.
@@ -115,7 +116,11 @@ const AppNav = () => {
   return (
     <>
       <FloatingNav triggerNavItem={triggerNavItem} />
-      <AppSidebar triggerNavItem={triggerNavItem} sheetContainerRef={sheetContainerRef} />
+      {isMobile ? (
+        <BottomBarNav triggerNavItem={triggerNavItem} />
+      ) : (
+        <SidebarNav triggerNavItem={triggerNavItem} sheetContainerRef={sheetContainerRef} />
+      )}
     </>
   );
 };
