@@ -1,6 +1,5 @@
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ZapOffIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { deleteMySessions } from '~/api.gen';
 import { ExpandableList } from '~/modules/common/expandable-list';
@@ -19,7 +18,7 @@ const SessionsList = () => {
     data: { sessions: allSessions },
   } = useSuspenseQuery(queryOptions);
 
-  const sessionsWithoutCurrent = useMemo(() => allSessions.filter((session) => !session.isCurrent), [allSessions]);
+  const sessionsWithoutCurrent = allSessions.filter((session) => !session.isCurrent);
   const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));
 
   // Terminate one or all sessions

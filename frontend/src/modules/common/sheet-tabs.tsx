@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { nanoid } from '~/utils/nanoid';
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const SheetTabs = ({ tabs }: Props) => {
-  const layoutId = useMemo(() => nanoid(), []);
+  const layoutId = nanoid();
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(tabs[0]);

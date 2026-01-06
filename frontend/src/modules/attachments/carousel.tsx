@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import { DownloadIcon, ExternalLinkIcon, XIcon } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachments/dialog/lib';
 import { AttachmentRender } from '~/modules/attachments/render';
@@ -63,14 +63,12 @@ const AttachmentsCarousel = ({
   const nextButtonRef = useRef(null);
   const [watchDrag, setWatchDrag] = useState(items.length > 1);
 
-  const currentItem = useMemo(() => {
-    return items.find((item) => item.id === attachmentDialogId) ?? items[itemIndex] ?? null;
-  }, [attachmentDialogId, items, itemIndex]);
+  const currentItem = items.find((item) => item.id === attachmentDialogId) ?? items[itemIndex] ?? null;
 
-  const currentItemIndex = useMemo(() => {
+  const currentItemIndex = (() => {
     const index = items.findIndex((item) => item.id === currentItem?.id);
     return index !== -1 ? index : itemIndex;
-  }, [items, currentItem, itemIndex]);
+  })();
 
   const updateSearchParam = (newItem: CarouselItemData | undefined) => {
     if (!saveInSearchParams) return;

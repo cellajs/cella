@@ -1,5 +1,5 @@
 import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtualizer } from 'virtua';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -67,9 +67,8 @@ const Combobox = ({
     ...passedPlaseholders,
   };
 
-  const filteredOptions = useMemo(
-    () => options.filter(({ label }) => label.toLowerCase().includes(debouncedSearchQuery.toLowerCase())),
-    [options, debouncedSearchQuery],
+  const filteredOptions = options.filter(({ label }) =>
+    label.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
   );
 
   const handleSelect = (newResult: string) => {

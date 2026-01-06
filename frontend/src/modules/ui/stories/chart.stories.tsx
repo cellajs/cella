@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useMemo } from 'react';
+
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Label, Line, LineChart, Pie, PieChart, XAxis } from 'recharts';
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '~/modules/ui/chart';
 
@@ -211,9 +211,7 @@ export const DoughnutChart: Story = {
     config: singleSeriesConfig,
   },
   render: (args) => {
-    const totalVisitors = useMemo(() => {
-      return singleSeriesData.reduce((acc, curr) => acc + curr.visitors, 0);
-    }, []);
+    const totalVisitors = singleSeriesData.reduce((acc, curr) => acc + curr.visitors, 0);
     return (
       <ChartContainer {...args}>
         <PieChart>

@@ -8,7 +8,7 @@ import {
   ShieldAlertIcon,
   XIcon,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
@@ -71,11 +71,11 @@ export const DownAlert = () => {
   // Track if user manually dismissed alert
   const [dismissedAlerts, setDismissedAlerts] = useState({} as Record<AlertKeys, boolean>);
 
-  const dismissAlert = useCallback(() => {
+  const dismissAlert = () => {
     if (!downAlert) return;
     setDismissedAlerts((prev) => ({ ...prev, [downAlert]: true }));
     setDownAlert(null);
-  }, [downAlert]);
+  };
 
   const resetDismiss = (key: AlertKeys) => setDismissedAlerts((prev) => ({ ...prev, [key]: false }));
 

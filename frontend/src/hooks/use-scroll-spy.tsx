@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type IntersectionEntry = {
   id: string;
@@ -36,24 +36,21 @@ export const useScrollSpy = ({ sectionIds = [], enableWriteHash = false }: UseSc
   const [currentSection, setCurrentSection] = useState<string>(sectionIds[0] || '');
 
   // Programmatically scroll to a section, pausing hash writes during the scroll
-  const scrollToSection = useCallback(
-    (id: string) => {
-      isProgrammaticScrollRef.current = true;
+  const scrollToSection = (id: string) => {
+    isProgrammaticScrollRef.current = true;
 
-      // Navigate to 'top' first to reset if already at the target hash
-      if (window.location.hash === `#${id}`) navigate({ to: '.', hash: 'top', replace: true });
+    // Navigate to 'top' first to reset if already at the target hash
+    if (window.location.hash === `#${id}`) navigate({ to: '.', hash: 'top', replace: true });
 
+    setTimeout(() => {
+      navigate({ to: '.', hash: id, replace: true });
+
+      // Re-enable hash writes after scroll animation completes
       setTimeout(() => {
-        navigate({ to: '.', hash: id, replace: true });
-
-        // Re-enable hash writes after scroll animation completes
-        setTimeout(() => {
-          isProgrammaticScrollRef.current = false;
-        }, 500);
-      }, 20);
-    },
-    [navigate],
-  );
+        isProgrammaticScrollRef.current = false;
+      }, 500);
+    }, 20);
+  };
 
   useEffect(() => {
     if (!sectionIds.length) return;

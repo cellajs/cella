@@ -1,6 +1,6 @@
 import { DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
 import { SlidersHorizontalIcon } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -25,15 +25,11 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, s
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
-  const filteredColumns = useMemo(
-    () =>
-      columns.filter(
-        (column) =>
-          typeof column.name === 'string' &&
-          column.name &&
-          column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
-      ),
-    [columns, columnSearch],
+  const filteredColumns = columns.filter(
+    (column) =>
+      typeof column.name === 'string' &&
+      column.name &&
+      column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
   );
 
   return (

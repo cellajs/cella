@@ -48,9 +48,9 @@ function useSidebar(): UseSidebarReturn {
   const keepMenuOpen = useNavigationStore((state) => state.keepMenuOpen);
   const setKeepMenuOpen = useNavigationStore((state) => state.setKeepMenuOpen);
 
-  const toggleSidebar = React.useCallback(() => {
+  const toggleSidebar = () => {
     setKeepMenuOpen(!keepMenuOpen);
-  }, [keepMenuOpen, setKeepMenuOpen]);
+  };
 
   // Keyboard shortcut to toggle sidebar
   React.useEffect(() => {
@@ -506,9 +506,7 @@ function SidebarMenuSkeleton({
   showIcon?: boolean;
 }) {
   // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  }, []);
+  const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
   return (
     <div
