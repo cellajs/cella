@@ -100,8 +100,18 @@ function SheetContent({
   );
 }
 
-function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="sheet-header" className={cn('flex flex-col gap-1.5 p-4', className)} {...props} />;
+function SheetHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
+  return (
+    <div
+      data-slot="sheet-header"
+      className={cn(
+        'flex flex-col gap-1.5 p-4',
+        sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {

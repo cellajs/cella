@@ -20,6 +20,12 @@ interface PageAsideProps<T> {
   setFocus?: boolean;
 }
 
+/**
+ * Page Aside Component which renders a list of tabs/links for navigation within a page.
+ * @param tabs (PageTab[]) - An array of tab objects containing id, label, resource, and optional icon.
+ * @param className - Optional additional class names for styling.
+ * @param setFocus - Optional boolean to set focus on the first tab on mount.
+ */
 export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const { t } = useTranslation();

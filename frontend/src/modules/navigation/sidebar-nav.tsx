@@ -74,6 +74,7 @@ export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProp
       />
       {/* Fixed sidebar */}
       <Sidebar
+        id="sidebar-nav"
         collapsible="none"
         data-theme={theme}
         data-started={hasStarted}

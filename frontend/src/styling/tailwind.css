@@ -44,6 +44,7 @@
     font-display: swap;
   }
 
+  /* REMARK: 500 weight somehow causes a flicker in resize  */
   @font-face {
     font-family: "Open Sans";
     src:
@@ -53,7 +54,7 @@
       url(/static/fonts/OpenSans-Medium.woff) format("woff");
     font-weight: 500;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
   }
 
   @font-face {

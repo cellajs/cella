@@ -24,18 +24,18 @@ const AppNavLoader = ({ className }: { className?: string }) => {
 
   return (
     <>
-      <Logo
-        iconOnly
+      <div
         className={cn(
-          `w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0
-                    ${appConfig.navLogoAnimation} ${!isLoading && hasWaited && 'ease-in-out opacity-0 scale-0'}`,
-          className,
+          'absolute transition-all ease-in-out duration-300 group-hover:scale-110 group-hover:opacity-0',
+          !isLoading && hasWaited ? 'opacity-0 scale-0' : 'opacity-100 scale-100 delay-150',
         )}
-      />
+      >
+        <Logo iconOnly className={cn(`w-8 saturate-[.9] ${appConfig.navLogoAnimation}`, className)} />
+      </div>
       <HomeIcon
-        strokeWidth={appConfig.theme.strokeWidth}
+        strokeWidth={1.8}
         className={cn(
-          `transition-all ease-in-out group-hover:scale-110 size-5 min-h-5 min-w-5 group-hover:opacity-100 
+          `transition-all ease-in-out duration-300 group-hover:scale-110 size-5 min-h-5 min-w-5 group-hover:opacity-100 
                     ${!hasWaited && 'scale-0 opacity-0'} ${isLoading && 'scale-0 opacity-0'}`,
           className,
         )}

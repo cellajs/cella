@@ -1,4 +1,3 @@
-import { appConfig } from 'config';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -46,7 +45,7 @@ export function AppNavIcon({ navItem, className }: { navItem: NavItem; className
   return (
     <NavItemIcon
       className={cn('group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 sm:ml-0.5 shrink-0', className)}
-      strokeWidth={appConfig.theme.strokeWidth}
+      strokeWidth={1.8}
     />
   );
 }

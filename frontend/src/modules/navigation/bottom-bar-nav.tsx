@@ -27,7 +27,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
 
   return (
     <nav
-      id="bar-nav"
+      id="bottom-bar-nav"
       data-theme={theme}
       data-started={hasStarted}
       className="in-[.floating-nav]:hidden fixed z-100 flex justify-between flex-row w-full bottom-0 transition-transform ease-out shadow-xs bg-primary data-[theme=none]:bg-secondary data-[started=false]:translate-y-full group-[.focus-view]/body:hidden"
@@ -38,18 +38,20 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
           const isActive = navSheetOpen === navItem.id;
 
           return (
-            <li
-              key={navItem.id}
-              className={cn(
-                'flex transform justify-start',
-                isSecondItem && 'xs:absolute xs:left-1/2 xs:-translate-x-1/2',
-              )}
-            >
-              <BottomBarNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
-            </li>
+            <>
+              <li
+                key={navItem.id}
+                className={cn(
+                  'flex transform justify-start',
+                  isSecondItem && 'xs:absolute xs:left-1/2 xs:-translate-x-1/2',
+                )}
+              >
+                <BottomBarNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
+              </li>
+              {isSecondItem && <div className={`hidden xs:flex xs:grow`} />}
+            </>
           );
         })}
-        <div className={`hidden xs:flex xs:grow`} />
       </ul>
     </nav>
   );

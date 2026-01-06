@@ -1511,7 +1511,7 @@ export const zGetPendingMembershipsResponse = z.object({
       id: z.string(),
       email: z.email(),
       thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      role: z.enum(['member', 'admin']),
+      role: z.nullable(z.enum(['member', 'admin'])),
       createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),
     }),

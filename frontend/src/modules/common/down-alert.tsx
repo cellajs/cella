@@ -17,6 +17,7 @@ import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
 import { useUIStore } from '~/store/ui';
 
+// Configuration for different down alerts
 const downAlertConfig = {
   offline: {
     icon: CloudOffIcon,
@@ -30,7 +31,7 @@ const downAlertConfig = {
       return <Trans t={t} className="max-sm:hidden" i18nKey={i18nKey} components={components} />;
     },
     textKey: 'common:offline.text',
-    variant: 'destructive',
+    variant: 'warning',
   },
   backend_not_ready: {
     icon: ClockAlertIcon,
@@ -60,6 +61,9 @@ const downAlertConfig = {
 
 export type AlertKeys = keyof typeof downAlertConfig;
 
+/**
+ * Down alert component that shows alerts based on application status.
+ */
 export const DownAlert = () => {
   const { isOnline } = useOnlineManager();
   const { downAlert, setDownAlert } = useAlertStore();
@@ -113,7 +117,7 @@ export const DownAlert = () => {
   const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
 
   return (
-    <div className="fixed z-2000 pointer-events-auto max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
+    <div className="fixed z-2000 pointer-events-auto bottom-4 max-sm:bottom-20 left-4 right-4 border-0 justify-center">
       <Alert variant={variant} className="border-0 w-auto">
         {/* Dismiss Button */}
         <Button variant="ghost" size="sm" className="absolute top-1 right-1" onClick={dismissAlert}>

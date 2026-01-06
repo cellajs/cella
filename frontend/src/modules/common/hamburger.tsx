@@ -27,7 +27,7 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
       size="lg"
       variant="ghost"
       className={cn(
-        'group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center',
+        'group flex h-10 w-10 flex-col items-center justify-center',
         className,
         isOpen && 'pointer-events-none',
       )}

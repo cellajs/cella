@@ -109,7 +109,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >
-        <SheetHeader className={`${title || description ? '' : 'hidden'}`}>
+        <SheetHeader sticky className={`${title || description ? '' : 'hidden'}`}>
           <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>

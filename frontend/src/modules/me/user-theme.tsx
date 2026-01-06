@@ -20,7 +20,7 @@ interface UserThemeProps {
   contentClassName?: string;
 }
 
-const UserTheme = ({ size = 16, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
+const UserTheme = ({ size = 20, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
   const { t } = useTranslation();
   const { mode, theme, setMode, setTheme } = useUIStore();
 
