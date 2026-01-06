@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type IntersectionEntry = {
   id: string;
   ratio: number;
+};
+
+type UseScrollSpyProps = {
+  sectionIds: string[];
+  enableWriteHash?: boolean;
 };
 
 /**
@@ -10,19 +16,44 @@ type IntersectionEntry = {
  * It uses Intersection Observer to monitor the visibility of sections based on their IDs.
  *
  * @param sectionIds - Array of section IDs to track and observe.
+ * @param enableWriteHash - When true, updates the URL hash when the current section changes.
  *
- * @returns An object containing the `currentSection` state, which represents the section
- * that is currently in view or has the highest visibility ratio.
+ * @returns An object containing:
+ * - `currentSection`: The section currently in view or with highest visibility ratio.
+ * - `scrollToSection`: Function to programmatically scroll to a section without triggering hash updates during the scroll.
  */
-
-export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
+export const useScrollSpy = ({ sectionIds = [], enableWriteHash = false }: UseScrollSpyProps) => {
+  const navigate = useNavigate();
   const observer = useRef<IntersectionObserver | null>(null);
 
   // Maintain entries in a ref to avoid triggering re-renders
   const entriesRef = useRef<IntersectionEntry[]>(sectionIds.map((id) => ({ id, ratio: 0 }))); // Map to store id -> intersectionRatio
 
+  // Track if we're in a programmatic scroll session
+  const isProgrammaticScrollRef = useRef(false);
+
   // Current section is state since it's used for rendering
   const [currentSection, setCurrentSection] = useState<string>(sectionIds[0] || '');
+
+  // Programmatically scroll to a section, pausing hash writes during the scroll
+  const scrollToSection = useCallback(
+    (id: string) => {
+      isProgrammaticScrollRef.current = true;
+
+      // Navigate to 'top' first to reset if already at the target hash
+      if (window.location.hash === `#${id}`) navigate({ to: '.', hash: 'top', replace: true });
+
+      setTimeout(() => {
+        navigate({ to: '.', hash: id, replace: true });
+
+        // Re-enable hash writes after scroll animation completes
+        setTimeout(() => {
+          isProgrammaticScrollRef.current = false;
+        }, 500);
+      }, 20);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     if (!sectionIds.length) return;
@@ -37,6 +68,16 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
     document.documentElement.classList.add('scroll-smooth');
     return () => document.documentElement.classList.remove('scroll-smooth');
   }, []);
+
+  // Update URL hash when currentSection changes (skip during programmatic scroll)
+  useEffect(() => {
+    if (!enableWriteHash || !currentSection || isProgrammaticScrollRef.current) return;
+
+    const currentHash = location.hash.replace('#', '');
+    if (currentHash !== currentSection) {
+      navigate({ hash: currentSection, hashScrollIntoView: false, replace: true });
+    }
+  }, [enableWriteHash, currentSection, navigate]);
 
   useEffect(() => {
     const options: IntersectionObserverInit = {
@@ -97,5 +138,5 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
     };
   }, [sectionIds, currentSection]);
 
-  return { currentSection };
+  return { currentSection, scrollToSection };
 };

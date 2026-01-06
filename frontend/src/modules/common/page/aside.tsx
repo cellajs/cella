@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,25 +29,15 @@ interface PageAsideProps<T> {
 export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const sectionIds = tabs.map((tab) => tab.id);
-  const { currentSection } = useScrollSpy({ sectionIds });
+  const { currentSection, scrollToSection } = useScrollSpy({ sectionIds, enableWriteHash: true });
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   // Focus the first tab on mount
   useEffect(() => {
     if (!isMobile && setFocus) firstTabRef.current?.focus();
   }, []);
-
-  const handleClick = (id: string) => {
-    // Remove hash to make sure it navigates to section that was already in URL
-    navigate({ to: '.', hash: 'top', replace: true });
-
-    setTimeout(() => {
-      navigate({ to: '.', hash: id, replace: true });
-    }, 20);
-  };
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
@@ -67,9 +57,8 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
             hash={id}
             draggable="false"
             onClick={(e) => {
-              if (window.location.hash !== `#${id}`) return;
               e.preventDefault();
-              handleClick(id);
+              scrollToSection(id);
             }}
             replace
           >
