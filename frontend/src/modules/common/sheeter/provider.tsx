@@ -8,7 +8,8 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/store/navigation';
 
 /**
- * Sheeter provider to render drawers on mobile and sheets on other screens.
+ * Sheeter provider to render drawers on mobile, sheets on desktop.
+ * When container is provided, sheets are portaled into the container element.
  * State is managed by the useSheeter zustand store hook.
  */
 export const Sheeter = () => {
@@ -47,7 +48,8 @@ export const Sheeter = () => {
   return (
     <>
       {sheets.map((sheet) => {
-        const SheetComponent = isMobile ? SheeterDrawer : SheeterSheet;
+        // Use drawer on mobile (without container), sheet on desktop
+        const SheetComponent = isMobile && !sheet.container ? SheeterDrawer : SheeterSheet;
         return <SheetComponent key={sheet.id} sheet={sheet} />;
       })}
     </>

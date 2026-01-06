@@ -37,7 +37,6 @@ export const PendingMemberships = ({ entity }: PendingMembershipsTableProps) => 
         description: t('common:pending_invitations.text', {
           entityType: t(`common:${entity.entityType}`).toLowerCase(),
         }),
-        scrollableOverlay: true,
       },
     );
   };
