@@ -79,7 +79,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
             ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
             : not(isNull(attachment.id)),
         )
-        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+        .orderBy(({ attachment }) => attachment[sort || 'createdAt'], order || 'desc');
     },
     {
       pageSize: limit,
@@ -98,6 +98,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     attachmentStorage.addCachedImage(fetchedRows);
   }, [fetchedRows]);
 
+  //
   const { data: localRows } = useLiveQuery(
     (liveQuery) => {
       return liveQuery
@@ -107,12 +108,11 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
             ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
             : not(isNull(attachment.id)),
         )
-        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+        .orderBy(({ attachment }) => attachment[sort || 'createdAt'], order || 'desc');
     },
     [entity.id, q, sort, order],
   );
 
-  // Memoize combined rows to prevent unnecessary recalculations
   const combinedData = [...fetchedRows, ...localRows];
 
   // TODO(tanstackDB) add ordering
@@ -149,7 +149,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [localAttachmentsCollection, updateOffline],
   );
 
-  // isFetching already includes next page fetch scenario
   const fetchMore = useCallback(async () => {
     if (!hasNextPage || isLoading || isFetchingNextPage) return;
     fetchNextPage();
@@ -162,19 +161,14 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [rows],
   );
 
-  // Memoize row key getter to prevent rerenders
   const rowKeyGetter = (row: Attachment) => row.id;
 
-  // Memoize selected rows Set
   const selectedRows = new Set(selected.map((s) => s.id));
 
-  // Memoize visible columns
   const visibleColumns = columns.filter((column) => column.visible);
 
-  // Memoize error object
   const error = isError ? new Error(t('common:failed_to_load_attachments')) : undefined;
 
-  // Memoize NoRowsComponent
   const NoRowsComponent = (
     <ContentPlaceholder
       icon={PaperclipIcon}
@@ -183,7 +177,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     />
   );
 
-  // Memoize clearSelection callback
   const clearSelection = () => setSelected([]);
 
   return (
@@ -200,6 +193,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         canUpload={canUpload}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
+        total={fetchedRows.length + localRows.length}
       />
       <DataTable<Attachment>
         {...{

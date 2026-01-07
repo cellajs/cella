@@ -40,6 +40,6 @@
   "email.unsubscribe": "Unsubscribe",
   "email.waitlist_request.text": "Thanks for joining the waitlist for {{appName}}. We'll notify you as soon as it's your turn.",
   "email.waitlist_request.title": "You're on the waitlist!",
-  "email.recive_request.title": "{{appName}} recive new {{type}} request"
+  "email.received_request.title": "{{appName}} received new {{type}} request"
 
 }

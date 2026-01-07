@@ -12,7 +12,7 @@ import {
 } from '~/routes/auth-routes';
 import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
-import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing-routes';
+import { AboutRoute, AccessibilityRoute, ContactRoute, LegalIndexRoute, LegalRoute } from '~/routes/marketing-routes';
 import {
   OrganizationAttachmentsRoute,
   OrganizationMembersRoute,
@@ -40,6 +40,7 @@ export const routeTree = RootRoute.addChildren([
   PublicLayoutRoute.addChildren([
     AboutRoute,
     ContactRoute,
+    LegalIndexRoute,
     LegalRoute,
     AccessibilityRoute,
     ErrorNoticeRoute,

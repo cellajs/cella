@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router';
+import { createRoute, redirect } from '@tanstack/react-router';
 import z from 'zod';
 import AboutPage from '~/modules/marketing/about/about-page';
 import AccessibilityPage from '~/modules/marketing/accessibility-page';
@@ -26,12 +26,26 @@ export const ContactRoute = createRoute({
 });
 
 const legalSubjects = objectEntries(legalConfig).map(([subject]) => subject);
+const defaultLegalSubject = legalSubjects[0];
+
+// Redirect /legal to /legal/privacy (or first subject)
+export const LegalIndexRoute = createRoute({
+  path: '/legal',
+  staticData: { isAuth: false },
+  getParentRoute: () => RootRoute,
+  beforeLoad: () => {
+    throw redirect({ to: '/legal/$subject', params: { subject: defaultLegalSubject } });
+  },
+});
 
 export const LegalRoute = createRoute({
-  path: '/legal',
-  validateSearch: z.object({
-    tab: z.enum(legalSubjects).optional(),
-  }),
+  path: '/legal/$subject',
+  params: {
+    parse: (params) => ({
+      subject: z.enum(legalSubjects).catch(defaultLegalSubject).parse(params.subject),
+    }),
+    stringify: (params) => ({ subject: params.subject }),
+  },
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Legal') }] }),
   getParentRoute: () => RootRoute,

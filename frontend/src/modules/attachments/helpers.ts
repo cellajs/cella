@@ -18,7 +18,7 @@ export const parseUploadedAttachments = (
   organizationId: string,
 ): Attachment[] => {
   const createdBy = useUserStore.getState().user.id;
-  const createdAt = new Date().toDateString();
+  const createdAt = new Date().toISOString();
 
   // Process original files
   const originalFiles = result[':original'] ?? [];

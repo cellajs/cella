@@ -19,7 +19,7 @@ export const RequestInfoEmail = ({ lng, type, subject, message }: RequestRespons
     <EmailContainer previewText={subject}>
       <EmailHeader
         headerText={
-          <div dangerouslySetInnerHTML={{ __html: i18n.t(`backend:email.recive_request.title`, {appName: appConfig.name,type,  lng }) }} />
+          <div dangerouslySetInnerHTML={{ __html: i18n.t(`backend:email.received_request.title`, { appName: appConfig.name, type, lng }) }} />
         }
       />
       <EmailBody>

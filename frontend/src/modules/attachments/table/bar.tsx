@@ -1,4 +1,3 @@
-import { useLoaderData } from '@tanstack/react-router';
 import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
@@ -18,12 +17,12 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   Omit<BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>, 'queryKey'> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
+    total: number;
   };
 
 export const AttachmentsTableBar = ({
@@ -38,15 +37,11 @@ export const AttachmentsTableBar = ({
   clearSelection,
   isSheet = false,
   canUpload = true,
+  total,
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog(entity.id);
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
-    from: OrganizationAttachmentsRoute.id,
-  });
-
-  const total = attachmentsCollection.size + localAttachmentsCollection.size;
 
   const deleteButtonRef = useRef(null);
 

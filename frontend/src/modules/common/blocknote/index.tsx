@@ -47,6 +47,7 @@ type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
+      autoFocus?: boolean;
       collaborative: true;
       user: {
         id?: string;
@@ -57,6 +58,7 @@ type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
+      autoFocus?: boolean;
       collaborative?: false | undefined;
       user?: never;
     })
@@ -64,6 +66,7 @@ type BlockNoteProps =
       type: 'preview';
       editable?: never;
       updateData?: never;
+      autoFocus?: never;
       onEscapeClick?: never;
       onEnterClick?: never;
       onBeforeLoad?: never;
@@ -83,6 +86,7 @@ const BlockNote = ({
   // Editor functional
   headingLevels = [1, 2, 3],
   editable = type !== 'preview',
+  autoFocus = false,
   sideMenu = true,
   slashMenu = true,
   formattingToolbar = true,
@@ -277,7 +281,7 @@ const BlockNote = ({
 
   // TODO(BLOCKING) Autofocus issue  https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
-    if (!editable || !editor) return;
+    if (!autoFocus || !editable || !editor) return;
 
     const intervalID = setInterval(() => {
       focusEditor(editor);
@@ -285,7 +289,7 @@ const BlockNote = ({
     }, 10);
 
     return () => clearInterval(intervalID);
-  }, [editor, editable]);
+  }, [editor, editable, autoFocus]);
 
   useEffect(() => {
     if (!onBeforeLoad || !editable) return;

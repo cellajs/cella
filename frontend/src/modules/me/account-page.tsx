@@ -118,8 +118,8 @@ const UserAccountPage = () => {
   return (
     <div className="container md:flex md:flex-row my-4 md:mt-8 mx-auto gap-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
-        <StickyBox className="z-10 max-md:block!" offsetTop={12}>
-          <SimpleHeader className="p-3" heading="common:my_account" text="common:my_account.text" />
+        <StickyBox className="z-10 max-md:block! group" offsetTop={12}>
+          <SimpleHeader className="p-3" heading="common:my_account" text="common:my_account.text" collapseText />
           <PageAside tabs={tabs} className="py-2" setFocus />
         </StickyBox>
       </div>

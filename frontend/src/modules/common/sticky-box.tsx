@@ -447,10 +447,8 @@ const StickyBox = (props: StickyBoxCompProps) => {
     if (ref.current) setRef(ref.current);
   }, [setRef]);
 
-  const stickyClass = isSticky ? 'group/sticky is-sticky' : 'not-sticky';
-
   return (
-    <div className={`${className} ${stickyClass}`} style={style} ref={ref}>
+    <div className={className} data-sticky={isSticky} style={style} ref={ref}>
       {children}
     </div>
   );

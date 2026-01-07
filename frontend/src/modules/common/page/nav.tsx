@@ -67,11 +67,11 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
       <div id="tabs-position" ref={inViewRef} />
       <StickyBox
         className={cn(
-          'max-sm:overflow-x-auto block text-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
+          'group/sticky max-sm:overflow-x-auto block text-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
           className,
         )}
       >
-        <div className="hidden md:group-[.is-sticky]/sticky:flex absolute left-0 h-full items-center">
+        <div className="hidden sm:group-data-[sticky=true]/sticky:flex absolute left-0 h-full items-center">
           {avatar && (
             <AvatarWrap
               className="m-3 h-5 w-5 text-xs"

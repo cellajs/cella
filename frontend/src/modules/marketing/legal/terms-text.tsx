@@ -12,14 +12,18 @@ const TermsText = () => {
   const supportEmail = appConfig.company.supportEmail;
 
   return (
-    <div className="prose dark:prose-invert text-foreground max-w-none">
-      <h2 className="mb-4 font-medium">Terms of use</h2>
-      <p className="italic mb-2">Last updated: {lastUpdated}</p>
-      <p>Here you can read our terms of use. If you have questions or comments about them, feel free to contact us.</p>
+    <div id="terms-content" className="prose dark:prose-invert text-foreground">
+      <section id="overview">
+        <h2 className="pt-8 mt-0 pb-4">Terms of use</h2>
+        <p className="italic mb-2">Last updated: {lastUpdated}</p>
+        <p>
+          Here you can read our terms of use. If you have questions or comments about them, feel free to contact us.
+        </p>
 
-      <LegalContact />
+        <LegalContact />
+      </section>
 
-      <section className="mb-4" id="introduction">
+      <section className="mb-4 pt-4" id="introduction" aria-label="Introduction">
         <h3 className="font-medium">Introduction</h3>
         <p>
           First of all, great to have you here! However, there are some rules you need to agree to before you use this
@@ -34,7 +38,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="contract">
+      <section className="mb-4 pt-4" id="contract" aria-label="Contract">
         <h3 className="font-medium" rel="noreferrer">
           Contract
         </h3>
@@ -78,7 +82,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4">
+      <section className="mb-4 pt-4" id="privacy" aria-label="Privacy">
         <h3 className="font-medium">Privacy</h3>
         <p>
           {companyShort} takes the privacy of its users very seriously. For the entire current {companyShort} Privacy
@@ -90,7 +94,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="sign-up">
+      <section className="mb-4 pt-4" id="sign-up" aria-label="Sign up">
         <h3 className="font-medium">Sign up</h3>
         <p>
           First, you have to sign up for an account. You promise to provide us with accurate, complete, and updated
@@ -101,7 +105,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="basic-use">
+      <section className="mb-4 pt-4" id="basic-use" aria-label="Basic use">
         <h3 className="font-medium">Basic use</h3>
         <p>
           You represent and warrant that you are of legal age to form a binding contract (or if not, you’ve received
@@ -118,7 +122,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="intellectual-property">
+      <section className="mb-4 pt-4" id="intellectual-property" aria-label="Intellectual property">
         <h3 className="font-medium">Intellectual property</h3>
 
         <h4 className="font-medium">Content</h4>
@@ -208,7 +212,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="change-of-the-services">
+      <section className="mb-4 pt-4" id="change-of-the-services" aria-label="Service changes">
         <h3 className="font-medium">Service changes</h3>
         <p>
           {appName} is a dynamic application, so the Services will change over time. We may change, suspend, or
@@ -221,7 +225,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="delete-account">
+      <section className="mb-4 pt-4" id="delete-account" aria-label="Account deletion">
         <h3 className="font-medium">Account deletion</h3>
         <p>
           You’re free to delete your account at any time; please refer to our
@@ -258,7 +262,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="warranty-disclaimer">
+      <section className="mb-4 pt-4" id="warranty-disclaimer" aria-label="Warranty disclaimer">
         <h3 className="font-medium">Warranty disclaimer</h3>
         <p>
           {companyShort} does not make any representations or warranties concerning any context contained in or accessed
@@ -275,7 +279,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="limitation-of-liability">
+      <section className="mb-4 pt-4" id="limitation-of-liability" aria-label="Limitation of liability">
         <h3 className="font-medium">Limitation of liability</h3>
         <p>
           To the fullest extent allowed by applicable law, under no circumstances and under no legal theory (including,
@@ -288,7 +292,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="indemnity">
+      <section className="mb-4 pt-4" id="indemnity" aria-label="Indemnity">
         <h3 className="font-medium">Indemnity</h3>
         <p>
           You agree to indemnify and hold {companyShort}, its affiliates, officers, agents, employees, contractors, and
@@ -301,7 +305,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="assignment">
+      <section className="mb-4 pt-4" id="assignment" aria-label="Assignment">
         <h3 className="font-medium">Assignment</h3>
         <p>
           You may not assign, delegate, or transfer these Terms or your rights or obligations hereunder, or your
@@ -310,7 +314,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="choice-of-law-arbitration">
+      <section className="mb-4 pt-4" id="choice-of-law-arbitration" aria-label="Choice of law, arbitration">
         <h3 className="font-medium">Choice of law, arbitration</h3>
         <p>
           These Terms are governed by and will be construed under the laws of the Netherlands, without regard to the
@@ -324,7 +328,7 @@ const TermsText = () => {
         </p>
       </section>
 
-      <section className="mb-4" id="miscellaneous">
+      <section className="mb-4 pt-4" id="miscellaneous" aria-label="Miscellaneous">
         <h3 className="font-medium">Miscellaneous</h3>
         <p>
           You will be responsible for withholding, filing, and reporting all taxes, duties, and other governmental

@@ -1,3 +1,4 @@
+import { Fragment } from 'react/jsx-runtime';
 import useMounted from '~/hooks/use-mounted';
 import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
@@ -38,7 +39,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
           const isActive = navSheetOpen === navItem.id;
 
           return (
-            <>
+            <Fragment key={navItem.id}>
               <li
                 key={navItem.id}
                 className={cn(
@@ -49,7 +50,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
                 <BottomBarNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
               </li>
               {isSecondItem && <div className={`hidden xs:flex xs:grow`} />}
-            </>
+            </Fragment>
           );
         })}
       </ul>
