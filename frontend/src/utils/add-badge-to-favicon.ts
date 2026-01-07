@@ -2,8 +2,7 @@ import type { ConfigMode } from 'config';
 
 /**
  * Show badge on favicon indicating current mode of application.
- * @param mode ConfigMode
- * @returns
+ * Example: "D" for development, "S" for staging.
  */
 export const addBadgeToFavicon = (mode: ConfigMode) => {
   if (mode === 'production') return;

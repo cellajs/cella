@@ -1,23 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { appConfig } from 'config';
-import { lazy, Suspense } from 'react';
+import { Check, Loader2 } from 'lucide-react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Page } from '~/api.gen';
 import { zUpdatePageData } from '~/api.gen/zod.gen';
+import { useAutoSave } from '~/hooks/use-auto-save';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { CallbackArgs } from '~/modules/common/data-table/types';
 import InputFormField from '~/modules/common/form-fields/input';
 import Spinner from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/service';
-import { usePageUpdateMutation } from '~/modules/pages/query';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import type { initPagesCollection } from '~/modules/pages/collections';
 import { Form } from '~/modules/ui/form';
-import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
-const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
+const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
 const formSchema = zUpdatePageData.shape.body;
 
@@ -25,12 +24,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
   page: Page;
-  callback?: (args: CallbackArgs<Page>) => void;
+  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
-const UpdatePageForm = ({ page, callback }: Props) => {
+const UpdatePageForm = ({ page, pagesCollection }: Props) => {
   const { t } = useTranslation();
-  const { mutate, isPending } = usePageUpdateMutation();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
@@ -43,35 +42,85 @@ const UpdatePageForm = ({ page, callback }: Props) => {
   const formContainerId = 'update-page';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${page.id}`, { formOptions, formContainerId });
 
-  // Prevent data loss
-  useBeforeUnload(form.isDirty);
+  // Watch form values for auto-save
+  const watchedValues = useWatch({ control: form.control });
 
-  const onSubmit = (body: FormValues) => {
-    mutate(
-      { id: page.id, body },
-      {
-        onSuccess: (updatedPage) => {
-          form.reset(body);
-          toaster(t('common:success.update_resource', { resource: t('common:page') }), 'success');
-          callback?.({ data: updatedPage, status: 'success' });
-        },
-      },
-    );
-  };
+  // Memoize form data for auto-save
+  const formData = useMemo(
+    () => ({
+      name: watchedValues.name ?? page.name,
+      description: watchedValues.description ?? page.description ?? '',
+    }),
+    [watchedValues.name, watchedValues.description, page.name, page.description],
+  );
 
-  const isDirty = () => {
-    if (!form.isDirty) return false;
-    const { name, description } = form.getValues();
-    const nameChanged = name !== page.name;
-    const descriptionChanged = typeof description === 'string' && blocknoteFieldIsDirty(description);
-    return nameChanged || descriptionChanged;
-  };
+  // Check if form has actual changes compared to original page
+  const hasChanges = useCallback(
+    (data: FormValues): boolean => {
+      const nameChanged = data.name !== page.name;
+      const descriptionChanged = data.description !== page.description;
+      return nameChanged || descriptionChanged;
+    },
+    [page.name, page.description],
+  );
+
+  // Save handler using collection
+  const handleSave = useCallback(
+    async (data: FormValues) => {
+      setSaveStatus('saving');
+      try {
+        pagesCollection.update(page.id, (draft) => {
+          if (data.name !== undefined) draft.name = data.name;
+          if (data.description !== undefined) draft.description = data.description;
+        });
+        form.reset(data);
+        setSaveStatus('saved');
+        // Reset to idle after showing "saved" indicator
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch {
+        setSaveStatus('idle');
+      }
+    },
+    [page.id, pagesCollection, form],
+  );
+
+  // Auto-save with 5s inactivity delay and 30s max delay
+  const { hasUnsavedChanges } = useAutoSave({
+    data: formData,
+    hasChanges,
+    onSave: handleSave,
+    inactivityDelay: 5000,
+    maxDelay: 30000,
+    enabled: !form.loading,
+  });
+
+  // Prevent data loss on navigation
+  useBeforeUnload(hasUnsavedChanges);
 
   if (form.loading) return null;
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 [&_label]:hidden">
+      <form className="space-y-6 [&_label]:hidden">
+        {/* Auto-save status indicator */}
+        <div className="flex items-center justify-end h-6 text-sm text-muted-foreground">
+          {saveStatus === 'saving' && (
+            <span className="flex items-center gap-1.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {t('common:saving')}
+            </span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-1.5 text-success">
+              <Check className="h-3.5 w-3.5" />
+              {t('common:saved')}
+            </span>
+          )}
+          {saveStatus === 'idle' && hasUnsavedChanges && (
+            <span className="text-muted-foreground/60">{t('common:unsaved_changes')}</span>
+          )}
+        </div>
+
         <InputFormField
           inputClassName="h-14 text-4xl font-bold border-0 p-0 focus:ring-0 focus:ring-offset-0 shadow-none"
           control={form.control}
@@ -81,9 +130,10 @@ const UpdatePageForm = ({ page, callback }: Props) => {
         />
 
         <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-          <BlockNoteContent
+          <BlockNoteContentField
             control={form.control}
             name="description"
+            autoFocus
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-page-${page.id}`,
               trailingBlock: false,
@@ -93,20 +143,6 @@ const UpdatePageForm = ({ page, callback }: Props) => {
             }}
           />
         </Suspense>
-
-        <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!isDirty()} loading={isPending}>
-            {t('common:save_changes')}
-          </SubmitButton>
-          <Button
-            type="reset"
-            variant="secondary"
-            onClick={() => form.reset()}
-            className={isDirty() ? '' : 'invisible'}
-          >
-            {t('common:cancel')}
-          </Button>
-        </div>
       </form>
     </Form>
   );

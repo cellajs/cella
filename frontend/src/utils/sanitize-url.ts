@@ -1,5 +1,5 @@
 /**
- * Very small allowlist sanitizer for URLs used in <img src>, etc.
+ * Sanitizes URLs by allowing only http(s) and root-relative paths.
  */
 export function sanitizeUrl(input: string): string {
   try {

@@ -1,10 +1,10 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { eq, useLiveQuery } from '@tanstack/react-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Edit, Eye } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
-import { pageQueryOptions } from '~/modules/pages/query';
+import type { initPagesCollection } from '~/modules/pages/collections';
 import UpdatePageForm from '~/modules/pages/update-page-form';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
@@ -16,6 +16,7 @@ const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
 interface PagePageProps {
   pageId: string;
+  pagesCollection: ReturnType<typeof initPagesCollection>;
   mode?: PageRouteSearchParams['mode'];
 }
 
@@ -23,14 +24,19 @@ interface PagePageProps {
  * Displays a page with its name as title and description as the main content.
  * In edit mode, shows the update form instead.
  */
-const PagePage = ({ pageId, mode = 'view' }: PagePageProps) => {
+const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { user } = useUserStore();
 
-  const pageQueryOpts = pageQueryOptions(pageId);
-  const { data: page } = useSuspenseQuery(pageQueryOpts);
+  // Get page from sync collection
+  const { data: pages } = useLiveQuery(
+    (liveQuery) => liveQuery.from({ page: pagesCollection }).where(({ page }) => eq(page.id, pageId)),
+    [pageId],
+  );
+
+  const page = pages?.[0];
 
   const toggleMode = () => {
     navigate({
@@ -40,6 +46,15 @@ const PagePage = ({ pageId, mode = 'view' }: PagePageProps) => {
       search: { mode: mode === 'view' ? 'edit' : 'view' },
     });
   };
+
+  // Show loading state while waiting for sync
+  if (!page) {
+    return (
+      <div className="container my-4 md:mt-8 mx-auto flex justify-center">
+        <Spinner className="my-16 h-6 w-6" />
+      </div>
+    );
+  }
 
   const headerSection = (
     <div className="flex items-center justify-between gap-3 mb-6">
@@ -75,12 +90,7 @@ const PagePage = ({ pageId, mode = 'view' }: PagePageProps) => {
       <div className="container my-4 md:mt-8 mx-auto">
         <div className="mx-auto max-w-4xl">
           {headerSection}
-          <UpdatePageForm
-            page={page}
-            callback={() => {
-              navigate({ to: '/page/$id', params: { id: pageId }, search: { mode: 'view' }, replace: true });
-            }}
-          />
+          <UpdatePageForm page={page} pagesCollection={pagesCollection} />
         </div>
       </div>
     );

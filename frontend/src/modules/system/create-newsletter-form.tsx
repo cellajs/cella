@@ -14,7 +14,7 @@ import type { ApiError } from '~/lib/api';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
 import { CallbackArgs } from '~/modules/common/data-table/types';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
+import BlockNoteContentField from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -105,11 +105,12 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
           required
         />
 
-        <BlockNoteContent
+        <BlockNoteContentField
           control={form.control}
           name="content"
           label={t('common:message')}
           required
+          autoFocus
           baseBlockNoteProps={{
             id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,

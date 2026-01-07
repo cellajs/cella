@@ -8,9 +8,13 @@ import { nanoid } from '#/utils/nanoid';
 
 const languagesEnum = appConfig.languages;
 
+/**
+ * Organizations table is a primary context entity table.
+ */
 export const organizationsTable = pgTable(
   'organizations',
   {
+    // Base columns
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     entityType: varchar({ enum: ['organization'] })
@@ -21,6 +25,7 @@ export const organizationsTable = pgTable(
     slug: varchar().unique().notNull(),
     thumbnailUrl: varchar(),
     bannerUrl: varchar(),
+    // Specific columns
     shortName: varchar(),
     country: varchar(),
     timezone: varchar(),

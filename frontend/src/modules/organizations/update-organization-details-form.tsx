@@ -17,7 +17,7 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
-const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
+const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
 const formSchema = zUpdateOrganizationData.shape.body.unwrap();
 
@@ -71,7 +71,7 @@ const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-          <BlockNoteContent
+          <BlockNoteContentField
             control={form.control}
             name="welcomeText"
             label={t('common:introduction')}

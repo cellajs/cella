@@ -13,6 +13,9 @@ import appTitle from '~/utils/app-title';
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 const UserAccountPage = lazy(() => import('~/modules/me/account-page'));
 
+/**
+ * User profile page displaying public user information.
+ */
 export const UserProfileRoute = createRoute({
   path: '/user/$idOrSlug',
   staticData: { isAuth: true },
@@ -37,6 +40,9 @@ export const UserProfileRoute = createRoute({
   },
 });
 
+/**
+ * User profile page within an organization context.
+ */
 export const UserInOrganizationProfileRoute = createRoute({
   path: '/$orgIdOrSlug/user/$idOrSlug',
   staticData: { isAuth: true },
@@ -61,6 +67,9 @@ export const UserInOrganizationProfileRoute = createRoute({
   },
 });
 
+/**
+ * User account settings page for personal configuration.
+ */
 export const UserAccountRoute = createRoute({
   path: '/account',
   staticData: { isAuth: true },

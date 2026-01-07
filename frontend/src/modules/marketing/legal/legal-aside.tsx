@@ -94,9 +94,9 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
               </Link>
             </CollapsibleTrigger>
             <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-              <div className="relative flex flex-col gap-0.5 py-2 ml-3 pl-4">
+              <div className="relative flex flex-col py-2 ml-3 pl-4">
                 {/* Faded rail line */}
-                <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-muted-foreground/20 rounded-full" />
+                <div className="absolute left-0 top-4 bottom-4 w-px bg-muted-foreground/20 rounded-full" />
                 {subjectSections.map(({ id: sectionId, label: sectionLabel }) => {
                   const isSectionActive = isActive && currentSection === sectionId;
                   return (
@@ -105,7 +105,7 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
                         <motion.span
                           layoutId={layoutId}
                           transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                          className="w-0.5 bg-primary rounded-full absolute -left-4 top-0 bottom-0"
+                          className="w-[0.20rem] bg-primary rounded-full absolute -left-4.5 ml-px top-2 bottom-2"
                         />
                       )}
                       <Link

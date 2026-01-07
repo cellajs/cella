@@ -24,6 +24,9 @@ const authenticateRouteSearch = z.object({
 
 const authErrorRouteSearch = z.object({ tokenId: z.string().optional() }).extend(errorSearchSchema.shape);
 
+/**
+ * Layout wrapper for all authentication-related routes.
+ */
 export const AuthLayoutRoute = createRoute({
   id: 'authLayout',
   staticData: { isAuth: false },
@@ -31,6 +34,9 @@ export const AuthLayoutRoute = createRoute({
   component: () => <AuthPage />,
 });
 
+/**
+ * Main authentication page for user sign-in and sign-up flows.
+ */
 export const AuthenticateRoute = createRoute({
   path: '/auth/authenticate',
   validateSearch: authenticateRouteSearch,
@@ -51,6 +57,9 @@ export const AuthenticateRoute = createRoute({
   component: () => <AuthenticatePage />,
 });
 
+/**
+ * Multi-factor authentication verification page.
+ */
 export const MfaRoute = createRoute({
   path: '/auth/mfa',
   validateSearch: authenticateRouteSearch,
@@ -60,6 +69,9 @@ export const MfaRoute = createRoute({
   component: () => <MfaPage />,
 });
 
+/**
+ * Password reset request page for forgotten passwords.
+ */
 export const RequestPasswordRoute = createRoute({
   path: '/auth/request-password',
   staticData: { isAuth: false },
@@ -76,6 +88,9 @@ export const RequestPasswordRoute = createRoute({
   ),
 });
 
+/**
+ * Token-based password creation page for new or reset passwords.
+ */
 export const CreatePasswordWithTokenRoute = createRoute({
   path: '/auth/create-password/$tokenId',
   staticData: { isAuth: false },
@@ -84,6 +99,9 @@ export const CreatePasswordWithTokenRoute = createRoute({
   component: () => <CreatePasswordPage />,
 });
 
+/**
+ * Email verification page to confirm user email addresses.
+ */
 export const EmailVerificationRoute = createRoute({
   path: '/auth/email-verification/$reason',
   validateSearch: z.object({ provider: z.string().optional() }),
@@ -93,6 +111,9 @@ export const EmailVerificationRoute = createRoute({
   component: () => <EmailVerificationPage />,
 });
 
+/**
+ * Confirmation page shown after unsubscribing from emails.
+ */
 export const UnsubscribedRoute = createRoute({
   path: '/auth/unsubscribed',
   staticData: { isAuth: false },
@@ -101,6 +122,9 @@ export const UnsubscribedRoute = createRoute({
   component: () => <UnsubscribedPage />,
 });
 
+/**
+ * Error page for authentication-related failures.
+ */
 export const AuthErrorRoute = createRoute({
   path: '/auth/error',
   validateSearch: authErrorRouteSearch,
@@ -110,6 +134,9 @@ export const AuthErrorRoute = createRoute({
   component: () => <AuthErrorPage />,
 });
 
+/**
+ * Sign out route that terminates the user session.
+ */
 export const SignOutRoute = createRoute({
   path: '/sign-out',
   validateSearch: z.object({ force: z.boolean().optional() }),

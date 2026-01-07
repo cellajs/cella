@@ -10,25 +10,23 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import { BaseTableBarProps, type CallbackArgs } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { PagesRouteSearchParams } from '~/modules/pages/types';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import type { initPagesCollection } from '~/modules/pages/collections';
+import type { PagesRouteSearchParams } from '~/modules/pages/types';
 import { CreatePageForm } from '../create-page-form';
 import DeletePages from '../delete-pages';
 
-interface PagesTableBarProps extends BaseTableBarProps<Page, PagesRouteSearchParams> {
+interface PagesTableBarProps extends Omit<BaseTableBarProps<Page, PagesRouteSearchParams>, 'queryKey'> {
   isCompact: boolean;
   setIsCompact: (isCompact: boolean) => void;
-  /** @default false */
-  isSheet?: boolean;
+  total: number;
+  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
 export const PagesTableBar = ({
-  queryKey,
   searchVars,
   setSearch,
   columns,
@@ -37,13 +35,13 @@ export const PagesTableBar = ({
   clearSelection,
   isCompact,
   setIsCompact,
+  total,
+  pagesCollection,
 }: PagesTableBarProps) => {
   const { t } = useTranslation();
 
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
-
-  const total = useInfiniteQueryTotal(queryKey);
 
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
@@ -67,21 +65,12 @@ export const PagesTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<Page[]>) => {
-      if (args.status === 'success') {
-        const message =
-          args.data.length === 1
-            ? t('common:success.delete_resource', { resource: t('common:page') })
-            : t('common:success.delete_counted_resources', {
-                count: args.data.length,
-                resources: t('common:pages').toLowerCase(),
-              });
-        toaster(message, 'success');
-      }
+    // Success toast is handled by collection's onDelete callback
+    const callback = () => {
       clearSelection();
     };
 
-    createDialog(<DeletePages pages={selected} callback={callback} />, {
+    createDialog(<DeletePages pages={selected} pagesCollection={pagesCollection} callback={callback} />, {
       id: 'delete-pages',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
@@ -122,7 +111,7 @@ export const PagesTableBar = ({
                 label="common:create"
                 icon={PlusIcon}
                 onClick={() => {
-                  createDialog(<CreatePageForm callback={onCreatePage} />, {
+                  createDialog(<CreatePageForm pagesCollection={pagesCollection} callback={onCreatePage} />, {
                     id: 'create-page',
                     triggerRef: createButtonRef,
                     className: 'md:max-w-2xl',

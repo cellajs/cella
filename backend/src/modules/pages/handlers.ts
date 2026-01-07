@@ -10,7 +10,7 @@ import { AppError } from '#/lib/errors';
 import pagesRoutes from '#/modules/pages/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { defaultHook } from '#/utils/default-hook';
-import { proxyElectricSync } from '#/utils/electric';
+import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';

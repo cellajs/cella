@@ -30,7 +30,9 @@ const baseColumns = {
   uniqueKey: varchar().unique().notNull(),
 };
 
-// Generate entity id columns based on entity-config
+/**
+ * Memberships table to track active memberships of users in organizations and other context entities.
+ */
 export const membershipsTable = generateTable('memberships', baseColumns, otherEntityIdColumns);
 
 export type MembershipModel = typeof membershipsTable.$inferSelect;

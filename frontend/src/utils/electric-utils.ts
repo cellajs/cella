@@ -12,6 +12,9 @@ export const baseBackoffOptions: BackoffOptions = {
   multiplier: 2,
 };
 
+/**
+ * Handles sync errors from Electric shape-streams.
+ */
 export const handleSyncError = (error: Error) => {
   if (error instanceof FetchError && error.json) {
     const responseJson = error.json;

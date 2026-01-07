@@ -1,6 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
+import { initPagesCollection } from '~/modules/pages/collections';
 import PagesTable from '~/modules/pages/table';
 import SystemPage from '~/modules/system/system-page';
 import { AppLayoutRoute } from '~/routes/base-routes';
@@ -19,6 +20,9 @@ const UsersTable = lazy(() => import('~/modules/users/table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
+/**
+ * System admin panel for platform-wide management.
+ */
 export const SystemRoute = createRoute({
   path: '/system',
   staticData: { isAuth: true },
@@ -30,6 +34,9 @@ export const SystemRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
 });
 
+/**
+ * System users table for managing all platform users.
+ */
 export const UsersTableRoute = createRoute({
   path: '/users',
   validateSearch: usersRouteSearchParamsSchema,
@@ -44,6 +51,9 @@ export const UsersTableRoute = createRoute({
   ),
 });
 
+/**
+ * System organizations table for managing all organizations.
+ */
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   validateSearch: organizationsRouteSearchParamsSchema,
@@ -58,6 +68,9 @@ export const OrganizationsTableRoute = createRoute({
   ),
 });
 
+/**
+ * System requests table for reviewing access requests.
+ */
 export const RequestsTableRoute = createRoute({
   path: '/requests',
   validateSearch: requestsRouteSearchParamsSchema,
@@ -72,13 +85,21 @@ export const RequestsTableRoute = createRoute({
   ),
 });
 
+/**
+ * System pages table for managing content pages.
+ */
 export const PagesTableRoute = createRoute({
   path: '/pages',
   validateSearch: pagesRouteSearchParamsSchema,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Pages') }] }),
   getParentRoute: () => SystemRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  // Note: Don't use loaderDeps here - collection is created once and live queries
+  // react to search param changes automatically.
+  async loader() {
+    const pagesCollection = initPagesCollection();
+    return { pagesCollection };
+  },
   component: () => (
     <Suspense>
       <PagesTable />
@@ -86,6 +107,9 @@ export const PagesTableRoute = createRoute({
   ),
 });
 
+/**
+ * System metrics dashboard for monitoring platform performance.
+ */
 export const MetricsRoute = createRoute({
   path: '/metrics',
   staticData: { isAuth: true },

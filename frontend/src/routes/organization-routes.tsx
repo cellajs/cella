@@ -22,6 +22,9 @@ const MembersTable = lazy(() => import('~/modules/memberships/members-table'));
 const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
+/**
+ * Main organization page with details and navigation.
+ */
 export const OrganizationRoute = createRoute({
   path: '/organization/$idOrSlug',
   staticData: { isAuth: true },
@@ -64,6 +67,9 @@ export const OrganizationRoute = createRoute({
   },
 });
 
+/**
+ * Organization members table for managing memberships.
+ */
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: membersRouteSearchParamsSchema,
@@ -81,6 +87,9 @@ export const OrganizationMembersRoute = createRoute({
   },
 });
 
+/**
+ * Organization attachments table for file management.
+ */
 export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
   validateSearch: attachmentsRouteSearchParamsSchema,
@@ -108,6 +117,9 @@ export const OrganizationAttachmentsRoute = createRoute({
   },
 });
 
+/**
+ * Organization settings page for configuration options.
+ */
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { isAuth: true },
