@@ -82,7 +82,7 @@ export const MarketingNav = () => {
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-1 sm:mr-1 md:mr-2 md:pr-4 hover:opacity-90 active:scale-95 relative p-0.5 rounded-md focus-effect pointer-events-auto!"
+              className="md:ml-1 sm:mr-1 md:mr-2 md:pr-4 transition-transform sm:hover:scale-105 sm:active:scale-100 relative p-0.5 rounded-md focus-effect pointer-events-auto!"
               aria-label="Go to about page"
             >
               <Logo height={36} />
@@ -152,7 +152,7 @@ export const MarketingNav = () => {
           </VisuallyHidden>
           <div
             ref={ref}
-            className={`flex mt-2 flex-col pt-14 gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
+            className={`flex mt-2 flex-col pt-14 px-4 gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
               inView && activeSheet ? 'opacity-100 delay-300' : 'opacity-0'
             }`}
           >

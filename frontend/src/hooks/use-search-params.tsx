@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type router from '~/lib/router';
 import { objectKeys } from '~/utils/object';
 
@@ -32,14 +32,10 @@ const useSearchParams = <T extends Record<string, string | string[] | undefined>
   const search = useSearch(from ? { from, strict: true } : { strict: false });
 
   // Memoize merged search params with default values
-  const mergedSearch = useMemo(
-    () =>
-      ({
-        ...defaultValues,
-        ...(useCurrentSearch ? search : {}),
-      }) as T,
-    [defaultValues, search, useCurrentSearch],
-  );
+  const mergedSearch = {
+    ...defaultValues,
+    ...(useCurrentSearch ? search : {}),
+  } as T;
 
   // State to hold the current search parameters
   const [currentSearch, setCurrentSearch] = useState<T>(mergedSearch);

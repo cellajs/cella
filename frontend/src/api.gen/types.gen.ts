@@ -3594,7 +3594,7 @@ export type GetPendingMembershipsResponses = {
       id: string;
       email: string;
       thumbnailUrl?: string | null;
-      role: 'member' | 'admin';
+      role: 'member' | 'admin' | null;
       createdAt: string;
       createdBy: string | null;
     }>;

@@ -1,7 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
@@ -27,7 +26,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
   const isSubitem = !searchResults && !item.submenu;
 
   // Build route path for the entity
-  const { to, params, search } = useMemo(() => getEntityRoute(item, isSubitem), [item]);
+  const { to, params, search } = getEntityRoute(item, isSubitem);
 
   return (
     <Link

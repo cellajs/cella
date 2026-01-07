@@ -8,7 +8,7 @@ import type { ContextEntityBase, UserBase } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { SearchResultBlock } from '~/modules/navigation/search-result-block';
+import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -20,6 +20,9 @@ import { useNavigationStore } from '~/store/navigation';
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
 
+/**
+ * Application search component.
+ */
 export const AppSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

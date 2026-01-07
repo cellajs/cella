@@ -16,6 +16,7 @@ import { buildMenu } from './build-menu';
 export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
   const detailedMenu = !!opts?.detailedMenu;
 
+  // Types must be memoized to prevent useQueries from creating new query instances on every render
   const types = useMemo(
     () =>
       Array.from(
@@ -32,6 +33,7 @@ export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
   // Stable recompute key when query data changes
   const recomputeKey = results.map((r) => r.dataUpdatedAt).join('|');
 
+  // Build menu from query results - memoized to prevent infinite re-renders
   const menu = useMemo(() => {
     const byType = new Map<ContextEntityType, UserMenuItem[]>();
 
@@ -41,7 +43,7 @@ export function useMenu(userId: string, opts?: { detailedMenu?: boolean }) {
     });
 
     return buildMenu(byType, appConfig.menuStructure, { detailedMenu });
-  }, [detailedMenu, types, recomputeKey]); // <- important
+  }, [detailedMenu, types, recomputeKey]);
 
   const isLoading = results.some((r) => r.isLoading);
   const error = results.find((r) => r.error)?.error;

@@ -6,8 +6,8 @@ import type { FooterLinkProps } from '~/modules/common/app/footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
+import { AppSearch } from '~/modules/navigation/app-search';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
-import { AppSearch } from '~/modules/navigation/search';
 
 /**
  * Declare search nav button action

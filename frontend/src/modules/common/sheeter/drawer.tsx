@@ -30,7 +30,7 @@ export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
       onClose={closeSheet}
     >
       <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} className={className}>
-        <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>
+        <DrawerHeader sticky className={`${description || title ? '' : 'hidden'}`}>
           <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>
             {description}

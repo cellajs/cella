@@ -8,7 +8,8 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/store/navigation';
 
 /**
- * Sheeter provider to render drawers on mobile and sheets on other screens.
+ * Sheeter provider to render drawers on mobile, sheets on desktop.
+ * When container is provided, sheets are portaled into the container element.
  * State is managed by the useSheeter zustand store hook.
  */
 export const Sheeter = () => {
@@ -22,7 +23,7 @@ export const Sheeter = () => {
 
   // Subscribe to router to close sheets
   useEffect(() => {
-    router.subscribe('onBeforeLoad', ({ hrefChanged }) => {
+    const unsubscribe = router.subscribe('onBeforeLoad', ({ hrefChanged }) => {
       const navState = useNavigationStore.getState();
       const sheetOpen = navState.navSheetOpen;
       const activeSheets = useSheeter.getState().sheets;
@@ -30,16 +31,18 @@ export const Sheeter = () => {
       if (!hrefChanged || !activeSheets.length) return;
 
       // Safe to remove all sheets
-      if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {
+      if (!sheetOpen || sheetOpen !== 'menu' || !navState.keepMenuOpen) {
         return useSheeter.getState().remove();
       }
 
       // Remove all sheets except the nav sheet
-      const removeSheetIds = sheets.filter((sheet) => sheet.id !== 'nav-sheet').map((sheet) => sheet.id);
+      const removeSheetIds = activeSheets.filter((sheet) => sheet.id !== 'nav-sheet').map((sheet) => sheet.id);
       for (const sheetId of removeSheetIds) {
         useSheeter.getState().remove(sheetId);
       }
     });
+
+    return unsubscribe;
   }, []);
 
   if (!sheets.length) return null;
@@ -47,7 +50,8 @@ export const Sheeter = () => {
   return (
     <>
       {sheets.map((sheet) => {
-        const SheetComponent = isMobile ? SheeterDrawer : SheeterSheet;
+        // Use drawer on mobile (without container), sheet on desktop
+        const SheetComponent = isMobile && !sheet.container ? SheeterDrawer : SheeterSheet;
         return <SheetComponent key={sheet.id} sheet={sheet} />;
       })}
     </>

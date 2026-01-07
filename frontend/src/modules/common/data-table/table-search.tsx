@@ -1,6 +1,6 @@
 import { useIsFetching } from '@tanstack/react-query';
 import { XCircleIcon } from 'lucide-react';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -25,10 +25,7 @@ const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }:
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(value);
 
-  const isSearching = useMemo(
-    () => tableFetchingCount > 0 && !!inputValue.length,
-    [inputValue.length, tableFetchingCount],
-  );
+  const isSearching = tableFetchingCount > 0 && !!inputValue.length;
   const debouncedQuery = useDebounce(inputValue, 250);
 
   // Update parent query only when debouncedQuery changes

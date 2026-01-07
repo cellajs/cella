@@ -45,7 +45,7 @@ const PagePage = ({ pageId, mode = 'view' }: PagePageProps) => {
     <div className="flex items-center justify-between gap-3 mb-6">
       <div className="flex items-center gap-2">
         {user && (
-          <Link to="/home" className={cn(buttonVariants({ variant: 'plain', size: 'default' }))}>
+          <Link to="/home" className={cn(buttonVariants({ variant: 'link', size: 'default' }))}>
             <ArrowLeft size={16} />
             <span className="ml-1 max-sm:hidden">{t('common:back_to_app')}</span>
           </Link>
@@ -91,7 +91,7 @@ const PagePage = ({ pageId, mode = 'view' }: PagePageProps) => {
       <div className="mx-auto max-w-4xl">
         {headerSection}
         <div className="prose dark:prose-invert">
-          <h1>{page.name}</h1>
+          <h1 className="pt-2">{page.name}</h1>
 
           {page.description && (
             <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>

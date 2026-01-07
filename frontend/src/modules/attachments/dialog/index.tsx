@@ -1,5 +1,4 @@
 import { FlameKindlingIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import AttachmentsCarousel, { CarouselItemData } from '~/modules/attachments/carousel';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 
@@ -9,10 +8,8 @@ interface AttachmentDialogProps {
 }
 
 const AttachmentDialog = ({ attachmentId, attachments }: AttachmentDialogProps) => {
-  const itemIndex = useMemo(() => {
-    const index = attachments.findIndex(({ id }) => id === attachmentId);
-    return index === -1 ? 0 : index;
-  }, [attachmentId, attachments]);
+  const index = attachments.findIndex(({ id }) => id === attachmentId);
+  const itemIndex = index === -1 ? 0 : index;
 
   return attachments.length ? (
     <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">

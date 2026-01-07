@@ -1,6 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import type { RegisteredRouter, UseSearchResult } from '@tanstack/router-core';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 
 type OfflineTableSearchParams<T> = {
@@ -15,10 +15,7 @@ function useOfflineTableSearch<T>({ data, filterFn, onFilterCallback }: OfflineT
   const { isOnline } = useOnlineManager();
 
   // Memoized filtering logic
-  const filteredData = useMemo(() => {
-    if (!data) return undefined;
-    return isOnline ? data : data.filter((item) => filterFn(searchParams, item));
-  }, [data, searchParams, isOnline]);
+  const filteredData = !data ? undefined : isOnline ? data : data.filter((item) => filterFn(searchParams, item));
 
   useEffect(() => {
     if (isOnline || !onFilterCallback || !filteredData) return;

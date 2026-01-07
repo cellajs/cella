@@ -1,9 +1,5 @@
 import { appConfig } from 'config';
-import { useEffect, useState } from 'react';
-
-// Store global state in a module-level variable
-let currentBreakpoint = '';
-const listeners = new Set<(breakpoint: string) => void>();
+import { useSyncExternalStore } from 'react';
 
 // Sort breakpoints once for efficiency
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
@@ -13,6 +9,8 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
 
 // Function to get the matched breakpoint based on window width
 const getMatchedBreakpoints = () => {
+  if (typeof window === 'undefined') return sortedBreakpoints[0];
+
   const width = window.innerWidth;
   let matched = sortedBreakpoints[0]; // Default to first breakpoint
 
@@ -30,13 +28,17 @@ const getMatchedBreakpoints = () => {
   return matched;
 };
 
+// Store global state in a module-level variable - initialize immediately
+let currentBreakpoint = getMatchedBreakpoints();
+const listeners = new Set<() => void>();
+
 // Function to update global breakpoint state (runs only when necessary)
 const updateGlobalBreakpoint = () => {
   const newBreakpoint = getMatchedBreakpoints();
   if (newBreakpoint !== currentBreakpoint) {
     currentBreakpoint = newBreakpoint;
     for (const listener of listeners) {
-      listener(newBreakpoint);
+      listener();
     }
   }
 };
@@ -44,32 +46,38 @@ const updateGlobalBreakpoint = () => {
 // Attach the listener once per app lifecycle
 if (typeof window !== 'undefined') {
   window.addEventListener('resize', updateGlobalBreakpoint);
-  updateGlobalBreakpoint(); // Initialize on load
 }
 
+// Subscribe function for useSyncExternalStore
+const subscribe = (callback: () => void) => {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+};
+
+// Snapshot functions for useSyncExternalStore
+const getSnapshot = () => currentBreakpoint;
+const getServerSnapshot = () => sortedBreakpoints[0];
+
 /**
- * Optimized breakpoint hook with shared state.
- * Prevents multiple instances from causing unnecessary state updates.
+ * Breakpoint hook to determine if the current viewport matches the specified breakpoint condition.
+ * @param mustBe - 'min' for minimum breakpoint, 'max' for maximum breakpoint
+ * @param breakpoint - The target breakpoint key (e.g., 'sm', 'md', 'lg')
+ * @param enableReactivity - Whether to enable reactivity to window resize events (default: true)
+ * @returns boolean indicating if the current viewport matches the condition
+ * @example
+ * const isMobile = useBreakpoints('max', 'sm', false); // Non-reactive
  */
 export const useBreakpoints = (
   mustBe: 'min' | 'max',
   breakpoint: keyof typeof breakpoints,
   enableReactivity = true,
 ) => {
-  const [breakpointState, setBreakpointState] = useState(currentBreakpoint);
-
-  useEffect(() => {
-    if (!enableReactivity) {
-      return () => {};
-    }
-
-    const update = (bp: string) => setBreakpointState(bp);
-    listeners.add(update);
-
-    return () => {
-      listeners.delete(update);
-    };
-  }, [enableReactivity]);
+  // useSyncExternalStore provides tear-free reads from external state
+  const breakpointState = useSyncExternalStore(
+    enableReactivity ? subscribe : () => () => {},
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const currentBreakpointIndex = sortedBreakpoints.indexOf(breakpointState);
   const targetBreakpointIndex = sortedBreakpoints.indexOf(breakpoint as string);

@@ -45,13 +45,13 @@ const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>((props, ref) =>
     errorIcon: CustomErrorIcon,
   } = props;
 
-  const Icon = React.useMemo(() => (CustomIcon ? CustomIcon : null), [CustomIcon]);
+  const Icon = CustomIcon ? CustomIcon : null;
 
-  const ErrorIcon = React.useMemo(() => (CustomErrorIcon ? CustomErrorIcon : null), [CustomErrorIcon]);
+  const ErrorIcon = CustomErrorIcon ? CustomErrorIcon : null;
 
-  const Check = React.useMemo(() => (CustomCheckIcon ? CustomCheckIcon : CheckIcon), [CustomCheckIcon]);
+  const Check = CustomCheckIcon ? CustomCheckIcon : CheckIcon;
 
-  return React.useMemo(() => {
+  const iconContent = (() => {
     if (isCompletedStep) {
       if (isError && isKeepError) {
         return (
@@ -97,7 +97,9 @@ const StepIcon = React.forwardRef<HTMLDivElement, StepIconProps>((props, ref) =>
         {(index || 0) + 1}
       </span>
     );
-  }, [isCompletedStep, isCurrentStep, isError, isLoading, Icon, index, Check, ErrorIcon, isKeepError, ref, size]);
+  })();
+
+  return iconContent;
 });
 
 export { StepIcon };

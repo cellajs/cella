@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ChevronUpIcon, HelpCircleIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { Separator } from '~/modules/ui/separator';
@@ -190,7 +190,7 @@ function FieldError({
 }: React.ComponentProps<'div'> & {
   errors?: Array<{ message?: string } | undefined>;
 }) {
-  const content = useMemo(() => {
+  const content = (() => {
     if (children) {
       return children;
     }
@@ -208,7 +208,7 @@ function FieldError({
         {errors.map((error, index) => error?.message && <li key={index}>{error.message}</li>)}
       </ul>
     );
-  }, [children, errors]);
+  })();
 
   if (!content) {
     return null;

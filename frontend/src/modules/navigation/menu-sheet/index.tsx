@@ -5,8 +5,9 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowLeftIcon, InfoIcon, SearchIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -39,6 +40,8 @@ export const MenuSheet = () => {
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
   const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
   const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
+
+  const isDesktop = useBreakpoints('min', 'xl', true);
 
   const { mutateAsync } = useMemberUpdateMutation();
 
@@ -98,23 +101,21 @@ export const MenuSheet = () => {
     );
   }, [menu]);
 
-  const searchResultsListItems = useCallback(() => {
+  const searchResultsListItems = () => {
     return searchResults.length > 0
       ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />)
       : [];
-  }, [searchResults]);
+  };
 
-  const renderedSections = useMemo(() => {
-    return appConfig.menuStructure
-      .map(({ entityType }) => {
-        const menuData = menu[entityType];
-        const menuSection = menuSectionsSchema[entityType];
-        if (!menuSection) return null;
+  const renderedSections = appConfig.menuStructure
+    .map(({ entityType }) => {
+      const menuData = menu[entityType];
+      const menuSection = menuSectionsSchema[entityType];
+      if (!menuSection) return null;
 
-        return <MenuSheetSection key={entityType} options={menuSection} data={menuData} />;
-      })
-      .filter((el) => el !== null);
-  }, [menu]);
+      return <MenuSheetSection key={entityType} options={menuSection} data={menuData} />;
+    })
+    .filter((el) => el !== null);
 
   return (
     <div
@@ -179,7 +180,7 @@ export const MenuSheet = () => {
               <Switch
                 id="keepMenuOpen"
                 checked={keepOpenPreference}
-                onCheckedChange={toggleKeepOpenPreference}
+                onCheckedChange={(checked) => toggleKeepOpenPreference(checked, isDesktop)}
                 aria-label={t('common:keep_menu_open')}
               />
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">

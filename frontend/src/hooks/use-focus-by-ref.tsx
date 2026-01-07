@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Hook to provide focus control for an element.
@@ -9,11 +9,11 @@ import { useCallback, useEffect, useRef } from 'react';
 const useFocusByRef = () => {
   const focusRef = useRef<HTMLInputElement | null>(null);
 
-  const setFocus = useCallback(() => {
+  const setFocus = () => {
     if (focusRef.current && window.innerWidth >= 640) {
       focusRef.current.focus();
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (window.innerWidth >= 640) setFocus();

@@ -5,6 +5,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
+import { cn } from '~/utils/cn';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
 export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
@@ -15,16 +16,17 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     open,
     triggerRef,
     description,
-    scrollableOverlay,
     title,
     titleContent = title,
     showCloseButton = true,
     className: sheetClassName,
     content,
     closeSheetOnEsc = true,
+    container,
   } = sheet;
 
   const isMobile = useBreakpoints('max', 'sm', false);
+  const containerElement = container?.ref?.current ?? null;
 
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -92,12 +94,12 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
       <SheetContent
         id={String(id)}
-        scrollableOverlay={scrollableOverlay}
         ref={sheetRef}
         side={side}
         showCloseButton={showCloseButton}
         aria-describedby={undefined}
-        className={`${className} items-start`}
+        container={containerElement}
+        className={cn(className, 'items-start', containerElement && 'z-40')}
         onEscapeKeyDown={handleEscapeKeyDown}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
@@ -107,7 +109,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >
-        <SheetHeader className={`${title || description ? '' : 'hidden'}`}>
+        <SheetHeader sticky className={`${title || description ? '' : 'hidden'}`}>
           <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>

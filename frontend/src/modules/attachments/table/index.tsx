@@ -2,7 +2,7 @@ import { ilike, isNull, not, or, useLiveInfiniteQuery, useLiveQuery } from '@tan
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
@@ -79,7 +79,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
             ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
             : not(isNull(attachment.id)),
         )
-        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+        .orderBy(({ attachment }) => attachment[sort || 'createdAt'], order || 'desc');
     },
     {
       pageSize: limit,
@@ -98,6 +98,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     attachmentStorage.addCachedImage(fetchedRows);
   }, [fetchedRows]);
 
+  //
   const { data: localRows } = useLiveQuery(
     (liveQuery) => {
       return liveQuery
@@ -107,13 +108,12 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
             ? or(ilike(attachment.name, `%${q.trim()}%`), ilike(attachment.filename, `%${q.trim()}%`))
             : not(isNull(attachment.id)),
         )
-        .orderBy(({ attachment }) => attachment[sort || 'id'], order);
+        .orderBy(({ attachment }) => attachment[sort || 'createdAt'], order || 'desc');
     },
     [entity.id, q, sort, order],
   );
 
-  // Memoize combined rows to prevent unnecessary recalculations
-  const combinedData = useMemo(() => [...fetchedRows, ...localRows], [fetchedRows, localRows]);
+  const combinedData = [...fetchedRows, ...localRows];
 
   // TODO(tanstackDB) add ordering
   const rows = useOfflineTableSearch({
@@ -149,7 +149,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [localAttachmentsCollection, updateOffline],
   );
 
-  // isFetching already includes next page fetch scenario
   const fetchMore = useCallback(async () => {
     if (!hasNextPage || isLoading || isFetchingNextPage) return;
     fetchNextPage();
@@ -162,32 +161,23 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [rows],
   );
 
-  // Memoize row key getter to prevent rerenders
-  const rowKeyGetter = useCallback((row: Attachment) => row.id, []);
+  const rowKeyGetter = (row: Attachment) => row.id;
 
-  // Memoize selected rows Set
-  const selectedRows = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+  const selectedRows = new Set(selected.map((s) => s.id));
 
-  // Memoize visible columns
-  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
+  const visibleColumns = columns.filter((column) => column.visible);
 
-  // Memoize error object
-  const error = useMemo(() => (isError ? new Error(t('common:failed_to_load_attachments')) : undefined), [isError, t]);
+  const error = isError ? new Error(t('common:failed_to_load_attachments')) : undefined;
 
-  // Memoize NoRowsComponent
-  const NoRowsComponent = useMemo(
-    () => (
-      <ContentPlaceholder
-        icon={PaperclipIcon}
-        title="common:no_resource_yet"
-        titleProps={{ resource: t('common:attachments').toLowerCase() }}
-      />
-    ),
-    [t],
+  const NoRowsComponent = (
+    <ContentPlaceholder
+      icon={PaperclipIcon}
+      title="common:no_resource_yet"
+      titleProps={{ resource: t('common:attachments').toLowerCase() }}
+    />
   );
 
-  // Memoize clearSelection callback
-  const clearSelection = useCallback(() => setSelected([]), []);
+  const clearSelection = () => setSelected([]);
 
   return (
     <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
@@ -203,6 +193,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         canUpload={canUpload}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
+        total={fetchedRows.length + localRows.length}
       />
       <DataTable<Attachment>
         {...{

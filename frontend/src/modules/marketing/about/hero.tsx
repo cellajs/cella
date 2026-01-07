@@ -1,4 +1,3 @@
-import { appConfig } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Badge } from '~/modules/ui/badge';
@@ -22,7 +21,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
 
   const gradientClass =
     theme === 'none'
-      ? 'from-slate-600 via-neutral-400 to-stone-700 text-primary/50'
+      ? 'from-slate-200 via-neutral-200 to-stone-300 text-primary/90'
       : 'from-rose-800 via-rose-600 to-pink-800 text-transparent';
   const sectionClass =
     'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
@@ -62,16 +61,13 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
 };
 
 export const BackgroundCurve = () => {
-  const mode = useUIStore((state) => state.mode);
-  const fillColor = mode === 'dark' ? appConfig.theme.colorDarkBackground : '#fff';
-
   return (
     <svg viewBox="0 0 800 400" className="transition" aria-hidden="true">
       <title>Background curve</title>
       <path
         id="curve"
         className="transition"
-        fill={fillColor}
+        fill="var(--background)"
         d="M 800 300 Q 400 250 0 300 L 0 0 L 800 0 L 800 300 Z"
       />
     </svg>

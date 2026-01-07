@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -25,17 +25,20 @@ export const ExpandableList = <T,>({
 }: ExpandableListProps<T>) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(alwaysShowAll);
+  const hasExpandedOnce = useRef(false);
 
   return (
     <>
       {items.map((item, index) => {
         const isInitiallyVisible = index < initialDisplayCount;
+        const shouldAnimate = hasExpandedOnce.current && !isInitiallyVisible;
+
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
           <AnimatePresence key={index}>
             {isInitiallyVisible || expanded ? (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
+                initial={shouldAnimate ? { height: 0, opacity: 0 } : false}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -48,7 +51,14 @@ export const ExpandableList = <T,>({
       })}
 
       {!expanded && items.length > initialDisplayCount && (
-        <Button variant="ghost" className="w-full group flex items-center" onClick={() => setExpanded(true)}>
+        <Button
+          variant="ghost"
+          className="w-full group flex items-center"
+          onClick={() => {
+            hasExpandedOnce.current = true;
+            setExpanded(true);
+          }}
+        >
           <Badge size="sm" className="mr-2 aspect-square py-0 px-1">
             {items.length - initialDisplayCount}
           </Badge>

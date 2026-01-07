@@ -1,6 +1,6 @@
 import { appConfig } from 'config';
 import { PartyPopperIcon, TrashIcon, XSquareIcon } from 'lucide-react';
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRequests } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -38,7 +38,7 @@ export const RequestsTableBar = ({
 
   const deleteButtonRef = useRef(null);
 
-  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.wasInvited), [selected]);
+  const selectedToWaitlist = selected.filter((r) => r.type === 'waitlist' && !r.wasInvited);
 
   const { q, order, sort } = searchVars;
   const isFiltered = !!q;

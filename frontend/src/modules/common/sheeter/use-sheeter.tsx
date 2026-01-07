@@ -3,6 +3,10 @@ import { create } from 'zustand';
 
 type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 
+type SheetContainerOptions = {
+  ref: RefObject<HTMLDivElement | null>;
+};
+
 export type SheetData = {
   id: string;
   triggerRef: TriggerRef;
@@ -12,10 +16,10 @@ export type SheetData = {
   description?: ReactNode;
   className?: string;
   showCloseButton?: boolean;
-  scrollableOverlay?: boolean;
   closeSheetOnEsc?: boolean;
   modal?: boolean;
   closeSheetOnRouteChange?: boolean;
+  container?: SheetContainerOptions;
   onClose?: (isCleanup?: boolean) => void;
 };
 

@@ -1,14 +1,22 @@
 import { useRouterState } from '@tanstack/react-router';
+import type { LucideProps } from 'lucide-react';
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import { FloatingNavButton } from '~/modules/navigation/floating-nav/button';
 import type { TriggerNavItemFn } from '~/modules/navigation/types';
+import { Button } from '~/modules/ui/button';
 import { navItems } from '~/nav-config';
+import { cn } from '~/utils/cn';
 
 const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 
+/**
+ * Floating navigation for mobile devices.
+ * - Shows/hides buttons based on scroll direction.
+ * - Renders buttons defined in route static data.
+ */
 const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
   const { hasWaited } = useMounted();
   const routerState = useRouterState();
@@ -70,6 +78,38 @@ const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) =
         />
       ))}
     </nav>
+  );
+};
+
+interface ButtonProps {
+  id: string;
+  icon: React.ElementType<LucideProps>;
+  onClick: () => void;
+  className?: string;
+  direction?: 'left' | 'right';
+}
+
+/**
+ * Floating navigation button
+ */
+export const FloatingNavButton = ({ id, icon: Icon, onClick, className, direction = 'right' }: ButtonProps) => {
+  return (
+    <Button
+      id={id}
+      size="icon"
+      data-direction={direction}
+      variant="secondary"
+      onClick={onClick}
+      className={cn(
+        `fixed z-105 w-14 h-14 flex items-center shadow-lg bg-secondary hover:bg-secondary justify-center rounded-full bottom-4 
+        transition-all duration-300 ease-in-out transform opacity-100 active:scale-95
+        data-[direction=left]:left-4 data-[direction=right]:right-4`,
+        className,
+      )}
+      aria-label="Navigate"
+    >
+      <Icon size={24} strokeWidth={1.5} />
+    </Button>
   );
 };
 

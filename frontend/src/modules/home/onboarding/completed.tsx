@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { UndoIcon } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '~/api.gen';
 import { Confetti } from '~/modules/home/onboarding/confetti';
@@ -26,10 +26,10 @@ export const OnboardingCompleted = () => {
   const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
 
-  const lastCreatedOrganization = useMemo(() => {
-    if (organizations.length === 0) return undefined;
-    return [...organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-  }, [organizations]);
+  const lastCreatedOrganization =
+    organizations.length === 0
+      ? undefined
+      : [...organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   useEffect(() => {
     // run once (but wait until org query has either data or is done fetching)

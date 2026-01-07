@@ -1,7 +1,7 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
 import type { EntityType } from 'config';
 import type { LucideIcon } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -29,7 +29,7 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
       </Avatar>
     );
 
-  const avatarBackground = useMemo(() => numberToColorClass(id), [id]);
+  const avatarBackground = numberToColorClass(id);
 
   return (
     //key will force remounting of AvatarImage or AvatarFallback when URL changes

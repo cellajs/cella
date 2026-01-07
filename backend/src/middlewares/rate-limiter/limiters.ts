@@ -39,7 +39,7 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> => {
  * Presigned URL rate limiter to prevent, falls back to IP address for anonymous requests
  */
 export const presignedUrlLimiter: MiddlewareHandler<Env> = rateLimiter('limit', 'presigned_url', ['userId', 'ip'], {
-  points: 20, // 20 requests per hour
+  points: 2000, // 20 requests per hour
   duration: 60 * 60, // 1 hour window
   blockDuration: 60 * 15, // 15 minute block
 });

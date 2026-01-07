@@ -1,5 +1,4 @@
-import { JSX, Suspense } from 'react';
-import Spinner from '~/modules/common/spinner';
+import type { JSX } from 'react';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
 
 export type LegalTexts = Record<string, { component: React.LazyExoticComponent<() => JSX.Element>; label: string }>;
@@ -9,12 +8,7 @@ export type LegalTexts = Record<string, { component: React.LazyExoticComponent<(
  */
 const LegalText = ({ subject }: { subject: LegalSubject }) => {
   const { component: SubjectText } = legalConfig[subject];
-
-  return (
-    <Suspense fallback={<Spinner className="mt-[20vh] h-10 w-10" />}>
-      <SubjectText />
-    </Suspense>
-  );
+  return <SubjectText />;
 };
 
 export default LegalText;

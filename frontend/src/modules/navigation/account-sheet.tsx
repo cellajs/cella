@@ -20,7 +20,7 @@ type AccountButtonProps = {
   action: string;
 } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
 
-// Create a button for each account action
+/** Create a button for each account action */
 const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) => {
   const { t } = useTranslation();
 
@@ -46,6 +46,9 @@ const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action 
   );
 };
 
+/**
+ * Account navigation sheet content.
+ */
 export const AccountSheet = () => {
   const { t } = useTranslation();
   const { user, systemRole } = useUserStore();

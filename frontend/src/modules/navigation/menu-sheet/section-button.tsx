@@ -1,5 +1,5 @@
 import { ChevronDown, PlusIcon, Settings2 } from 'lucide-react';
-import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
@@ -18,6 +18,9 @@ interface MenuSectionButtonProps {
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
+/**
+ * Menu section component that is sticky and can contain action buttons.
+ */
 export const MenuSectionButton = ({
   data,
   options,
@@ -33,19 +36,19 @@ export const MenuSectionButton = ({
 
   return (
     <StickyBox className="z-10">
-      <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between">
-        <LayoutGroup>
+      <div className="flex items-center z-10 py-3 pb-1 bg-background">
+        <motion.div layout transition={{ bounce: 0, duration: 0.2 }} className="flex items-center w-full">
+          {/* Main section toggle button */}
           <Button
             onClick={() => toggleSection(options.entityType)}
-            className="w-full justify-between shadow-none"
+            className="flex-1 justify-between shadow-none"
             variant="secondary"
             asChild
           >
-            <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.2 }}>
+            <motion.button layout transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
-                <motion.span layout={'size'} className="flex items-center">
-                  {t(options.label)}
-                </motion.span>
+                <span className="flex items-center">{t(options.label)}</span>
+                {/* Item count badge */}
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -57,64 +60,64 @@ export const MenuSectionButton = ({
                 </motion.span>
               </div>
 
-              <motion.div initial={{ rotate: 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown size={16} className="opacity-50 group-data-[visible=true]/menuSection:rotate-180" />
-              </motion.div>
+              <ChevronDown
+                size={16}
+                className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180"
+              />
             </motion.button>
           </Button>
-          <AnimatePresence mode="popLayout">
-            {isSectionVisible && data.length && (
-              <TooltipButton
-                toolTipContent={t('common:manage_content')}
-                side="bottom"
-                sideOffset={10}
-                className="max-sm:hidden"
+
+          {/* Settings button */}
+          <AnimatePresence>
+            {isSectionVisible && !!data.length && (
+              <motion.div
+                key={`sheet-menu-settings-${options.entityType}`}
+                initial={{ width: 0, opacity: 0, marginLeft: 0 }}
+                animate={{ width: 48, opacity: 1, marginLeft: 8 }}
+                exit={{ width: 0, opacity: 0, marginLeft: 0 }}
+                transition={{ bounce: 0, duration: 0.2 }}
+                className="overflow-hidden max-sm:hidden"
               >
-                <Button
-                  className="w-12 px-2 shadow-none"
-                  variant={isEditing ? 'plain' : 'secondary'}
-                  size="icon"
-                  onClick={() => toggleIsEditing()}
-                  asChild
-                >
-                  <motion.button
-                    key={`sheet-menu-settings-${options.entityType}`}
-                    transition={{ bounce: 0, duration: 0.2 }}
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: 20, opacity: 0, transition: { bounce: 0, duration: 0.1 } }}
+                <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10}>
+                  <Button
+                    className="w-12 px-2 shadow-none"
+                    variant={isEditing ? 'plain' : 'secondary'}
+                    size="icon"
+                    onClick={() => toggleIsEditing()}
                   >
                     <Settings2 size={16} />
-                  </motion.button>
-                </Button>
-              </TooltipButton>
+                  </Button>
+                </TooltipButton>
+              </motion.div>
             )}
           </AnimatePresence>
-          <AnimatePresence mode="popLayout">
+
+          {/* Create button */}
+          <AnimatePresence>
             {isSectionVisible && handleCreateAction && (
-              <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
-                <Button
-                  ref={createButtonRef}
-                  className="w-12 px-2 shadow-none"
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => handleCreateAction(createButtonRef)}
-                  asChild
-                >
-                  <motion.button
-                    key={`sheet-menu-plus-${options.entityType}`}
-                    transition={{ bounce: 0, duration: 0.2 }}
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: 20, opacity: 0 }}
+              <motion.div
+                key={`sheet-menu-plus-${options.entityType}`}
+                initial={{ width: 0, opacity: 0, marginLeft: 0 }}
+                animate={{ width: 48, opacity: 1, marginLeft: 8 }}
+                exit={{ width: 0, opacity: 0, marginLeft: 0 }}
+                transition={{ bounce: 0, duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
+                  <Button
+                    ref={createButtonRef}
+                    className="w-12 px-2 shadow-none"
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => handleCreateAction(createButtonRef)}
                   >
                     <PlusIcon size={16} />
-                  </motion.button>
-                </Button>
-              </TooltipButton>
+                  </Button>
+                </TooltipButton>
+              </motion.div>
             )}
           </AnimatePresence>
-        </LayoutGroup>
+        </motion.div>
       </div>
     </StickyBox>
   );
