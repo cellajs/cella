@@ -1,6 +1,6 @@
 # Cella Agent Guidelines (AGENTS.md)
 
-This document provides instructions and context for AI agents (like Junie, Cursor, Windsurf, etc.) working on the Cella project.
+This document provides instructions and context for AI agents working on cella as a template, or on an app being built with cella as the tempalte.
 
 ## Project Vision
 Cella is a TypeScript template for building collaborative web apps with sync and offline capabilities. OpenAPI is a central part of the architecture.
@@ -82,7 +82,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - `pnpm test`: Run all tests across the monorepo.
 - `pnpm check`: Comprehensive validation. Runs `generate:openapi`, `ts` (type check), and `lint:fix`.
 - `pnpm generate`: Generate new Drizzle migrations based on schema changes in `backend/src/db/schema/`.
-- `pnpm generate:openapi`: Regenerate the backend OpenAPI spec and update the frontend `api.gen` client.
+- `pnpm generate:openapi`: Regenerate backend OpenAPI spec and update the frontend `api.gen` client.
 - `pnpm seed`: Seed the database with initial/test data.
 - `pnpm diverged`: List files that have diverged from the upstream Cella template.
 - `pnpm upstream:pull`: Pull changes from the upstream Cella template (automatically undoes changes in ignored files).

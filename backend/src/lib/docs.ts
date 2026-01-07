@@ -43,7 +43,7 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
     in: 'cookie',
     name: `${appConfig.slug}-session-${appConfig.apiVersion}`,
     description:
-      "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
+      "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
   // Register lower-level (base) schemas
