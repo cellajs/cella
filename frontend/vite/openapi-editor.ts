@@ -27,13 +27,16 @@ function getProject(backendPath: string): Project {
   return project;
 }
 
+type EditableField = 'summary' | 'description';
+
 /**
- * Find and update the description for a specific operationId
+ * Find and update a field for a specific operationId
  */
-function updateBackendDescription(
+function updateBackendField(
   backendPath: string,
   operationId: string,
-  newDescription: string,
+  field: EditableField,
+  newValue: string,
 ): { success: boolean; filePath?: string; error?: string } {
   try {
     const proj = getProject(backendPath);
@@ -67,18 +70,18 @@ function updateBackendDescription(
         const value = initializer.getText().replace(/['"]/g, '');
         if (value !== operationId) continue;
 
-        // Found the right route, now find description property
-        const descriptionProp = objectLiteral.getProperty('description');
-        if (!descriptionProp || !descriptionProp.isKind(SyntaxKind.PropertyAssignment)) continue;
+        // Found the right route, now find the target property
+        const targetProp = objectLiteral.getProperty(field);
+        if (!targetProp || !targetProp.isKind(SyntaxKind.PropertyAssignment)) continue;
 
         // Escape and set the new value
-        const isMultiLine = newDescription.includes('\n');
+        const isMultiLine = newValue.includes('\n');
         if (isMultiLine) {
-          const escaped = newDescription.replace(/`/g, '\\`').replace(/\${/g, '\\${');
-          (descriptionProp as PropertyAssignment).setInitializer(`\`${escaped}\``);
+          const escaped = newValue.replace(/`/g, '\\`').replace(/\${/g, '\\${');
+          (targetProp as PropertyAssignment).setInitializer(`\`${escaped}\``);
         } else {
-          const escaped = newDescription.replace(/'/g, "\\'");
-          (descriptionProp as PropertyAssignment).setInitializer(`'${escaped}'`);
+          const escaped = newValue.replace(/'/g, "\\'");
+          (targetProp as PropertyAssignment).setInitializer(`'${escaped}'`);
         }
 
         // Save the file
@@ -99,9 +102,14 @@ function updateBackendDescription(
 }
 
 /**
- * Update the operations.gen.ts file directly with the new description
+ * Update the operations.gen.ts file directly with the new value
  */
-function updateOperationsFile(operationsFilePath: string, operationId: string, newDescription: string): boolean {
+function updateOperationsFile(
+  operationsFilePath: string,
+  operationId: string,
+  field: EditableField,
+  newValue: string,
+): boolean {
   try {
     const content = readFileSync(operationsFilePath, 'utf-8');
 
@@ -115,7 +123,7 @@ function updateOperationsFile(operationsFilePath: string, operationId: string, n
     const operation = operations.find((op: { id: string }) => op.id === operationId);
     if (!operation) return false;
 
-    operation.description = newDescription;
+    operation[field] = newValue;
 
     // Reconstruct the file
     const interfaceSection = content.split('export const operations')[0];
@@ -128,13 +136,13 @@ function updateOperationsFile(operationsFilePath: string, operationId: string, n
   }
 }
 
-export function openApiDescriptionEditorPlugin(): Plugin {
+export function openApiEditor(): Plugin {
   let server: ViteDevServer;
   let backendPath: string;
   let operationsFilePath: string;
 
   return {
-    name: 'vite-plugin-openapi-description-editor',
+    name: 'vite-plugin-openapi-editor',
 
     // Only run in dev/serve mode
     apply: 'serve',
@@ -151,7 +159,7 @@ export function openApiDescriptionEditorPlugin(): Plugin {
 
       // Add middleware BEFORE Vite's internal middlewares (by not returning a function)
       // This ensures our endpoint is handled before the SPA fallback
-      server.middlewares.use('/__openapi-description-editor', async (req, res) => {
+      server.middlewares.use('/__openapi-editor', async (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
           res.setHeader('Content-Type', 'application/json');
@@ -166,17 +174,31 @@ export function openApiDescriptionEditorPlugin(): Plugin {
         }
 
         try {
-          const { operationId, description } = JSON.parse(body);
+          const { operationId, field, value } = JSON.parse(body);
 
-          if (!operationId || typeof description !== 'string') {
+          // Validate field is allowed
+          const allowedFields: EditableField[] = ['summary', 'description'];
+          if (!operationId || !field || typeof value !== 'string') {
             res.statusCode = 400;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: false, error: 'Missing operationId or description' }));
+            res.end(JSON.stringify({ success: false, error: 'Missing operationId, field, or value' }));
+            return;
+          }
+
+          if (!allowedFields.includes(field)) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                success: false,
+                error: `Invalid field: ${field}. Allowed: ${allowedFields.join(', ')}`,
+              }),
+            );
             return;
           }
 
           // 1. Update backend source code
-          const backendResult = updateBackendDescription(backendPath, operationId, description);
+          const backendResult = updateBackendField(backendPath, operationId, field, value);
 
           if (!backendResult.success) {
             res.statusCode = 400;
@@ -186,7 +208,7 @@ export function openApiDescriptionEditorPlugin(): Plugin {
           }
 
           // 2. Update the operations.gen.ts file directly
-          const frontendUpdated = updateOperationsFile(operationsFilePath, operationId, description);
+          const frontendUpdated = updateOperationsFile(operationsFilePath, operationId, field, value);
 
           // 3. Trigger HMR for the operations file
           if (frontendUpdated) {
@@ -224,4 +246,4 @@ export function openApiDescriptionEditorPlugin(): Plugin {
   };
 }
 
-export default openApiDescriptionEditorPlugin;
+export default openApiEditor;

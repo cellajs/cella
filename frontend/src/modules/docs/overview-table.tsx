@@ -25,7 +25,7 @@ const OverviewTable = () => {
     () => [
       {
         key: 'key',
-        name: 'Property',
+        name: '',
         visible: true,
         sortable: false,
         resizable: false,
@@ -35,7 +35,7 @@ const OverviewTable = () => {
       },
       {
         key: 'value',
-        name: 'Value',
+        name: '',
         visible: true,
         sortable: false,
         resizable: true,

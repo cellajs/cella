@@ -65,10 +65,3 @@ export const attachmentsRouteSearchParamsSchema = z.object({
   order: z.enum(['asc', 'desc']).optional(),
   sort: z.enum(['id', 'name', 'size', 'createdAt']).optional(),
 });
-
-/**
- * Search params schema for page route.
- */
-export const pageRouteSearchParamsSchema = z.object({
-  mode: z.enum(['view', 'edit']).default('view').catch('view'),
-});

@@ -1,3 +1,4 @@
+import { isNull, not, useLiveQuery } from '@tanstack/react-db';
 import { Link, useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon, ListIcon, PencilIcon, TableIcon } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -6,6 +7,7 @@ import type { OperationSummary, TagName, TagSummary } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import Logo from '~/modules/common/logo';
+import type { initPagesCollection } from '~/modules/pages/collections';
 import { Badge } from '~/modules/ui/badge';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -26,27 +28,39 @@ import { getMethodColor } from './helpers/get-method-color';
 interface DocsSidebarProps {
   operations: OperationSummary[];
   tags: TagSummary[];
+  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
-export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
+export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarProps) {
   const isMobile = useBreakpoints('max', 'sm');
   const layoutId = useRef(nanoid()).current;
 
   const { systemRole } = useUserStore();
 
-  // Get current pathname to determine active section
+  // Get current pathname to determine active/expanded section
   const { location } = useRouterState();
   const isOverviewRoute = location.pathname.includes('/docs/overview');
   const isOperationsRoute = location.pathname === '/docs' || location.pathname === '/docs/';
   const isSchemasRoute = location.pathname.includes('/docs/schemas');
 
-  // State for collapsible sections in list mode
-  const [operationsExpanded, setOperationsExpanded] = useState(true);
-  const [schemasExpanded, setSchemasExpanded] = useState(false);
+  // Derive expanded section directly from route (mutually exclusive)
+  const expandedSection = isOperationsRoute ? 'operations' : isSchemasRoute ? 'schemas' : null;
 
   // Get active tag and viewMode from URL search params
   const { tag: activeTag, viewMode = 'list' } = useSearch({ from: '/publicLayout/docs' });
   const navigate = useNavigate();
+
+  // Track sections that are forcibly collapsed (only applies in list mode)
+  const [forcedCollapsed, setForcedCollapsed] = useState<Set<string>>(new Set());
+
+  const toggleForcedCollapse = (section: string) => {
+    setForcedCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
+  };
 
   const getOperationsByTag = (tagName: string) => {
     return operations.filter((op) => op.tags.includes(tagName));
@@ -62,6 +76,16 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
     enableWriteHash: !isMobile,
     smoothScroll: false,
   });
+
+  // Live query for pages - only published pages, ordered by name
+  const { data: pages } = useLiveQuery(
+    (liveQuery) =>
+      liveQuery
+        .from({ page: pagesCollection })
+        .where(({ page }) => not(isNull(page.id)))
+        .orderBy(({ page }) => page.name, 'asc'),
+    [],
+  );
 
   const isListMode = viewMode === 'list';
 
@@ -118,13 +142,26 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
 
           {/* Operations */}
           <SidebarGroup className="p-1">
-            <Collapsible open={isListMode && operationsExpanded} onOpenChange={setOperationsExpanded}>
+            <Collapsible open={isListMode && expandedSection === 'operations' && !forcedCollapsed.has('operations')}>
               <SidebarMenuItem className="list-none">
                 {isListMode ? (
                   <CollapsibleTrigger asChild>
                     <Link
                       to="/docs"
                       search={(prev) => prev}
+                      onClick={(e) => {
+                        if (isOperationsRoute) {
+                          e.preventDefault();
+                          toggleForcedCollapse('operations');
+                        } else {
+                          // Clear forced collapse when navigating to operations
+                          setForcedCollapsed((prev) => {
+                            const next = new Set(prev);
+                            next.delete('operations');
+                            return next;
+                          });
+                        }
+                      }}
                       className={cn(
                         buttonVariants({ variant: 'ghost', size: 'lg' }),
                         'w-full justify-start font-normal group px-3 lowercase',
@@ -132,13 +169,13 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
                       )}
                     >
                       <span>operations</span>
-                      {!operationsExpanded && (
+                      {(expandedSection !== 'operations' || forcedCollapsed.has('operations')) && (
                         <span className="ml-2 text-xs text-muted-foreground/90 font-light">{operations.length}</span>
                       )}
                       <ChevronDownIcon
                         className={cn(
                           'size-4 ml-auto transition-transform duration-200 opacity-40',
-                          operationsExpanded && 'rotate-180',
+                          expandedSection === 'operations' && !forcedCollapsed.has('operations') && 'rotate-180',
                         )}
                       />
                     </Link>
@@ -255,13 +292,26 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
 
           {/* Schemas */}
           <SidebarGroup className="p-1">
-            <Collapsible open={isListMode && schemasExpanded} onOpenChange={setSchemasExpanded}>
+            <Collapsible open={isListMode && expandedSection === 'schemas' && !forcedCollapsed.has('schemas')}>
               <SidebarMenuItem className="list-none">
                 {isListMode ? (
                   <CollapsibleTrigger asChild>
                     <Link
                       to="/docs/schemas"
                       search={(prev) => prev}
+                      onClick={(e) => {
+                        if (isSchemasRoute) {
+                          e.preventDefault();
+                          toggleForcedCollapse('schemas');
+                        } else {
+                          // Clear forced collapse when navigating to schemas
+                          setForcedCollapsed((prev) => {
+                            const next = new Set(prev);
+                            next.delete('schemas');
+                            return next;
+                          });
+                        }
+                      }}
                       className={cn(
                         buttonVariants({ variant: 'ghost', size: 'lg' }),
                         'w-full justify-start font-normal group px-3 lowercase',
@@ -272,7 +322,7 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
                       <ChevronDownIcon
                         className={cn(
                           'size-4 ml-auto transition-transform duration-200 opacity-40',
-                          schemasExpanded && 'rotate-180',
+                          expandedSection === 'schemas' && !forcedCollapsed.has('schemas') && 'rotate-180',
                         )}
                       />
                     </Link>
@@ -305,7 +355,7 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {/* Pages (placeholder for future) */}
+      {/* Pages */}
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
           <SidebarGroupLabel className="opacity-75 p-0">pages</SidebarGroupLabel>
@@ -321,28 +371,26 @@ export function DocsSidebar({ operations, tags }: DocsSidebarProps) {
         </div>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <button
-                type="button"
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'lg' }),
-                  'w-full justify-start font-normal group px-3 lowercase',
-                )}
-              >
-                <span>Getting Started</span>
-              </button>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <button
-                type="button"
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'lg' }),
-                  'w-full justify-start font-normal group px-3 lowercase',
-                )}
-              >
-                <span>Authentication</span>
-              </button>
-            </SidebarMenuItem>
+            {pages && pages.length > 0 ? (
+              pages.map((page) => (
+                <SidebarMenuItem key={page.id}>
+                  <Link
+                    to="/docs/page/$id/$mode"
+                    params={{ id: page.id, mode: 'view' }}
+                    className={cn(
+                      buttonVariants({ variant: 'ghost', size: 'lg' }),
+                      'w-full justify-start font-normal group px-3 lowercase',
+                    )}
+                  >
+                    <span className="truncate">{page.name}</span>
+                  </Link>
+                </SidebarMenuItem>
+              ))
+            ) : (
+              <SidebarMenuItem>
+                <span className="px-3 py-2 text-sm text-muted-foreground lowercase">No pages yet</span>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

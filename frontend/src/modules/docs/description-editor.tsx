@@ -71,7 +71,7 @@ export function DescriptionEditor({ operationId, initialDescription, onUpdate }:
   >({
     mutationFn: async ({ operationId, description }) => {
       // Call the Vite dev server endpoint
-      const response = await fetch('/__openapi-description-editor', {
+      const response = await fetch('/__openapi-editor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operationId, description }),

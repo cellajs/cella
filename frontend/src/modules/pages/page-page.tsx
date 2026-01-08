@@ -9,14 +9,13 @@ import UpdatePageForm from '~/modules/pages/update-page-form';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
-import { PageRouteSearchParams } from './types';
 
 const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
 interface PagePageProps {
   pageId: string;
   pagesCollection: ReturnType<typeof initPagesCollection>;
-  mode?: PageRouteSearchParams['mode'];
+  mode?: 'view' | 'edit';
 }
 
 /**
@@ -39,10 +38,9 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
 
   const toggleMode = () => {
     navigate({
-      to: '/docs/page/$id',
+      to: '/docs/page/$id/$mode',
       replace: true,
-      params: { id: pageId },
-      search: { mode: mode === 'view' ? 'edit' : 'view' },
+      params: { id: pageId, mode: mode === 'view' ? 'edit' : 'view' },
     });
   };
 

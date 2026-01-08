@@ -3,16 +3,13 @@ import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import { initPagesCollection } from '~/modules/pages/collections';
 import { PublicLayoutRoute } from '~/routes/base-routes';
-import {
-  docsRouteSearchParamsSchema,
-  pageRouteSearchParamsSchema,
-  pagesRouteSearchParamsSchema,
-} from '~/routes/search-params-schemas';
+import { docsRouteSearchParamsSchema, pagesRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 import appTitle from '~/utils/app-title';
 
 const DocsPage = lazy(() => import('~/modules/docs/docs-page'));
 const OverviewTable = lazy(() => import('~/modules/docs/overview-table'));
-const OperationsView = lazy(() => import('~/modules/docs/operations-view'));
+const OperationsList = lazy(() => import('~/modules/docs/operations-list'));
+const OperationsTable = lazy(() => import('~/modules/docs/table'));
 const SchemasList = lazy(() => import('~/modules/docs/schemas-list'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
 const PagePage = lazy(() => import('~/modules/pages/page-page'));
@@ -27,6 +24,10 @@ export const DocsRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Docs') }] }),
   getParentRoute: () => PublicLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  loader: () => {
+    const pagesCollection = initPagesCollection();
+    return { pagesCollection };
+  },
   component: () => (
     <Suspense>
       <DocsPage />
@@ -41,11 +42,10 @@ export const DocsIndexRoute = createRoute({
   path: '/',
   staticData: { isAuth: false },
   getParentRoute: () => DocsRoute,
-  component: () => (
-    <Suspense>
-      <OperationsView />
-    </Suspense>
-  ),
+  component: () => {
+    const { viewMode = 'list' } = useSearch({ from: '/publicLayout/docs/' });
+    return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsList />}</Suspense>;
+  },
 });
 
 /**
@@ -101,9 +101,8 @@ export const DocsPagesRoute = createRoute({
  * Single page route - displays an individual documentation page.
  */
 export const DocsPageRoute = createRoute({
-  path: '/page/$id',
+  path: '/page/$id/$mode',
   staticData: { isAuth: false },
-  validateSearch: pageRouteSearchParamsSchema,
   loader: ({ params: { id } }) => {
     const pagesCollection = initPagesCollection();
     return { pageId: id, pagesCollection };
@@ -114,10 +113,11 @@ export const DocsPageRoute = createRoute({
   notFoundComponent: () => <ErrorNotice level="app" error={new Error('Page not found')} />,
   component: () => {
     const { pageId, pagesCollection } = useLoaderData({ from: DocsPageRoute.id });
-    const { mode } = useSearch({ from: DocsPageRoute.id });
+    const { mode } = DocsPageRoute.useParams();
+    const resolvedMode = mode === 'edit' ? 'edit' : 'view';
     return (
       <Suspense>
-        <PagePage key={pageId} pageId={pageId} pagesCollection={pagesCollection} mode={mode} />
+        <PagePage key={pageId} pageId={pageId} pagesCollection={pagesCollection} mode={resolvedMode} />
       </Suspense>
     );
   },
