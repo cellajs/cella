@@ -1,7 +1,10 @@
 import { createRoute, useLoaderData, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
+import { tags } from '~/api.gen/docs';
 import ErrorNotice from '~/modules/common/error-notice';
+import { tagDetailsQueryOptions } from '~/modules/docs/operation-responses';
 import { initPagesCollection } from '~/modules/pages/collections';
+import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import { docsRouteSearchParamsSchema, pagesRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 import appTitle from '~/utils/app-title';
@@ -42,6 +45,10 @@ export const DocsIndexRoute = createRoute({
   path: '/',
   staticData: { isAuth: false },
   getParentRoute: () => DocsRoute,
+  loader: async () => {
+    // Prefetch all tag details into react-query cache
+    await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
+  },
   component: () => {
     const { viewMode = 'list' } = useSearch({ from: '/publicLayout/docs/' });
     return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsList />}</Suspense>;
