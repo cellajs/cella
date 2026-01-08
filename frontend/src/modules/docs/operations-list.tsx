@@ -1,7 +1,7 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { Suspense } from 'react';
-import { type OperationSummary, operations, type TagName, tags } from '~/api.gen/docs';
+import { type GenOperationSummary, operations, type TagName, tags } from '~/api.gen/docs';
 import { DescriptionEditor } from '~/modules/docs/description-editor';
 import {
   OperationResponses,
@@ -31,7 +31,7 @@ const OperationsList = () => {
       }
       return acc;
     },
-    {} as Record<string, OperationSummary[]>,
+    {} as Record<string, GenOperationSummary[]>,
   );
 
   return (
@@ -47,7 +47,7 @@ const OperationsList = () => {
         {tags.map((tag) => {
           const tagOperations = operationsByTag[tag.name] || [];
           const isOpen = activeTag === tag.name;
-          const endpointLabel = tag.count === 1 ? 'endpoint' : 'endpoints';
+          const operationLabel = tag.count === 1 ? 'operation' : 'operations';
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
@@ -72,7 +72,7 @@ const OperationsList = () => {
                       </Suspense>
                     ) : (
                       <>
-                        {tag.count} {endpointLabel}
+                        {tag.count} {operationLabel}
                         <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50" />
                       </>
                     )}
@@ -88,7 +88,12 @@ const OperationsList = () => {
                           id={operation.hash}
                           className="p-6 border-b last:border-b-0 hover:bg-muted/30 transition-colors"
                         >
-                          {operation.summary && <p className="text-xl mb-4">{operation.summary}</p>}
+                          <div className="flex justify-between items-start mb-4">
+                            {operation.summary && <p className="text-xl font-medium">{operation.summary}</p>}
+                            <div className="text-sm font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                              {operation.id}
+                            </div>
+                          </div>
 
                           <div className="flex items-center gap-3 mb-4">
                             <Badge

@@ -1,7 +1,7 @@
 import { useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
-import { type OperationSummary, operations } from '~/api.gen/docs';
+import { type GenOperationSummary, operations } from '~/api.gen/docs';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { OperationsTableBar } from '~/modules/docs/table/bar';
@@ -26,7 +26,7 @@ const OperationsTable = () => {
   const [columns, setColumns] = useColumns();
 
   // Local state for operations to enable editing
-  const [localOperations, setLocalOperations] = useState<OperationSummary[]>(operations);
+  const [localOperations, setLocalOperations] = useState<GenOperationSummary[]>(operations);
 
   // Filter operations based on search query
   const filteredOperations = useMemo(() => {
@@ -43,7 +43,7 @@ const OperationsTable = () => {
 
   // Handle row changes for editable cells
   const onRowsChange = useCallback(
-    (changedRows: OperationSummary[], { indexes, column }: RowsChangeData<OperationSummary>) => {
+    (changedRows: GenOperationSummary[], { indexes, column }: RowsChangeData<GenOperationSummary>) => {
       if (column.key !== 'summary') return;
 
       for (const index of indexes) {
@@ -80,7 +80,7 @@ const OperationsTable = () => {
         columns={columns}
         setColumns={setColumns}
       />
-      <DataTable<OperationSummary>
+      <DataTable<GenOperationSummary>
         columns={columns.filter((column) => column.visible)}
         rows={filteredOperations}
         onRowsChange={onRowsChange}

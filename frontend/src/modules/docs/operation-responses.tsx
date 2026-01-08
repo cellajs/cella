@@ -3,16 +3,7 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { cn } from '~/utils/cn';
 import { getStatusColor } from './helpers/get-status-color';
-
-interface ResponseSummary {
-  status: number;
-  description: string;
-}
-
-export interface OperationDetail {
-  operationId: string;
-  responses: ResponseSummary[];
-}
+import type { GenOperationDetail, GenResponseSummary } from './types';
 
 /**
  * Query options for fetching tag operation details.
@@ -22,13 +13,13 @@ export const tagDetailsQueryOptions = (tagName: string) =>
     queryKey: ['docs', 'tag-details', tagName],
     queryFn: async () => {
       const module = await import(`~/api.gen/docs/details/${tagName}.gen.ts`);
-      return module.operations as OperationDetail[];
+      return module.operations as GenOperationDetail[];
     },
     staleTime: Number.POSITIVE_INFINITY, // Never stale - generated at build time
   });
 
 interface ResponsesAccordionProps {
-  responses: ResponseSummary[];
+  responses: GenResponseSummary[];
 }
 
 const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
@@ -41,13 +32,20 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
       {responses.map((response) => (
         <AccordionItem key={response.status} value={String(response.status)}>
           <AccordionTrigger className="py-2">
-            <div className="flex items-center gap-3">
-              <span
-                className={`font-mono text-sm font-semibold px-2 py-0.5 rounded ${getStatusColor(response.status)}`}
-              >
-                {response.status}
-              </span>
-              <span className="text-sm text-muted-foreground">{response.description}</span>
+            <div className="flex items-center justify-between w-full pr-2">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded ${getStatusColor(response.status)}`}
+                >
+                  {response.status}
+                </span>
+                <span className="text-sm text-muted-foreground">{response.description}</span>
+              </div>
+              {response.name && (
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                  {response.name}
+                </span>
+              )}
             </div>
           </AccordionTrigger>
           <AccordionContent>
@@ -97,11 +95,11 @@ export const TagExpandButtonContent = ({ tagName, count, isOpen }: TagExpandButt
   // This triggers the Suspense - data will be cached for when content renders
   useSuspenseQuery(tagDetailsQueryOptions(tagName));
 
-  const endpointLabel = count === 1 ? 'endpoint' : 'endpoints';
+  const operationLabel = count === 1 ? 'operation' : 'operations';
 
   return (
     <>
-      {count} {endpointLabel}
+      {count} {operationLabel}
       <ChevronDown
         className={cn('ml-2 h-4 w-4 transition-transform duration-200 opacity-50', isOpen && 'rotate-180')}
       />
@@ -113,11 +111,11 @@ export const TagExpandButtonContent = ({ tagName, count, isOpen }: TagExpandButt
  * Loading fallback for the expand button - shows spinner instead of chevron
  */
 export const TagExpandButtonLoading = ({ count }: { count: number }) => {
-  const endpointLabel = count === 1 ? 'endpoint' : 'endpoints';
+  const operationLabel = count === 1 ? 'operation' : 'operations';
 
   return (
     <>
-      {count} {endpointLabel}
+      {count} {operationLabel}
       <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
     </>
   );

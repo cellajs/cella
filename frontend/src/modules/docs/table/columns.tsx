@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { OperationSummary } from '~/api.gen/docs';
+import type { GenOperationSummary } from '~/api.gen/docs';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Badge } from '~/modules/ui/badge';
@@ -8,7 +8,7 @@ import { getMethodColor } from '../helpers/get-method-color';
 
 export const useColumns = () => {
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<OperationSummary>[] = [
+    const cols: ColumnOrColumnGroup<GenOperationSummary>[] = [
       {
         key: 'method',
         name: 'Method',
@@ -54,5 +54,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<OperationSummary>[]>(columns);
+  return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(columns);
 };

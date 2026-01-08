@@ -1,4 +1,4 @@
-import type { OperationSummary } from '~/api.gen/docs';
+import type { GenOperationSummary } from '~/api.gen/docs';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -10,8 +10,8 @@ interface OperationsTableBarProps {
   total: number;
   q: string;
   setSearch: (params: { q?: string }) => void;
-  columns: ColumnOrColumnGroup<OperationSummary>[];
-  setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<OperationSummary>[]>>;
+  columns: ColumnOrColumnGroup<GenOperationSummary>[];
+  setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
 }
 
 export const OperationsTableBar = ({ total, q, setSearch, columns, setColumns }: OperationsTableBarProps) => {

@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState, useSearch } from '@tanstack/react-ro
 import { ChevronDownIcon, ListIcon, PencilIcon, TableIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
-import type { OperationSummary, TagName, TagSummary } from '~/api.gen/docs';
+import type { GenOperationSummary, GenTagSummary, TagName } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import Logo from '~/modules/common/logo';
@@ -26,8 +26,8 @@ import { nanoid } from '~/utils/nanoid';
 import { getMethodColor } from './helpers/get-method-color';
 
 interface DocsSidebarProps {
-  operations: OperationSummary[];
-  tags: TagSummary[];
+  operations: GenOperationSummary[];
+  tags: GenTagSummary[];
   pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 

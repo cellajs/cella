@@ -1,5 +1,6 @@
-import { Outlet, useLoaderData } from '@tanstack/react-router';
+import { Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
 import { operations, tags } from '~/api.gen/docs';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import { DocsSidebar } from '~/modules/docs/docs-sidebar';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -7,6 +8,17 @@ import { DocsRoute } from '~/routes/docs-routes';
 
 const DocsPage = () => {
   const { pagesCollection } = useLoaderData({ from: DocsRoute.id });
+  const navigate = useNavigate();
+
+  // Collapse all expanded items on ESC
+  useHotkeys([
+    [
+      'Escape',
+      () => {
+        navigate({ to: '.', search: (prev) => ({ ...prev, tag: undefined }), resetScroll: false, replace: true });
+      },
+    ],
+  ]);
 
   return (
     <ResizableGroup orientation="horizontal" className="h-screen">
