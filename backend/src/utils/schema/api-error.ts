@@ -2,51 +2,13 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type Severity } from 'config';
 import { entityTypeSchema } from '#/utils/schema/common';
 
-const ClientErrorStatusCodeEnum = z.union([
-  z.literal(400),
-  z.literal(401),
-  z.literal(402),
-  z.literal(403),
-  z.literal(404),
-  z.literal(405),
-  z.literal(406),
-  z.literal(407),
-  z.literal(408),
-  z.literal(409),
-  z.literal(410),
-  z.literal(411),
-  z.literal(412),
-  z.literal(413),
-  z.literal(414),
-  z.literal(415),
-  z.literal(416),
-  z.literal(417),
-  z.literal(418),
-  z.literal(421),
-  z.literal(422),
-  z.literal(423),
-  z.literal(424),
-  z.literal(425),
-  z.literal(426),
-  z.literal(428),
-  z.literal(429),
-  z.literal(431),
-  z.literal(451),
-]);
+const ClientErrorStatusCodeEnum = z
+  .number()
+  .refine((val) => val >= 400 && val < 500, { message: 'Must be a valid client error status code' });
 
-const ServerErrorStatusCodeEnum = z.union([
-  z.literal(500),
-  z.literal(501),
-  z.literal(502),
-  z.literal(503),
-  z.literal(504),
-  z.literal(505),
-  z.literal(506),
-  z.literal(507),
-  z.literal(508),
-  z.literal(510),
-  z.literal(511),
-]);
+const ServerErrorStatusCodeEnum = z
+  .number()
+  .refine((val) => val >= 500 && val < 600, { message: 'Must be a valid server error status code' });
 
 /**
  * Schema for errors in a response.

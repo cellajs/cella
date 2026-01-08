@@ -1,0 +1,501 @@
+import assign, { type Options as AssignOptions, type Input } from 'object-property-assigner';
+import extract from 'object-property-extractor';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CollectionNode } from './CollectionNode';
+import { defaultTheme, ThemeProvider, TreeStateProvider, useTheme, useTreeState } from './contexts';
+import {
+  getFullKeyboardControlMap,
+  handleKeyPress,
+  isCollection,
+  matchNode,
+  matchNodeKey,
+  restoreUndefined,
+  UNDEFINED,
+} from './helpers';
+import { useData, useTriggers } from './hooks';
+import { getTranslateFunction } from './localisation';
+import {
+  type CollectionData,
+  type CollectionKey,
+  CustomNodeDefinition,
+  type FilterFunction,
+  type InternalUpdateFunction,
+  type JsonData,
+  type JsonEditorProps,
+  type KeyboardControls,
+  type NodeData,
+  type SearchFilterFunction,
+  type UpdateFunction,
+  type UpdateFunctionProps,
+  type UpdateFunctionReturn,
+  ValueData,
+} from './types';
+import { ValueNodeWrapper } from './ValueNodeWrapper';
+
+import './style.css';
+import { getCustomNode } from './CustomNode';
+
+const Editor: React.FC<JsonEditorProps> = ({
+  data: srcData,
+  setData: srcSetData,
+  rootName = 'root',
+  onUpdate = () => {},
+  onEdit: srcEdit = onUpdate,
+  onDelete: srcDelete = onUpdate,
+  onAdd: srcAdd = onUpdate,
+  onChange,
+  onError,
+  onEditEvent,
+  showErrorMessages = true,
+  enableClipboard = true,
+  indent = 2,
+  collapse = false,
+  collapseAnimationTime = 300, // must be equivalent to CSS value
+  showCollectionCount = true,
+  restrictEdit = false,
+  restrictDelete = false,
+  restrictAdd = false,
+  restrictTypeSelection = false,
+  restrictDrag = true,
+  viewOnly,
+  searchFilter: searchFilterInput,
+  searchText,
+  searchDebounceTime = 350,
+  keySort = false,
+  showArrayIndices = true,
+  arrayIndexFromOne = false,
+  showStringQuotes = true,
+  showIconTooltips = false,
+  defaultValue = null,
+  newKeyOptions,
+  minWidth = 250,
+  maxWidth = 'min(600px, 90vw)',
+  rootFontSize,
+  stringTruncate = 250,
+  translations = {},
+  className,
+  id,
+  customText = {},
+  customNodeDefinitions = [],
+  customButtons = [],
+  jsonParse = JSON.parse,
+  jsonStringify = (data, replacer) => JSON.stringify(data, replacer, 2),
+  TextEditor,
+  errorMessageTimeout = 2500,
+  keyboardControls = {},
+  externalTriggers,
+  insertAtTop = false,
+  onCollapse,
+  collapseClickZones = ['header', 'left'],
+  hideRoot = false,
+}) => {
+  const { getStyles } = useTheme();
+  const { setCurrentlyEditingElement } = useTreeState();
+  const collapseFilter = useMemo(() => getFilterFunction(collapse), [collapse]);
+  const translate = useMemo(() => getTranslateFunction(translations, customText), [translations, customText]);
+  const [debouncedSearchText, setDebouncedSearchText] = useState(searchText);
+
+  const [data, setData] = useData<JsonData>({ setData: srcSetData, data: srcData });
+
+  const mainContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCurrentlyEditingElement(null);
+    const debounce = setTimeout(() => setDebouncedSearchText(searchText), searchDebounceTime);
+    return () => clearTimeout(debounce);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setCurrentlyEditingElement is a React state setter, and can't change
+  }, [searchText, searchDebounceTime]);
+
+  const nodeData: NodeData = {
+    key: rootName,
+    path: [],
+    level: 0,
+    index: 0,
+    value: data,
+    size: typeof data === 'object' && data !== null ? Object.keys(data).length : 1,
+    parentData: null,
+    fullData: data,
+  };
+
+  // Common method for handling data update. It runs the updated data through
+  // provided "onUpdate" function, then updates data state or returns error
+  // information accordingly
+  const handleEdit = async (updateMethod: UpdateFunction, input: UpdateFunctionProps) => {
+    const result = await updateMethod(input);
+
+    if (result === true || result === undefined) {
+      setData(input.newData);
+      return;
+    }
+
+    const returnTuple = isUpdateReturnTuple(result) ? result : ['error', result];
+    const [type, resultValue] = returnTuple;
+
+    if (type === 'error') {
+      setData(input.currentData);
+      return resultValue === false ? translate('ERROR_UPDATE', nodeData) : String(resultValue);
+    }
+
+    setData(resultValue);
+  };
+
+  const onEdit: InternalUpdateFunction = async (value, path) => {
+    const { currentData, newData, currentValue, newValue } = updateDataObject(data, path, value, 'update');
+    if (currentValue === newValue) return;
+
+    return await handleEdit(srcEdit, {
+      currentData,
+      newData,
+      currentValue,
+      newValue,
+      name: path.slice(-1)[0],
+      path,
+    });
+  };
+
+  const onDelete: InternalUpdateFunction = async (value, path) => {
+    const { currentData, newData, currentValue, newValue } = updateDataObject(data, path, value, 'delete');
+
+    return await handleEdit(srcDelete, {
+      currentData,
+      newData,
+      currentValue,
+      newValue,
+      name: path.slice(-1)[0],
+      path,
+    });
+  };
+
+  const onAdd: InternalUpdateFunction = async (value, path, options) => {
+    const { currentData, newData, currentValue, newValue } = updateDataObject(data, path, value, 'add', options);
+
+    return await handleEdit(srcAdd, {
+      currentData,
+      newData,
+      currentValue,
+      newValue,
+      name: path.slice(-1)[0],
+      path,
+    });
+  };
+
+  // "onMove" is just a "Delete" followed by an "Add", but we combine into a
+  // single "action" and only run one "onUpdate", which also means it'll be
+  // registered as a single event in the "Undo" queue.
+  // If either action returns an error, we reset the data the same way we do
+  // when a single action returns error.
+  const onMove = async (sourcePath: CollectionKey[] | null, destPath: CollectionKey[], position: 'above' | 'below') => {
+    if (sourcePath === null) return;
+    const { currentData, newData, currentValue } = updateDataObject(data, sourcePath, '', 'delete');
+
+    // Immediate key of the item being moved
+    const originalKey = sourcePath.slice(-1)[0];
+    // Where it's going
+    const targetPath = destPath.slice(0, -1);
+    // The key in the target path to insert before or after
+    const insertPos = destPath.slice(-1)[0];
+
+    let targetKey =
+      typeof insertPos === 'number' // Moving TO an array
+        ? position === 'above'
+          ? insertPos
+          : insertPos + 1
+        : typeof originalKey === 'number'
+          ? `arr_${originalKey}` // Moving FROM an array, so needs a key
+          : originalKey; // Moving from object to object
+
+    const sourceBase = sourcePath.slice(0, -1).join('.');
+    const destBase = destPath.slice(0, -1).join('.');
+
+    if (
+      sourceBase === destBase &&
+      typeof originalKey === 'number' &&
+      typeof targetKey === 'number' &&
+      originalKey < targetKey
+    ) {
+      targetKey -= 1;
+    }
+
+    const insertOptions =
+      typeof targetKey === 'number'
+        ? { insert: true }
+        : position === 'above'
+          ? { insertBefore: insertPos }
+          : { insertAfter: insertPos };
+
+    const { newData: addedData, newValue: addedValue } = updateDataObject(
+      newData,
+      [...targetPath, targetKey],
+      currentValue,
+      'add',
+      insertOptions as UpdateOptions,
+    );
+
+    return await handleEdit(srcEdit, {
+      currentData,
+      newData: addedData,
+      currentValue,
+      newValue: addedValue,
+      name: destPath.slice(-1)[0],
+      path: destPath,
+    });
+  };
+
+  const restrictEditFilter = useMemo(() => getFilterFunction(restrictEdit, viewOnly), [restrictEdit, viewOnly]);
+  const restrictDeleteFilter = useMemo(() => getFilterFunction(restrictDelete, viewOnly), [restrictDelete, viewOnly]);
+  const restrictAddFilter = useMemo(() => getFilterFunction(restrictAdd, viewOnly), [restrictAdd, viewOnly]);
+  const restrictDragFilter = useMemo(() => getFilterFunction(restrictDrag, viewOnly), [restrictDrag, viewOnly]);
+  const searchFilter = useMemo(() => getSearchFilter(searchFilterInput), [searchFilterInput]);
+
+  const fullKeyboardControls = useMemo(() => getFullKeyboardControlMap(keyboardControls), [keyboardControls]);
+
+  const handleKeyboardCallback = useCallback(
+    (e: React.KeyboardEvent, eventMap: Partial<Record<keyof KeyboardControls, () => void>>) =>
+      handleKeyPress(fullKeyboardControls, eventMap, e),
+    [fullKeyboardControls],
+  );
+
+  const jsonStringifyReplacement = useMemo(() => {
+    const replacerFn = getJsonReplacerFn<unknown, unknown>(customNodeDefinitions, 'stringifyReplacer');
+    return (data: JsonData) => jsonStringify(data, replacerFn);
+  }, [customNodeDefinitions, jsonStringify]);
+
+  const jsonParseReplacement = useMemo(() => {
+    const reviverFn = getJsonReplacerFn<string, unknown>(customNodeDefinitions, 'parseReviver');
+
+    return (data: string) => {
+      const parsed = jsonParse(data, reviverFn);
+      return restoreUndefined(parsed);
+    };
+  }, [customNodeDefinitions, jsonParse]);
+
+  const editConfirmRef = useRef<HTMLDivElement>(null);
+  useTriggers(externalTriggers, editConfirmRef);
+
+  // Common "sort" method for ordering nodes, based on the `keySort` prop
+  // - If it's false (the default), we do nothing
+  // - If true, use default array sort on the node's key
+  // - Otherwise sort via the defined comparison function
+  // The "nodeMap" is due  to the fact that this sort is performed on different
+  //   shaped arrays in different places, so in each implementation we pass a
+  //   function to convert each element into a [key, value] tuple, the shape
+  //   expected by the comparison function
+  const sort = useCallback(
+    <T,>(arr: T[], nodeMap: (input: T) => [string | number, unknown]) => {
+      if (keySort === false) return;
+
+      if (typeof keySort === 'function') {
+        arr.sort((a, b) => keySort(nodeMap(a), nodeMap(b)));
+        return;
+      }
+
+      arr.sort((a, b) => {
+        const A = nodeMap(a)[0];
+        const B = nodeMap(b)[0];
+        if (A < B) return -1;
+        if (A > B) return 1;
+        return 0;
+      });
+    },
+    [keySort],
+  );
+
+  const customNodeData = getCustomNode(customNodeDefinitions, nodeData);
+
+  const otherProps = {
+    mainContainerRef: mainContainerRef as React.MutableRefObject<Element>,
+    name: rootName,
+    nodeData,
+    onEdit,
+    onDelete,
+    onAdd,
+    onChange,
+    onError,
+    onEditEvent,
+    showErrorMessages,
+    onMove,
+    showCollectionCount,
+    collapseFilter,
+    collapseAnimationTime,
+    restrictEditFilter,
+    restrictDeleteFilter,
+    restrictAddFilter,
+    restrictTypeSelection,
+    restrictDragFilter,
+    canDragOnto: false, // can't drag onto outermost container
+    searchFilter,
+    searchText: debouncedSearchText,
+    enableClipboard,
+    keySort,
+    sort,
+    showArrayIndices,
+    arrayIndexFromOne,
+    showStringQuotes,
+    showIconTooltips,
+    indent,
+    defaultValue,
+    newKeyOptions,
+    stringTruncate,
+    translate,
+    customNodeDefinitions,
+    customNodeData,
+    customButtons,
+    parentData: null,
+    jsonParse: jsonParseReplacement,
+    jsonStringify: jsonStringifyReplacement,
+    TextEditor,
+    errorMessageTimeout,
+    handleKeyboard: handleKeyboardCallback,
+    keyboardControls: fullKeyboardControls,
+    insertAtTop: {
+      object: insertAtTop === true || insertAtTop === 'object',
+      array: insertAtTop === true || insertAtTop === 'array',
+    },
+    onCollapse,
+    editConfirmRef,
+    collapseClickZones,
+    hideRoot,
+  };
+
+  const mainContainerStyles = { ...getStyles('container', nodeData), minWidth, maxWidth };
+
+  // Props fontSize takes priority over theme, but we fall back on a default of
+  // 16 (from CSS sheet) if neither are provided. Having a defined base size
+  // ensures the component doesn't have its fontSize affected from the parent
+  // environment
+  mainContainerStyles.fontSize = rootFontSize ?? mainContainerStyles.fontSize;
+
+  return (
+    <div
+      id={id}
+      ref={mainContainerRef}
+      className={`jer-editor-container ${className ?? ''}`}
+      style={mainContainerStyles}
+    >
+      {isCollection(data) && !customNodeData.renderCollectionAsValue ? (
+        <CollectionNode data={data} {...otherProps} />
+      ) : (
+        <ValueNodeWrapper data={data as ValueData} showLabel {...otherProps} />
+      )}
+    </div>
+  );
+};
+
+export const JsonEditor: React.FC<JsonEditorProps> = (props) => {
+  const [docRoot, setDocRoot] = useState<HTMLElement>();
+
+  // We want access to the global document.documentElement object, but can't
+  // access it directly when used with SSR. So we set it inside a `useEffect`,
+  // which won't run server-side (it'll just be undefined) until client
+  // hydration
+  useEffect(() => {
+    const root = document.documentElement;
+    setDocRoot(root);
+  }, []);
+
+  if (!docRoot) return null;
+
+  return (
+    <ThemeProvider theme={props.theme ?? defaultTheme} icons={props.icons} docRoot={docRoot}>
+      <TreeStateProvider onEditEvent={props.onEditEvent} onCollapse={props.onCollapse}>
+        <Editor {...props} />
+      </TreeStateProvider>
+    </ThemeProvider>
+  );
+};
+
+interface UpdateOptions {
+  remove?: boolean;
+  insert?: boolean;
+  insertBefore?: string | number;
+  insertAfter?: string | number;
+}
+
+const updateDataObject = (
+  data: JsonData,
+  path: Array<string | number>,
+  newValue: unknown,
+  action: 'update' | 'delete' | 'add',
+  insertOptions: AssignOptions = {},
+) => {
+  if (path.length === 0) {
+    return {
+      currentData: data,
+      newData: newValue as CollectionData,
+      currentValue: data,
+      newValue,
+    };
+  }
+
+  const assignOptions: UpdateOptions = {
+    remove: action === 'delete',
+    ...insertOptions,
+  };
+
+  const currentValue = action !== 'add' ? extract(data, path) : undefined;
+  const newData = assign(data as Input, path, newValue, assignOptions);
+
+  return {
+    currentData: data,
+    newData,
+    currentValue,
+    newValue: action !== 'delete' ? newValue : undefined,
+  };
+};
+
+const getFilterFunction = (propValue: boolean | number | FilterFunction, viewOnly?: boolean): FilterFunction => {
+  if (viewOnly) return () => true;
+  if (typeof propValue === 'boolean') return () => propValue;
+  if (typeof propValue === 'number') return ({ level }) => level >= propValue;
+  return propValue;
+};
+
+const getSearchFilter = (
+  searchFilterInput: 'key' | 'value' | 'all' | SearchFilterFunction | undefined,
+): SearchFilterFunction | undefined => {
+  if (searchFilterInput === undefined) return undefined;
+  if (searchFilterInput === 'value') {
+    return matchNode as SearchFilterFunction;
+  }
+  if (searchFilterInput === 'key') {
+    return matchNodeKey;
+  }
+  if (searchFilterInput === 'all') {
+    return (inputData, searchText) => matchNode(inputData, searchText) || matchNodeKey(inputData, searchText);
+  }
+  return searchFilterInput;
+};
+
+const isUpdateReturnTuple = (
+  input: UpdateFunctionReturn | string | boolean | undefined,
+): input is UpdateFunctionReturn => {
+  return Array.isArray(input) && input.length === 2 && ['error', 'value'].includes(input[0]);
+};
+
+// Combines all the replacer or reviver functions from the Custom node
+// definitions into a single replacer/reviver function for the internal
+// jsonStringify and jsonParse methods
+const getJsonReplacerFn = <T, U>(
+  customNodeDefinitions: CustomNodeDefinition[],
+  method: 'stringifyReplacer' | 'parseReviver',
+): ((key: string, value: T) => U) | undefined => {
+  const replacers: (((value: unknown) => unknown) | ((stringified: string) => unknown))[] =
+    // For "undefined", we hard-code this stringify replacer, as the restore
+    // when parsing has to be handled internally (as reviver function can't
+    // return undefined)
+    method === 'stringifyReplacer' ? [(value: unknown) => (value === undefined ? UNDEFINED : value)] : [];
+
+  replacers.push(...customNodeDefinitions.map((r) => r[method]).filter((r) => !!r));
+
+  if (replacers.length === 0) return undefined;
+
+  return (_: string, value: T) => {
+    let result: unknown = value;
+
+    for (const replacer of replacers) {
+      result = replacer(result as string);
+    }
+
+    return result as U;
+  };
+};

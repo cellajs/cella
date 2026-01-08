@@ -3,7 +3,41 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { cn } from '~/utils/cn';
 import { getStatusColor } from './helpers/get-status-color';
+import { JsonEditor } from './json-viewer';
 import type { GenOperationDetail, GenResponseSummary } from './types';
+
+// Mockup schema inspired by zUser - this will be replaced with actual schema data
+const mockUserSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', description: 'Unique identifier', required: true },
+    entityType: { type: 'string', enum: ['user'], description: 'Entity type discriminator', required: true },
+    name: { type: 'string', description: 'Display name', required: true },
+    email: { type: 'string', format: 'email', description: 'Email address', required: true },
+    slug: { type: 'string', description: 'URL-friendly identifier', required: true },
+    description: { type: ['string', 'null'], description: 'User bio or description', required: false },
+    thumbnailUrl: { type: ['string', 'null'], description: 'Profile picture URL', required: false },
+    bannerUrl: { type: ['string', 'null'], description: 'Banner image URL', required: false },
+    firstName: { type: ['string', 'null'], required: false },
+    lastName: { type: ['string', 'null'], required: false },
+    language: { type: 'string', enum: ['en', 'nl'], description: 'Preferred language', required: true },
+    newsletter: { type: 'boolean', description: 'Newsletter subscription status', required: true },
+    mfaRequired: { type: 'boolean', description: 'Whether MFA is required', required: true },
+    userFlags: {
+      type: 'object',
+      required: false,
+      properties: {
+        finishedOnboarding: { type: 'boolean', required: true },
+      },
+    },
+    createdAt: { type: 'string', format: 'date-time', required: true },
+    modifiedAt: { type: ['string', 'null'], format: 'date-time', required: false },
+    lastSeenAt: { type: ['string', 'null'], format: 'date-time', required: false },
+    lastStartedAt: { type: ['string', 'null'], format: 'date-time', required: false },
+    lastSignInAt: { type: ['string', 'null'], format: 'date-time', required: false },
+    modifiedBy: { type: ['string', 'null'], required: false },
+  },
+};
 
 /**
  * Query options for fetching tag operation details.
@@ -49,7 +83,23 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="text-sm text-muted-foreground italic">Schema details coming soon...</div>
+            <div className="p-3 rounded-md bg-muted/50">
+              <JsonEditor
+                hideRoot
+                data={mockUserSchema}
+                collapse={3}
+                restrictEdit={true}
+                searchFilter="all"
+                enableClipboard={false}
+                restrictDelete={true}
+                restrictAdd={true}
+                showStringQuotes={false}
+                showArrayIndices={false}
+                showCollectionCount="when-closed"
+                indent={2}
+                rootFontSize="13px"
+              />
+            </div>
           </AccordionContent>
         </AccordionItem>
       ))}
