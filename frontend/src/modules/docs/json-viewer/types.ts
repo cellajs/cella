@@ -61,6 +61,9 @@ export interface JsonEditorProps {
   insertAtTop?: boolean | 'array' | 'object';
   collapseClickZones?: Array<'left' | 'header' | 'property'>;
   hideRoot?: boolean;
+  enableSingleLineArrays?: boolean;
+  enableRequiredAsLabel?: boolean;
+  hideBrackets?: boolean;
   // Additional events
   onEditEvent?: OnEditEventFunction;
   onCollapse?: OnCollapseFunction;
@@ -301,6 +304,9 @@ export interface CollectionNodeProps extends BaseNodeProps {
   onCollapse?: OnCollapseFunction;
   collapseClickZones: Array<'left' | 'header' | 'property'>;
   hideRoot?: boolean;
+  enableSingleLineArrays?: boolean;
+  enableRequiredAsLabel?: boolean;
+  hideBrackets?: boolean;
 }
 
 export type ValueData = string | number | boolean;

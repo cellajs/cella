@@ -425,3 +425,68 @@ collapse/expand node*/
   /* border: 1px solid red; */
   height: calc(100% - 0.8em);
 }
+
+/* Single-line array styles */
+.jer-array {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.jer-array > .jer-clickzone {
+  display: none;
+}
+
+.jer-array .jer-hidden {
+  display: none;
+}
+
+.jer-array .jer-collapse-icon {
+  display: none;
+}
+
+.jer-array .jer-collection-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.jer-array .jer-collection-element {
+  display: flex;
+  align-items: center;
+}
+
+.jer-array .jer-value-component {
+  margin-left: 0 !important;
+}
+
+.jer-array .jer-brackets.jer-bracket-outside {
+  margin-left: 0 !important;
+  padding-left: 0;
+}
+
+/* Required label styles */
+.jer-required-label {
+  font-size: 0.75em;
+  font-weight: 500;
+  color: #dc2626;
+  background-color: #fef2f2;
+  padding: 0.1em 0.4em;
+  border-radius: 0.25em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+/* Hide brackets mode */
+.jer-hide-brackets .jer-brackets {
+  display: none;
+}
+
+/* Dim secondary keys */
+.jer-array .jer-key-text {
+  opacity: 0.5;
+}
+
+.jer-value-component .jer-key-text {
+  opacity: 0.5;
+}

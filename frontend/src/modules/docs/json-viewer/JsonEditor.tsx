@@ -88,6 +88,9 @@ const Editor: React.FC<JsonEditorProps> = ({
   onCollapse,
   collapseClickZones = ['header', 'left'],
   hideRoot = false,
+  enableSingleLineArrays = false,
+  enableRequiredAsLabel = false,
+  hideBrackets = false,
 }) => {
   const { getStyles } = useTheme();
   const { setCurrentlyEditingElement } = useTreeState();
@@ -355,6 +358,9 @@ const Editor: React.FC<JsonEditorProps> = ({
     editConfirmRef,
     collapseClickZones,
     hideRoot,
+    enableSingleLineArrays,
+    enableRequiredAsLabel,
+    hideBrackets,
   };
 
   const mainContainerStyles = { ...getStyles('container', nodeData), minWidth, maxWidth };
@@ -369,7 +375,7 @@ const Editor: React.FC<JsonEditorProps> = ({
     <div
       id={id}
       ref={mainContainerRef}
-      className={`jer-editor-container ${className ?? ''}`}
+      className={`jer-editor-container${hideBrackets ? ' jer-hide-brackets' : ''} ${className ?? ''}`}
       style={mainContainerStyles}
     >
       {isCollection(data) && !customNodeData.renderCollectionAsValue ? (

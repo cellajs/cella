@@ -59,6 +59,8 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
     editConfirmRef,
     collapseClickZones,
     hideRoot,
+    enableSingleLineArrays,
+    enableRequiredAsLabel,
   } = props;
   const [stringifiedValue, setStringifiedValue] = useState(jsonStringify(data));
 
@@ -274,9 +276,14 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
   const showKey = showLabel && !hideKey && name !== undefined && !isRootHidden;
   const showCustomNodeContents = CustomNode && ((isEditing && showOnEdit) || (!isEditing && showOnView));
 
-  const keyValueArray = Object.entries(data).map(
-    ([key, value]) => [collectionType === 'array' ? Number(key) : key, value] as [string | number, ValueData],
-  );
+  // Check for xRequired key and extract its value
+  const xRequiredValue =
+    enableRequiredAsLabel && collectionType === 'object' ? (data as Record<string, unknown>)['xRequired'] : undefined;
+  const isRequired = xRequiredValue === true;
+
+  const keyValueArray = Object.entries(data)
+    .filter(([key]) => !(enableRequiredAsLabel && key === 'xRequired'))
+    .map(([key, value]) => [collectionType === 'array' ? Number(key) : key, value] as [string | number, ValueData]);
 
   if (collectionType === 'object') sort<[string | number, ValueData]>(keyValueArray, (_) => _);
 
@@ -294,6 +301,8 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
       };
 
       const childCustomNodeData = getCustomNode(customNodeDefinitions, childNodeData);
+      const isLastItem = index === keyValueArray.length - 1;
+      const showComma = enableSingleLineArrays && collectionType === 'array' && !isLastItem;
 
       return (
         <div
@@ -323,6 +332,11 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
               showLabel={collectionType === 'object' ? true : showArrayIndices}
               customNodeData={childCustomNodeData}
             />
+          )}
+          {showComma && (
+            <span className="jer-comma" style={getStyles('bracket', childNodeData)}>
+              ,
+            </span>
           )}
         </div>
       );
@@ -445,7 +459,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
 
   const CollectionNodeComponent = (
     <div
-      className="jer-component jer-collection-component"
+      className={`jer-component jer-collection-component${enableSingleLineArrays && collectionType === 'array' ? ' jer-array' : ''}`}
       style={{
         marginLeft: `${path.length === 0 ? 0 : indent / 2}em`,
         ...getStyles('collection', nodeData),
@@ -455,14 +469,16 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
       {...dragSourceProps}
       {...getDropTargetProps('above')}
     >
-      <div
-        className="jer-clickzone"
-        style={{
-          width: `${indent / 2 + 1}em`,
-          zIndex: 10 + nodeData.level * 2,
-        }}
-        onClick={collapseClickZones.includes('left') ? handleCollapse : undefined}
-      />
+      {!isRootHidden && (
+        <div
+          className="jer-clickzone"
+          style={{
+            width: `${indent / 2 + 1}em`,
+            zIndex: 10 + nodeData.level * 2,
+          }}
+          onClick={collapseClickZones.includes('left') ? handleCollapse : undefined}
+        />
+      )}
       {!isEditing && BottomDropTarget}
       <DropTargetPadding position="above" nodeData={nodeData} />
       {showCollectionWrapper ? (
@@ -482,6 +498,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
               </div>
             )}
             {showKey && <KeyDisplay {...keyDisplayProps} />}
+            {isRequired && <span className="jer-required-label">required</span>}
             {!isEditing && (
               <span className="jer-brackets jer-bracket-open" style={getStyles('bracket', nodeData)}>
                 {brackets.open}
@@ -504,12 +521,15 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
           >
             {brackets.close}
           </div>
-          {EditButtonDisplay}
+          {!(enableSingleLineArrays && collectionType === 'array') && EditButtonDisplay}
         </div>
       ) : hideKey ? (
         <></>
       ) : (
-        <div className="jer-collection-header-row" style={{ position: 'relative' }}>
+        <div
+          className={`jer-collection-header-row${enableSingleLineArrays && collectionType === 'array' ? ' jer-array' : ''}`}
+          style={{ position: 'relative' }}
+        >
           <KeyDisplay {...keyDisplayProps} />
           {EditButtonDisplay}
         </div>
@@ -533,7 +553,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
             </span>
           )}
         </div>
-        {!isEditing && showCollectionWrapper && (
+        {!isEditing && showCollectionWrapper && !(enableSingleLineArrays && collectionType === 'array') && (
           <div
             className="jer-brackets jer-bracket-outside"
             style={{
@@ -545,6 +565,14 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
           </div>
         )}
       </div>
+      {!isEditing && showCollectionWrapper && enableSingleLineArrays && collectionType === 'array' && (
+        <>
+          <span className="jer-brackets jer-bracket-outside" style={getStyles('bracket', nodeData)}>
+            {brackets.close}
+          </span>
+          {EditButtonDisplay}
+        </>
+      )}
       <DropTargetPadding position="below" nodeData={nodeData} />
     </div>
   );

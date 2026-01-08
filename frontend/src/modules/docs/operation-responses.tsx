@@ -10,32 +10,32 @@ import type { GenOperationDetail, GenResponseSummary } from './types';
 const mockUserSchema = {
   type: 'object',
   properties: {
-    id: { type: 'string', description: 'Unique identifier', required: true },
-    entityType: { type: 'string', enum: ['user'], description: 'Entity type discriminator', required: true },
-    name: { type: 'string', description: 'Display name', required: true },
-    email: { type: 'string', format: 'email', description: 'Email address', required: true },
-    slug: { type: 'string', description: 'URL-friendly identifier', required: true },
-    description: { type: ['string', 'null'], description: 'User bio or description', required: false },
-    thumbnailUrl: { type: ['string', 'null'], description: 'Profile picture URL', required: false },
-    bannerUrl: { type: ['string', 'null'], description: 'Banner image URL', required: false },
-    firstName: { type: ['string', 'null'], required: false },
-    lastName: { type: ['string', 'null'], required: false },
-    language: { type: 'string', enum: ['en', 'nl'], description: 'Preferred language', required: true },
-    newsletter: { type: 'boolean', description: 'Newsletter subscription status', required: true },
-    mfaRequired: { type: 'boolean', description: 'Whether MFA is required', required: true },
+    id: { type: 'string', description: 'Unique identifier', xRequired: true },
+    entityType: { type: 'string', enum: ['user'], description: 'Entity type discriminator', xRequired: true },
+    name: { type: 'string', description: 'Display name', xRequired: true },
+    email: { type: 'string', format: 'email', description: 'Email address', xRequired: true },
+    slug: { type: 'string', description: 'URL-friendly identifier', xRequired: true },
+    description: { type: ['string', 'null'], description: 'User bio or description', xRequired: false },
+    thumbnailUrl: { type: ['string', 'null'], description: 'Profile picture URL', xRequired: false },
+    bannerUrl: { type: ['string', 'null'], description: 'Banner image URL', xRequired: false },
+    firstName: { type: ['string', 'null'], xRequired: false },
+    lastName: { type: ['string', 'null'], xRequired: false },
+    language: { type: 'string', enum: ['en', 'nl'], description: 'Preferred language', xRequired: true },
+    newsletter: { type: 'boolean', description: 'Newsletter subscription status', xRequired: true },
+    mfaRequired: { type: 'boolean', description: 'Whether MFA is required', xRequired: true },
     userFlags: {
       type: 'object',
-      required: false,
+      xRequired: false,
       properties: {
-        finishedOnboarding: { type: 'boolean', required: true },
+        finishedOnboarding: { type: 'boolean', xRequired: true },
       },
     },
-    createdAt: { type: 'string', format: 'date-time', required: true },
-    modifiedAt: { type: ['string', 'null'], format: 'date-time', required: false },
-    lastSeenAt: { type: ['string', 'null'], format: 'date-time', required: false },
-    lastStartedAt: { type: ['string', 'null'], format: 'date-time', required: false },
-    lastSignInAt: { type: ['string', 'null'], format: 'date-time', required: false },
-    modifiedBy: { type: ['string', 'null'], required: false },
+    createdAt: { type: 'string', format: 'date-time', xRequired: true },
+    modifiedAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
+    lastSeenAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
+    lastStartedAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
+    lastSignInAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
+    modifiedBy: { type: ['string', 'null'], xRequired: false },
   },
 };
 
@@ -86,13 +86,16 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
             <div className="p-3 rounded-md bg-muted/50">
               <JsonEditor
                 hideRoot
+                enableSingleLineArrays
+                enableRequiredAsLabel
+                hideBrackets
                 data={mockUserSchema}
-                collapse={3}
+                collapse={4}
                 restrictEdit={true}
                 searchFilter="all"
                 enableClipboard={false}
-                restrictDelete={true}
-                restrictAdd={true}
+                restrictDelete
+                restrictAdd
                 showStringQuotes={false}
                 showArrayIndices={false}
                 showCollectionCount="when-closed"
