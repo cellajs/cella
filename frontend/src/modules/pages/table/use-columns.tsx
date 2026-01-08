@@ -25,7 +25,7 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
-          to="/page/$id"
+          to="/docs/page/$id"
           draggable="false"
           tabIndex={tabIndex}
           params={{ id: row.id }}

@@ -1,13 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
-import { initPagesCollection } from '~/modules/pages/collections';
-import PagesTable from '~/modules/pages/table';
 import SystemPage from '~/modules/system/system-page';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import {
   organizationsRouteSearchParamsSchema,
-  pagesRouteSearchParamsSchema,
   requestsRouteSearchParamsSchema,
   usersRouteSearchParamsSchema,
 } from '~/routes/search-params-schemas';
@@ -81,28 +78,6 @@ export const RequestsTableRoute = createRoute({
   component: () => (
     <Suspense>
       <RequestsTable />
-    </Suspense>
-  ),
-});
-
-/**
- * System pages table for managing content pages.
- */
-export const PagesTableRoute = createRoute({
-  path: '/pages',
-  validateSearch: pagesRouteSearchParamsSchema,
-  staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: appTitle('Pages') }] }),
-  getParentRoute: () => SystemRoute,
-  // Note: Don't use loaderDeps here - collection is created once and live queries
-  // react to search param changes automatically.
-  async loader() {
-    const pagesCollection = initPagesCollection();
-    return { pagesCollection };
-  },
-  component: () => (
-    <Suspense>
-      <PagesTable />
     </Suspense>
   ),
 });

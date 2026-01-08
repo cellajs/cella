@@ -10,7 +10,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { pagesLimit } from '~/modules/pages/query';
 import type { PagesRouteSearchParams } from '~/modules/pages/types';
-import { PagesTableRoute } from '~/routes/system-routes';
+import { DocsPagesRoute } from '~/routes/docs-routes';
 import { PagesTableBar } from './table-bar';
 import { usePagesTableColumns } from './use-columns';
 
@@ -18,7 +18,7 @@ const PagesTable = () => {
   const { t } = useTranslation();
   const [isCompact, setIsCompact] = useState(false);
 
-  const { pagesCollection } = useLoaderData({ from: PagesTableRoute.id });
+  const { pagesCollection } = useLoaderData({ from: DocsPagesRoute.id });
   const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
 
   // Table state

@@ -1,6 +1,7 @@
 // Search query schemas
 
 import z from 'zod';
+import { tagNames } from '~/api.gen/docs';
 import {
   zGetMembersData,
   zGetOrganizationsData,
@@ -8,6 +9,15 @@ import {
   zGetRequestsData,
   zGetUsersData,
 } from '~/api.gen/zod.gen';
+
+/**
+ * Search params schema for docs route.
+ */
+export const docsRouteSearchParamsSchema = z.object({
+  tag: z.enum(tagNames).optional(),
+  viewMode: z.enum(['list', 'table']).optional(),
+  q: z.string().optional(),
+});
 
 /**
  * Search params schema for members route.

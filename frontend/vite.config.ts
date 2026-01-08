@@ -15,6 +15,7 @@ import { appConfig } from '../config';
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { openApiWatch } from './vite/openapi-watch';
 import { localesHMR } from './vite/locales-hmr';
+import { openApiDescriptionEditorPlugin } from './vite/openapi-description-editor-plugin';
 
 const ReactCompilerConfig = {
   /* ... */
@@ -176,6 +177,7 @@ if (appConfig.mode === 'development' && !isStorybook) {
     }),
     i18nextHMRPlugin({ localesDir: '../locales' }),
     openApiWatch(),
+    openApiDescriptionEditorPlugin(),
     reactScan({
       enable: false,
       scanOptions: {
