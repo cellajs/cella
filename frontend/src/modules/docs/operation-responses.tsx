@@ -33,7 +33,7 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
   }
 
   return (
-    <Accordion type="multiple" className="w-full">
+    <Accordion type="single" className="w-full">
       {responses.map((response) => (
         <AccordionItem key={response.status} value={String(response.status)}>
           <AccordionTrigger className="py-2">

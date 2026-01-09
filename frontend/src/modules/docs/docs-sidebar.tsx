@@ -126,13 +126,13 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
         </div>
         <SidebarGroupContent>
           {/* Overview */}
-          <SidebarGroup className="p-1">
+          <SidebarGroup className="p-1 pt-0">
             <SidebarMenuItem className="list-none">
               <Link
                 to="/docs/overview"
                 search={(prev) => prev}
                 className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'lg' }),
+                  buttonVariants({ variant: 'ghost' }),
                   'w-full justify-start font-normal group px-3 lowercase',
                   isOverviewRoute && 'font-medium bg-accent',
                 )}
@@ -143,7 +143,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
           </SidebarGroup>
 
           {/* Operations */}
-          <SidebarGroup className="p-1">
+          <SidebarGroup className="p-1 pt-0">
             <Collapsible open={isListMode && expandedSection === 'operations' && !forcedCollapsed.has('operations')}>
               <SidebarMenuItem className="list-none">
                 {isListMode ? (
@@ -165,7 +165,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                         }
                       }}
                       className={cn(
-                        buttonVariants({ variant: 'ghost', size: 'lg' }),
+                        buttonVariants({ variant: 'ghost' }),
                         'w-full justify-start font-normal group px-3 lowercase',
                         isOperationsRoute && 'font-medium bg-accent',
                       )}
@@ -187,7 +187,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                     to="/docs"
                     search={(prev) => prev}
                     className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'lg' }),
+                      buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',
                       isOperationsRoute && 'font-medium bg-accent',
                     )}
@@ -293,7 +293,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
           </SidebarGroup>
 
           {/* Schemas */}
-          <SidebarGroup className="p-1">
+          <SidebarGroup className="p-1 pt-0">
             <Collapsible open={isListMode && expandedSection === 'schemas' && !forcedCollapsed.has('schemas')}>
               <SidebarMenuItem className="list-none">
                 {isListMode ? (
@@ -315,7 +315,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                         }
                       }}
                       className={cn(
-                        buttonVariants({ variant: 'ghost', size: 'lg' }),
+                        buttonVariants({ variant: 'ghost' }),
                         'w-full justify-start font-normal group px-3 lowercase',
                         isSchemasRoute && 'font-medium bg-accent',
                       )}
@@ -334,7 +334,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                     to="/docs/schemas"
                     search={(prev) => prev}
                     className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'lg' }),
+                      buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',
                       isSchemasRoute && 'font-medium bg-accent',
                     )}
@@ -345,7 +345,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
               </SidebarMenuItem>
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
-                  <SidebarMenu>
+                  <SidebarMenu className="gap-1">
                     <SidebarMenuItem>
                       <span className="px-4 text-sm text-muted-foreground lowercase">
                         {t('common:docs.coming_soon')}
@@ -382,7 +382,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                     to="/docs/page/$id/$mode"
                     params={{ id: page.id, mode: 'view' }}
                     className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'lg' }),
+                      buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',
                     )}
                   >
