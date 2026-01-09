@@ -1114,7 +1114,13 @@
           "auth"
         ],
         "summary": "Check if email exists",
-        "description": "🌐 Public access  \n⏳ Email (5/h)  \n\nChecks if a user with the specified email address exists in the system.",
+        "description": "Checks if a user with the specified email address exists in the system.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "emailEnumLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1164,7 +1170,13 @@
           "auth"
         ],
         "summary": "Invoke token session",
-        "description": "🌐 Public access  \n⏳ token_token (10/h)  \n\nValidates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
+        "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_tokenLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -1228,7 +1240,13 @@
           "auth"
         ],
         "summary": "Get token data",
-        "description": "🌐 Public access  \n⏳ token_token (10/h)  \n\nGet basic token data from single-use token session, It returns basic data if the session is still valid.",
+        "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_tokenLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -1310,7 +1328,12 @@
           "auth"
         ],
         "summary": "Start impersonating",
-        "description": "🛡️ Requires authentication (system access)  \n\nAllows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
+        "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -1363,7 +1386,11 @@
           "auth"
         ],
         "summary": "Stop impersonating",
-        "description": "🛡️ Requires authentication  \n\nEnds impersonation by clearing the current impersonation session and restoring the admin context.",
+        "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "204": {
             "description": "Stopped impersonating"
@@ -1394,7 +1421,13 @@
           "auth"
         ],
         "summary": "Resend invitation",
-        "description": "🌐 Public access  \n⏳ Spam (10/h)  \n\nResends an invitation email with token to a new user using the provided email address and token ID.",
+        "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "spamLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1466,7 +1499,11 @@
           "auth"
         ],
         "summary": "Sign out",
-        "description": "🌐 Public access  \n\nSigns out the *current user* and clears the active session.",
+        "description": "Signs out the *current user* and clears the active session.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "204": {
             "description": "User signed out"
@@ -1501,7 +1538,11 @@
           "auth"
         ],
         "summary": "Generate TOTP key",
-        "description": "🛡️ Requires authentication  \n\nGenerates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
+        "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "200": {
             "description": "Challenge created",
@@ -1555,7 +1596,11 @@
           "auth"
         ],
         "summary": "Set TOTP",
-        "description": "🛡️ Requires authentication  \n\nConfirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
+        "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -1607,7 +1652,11 @@
           "auth"
         ],
         "summary": "Delete TOTP",
-        "description": "🛡️ Requires authentication  \n\nDelete TOTP credential for current user.",
+        "description": "Delete TOTP credential for current user.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "204": {
             "description": "TOTP deleted"
@@ -1638,7 +1687,13 @@
           "auth"
         ],
         "summary": "Verify TOTP",
-        "description": "🌐 Public access  \n⏳ TOTP Verification (5/h)  \n\nValidates the TOTP code and completes TOTP based authentication.",
+        "description": "Validates the TOTP code and completes TOTP based authentication.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "totpVerificationLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1696,7 +1751,14 @@
           "auth"
         ],
         "summary": "Sign up with password",
-        "description": "🌐 Public access  \n⏳ Spam (10/h), Email (5/h)  \n\nRegisters a new user using an email and password. Sends a verification email upon successful sign up.",
+        "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "spamLimiter",
+          "emailEnumLimiter"
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1770,7 +1832,14 @@
           "auth"
         ],
         "summary": "Sign up to accept invite",
-        "description": "🌐 Public access  \n⏳ token_signup_invitation (10/h), Email (5/h)  \n\nRegisters a user using an email and password in response to a system or organization invitation.",
+        "description": "Registers a user using an email and password in response to a system or organization invitation.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_signup_invitationLimiter",
+          "emailEnumLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -1859,7 +1928,14 @@
           "auth"
         ],
         "summary": "Request new password",
-        "description": "🌐 Public access  \n⏳ Spam (10/h), Email (5/h)  \n\nSends an email with a link to reset the user's password.",
+        "description": "Sends an email with a link to reset the user's password.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "spamLimiter",
+          "emailEnumLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1909,7 +1985,13 @@
           "auth"
         ],
         "summary": "Create password",
-        "description": "🌐 Public access  \n⏳ token_password-reset (10/h)  \n\nSets a new password using a single-use session token in cookie and grants a session immediately upon success.",
+        "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_password-resetLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -1985,7 +2067,13 @@
           "auth"
         ],
         "summary": "Sign in with password",
-        "description": "🌐 Public access  \n⏳ Password (5/h)  \n\nAuthenticates an existing user using their email and password.",
+        "description": "Authenticates an existing user using their email and password.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "passwordLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2071,7 +2159,11 @@
           "auth"
         ],
         "summary": "Create passkey",
-        "description": "🛡️ Requires authentication  \n\nRegister a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
+        "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -2188,7 +2280,11 @@
           "auth"
         ],
         "summary": "Delete passkey",
-        "description": "🛡️ Requires authentication  \n\nDelete a passkey by id from the *current user*.",
+        "description": "Delete a passkey by id from the *current user*.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -2229,7 +2325,13 @@
           "auth"
         ],
         "summary": "Generate passkey challenge",
-        "description": "🌐 Public access  \n⏳ Passkey Challenge (5/h)  \n\nInitiates the passkey registration or authentication flow by generating a device bound challenge.",
+        "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "passkeyChallengeLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2322,7 +2424,13 @@
           "auth"
         ],
         "summary": "Verify passkey",
-        "description": "🌐 Public access  \n⏳ token_passkey (10/h)  \n\nValidates the signed challenge and completes passkey based authentication.",
+        "description": "Validates the signed challenge and completes passkey based authentication.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_passkeyLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2411,7 +2519,11 @@
           "auth"
         ],
         "summary": "Authenticate with GitHub",
-        "description": "🌐 Public access  \n\nStarts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -2475,7 +2587,11 @@
           "auth"
         ],
         "summary": "Authenticate with Google",
-        "description": "🌐 Public access  \n\nStarts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -2539,7 +2655,11 @@
           "auth"
         ],
         "summary": "Authenticate with Microsoft",
-        "description": "🌐 Public access  \n\nStarts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -2603,7 +2723,13 @@
           "auth"
         ],
         "summary": "Callback for GitHub",
-        "description": "🌐 Public access  \n⏳ token_github (10/h)  \n\nHandles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_githubLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -2684,7 +2810,13 @@
           "auth"
         ],
         "summary": "Callback for Google",
-        "description": "🌐 Public access  \n⏳ token_google (10/h)  \n\nHandles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_googleLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -2741,7 +2873,13 @@
           "auth"
         ],
         "summary": "Callback for Microsoft",
-        "description": "🌐 Public access  \n⏳ token_microsoft (10/h)  \n\nHandles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_microsoftLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -2802,7 +2940,11 @@
           "me"
         ],
         "summary": "Get self",
-        "description": "🛡️ Requires authentication  \n\nReturns the *current user*.",
+        "description": "Returns the *current user*.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "200": {
             "description": "User",
@@ -2858,7 +3000,11 @@
           "me"
         ],
         "summary": "Update self",
-        "description": "🛡️ Requires authentication  \n\nUpdates the *current user*.",
+        "description": "Updates the *current user*.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -2961,7 +3107,11 @@
           "me"
         ],
         "summary": "Delete self",
-        "description": "🛡️ Requires authentication  \n\nDeletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+        "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "204": {
             "description": "User deleted"
@@ -2996,7 +3146,11 @@
           "me"
         ],
         "summary": "Toggle MFA",
-        "description": "🛡️ Requires authentication  \n\nEnable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
+        "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3082,7 +3236,11 @@
           "me"
         ],
         "summary": "Get auth data",
-        "description": "🛡️ Requires authentication  \n\nReturns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
+        "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "200": {
             "description": "User sign-up info",
@@ -3284,7 +3442,11 @@
           "me"
         ],
         "summary": "Get list of invitations",
-        "description": "🛡️ Requires authentication  \n\nReturns a list of pending memberships with entity data.",
+        "description": "Returns a list of pending memberships with entity data.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "200": {
             "description": "Invitations pending",
@@ -3353,7 +3515,11 @@
           "me"
         ],
         "summary": "Terminate sessions",
-        "description": "🛡️ Requires authentication  \n\nEnds one or more sessions for the *current user* based on provided session IDs.",
+        "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3432,7 +3598,11 @@
           "me"
         ],
         "summary": "Leave entity",
-        "description": "🛡️ Requires authentication  \n\nRemoves the *current user* from an entity they are a member of.",
+        "description": "Removes the *current user* from an entity they are a member of.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -3495,7 +3665,11 @@
           "me"
         ],
         "summary": "Get upload token",
-        "description": "🛡️ Requires authentication  \n\nGenerates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
+        "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -3616,7 +3790,13 @@
           "me"
         ],
         "summary": "Unsubscribe",
-        "description": "🌐 Public access  \n⏳ token_unsubscribe (10/h)  \n\nUnsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
+        "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_unsubscribeLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -3669,7 +3849,11 @@
           "users"
         ],
         "summary": "Get list of users",
-        "description": "🛡️ Requires authentication  \n\nReturns a list of *users*.",
+        "description": "Returns a list of *users*.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -3834,7 +4018,12 @@
           "users"
         ],
         "summary": "Delete users",
-        "description": "🛡️ Requires authentication (system access)  \n\nDeletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+        "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3914,7 +4103,11 @@
           "users"
         ],
         "summary": "Get user",
-        "description": "🛡️ Requires authentication  \n\nRetrieves a *user* by ID or slug.",
+        "description": "Retrieves a *user* by ID or slug.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -3971,7 +4164,12 @@
           "users"
         ],
         "summary": "Update user",
-        "description": "🛡️ Requires authentication (system access)  \n\nUpdates a *user* identified by ID or slug.",
+        "description": "Updates a *user* identified by ID or slug.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4084,7 +4282,11 @@
           "organizations"
         ],
         "summary": "Create organization",
-        "description": "🛡️ Requires authentication  \n\nCreates a new *organization*.",
+        "description": "Creates a new *organization*.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4162,7 +4364,11 @@
           "organizations"
         ],
         "summary": "Get list of organizations",
-        "description": "🛡️ Requires authentication  \n\nReturns a list of *organizations*.",
+        "description": "Returns a list of *organizations*.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4302,7 +4508,11 @@
           "organizations"
         ],
         "summary": "Delete organizations",
-        "description": "🛡️ Requires authentication  \n\nDeletes one or more *organizations* by ID.",
+        "description": "Deletes one or more *organizations* by ID.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4382,7 +4592,11 @@
           "organizations"
         ],
         "summary": "Get organization",
-        "description": "🛡️ Requires authentication  \n\nRetrieves an *organization* by ID or slug.",
+        "description": "Retrieves an *organization* by ID or slug.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4439,7 +4653,11 @@
           "organizations"
         ],
         "summary": "Update organization",
-        "description": "🛡️ Requires authentication  \n\nUpdates an *organization* by ID or slug.",
+        "description": "Updates an *organization* by ID or slug.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4621,7 +4839,11 @@
           "pages"
         ],
         "summary": "Sync pages",
-        "description": "🌐 Public access  \n\nSync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
+        "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4706,7 +4928,12 @@
           "pages"
         ],
         "summary": "Create pages",
-        "description": "🛡️ Requires authentication (system access)  \n\nInsert one or more new *pages*.",
+        "description": "Insert one or more new *pages*.",
+        "x-guard": [
+          "isAuthenticated",
+          "isSystemAdmin"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4757,7 +4984,11 @@
           "pages"
         ],
         "summary": "Get pages",
-        "description": "🌐 Public access  \n\nGet all matching *pages*.",
+        "description": "Get all matching *pages*.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4865,7 +5096,12 @@
           "pages"
         ],
         "summary": "Delete pages",
-        "description": "🛡️ Requires authentication (system access)  \n\nDelete one or more *pages* by ID.",
+        "description": "Delete one or more *pages* by ID.",
+        "x-guard": [
+          "isAuthenticated",
+          "isSystemAdmin"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4919,7 +5155,11 @@
           "pages"
         ],
         "summary": "Get page",
-        "description": "🌐 Public access  \n\nGet a single *page* by ID.",
+        "description": "Get a single *page* by ID.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -4969,7 +5209,12 @@
           "pages"
         ],
         "summary": "Update page",
-        "description": "🛡️ Requires authentication (system access)  \n\nUpdate a single *page* by ID.",
+        "description": "Update a single *page* by ID.",
+        "x-guard": [
+          "isAuthenticated",
+          "isSystemAdmin"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -5061,7 +5306,11 @@
           "entities"
         ],
         "summary": "Check slug availability",
-        "description": "🛡️ Requires authentication  \n\nChecks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
+        "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5122,7 +5371,12 @@
           "system"
         ],
         "summary": "Invite to system",
-        "description": "🛡️ Requires authentication (system access)  \n\nInvites one or more users to the system via email. Can be used to onboard system level users or admins.",
+        "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5203,7 +5457,13 @@
           "system"
         ],
         "summary": "Get presigned URL",
-        "description": "🌐 Public access  \n⏳ Presigned URL (20/h)  \n\nGenerates and returns a presigned URL for uploading files to an S3 bucket.",
+        "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "presignedUrlLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -5267,7 +5527,13 @@
           "system"
         ],
         "summary": "Paddle webhook (WIP)",
-        "description": "🌐 Public access  \n⏳ token_paddle (10/h)  \n\nReceives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
+        "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_paddleLimiter"
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5309,7 +5575,12 @@
           "system"
         ],
         "summary": "Newsletter to members",
-        "description": "🛡️ Requires authentication (system access)  \n\nSends a newsletter to members of one or more specified organizations.",
+        "description": "Sends a newsletter to members of one or more specified organizations.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -5399,7 +5670,14 @@
           "requests"
         ],
         "summary": "Create request",
-        "description": "🌐 Public access  \n⏳ Email (5/h), Spam (10/h)  \n\nSubmits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "emailEnumLimiter",
+          "spamLimiter"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5510,7 +5788,12 @@
           "requests"
         ],
         "summary": "Get list of requests",
-        "description": "🛡️ Requires authentication (system access)  \n\nReturns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
+        "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -5655,7 +5938,12 @@
           "requests"
         ],
         "summary": "Delete requests",
-        "description": "🛡️ Requires authentication (system access)  \n\nDeletes one or more *requests* from the system by their IDs.",
+        "description": "Deletes one or more *requests* from the system by their IDs.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5713,7 +6001,12 @@
           "metrics"
         ],
         "summary": "Get metrics",
-        "description": "🛡️ Requires authentication (system access)  \n\nEXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).\n      Primarily intended for internal monitoring and diagnostics.",
+        "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).\n      Primarily intended for internal monitoring and diagnostics.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "200": {
             "description": "Metrics",
@@ -5766,7 +6059,11 @@
           "metrics"
         ],
         "summary": "Get public counts",
-        "description": "🌐 Public access  \n\nReturns basic count metrics for entity types such as `users` and `organizations`.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "description": "Returns basic count metrics for entity types such as `users` and `organizations`.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [],
         "responses": {
           "200": {
             "description": "Public counts",
@@ -5828,7 +6125,12 @@
           "attachments"
         ],
         "summary": "Sync attachments",
-        "description": "🛡️ Requires authentication (org access)  \n\nSync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.\n      Organization parameter is required to scope the data.",
+        "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.\n      Organization parameter is required to scope the data.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -5928,7 +6230,12 @@
           "attachments"
         ],
         "summary": "Create attachments",
-        "description": "🛡️ Requires authentication (org access)  \n\nRegisters one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
+        "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6097,7 +6404,12 @@
           "attachments"
         ],
         "summary": "Delete attachments",
-        "description": "🛡️ Requires authentication (org access)  \n\nDeletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
+        "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6194,7 +6506,12 @@
           "attachments"
         ],
         "summary": "Update attachment",
-        "description": "🛡️ Requires authentication (org access)  \n\nUpdates metadata of an *attachment*, such as its name or associated entity.",
+        "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6275,7 +6592,13 @@
           "attachments"
         ],
         "summary": "Redirect to attachment",
-        "description": "🌐 Public access  \n⏳ token_attachment_redirect (10/h)  \n\nRedirects to the file's public or presigned URL, depending on storage visibility.",
+        "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limit": [
+          "token_attachment_redirectLimiter"
+        ],
         "parameters": [
           {
             "schema": {
@@ -6320,7 +6643,12 @@
           "memberships"
         ],
         "summary": "Create memberships",
-        "description": "🛡️ Requires authentication (org access)  \n\nCreates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
+        "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6456,7 +6784,12 @@
           "memberships"
         ],
         "summary": "Delete memberships",
-        "description": "🛡️ Requires authentication (org access)  \n\nDeletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
+        "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6579,7 +6912,12 @@
           "memberships"
         ],
         "summary": "Update membership",
-        "description": "🛡️ Requires authentication (org access)  \n\nUpdates the *membership* metadata, such as role, `muted`, or `archived` status.",
+        "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6673,7 +7011,11 @@
           "memberships"
         ],
         "summary": "Respond to membership invitation",
-        "description": "🛡️ Requires authentication  \n\nAccepting activates the associated membership. Rejecting simply removes the invitation token.",
+        "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -6752,7 +7094,12 @@
           "memberships"
         ],
         "summary": "Get list of members",
-        "description": "🛡️ Requires authentication (org access)  \n\nRetrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
+        "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {
@@ -7036,7 +7383,12 @@
           "memberships"
         ],
         "summary": "Get list of pending memberships",
-        "description": "🛡️ Requires authentication (org access)  \n\nReturns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
+        "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limit": [],
         "parameters": [
           {
             "schema": {

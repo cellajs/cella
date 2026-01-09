@@ -155,3 +155,21 @@ function getIcon(
   if (category === 'rate-limit') return '⏳'; // Placeholder for rate limit icon
   return undefined;
 }
+
+/**
+ * Returns OpenAPI specification extensions (x-*) based on the middlewares used in a route.
+ *
+ * @param middlewares - Middleware handlers used in the route
+ * @returns Object with OpenAPI x-* extensions
+ */
+export function getSpecificationExtensions(middlewares: MiddlewareHandler[]): Record<string, unknown> {
+  const descriptors = middlewares.map((mw) => middlewareRegistry.get(mw)).filter((d): d is MiddlewareDescriptor => !!d);
+
+  const xAuthSections = descriptors.filter((d) => d.category === 'auth');
+  const xRateLimitSections = descriptors.filter((d) => d.category === 'rate-limit');
+
+  return {
+    'x-guard': xAuthSections.map((d) => d.name),
+    'x-rate-limit': xRateLimitSections.map((d) => d.name),
+  };
+}

@@ -1,7 +1,7 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/lib/context';
-import { enhanceOpenAPIDescription, getMiddlewareDescriptor } from '#/lib/openapi-describer';
+import { getMiddlewareDescriptor, getSpecificationExtensions } from '#/lib/openapi-describer';
 
 type NonEmptyArray<T> = readonly [T, ...T[]];
 
@@ -34,11 +34,8 @@ export const createCustomRoute = <P extends string, R extends Omit<RouteOptions,
     : [];
   const middleware = [...initGuard, ...initMiddleware];
 
-  // Extend the OpenAPI description with authentication details
-  const enhancedDescription = enhanceOpenAPIDescription(
-    routeConfig.description,
-    middleware, // optionally check all middleware too
-  );
+  // Get specification extensions (x-*) from middleware
+  const specificationExtensions = getSpecificationExtensions(middleware);
 
   // Determine OpenAPI security automatically based on middleware guards
   const security = initGuard.some((guard) => getMiddlewareDescriptor(guard)?.level === 'authenticated')
@@ -49,6 +46,6 @@ export const createCustomRoute = <P extends string, R extends Omit<RouteOptions,
     security,
     ...routeConfig, // allow routeConfig to override security
     middleware,
-    description: enhancedDescription,
+    ...specificationExtensions,
   });
 };
