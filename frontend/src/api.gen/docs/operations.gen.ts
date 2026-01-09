@@ -14,6 +14,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['emailEnumLimiter'],
   },
   {
     id: 'invokeToken',
@@ -28,6 +30,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_tokenLimiter'],
   },
   {
     id: 'getTokenData',
@@ -42,6 +46,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_tokenLimiter'],
   },
   {
     id: 'startImpersonation',
@@ -56,6 +62,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'stopImpersonation',
@@ -69,6 +77,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'resendInvitationWithToken',
@@ -82,6 +92,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['spamLimiter'],
   },
   {
     id: 'signOut',
@@ -95,6 +107,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'generateTotpKey',
@@ -108,6 +122,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'createTotp',
@@ -122,6 +138,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteTotp',
@@ -135,6 +153,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'signInWithTotp',
@@ -148,6 +168,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['totpVerificationLimiter'],
   },
   {
     id: 'signUp',
@@ -162,6 +184,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['spamLimiter', 'emailEnumLimiter'],
   },
   {
     id: 'signUpWithToken',
@@ -175,6 +199,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_signup_invitationLimiter', 'emailEnumLimiter'],
   },
   {
     id: 'requestPassword',
@@ -188,6 +214,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['spamLimiter', 'emailEnumLimiter'],
   },
   {
     id: 'createPassword',
@@ -202,6 +230,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_password-resetLimiter'],
   },
   {
     id: 'signIn',
@@ -215,6 +245,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['passwordLimiter'],
   },
   {
     id: 'createPasskey',
@@ -229,6 +261,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deletePasskey',
@@ -242,6 +276,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'generatePasskeyChallenge',
@@ -255,6 +291,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['passkeyChallengeLimiter'],
   },
   {
     id: 'signInWithPasskey',
@@ -268,6 +306,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_passkeyLimiter'],
   },
   {
     id: 'github',
@@ -282,6 +322,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'google',
@@ -296,6 +338,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'microsoft',
@@ -310,6 +354,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'githubCallback',
@@ -323,6 +369,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_githubLimiter'],
   },
   {
     id: 'googleCallback',
@@ -336,6 +384,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_googleLimiter'],
   },
   {
     id: 'microsoftCallback',
@@ -350,6 +400,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_microsoftLimiter'],
   },
   {
     id: 'getMe',
@@ -363,6 +415,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'updateMe',
@@ -376,6 +430,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteMe',
@@ -390,6 +446,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'toggleMfa',
@@ -404,6 +462,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'getMyAuth',
@@ -418,6 +478,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'getMyInvitations',
@@ -431,6 +493,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteMySessions',
@@ -444,6 +508,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteMyMembership',
@@ -457,6 +523,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'getUploadToken',
@@ -471,6 +539,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'unsubscribeMe',
@@ -485,6 +555,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_unsubscribeLimiter'],
   },
   {
     id: 'getUsers',
@@ -498,6 +570,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteUsers',
@@ -512,6 +586,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'getUser',
@@ -525,6 +601,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'updateUser',
@@ -538,6 +616,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'createOrganization',
@@ -551,6 +631,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'getOrganizations',
@@ -564,6 +646,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteOrganizations',
@@ -577,6 +661,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'getOrganization',
@@ -590,6 +676,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'updateOrganization',
@@ -603,6 +691,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'syncPages',
@@ -616,6 +706,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'createPage',
@@ -629,6 +721,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'isSystemAdmin'],
+    xRateLimiter: [],
   },
   {
     id: 'getPages',
@@ -642,6 +736,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'deletePages',
@@ -655,6 +751,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'isSystemAdmin'],
+    xRateLimiter: [],
   },
   {
     id: 'getPage',
@@ -668,6 +766,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'updatePage',
@@ -681,6 +781,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'isSystemAdmin'],
+    xRateLimiter: [],
   },
   {
     id: 'checkSlug',
@@ -695,6 +797,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'systemInvite',
@@ -709,6 +813,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'getPresignedUrl',
@@ -722,6 +828,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['presignedUrlLimiter'],
   },
   {
     id: 'paddleWebhook',
@@ -735,6 +843,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_paddleLimiter'],
   },
   {
     id: 'sendNewsletter',
@@ -748,6 +858,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'createRequest',
@@ -762,6 +874,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['emailEnumLimiter', 'spamLimiter'],
   },
   {
     id: 'getRequests',
@@ -775,6 +889,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteRequests',
@@ -788,6 +904,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'getMetrics',
@@ -802,6 +920,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'getPublicCounts',
@@ -816,6 +936,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'syncAttachments',
@@ -830,6 +952,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'createAttachment',
@@ -844,6 +968,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteAttachments',
@@ -857,6 +983,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'updateAttachment',
@@ -870,6 +998,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'redirectToAttachment',
@@ -883,6 +1013,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isPublicAccess'],
+    xRateLimiter: ['token_attachment_redirectLimiter'],
   },
   {
     id: 'membershipInvite',
@@ -897,6 +1029,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'deleteMemberships',
@@ -911,6 +1045,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'updateMembership',
@@ -924,6 +1060,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'handleMembershipInvitation',
@@ -937,6 +1075,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated'],
+    xRateLimiter: [],
   },
   {
     id: 'getMembers',
@@ -951,6 +1091,8 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
   {
     id: 'getPendingMemberships',
@@ -965,5 +1107,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
+    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xRateLimiter: [],
   },
 ];
