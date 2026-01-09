@@ -127,6 +127,8 @@ const run = async () => {
     process.exit(1);
   }
 
+  const startTime = performance.now();
+
   try {
     // Clean up any old temp folders from previous runs
     const viteDir = resolve(frontendDir, 'vite');
@@ -191,22 +193,45 @@ const run = async () => {
     const existingHash = hashDirectory(finalOutputPath);
 
     if (tempHash === existingHash) {
-      console.info('✅ Generated client unchanged — keeping existing output');
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+      console.info(`✅ Generated client unchanged — keeping existing output (${elapsed}s)`);
       rmSync(tempOutputPath, { recursive: true });
       return;
     }
 
     console.info('📝 Client changed — updating output...');
 
-    // Remove existing output and replace with temp
-    if (existsSync(finalOutputPath)) {
-      rmSync(finalOutputPath, { recursive: true });
+    // Use a safe update pattern:
+    // 1. Ensure target directory exists
+    // 2. Copy new files (overwrites existing)
+    // 3. Remove old files that no longer exist in new version
+
+    if (!existsSync(finalOutputPath)) {
+      mkdirSync(finalOutputPath, { recursive: true });
     }
 
+    // Get list of files in both directories
+    const newFiles = new Set(getFilesRecursively(tempOutputPath).map((f) => f.slice(tempOutputPath.length)));
+    const oldFiles = getFilesRecursively(finalOutputPath).map((f) => f.slice(finalOutputPath.length));
+
+    // Copy all new files (this overwrites existing files atomically per-file)
     cpSync(tempOutputPath, finalOutputPath, { recursive: true });
+
+    // Remove files that no longer exist in the new version
+    for (const oldFile of oldFiles) {
+      if (!newFiles.has(oldFile)) {
+        const oldFilePath = resolve(finalOutputPath, oldFile.slice(1)); // Remove leading slash
+        if (existsSync(oldFilePath)) {
+          rmSync(oldFilePath);
+        }
+      }
+    }
+
+    // Clean up temp folder
     rmSync(tempOutputPath, { recursive: true });
 
-    console.info('✅ Client generation complete');
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+    console.info(`✅ Client generation complete (${elapsed}s)`);
   } finally {
     // Always release the lock when done
     releaseLock();
