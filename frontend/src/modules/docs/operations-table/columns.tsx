@@ -57,15 +57,6 @@ export const useColumns = (isCompact: boolean) => {
         ),
       },
       {
-        key: 'id',
-        name: t('common:docs.operation_id'),
-        sortable: true,
-        resizable: true,
-        width: 200,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <code className="text-xs text-muted-foreground font-mono">{row.id}</code>,
-      },
-      {
         key: 'xGuard',
         name: t('common:docs.guard'),
         visible: !isMobile,
@@ -106,6 +97,15 @@ export const useColumns = (isCompact: boolean) => {
           ) : (
             <span className="text-muted-foreground">-</span>
           ),
+      },
+      {
+        key: 'id',
+        name: t('common:docs.operation_id'),
+        sortable: true,
+        resizable: true,
+        width: 200,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => <code className="text-xs text-muted-foreground font-mono">{row.id}</code>,
       },
     ];
 
