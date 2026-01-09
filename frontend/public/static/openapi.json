@@ -1115,7 +1115,7 @@
         ],
         "summary": "Check if email exists",
         "description": "Checks if a user with the specified email address exists in the system.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1171,7 +1171,7 @@
         ],
         "summary": "Invoke token session",
         "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1241,7 +1241,7 @@
         ],
         "summary": "Get token data",
         "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1329,7 +1329,7 @@
         ],
         "summary": "Start impersonating",
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -1387,7 +1387,7 @@
         ],
         "summary": "Stop impersonating",
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -1422,7 +1422,7 @@
         ],
         "summary": "Resend invitation",
         "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1500,7 +1500,7 @@
         ],
         "summary": "Sign out",
         "description": "Signs out the *current user* and clears the active session.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -1539,7 +1539,7 @@
         ],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -1597,7 +1597,7 @@
         ],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -1653,7 +1653,7 @@
         ],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -1688,7 +1688,7 @@
         ],
         "summary": "Verify TOTP",
         "description": "Validates the TOTP code and completes TOTP based authentication.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1752,7 +1752,7 @@
         ],
         "summary": "Sign up with password",
         "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1833,7 +1833,7 @@
         ],
         "summary": "Sign up to accept invite",
         "description": "Registers a user using an email and password in response to a system or organization invitation.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1929,7 +1929,7 @@
         ],
         "summary": "Request new password",
         "description": "Sends an email with a link to reset the user's password.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -1986,7 +1986,7 @@
         ],
         "summary": "Create password",
         "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2068,7 +2068,7 @@
         ],
         "summary": "Sign in with password",
         "description": "Authenticates an existing user using their email and password.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2160,7 +2160,7 @@
         ],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -2281,7 +2281,7 @@
         ],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the *current user*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -2326,7 +2326,7 @@
         ],
         "summary": "Generate passkey challenge",
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2425,7 +2425,7 @@
         ],
         "summary": "Verify passkey",
         "description": "Validates the signed challenge and completes passkey based authentication.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2520,7 +2520,7 @@
         ],
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -2588,7 +2588,7 @@
         ],
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -2656,7 +2656,7 @@
         ],
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -2724,7 +2724,7 @@
         ],
         "summary": "Callback for GitHub",
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2811,7 +2811,7 @@
         ],
         "summary": "Callback for Google",
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2874,7 +2874,7 @@
         ],
         "summary": "Callback for Microsoft",
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -2941,7 +2941,7 @@
         ],
         "summary": "Get self",
         "description": "Returns the *current user*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3001,7 +3001,7 @@
         ],
         "summary": "Update self",
         "description": "Updates the *current user*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3108,7 +3108,7 @@
         ],
         "summary": "Delete self",
         "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3147,7 +3147,7 @@
         ],
         "summary": "Toggle MFA",
         "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3237,7 +3237,7 @@
         ],
         "summary": "Get auth data",
         "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3443,7 +3443,7 @@
         ],
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3516,7 +3516,7 @@
         ],
         "summary": "Terminate sessions",
         "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3599,7 +3599,7 @@
         ],
         "summary": "Leave entity",
         "description": "Removes the *current user* from an entity they are a member of.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3666,7 +3666,7 @@
         ],
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -3791,7 +3791,7 @@
         ],
         "summary": "Unsubscribe",
         "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -3850,7 +3850,7 @@
         ],
         "summary": "Get list of users",
         "description": "Returns a list of *users*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4019,7 +4019,7 @@
         ],
         "summary": "Delete users",
         "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -4104,7 +4104,7 @@
         ],
         "summary": "Get user",
         "description": "Retrieves a *user* by ID or slug.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4165,7 +4165,7 @@
         ],
         "summary": "Update user",
         "description": "Updates a *user* identified by ID or slug.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -4283,7 +4283,7 @@
         ],
         "summary": "Create organization",
         "description": "Creates a new *organization*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4365,7 +4365,7 @@
         ],
         "summary": "Get list of organizations",
         "description": "Returns a list of *organizations*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4509,7 +4509,7 @@
         ],
         "summary": "Delete organizations",
         "description": "Deletes one or more *organizations* by ID.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4593,7 +4593,7 @@
         ],
         "summary": "Get organization",
         "description": "Retrieves an *organization* by ID or slug.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4654,7 +4654,7 @@
         ],
         "summary": "Update organization",
         "description": "Updates an *organization* by ID or slug.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -4840,7 +4840,7 @@
         ],
         "summary": "Sync pages",
         "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -4929,7 +4929,7 @@
         ],
         "summary": "Create pages",
         "description": "Insert one or more new *pages*.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "isSystemAdmin"
         ],
@@ -4985,7 +4985,7 @@
         ],
         "summary": "Get pages",
         "description": "Get all matching *pages*.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -5097,7 +5097,7 @@
         ],
         "summary": "Delete pages",
         "description": "Delete one or more *pages* by ID.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "isSystemAdmin"
         ],
@@ -5156,7 +5156,7 @@
         ],
         "summary": "Get page",
         "description": "Get a single *page* by ID.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -5210,7 +5210,7 @@
         ],
         "summary": "Update page",
         "description": "Update a single *page* by ID.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "isSystemAdmin"
         ],
@@ -5307,7 +5307,7 @@
         ],
         "summary": "Check slug availability",
         "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -5372,7 +5372,7 @@
         ],
         "summary": "Invite to system",
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -5458,7 +5458,7 @@
         ],
         "summary": "Get presigned URL",
         "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -5528,7 +5528,7 @@
         ],
         "summary": "Paddle webhook (WIP)",
         "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -5576,7 +5576,7 @@
         ],
         "summary": "Newsletter to members",
         "description": "Sends a newsletter to members of one or more specified organizations.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -5671,7 +5671,7 @@
         ],
         "summary": "Create request",
         "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -5789,7 +5789,7 @@
         ],
         "summary": "Get list of requests",
         "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -5939,7 +5939,7 @@
         ],
         "summary": "Delete requests",
         "description": "Deletes one or more *requests* from the system by their IDs.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -6002,7 +6002,7 @@
         ],
         "summary": "Get metrics",
         "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).\n      Primarily intended for internal monitoring and diagnostics.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasSystemAccess"
         ],
@@ -6060,7 +6060,7 @@
         ],
         "summary": "Get public counts",
         "description": "Returns basic count metrics for entity types such as `users` and `organizations`.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [],
@@ -6126,7 +6126,7 @@
         ],
         "summary": "Sync attachments",
         "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.\n      Organization parameter is required to scope the data.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -6231,7 +6231,7 @@
         ],
         "summary": "Create attachments",
         "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -6405,7 +6405,7 @@
         ],
         "summary": "Delete attachments",
         "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -6507,7 +6507,7 @@
         ],
         "summary": "Update attachment",
         "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -6593,7 +6593,7 @@
         ],
         "summary": "Redirect to attachment",
         "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
-        "x-auth": [
+        "x-guard": [
           "isPublicAccess"
         ],
         "x-rate-limiter": [
@@ -6644,7 +6644,7 @@
         ],
         "summary": "Create memberships",
         "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -6785,7 +6785,7 @@
         ],
         "summary": "Delete memberships",
         "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -6913,7 +6913,7 @@
         ],
         "summary": "Update membership",
         "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -7012,7 +7012,7 @@
         ],
         "summary": "Respond to membership invitation",
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated"
         ],
         "x-rate-limiter": [],
@@ -7095,7 +7095,7 @@
         ],
         "summary": "Get list of members",
         "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
@@ -7384,7 +7384,7 @@
         ],
         "summary": "Get list of pending memberships",
         "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
-        "x-auth": [
+        "x-guard": [
           "isAuthenticated",
           "hasOrgAccess"
         ],
