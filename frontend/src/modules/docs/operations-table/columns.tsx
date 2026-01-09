@@ -65,6 +65,48 @@ export const useColumns = (isCompact: boolean) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <code className="text-xs text-muted-foreground font-mono">{row.id}</code>,
       },
+      {
+        key: 'xGuard',
+        name: t('common:docs.guard'),
+        visible: !isMobile,
+        sortable: false,
+        resizable: true,
+        width: 150,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) =>
+          row.xGuard?.length ? (
+            <div className="flex flex-wrap gap-1">
+              {row.xGuard.map((guard) => (
+                <Badge key={guard} variant="outline" className="text-xs font-mono">
+                  {guard}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          ),
+      },
+      {
+        key: 'xRateLimiter',
+        name: t('common:docs.rate_limiter'),
+        visible: !isMobile,
+        sortable: false,
+        resizable: true,
+        width: 150,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) =>
+          row.xRateLimiter?.length ? (
+            <div className="flex flex-wrap gap-1">
+              {row.xRateLimiter.map((limiter) => (
+                <Badge key={limiter} variant="outline" className="text-xs font-mono">
+                  {limiter}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          ),
+      },
     ];
 
     return cols;

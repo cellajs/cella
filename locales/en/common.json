@@ -116,6 +116,8 @@
   "docs.openapi_json": "OpenAPI JSON",
   "docs.openapi_specification": "OpenAPI Specification",
   "docs.operation_id": "Operation ID",
+  "docs.guard": "Guard",
+  "docs.rate_limiter": "Rate limiter",
   "docs.operations_across_tags": "{{operations}} operations across {{tags}} tags",
   "docs.openapi_version": "OpenAPI version",
   "docs.parameters": "Parameters",
