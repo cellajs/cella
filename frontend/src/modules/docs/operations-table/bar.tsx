@@ -37,7 +37,7 @@ export const OperationsTableBar = ({
   const isFiltered = !!searchVars.q;
 
   return (
-    <TableBarContainer>
+    <TableBarContainer className="mt-0">
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           <TableCount count={total} label="common:operation" isFiltered={isFiltered} onResetFilters={onResetFilters} />
