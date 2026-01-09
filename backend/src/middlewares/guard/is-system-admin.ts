@@ -29,6 +29,6 @@ export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async
 registerMiddlewareDescription({
   name: 'isSystemAdmin',
   middleware: isSystemAdmin,
-  category: 'auth',
+  category: 'guard',
   scopes: ['system'],
 });

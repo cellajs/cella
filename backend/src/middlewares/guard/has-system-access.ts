@@ -29,6 +29,6 @@ export const hasSystemAccess: MiddlewareHandler = every(
 registerMiddlewareDescription({
   name: 'hasSystemAccess',
   middleware: hasSystemAccess,
-  category: 'auth',
+  category: 'guard',
   scopes: ['system'],
 });

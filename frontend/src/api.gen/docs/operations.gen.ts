@@ -14,7 +14,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['emailEnumLimiter'],
   },
   {
@@ -30,7 +30,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_tokenLimiter'],
   },
   {
@@ -46,7 +46,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_tokenLimiter'],
   },
   {
@@ -62,7 +62,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -77,7 +77,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -92,7 +92,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['spamLimiter'],
   },
   {
@@ -107,7 +107,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -122,7 +122,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -138,7 +138,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -153,7 +153,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -168,7 +168,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['totpVerificationLimiter'],
   },
   {
@@ -184,7 +184,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['spamLimiter', 'emailEnumLimiter'],
   },
   {
@@ -199,7 +199,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_signup_invitationLimiter', 'emailEnumLimiter'],
   },
   {
@@ -214,7 +214,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['spamLimiter', 'emailEnumLimiter'],
   },
   {
@@ -230,7 +230,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_password-resetLimiter'],
   },
   {
@@ -245,7 +245,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['passwordLimiter'],
   },
   {
@@ -261,7 +261,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -276,7 +276,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -291,7 +291,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['passkeyChallengeLimiter'],
   },
   {
@@ -306,7 +306,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_passkeyLimiter'],
   },
   {
@@ -322,7 +322,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -338,7 +338,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -354,7 +354,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -369,7 +369,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_githubLimiter'],
   },
   {
@@ -384,7 +384,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_googleLimiter'],
   },
   {
@@ -400,7 +400,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_microsoftLimiter'],
   },
   {
@@ -415,7 +415,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -430,7 +430,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -446,7 +446,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -462,7 +462,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -478,7 +478,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -493,7 +493,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -508,7 +508,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -523,7 +523,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -539,7 +539,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -555,7 +555,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_unsubscribeLimiter'],
   },
   {
@@ -570,7 +570,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -586,7 +586,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -601,7 +601,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -616,7 +616,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -631,7 +631,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -646,7 +646,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -661,7 +661,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -676,7 +676,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -691,7 +691,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -706,7 +706,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -721,7 +721,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'isSystemAdmin'],
+    xGuard: ['isAuthenticated', 'isSystemAdmin'],
     xRateLimiter: [],
   },
   {
@@ -736,7 +736,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -751,7 +751,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'isSystemAdmin'],
+    xGuard: ['isAuthenticated', 'isSystemAdmin'],
     xRateLimiter: [],
   },
   {
@@ -766,7 +766,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -781,7 +781,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'isSystemAdmin'],
+    xGuard: ['isAuthenticated', 'isSystemAdmin'],
     xRateLimiter: [],
   },
   {
@@ -797,7 +797,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -813,7 +813,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -828,7 +828,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['presignedUrlLimiter'],
   },
   {
@@ -843,7 +843,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_paddleLimiter'],
   },
   {
@@ -858,7 +858,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -874,7 +874,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['emailEnumLimiter', 'spamLimiter'],
   },
   {
@@ -889,7 +889,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -904,7 +904,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -920,7 +920,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated', 'hasSystemAccess'],
+    xGuard: ['isAuthenticated', 'hasSystemAccess'],
     xRateLimiter: [],
   },
   {
@@ -936,7 +936,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: false,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: [],
   },
   {
@@ -952,7 +952,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -968,7 +968,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -983,7 +983,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -998,7 +998,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -1013,7 +1013,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isPublicAccess'],
+    xGuard: ['isPublicAccess'],
     xRateLimiter: ['token_attachment_redirectLimiter'],
   },
   {
@@ -1029,7 +1029,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -1045,7 +1045,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -1060,7 +1060,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: true,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -1075,7 +1075,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated'],
+    xGuard: ['isAuthenticated'],
     xRateLimiter: [],
   },
   {
@@ -1091,7 +1091,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
   {
@@ -1107,7 +1107,7 @@ export const operations: GenOperationSummary[] = [
     hasAuth: true,
     hasParams: true,
     hasRequestBody: false,
-    xAuth: ['isAuthenticated', 'hasOrgAccess'],
+    xGuard: ['isAuthenticated', 'hasOrgAccess'],
     xRateLimiter: [],
   },
 ];

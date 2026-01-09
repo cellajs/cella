@@ -21,7 +21,7 @@ export const isPublicAccess: MiddlewareHandler<Env> = createMiddleware<Env>(asyn
 registerMiddlewareDescription({
   name: 'isPublicAccess',
   middleware: isPublicAccess,
-  category: 'auth',
+  category: 'guard',
   level: 'public',
   label: 'Public access',
 });

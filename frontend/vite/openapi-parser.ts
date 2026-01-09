@@ -367,7 +367,7 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
           parameters?: Record<string, unknown>;
           requestBody?: unknown;
           responses?: Record<string, { description?: string; $ref?: string }>;
-          'x-auth'?: string[];
+          'x-guard'?: string[];
           'x-rate-limiter'?: string[];
         };
 
@@ -446,7 +446,7 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
           hasAuth: (op.security?.length ?? 0) > 0,
           hasParams: Object.keys(op.parameters ?? {}).length > 0,
           hasRequestBody: !!op.requestBody,
-          xAuth: op['x-auth'],
+          xGuard: op['x-guard'],
           xRateLimiter: op['x-rate-limiter'],
         };
 

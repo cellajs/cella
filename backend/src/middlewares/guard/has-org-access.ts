@@ -54,6 +54,6 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
 registerMiddlewareDescription({
   name: 'hasOrgAccess',
   middleware: hasOrgAccess,
-  category: 'auth',
+  category: 'guard',
   scopes: ['org'],
 });

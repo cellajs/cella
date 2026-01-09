@@ -19,8 +19,8 @@ export interface GenOperationSummary {
   hasAuth: boolean;
   hasParams: boolean;
   hasRequestBody: boolean;
-  /** x-auth specification extension - authentication methods */
-  xAuth?: string[];
+  /** x-guard specification extension - guard middleware */
+  xGuard?: string[];
   /** x-rate-limiter specification extension - rate limiting rules */
   xRateLimiter?: string[];
 }

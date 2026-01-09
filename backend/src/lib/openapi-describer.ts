@@ -13,7 +13,7 @@ export type MiddlewareDescriptor = {
   middleware: MiddlewareHandler;
 
   /** Logical category of this middleware */
-  category: 'auth' | 'rate-limit' | 'logging' | 'other';
+  category: 'guard' | 'rate-limit' | 'logging' | 'other';
 
   /**
    * Authentication or visibility level.
@@ -66,7 +66,7 @@ export function enhanceOpenAPIDescription(original: string | undefined, middlewa
 
   const sections: string[] = [];
 
-  const authSection = formatAuthSection(descriptors.filter((d) => d.category === 'auth'));
+  const authSection = formatAuthSection(descriptors.filter((d) => d.category === 'guard'));
   if (authSection) sections.push(authSection);
 
   const rateLimitSection = formatRateLimitSection(descriptors.filter((d) => d.category === 'rate-limit'));
@@ -88,13 +88,13 @@ export function enhanceOpenAPIDescription(original: string | undefined, middlewa
 }
 
 /**
- * Build the auth-related prefix section for OpenAPI description.
+ * Build the guard-related prefix section for OpenAPI description.
  */
 function formatAuthSection(authDescriptors: MiddlewareDescriptor[]): string | null {
   if (authDescriptors.length === 0) return null;
 
   const level = getHighestAuthLevel(authDescriptors);
-  const icon = getIcon('auth', level);
+  const icon = getIcon('guard', level);
 
   const labels = authDescriptors
     .map((d) => d.label)
@@ -139,17 +139,17 @@ function getHighestAuthLevel(descriptors: MiddlewareDescriptor[]): 'authenticate
 /**
  * Get icon based on category and level. Adds more safety/flexibility for future customization.
  *
- * @param category - Middleware category (e.g., 'auth', 'rate-limit')
+ * @param category - Middleware category (e.g., 'guard', 'rate-limit')
  * @param level - Optional level for more specific icons (e.g., 'public' vs 'authenticated')
  */
 function getIcon(
   category: MiddlewareDescriptor['category'],
   level?: MiddlewareDescriptor['level'],
 ): string | undefined {
-  if (category === 'auth') {
+  if (category === 'guard') {
     if (level === 'public') return '🌐';
     if (level === 'authenticated') return '🛡️';
-    return '🛡️'; // Default for scoped-only auth
+    return '🛡️'; // Default for scoped-only guard
   }
 
   if (category === 'rate-limit') return '⏳'; // Placeholder for rate limit icon
@@ -160,7 +160,7 @@ function getIcon(
  * OpenAPI specification extensions (x-*) for routes.
  */
 export type SpecificationExtensions = {
-  'x-auth': string[];
+  'x-guard': string[];
   'x-rate-limiter': string[];
 };
 
@@ -173,11 +173,11 @@ export type SpecificationExtensions = {
 export function getSpecificationExtensions(middlewares: MiddlewareHandler[]): SpecificationExtensions {
   const descriptors = middlewares.map((mw) => middlewareRegistry.get(mw)).filter((d): d is MiddlewareDescriptor => !!d);
 
-  const xAuthSections = descriptors.filter((d) => d.category === 'auth');
+  const xGuardSections = descriptors.filter((d) => d.category === 'guard');
   const xRateLimitSections = descriptors.filter((d) => d.category === 'rate-limit');
 
   return {
-    'x-auth': xAuthSections.map((d) => d.name),
+    'x-guard': xGuardSections.map((d) => d.name),
     'x-rate-limiter': xRateLimitSections.map((d) => d.name),
   };
 }

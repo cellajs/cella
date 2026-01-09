@@ -80,7 +80,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
 registerMiddlewareDescription({
   name: 'isAuthenticated',
   middleware: isAuthenticated,
-  category: 'auth',
+  category: 'guard',
   level: 'authenticated',
   label: 'Requires authentication',
 });
