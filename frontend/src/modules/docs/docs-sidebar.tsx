@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState, useSearch } from '@tanstack/react-ro
 import { ChevronDownIcon, ListIcon, PencilIcon, TableIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary, GenTagSummary, TagName } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
@@ -32,6 +33,7 @@ interface DocsSidebarProps {
 }
 
 export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarProps) {
+  const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const layoutId = useRef(nanoid()).current;
 
@@ -94,9 +96,9 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
       {/* Logo */}
       <div className="px-4 my-2">
         <Link
-          to="/about"
+          to="/"
           className="inline-block transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md"
-          aria-label="Go to about page"
+          aria-label="Go to homepage"
         >
           <Logo height={32} />
         </Link>
@@ -105,7 +107,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
       {/* API reference */}
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
-          <SidebarGroupLabel className="opacity-75 p-0">api reference</SidebarGroupLabel>
+          <SidebarGroupLabel className="opacity-75 p-0">{t('common:docs.api_reference')}</SidebarGroupLabel>
           <ToggleGroup
             type="single"
             size="sm"
@@ -135,7 +137,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                   isOverviewRoute && 'font-medium bg-accent',
                 )}
               >
-                <span>overview</span>
+                <span>{t('common:overview_view')}</span>
               </Link>
             </SidebarMenuItem>
           </SidebarGroup>
@@ -168,7 +170,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                         isOperationsRoute && 'font-medium bg-accent',
                       )}
                     >
-                      <span>operations</span>
+                      <span>{t('common:operation', { count: 2 })}</span>
                       {(expandedSection !== 'operations' || forcedCollapsed.has('operations')) && (
                         <span className="ml-2 text-xs text-muted-foreground/90 font-light">{operations.length}</span>
                       )}
@@ -190,7 +192,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                       isOperationsRoute && 'font-medium bg-accent',
                     )}
                   >
-                    <span>operations</span>
+                    <span>{t('common:operation', { count: 2 })}</span>
                     <span className="ml-2 text-xs text-muted-foreground/90 font-light">{operations.length}</span>
                   </Link>
                 )}
@@ -318,7 +320,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                         isSchemasRoute && 'font-medium bg-accent',
                       )}
                     >
-                      <span>schemas</span>
+                      <span>{t('common:schema', { count: 2 })}</span>
                       <ChevronDownIcon
                         className={cn(
                           'size-4 ml-auto transition-transform duration-200 opacity-40',
@@ -337,7 +339,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                       isSchemasRoute && 'font-medium bg-accent',
                     )}
                   >
-                    <span>schemas</span>
+                    <span>{t('common:schema', { count: 2 })}</span>
                   </Link>
                 )}
               </SidebarMenuItem>
@@ -345,7 +347,9 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <span className="px-4 text-sm text-muted-foreground lowercase">Coming soon...</span>
+                      <span className="px-4 text-sm text-muted-foreground lowercase">
+                        {t('common:docs.coming_soon')}
+                      </span>
                     </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
@@ -358,7 +362,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
       {/* Pages */}
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
-          <SidebarGroupLabel className="opacity-75 p-0">pages</SidebarGroupLabel>
+          <SidebarGroupLabel className="opacity-75 p-0">{t('common:pages')}</SidebarGroupLabel>
           {systemRole && (
             <Link
               to="/docs/pages"
@@ -388,7 +392,9 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
               ))
             ) : (
               <SidebarMenuItem>
-                <span className="px-3 py-2 text-sm text-muted-foreground lowercase">No pages yet</span>
+                <span className="px-3 py-2 text-sm text-muted-foreground lowercase">
+                  {t('common:docs.no_pages_yet')}
+                </span>
               </SidebarMenuItem>
             )}
           </SidebarMenu>

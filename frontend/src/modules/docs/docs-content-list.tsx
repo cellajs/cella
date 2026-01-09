@@ -1,5 +1,6 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary, GenTagSummary, TagName } from '~/api.gen/docs';
 import { DescriptionEditor } from '~/modules/docs/description-editor';
 import { Badge } from '~/modules/ui/badge';
@@ -31,6 +32,7 @@ const getMethodColor = (method: string) => {
 };
 
 export function DocsContentList({ operations, tags }: DocsContentListProps) {
+  const { t } = useTranslation();
   // Get active tag from URL search param
   const { tag: activeTag } = useSearch({ from: '/publicLayout/docs' });
 
@@ -52,7 +54,6 @@ export function DocsContentList({ operations, tags }: DocsContentListProps) {
       {tags.map((tag) => {
         const tagOperations = operationsByTag[tag.name] || [];
         const isOpen = activeTag === tag.name;
-        const operationLabel = tag.count === 1 ? 'operation' : 'operations';
 
         return (
           <Collapsible key={tag.name} open={isOpen}>
@@ -69,7 +70,7 @@ export function DocsContentList({ operations, tags }: DocsContentListProps) {
                   resetScroll={false}
                   className={cn(buttonVariants({ variant: 'plain', size: 'lg' }), 'rounded-full')}
                 >
-                  {isOpen ? `${tag.count} ${operationLabel}` : `${tag.count} ${operationLabel}`}
+                  {t('common:operation', { count: tag.count })}
                   <ChevronDown
                     className={cn('ml-2 h-4 w-4 transition-transform duration-200 opacity-50', isOpen && 'rotate-180')}
                   />
@@ -93,7 +94,7 @@ export function DocsContentList({ operations, tags }: DocsContentListProps) {
                         <code className="text-lg opacity-70 font-mono">{operation.path}</code>
                         {operation.deprecated && (
                           <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                            Deprecated
+                            {t('common:deprecated')}
                           </Badge>
                         )}
                       </div>
@@ -106,9 +107,15 @@ export function DocsContentList({ operations, tags }: DocsContentListProps) {
 
                       {(operation.hasAuth || operation.hasParams || operation.hasRequestBody) && (
                         <div className="flex gap-4 text-sm">
-                          {operation.hasAuth && <span className="text-muted-foreground">🔒 Auth required</span>}
-                          {operation.hasParams && <span className="text-muted-foreground">📝 Parameters</span>}
-                          {operation.hasRequestBody && <span className="text-muted-foreground">📤 Request body</span>}
+                          {operation.hasAuth && (
+                            <span className="text-muted-foreground">🔒 {t('common:docs.auth_required')}</span>
+                          )}
+                          {operation.hasParams && (
+                            <span className="text-muted-foreground">📝 {t('common:docs.parameters')}</span>
+                          )}
+                          {operation.hasRequestBody && (
+                            <span className="text-muted-foreground">📤 {t('common:docs.request_body')}</span>
+                          )}
                         </div>
                       )}
                     </div>

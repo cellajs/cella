@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from '~/api.gen/docs';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -7,11 +8,13 @@ import { Input } from '~/modules/ui/input';
 import { getMethodColor } from '../helpers/get-method-color';
 
 export const useColumns = () => {
+  const { t } = useTranslation();
+
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<GenOperationSummary>[] = [
       {
         key: 'method',
-        name: 'Method',
+        name: t('common:method'),
         visible: true,
         sortable: true,
         resizable: false,
@@ -28,7 +31,7 @@ export const useColumns = () => {
       },
       {
         key: 'summary',
-        name: 'Summary',
+        name: t('common:summary'),
         visible: true,
         sortable: true,
         resizable: true,
@@ -41,7 +44,7 @@ export const useColumns = () => {
       },
       {
         key: 'id',
-        name: 'Operation ID',
+        name: t('common:docs.operation_id'),
         visible: true,
         sortable: true,
         resizable: true,
@@ -52,7 +55,7 @@ export const useColumns = () => {
     ];
 
     return cols;
-  }, []);
+  }, [t]);
 
   return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(columns);
 };

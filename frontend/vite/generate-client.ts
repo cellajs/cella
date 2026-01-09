@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@hey-api/openapi-ts';
@@ -21,6 +21,7 @@ import { openApiConfig } from '../openapi-ts.config';
 const frontendDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempOutputPath = resolve(frontendDir, 'vite/temp-api-gen');
 const finalOutputPath = resolve(frontendDir, 'src/api.gen');
+const publicStaticPath = resolve(frontendDir, 'public/static');
 
 /**
  * Compute a combined hash of all files in a directory.
@@ -65,16 +66,37 @@ const run = async () => {
     rmSync(tempOutputPath, { recursive: true });
   }
 
+  // Ensure public/static directory exists for source output
+  if (!existsSync(publicStaticPath)) {
+    mkdirSync(publicStaticPath, { recursive: true });
+  }
+
   console.info('🔄 Generating client to temp folder...');
+
+  // Get output config
+  const outputConfig = typeof openApiConfig.output === 'object' ? openApiConfig.output : {};
+  const sourceConfig = 'source' in outputConfig ? outputConfig.source : undefined;
+  const sourceFileName =
+    sourceConfig && typeof sourceConfig === 'object' && 'fileName' in sourceConfig && sourceConfig.fileName
+      ? String(sourceConfig.fileName)
+      : 'openapi';
 
   // Run Hey API generation to temp folder
   await createClient({
     ...openApiConfig,
     output: {
-      ...(typeof openApiConfig.output === 'object' ? openApiConfig.output : {}),
+      ...outputConfig,
       path: tempOutputPath,
       lint: null,
       format: null,
+      // Override source path to use absolute path (relative paths break with temp folder)
+      source: sourceConfig
+        ? {
+            ...(typeof sourceConfig === 'object' ? sourceConfig : {}),
+            fileName: sourceFileName,
+            path: publicStaticPath,
+          }
+        : undefined,
     },
   });
 

@@ -14,6 +14,7 @@ const OverviewTable = lazy(() => import('~/modules/docs/overview-table'));
 const OperationsList = lazy(() => import('~/modules/docs/operations-list'));
 const OperationsTable = lazy(() => import('~/modules/docs/table'));
 const SchemasList = lazy(() => import('~/modules/docs/schemas-list'));
+const OpenApiSpecViewer = lazy(() => import('~/modules/docs/openapi-spec-viewer'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
 const PagePage = lazy(() => import('~/modules/pages/page-page'));
 
@@ -26,7 +27,8 @@ export const DocsRoute = createRoute({
   validateSearch: docsRouteSearchParamsSchema,
   head: () => ({ meta: [{ title: appTitle('Docs') }] }),
   getParentRoute: () => PublicLayoutRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: () => {
     const pagesCollection = initPagesCollection();
     return { pagesCollection };
@@ -66,6 +68,7 @@ export const DocsOverviewRoute = createRoute({
   component: () => (
     <Suspense>
       <OverviewTable />
+      <OpenApiSpecViewer />
     </Suspense>
   ),
 });
@@ -116,8 +119,8 @@ export const DocsPageRoute = createRoute({
   },
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
   getParentRoute: () => DocsRoute,
-  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
-  notFoundComponent: () => <ErrorNotice level="app" error={new Error('Page not found')} />,
+  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
     const { pageId, pagesCollection } = useLoaderData({ from: DocsPageRoute.id });
     const { mode } = DocsPageRoute.useParams();

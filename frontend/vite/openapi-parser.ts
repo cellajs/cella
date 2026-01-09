@@ -7,6 +7,8 @@ import type {
   GenOperationDetail,
   GenOperationSummary,
   GenResponseSummary,
+  GenSchema,
+  GenSchemaProperty,
   GenTagSummary,
 } from '../src/modules/docs/types';
 
@@ -21,6 +23,233 @@ import type {
  * Secondary data (full descriptions, parameters, schemas) is accessed
  * on-demand from the full OpenAPI spec.
  */
+
+// Type definitions for OpenAPI schema structures
+type OpenApiSchema = {
+  type?: string | string[];
+  description?: string;
+  format?: string;
+  enum?: (string | number | boolean)[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  minItems?: number;
+  maxItems?: number;
+  properties?: Record<string, OpenApiSchema>;
+  required?: string[];
+  items?: OpenApiSchema;
+  $ref?: string;
+  anyOf?: OpenApiSchema[];
+  oneOf?: OpenApiSchema[];
+  allOf?: OpenApiSchema[];
+};
+
+type OpenApiSpec = {
+  openapi?: string;
+  info?: { title?: string; version?: string; description?: string };
+  tags?: { name: string; description?: string }[];
+  components?: {
+    schemas?: Record<string, OpenApiSchema>;
+    responses?: Record<string, { description?: string; content?: Record<string, { schema?: OpenApiSchema }> }>;
+  };
+  paths?: Record<string, Record<string, unknown>>;
+};
+
+/**
+ * Resolves a $ref path to the actual schema from components
+ */
+function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | undefined; name: string } {
+  // Handle refs like "#/components/schemas/User" or "#/components/responses/BadRequestError"
+  const parts = ref.split('/');
+  const name = parts[parts.length - 1];
+
+  if (ref.startsWith('#/components/schemas/')) {
+    return { schema: spec.components?.schemas?.[name], name };
+  }
+  if (ref.startsWith('#/components/responses/')) {
+    const response = spec.components?.responses?.[name];
+    const schema = response?.content?.['application/json']?.schema;
+    return { schema, name };
+  }
+
+  return { schema: undefined, name };
+}
+
+/**
+ * Resolves an OpenAPI schema to a GenSchemaProperty, dereferencing $refs
+ * and converting the required array to inline required fields.
+ */
+function resolveSchemaProperty(
+  schema: OpenApiSchema,
+  isRequired: boolean,
+  spec: OpenApiSpec,
+  visited: Set<string> = new Set(),
+): GenSchemaProperty {
+  // Handle $ref
+  if (schema.$ref) {
+    // Prevent circular references
+    if (visited.has(schema.$ref)) {
+      return {
+        type: 'object',
+        required: isRequired,
+        ref: schema.$ref,
+        refName: schema.$ref.split('/').pop(),
+        refDescription: '(circular reference)',
+      };
+    }
+
+    const newVisited = new Set(visited);
+    newVisited.add(schema.$ref);
+
+    const { schema: resolved, name } = resolveRef(schema.$ref, spec);
+    if (resolved) {
+      const result = resolveSchemaProperty(resolved, isRequired, spec, newVisited);
+      // Add ref metadata
+      result.ref = schema.$ref;
+      result.refName = name;
+      if (resolved.description) {
+        result.refDescription = resolved.description;
+      }
+      return result;
+    }
+
+    // Unresolved ref
+    return {
+      type: 'object',
+      required: isRequired,
+      ref: schema.$ref,
+      refName: name,
+    };
+  }
+
+  const prop: GenSchemaProperty = {
+    type: schema.type || 'object',
+    required: isRequired,
+  };
+
+  // Copy description
+  if (schema.description) prop.description = schema.description;
+
+  // Copy format constraints
+  if (schema.format) prop.format = schema.format;
+  if (schema.enum) prop.enum = schema.enum;
+  if (schema.minimum !== undefined) prop.minimum = schema.minimum;
+  if (schema.maximum !== undefined) prop.maximum = schema.maximum;
+  if (schema.minLength !== undefined) prop.minLength = schema.minLength;
+  if (schema.maxLength !== undefined) prop.maxLength = schema.maxLength;
+  if (schema.minItems !== undefined) prop.minItems = schema.minItems;
+  if (schema.maxItems !== undefined) prop.maxItems = schema.maxItems;
+
+  // Handle nested object properties
+  if (schema.properties) {
+    const requiredSet = new Set(schema.required || []);
+    prop.properties = {};
+    for (const [key, value] of Object.entries(schema.properties)) {
+      prop.properties[key] = resolveSchemaProperty(value, requiredSet.has(key), spec, visited);
+    }
+  }
+
+  // Handle array items
+  if (schema.items) {
+    prop.items = resolveSchemaProperty(schema.items, true, spec, visited);
+  }
+
+  // Handle composition keywords
+  if (schema.anyOf) {
+    prop.anyOf = schema.anyOf.map((s) => resolveSchemaProperty(s, false, spec, visited));
+  }
+  if (schema.oneOf) {
+    prop.oneOf = schema.oneOf.map((s) => resolveSchemaProperty(s, false, spec, visited));
+  }
+  if (schema.allOf) {
+    prop.allOf = schema.allOf.map((s) => resolveSchemaProperty(s, false, spec, visited));
+  }
+
+  return prop;
+}
+
+/**
+ * Resolves an OpenAPI schema to a top-level GenSchema for response bodies.
+ * Preserves reference metadata when dereferencing.
+ */
+function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<string> = new Set()): GenSchema {
+  // Handle $ref at top level
+  if (schema.$ref) {
+    // Prevent circular references
+    if (visited.has(schema.$ref)) {
+      return {
+        type: 'object',
+        ref: schema.$ref,
+        refName: schema.$ref.split('/').pop(),
+        refDescription: '(circular reference)',
+      };
+    }
+
+    const newVisited = new Set(visited);
+    newVisited.add(schema.$ref);
+
+    const { schema: resolved, name } = resolveRef(schema.$ref, spec);
+    if (resolved) {
+      const result = resolveSchema(resolved, spec, newVisited);
+      // Preserve original ref info
+      result.ref = schema.$ref;
+      result.refName = name;
+      if (resolved.description) {
+        result.refDescription = resolved.description;
+      }
+      return result;
+    }
+
+    // Unresolved ref
+    return {
+      type: 'object',
+      ref: schema.$ref,
+      refName: name,
+    };
+  }
+
+  const result: GenSchema = {
+    type: schema.type || 'object',
+  };
+
+  // Copy description
+  if (schema.description) {
+    result.refDescription = schema.description;
+  }
+
+  // Handle enum
+  if (schema.enum) {
+    result.enum = schema.enum;
+  }
+
+  // Handle nested object properties
+  if (schema.properties) {
+    const requiredSet = new Set(schema.required || []);
+    result.properties = {};
+    for (const [key, value] of Object.entries(schema.properties)) {
+      result.properties[key] = resolveSchemaProperty(value, requiredSet.has(key), spec, visited);
+    }
+  }
+
+  // Handle array items
+  if (schema.items) {
+    result.items = resolveSchemaProperty(schema.items, true, spec, visited);
+  }
+
+  // Handle composition keywords
+  if (schema.anyOf) {
+    result.anyOf = schema.anyOf.map((s) => resolveSchema(s, spec, visited));
+  }
+  if (schema.oneOf) {
+    result.oneOf = schema.oneOf.map((s) => resolveSchema(s, spec, visited));
+  }
+  if (schema.allOf) {
+    result.allOf = schema.allOf.map((s) => resolveSchema(s, spec, visited));
+  }
+
+  return result;
+}
 
 /**
  * Configuration options for the openapi-parser plugin.
@@ -144,8 +373,14 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
 
         const tags = op.tags ?? [];
 
+        // Cast spec to OpenApiSpec for type safety with our resolver functions
+        const typedSpec = spec as OpenApiSpec;
+
         // Helper to resolve $ref to component responses
-        const componentResponses = (spec.components?.responses ?? {}) as Record<string, { description?: string }>;
+        const componentResponses = (spec.components?.responses ?? {}) as Record<
+          string,
+          { description?: string; content?: Record<string, { schema?: OpenApiSchema }> }
+        >;
 
         // Extract responses for operation details
         const responses: GenResponseSummary[] = [];
@@ -154,22 +389,34 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
             let description = response?.description ?? '';
             let name: string | undefined;
             let ref: string | undefined;
+            let schema: GenSchema | undefined;
 
-            // Resolve $ref if present (e.g., "#/components/responses/BadRequestError" or "#/components/schemas/User")
+            // Resolve $ref if present (e.g., "#/components/responses/BadRequestError")
             if (response?.$ref) {
               ref = response.$ref;
               name = response.$ref.split('/').pop();
               if (name && componentResponses[name]) {
-                description = componentResponses[name].description ?? '';
+                const componentResponse = componentResponses[name];
+                description = componentResponse.description ?? '';
+                // Get schema from component response
+                const responseSchema = componentResponse.content?.['application/json']?.schema;
+                if (responseSchema) {
+                  schema = resolveSchema(responseSchema, typedSpec);
+                }
               }
             }
 
-            // Check for schema $ref in response content
-            const content = (response as { content?: Record<string, { schema?: { $ref?: string } }> })?.content;
-            if (content?.['application/json']?.schema?.$ref) {
-              const schemaRef = content['application/json'].schema.$ref;
-              ref = schemaRef;
-              name = schemaRef.split('/').pop();
+            // Check for inline response content with schema
+            const content = (response as { content?: Record<string, { schema?: OpenApiSchema }> })?.content;
+            if (content?.['application/json']?.schema) {
+              const responseSchema = content['application/json'].schema;
+              schema = resolveSchema(responseSchema, typedSpec);
+
+              // Extract ref info if the schema itself is a $ref
+              if (responseSchema.$ref) {
+                ref = responseSchema.$ref;
+                name = responseSchema.$ref.split('/').pop();
+              }
             }
 
             const responseSummary: GenResponseSummary = {
@@ -179,6 +426,7 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
 
             if (name) responseSummary.name = name;
             if (ref) responseSummary.ref = ref;
+            if (schema) responseSummary.schema = schema;
 
             responses.push(responseSummary);
           }

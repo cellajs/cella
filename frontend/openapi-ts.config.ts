@@ -25,6 +25,10 @@ export const openApiConfig: UserConfig = {
     path: './src/api.gen',
     lint: null,
     format: null,
+    source: {
+      fileName: 'openapi',
+      path: '../../public/static',
+    },
   },
   parser: {
     transforms: {

@@ -37,6 +37,7 @@ interface DataTableProps<TData> {
   sortColumns?: SortColumn[];
   onSortColumnsChange?: (sortColumns: SortColumn[]) => void;
   rowHeight?: number;
+  hideHeader?: boolean;
   enableVirtualization?: boolean;
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
@@ -58,6 +59,7 @@ export const DataTable = <TData,>({
   sortColumns,
   onSortColumnsChange,
   rowHeight = 52,
+  hideHeader,
   enableVirtualization,
   onRowsChange,
   fetchMore,
@@ -87,7 +89,7 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className="grid rdg-wrapper relative" ref={gridRef}>
+            <div className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''}`} ref={gridRef}>
               <DataGrid
                 rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
                 enableVirtualization={enableVirtualization}

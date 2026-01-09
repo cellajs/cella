@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Check, Pencil, X } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
@@ -58,6 +59,7 @@ function blockNoteContentToText(content: string): string {
  * Only available in development mode via Vite dev server.
  */
 export function DescriptionEditor({ operationId, initialDescription, onUpdate }: DescriptionEditorProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [blockContent, setBlockContent] = useState(() => textToBlockNoteContent(initialDescription));
 
@@ -86,7 +88,7 @@ export function DescriptionEditor({ operationId, initialDescription, onUpdate }:
     },
     onSuccess: (result, { description }) => {
       if (result.success) {
-        toaster('Description updated in source code', 'success');
+        toaster(t('common:docs.description_updated'), 'success');
         onUpdate?.(description);
         setIsEditing(false);
       } else {
@@ -111,7 +113,9 @@ export function DescriptionEditor({ operationId, initialDescription, onUpdate }:
   if (!isEditing) {
     return (
       <div className="group relative">
-        <p className="text-muted-foreground whitespace-pre-wrap pr-8">{initialDescription || 'No description'}</p>
+        <p className="text-muted-foreground whitespace-pre-wrap pr-8">
+          {initialDescription || t('common:docs.no_description')}
+        </p>
         {isDev && (
           <Button
             variant="ghost"
@@ -153,14 +157,14 @@ export function DescriptionEditor({ operationId, initialDescription, onUpdate }:
       <div className="flex gap-2">
         <Button size="sm" onClick={handleSave} disabled={isPending}>
           <Check className="h-3 w-3 mr-1" />
-          {isPending ? 'Saving...' : 'Save'}
+          {isPending ? t('common:saving') : t('common:save')}
         </Button>
         <Button size="sm" variant="ghost" onClick={handleCancel} disabled={isPending}>
           <X className="h-3 w-3 mr-1" />
-          Cancel
+          {t('common:cancel')}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">This will update the source code in your backend route file.</p>
+      <p className="text-xs text-muted-foreground">{t('common:docs.update_source_code_notice')}</p>
     </div>
   );
 }

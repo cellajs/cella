@@ -69,7 +69,7 @@ const Editor: React.FC<JsonEditorProps> = ({
   defaultValue = null,
   newKeyOptions,
   minWidth = 250,
-  maxWidth = 'min(600px, 90vw)',
+  maxWidth,
   rootFontSize,
   stringTruncate = 250,
   translations = {},
@@ -363,7 +363,8 @@ const Editor: React.FC<JsonEditorProps> = ({
     hideBrackets,
   };
 
-  const mainContainerStyles = { ...getStyles('container', nodeData), minWidth, maxWidth };
+  const mainContainerStyles: React.CSSProperties = { ...getStyles('container', nodeData), minWidth };
+  if (maxWidth) mainContainerStyles.maxWidth = maxWidth;
 
   // Props fontSize takes priority over theme, but we fall back on a default of
   // 16 (from CSS sheet) if neither are provided. Having a defined base size

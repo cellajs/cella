@@ -60,6 +60,10 @@
   font-weight: 600;
 }
 
+.rdg-hide-header .rdg-cell[role="columnheader"] {
+  display: none;
+}
+
 .rdg-cell.rdg-expand-cell {
   border-top-color: transparent;
 }

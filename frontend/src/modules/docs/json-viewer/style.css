@@ -214,6 +214,9 @@ select:focus + .focus {
   display: flex;
   gap: 0;
 }
+.jer-value-component:has(.jer-key-text) > .jer-value-main-row {
+  align-items: flex-start;
+}
 
 .jer-value-and-buttons {
   display: flex;
@@ -228,7 +231,7 @@ select:focus + .focus {
 
 .jer-value-string {
   line-height: 1.3em;
-  white-space: pre-wrap;
+  white-space: pre-line;
   overflow-wrap: anywhere;
   word-break: break-word;
 }

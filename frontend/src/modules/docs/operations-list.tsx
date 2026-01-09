@@ -1,6 +1,7 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type GenOperationSummary, operations, type TagName, tags } from '~/api.gen/docs';
 import { DescriptionEditor } from '~/modules/docs/description-editor';
 import {
@@ -9,6 +10,7 @@ import {
   TagExpandButtonLoading,
   tagDetailsQueryOptions,
 } from '~/modules/docs/operation-responses';
+import { TagOperationsTable } from '~/modules/docs/table/tag-operations-table';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
@@ -18,6 +20,7 @@ import { buttonVariants } from '../ui/button';
 import { getMethodColor } from './helpers/get-method-color';
 
 const OperationsList = () => {
+  const { t } = useTranslation();
   // Get active tag from URL search param
   const { tag: activeTag } = useSearch({ from: '/publicLayout/docs/' });
 
@@ -37,9 +40,9 @@ const OperationsList = () => {
   return (
     <>
       <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">API operations</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('common:docs.api_operations')}</h1>
         <p className="text-muted-foreground">
-          {operations.length} operations across {tags.length} tags
+          {t('common:docs.operations_across_tags', { operations: operations.length, tags: tags.length })}
         </p>
       </header>
 
@@ -47,7 +50,6 @@ const OperationsList = () => {
         {tags.map((tag) => {
           const tagOperations = operationsByTag[tag.name] || [];
           const isOpen = activeTag === tag.name;
-          const operationLabel = tag.count === 1 ? 'operation' : 'operations';
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
@@ -55,8 +57,10 @@ const OperationsList = () => {
                 <CardHeader>
                   <CardTitle className="text-3xl leading-12">{tag.name}</CardTitle>
                   {tag.description && <CardDescription className="mt-2">{tag.description}</CardDescription>}
+                  <p className="text-sm font-medium mt-4">{t('common:operation', { count: tag.count })}</p>
                 </CardHeader>
-                <CardContent className="flex items-center gap-4">
+                <CardContent className="flex flex-col gap-4">
+                  <TagOperationsTable operations={tagOperations} tagName={tag.name as TagName} />
                   <Link
                     to="."
                     search={(prev) => ({ ...prev, tag: isOpen ? undefined : (tag.name as TagName) })}
@@ -67,12 +71,12 @@ const OperationsList = () => {
                     onMouseEnter={() => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))}
                   >
                     {isOpen ? (
-                      <Suspense fallback={<TagExpandButtonLoading count={tag.count} />}>
-                        <TagExpandButtonContent tagName={tag.name} count={tag.count} isOpen={isOpen} />
+                      <Suspense fallback={<TagExpandButtonLoading />}>
+                        <TagExpandButtonContent tagName={tag.name} isOpen={isOpen} />
                       </Suspense>
                     ) : (
                       <>
-                        {tag.count} {operationLabel}
+                        {t('common:docs.show_details')}
                         <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50" />
                       </>
                     )}
@@ -90,7 +94,7 @@ const OperationsList = () => {
                         >
                           <div className="flex justify-between items-start mb-4">
                             {operation.summary && <p className="text-xl font-medium">{operation.summary}</p>}
-                            <div className="text-sm font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                            <div className="text-sm font-mono px-2 py-0.5 text-muted-foreground shrink-0">
                               {operation.id}
                             </div>
                           </div>
@@ -104,7 +108,7 @@ const OperationsList = () => {
                             <code className="text-lg opacity-70 font-mono">{operation.path}</code>
                             {operation.deprecated && (
                               <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                                Deprecated
+                                {t('common:deprecated')}
                               </Badge>
                             )}
                           </div>
@@ -120,16 +124,20 @@ const OperationsList = () => {
 
                           {(operation.hasAuth || operation.hasParams || operation.hasRequestBody) && (
                             <div className="flex gap-4 text-sm">
-                              {operation.hasAuth && <span className="text-muted-foreground">🔒 Auth required</span>}
-                              {operation.hasParams && <span className="text-muted-foreground">📝 Parameters</span>}
+                              {operation.hasAuth && (
+                                <span className="text-muted-foreground">🔒 {t('common:docs.auth_required')}</span>
+                              )}
+                              {operation.hasParams && (
+                                <span className="text-muted-foreground">📝 {t('common:docs.parameters')}</span>
+                              )}
                               {operation.hasRequestBody && (
-                                <span className="text-muted-foreground">📤 Request body</span>
+                                <span className="text-muted-foreground">📤 {t('common:docs.request_body')}</span>
                               )}
                             </div>
                           )}
 
                           <div className="mt-4">
-                            <h4 className="text-sm font-medium mb-2">Responses</h4>
+                            <h4 className="text-sm font-medium mb-2">{t('common:docs.responses')}</h4>
                             <OperationResponses operationId={operation.id} tagName={operation.tags[0]} />
                           </div>
                         </div>

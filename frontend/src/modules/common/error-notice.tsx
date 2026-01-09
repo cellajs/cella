@@ -19,6 +19,7 @@ interface ErrorNoticeProps {
   error?: ErrorNoticeError;
   children?: React.ReactNode;
   resetErrorBoundary?: () => void;
+  homePath?: string;
 }
 
 export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
@@ -76,7 +77,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
  * app: no footer required
  * public: show footer
  */
-const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNoticeProps) => {
+const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/' }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -105,7 +106,7 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level }: ErrorNotice
 
   const handleGoToHome = () => {
     resetErrorBoundary?.();
-    window.location.replace('/');
+    window.location.replace(homePath);
   };
 
   return (

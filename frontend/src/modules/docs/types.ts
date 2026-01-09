@@ -41,6 +41,78 @@ export interface GenInfoSummary {
 }
 
 /**
+ * Schema property with inline required field.
+ * Represents a single property in a schema object.
+ */
+export interface GenSchemaProperty {
+  /** Property type (string, number, boolean, object, array, or array for nullable like ['string', 'null']) */
+  type: string | string[];
+  /** Property description from OpenAPI spec */
+  description?: string;
+  /** Whether this property is required (inline, not in separate array) */
+  required: boolean;
+  /** Format constraint (e.g., 'email', 'date-time') */
+  format?: string;
+  /** Enum values if this is an enum type (can include null for nullable enums) */
+  enum?: (string | number | boolean | null)[];
+  /** Minimum value for numbers */
+  minimum?: number;
+  /** Maximum value for numbers */
+  maximum?: number;
+  /** Minimum length for strings/arrays */
+  minLength?: number;
+  /** Maximum length for strings/arrays */
+  maxLength?: number;
+  /** Minimum items for arrays */
+  minItems?: number;
+  /** Maximum items for arrays */
+  maxItems?: number;
+  /** Nested properties for object types */
+  properties?: Record<string, GenSchemaProperty>;
+  /** Items schema for array types */
+  items?: GenSchemaProperty;
+  /** Reference path if this was dereferenced (e.g., '#/components/schemas/User') */
+  ref?: string;
+  /** Referenced schema name (e.g., 'User') */
+  refName?: string;
+  /** Description from the referenced schema */
+  refDescription?: string;
+  /** anyOf schemas (for union types) */
+  anyOf?: GenSchemaProperty[];
+  /** oneOf schemas (for discriminated unions) */
+  oneOf?: GenSchemaProperty[];
+  /** allOf schemas (for composition/inheritance) */
+  allOf?: GenSchemaProperty[];
+}
+
+/**
+ * Top-level schema representation for response bodies.
+ * Includes reference metadata when dereferenced from a $ref.
+ */
+export interface GenSchema {
+  /** Schema type (object, array, string, etc.) */
+  type: string | string[];
+  /** Original reference path if dereferenced */
+  ref?: string;
+  /** Referenced schema name */
+  refName?: string;
+  /** Description from the referenced schema or inline */
+  refDescription?: string;
+  /** Properties for object schemas */
+  properties?: Record<string, GenSchemaProperty>;
+  /** Items schema for array types */
+  items?: GenSchemaProperty;
+  /** Enum values if this is an enum type (can include null for nullable enums) */
+  enum?: (string | number | boolean | null)[];
+  /** anyOf schemas */
+  anyOf?: GenSchema[];
+  /** oneOf schemas */
+  oneOf?: GenSchema[];
+  /** allOf schemas */
+  allOf?: GenSchema[];
+}
+
+/**
  * Response summary for operation details
  */
 export interface GenResponseSummary {
@@ -48,6 +120,8 @@ export interface GenResponseSummary {
   description: string;
   name?: string;
   ref?: string;
+  /** Resolved response schema (dereferenced with ref metadata preserved) */
+  schema?: GenSchema;
 }
 
 /**

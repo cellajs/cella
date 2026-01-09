@@ -64,7 +64,14 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
   } = props;
   const [stringifiedValue, setStringifiedValue] = useState(jsonStringify(data));
 
-  const startCollapsed = collapseFilter(incomingNodeData);
+  // Compute single-line array status early so we can use it for initial collapse state
+  const collectionType = Array.isArray(data) ? 'array' : 'object';
+  const arrayHasObjects =
+    collectionType === 'array' && (data as unknown[]).some((item) => typeof item === 'object' && item !== null);
+  const isSingleLineArray = enableSingleLineArrays && collectionType === 'array' && !arrayHasObjects;
+
+  // Single-line arrays should always start expanded
+  const startCollapsed = isSingleLineArray ? false : collapseFilter(incomingNodeData);
 
   const { contentRef, isAnimating, maxHeight, collapsed, animateCollapse, cssTransitionValue } = useCollapseTransition(
     data,
@@ -117,7 +124,8 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
   }, [data, jsonStringify]);
 
   useEffect(() => {
-    const shouldBeCollapsed = collapseFilter(nodeData) && !isEditing;
+    // Single-line arrays should never be collapsed
+    const shouldBeCollapsed = isSingleLineArray ? false : collapseFilter(nodeData) && !isEditing;
     hasBeenOpened.current = !shouldBeCollapsed;
     animateCollapse(shouldBeCollapsed);
     // eslint-disable-next-line
@@ -128,7 +136,8 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
       const matchingCollapse = getMatchingCollapseState(path);
       if (matchingCollapse) {
         hasBeenOpened.current = true;
-        animateCollapse(matchingCollapse.collapsed);
+        // Single-line arrays should never be collapsed
+        animateCollapse(isSingleLineArray ? false : matchingCollapse.collapsed);
       }
     }
     // eslint-disable-next-line
@@ -176,7 +185,6 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
   const isVisible = filterNode('collection', nodeData, searchFilter, searchText) || nodeData.level === 0;
   if (!isVisible && !childrenEditing) return null;
 
-  const collectionType = Array.isArray(data) ? 'array' : 'object';
   const brackets = collectionType === 'array' ? { open: '[', close: ']' } : { open: '{', close: '}' };
 
   const handleKeyPressEdit = (e: React.KeyboardEvent) => {
@@ -276,13 +284,13 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
   const showKey = showLabel && !hideKey && name !== undefined && !isRootHidden;
   const showCustomNodeContents = CustomNode && ((isEditing && showOnEdit) || (!isEditing && showOnView));
 
-  // Check for xRequired key and extract its value
-  const xRequiredValue =
-    enableRequiredAsLabel && collectionType === 'object' ? (data as Record<string, unknown>)['xRequired'] : undefined;
-  const isRequired = xRequiredValue === true;
+  // Check for required key and extract its value
+  const requiredValue =
+    enableRequiredAsLabel && collectionType === 'object' ? (data as Record<string, unknown>)['required'] : undefined;
+  const isRequired = requiredValue === true;
 
   const keyValueArray = Object.entries(data)
-    .filter(([key]) => !(enableRequiredAsLabel && key === 'xRequired'))
+    .filter(([key]) => !(enableRequiredAsLabel && key === 'required'))
     .map(([key, value]) => [collectionType === 'array' ? Number(key) : key, value] as [string | number, ValueData]);
 
   if (collectionType === 'object') sort<[string | number, ValueData]>(keyValueArray, (_) => _);
@@ -302,7 +310,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
 
       const childCustomNodeData = getCustomNode(customNodeDefinitions, childNodeData);
       const isLastItem = index === keyValueArray.length - 1;
-      const showComma = enableSingleLineArrays && collectionType === 'array' && !isLastItem;
+      const showComma = isSingleLineArray && !isLastItem;
 
       return (
         <div
@@ -459,7 +467,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
 
   const CollectionNodeComponent = (
     <div
-      className={`jer-component jer-collection-component${enableSingleLineArrays && collectionType === 'array' ? ' jer-array' : ''}`}
+      className={`jer-component jer-collection-component${isSingleLineArray ? ' jer-array' : ''}`}
       style={{
         marginLeft: `${path.length === 0 ? 0 : indent / 2}em`,
         ...getStyles('collection', nodeData),
@@ -521,13 +529,13 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
           >
             {brackets.close}
           </div>
-          {!(enableSingleLineArrays && collectionType === 'array') && EditButtonDisplay}
+          {!isSingleLineArray && EditButtonDisplay}
         </div>
       ) : hideKey ? (
         <></>
       ) : (
         <div
-          className={`jer-collection-header-row${enableSingleLineArrays && collectionType === 'array' ? ' jer-array' : ''}`}
+          className={`jer-collection-header-row${isSingleLineArray ? ' jer-array' : ''}`}
           style={{ position: 'relative' }}
         >
           <KeyDisplay {...keyDisplayProps} />
@@ -553,7 +561,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
             </span>
           )}
         </div>
-        {!isEditing && showCollectionWrapper && !(enableSingleLineArrays && collectionType === 'array') && (
+        {!isEditing && showCollectionWrapper && !isSingleLineArray && (
           <div
             className="jer-brackets jer-bracket-outside"
             style={{
@@ -565,7 +573,7 @@ export const CollectionNode: React.FC<CollectionNodeProps> = (props) => {
           </div>
         )}
       </div>
-      {!isEditing && showCollectionWrapper && enableSingleLineArrays && collectionType === 'array' && (
+      {!isEditing && showCollectionWrapper && isSingleLineArray && (
         <>
           <span className="jer-brackets jer-bracket-outside" style={getStyles('bracket', nodeData)}>
             {brackets.close}

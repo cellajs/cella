@@ -1,43 +1,12 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDown, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { cn } from '~/utils/cn';
 import { getStatusColor } from './helpers/get-status-color';
+import { valuesFirstSort } from './helpers/values-first-sort';
 import { JsonEditor } from './json-viewer';
 import type { GenOperationDetail, GenResponseSummary } from './types';
-
-// Mockup schema inspired by zUser - this will be replaced with actual schema data
-const mockUserSchema = {
-  type: 'object',
-  properties: {
-    id: { type: 'string', description: 'Unique identifier', xRequired: true },
-    entityType: { type: 'string', enum: ['user'], description: 'Entity type discriminator', xRequired: true },
-    name: { type: 'string', description: 'Display name', xRequired: true },
-    email: { type: 'string', format: 'email', description: 'Email address', xRequired: true },
-    slug: { type: 'string', description: 'URL-friendly identifier', xRequired: true },
-    description: { type: ['string', 'null'], description: 'User bio or description', xRequired: false },
-    thumbnailUrl: { type: ['string', 'null'], description: 'Profile picture URL', xRequired: false },
-    bannerUrl: { type: ['string', 'null'], description: 'Banner image URL', xRequired: false },
-    firstName: { type: ['string', 'null'], xRequired: false },
-    lastName: { type: ['string', 'null'], xRequired: false },
-    language: { type: 'string', enum: ['en', 'nl'], description: 'Preferred language', xRequired: true },
-    newsletter: { type: 'boolean', description: 'Newsletter subscription status', xRequired: true },
-    mfaRequired: { type: 'boolean', description: 'Whether MFA is required', xRequired: true },
-    userFlags: {
-      type: 'object',
-      xRequired: false,
-      properties: {
-        finishedOnboarding: { type: 'boolean', xRequired: true },
-      },
-    },
-    createdAt: { type: 'string', format: 'date-time', xRequired: true },
-    modifiedAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
-    lastSeenAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
-    lastStartedAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
-    lastSignInAt: { type: ['string', 'null'], format: 'date-time', xRequired: false },
-    modifiedBy: { type: ['string', 'null'], xRequired: false },
-  },
-};
 
 /**
  * Query options for fetching tag operation details.
@@ -57,8 +26,10 @@ interface ResponsesAccordionProps {
 }
 
 const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
+  const { t } = useTranslation();
+
   if (responses.length === 0) {
-    return <div className="text-sm text-muted-foreground py-2">No responses defined</div>;
+    return <div className="text-sm text-muted-foreground py-2">{t('common:docs.no_responses_defined')}</div>;
   }
 
   return (
@@ -83,26 +54,30 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="p-3 rounded-md bg-muted/50">
-              <JsonEditor
-                hideRoot
-                enableSingleLineArrays
-                enableRequiredAsLabel
-                hideBrackets
-                data={mockUserSchema}
-                collapse={4}
-                restrictEdit={true}
-                searchFilter="all"
-                enableClipboard={false}
-                restrictDelete
-                restrictAdd
-                showStringQuotes={false}
-                showArrayIndices={false}
-                showCollectionCount="when-closed"
-                indent={2}
-                rootFontSize="13px"
-              />
-            </div>
+            {response.schema ? (
+              <div className="p-3 rounded-md bg-muted/50">
+                <JsonEditor
+                  hideRoot
+                  enableSingleLineArrays
+                  enableRequiredAsLabel
+                  data={response.schema}
+                  collapse={4}
+                  keySort={valuesFirstSort}
+                  restrictEdit={true}
+                  searchFilter="all"
+                  enableClipboard={false}
+                  restrictDelete
+                  restrictAdd
+                  showStringQuotes={false}
+                  showArrayIndices={false}
+                  showCollectionCount="when-closed"
+                  indent={2}
+                  rootFontSize="13px"
+                />
+              </div>
+            ) : (
+              <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
+            )}
           </AccordionContent>
         </AccordionItem>
       ))}
@@ -127,16 +102,8 @@ export const OperationResponses = ({ operationId, tagName }: OperationResponsesP
   return <ResponsesAccordion responses={responses} />;
 };
 
-/**
- * Loading fallback component for the tag operations Suspense boundary
- */
-export const TagOperationsLoading = () => (
-  <div className="p-6 text-center text-muted-foreground">Loading operation details...</div>
-);
-
 interface TagExpandButtonProps {
   tagName: string;
-  count: number;
   isOpen: boolean;
 }
 
@@ -144,15 +111,14 @@ interface TagExpandButtonProps {
  * Button content that triggers data load via useSuspenseQuery.
  * When wrapped in Suspense, shows loading state until data is ready.
  */
-export const TagExpandButtonContent = ({ tagName, count, isOpen }: TagExpandButtonProps) => {
+export const TagExpandButtonContent = ({ tagName, isOpen }: TagExpandButtonProps) => {
+  const { t } = useTranslation();
   // This triggers the Suspense - data will be cached for when content renders
   useSuspenseQuery(tagDetailsQueryOptions(tagName));
 
-  const operationLabel = count === 1 ? 'operation' : 'operations';
-
   return (
     <>
-      {count} {operationLabel}
+      {t('common:docs.hide_details')}
       <ChevronDown
         className={cn('ml-2 h-4 w-4 transition-transform duration-200 opacity-50', isOpen && 'rotate-180')}
       />
@@ -163,12 +129,11 @@ export const TagExpandButtonContent = ({ tagName, count, isOpen }: TagExpandButt
 /**
  * Loading fallback for the expand button - shows spinner instead of chevron
  */
-export const TagExpandButtonLoading = ({ count }: { count: number }) => {
-  const operationLabel = count === 1 ? 'operation' : 'operations';
-
+export const TagExpandButtonLoading = () => {
+  const { t } = useTranslation();
   return (
     <>
-      {count} {operationLabel}
+      {t('common:docs.show_details')}
       <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
     </>
   );
