@@ -114,7 +114,6 @@
   "docs.no_response_body": "No response body",
   "docs.no_responses_defined": "No responses defined",
   "docs.openapi_json": "OpenAPI JSON",
-  "docs.openapi_spec_description": "Full OpenAPI 3.1 specification for the {{title}}",
   "docs.openapi_specification": "OpenAPI Specification",
   "docs.operation_id": "Operation ID",
   "docs.operations_across_tags": "{{operations}} operations across {{tags}} tags",

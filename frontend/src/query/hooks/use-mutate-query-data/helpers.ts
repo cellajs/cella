@@ -29,6 +29,7 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
     return value.every((item) => typeof item === 'object' && item !== null && 'entityType' in item && 'id' in item);
   });
 };
+
 /**
  * Updates the infinite query data based on the specified action.
  *

@@ -70,8 +70,8 @@ importers:
         specifier: 2.5.0
         version: 2.5.0
       '@hono/node-server':
-        specifier: ^1.19.7
-        version: 1.19.7(hono@4.11.3)
+        specifier: ^1.19.8
+        version: 1.19.8(hono@4.11.3)
       '@hono/zod-openapi':
         specifier: ^1.2.0
         version: 1.2.0(hono@4.11.3)(zod@4.3.5)
@@ -408,9 +408,6 @@ importers:
       '@electric-sql/client':
         specifier: ^1.4.0
         version: 1.4.0
-      '@electric-sql/react':
-        specifier: ^1.0.26
-        version: 1.0.26(react@19.2.3)
       '@floating-ui/dom':
         specifier: ^1.7.4
         version: 1.7.4
@@ -519,9 +516,6 @@ importers:
       '@tanstack/offline-transactions':
         specifier: ^1.0.7
         version: 1.0.7(typescript@5.9.3)
-      '@tanstack/query-sync-storage-persister':
-        specifier: ^5.90.18
-        version: 5.90.18
       '@tanstack/react-db':
         specifier: ^0.1.61
         version: 0.1.61(react@19.2.3)(typescript@5.9.3)
@@ -579,9 +573,6 @@ importers:
       '@uppy/transloadit':
         specifier: ^5.4.0
         version: 5.4.0(@uppy/core@5.2.0)(typanion@3.14.0)
-      '@uppy/tus':
-        specifier: ^5.1.0
-        version: 5.1.0(@uppy/core@5.2.0)
       '@uppy/url':
         specifier: ^5.1.0
         version: 5.1.0(@uppy/core@5.2.0)
@@ -658,8 +649,8 @@ importers:
         specifier: ^0.542.0
         version: 0.542.0(react@19.2.3)
       motion:
-        specifier: ^12.24.12
-        version: 12.24.12(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^12.25.0
+        version: 12.25.0(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
@@ -712,8 +703,8 @@ importers:
         specifier: ^10.3.0
         version: 10.3.0(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-resizable-panels:
-        specifier: ^4.3.2
-        version: 4.3.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^4.3.3
+        version: 4.3.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-use-downloader:
         specifier: ^1.3.0
         version: 1.3.0(react@19.2.3)
@@ -1840,14 +1831,6 @@ packages:
   '@electric-sql/pglite@0.3.14':
     resolution: {integrity: sha512-3DB258dhqdsArOI1fIt7cb9RpUOgcDg5hXWVgVHAeqVQ/qxtFy605QKs4gx6mFq3jWsSPqDN8TgSEsqC3OfV9Q==}
 
-  '@electric-sql/react@1.0.26':
-    resolution: {integrity: sha512-cCKLQrtGNaAPBzdLZk97bK/Hue3fKkfL0/aA5HAPzoo7U07/TRzzs4EVRy7q+BV6AONEK+YXxxrzH9gEH8YVQA==}
-    peerDependencies:
-      react: '>=18.3.1 <20.0.0'
-    peerDependenciesMeta:
-      react:
-        optional: true
-
   '@emnapi/core@1.8.1':
     resolution: {integrity: sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg==}
 
@@ -2597,8 +2580,8 @@ packages:
       y-protocols: ^1.0.6
       yjs: ^13.6.8
 
-  '@hono/node-server@1.19.7':
-    resolution: {integrity: sha512-vUcD0uauS7EU2caukW8z5lJKtoGMokxNbJtBiwHgpqxEXokaHCBkQUmCHhjFB1VUTWdqj25QoMkMKzgjq+uhrw==}
+  '@hono/node-server@1.19.8':
+    resolution: {integrity: sha512-0/g2lIOPzX8f3vzW1ggQgvG5mjtFBDBHFAzI5SFAi2DzSqS9luJwqg9T6O/gKYLi+inS7eNxBeIFkkghIPvrMA==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -5618,9 +5601,6 @@ packages:
   '@tanstack/query-persist-client-core@5.91.15':
     resolution: {integrity: sha512-vnPSfQVo41EKJN8v20nkhWNZPyB1dMJIy5icOvCGzcCJzsmRefYY1owtr63ICOcjOiPPTuNEfPsdjdBhkzYnmA==}
 
-  '@tanstack/query-sync-storage-persister@5.90.18':
-    resolution: {integrity: sha512-tKngFopz/TuAe7LBDg7IOhWPh9blxdQ6QG/vVL2dFzRmlPNcSo4WdCSONqSDioJkcyTwh1YCSlcikmJ1WnSb3Q==}
-
   '@tanstack/react-db@0.1.61':
     resolution: {integrity: sha512-WY76mGQmiTbAPM4qdsk+AvlQKdK0uC/lTpceCkZiozgpW4M7RrYYFYy92YBvi+PunauNazyUxfhUWlh53SvsAg==}
     peerDependencies:
@@ -7815,8 +7795,8 @@ packages:
       react-dom:
         optional: true
 
-  framer-motion@12.24.12:
-    resolution: {integrity: sha512-W+tBOI1SDGNMH4D4mADY95qYd16Drke2Tj9zlGlwTGSCi6yy8wbMmPY1mvirfcTK8HBeuuCd2PflHdN/zbL4ew==}
+  framer-motion@12.25.0:
+    resolution: {integrity: sha512-mlWqd0rApIjeyhTCSNCqPYsUAEhkcUukZxH3ke6KbstBRPcxhEpuIjmiUQvB+1E9xkEm5SpNHBgHCapH/QHTWg==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -9152,8 +9132,8 @@ packages:
   motion-utils@12.24.10:
     resolution: {integrity: sha512-x5TFgkCIP4pPsRLpKoI86jv/q8t8FQOiM/0E8QKBzfMozWHfkKap2gA1hOki+B5g3IsBNpxbUnfOum1+dgvYww==}
 
-  motion@12.24.12:
-    resolution: {integrity: sha512-usaP62NpHmM8++QrEnNoCco6qrtK1AtzkeHfgW+4qICE0k7ykK+dPJGaRjEzo7sF1GcrYskrGBB/r5RtqnminQ==}
+  motion@12.25.0:
+    resolution: {integrity: sha512-jBFohEYklpZ+TL64zv03sHdqr1Tsc8/yDy7u68hVzi7hTJYtv53AduchqCiY3aWi4vY1hweS8DWtgCuckusYdQ==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -10066,8 +10046,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-resizable-panels@4.3.2:
-    resolution: {integrity: sha512-Rg6kSKK9yxfaJIaj/nXsmTNX/8hexrksXSjfL9SEIfeApcSXs35aG2HFxjwW5oobHKh/Mr/BkH9m4fgPBq3CTg==}
+  react-resizable-panels@4.3.3:
+    resolution: {integrity: sha512-7ZmYcoOiipVwwz8X9O/HiRbm8THM6qnXo7p5dPI6ivzdDoteHo3iXS1pijs8Z4/XU8V1RwhuGgJiZU5G7Zy0KQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -13255,13 +13235,6 @@ snapshots:
 
   '@electric-sql/pglite@0.3.14': {}
 
-  '@electric-sql/react@1.0.26(react@19.2.3)':
-    dependencies:
-      '@electric-sql/client': 1.4.0
-      use-sync-external-store: 1.6.0(react@19.2.3)
-    optionalDependencies:
-      react: 19.2.3
-
   '@emnapi/core@1.8.1':
     dependencies:
       '@emnapi/wasi-threads': 1.1.0
@@ -13742,7 +13715,7 @@ snapshots:
       - utf-8-validate
     optional: true
 
-  '@hono/node-server@1.19.7(hono@4.11.3)':
+  '@hono/node-server@1.19.8(hono@4.11.3)':
     dependencies:
       hono: 4.11.3
 
@@ -16946,11 +16919,6 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.90.16
 
-  '@tanstack/query-sync-storage-persister@5.90.18':
-    dependencies:
-      '@tanstack/query-core': 5.90.16
-      '@tanstack/query-persist-client-core': 5.91.15
-
   '@tanstack/react-db@0.1.61(react@19.2.3)(typescript@5.9.3)':
     dependencies:
       '@tanstack/db': 0.5.17(typescript@5.9.3)
@@ -19423,7 +19391,7 @@ snapshots:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 
-  framer-motion@12.24.12(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  framer-motion@12.25.0(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       motion-dom: 12.24.11
       motion-utils: 12.24.10
@@ -21122,9 +21090,9 @@ snapshots:
 
   motion-utils@12.24.10: {}
 
-  motion@12.24.12(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  motion@12.25.0(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
-      framer-motion: 12.24.12(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      framer-motion: 12.25.0(@emotion/is-prop-valid@1.3.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       tslib: 2.8.1
     optionalDependencies:
       '@emotion/is-prop-valid': 1.3.1
@@ -22049,7 +22017,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.7
 
-  react-resizable-panels@4.3.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  react-resizable-panels@4.3.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)

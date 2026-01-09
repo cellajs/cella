@@ -52,9 +52,9 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
     key: 'id',
     name: '',
     sortable: false,
-    width: 180,
+    width: 200,
     renderHeaderCell: HeaderCell,
-    renderCell: ({ row }) => <code className="text-xs text-muted-foreground font-mono">{row.id}</code>,
+    renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
   },
 ];
 
@@ -65,18 +65,20 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
   const columns = useColumns(tagName);
 
   return (
-    <DataTable<GenOperationSummary>
-      columns={columns}
-      rows={operations}
-      hasNextPage={false}
-      rowKeyGetter={(row) => row.hash}
-      isLoading={false}
-      isFetching={false}
-      limit={operations.length}
-      isFiltered={false}
-      rowHeight={36}
-      hideHeader
-      enableVirtualization={false}
-    />
+    <div className="rdg-readonly">
+      <DataTable<GenOperationSummary>
+        columns={columns}
+        rows={operations}
+        hasNextPage={false}
+        rowKeyGetter={(row) => row.hash}
+        isLoading={false}
+        isFetching={false}
+        limit={operations.length}
+        isFiltered={false}
+        rowHeight={36}
+        hideHeader
+        enableVirtualization={false}
+      />
+    </div>
   );
 };

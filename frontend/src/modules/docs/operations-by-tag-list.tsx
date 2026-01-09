@@ -53,7 +53,7 @@ const OperationsByTagList = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={`tag/${tag.name}`} className="scroll-mt-8 border-0 border-l-3 rounded-none">
+              <Card id={`tag/${tag.name}`} className="scroll-mt-8 border-0">
                 <CardHeader>
                   <CardTitle className="text-3xl leading-12">{tag.name}</CardTitle>
                   {tag.description && <CardDescription className="mt-2">{tag.description}</CardDescription>}
@@ -61,26 +61,28 @@ const OperationsByTagList = () => {
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
                   <TagOperationsTable operations={tagOperations} tagName={tag.name as TagName} />
-                  <Link
-                    to="."
-                    search={(prev) => ({ ...prev, tag: isOpen ? undefined : (tag.name as TagName) })}
-                    replace
-                    draggable={false}
-                    resetScroll={false}
-                    className={cn(buttonVariants({ variant: 'plain', size: 'lg' }), 'rounded-full')}
-                    onMouseEnter={() => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))}
-                  >
-                    {isOpen ? (
-                      <Suspense fallback={<TagExpandButtonLoading />}>
-                        <TagExpandButtonContent tagName={tag.name} isOpen={isOpen} />
-                      </Suspense>
-                    ) : (
-                      <>
-                        {t('common:docs.show_details')}
-                        <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50" />
-                      </>
-                    )}
-                  </Link>
+                  <div className="flex w-full justify-center">
+                    <Link
+                      to="."
+                      search={(prev) => ({ ...prev, tag: isOpen ? undefined : (tag.name as TagName) })}
+                      replace
+                      draggable={false}
+                      resetScroll={false}
+                      className={cn(buttonVariants({ variant: 'plain', size: 'lg' }), 'rounded-full')}
+                      onMouseEnter={() => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))}
+                    >
+                      {isOpen ? (
+                        <Suspense fallback={<TagExpandButtonLoading />}>
+                          <TagExpandButtonContent tagName={tag.name} isOpen={isOpen} />
+                        </Suspense>
+                      ) : (
+                        <>
+                          {t('common:docs.show_details')}
+                          <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50" />
+                        </>
+                      )}
+                    </Link>
+                  </div>
                 </CardContent>
 
                 <CollapsibleContent>
@@ -90,7 +92,7 @@ const OperationsByTagList = () => {
                         <div
                           key={operation.hash}
                           id={operation.hash}
-                          className="p-6 border-b last:border-b-0 hover:bg-muted/30 transition-colors"
+                          className="p-6 border-b last:border-b-0 transition-colors"
                         >
                           <div className="flex justify-between items-start mb-4">
                             {operation.summary && <p className="text-xl font-medium">{operation.summary}</p>}

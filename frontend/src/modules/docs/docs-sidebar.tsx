@@ -1,13 +1,15 @@
 import { isNull, not, useLiveQuery } from '@tanstack/react-db';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon, ListIcon, PencilIcon, TableIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary, GenTagSummary, TagName } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import Logo from '~/modules/common/logo';
+import { JsonActions } from '~/modules/docs/json-actions';
 import type { initPagesCollection } from '~/modules/pages/collections';
 import { Badge } from '~/modules/ui/badge';
 import { buttonVariants } from '~/modules/ui/button';
@@ -25,6 +27,22 @@ import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 import { getMethodColor } from './helpers/get-method-color';
+import { openApiSpecQueryOptions, openApiUrl } from './query';
+
+/** Suspense-wrapped JsonActions for OpenAPI spec */
+const OpenApiJsonActions = () => {
+  const { t } = useTranslation();
+  const { data } = useSuspenseQuery(openApiSpecQueryOptions);
+  return (
+    <JsonActions
+      url={openApiUrl}
+      smallMode
+      data={data}
+      filename="openapi.json"
+      resourceName={t('common:docs.openapi_json')}
+    />
+  );
+};
 
 interface DocsSidebarProps {
   operations: GenOperationSummary[];
@@ -104,26 +122,36 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
         </Link>
       </div>
 
+      {/* API spec */}
+      <SidebarGroup>
+        <div className="flex items-center gap-3 pl-2">
+          <Suspense fallback={null}>
+            <OpenApiJsonActions />
+          </Suspense>
+        </div>
+      </SidebarGroup>
+
       {/* API reference */}
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
-          <SidebarGroupLabel className="opacity-75 p-0">{t('common:docs.api_reference')}</SidebarGroupLabel>
+          <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:docs.api_reference')}</SidebarGroupLabel>
           <ToggleGroup
             type="single"
-            size="sm"
+            size="xs"
             value={viewMode}
             onValueChange={(value: 'list' | 'table') => {
               if (value) navigate({ to: location.pathname, search: (prev) => ({ ...prev, viewMode: value }) });
             }}
           >
-            <ToggleGroupItem value="list" className="h-6 w-6 p-0">
-              <ListIcon className="size-3.5" />
+            <ToggleGroupItem value="list" size={'xs'}>
+              <ListIcon className="size-4" />
             </ToggleGroupItem>
-            <ToggleGroupItem value="table" className="h-6 w-6 p-0">
-              <TableIcon className="size-3.5" />
+            <ToggleGroupItem value="table" size={'xs'}>
+              <TableIcon className="size-4" />
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
+
         <SidebarGroupContent>
           {/* Overview */}
           <SidebarGroup className="p-1 pt-0">
@@ -362,14 +390,14 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
       {/* Pages */}
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
-          <SidebarGroupLabel className="opacity-75 p-0">{t('common:pages')}</SidebarGroupLabel>
+          <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:pages')}</SidebarGroupLabel>
           {systemRole && (
             <Link
               to="/docs/pages"
-              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-6 w-6 p-0')}
+              className={cn(buttonVariants({ variant: 'outline', size: 'xs' }), 'h-7 w-8 p-0')}
               aria-label="Manage pages"
             >
-              <PencilIcon className="size-3.5" />
+              <PencilIcon size={14} />
             </Link>
           )}
         </div>

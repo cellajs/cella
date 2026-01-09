@@ -4615,17 +4615,13 @@
     },
     "/pages/sync-pages": {
       "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
+        "security": [],
         "operationId": "syncPages",
         "tags": [
           "pages"
         ],
         "summary": "Sync pages",
-        "description": "🛡️ Requires authentication  \n\nSync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
+        "description": "🌐 Public access  \n\nSync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
         "parameters": [
           {
             "schema": {

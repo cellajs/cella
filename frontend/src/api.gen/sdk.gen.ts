@@ -1524,7 +1524,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Sync pages
  *
- * 🛡️ Requires authentication
+ * 🌐 Public access
  *
  * Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.
  *
@@ -1542,13 +1542,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
 export const syncPages = <ThrowOnError extends boolean = true>(options: Options<SyncPagesData, ThrowOnError>) =>
   (options.client ?? client).get<SyncPagesResponses, SyncPagesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/pages/sync-pages',
     ...options,
   });

@@ -625,9 +625,9 @@ export const operations: GenOperationSummary[] = [
     tags: ['pages'],
     summary: 'Sync pages',
     description:
-      "🛡️ Requires authentication  \n\nSync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
+      "🌐 Public access  \n\nSync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
     deprecated: false,
-    hasAuth: true,
+    hasAuth: false,
     hasParams: true,
     hasRequestBody: false,
   },
