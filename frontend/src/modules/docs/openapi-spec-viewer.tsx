@@ -41,12 +41,8 @@ const OpenApiSpecViewer = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-2xl font-bold">{t('common:docs.openapi_specification')}</h1>
-      </header>
-
-      <div className="flex items-center gap-2 max-sm:flex-col w-full">
+    <>
+      <div className="flex items-center gap-2 max-sm:flex-col w-full mb-4">
         {/* Search through JSON */}
         <InputGroup className="max-sm:w-full max-sm:order-last">
           <InputGroupAddon>
@@ -119,7 +115,7 @@ const OpenApiSpecViewer = () => {
           theme={mode === 'dark' ? githubDarkTheme : undefined}
         />
       </div>
-    </div>
+    </>
   );
 };
 

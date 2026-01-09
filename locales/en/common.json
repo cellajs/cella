@@ -112,7 +112,7 @@
   "docs.no_response_body": "No response body",
   "docs.no_responses_defined": "No responses defined",
   "docs.openapi_json": "OpenAPI JSON",
-  "docs.openapi_specification": "OpenAPI Specification",
+  "docs.openapi_specification": "OpenAPI specification",
   "docs.operation_id": "Operation ID",
   "docs.guard": "Guard",
   "docs.rate_limiter": "Rate limiter",

@@ -10,11 +10,10 @@ import { docsRouteSearchParamsSchema, pagesRouteSearchParamsSchema } from '~/rou
 import appTitle from '~/utils/app-title';
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
-const OverviewTable = lazy(() => import('~/modules/docs/overview-table'));
+const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
 const OperationsByTagList = lazy(() => import('~/modules/docs/operations-by-tag-list'));
 const OperationsTable = lazy(() => import('~/modules/docs/operations-table'));
 const SchemasList = lazy(() => import('~/modules/docs/schemas-list'));
-const OpenApiSpecViewer = lazy(() => import('~/modules/docs/openapi-spec-viewer'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
 const PagePage = lazy(() => import('~/modules/pages/page-page'));
 
@@ -67,8 +66,7 @@ export const DocsOverviewRoute = createRoute({
   getParentRoute: () => DocsLayoutRoute,
   component: () => (
     <Suspense>
-      <OverviewTable />
-      <OpenApiSpecViewer />
+      <OverviewPage />
     </Suspense>
   ),
 });

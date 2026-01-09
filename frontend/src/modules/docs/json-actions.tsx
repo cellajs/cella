@@ -72,8 +72,8 @@ export const JsonActions = ({
         size={size}
         onClick={handleOpen}
       >
-        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:open')}</span>
         <ExternalLinkIcon size={iconSize} />
+        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:open')}</span>
       </ToggleGroupItem>
       {/* Copy */}
       <ToggleGroupItem value="copy" aria-label={t('common:copy')} className="gap-2" size={size} onClick={handleCopy}>
