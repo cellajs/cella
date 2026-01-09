@@ -22,7 +22,7 @@
 
 4. **Routing** (`routes/`)
    - `docs-routes.tsx` - Route definition with lazy-loaded component
-   - Added DocsRoute to route tree
+   - Added DocsLayoutRoute to route tree
    - Uses PublicLayoutRoute parent (accessible without auth)
 
 5. **Basic Page Component** (`modules/docs/docs-page.tsx`)

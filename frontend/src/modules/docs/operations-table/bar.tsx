@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react';
 import type { GenOperationSummary } from '~/api.gen/docs';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -8,13 +9,23 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 
 interface OperationsTableBarProps {
   total: number;
-  q: string;
+  searchVars: { q?: string };
   setSearch: (params: { q?: string }) => void;
   columns: ColumnOrColumnGroup<GenOperationSummary>[];
-  setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
+  isCompact: boolean;
+  setIsCompact: (isCompact: boolean) => void;
 }
 
-export const OperationsTableBar = ({ total, q, setSearch, columns, setColumns }: OperationsTableBarProps) => {
+export const OperationsTableBar = ({
+  total,
+  searchVars,
+  setSearch,
+  columns,
+  setColumns,
+  isCompact,
+  setIsCompact,
+}: OperationsTableBarProps) => {
   const onSearch = (searchString: string) => {
     setSearch({ q: searchString });
   };
@@ -23,7 +34,7 @@ export const OperationsTableBar = ({ total, q, setSearch, columns, setColumns }:
     setSearch({ q: '' });
   };
 
-  const isFiltered = !!q;
+  const isFiltered = !!searchVars.q;
 
   return (
     <TableBarContainer>
@@ -35,11 +46,17 @@ export const OperationsTableBar = ({ total, q, setSearch, columns, setColumns }:
         <div className="sm:grow" />
 
         <FilterBarContent>
-          <TableSearch name="operationsSearch" value={q} setQuery={onSearch} />
+          <TableSearch name="operationsSearch" value={searchVars.q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+      <ColumnsView
+        className="max-lg:hidden"
+        columns={columns}
+        setColumns={setColumns}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
+      />
     </TableBarContainer>
   );
 };

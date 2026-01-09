@@ -50,6 +50,9 @@ interface DocsSidebarProps {
   pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
+/**
+ * Sidebar for the Docs section, including logo, Spec JSON actions, API reference (operations & schemas), and pages groups.
+ */
 export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
@@ -124,7 +127,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
 
       {/* API spec */}
       <SidebarGroup>
-        <div className="flex items-center gap-3 pl-2">
+        <div className="flex items-center gap-3 pl-1.5">
           <Suspense fallback={null}>
             <OpenApiJsonActions />
           </Suspense>

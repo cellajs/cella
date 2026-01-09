@@ -13,10 +13,10 @@ import {
 import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import {
   DocsIndexRoute,
+  DocsLayoutRoute,
   DocsOverviewRoute,
   DocsPageRoute,
   DocsPagesRoute,
-  DocsRoute,
   DocsSchemasRoute,
 } from '~/routes/docs-routes';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
@@ -46,7 +46,7 @@ export const routeTree = RootRoute.addChildren([
   PublicLayoutRoute.addChildren([
     AboutRoute,
     ContactRoute,
-    DocsRoute.addChildren([DocsIndexRoute, DocsOverviewRoute, DocsSchemasRoute, DocsPagesRoute, DocsPageRoute]),
+    DocsLayoutRoute.addChildren([DocsIndexRoute, DocsOverviewRoute, DocsSchemasRoute, DocsPagesRoute, DocsPageRoute]),
     LegalIndexRoute,
     LegalRoute,
     AccessibilityRoute,

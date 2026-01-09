@@ -15,6 +15,7 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
   {
     key: 'method',
     name: '',
+    visible: true,
     sortable: false,
     width: 80,
     renderHeaderCell: HeaderCell,
@@ -30,6 +31,7 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
   {
     key: 'path',
     name: '',
+    visible: true,
     minWidth: 200,
     sortable: false,
     renderHeaderCell: HeaderCell,
@@ -51,6 +53,7 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
   {
     key: 'id',
     name: '',
+    visible: true,
     sortable: false,
     width: 200,
     renderHeaderCell: HeaderCell,
@@ -65,20 +68,18 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
   const columns = useColumns(tagName);
 
   return (
-    <div className="rdg-readonly">
-      <DataTable<GenOperationSummary>
-        columns={columns}
-        rows={operations}
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.hash}
-        isLoading={false}
-        isFetching={false}
-        limit={operations.length}
-        isFiltered={false}
-        rowHeight={36}
-        hideHeader
-        enableVirtualization={false}
-      />
-    </div>
+    <DataTable<GenOperationSummary>
+      columns={columns}
+      rows={operations}
+      hasNextPage={false}
+      rowKeyGetter={(row) => row.hash}
+      isLoading={false}
+      isFetching={false}
+      limit={operations.length}
+      isFiltered={false}
+      rowHeight={36}
+      hideHeader
+      enableVirtualization={false}
+    />
   );
 };

@@ -59,8 +59,11 @@ const OperationsByTagList = () => {
                   {tag.description && <CardDescription className="mt-2">{tag.description}</CardDescription>}
                   <p className="text-sm font-medium mt-4">{t('common:operation', { count: tag.count })}</p>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-4">
+                <CardContent className="flex flex-col gap-4 rdg-readonly">
+                  {/* Readonly data table with operations in this tag */}
                   <TagOperationsTable operations={tagOperations} tagName={tag.name as TagName} />
+
+                  {/* Show details button */}
                   <div className="flex w-full justify-center">
                     <Link
                       to="."
@@ -85,6 +88,7 @@ const OperationsByTagList = () => {
                   </div>
                 </CardContent>
 
+                {/* Operation details list */}
                 <CollapsibleContent>
                   <Suspense>
                     <div className="border-t">

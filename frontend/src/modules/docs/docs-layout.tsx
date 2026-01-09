@@ -4,11 +4,12 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { DocsSidebar } from '~/modules/docs/docs-sidebar';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { DocsRoute } from '~/routes/docs-routes';
+import { DocsLayoutRoute } from '~/routes/docs-routes';
 
-const DocsPage = () => {
-  const { pagesCollection } = useLoaderData({ from: DocsRoute.id });
+const DocsLayout = () => {
   const navigate = useNavigate();
+
+  const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
 
   // Collapse all expanded items on ESC
   useHotkeys([
@@ -43,4 +44,4 @@ const DocsPage = () => {
   );
 };
 
-export default DocsPage;
+export default DocsLayout;

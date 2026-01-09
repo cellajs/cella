@@ -23,7 +23,9 @@ const OperationsTable = () => {
   const { setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/' });
   const { q = '' } = useSearch({ from: '/publicLayout/docs/' });
 
-  const [columns, setColumns] = useColumns();
+  const [isCompact, setIsCompact] = useState(false);
+
+  const [columns, setColumns] = useColumns(isCompact);
 
   // Local state for operations to enable editing
   const [localOperations, setLocalOperations] = useState<GenOperationSummary[]>(operations);
@@ -75,13 +77,15 @@ const OperationsTable = () => {
     <div className="flex flex-col gap-2">
       <OperationsTableBar
         total={filteredOperations.length}
-        q={q}
+        searchVars={{ q }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
       />
       <DataTable<GenOperationSummary>
-        columns={columns.filter((column) => column.visible)}
+        columns={columns}
         rows={filteredOperations}
         onRowsChange={onRowsChange}
         hasNextPage={false}

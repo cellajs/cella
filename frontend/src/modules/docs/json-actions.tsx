@@ -28,12 +28,13 @@ export const JsonActions = ({
   smallMode,
 }: JsonActionsProps) => {
   const { t } = useTranslation();
+
   const { copyToClipboard, copied } = useCopyToClipboard();
   const { download, isInProgress } = useDownloader();
 
   const handleCopy = () => {
     copyToClipboard(JSON.stringify(data, null, 2));
-    toaster(t('common:success.resource_copied', { resource: resourceName ?? t('common:json') }), 'success');
+    toaster(t('common:success.resource_copied', { resource: resourceName ?? 'JSON' }), 'success');
   };
 
   const handleDownload = () => {
@@ -58,7 +59,7 @@ export const JsonActions = ({
         size={size}
         onClick={handleOpen}
       >
-        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:text-xs">openapi.json</span>
+        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
         <ExternalLinkIcon size={iconSize} />
       </ToggleGroupItem>
       <ToggleGroupItem value="copy" aria-label={t('common:copy')} className="gap-2" size={size} onClick={handleCopy}>

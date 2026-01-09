@@ -9,7 +9,7 @@ import { PublicLayoutRoute } from '~/routes/base-routes';
 import { docsRouteSearchParamsSchema, pagesRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 import appTitle from '~/utils/app-title';
 
-const DocsPage = lazy(() => import('~/modules/docs/docs-page'));
+const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewTable = lazy(() => import('~/modules/docs/overview-table'));
 const OperationsByTagList = lazy(() => import('~/modules/docs/operations-by-tag-list'));
 const OperationsTable = lazy(() => import('~/modules/docs/operations-table'));
@@ -21,7 +21,7 @@ const PagePage = lazy(() => import('~/modules/pages/page-page'));
 /**
  * Documentation route for API reference and developer guides.
  */
-export const DocsRoute = createRoute({
+export const DocsLayoutRoute = createRoute({
   path: '/docs',
   staticData: { isAuth: false },
   validateSearch: docsRouteSearchParamsSchema,
@@ -35,7 +35,7 @@ export const DocsRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <DocsPage />
+      <DocsLayout />
     </Suspense>
   ),
 });
@@ -46,7 +46,7 @@ export const DocsRoute = createRoute({
 export const DocsIndexRoute = createRoute({
   path: '/',
   staticData: { isAuth: false },
-  getParentRoute: () => DocsRoute,
+  getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
     // Prefetch all tag details into react-query cache
     await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
@@ -64,7 +64,7 @@ export const DocsOverviewRoute = createRoute({
   path: '/overview',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('API Overview') }] }),
-  getParentRoute: () => DocsRoute,
+  getParentRoute: () => DocsLayoutRoute,
   component: () => (
     <Suspense>
       <OverviewTable />
@@ -79,7 +79,7 @@ export const DocsOverviewRoute = createRoute({
 export const DocsSchemasRoute = createRoute({
   path: '/schemas',
   staticData: { isAuth: false },
-  getParentRoute: () => DocsRoute,
+  getParentRoute: () => DocsLayoutRoute,
   component: () => (
     <Suspense>
       <SchemasList />
@@ -95,7 +95,7 @@ export const DocsPagesRoute = createRoute({
   validateSearch: pagesRouteSearchParamsSchema,
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Pages') }] }),
-  getParentRoute: () => DocsRoute,
+  getParentRoute: () => DocsLayoutRoute,
   async loader() {
     const pagesCollection = initPagesCollection();
     return { pagesCollection };
@@ -118,7 +118,7 @@ export const DocsPageRoute = createRoute({
     return { pageId: id, pagesCollection };
   },
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
-  getParentRoute: () => DocsRoute,
+  getParentRoute: () => DocsLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
