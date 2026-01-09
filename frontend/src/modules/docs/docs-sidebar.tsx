@@ -288,7 +288,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                                         </span>
                                         <Badge
                                           variant="secondary"
-                                          className={`text-[11px] p-0 shrink-0 opacity-50 group-hover:opacity-100 uppercase bg-transparent shadow-none ${getMethodColor(operation.method)}`}
+                                          className={`text-[11px] p-0 shrink-0 opacity-70 group-hover:opacity-100 uppercase bg-transparent shadow-none ${getMethodColor(operation.method)}`}
                                         >
                                           {operation.method}
                                         </Badge>

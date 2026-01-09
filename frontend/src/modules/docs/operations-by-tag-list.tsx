@@ -142,7 +142,7 @@ const OperationsByTagList = () => {
                             </div>
                           )}
 
-                          <div className="mt-4">
+                          <div className="mt-8">
                             <h4 className="text-sm font-medium mb-2">{t('common:docs.responses')}</h4>
                             <OperationResponses operationId={operation.id} tagName={operation.tags[0]} />
                           </div>
