@@ -1,4 +1,5 @@
-import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, LaptopIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
@@ -14,6 +15,7 @@ interface JsonActionsProps {
   resourceName?: string;
   className?: string;
   smallMode?: boolean;
+  viewerUrl?: string;
 }
 
 /**
@@ -26,6 +28,7 @@ export const JsonActions = ({
   resourceName,
   className,
   smallMode,
+  viewerUrl,
 }: JsonActionsProps) => {
   const { t } = useTranslation();
 
@@ -52,6 +55,16 @@ export const JsonActions = ({
 
   return (
     <ToggleGroup type="single" variant="merged" data-small-mode={smallMode} className={cn('gap-0', className)}>
+      {/* View */}
+      {viewerUrl && (
+        <ToggleGroupItem value="view" aria-label={t('common:view')} className="gap-2 flex-none" size={size} asChild>
+          <Link to={viewerUrl}>
+            <LaptopIcon size={iconSize} />
+            <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
+          </Link>
+        </ToggleGroupItem>
+      )}
+      {/* Open */}
       <ToggleGroupItem
         value="open"
         aria-label={t('common:open')}
@@ -59,13 +72,15 @@ export const JsonActions = ({
         size={size}
         onClick={handleOpen}
       >
-        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
+        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:open')}</span>
         <ExternalLinkIcon size={iconSize} />
       </ToggleGroupItem>
+      {/* Copy */}
       <ToggleGroupItem value="copy" aria-label={t('common:copy')} className="gap-2" size={size} onClick={handleCopy}>
         {copied ? <CopyCheckIcon size={iconSize} /> : <CopyIcon size={iconSize} />}
         <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:copy')}</span>
       </ToggleGroupItem>
+      {/* Download */}
       <ToggleGroupItem
         value="download"
         aria-label={t('common:download')}

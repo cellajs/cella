@@ -56,7 +56,7 @@ const OperationsByTagList = () => {
               <Card id={`tag/${tag.name}`} className="scroll-mt-8 border-0">
                 <CardHeader>
                   <CardTitle className="text-3xl leading-12">{tag.name}</CardTitle>
-                  {tag.description && <CardDescription className="mt-2">{tag.description}</CardDescription>}
+                  {tag.description && <CardDescription className="my-2">{tag.description}</CardDescription>}
                   <p className="text-sm font-medium mt-4">{t('common:operation', { count: tag.count })}</p>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 rdg-readonly">

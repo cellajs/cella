@@ -17,6 +17,7 @@ import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { Checkbox } from '~/modules/ui/checkbox';
+import { cn } from '~/utils/cn';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -41,8 +42,13 @@ interface DataTableProps<TData> {
   enableVirtualization?: boolean;
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
+  className?: string;
 }
 
+/**
+ * Generic data table with support for loading state, error handling, no rows state,
+ * sorting, selection, and infinite loading.
+ */
 export const DataTable = <TData,>({
   columns,
   rows,
@@ -65,6 +71,7 @@ export const DataTable = <TData,>({
   fetchMore,
   renderRow,
   onCellClick,
+  className,
 }: DataTableProps<TData>) => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
@@ -72,7 +79,7 @@ export const DataTable = <TData,>({
   useTableTooltip(gridRef, !isLoading);
 
   return (
-    <div className="w-full h-full mb-4 md:mb-8 focus-view-scroll">
+    <div className={cn('w-full h-full mb-4 md:mb-8 focus-view-scroll', className)}>
       {isLoading || !rows ? (
         // Render skeleton only on initial load
         <DataTableSkeleton

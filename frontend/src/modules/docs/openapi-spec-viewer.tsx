@@ -3,6 +3,7 @@ import { ChevronsDownUpIcon, ChevronsUpDownIcon, XCircleIcon } from 'lucide-reac
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchSpinner } from '~/modules/common/search-spinner';
+import Spinner from '~/modules/common/spinner';
 import { valuesFirstSort } from '~/modules/docs/helpers/values-first-sort';
 import { JsonActions } from '~/modules/docs/json-actions';
 import type { ExternalTriggers } from '~/modules/docs/json-editor';
@@ -29,13 +30,7 @@ const OpenApiSpecViewer = () => {
   // Fetch OpenAPI json
   const { data, isLoading, error } = useQuery(openApiSpecQueryOptions);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <span className="text-muted-foreground">{t('common:docs.loading_openapi')}</span>
-      </div>
-    );
-  }
+  if (isLoading) return <Spinner />;
 
   if (error) {
     return (

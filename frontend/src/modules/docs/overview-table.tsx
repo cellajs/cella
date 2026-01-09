@@ -57,7 +57,7 @@ const OverviewTable = () => {
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 rdg-readonly">
       <h2 className="text-lg font-medium px-1">{t('common:docs.api_overview')}</h2>
       <DataTable<InfoRow>
         columns={columns}

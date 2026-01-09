@@ -26,6 +26,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import UserTheme from '../me/user-theme';
 import { getMethodColor } from './helpers/get-method-color';
 import { openApiSpecQueryOptions, openApiUrl } from './query';
 
@@ -40,6 +41,7 @@ const OpenApiJsonActions = () => {
       data={data}
       filename="openapi.json"
       resourceName={t('common:docs.openapi_json')}
+      viewerUrl="/docs/overview"
     />
   );
 };
@@ -62,7 +64,6 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
 
   // Get current pathname to determine active/expanded section
   const { location } = useRouterState();
-  const isOverviewRoute = location.pathname.includes('/docs/overview');
   const isOperationsRoute = location.pathname === '/docs' || location.pathname === '/docs/';
   const isSchemasRoute = location.pathname.includes('/docs/schemas');
 
@@ -115,7 +116,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
   return (
     <SidebarContent className="pt-4 pb-12">
       {/* Logo */}
-      <div className="px-4 my-2">
+      <div className="px-4 my-2 flex justify-center">
         <Link
           to="/"
           className="inline-block transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md"
@@ -125,18 +126,19 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
         </Link>
       </div>
 
-      {/* API spec */}
+      {/* API spec action buttons and user theme */}
       <SidebarGroup>
-        <div className="flex items-center gap-3 pl-1.5">
+        <div className="flex justify-center pb-3">
           <Suspense fallback={null}>
             <OpenApiJsonActions />
+            <UserTheme buttonClassName="ml-2 h-7 w-8" size={16} />
           </Suspense>
         </div>
       </SidebarGroup>
 
       {/* API reference */}
       <SidebarGroup>
-        <div className="flex items-center gap-3 px-4 pr-1">
+        <div className="flex items-center gap-3 px-4 pb-1 pr-1">
           <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:docs.api_reference')}</SidebarGroupLabel>
           <ToggleGroup
             type="single"
@@ -156,23 +158,6 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
         </div>
 
         <SidebarGroupContent>
-          {/* Overview */}
-          <SidebarGroup className="p-1 pt-0">
-            <SidebarMenuItem className="list-none">
-              <Link
-                to="/docs/overview"
-                search={(prev) => prev}
-                className={cn(
-                  buttonVariants({ variant: 'ghost' }),
-                  'w-full justify-start font-normal group px-3 lowercase',
-                  isOverviewRoute && 'font-medium bg-accent',
-                )}
-              >
-                <span>{t('common:overview_view')}</span>
-              </Link>
-            </SidebarMenuItem>
-          </SidebarGroup>
-
           {/* Operations */}
           <SidebarGroup className="p-1 pt-0">
             <Collapsible open={isListMode && expandedSection === 'operations' && !forcedCollapsed.has('operations')}>
@@ -394,16 +379,18 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
           <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:pages')}</SidebarGroupLabel>
+          {/* Edit pages */}
           {systemRole && (
             <Link
               to="/docs/pages"
-              className={cn(buttonVariants({ variant: 'outline', size: 'xs' }), 'h-7 w-8 p-0')}
+              className={cn(buttonVariants({ variant: 'ghost', size: 'xs' }), 'h-7 w-8 p-0')}
               aria-label="Manage pages"
             >
               <PencilIcon size={14} />
             </Link>
           )}
         </div>
+        {/* List of pages */}
         <SidebarGroupContent>
           <SidebarMenu>
             {pages && pages.length > 0 ? (
