@@ -17,10 +17,11 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { valuesFirstSort } from '~/modules/docs/helpers/values-first-sort';
-import type { ExternalTriggers } from '~/modules/docs/json-viewer';
-import { JsonEditor } from '~/modules/docs/json-viewer';
+import type { ExternalTriggers } from '~/modules/docs/json-editor';
+import { githubDarkTheme, JsonEditor } from '~/modules/docs/json-editor';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 // OpenAPI spec URL in public/static
@@ -32,6 +33,7 @@ const openapiUrl = `${appConfig.frontendUrl}/static/openapi.json`;
  */
 const OpenApiSpecViewer = () => {
   const { t } = useTranslation();
+  const mode = useUIStore((state) => state.mode);
   const [searchText, setSearchText] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [resetKey, setResetKey] = useState(0);
@@ -154,6 +156,7 @@ const OpenApiSpecViewer = () => {
           indent={2}
           rootFontSize="13px"
           externalTriggers={triggers}
+          theme={mode === 'dark' ? githubDarkTheme : undefined}
         />
       </div>
     </div>

@@ -4,8 +4,8 @@ import type { RowsChangeData } from 'react-data-grid';
 import { type GenOperationSummary, operations } from '~/api.gen/docs';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
-import { OperationsTableBar } from '~/modules/docs/table/bar';
-import { useColumns } from '~/modules/docs/table/columns';
+import { OperationsTableBar } from '~/modules/docs/operations-table/bar';
+import { useColumns } from '~/modules/docs/operations-table/columns';
 
 /**
  * Update an operation field via the Vite openapi-editor plugin

@@ -4,7 +4,7 @@ import { DataTable } from '~/modules/common/data-table';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Badge } from '~/modules/ui/badge';
-import { getMethodColor } from '../helpers/get-method-color';
+import { getMethodColor } from './helpers/get-method-color';
 
 interface TagOperationsTableProps {
   operations: GenOperationSummary[];

@@ -259,7 +259,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                                         draggable="false"
                                         className={cn(
                                           buttonVariants({ variant: 'ghost', size: 'sm' }),
-                                          'hover:bg-accent/50 w-full justify-between text-left font-normal opacity-75 text-sm h-8 gap-2 px-2',
+                                          'hover:bg-accent/50 w-full justify-between text-left group font-normal opacity-75 text-sm h-8 gap-2 px-2',
                                           isActive && 'font-medium opacity-100',
                                         )}
                                         onClick={(e) => {
@@ -272,7 +272,7 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                                         </span>
                                         <Badge
                                           variant="secondary"
-                                          className={`text-[11px] p-0 shrink-0 uppercase bg-transparent shadow-none ${getMethodColor(operation.method)}`}
+                                          className={`text-[11px] p-0 shrink-0 opacity-50 group-hover:opacity-100 uppercase bg-transparent shadow-none ${getMethodColor(operation.method)}`}
                                         >
                                           {operation.method}
                                         </Badge>

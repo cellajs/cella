@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/
 import { cn } from '~/utils/cn';
 import { getStatusColor } from './helpers/get-status-color';
 import { valuesFirstSort } from './helpers/values-first-sort';
-import { JsonEditor } from './json-viewer';
+import { JsonEditor } from './json-editor';
 import type { GenOperationDetail, GenResponseSummary } from './types';
 
 /**
@@ -33,7 +33,7 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
   }
 
   return (
-    <Accordion type="single" className="w-full">
+    <Accordion type="single" className="w-full" collapsible>
       {responses.map((response) => (
         <AccordionItem key={response.status} value={String(response.status)}>
           <AccordionTrigger className="py-2">

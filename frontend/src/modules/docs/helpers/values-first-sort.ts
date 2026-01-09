@@ -1,4 +1,4 @@
-import type { CompareFunction } from '~/modules/docs/json-viewer';
+import type { CompareFunction } from '~/modules/docs/json-editor';
 
 /**
  * Sort function for JsonEditor that places primitive values before collections (objects/arrays).

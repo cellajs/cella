@@ -12,7 +12,7 @@ import appTitle from '~/utils/app-title';
 const DocsPage = lazy(() => import('~/modules/docs/docs-page'));
 const OverviewTable = lazy(() => import('~/modules/docs/overview-table'));
 const OperationsByTagList = lazy(() => import('~/modules/docs/operations-by-tag-list'));
-const OperationsTable = lazy(() => import('~/modules/docs/table'));
+const OperationsTable = lazy(() => import('~/modules/docs/operations-table'));
 const SchemasList = lazy(() => import('~/modules/docs/schemas-list'));
 const OpenApiSpecViewer = lazy(() => import('~/modules/docs/openapi-spec-viewer'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));

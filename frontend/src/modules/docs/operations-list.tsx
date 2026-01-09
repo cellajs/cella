@@ -11,7 +11,7 @@ import {
   TagExpandButtonLoading,
   tagDetailsQueryOptions,
 } from '~/modules/docs/operation-responses';
-import { TagOperationsTable } from '~/modules/docs/table/tag-operations-table';
+import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';

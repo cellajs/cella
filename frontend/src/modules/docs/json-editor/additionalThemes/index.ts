@@ -9,7 +9,7 @@ export const githubDarkTheme: Theme = {
   displayName: 'Github Dark',
   styles: {
     container: {
-      backgroundColor: '#0d1117',
+      backgroundColor: 'transparent',
       color: 'white',
     },
     dropZone: 'rgba(165, 214, 255, 0.17)',
