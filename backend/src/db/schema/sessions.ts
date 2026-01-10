@@ -13,15 +13,14 @@ export type SessionTypes = (typeof sessionTypeEnum)[number];
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'] as const;
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
+/**
+ * Sessions table to store authenticated session data.
+ */
 export const sessionsTable = pgTable('sessions', {
   createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   token: varchar().notNull(),
-  type: varchar({
-    enum: sessionTypeEnum,
-  })
-    .notNull()
-    .default('regular'),
+  type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -31,9 +30,7 @@ export const sessionsTable = pgTable('sessions', {
     .default('desktop'),
   deviceOs: varchar(),
   browser: varchar(),
-  authStrategy: varchar({
-    enum: authStrategiesEnum,
-  }).notNull(),
+  authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
   expiresAt: timestampColumns.expiresAt,
 });
 

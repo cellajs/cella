@@ -1,41 +1,29 @@
-import { deletePages, type Page } from '~/api.gen';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { Page } from '~/api.gen';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useTableMutation } from './utils/mutations';
+import type { initPagesCollection } from '~/modules/pages/collections';
 
 type Props = {
   pages: Page[];
+  pagesCollection: ReturnType<typeof initPagesCollection>;
   isDialog?: boolean;
   callback?: (args: CallbackArgs<Page[]>) => void;
 };
 
-const DeletePages = ({ pages, callback, isDialog }: Props) => {
+const DeletePages = ({ pages, pagesCollection, callback, isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
 
-  const mutation = useTableMutation({
-    table: 'pages',
-    type: 'create',
-    mutationFn: async (pages: Page[]) => {
-      const ids = pages.map(({ id }) => id);
-      return await deletePages({ body: { ids } });
-    },
-  });
+  const handleDelete = () => {
+    // Use collection for optimistic delete - syncs automatically via onDelete callback
+    for (const page of pages) {
+      pagesCollection.delete(page.id);
+    }
+    if (isDialog) removeDialog();
+    callback?.({ data: pages, status: 'success' });
+  };
 
-  return (
-    <DeleteForm
-      onDelete={() => {
-        mutation.mutate(pages, {
-          onSuccess: (_, data) => {
-            if (isDialog) removeDialog();
-            callback?.({ data, status: 'success' });
-          },
-        });
-      }}
-      onCancel={() => removeDialog()}
-      pending={mutation.isPending}
-    />
-  );
+  return <DeleteForm onDelete={handleDelete} onCancel={() => removeDialog()} pending={false} />;
 };
 
 export default DeletePages;

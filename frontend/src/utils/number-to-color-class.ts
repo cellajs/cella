@@ -1,6 +1,8 @@
 import { appConfig } from 'config';
 
-// Generate a number from a string (ie. to choose a color)
+/**
+ * Generates a number from a string for color selection.
+ */
 function generateNumber(id: string) {
   if (!id) return null;
 
@@ -16,7 +18,9 @@ function generateNumber(id: string) {
   return null;
 }
 
-// Get a color class based on an id
+/**
+ * Returns a color class based on a string identifier.
+ */
 export const numberToColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
   const index = generateNumber(id) || 0;

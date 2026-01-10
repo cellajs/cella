@@ -6,22 +6,24 @@ import type { z } from 'zod';
 import type { Page } from '~/api.gen';
 import { zCreatePageData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { CallbackArgs } from '~/modules/common/data-table/types';
 import InputFormField from '~/modules/common/form-fields/input';
-import { toaster } from '~/modules/common/toaster/service';
-import { usePageCreateMutation } from '~/modules/pages/query';
+import type { initPagesCollection } from '~/modules/pages/collections';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
+import { useUserStore } from '~/store/user';
+import { nanoid } from '~/utils/nanoid';
 
 interface Props {
-  callback?: (args: CallbackArgs<Page>) => void;
+  pagesCollection: ReturnType<typeof initPagesCollection>;
+  callback?: () => void;
 }
 
 const formSchema = zCreatePageData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
-export const CreatePageForm = ({ callback }: Props) => {
+export const CreatePageForm = ({ pagesCollection, callback }: Props) => {
   const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
 
   const defaultValues = { name: '' };
 
@@ -36,16 +38,27 @@ export const CreatePageForm = ({ callback }: Props) => {
   const formContainerId = 'create-page';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
-  const { mutate, isPending } = usePageCreateMutation();
-
   const onSubmit = (values: FormValues) => {
-    mutate(values, {
-      onSuccess: (createdPage) => {
-        form.reset();
-        toaster(t('common:success.create_resource', { resource: t('common:page') }), 'success');
-        callback?.({ data: createdPage, status: 'success' }); // Trigger callback
-      },
-    });
+    // Create page with all required fields for optimistic insert
+    const newPage: Page = {
+      id: nanoid(),
+      entityType: 'page',
+      name: values.name ?? '',
+      description: '',
+      keywords: '',
+      status: 'unpublished',
+      parentId: null,
+      displayOrder: 0,
+      createdBy: user.id,
+      createdAt: new Date().toISOString(),
+      modifiedAt: null,
+      modifiedBy: null,
+    };
+
+    // Use collection for optimistic insert - syncs automatically via onInsert callback
+    pagesCollection.insert(newPage);
+    form.reset();
+    callback?.();
   };
 
   return (
@@ -54,9 +67,7 @@ export const CreatePageForm = ({ callback }: Props) => {
         <InputFormField control={form.control} name="name" label={t('common:title')} required />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!form.isDirty} loading={isPending}>
-            {t('common:create')}
-          </SubmitButton>
+          <SubmitButton disabled={!form.isDirty}>{t('common:create')}</SubmitButton>
 
           <Button
             type="reset"

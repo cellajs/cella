@@ -8,6 +8,9 @@ import appTitle from '~/utils/app-title';
 
 const Welcome = lazy(() => import('~/modules/home/welcome-page'));
 
+/**
+ * Main home page for authenticated users.
+ */
 export const HomeRoute = createRoute({
   path: '/',
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
@@ -20,7 +23,9 @@ export const HomeRoute = createRoute({
   ),
 });
 
-// We need an alias for '/' to forward users better if coming from backend
+/**
+ * Alias route for home that handles onboarding redirects.
+ */
 export const HomeAliasRoute = createRoute({
   path: '/home',
   validateSearch: z.object({
@@ -43,6 +48,9 @@ export const HomeAliasRoute = createRoute({
   ),
 });
 
+/**
+ * Welcome page shown to new users during onboarding.
+ */
 export const WelcomeRoute = createRoute({
   path: '/welcome',
   staticData: { isAuth: true },

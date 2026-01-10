@@ -1,6 +1,6 @@
 # Cella Agent Guidelines (AGENTS.md)
 
-This document provides instructions and context for AI agents (like Junie, Cursor, Windsurf, etc.) working on the Cella project.
+This document provides instructions and context for AI agents working on cella as a template, or on an app being built with cella as the tempalte.
 
 ## Project Vision
 Cella is a TypeScript template for building collaborative web apps with sync and offline capabilities. OpenAPI is a central part of the architecture.
@@ -51,10 +51,9 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **API Client**: The frontend SDK in `frontend/src/api.gen/` is generated from the backend OpenAPI spec. **Never modify files in `api.gen` manually.** Run `pnpm generate:openapi` after changing backend routes or schemas.
 - **Database**: Drizzle ORM is mandatory. Schema definitions are in `backend/src/db/schema/`. Use `pnpm generate` in the root or backend to create migrations.
 
-## Workflow Patterns
-- **Sync/Offline**: Leverage Electric Sync for realtime and offline capabilities. Look at the `attachments` module for a reference implementation.
+## Coding Patterns
+- **Sync/Offline**: Leverage Electric Sync for realtime and offline capabilities using `useLiveQuery`. Look at the `pages` module for a reference implementation.
 - **Entities**: Entities are categorized into `ContextEntityType` (has memberships, like organizations) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md` for details.
-- **React-compiler**: useMemo, useCallback can be avoided in most cases.
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
 
 ## Coding Style & Naming Conventions
@@ -64,6 +63,10 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Prefer feature-oriented folders; test files near code or under `__tests__/`.
 - Zod v4 only: `import { z } from 'zod'`. However, in backend due to using hono/zod-openapi, `import { z } from '@hono/zod-openapi'` is required.
 - camelCase for variables and functions, PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
+- Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.
+- Links as buttons: For buttons that link to directly targetable online resources, use TanStack Router `<Link>` with `buttonVariants()` instead of `<button>`. Also when the primary action is opening a sheet, if the data targetable by url, allow end-user to open it in a new tab.
+- React-compiler: `useMemo`, `useCallback` can be avoided in most cases.
+- Translations: All user-facing text in UI must use translation strings via `const { t } = useTranslation()` and `t('common:save_changes')`. Never hardcode text. Translation files are in `locales/en/`.
 
 ## Testing
 - Framework: Vitest. Typical locations: `__tests__/` or `*.test.ts` adjacent to source.
@@ -82,7 +85,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - `pnpm test`: Run all tests across the monorepo.
 - `pnpm check`: Comprehensive validation. Runs `generate:openapi`, `ts` (type check), and `lint:fix`.
 - `pnpm generate`: Generate new Drizzle migrations based on schema changes in `backend/src/db/schema/`.
-- `pnpm generate:openapi`: Regenerate the backend OpenAPI spec and update the frontend `api.gen` client.
+- `pnpm generate:openapi`: Regenerate backend OpenAPI spec and update the frontend `api.gen` client.
 - `pnpm seed`: Seed the database with initial/test data.
 - `pnpm diverged`: List files that have diverged from the upstream Cella template.
 - `pnpm upstream:pull`: Pull changes from the upstream Cella template (automatically undoes changes in ignored files).

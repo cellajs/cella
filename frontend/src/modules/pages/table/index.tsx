@@ -1,13 +1,16 @@
+import { ilike, isNull, not, or, useLiveQuery } from '@tanstack/react-db';
+import { useLoaderData } from '@tanstack/react-router';
 import { BirdIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Page } from '~/api.gen';
-import useOfflineTableSearch from '~/hooks/use-offline-table-search';
+import type { Page } from '~/api.gen';
+import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { usePagesList } from '~/modules/pages/hooks';
-import { filterPages } from '~/modules/pages/query';
+import { pagesLimit } from '~/modules/pages/query';
+import type { PagesRouteSearchParams } from '~/modules/pages/types';
+import { DocsPagesRoute } from '~/routes/docs-routes';
 import { PagesTableBar } from './table-bar';
 import { usePagesTableColumns } from './use-columns';
 
@@ -15,62 +18,77 @@ const PagesTable = () => {
   const { t } = useTranslation();
   const [isCompact, setIsCompact] = useState(false);
 
-  const { search, setSearch, data, isLoading, isFetching, error, hasNextPage, fetchNextPage } = usePagesList();
+  const { pagesCollection } = useLoaderData({ from: DocsPagesRoute.id });
+  const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
 
-  const rows = useOfflineTableSearch({
-    data,
-    filterFn: filterPages,
-  });
+  // Table state
+  const { q, sort, order } = search;
+  const limit = pagesLimit;
 
-  const { columns, visibleColumns, setColumns } = usePagesTableColumns(isCompact);
-
-  const { sortColumns, setSortColumns } = useSortColumns(search.sort, search.order, setSearch);
-
+  // Build columns
   const [selected, setSelected] = useState<Page[]>([]);
+  const { columns, visibleColumns, setColumns } = usePagesTableColumns(isCompact);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
+
+  // Live query for reactive data from Electric collection
+  const {
+    data: rows,
+    isLoading,
+    isError,
+  } = useLiveQuery(
+    (liveQuery) => {
+      return liveQuery
+        .from({ page: pagesCollection })
+        .where(({ page }) =>
+          q ? or(ilike(page.name, `%${q.trim()}%`), ilike(page.description, `%${q.trim()}%`)) : not(isNull(page.id)),
+        )
+        .orderBy(({ page }) => page[sort || 'createdAt'], order || 'desc');
+    },
+    [q, sort, order],
+  );
+
+  // Handle row selection
+  const onSelectedRowsChange = useCallback(
+    (selectedIds: Set<string>) => {
+      if (rows) {
+        const selectedRows = rows.filter((row) => selectedIds.has(row.id));
+        setSelected(selectedRows);
+      }
+    },
+    [rows],
+  );
+
+  const clearSelection = () => setSelected([]);
+
+  const error = isError ? new Error(t('common:failed_to_load_pages')) : undefined;
 
   return (
     <div data-is-compact={isCompact} className="flex flex-col gap-4 h-full">
       <PagesTableBar
-        queryKey={['pages', 'table']}
-        searchVars={search}
+        searchVars={{ ...search, limit }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         selected={selected}
-        clearSelection={() => setSelected([])}
+        clearSelection={clearSelection}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
+        total={rows?.length ?? 0}
+        pagesCollection={pagesCollection}
       />
       <DataTable
         rows={rows}
         rowHeight={52}
-        onRowsChange={async (_changedRows, { column, indexes }) => {
-          if (column.key !== 'role') return;
-          console.log(indexes);
-          // if (!onlineManager.isOnline()) {
-          //   toaster(t('common:action.offline.text'), 'warning');
-          //   return;
-          // }
-
-          // in orgs, this is membership update or w/e - side effects
-        }}
         rowKeyGetter={(r) => r.id}
         columns={visibleColumns}
         enableVirtualization={true}
-        limit={search.limit}
+        limit={limit}
         error={error}
         isLoading={isLoading}
-        isFetching={isFetching}
-        isFiltered={!!search.q}
-        hasNextPage={hasNextPage}
-        fetchMore={fetchNextPage}
+        isFiltered={!!q}
+        hasNextPage={false}
         selectedRows={new Set(selected.map((row) => row.id))}
-        onSelectedRowsChange={(selectedIds) => {
-          if (rows) {
-            const selectedRows = rows.filter((row) => selectedIds.has(row.id));
-            setSelected(selectedRows);
-          }
-        }}
+        onSelectedRowsChange={onSelectedRowsChange}
         sortColumns={sortColumns}
         onSortColumnsChange={setSortColumns}
         NoRowsComponent={

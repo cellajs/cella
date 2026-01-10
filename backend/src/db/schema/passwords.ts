@@ -3,6 +3,9 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
+/**
+ * Passwords table to store hashed passwords for users.
+ */
 export const passwordsTable = pgTable('passwords', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   hashedPassword: varchar().notNull(),

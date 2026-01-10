@@ -9,6 +9,9 @@ import { PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { objectEntries } from '~/utils/object';
 
+/**
+ * Public about page describing the application.
+ */
 export const AboutRoute = createRoute({
   path: '/about',
   staticData: { isAuth: false },
@@ -17,6 +20,9 @@ export const AboutRoute = createRoute({
   component: () => <AboutPage />,
 });
 
+/**
+ * Contact page for user inquiries and support.
+ */
 export const ContactRoute = createRoute({
   path: '/contact',
   staticData: { isAuth: false },
@@ -28,7 +34,9 @@ export const ContactRoute = createRoute({
 const legalSubjects = objectEntries(legalConfig).map(([subject]) => subject);
 const defaultLegalSubject = legalSubjects[0];
 
-// Redirect /legal to /legal/privacy (or first subject)
+/**
+ * Index route that redirects to the first legal subject.
+ */
 export const LegalIndexRoute = createRoute({
   path: '/legal',
   staticData: { isAuth: false },
@@ -38,6 +46,9 @@ export const LegalIndexRoute = createRoute({
   },
 });
 
+/**
+ * Legal pages displaying privacy policy, terms, and other legal content.
+ */
 export const LegalRoute = createRoute({
   path: '/legal/$subject',
   params: {
@@ -52,6 +63,9 @@ export const LegalRoute = createRoute({
   component: () => <LegalPage />,
 });
 
+/**
+ * Accessibility statement page for compliance information.
+ */
 export const AccessibilityRoute = createRoute({
   path: '/accessibility',
   staticData: { isAuth: false },

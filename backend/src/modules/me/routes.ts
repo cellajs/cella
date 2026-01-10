@@ -223,7 +223,7 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Toggle MFA',
     description:
-      'Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.',
+      'Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

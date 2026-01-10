@@ -8,7 +8,7 @@ This document describes the high-level architecture of Cella.
 * Development budget and time is limited
 * Fullstack development is seen as beneficial to work effectively and to provide engineering stability. 
 
-### Core aspects
+### DX aspects
  * Type safe, without overdoing it. 
  * Only build what you are going to use yourself.
  * Stay humble and remain a template, not a framework. So prevent abstraction layers and leverage libraries to the fullest extent.
@@ -85,10 +85,10 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 ```
 
 ## Data modeling
-Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in four categories:
-* All entities (`user`, `organization`, `attachments`)
+Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in categories:
 * `ContextEntityType`: Has memberships (`organization`)
 * `ProductEntityType`: Content related, no membership (`attachment`)
+* All entities, including `user`: (`user`, `organization`, `attachments`)
 
 The example cella setup has one product entity - `attachments` - and one context: `organizations`. But in a typical app you would have a context entity such as a 'bookclub' and more product entities such as 'books' and 'reviews'.
 
@@ -101,10 +101,57 @@ Both frontend and backend have business logic split in modules. Most of them are
 Zooming in on some of the frontend modules:
 * `common`: a large set of reusable react components and services 
 * `ui`: Full of shadcn UI components. They have some small tweaks, but not many.
-* `attachments`: product entity module that has support for **offline, optimistic updates and realtime sync**.
+* `pages`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
 ## API client
 An api client is generated in the frontend using [openapi-ts](https://github.com/hey-api/openapi-ts). It includes zod schemas, types and an sdk.
+
+## Sync & Offline
+Cella has a hybrid approach to sync and offline. 
+
+### Context vs. product entities
+Context entities are just old-school CRUD openapi endpoints. They do not have a sync layer and users only have `read` access while offline: if they enabled `offlineAccess`, data will be prefetched based on the users' menu items (which are in essence context entities). The handling and source of truth is by react-query. 
+
+Product entities are the types of data that users interact with on a daily basis. They are upgraded using a sync + offline layer with create, update and delete mutations queued (so full offline CRUD) while offline.
+
+Cella uses a layered approach to handle product entity data:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     React Components                        │
+│              useLiveQuery / useSuspenseQuery                │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              TanStack DB (Reactive/Relational Layer)        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┴───────────────────┐
+          ▼                                       ▼
+┌─────────────────────────┐         ┌─────────────────────────┐
+│   Electric SQL Sync     │         │    REST API Mutations   │
+└─────────────────────────┘         └─────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│           TanStack Query (Persisted Store Layer)            │
+│  • Query cache management and deduplication                 │
+│  • Background refetching and stale-while-revalidate         │
+│  • Persisted to IndexedDB via Dexie                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Layer Responsibilities
+
+**TanStack DB + Electric Collections**
+- Reactive live queries with sub-millisecond updates
+- Optimistic mutations with automatic rollback
+- Real-time sync from PostgreSQL via Electric shapes
+
+**TanStack Query + Dexie Persistence**  
+- Persisted cache layer (survives refresh, works offline)
+- Background refetching and cache invalidation
 
 ## Security
 Link to valuable resources:

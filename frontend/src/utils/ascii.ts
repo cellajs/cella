@@ -1,3 +1,6 @@
+/**
+ * Renders the Cella ASCII art logo to the console.
+ */
 export const renderAscii = () => {
   console.info(
     '                         _ _            \n   ▒▓█████▓▒     ___ ___| | | __ _      \n   ▒▓█   █▓▒    / __/ _ \\ | |/ _` |    \n   ▒▓█   █▓▒   | (_|  __/ | | (_| |     \n   ▒▓█████▓▒    \\___\\___|_|_|\\__,_|  \n ',

@@ -1,0 +1,62 @@
+import type { Dispatch, SetStateAction } from 'react';
+import type { GenOperationSummary } from '~/api.gen/docs';
+import ColumnsView from '~/modules/common/data-table/columns-view';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
+import TableCount from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+
+interface OperationsTableBarProps {
+  total: number;
+  searchVars: { q?: string };
+  setSearch: (params: { q?: string }) => void;
+  columns: ColumnOrColumnGroup<GenOperationSummary>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
+  isCompact: boolean;
+  setIsCompact: (isCompact: boolean) => void;
+}
+
+export const OperationsTableBar = ({
+  total,
+  searchVars,
+  setSearch,
+  columns,
+  setColumns,
+  isCompact,
+  setIsCompact,
+}: OperationsTableBarProps) => {
+  const onSearch = (searchString: string) => {
+    setSearch({ q: searchString });
+  };
+
+  const onResetFilters = () => {
+    setSearch({ q: '' });
+  };
+
+  const isFiltered = !!searchVars.q;
+
+  return (
+    <TableBarContainer className="mt-0">
+      <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+        <FilterBarActions>
+          <TableCount count={total} label="common:operation" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+        </FilterBarActions>
+
+        <div className="sm:grow" />
+
+        <FilterBarContent>
+          <TableSearch name="operationsSearch" value={searchVars.q} setQuery={onSearch} />
+        </FilterBarContent>
+      </TableFilterBar>
+
+      <ColumnsView
+        className="max-lg:hidden"
+        columns={columns}
+        setColumns={setColumns}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
+      />
+    </TableBarContainer>
+  );
+};

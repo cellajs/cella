@@ -10,6 +10,7 @@ import { nanoid } from '#/utils/nanoid';
 export const attachmentsTable = pgTable(
   'attachments',
   {
+    // Base columns
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     entityType: varchar({ enum: ['attachment'] })
@@ -17,7 +18,8 @@ export const attachmentsTable = pgTable(
       .default('attachment'),
     name: varchar().notNull().default('New attachment'),
     description: varchar(),
-
+    //TODO add keywords column?
+    // Specific columns
     public: boolean().notNull().default(false),
     bucketName: varchar().notNull(),
     groupId: varchar(),

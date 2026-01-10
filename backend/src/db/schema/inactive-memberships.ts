@@ -27,7 +27,11 @@ const baseColumns = {
   uniqueKey: varchar().unique().notNull(),
 };
 
-// Generate entity id columns based on entity-config
+/**
+ * Inactive memberships table to track memberships that have are pending (invitations) or rejected.
+ * They are a subset of the membershipsTable columns, and include email and rejectedAt fields to track
+ * the status of the inactive membership.
+ */
 export const inactiveMembershipsTable = generateTable('inactive_memberships', baseColumns, otherEntityIdColumns);
 
 export type InactiveMembershipModel = typeof inactiveMembershipsTable.$inferSelect;

@@ -11,7 +11,7 @@ import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
-import { proxyElectricSync } from '#/utils/electric';
+import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 

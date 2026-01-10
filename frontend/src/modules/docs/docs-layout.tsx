@@ -1,0 +1,119 @@
+import { Link, Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { MenuIcon } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { operations, tags } from '~/api.gen/docs';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import Logo from '~/modules/common/logo';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { DocsSidebar } from '~/modules/docs/docs-sidebar';
+import { Button } from '~/modules/ui/button';
+import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
+import { ScrollArea } from '~/modules/ui/scroll-area';
+import { DocsLayoutRoute } from '~/routes/docs-routes';
+
+const DOCS_SIDEBAR_SHEET_ID = 'docs-sidebar';
+
+const DocsLayout = () => {
+  const navigate = useNavigate();
+  const isMobile = useBreakpoints('max', 'sm');
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
+
+  // Get sheeter state
+  const sheets = useSheeter((state) => state.sheets);
+  const sidebarOpen = sheets.some((s) => s.id === DOCS_SIDEBAR_SHEET_ID);
+
+  const sidebarContent = <DocsSidebar operations={operations} tags={tags} pagesCollection={pagesCollection} />;
+
+  // Create or remove sheet based on mobile state
+  useEffect(() => {
+    // Clean up sheet when switching to desktop
+    if (!isMobile && sidebarOpen) {
+      useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
+    }
+  }, [isMobile, sidebarOpen]);
+
+  // Collapse all expanded items on ESC
+  useHotkeys([
+    [
+      'Escape',
+      () => {
+        if (sidebarOpen) {
+          useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
+          return;
+        }
+        navigate({ to: '.', search: (prev) => ({ ...prev, tag: undefined }), resetScroll: false, replace: true });
+      },
+    ],
+  ]);
+
+  const toggleSidebar = () => {
+    if (sidebarOpen) {
+      useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
+    } else {
+      useSheeter.getState().create(sidebarContent, {
+        id: DOCS_SIDEBAR_SHEET_ID,
+        side: 'left',
+        triggerRef,
+        className: 'w-72 p-0',
+        showCloseButton: false,
+        closeSheetOnRouteChange: true,
+      });
+    }
+  };
+
+  // Mobile layout with sheeter sidebar
+  if (isMobile) {
+    return (
+      <div className="h-screen flex flex-col">
+        {/* Fixed mobile header */}
+        <header className="fixed top-0 left-0 right-0 z-80 h-14 bg-background/70 backdrop-blur-sm">
+          <div className="flex h-full items-center gap- px-2">
+            <Button ref={triggerRef} variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle menu">
+              <MenuIcon className="size-5" />
+            </Button>
+            <Link
+              to="/docs"
+              className="transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md p-0.5"
+              aria-label="Go to docs"
+            >
+              <Logo height={32} iconOnly />
+            </Link>
+          </div>
+        </header>
+
+        {/* Main content with top padding for fixed header */}
+        <main className="flex-1 overflow-auto pt-17 p-3 pb-[70vh]">
+          <div className="">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Desktop layout with resizable panels
+  return (
+    <ResizableGroup orientation="horizontal" className="h-screen">
+      <ResizablePanel defaultSize="20%" className="border-r">
+        <div className="h-screen">
+          <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
+        </div>
+      </ResizablePanel>
+
+      <ResizableSeparator />
+
+      <ResizablePanel>
+        <main className="h-screen overflow-auto p-6 pb-[70vh]">
+          <div className="">
+            <Outlet />
+          </div>
+        </main>
+      </ResizablePanel>
+    </ResizableGroup>
+  );
+};
+
+export default DocsLayout;

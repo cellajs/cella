@@ -21,7 +21,6 @@ const SystemPage = () => {
           { id: 'users', label: 'common:users', path: '/system/users' },
           { id: 'organizations', label: 'common:organizations', path: '/system/organizations' },
           { id: 'requests', label: 'common:requests', path: '/system/requests' },
-          { id: 'pages', label: 'common:pages', path: '/system/pages' },
           { id: 'metrics', label: 'common:metrics', path: '/system/metrics' },
         ]}
       />

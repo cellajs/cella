@@ -11,6 +11,7 @@ const pageStatusEnum = ['unpublished', 'published', 'archived'] as const;
 export const pagesTable = pgTable(
   'pages',
   {
+    // Base columns
     createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     entityType: varchar({ enum: ['page'] })
@@ -18,8 +19,8 @@ export const pagesTable = pgTable(
       .default('page'),
     name: varchar().notNull().default('New page'),
     description: varchar().notNull(),
-
     keywords: varchar().notNull(),
+    // Specific columns
     status: varchar({ enum: pageStatusEnum }).notNull().default('unpublished'),
     parentId: varchar().references((): AnyPgColumn => pagesTable.id, {
       onDelete: 'set null',

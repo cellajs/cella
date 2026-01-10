@@ -6,6 +6,9 @@ import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = appConfig.roles.systemRoles;
 
+/**
+ * System roles table to assign global roles to users that have special permissions.
+ */
 export const systemRolesTable = pgTable('system_roles', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   userId: varchar()

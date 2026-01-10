@@ -233,9 +233,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * Check if email exists
  *
- * 🌐 Public access
- * ⏳ Email (5/h)
- *
  * Checks if a user with the specified email address exists in the system.
  *
  * **POST /auth/check-email** ·· [checkEmail](https://api.cellajs.com/docs#tag/auth/post/auth/check-email) ·· _auth_
@@ -258,9 +255,6 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Invoke token session
  *
- * 🌐 Public access
- * ⏳ token_token (10/h)
- *
  * Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
  *
  * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://api.cellajs.com/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· _auth_
@@ -280,9 +274,6 @@ export const invokeToken = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Get token data
  *
- * 🌐 Public access
- * ⏳ token_token (10/h)
- *
  * Get basic token data from single-use token session, It returns basic data if the session is still valid.
  *
  * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://api.cellajs.com/docs#tag/auth/get/auth/token/{type}/{id}) ·· _auth_
@@ -301,8 +292,6 @@ export const getTokenData = <ThrowOnError extends boolean = true>(options: Optio
 
 /**
  * Start impersonating
- *
- * 🛡️ Requires authentication (system access)
  *
  * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
  *
@@ -331,8 +320,6 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
 /**
  * Stop impersonating
  *
- * 🛡️ Requires authentication
- *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
  * **GET /auth/impersonation/stop** ·· [stopImpersonation](https://api.cellajs.com/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
@@ -358,9 +345,6 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
 
 /**
  * Resend invitation
- *
- * 🌐 Public access
- * ⏳ Spam (10/h)
  *
  * Resends an invitation email with token to a new user using the provided email address and token ID.
  *
@@ -390,8 +374,6 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Sign out
  *
- * 🌐 Public access
- *
  * Signs out the *current user* and clears the active session.
  *
  * **POST /auth/sign-out** ·· [signOut](https://api.cellajs.com/docs#tag/auth/post/auth/sign-out) ·· _auth_
@@ -408,8 +390,6 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
 
 /**
  * Generate TOTP key
- *
- * 🛡️ Requires authentication
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
  *
@@ -437,8 +417,6 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
 /**
  * Delete TOTP
  *
- * 🛡️ Requires authentication
- *
  * Delete TOTP credential for current user.
  *
  * **DELETE /auth/totp** ·· [deleteTotp](https://api.cellajs.com/docs#tag/auth/delete/auth/totp) ·· _auth_
@@ -462,8 +440,6 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Option
 
 /**
  * Set TOTP
- *
- * 🛡️ Requires authentication
  *
  * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
  *
@@ -494,9 +470,6 @@ export const createTotp = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Verify TOTP
  *
- * 🌐 Public access
- * ⏳ TOTP Verification (5/h)
- *
  * Validates the TOTP code and completes TOTP based authentication.
  *
  * **POST /auth/totp-verification** ·· [signInWithTotp](https://api.cellajs.com/docs#tag/auth/post/auth/totp-verification) ·· _auth_
@@ -521,9 +494,6 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
 /**
  * Sign up with password
  *
- * 🌐 Public access
- * ⏳ Spam (10/h), Email (5/h)
- *
  * Registers a new user using an email and password. Sends a verification email upon successful sign up.
  *
  * **POST /auth/sign-up** ·· [signUp](https://api.cellajs.com/docs#tag/auth/post/auth/sign-up) ·· _auth_
@@ -546,9 +516,6 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 
 /**
  * Sign up to accept invite
- *
- * 🌐 Public access
- * ⏳ token_signup_invitation (10/h), Email (5/h)
  *
  * Registers a user using an email and password in response to a system or organization invitation.
  *
@@ -576,9 +543,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Request new password
  *
- * 🌐 Public access
- * ⏳ Spam (10/h), Email (5/h)
- *
  * Sends an email with a link to reset the user's password.
  *
  * **POST /auth/request-password** ·· [requestPassword](https://api.cellajs.com/docs#tag/auth/post/auth/request-password) ·· _auth_
@@ -602,9 +566,6 @@ export const requestPassword = <ThrowOnError extends boolean = true>(
 
 /**
  * Create password
- *
- * 🌐 Public access
- * ⏳ token_password-reset (10/h)
  *
  * Sets a new password using a single-use session token in cookie and grants a session immediately upon success.
  *
@@ -631,9 +592,6 @@ export const createPassword = <ThrowOnError extends boolean = true>(
 /**
  * Sign in with password
  *
- * 🌐 Public access
- * ⏳ Password (5/h)
- *
  * Authenticates an existing user using their email and password.
  *
  * **POST /auth/sign-in** ·· [signIn](https://api.cellajs.com/docs#tag/auth/post/auth/sign-in) ·· _auth_
@@ -656,8 +614,6 @@ export const signIn = <ThrowOnError extends boolean = true>(options: Options<Sig
 
 /**
  * Create passkey
- *
- * 🛡️ Requires authentication
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
@@ -690,8 +646,6 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
 /**
  * Delete passkey
  *
- * 🛡️ Requires authentication
- *
  * Delete a passkey by id from the *current user*.
  *
  * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://api.cellajs.com/docs#tag/auth/delete/auth/passkey/{id}) ·· _auth_
@@ -716,9 +670,6 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Generate passkey challenge
- *
- * 🌐 Public access
- * ⏳ Passkey Challenge (5/h)
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
@@ -750,9 +701,6 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
 /**
  * Verify passkey
  *
- * 🌐 Public access
- * ⏳ token_passkey (10/h)
- *
  * Validates the signed challenge and completes passkey based authentication.
  *
  * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://api.cellajs.com/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
@@ -782,8 +730,6 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
 /**
  * Authenticate with GitHub
  *
- * 🌐 Public access
- *
  * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
  * **GET /auth/github** ·· [github](https://api.cellajs.com/docs#tag/auth/get/auth/github) ·· _auth_
@@ -802,8 +748,6 @@ export const github = <ThrowOnError extends boolean = true>(options?: Options<Gi
 
 /**
  * Authenticate with Google
- *
- * 🌐 Public access
  *
  * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
@@ -824,8 +768,6 @@ export const google = <ThrowOnError extends boolean = true>(options?: Options<Go
 /**
  * Authenticate with Microsoft
  *
- * 🌐 Public access
- *
  * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
  * **GET /auth/microsoft** ·· [microsoft](https://api.cellajs.com/docs#tag/auth/get/auth/microsoft) ·· _auth_
@@ -844,9 +786,6 @@ export const microsoft = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Callback for GitHub
- *
- * 🌐 Public access
- * ⏳ token_github (10/h)
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
@@ -872,9 +811,6 @@ export const githubCallback = <ThrowOnError extends boolean = true>(
 /**
  * Callback for Google
  *
- * 🌐 Public access
- * ⏳ token_google (10/h)
- *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
  * **GET /auth/google/callback** ·· [googleCallback](https://api.cellajs.com/docs#tag/auth/get/auth/google/callback) ·· _auth_
@@ -896,9 +832,6 @@ export const googleCallback = <ThrowOnError extends boolean = true>(
 /**
  * Callback for Microsoft
  *
- * 🌐 Public access
- * ⏳ token_microsoft (10/h)
- *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
  * **GET /auth/microsoft/callback** ·· [microsoftCallback](https://api.cellajs.com/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
@@ -919,8 +852,6 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
 
 /**
  * Delete self
- *
- * 🛡️ Requires authentication
  *
  * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
@@ -946,8 +877,6 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
 /**
  * Get self
  *
- * 🛡️ Requires authentication
- *
  * Returns the *current user*.
  *
  * **GET /me** ·· [getMe](https://api.cellajs.com/docs#tag/me/get/me) ·· _me_
@@ -971,8 +900,6 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
 
 /**
  * Update self
- *
- * 🛡️ Requires authentication
  *
  * Updates the *current user*.
  *
@@ -1010,9 +937,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options: Options<U
 /**
  * Toggle MFA
  *
- * 🛡️ Requires authentication
- *
- * Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication.
+ * Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.
  *
  * **PUT /me/mfa** ·· [toggleMfa](https://api.cellajs.com/docs#tag/me/put/me/mfa) ·· _me_
  *
@@ -1043,8 +968,6 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options
 /**
  * Get auth data
  *
- * 🛡️ Requires authentication
- *
  * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
  *
  * **GET /me/auth** ·· [getMyAuth](https://api.cellajs.com/docs#tag/me/get/me/auth) ·· _me_
@@ -1068,8 +991,6 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Get list of invitations
- *
- * 🛡️ Requires authentication
  *
  * Returns a list of pending memberships with entity data.
  *
@@ -1096,8 +1017,6 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 
 /**
  * Terminate sessions
- *
- * 🛡️ Requires authentication
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
  *
@@ -1130,8 +1049,6 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(
 /**
  * Leave entity
  *
- * 🛡️ Requires authentication
- *
  * Removes the *current user* from an entity they are a member of.
  *
  * **DELETE /me/leave** ·· [deleteMyMembership](https://api.cellajs.com/docs#tag/me/delete/me/leave) ·· _me_
@@ -1159,8 +1076,6 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
 
 /**
  * Get upload token
- *
- * 🛡️ Requires authentication
  *
  * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
  *
@@ -1191,9 +1106,6 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
 /**
  * Unsubscribe
  *
- * 🌐 Public access
- * ⏳ token_unsubscribe (10/h)
- *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
  * **GET /me/unsubscribe** ·· [unsubscribeMe](https://api.cellajs.com/docs#tag/me/get/me/unsubscribe) ·· _me_
@@ -1211,8 +1123,6 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Delete users
- *
- * 🛡️ Requires authentication (system access)
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
@@ -1242,8 +1152,6 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options: Option
 
 /**
  * Get list of users
- *
- * 🛡️ Requires authentication
  *
  * Returns a list of *users*.
  *
@@ -1277,8 +1185,6 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
 /**
  * Get user
  *
- * 🛡️ Requires authentication
- *
  * Retrieves a *user* by ID or slug.
  *
  * **GET /users/{idOrSlug}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/{idOrSlug}) ·· _users_
@@ -1303,8 +1209,6 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
 
 /**
  * Update user
- *
- * 🛡️ Requires authentication (system access)
  *
  * Updates a *user* identified by ID or slug.
  *
@@ -1342,8 +1246,6 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Delete organizations
  *
- * 🛡️ Requires authentication
- *
  * Deletes one or more *organizations* by ID.
  *
  * **DELETE /organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/organizations) ·· _organizations_
@@ -1374,8 +1276,6 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
 
 /**
  * Get list of organizations
- *
- * 🛡️ Requires authentication
  *
  * Returns a list of *organizations*.
  *
@@ -1411,8 +1311,6 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Create organization
  *
- * 🛡️ Requires authentication
- *
  * Creates a new *organization*.
  *
  * **POST /organizations** ·· [createOrganization](https://api.cellajs.com/docs#tag/organizations/post/organizations) ·· _organizations_
@@ -1445,8 +1343,6 @@ export const createOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Get organization
  *
- * 🛡️ Requires authentication
- *
  * Retrieves an *organization* by ID or slug.
  *
  * **GET /organizations/{idOrSlug}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/organizations/{idOrSlug}) ·· _organizations_
@@ -1473,8 +1369,6 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
 
 /**
  * Update organization
- *
- * 🛡️ Requires authentication
  *
  * Updates an *organization* by ID or slug.
  *
@@ -1524,8 +1418,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Sync pages
  *
- * 🛡️ Requires authentication
- *
  * Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.
  *
  * **GET /pages/sync-pages** ·· [syncPages](https://api.cellajs.com/docs#tag/pages/get/pages/sync-pages) ·· _pages_
@@ -1542,21 +1434,12 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
 export const syncPages = <ThrowOnError extends boolean = true>(options: Options<SyncPagesData, ThrowOnError>) =>
   (options.client ?? client).get<SyncPagesResponses, SyncPagesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
     url: '/pages/sync-pages',
     ...options,
   });
 
 /**
  * Delete pages
- *
- * 🛡️ Requires authentication (system access)
  *
  * Delete one or more *pages* by ID.
  *
@@ -1587,8 +1470,6 @@ export const deletePages = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Get pages
  *
- * 🌐 Public access
- *
  * Get all matching *pages*.
  *
  * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· _pages_
@@ -1610,8 +1491,6 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
 
 /**
  * Create pages
- *
- * 🛡️ Requires authentication (system access)
  *
  * Insert one or more new *pages*.
  *
@@ -1642,8 +1521,6 @@ export const createPage = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Get page
  *
- * 🌐 Public access
- *
  * Get a single *page* by ID.
  *
  * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· _pages_
@@ -1661,8 +1538,6 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
 
 /**
  * Update page
- *
- * 🛡️ Requires authentication (system access)
  *
  * Update a single *page* by ID.
  *
@@ -1699,8 +1574,6 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Check slug availability
  *
- * 🛡️ Requires authentication
- *
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
  * Primarily used to prevent slug collisions before creating or updating an entity.
  *
@@ -1732,8 +1605,6 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
 /**
  * Invite to system
  *
- * 🛡️ Requires authentication (system access)
- *
  * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
  *
  * **POST /system/invite** ·· [systemInvite](https://api.cellajs.com/docs#tag/system/post/system/invite) ·· _system_
@@ -1763,9 +1634,6 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options: Optio
 /**
  * Get presigned URL
  *
- * 🌐 Public access
- * ⏳ Presigned URL (20/h)
- *
  * Generates and returns a presigned URL for uploading files to an S3 bucket.
  *
  * **GET /system/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/system/get/system/presigned-url) ·· _system_
@@ -1786,9 +1654,6 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
 
 /**
  * Paddle webhook (WIP)
- *
- * 🌐 Public access
- * ⏳ token_paddle (10/h)
  *
  * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  *
@@ -1812,8 +1677,6 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(
 
 /**
  * Newsletter to members
- *
- * 🛡️ Requires authentication (system access)
  *
  * Sends a newsletter to members of one or more specified organizations.
  *
@@ -1850,8 +1713,6 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
 /**
  * Delete requests
  *
- * 🛡️ Requires authentication (system access)
- *
  * Deletes one or more *requests* from the system by their IDs.
  *
  * **DELETE /requests** ·· [deleteRequests](https://api.cellajs.com/docs#tag/requests/delete/requests) ·· _requests_
@@ -1883,8 +1744,6 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
 /**
  * Get list of requests
  *
- * 🛡️ Requires authentication (system access)
- *
  * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
  *
  * **GET /requests** ·· [getRequests](https://api.cellajs.com/docs#tag/requests/get/requests) ·· _requests_
@@ -1914,9 +1773,6 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
 /**
  * Create request
  *
- * 🌐 Public access
- * ⏳ Email (5/h), Spam (10/h)
- *
  * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  *
  * **POST /requests** ·· [createRequest](https://api.cellajs.com/docs#tag/requests/post/requests) ·· _requests_
@@ -1940,8 +1796,6 @@ export const createRequest = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Get metrics
- *
- * 🛡️ Requires authentication (system access)
  *
  * EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
  * Primarily intended for internal monitoring and diagnostics.
@@ -1968,8 +1822,6 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
 /**
  * Get public counts
  *
- * 🌐 Public access
- *
  * Returns basic count metrics for entity types such as `users` and `organizations`.
  * This endpoint is public and uses a 1 minute in memory cache for performance.
  *
@@ -1989,8 +1841,6 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
 
 /**
  * Sync attachments
- *
- * 🛡️ Requires authentication (org access)
  *
  * Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.
  * Organization parameter is required to scope the data.
@@ -2026,8 +1876,6 @@ export const syncAttachments = <ThrowOnError extends boolean = true>(
 /**
  * Delete attachments
  *
- * 🛡️ Requires authentication (org access)
- *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
  *
  * **DELETE /{orgIdOrSlug}/attachments** ·· [deleteAttachments](https://api.cellajs.com/docs#tag/attachments/delete/{orgIdOrSlug}/attachments) ·· _attachments_
@@ -2060,8 +1908,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
 /**
  * Create attachments
  *
- * 🛡️ Requires authentication (org access)
- *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  *
  * **POST /{orgIdOrSlug}/attachments** ·· [createAttachment](https://api.cellajs.com/docs#tag/attachments/post/{orgIdOrSlug}/attachments) ·· _attachments_
@@ -2092,8 +1938,6 @@ export const createAttachment = <ThrowOnError extends boolean = true>(
 
 /**
  * Update attachment
- *
- * 🛡️ Requires authentication (org access)
  *
  * Updates metadata of an *attachment*, such as its name or associated entity.
  *
@@ -2129,9 +1973,6 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
 /**
  * Redirect to attachment
  *
- * 🌐 Public access
- * ⏳ token_attachment_redirect (10/h)
- *
  * Redirects to the file's public or presigned URL, depending on storage visibility.
  *
  * **GET /{orgIdOrSlug}/attachments/{id}/link** ·· [redirectToAttachment](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}/link) ·· _attachments_
@@ -2151,8 +1992,6 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(
 
 /**
  * Delete memberships
- *
- * 🛡️ Requires authentication (org access)
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
  *
@@ -2188,8 +2027,6 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Create memberships
  *
- * 🛡️ Requires authentication (org access)
- *
  * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
  * **POST /{orgIdOrSlug}/memberships** ·· [membershipInvite](https://api.cellajs.com/docs#tag/memberships/post/{orgIdOrSlug}/memberships) ·· _memberships_
@@ -2224,8 +2061,6 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
 
 /**
  * Update membership
- *
- * 🛡️ Requires authentication (org access)
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
  *
@@ -2263,8 +2098,6 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
 /**
  * Respond to membership invitation
  *
- * 🛡️ Requires authentication
- *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
  * **POST /{orgIdOrSlug}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/memberships/post/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}) ·· _memberships_
@@ -2299,8 +2132,6 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
 /**
  * Get list of members
  *
- * 🛡️ Requires authentication (org access)
- *
  * Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.
  *
  * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](https://api.cellajs.com/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
@@ -2333,8 +2164,6 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Get list of pending memberships
- *
- * 🛡️ Requires authentication (org access)
  *
  * Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.
  *

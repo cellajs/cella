@@ -3,6 +3,9 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
+/**
+ * Unsubscribe tokens table to manage email unsubscribe tokens for users.
+ */
 export const unsubscribeTokensTable = pgTable(
   'unsubscribe_tokens',
   {

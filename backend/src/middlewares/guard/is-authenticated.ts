@@ -1,14 +1,11 @@
 import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
-import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { registerMiddlewareDescription } from '#/lib/openapi-describer';
+import { xMiddleware } from '#/lib/x-middleware';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { TimeSpan } from '#/utils/time-span';
@@ -22,7 +19,7 @@ import { TimeSpan } from '#/utils/time-span';
  * @param next - The next middleware or route handler to call if authentication succeeds.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
+export const isAuthenticated = xMiddleware('isAuthenticated', 'x-guard', async (ctx, next) => {
   // Validate session
   try {
     // Get session id from cookie
@@ -71,16 +68,4 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   }
 
   await next();
-});
-
-/**
- * Registers the `isAuthenticated` middleware for OpenAPI documentation.
- * This allows the middleware to be recognized and described in the API documentation.
- */
-registerMiddlewareDescription({
-  name: 'isAuthenticated',
-  middleware: isAuthenticated,
-  category: 'auth',
-  level: 'authenticated',
-  label: 'Requires authentication',
 });

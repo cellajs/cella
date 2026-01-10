@@ -12,14 +12,16 @@ type BaseBlockNoteProps = Omit<
 };
 type BlocknoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   baseBlockNoteProps: BaseBlockNoteProps;
+  autoFocus?: boolean;
 };
 
-const BlockNoteContent = <TFieldValues extends FieldValues>({
+const BlockNoteContentField = <TFieldValues extends FieldValues>({
   control,
   label,
   name,
   required,
   disabled,
+  autoFocus,
   baseBlockNoteProps: {
     excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'],
     ...restBlockNoteProps
@@ -41,6 +43,7 @@ const BlockNoteContent = <TFieldValues extends FieldValues>({
             <FormControl>
               <BlockNote
                 type="create"
+                autoFocus={autoFocus}
                 defaultValue={value}
                 excludeBlockTypes={excludeBlockTypes}
                 updateData={onChange}
@@ -55,4 +58,4 @@ const BlockNoteContent = <TFieldValues extends FieldValues>({
   );
 };
 
-export default BlockNoteContent;
+export default BlockNoteContentField;

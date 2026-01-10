@@ -1,5 +1,8 @@
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 
+/**
+ * Checks if a BlockNote field has meaningful content changes.
+ */
 export const blocknoteFieldIsDirty = (strBlocks: string): boolean => {
   try {
     const blocks = JSON.parse(strBlocks) as CustomBlock[];

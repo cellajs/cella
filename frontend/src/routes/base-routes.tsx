@@ -70,7 +70,7 @@ export const PublicLayoutRoute = createRoute({
 });
 
 /**
- * App layout is for authenticated users, since this view requires a user in the user store.
+ * Layout for authenticated users requiring a valid user session.
  */
 export const AppLayoutRoute = createRoute({
   id: 'appLayout',
@@ -137,6 +137,9 @@ export const AppLayoutRoute = createRoute({
   },
 });
 
+/**
+ * Generic error page for displaying application errors.
+ */
 export const ErrorNoticeRoute = createRoute({
   path: '/error',
   validateSearch: errorSearchSchema,

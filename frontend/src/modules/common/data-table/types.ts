@@ -15,11 +15,11 @@ export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
 export type BaseTableBarProps<T, K> = {
   selected: T[];
   queryKey: QueryKey;
-  searchVars: BaseTableSearchVariables<K>;
-  setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
   clearSelection: () => void;
+  searchVars: BaseTableSearchVariables<K>;
+  setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
 };
 
 /**
