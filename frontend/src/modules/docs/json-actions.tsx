@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, LaptopIcon } from 'lucide-react';
+import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
@@ -59,8 +59,7 @@ export const JsonActions = ({
       {viewerUrl && (
         <ToggleGroupItem value="view" aria-label={t('common:view')} className="gap-2 flex-none" size={size} asChild>
           <Link to={viewerUrl}>
-            <LaptopIcon size={iconSize} />
-            <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
+            <span className="group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
           </Link>
         </ToggleGroupItem>
       )}

@@ -41,15 +41,17 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
     <Accordion type="single" className="w-full" collapsible>
       {responses.map((response) => (
         <AccordionItem key={response.status} value={String(response.status)}>
-          <AccordionTrigger className="py-2">
+          <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
             <div className="flex items-center justify-between w-full pr-2">
               <div className="flex items-center gap-3">
                 <span
-                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded ${getStatusColor(response.status)}`}
+                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
                 >
                   {response.status}
                 </span>
-                <span className="text-sm text-muted-foreground">{response.description}</span>
+                <span className="text-sm text-muted-foreground group-data-[state=open]:text-foreground">
+                  {response.description}
+                </span>
               </div>
               {response.name && (
                 <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">

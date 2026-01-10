@@ -96,7 +96,7 @@ const OperationsByTagList = () => {
                         <div
                           key={operation.hash}
                           id={operation.hash}
-                          className="p-6 border-b last:border-b-0 transition-colors"
+                          className="p-6 mt-4 border-b last:border-b-0 transition-colors"
                         >
                           <div className="flex justify-between items-start mb-4">
                             {operation.summary && <p className="text-xl font-medium">{operation.summary}</p>}

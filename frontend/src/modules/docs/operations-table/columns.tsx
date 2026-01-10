@@ -18,9 +18,8 @@ export const useColumns = (isCompact: boolean) => {
         key: 'method',
         name: t('common:method'),
         visible: true,
-        sortable: true,
         resizable: false,
-        width: 100,
+        width: 80,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <Badge
@@ -34,11 +33,13 @@ export const useColumns = (isCompact: boolean) => {
       {
         key: 'path',
         name: t('common:path'),
-        minWidth: 200,
+        minWidth: 180,
+        visible: true,
+        resizable: true,
         sortable: false,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
-          <div className="font-mono text-sm truncate hover:underline underline-offset-3 decoration-foreground/30">
+          <div className="font-mono text-xs truncate hover:underline underline-offset-3 decoration-foreground/30">
             {row.path}
           </div>
         ),
@@ -51,7 +52,7 @@ export const useColumns = (isCompact: boolean) => {
         resizable: true,
         editable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <span className="truncate">{row.summary || row.id}</span>,
+        renderCell: ({ row }) => <span className="truncate text-sm">{row.summary || row.id}</span>,
         renderEditCell: ({ row, onRowChange }) => (
           <Input value={row.summary} onChange={(e) => onRowChange({ ...row, summary: e.target.value })} autoFocus />
         ),
@@ -68,9 +69,9 @@ export const useColumns = (isCompact: boolean) => {
           row.xGuard?.length ? (
             <div className="flex flex-wrap gap-1">
               {row.xGuard.map((guard) => (
-                <Badge key={guard} variant="outline" className="text-xs font-mono">
+                <span key={guard} className="text-xs">
                   {guard}
-                </Badge>
+                </span>
               ))}
             </div>
           ) : (
@@ -89,9 +90,9 @@ export const useColumns = (isCompact: boolean) => {
           row.xRateLimiter?.length ? (
             <div className="flex flex-wrap gap-1">
               {row.xRateLimiter.map((limiter) => (
-                <Badge key={limiter} variant="outline" className="text-xs font-mono">
+                <span key={limiter} className="text-xs">
                   {limiter}
-                </Badge>
+                </span>
               ))}
             </div>
           ) : (
@@ -102,6 +103,7 @@ export const useColumns = (isCompact: boolean) => {
         key: 'id',
         name: t('common:docs.operation_id'),
         sortable: true,
+        visible: true,
         resizable: true,
         width: 200,
         renderHeaderCell: HeaderCell,

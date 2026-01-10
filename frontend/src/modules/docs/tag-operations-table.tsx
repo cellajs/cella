@@ -69,6 +69,7 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
 
   return (
     <DataTable<GenOperationSummary>
+      className="mb-0"
       columns={columns}
       rows={operations}
       hasNextPage={false}

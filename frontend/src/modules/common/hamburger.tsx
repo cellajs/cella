@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
@@ -6,6 +7,7 @@ interface HamburgerButtonProps {
   isOpen: boolean;
   toggle: () => void;
   className?: string;
+  ref?: Ref<HTMLButtonElement>;
 }
 const HamburgerLine = ({ className, lineColor }: { className: string; lineColor: string }) => (
   <div
@@ -14,7 +16,7 @@ const HamburgerLine = ({ className, lineColor }: { className: string; lineColor:
   />
 );
 
-const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) => {
+const HamburgerButton = ({ isOpen, toggle, className, ref }: HamburgerButtonProps) => {
   const mode = useUIStore((state) => state.mode);
   const lineColor = mode === 'dark' ? 'white' : 'black';
 
@@ -24,6 +26,7 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
 
   return (
     <Button
+      ref={ref}
       size="lg"
       variant="ghost"
       className={cn(
