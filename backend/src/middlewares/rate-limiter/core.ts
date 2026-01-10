@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
+import { xMiddleware } from '#/lib/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
 import { RateLimitIdentifier, RateLimitMode, RateLimitOptions } from '#/middlewares/rate-limiter/types';
 
@@ -42,6 +42,7 @@ export const slowOptions = {
  * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
  * @param identifiers - `("ip" | "email")[]` A list of identifiers to consider when generating rate limit key.
  * @param options - Optional custom configuration for rate limiting.
+ * @param name - Optional name override for OpenAPI documentation (defaults to `${key}Limiter`).
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
@@ -50,12 +51,13 @@ export const rateLimiter = (
   key: string,
   identifiers: RateLimitIdentifier[],
   options?: RateLimitOptions,
+  name?: string,
 ): MiddlewareHandler<Env> => {
   const config = { ...defaultOptions, ...options };
   const limiter = getRateLimiterInstance({ ...config, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 
-  return createMiddleware<Env>(async (ctx, next) => {
+  return xMiddleware(name ?? `${key}Limiter`, 'x-rate-limiter', async (ctx, next) => {
     // Extract identifiers from multiple sources
     const extractedIdentifiers = await extractIdentifiers(ctx, identifiers);
 

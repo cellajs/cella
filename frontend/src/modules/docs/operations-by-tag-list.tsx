@@ -128,9 +128,9 @@ const OperationsByTagList = () => {
                             </div>
                           )}
 
-                          {(operation.hasAuth || operation.hasParams || operation.hasRequestBody) && (
+                          {(operation.xGuard?.length || operation.hasParams || operation.hasRequestBody) && (
                             <div className="flex gap-4 text-sm">
-                              {operation.hasAuth && (
+                              {!!operation.xGuard?.length && (
                                 <span className="text-muted-foreground">🔒 {t('common:docs.auth_required')}</span>
                               )}
                               {operation.hasParams && (

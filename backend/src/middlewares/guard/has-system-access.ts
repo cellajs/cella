@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { AppError } from '#/lib/errors';
-import { registerMiddlewareDescription } from '#/lib/openapi-describer';
+import { setMiddlewareExtension } from '#/lib/x-middleware';
 import { isSystemAdmin } from '#/middlewares/guard/is-system-admin';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
@@ -15,20 +15,11 @@ const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
  *
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const hasSystemAccess: MiddlewareHandler = every(
+const combinedMiddleware: MiddlewareHandler = every(
   isSystemAdmin,
   ipRestriction(getIp, { allowList }, async () => {
     throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
   }),
 );
 
-/**
- * Registers the `hasSystemAccess` middleware for OpenAPI documentation.
- * This allows the middleware to be recognized and described in the API documentation.
- */
-registerMiddlewareDescription({
-  name: 'hasSystemAccess',
-  middleware: hasSystemAccess,
-  category: 'guard',
-  scopes: ['system'],
-});
+export const hasSystemAccess = setMiddlewareExtension(combinedMiddleware, 'hasSystemAccess', 'x-guard');

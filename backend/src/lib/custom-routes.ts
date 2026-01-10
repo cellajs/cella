@@ -1,7 +1,8 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/lib/context';
-import { getMiddlewareDescriptor, getSpecificationExtensions } from '#/lib/openapi-describer';
+import { getSpecificationExtensions } from '#/lib/openapi-describer';
+import { isPublicAccess } from '#/middlewares/guard/is-public-access';
 
 type NonEmptyArray<T> = readonly [T, ...T[]];
 
@@ -37,10 +38,8 @@ export const createCustomRoute = <P extends string, R extends Omit<RouteOptions,
   // Get specification extensions (x-*) from middleware
   const specificationExtensions = getSpecificationExtensions(middleware);
 
-  // Determine OpenAPI security automatically based on middleware guards
-  const security = initGuard.some((guard) => getMiddlewareDescriptor(guard)?.level === 'authenticated')
-    ? [{ cookieAuth: [] }] // protected route
-    : []; // public route
+  // Public routes have no security, authenticated routes require cookie auth
+  const security = initGuard.includes(isPublicAccess) ? [] : [{ cookieAuth: [] }];
 
   return createRoute({
     security,

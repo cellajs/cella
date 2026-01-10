@@ -1175,7 +1175,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_tokenLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -1245,7 +1245,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_tokenLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -1837,7 +1837,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_signup_invitationLimiter",
+          "tokenLimiter",
           "emailEnumLimiter"
         ],
         "parameters": [
@@ -1990,7 +1990,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_password-resetLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -2429,7 +2429,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_passkeyLimiter"
+          "tokenLimiter"
         ],
         "requestBody": {
           "required": true,
@@ -2728,7 +2728,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_githubLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -2815,7 +2815,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_googleLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -2878,7 +2878,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_microsoftLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -3795,7 +3795,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_unsubscribeLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {
@@ -5532,7 +5532,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_paddleLimiter"
+          "tokenLimiter"
         ],
         "requestBody": {
           "content": {
@@ -6597,7 +6597,7 @@
           "isPublicAccess"
         ],
         "x-rate-limiter": [
-          "token_attachment_redirectLimiter"
+          "tokenLimiter"
         ],
         "parameters": [
           {

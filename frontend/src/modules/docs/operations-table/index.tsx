@@ -85,7 +85,7 @@ const OperationsTable = () => {
         setIsCompact={setIsCompact}
       />
       <DataTable<GenOperationSummary>
-        columns={columns}
+        columns={columns.filter((column) => column.visible)}
         rows={filteredOperations}
         onRowsChange={onRowsChange}
         hasNextPage={false}

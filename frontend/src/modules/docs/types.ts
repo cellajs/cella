@@ -16,7 +16,6 @@ export interface GenOperationSummary {
   summary: string;
   description: string;
   deprecated: boolean;
-  hasAuth: boolean;
   hasParams: boolean;
   hasRequestBody: boolean;
   /** x-guard specification extension - guard middleware */

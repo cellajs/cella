@@ -443,7 +443,6 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
           summary: op.summary ?? '',
           description: op.description ?? '',
           deprecated: op.deprecated ?? false,
-          hasAuth: (op.security?.length ?? 0) > 0,
           hasParams: Object.keys(op.parameters ?? {}).length > 0,
           hasRequestBody: !!op.requestBody,
           xGuard: op['x-guard'],
