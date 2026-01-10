@@ -11,6 +11,14 @@ import {
   UnsubscribedRoute,
 } from '~/routes/auth-routes';
 import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
+import {
+  DocsIndexRoute,
+  DocsLayoutRoute,
+  DocsOverviewRoute,
+  DocsPageRoute,
+  DocsPagesRoute,
+  DocsSchemasRoute,
+} from '~/routes/docs-routes';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalIndexRoute, LegalRoute } from '~/routes/marketing-routes';
 import {
@@ -19,11 +27,9 @@ import {
   OrganizationRoute,
   OrganizationSettingsRoute,
 } from '~/routes/organization-routes';
-import { PageRoute } from '~/routes/page-routes';
 import {
   MetricsRoute,
   OrganizationsTableRoute,
-  PagesTableRoute,
   RequestsTableRoute,
   SystemRoute,
   UsersTableRoute,
@@ -40,12 +46,12 @@ export const routeTree = RootRoute.addChildren([
   PublicLayoutRoute.addChildren([
     AboutRoute,
     ContactRoute,
+    DocsLayoutRoute.addChildren([DocsIndexRoute, DocsOverviewRoute, DocsSchemasRoute, DocsPagesRoute, DocsPageRoute]),
     LegalIndexRoute,
     LegalRoute,
     AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
-    PageRoute,
     AuthLayoutRoute.addChildren([
       AuthenticateRoute,
       MfaRoute,
@@ -60,13 +66,7 @@ export const routeTree = RootRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,
-    SystemRoute.addChildren([
-      UsersTableRoute,
-      OrganizationsTableRoute,
-      RequestsTableRoute,
-      PagesTableRoute,
-      MetricsRoute,
-    ]),
+    SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,
     UserInOrganizationProfileRoute,
     UserAccountRoute,

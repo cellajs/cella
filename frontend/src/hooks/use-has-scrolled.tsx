@@ -7,9 +7,13 @@ interface UseHasScrolledOptions {
   immediate?: boolean;
 }
 
+// Keys that typically trigger scrolling
+const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+
 /**
- * Hook to track if the user has scrolled the page.
- * Returns true after the first scroll event and stays true.
+ * Hook to track if the user has initiated a scroll interaction.
+ * Uses wheel, touch, and keyboard events which work with any scroll container.
+ * Returns true after the first scroll interaction and stays true.
  * By default, waits 2 seconds before activating to prevent false positives on page load.
  */
 export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScrolledOptions = {}) => {
@@ -20,13 +24,27 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
 
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const handleScroll = () => {
+    const handleScrollIntent = () => {
       setHasScrolled(true);
-      window.removeEventListener('scroll', handleScroll);
+      cleanup();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (SCROLL_KEYS.includes(e.key)) {
+        handleScrollIntent();
+      }
+    };
+
+    const cleanup = () => {
+      document.removeEventListener('wheel', handleScrollIntent);
+      document.removeEventListener('touchmove', handleScrollIntent);
+      document.removeEventListener('keydown', handleKeyDown);
     };
 
     const startListening = () => {
-      window.addEventListener('scroll', handleScroll, { passive: true });
+      document.addEventListener('wheel', handleScrollIntent, { passive: true });
+      document.addEventListener('touchmove', handleScrollIntent, { passive: true });
+      document.addEventListener('keydown', handleKeyDown);
     };
 
     if (immediate) {
@@ -37,7 +55,7 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
 
     return () => {
       if (timer) clearTimeout(timer);
-      window.removeEventListener('scroll', handleScroll);
+      cleanup();
     };
   }, [delay, immediate, hasScrolled]);
 

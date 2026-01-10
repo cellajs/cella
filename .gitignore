@@ -35,7 +35,8 @@ dist-ssr
 .db
 .rendered
 backend/openapi.cache.json
-frontend/vite/temp-api-gen
+frontend/vite/temp-api-gen-*
+frontend/vite/.generate-client.lock
 
 # Other
 .netlify

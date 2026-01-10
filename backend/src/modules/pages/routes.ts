@@ -14,7 +14,7 @@ const pagesRoutes = {
     operationId: 'syncPages',
     method: 'get',
     path: '/sync-pages',
-    guard: [isAuthenticated],
+    guard: isPublicAccess,
     tags: ['pages'],
     summary: 'Sync pages',
     description: `Sync page data by proxying requests to ElectricSQL's shape endpoint for \`pages\` table.`,

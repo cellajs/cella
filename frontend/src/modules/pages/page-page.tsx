@@ -1,23 +1,21 @@
 import { eq, useLiveQuery } from '@tanstack/react-db';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Edit, Eye } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { Edit, Eye } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
 import type { initPagesCollection } from '~/modules/pages/collections';
 import UpdatePageForm from '~/modules/pages/update-page-form';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
-import { PageRouteSearchParams } from './types';
 
 const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
 interface PagePageProps {
   pageId: string;
   pagesCollection: ReturnType<typeof initPagesCollection>;
-  mode?: PageRouteSearchParams['mode'];
+  mode?: 'view' | 'edit';
 }
 
 /**
@@ -28,7 +26,7 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { user } = useUserStore();
+  const { systemRole } = useUserStore();
 
   // Get page from sync collection
   const { data: pages } = useLiveQuery(
@@ -40,10 +38,9 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
 
   const toggleMode = () => {
     navigate({
-      to: '/page/$id',
+      to: '/docs/page/$id/$mode',
       replace: true,
-      params: { id: pageId },
-      search: { mode: mode === 'view' ? 'edit' : 'view' },
+      params: { id: pageId, mode: mode === 'view' ? 'edit' : 'view' },
     });
   };
 
@@ -59,25 +56,21 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
   const headerSection = (
     <div className="flex items-center justify-between gap-3 mb-6">
       <div className="flex items-center gap-2">
-        {user && (
-          <Link to="/home" className={cn(buttonVariants({ variant: 'link', size: 'default' }))}>
-            <ArrowLeft size={16} />
-            <span className="ml-1 max-sm:hidden">{t('common:back_to_app')}</span>
-          </Link>
+        {systemRole && (
+          <Button variant="plain" onClick={toggleMode}>
+            {mode === 'view' ? (
+              <>
+                <Edit size={16} className="mr-2" />
+                {t('common:edit')}
+              </>
+            ) : (
+              <>
+                <Eye size={16} className="mr-2" />
+                {t('common:view')}
+              </>
+            )}
+          </Button>
         )}
-        <Button variant="plain" onClick={toggleMode}>
-          {mode === 'view' ? (
-            <>
-              <Edit size={16} className="mr-2" />
-              {t('common:edit')}
-            </>
-          ) : (
-            <>
-              <Eye size={16} className="mr-2" />
-              {t('common:view')}
-            </>
-          )}
-        </Button>
       </div>
       <div className="text-sm text-muted-foreground">
         {t('common:created_at')} {dateShort(page.createdAt)}

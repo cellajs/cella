@@ -14,7 +14,7 @@ import { nanoid } from '~/utils/nanoid';
 export const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },
   // { id: 'pricing', url: '/about', hash: 'pricing' },
-  { id: 'docs', url: `${appConfig.backendUrl}/docs`, hash: '' },
+  { id: 'docs', url: '/docs', hash: '' },
 ];
 
 /*************************************************************************************************

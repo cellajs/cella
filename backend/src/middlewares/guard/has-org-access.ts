@@ -1,12 +1,10 @@
 import * as Sentry from '@sentry/node';
 import { eq, or } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type Env, getContextMemberships, getContextUserSystemRole } from '#/lib/context';
+import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { registerMiddlewareDescription } from '#/lib/openapi-describer';
+import { xMiddleware } from '#/lib/x-middleware';
 
 /**
  * Middleware to ensure the user has access to an organization-scoped route.
@@ -16,8 +14,7 @@ import { registerMiddlewareDescription } from '#/lib/openapi-describer';
  * @param next - The next middleware or route handler to call if the check passes.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-
-export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
+export const hasOrgAccess = xMiddleware('hasOrgAccess', 'x-guard', async (ctx, next) => {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
   if (!orgIdOrSlug) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
@@ -45,15 +42,4 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   Sentry.setTag('organization_slug', orgWithMembership.slug);
 
   await next();
-});
-
-/**
- * Registers the `hasOrgAccess` middleware for OpenAPI documentation.
- * This allows the middleware to be recognized and described in the API documentation.
- */
-registerMiddlewareDescription({
-  name: 'hasOrgAccess',
-  middleware: hasOrgAccess,
-  category: 'auth',
-  scopes: ['org'],
 });

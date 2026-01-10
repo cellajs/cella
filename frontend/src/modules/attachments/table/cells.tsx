@@ -189,7 +189,7 @@ export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
       icon: CopyIcon,
       onSelect: () => {
         copyToClipboard(shareLink);
-        toaster(t('common:success.copy_url'), 'success');
+        toaster(t('common:success.resource_copied', { resource: t('common:url') }), 'success');
         useDropdowner.getState().remove();
       },
     });

@@ -25,10 +25,10 @@ export const usePagesTableColumns = (isCompact: boolean) => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
-          to="/page/$id"
+          to="/docs/page/$id/$mode"
           draggable="false"
           tabIndex={tabIndex}
-          params={{ id: row.id }}
+          params={{ id: row.id, mode: 'view' }}
           className="flex space-x-2 items-center outline-0 ring-0 group"
         >
           {/* <AvatarWrap
