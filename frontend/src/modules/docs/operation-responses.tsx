@@ -39,19 +39,17 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
       {responses.map((response) => (
         <AccordionItem key={response.status} value={String(response.status)}>
           <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
-            <div className="flex items-center justify-between w-full pr-2">
-              <div className="flex items-center gap-3">
-                <span
-                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
-                >
-                  {response.status}
-                </span>
-                <span className="text-sm text-muted-foreground group-data-[state=open]:text-foreground">
-                  {response.description}
-                </span>
+            <div className="flex items-center justify-between w-full pr-2 gap-3">
+              <div
+                className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
+              >
+                {response.status}
+              </div>
+              <div className="text-sm text-muted-foreground grow group-data-[state=open]:text-foreground">
+                {response.description}
               </div>
               {response.name && (
-                <span className="max-sm:hidden text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                <span className="max-md:hidden truncate text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
                   {response.name}
                 </span>
               )}
@@ -63,11 +61,10 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
                 <JsonViewer
                   value={response.schema}
                   showKeyQuotes={false}
-                  singleLineArrays={true}
                   openapiMode="schema"
                   rootName={false}
-                  defaultInspectDepth={4}
-                  indentWidth={2}
+                  defaultInspectDepth={5}
+                  indentWidth={3}
                 />
               </div>
             ) : (

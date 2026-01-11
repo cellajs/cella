@@ -79,7 +79,6 @@ const createRefDataType = (onNavigate: (targetPath: string) => void): DataType<s
 export const JsonViewer: FC<JsonViewerProps> = ({
   value,
   defaultInspectDepth = 3,
-  defaultInspectControl: externalInspectControl,
   rootName = 'root',
   displayDataTypes = false,
   enableClipboard = false,
@@ -93,7 +92,6 @@ export const JsonViewer: FC<JsonViewerProps> = ({
   currentMatchIndex = 0,
   showKeyQuotes = true,
   expandChildrenDepth = 1,
-  singleLineArrays = false,
 }) => {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -129,7 +127,6 @@ export const JsonViewer: FC<JsonViewerProps> = ({
     theme: defaultTheme,
     indentWidth,
     defaultInspectDepth,
-    defaultInspectControl: externalInspectControl,
     displayDataTypes,
     enableClipboard,
     valueTypes: combinedValueTypes,
@@ -140,7 +137,6 @@ export const JsonViewer: FC<JsonViewerProps> = ({
     currentMatchIndex,
     showKeyQuotes,
     expandChildrenDepth,
-    singleLineArrays,
     openapiMode,
   };
 
@@ -163,7 +159,8 @@ export const JsonViewer: FC<JsonViewerProps> = ({
       </style>
       <div
         ref={containerRef}
-        className={`font-mono text-[13px] leading-relaxed text-gray-900 dark:text-gray-100 ${className || ''}`}
+        data-openapi-mode={openapiMode}
+        className={`group/jv font-mono text-[13px] leading-relaxed text-gray-900 dark:text-gray-100 ${className || ''}`}
       >
         <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
       </div>

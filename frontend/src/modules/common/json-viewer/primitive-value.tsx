@@ -14,12 +14,14 @@ export const InlinePrimitiveValue: FC<InlinePrimitiveValueProps> = ({ value, the
   const lowerSearch = searchText?.toLowerCase() || '';
 
   const renderWithHighlight = (text: string, colorClass: string, quote = false) => {
+    const quoteSpan = quote ? <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span> : null;
+
     if (!lowerSearch) {
       return (
         <span className={colorClass}>
-          {quote && '"'}
+          {quoteSpan}
           {text}
-          {quote && '"'}
+          {quoteSpan}
         </span>
       );
     }
@@ -30,9 +32,9 @@ export const InlinePrimitiveValue: FC<InlinePrimitiveValueProps> = ({ value, the
     if (matchIndex === -1) {
       return (
         <span className={colorClass}>
-          {quote && '"'}
+          {quoteSpan}
           {text}
-          {quote && '"'}
+          {quoteSpan}
         </span>
       );
     }
@@ -43,11 +45,11 @@ export const InlinePrimitiveValue: FC<InlinePrimitiveValueProps> = ({ value, the
 
     return (
       <span className={colorClass}>
-        {quote && '"'}
+        {quoteSpan}
         {before}
         <span className={theme.searchMatch}>{match}</span>
         {after}
-        {quote && '"'}
+        {quoteSpan}
       </span>
     );
   };
@@ -120,13 +122,14 @@ export const PrimitiveValue: FC<PrimitiveValueProps> = ({
           onClick={shouldTruncate ? () => setIsExpanded(!isExpanded) : undefined}
           title={shouldTruncate ? (isExpanded ? 'Click to collapse' : 'Click to expand') : undefined}
         >
-          "
+          <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
           {isMatch ? (
             highlightText(displayValue, searchText, theme.string, theme.searchMatch)
           ) : (
             <span className={theme.string}>{displayValue}</span>
           )}
-          {!isExpanded && shouldTruncate && <span className="opacity-50">…</span>}"
+          {!isExpanded && shouldTruncate && <span className="opacity-50">…</span>}
+          <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
         </span>
       );
     }

@@ -28,8 +28,6 @@ export interface JsonViewerProps<T = unknown> {
   value: T;
   /** Default depth to expand (default: 3) */
   defaultInspectDepth?: number;
-  /** Custom function to control expansion per path */
-  defaultInspectControl?: (path: Path, value: unknown) => boolean;
   /** Root name to display (false to hide) */
   rootName?: string | false;
   /** Whether to display data type labels */
@@ -56,8 +54,6 @@ export interface JsonViewerProps<T = unknown> {
   showKeyQuotes?: boolean;
   /** How many levels deep to expand when clicking a node (default: 1) */
   expandChildrenDepth?: number;
-  /** Render arrays of primitives on a single line (default: false) */
-  singleLineArrays?: boolean;
 }
 
 /** Tailwind class mappings for JsonViewer theming */
@@ -83,7 +79,7 @@ export interface JsonViewerTheme {
 /** Default theme using Tailwind classes with dark mode support */
 export const defaultTheme: JsonViewerTheme = {
   // Value types
-  string: 'text-blue-800 dark:text-blue-300',
+  string: 'text-foreground',
   number: 'text-amber-700 dark:text-amber-400',
   boolean: 'text-rose-600 dark:text-rose-400',
   null: 'text-gray-500 dark:text-gray-500',
@@ -94,7 +90,7 @@ export const defaultTheme: JsonViewerTheme = {
   index: 'text-gray-500 opacity-70 text-xs',
   // Schema mode
   schemaType: 'font-medium italic',
-  required: 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300',
+  required: 'bg-amber-100 dark:bg-amber-900/10 text-amber-700/20 dark:text-amber-200/60',
   // Search
   searchMatch: 'bg-yellow-200 dark:bg-yellow-700 rounded px-0.5',
   matchBadge: 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200',

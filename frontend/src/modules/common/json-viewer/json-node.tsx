@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
 import { type FC, useEffect, useState } from 'react';
 import { CollapsedPreview } from './collapsed-preview';
 import { useJsonViewerContext } from './context';
@@ -26,7 +26,6 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     theme,
     indentWidth,
     defaultInspectDepth,
-    defaultInspectControl,
     displayDataTypes,
     enableClipboard,
     valueTypes,
@@ -36,25 +35,27 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     expandAll,
     showKeyQuotes,
     expandChildrenDepth,
-    singleLineArrays,
     openapiMode,
   } = useJsonViewerContext();
+
+  // In schema mode, arrays of primitives render on a single line
+  const singleLineArrays = openapiMode === 'schema';
 
   // Track current cascade depth for children (when user clicks to expand)
   const [childCascadeDepth, setChildCascadeDepth] = useState(0);
 
+  // In schema mode, check if this is a 'properties' node that should be flattened (always expanded)
+  const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
+
   // Determine if this node should be expanded by default
   const getDefaultExpanded = () => {
+    if (isPropertiesNode) return true; // Properties nodes are always expanded in schema mode
     if (cascadeDepth > 0) return true; // Auto-expand if cascading from parent
     if (expandAll) return true;
-    if (defaultInspectControl) {
-      return defaultInspectControl(path, value);
-    }
     return depth < defaultInspectDepth;
   };
 
   const [isExpanded, setIsExpanded] = useState(getDefaultExpanded);
-  const [isHovered, setIsHovered] = useState(false);
 
   // Check if this node is on the path to the target (for $ref navigation)
   const isOnTargetPath = (() => {
@@ -102,7 +103,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   const valueType = getValueType(value);
 
   // Check if current value is an object/array (for key dimming)
-  const isObjectValue = valueType === 'object' || valueType === 'array';
+  const isObjectValue = valueType === 'object';
 
   // In schema mode, check if this node itself has required: true (boolean property on the object)
   const hasSelfRequired =
@@ -198,14 +199,17 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   const closeBracket = isArray ? ']' : '}';
   const isEmpty = entries.length === 0;
 
+  // In schema mode, brackets are hidden via Tailwind group-data selector
+  const bracketClass = `font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`;
+
   if (isEmpty) {
     return (
       <div className="whitespace-nowrap" style={{ paddingLeft }}>
         <KeyRenderer {...keyProps} />
         {keyName !== false && <span className="opacity-70 mr-1">: </span>}
-        <span className={`font-medium ${theme.bracket}`}>{openBracket}</span>
+        <span className={bracketClass}>{openBracket}</span>
         <SchemaLabels typeValue={typeValue} refValue={refValue} theme={theme} />
-        <span className={`font-medium ${theme.bracket}`}>{closeBracket}</span>
+        <span className={bracketClass}>{closeBracket}</span>
       </div>
     );
   }
@@ -223,14 +227,14 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
       <div className="whitespace-nowrap" style={{ paddingLeft }}>
         <KeyRenderer {...keyProps} />
         {keyName !== false && <span className="opacity-70 mr-1">: </span>}
-        <span className={`font-medium ${theme.bracket}`}>[</span>
+        <span className={bracketClass}>[</span>
         {items.map((item, index) => (
           <span key={index}>
             <InlinePrimitiveValue value={item} theme={theme} searchText={searchText} />
             {index < items.length - 1 && <span className="opacity-70">, </span>}
           </span>
         ))}
-        <span className={`font-medium ${theme.bracket}`}>]</span>
+        <span className={bracketClass}>]</span>
       </div>
     );
   }
@@ -239,44 +243,44 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   const hasHiddenMatches = !isExpanded && !!searchText && containsSearchMatch(value, searchText);
 
   return (
-    <div>
-      <div
-        className={`inline-flex items-center gap-0.5 rounded py-px px-1 -my-px -mx-1 cursor-pointer ${isHovered ? 'bg-gray-100 dark:bg-white/5' : ''}`}
-        style={{ paddingLeft }}
-        onClick={() => {
-          if (!isExpanded && expandChildrenDepth > 1) {
-            // When expanding, cascade to children
-            setChildCascadeDepth(expandChildrenDepth - 1);
-          } else {
-            // When collapsing, reset cascade
-            setChildCascadeDepth(0);
-          }
-          setIsExpanded(!isExpanded);
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <span className="inline-flex items-center justify-center w-4 h-4 opacity-60 shrink-0">
-          {isExpanded ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
-        </span>
-        <KeyRenderer {...keyProps} />
-        {keyName !== false && <span className="opacity-70 mr-1">: </span>}
-        <span className={`font-medium ${theme.bracket}`}>{openBracket}</span>
-        <SchemaLabels typeValue={typeValue} refValue={refValue} theme={theme} />
-        {!isExpanded && (
-          <CollapsedPreview
-            itemCount={entries.length}
-            closeBracket={closeBracket}
-            hasHiddenMatches={hasHiddenMatches}
-            displayDataTypes={displayDataTypes}
-            typeLabel={getTypeLabel(value, valueType)}
-            theme={theme}
-          />
-        )}
-        {enableClipboard && <CopyButton value={value} isVisible={isHovered} />}
-      </div>
-      {isExpanded && (
-        <>
+    <div data-properties-node={isPropertiesNode || undefined}>
+      {!isPropertiesNode && (
+        <div
+          className="group/node inline-flex items-center gap-0.5 rounded py-px px-1 -my-px -mx-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5"
+          style={{ paddingLeft }}
+          onClick={() => {
+            if (!isExpanded && expandChildrenDepth > 1) {
+              // When expanding, cascade to children
+              setChildCascadeDepth(expandChildrenDepth - 1);
+            } else {
+              // When collapsing, reset cascade
+              setChildCascadeDepth(0);
+            }
+            setIsExpanded(!isExpanded);
+          }}
+        >
+          <span className="inline-flex items-center justify-center w-4 h-4 opacity-60 shrink-0">
+            <ChevronRightIcon size={14} className={`transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
+          </span>
+          <KeyRenderer {...keyProps} />
+          {keyName !== false && <span className="opacity-70 mr-1">: </span>}
+          <span className={bracketClass}>{openBracket}</span>
+          <SchemaLabels typeValue={typeValue} refValue={refValue} theme={theme} />
+          {!isExpanded && (
+            <CollapsedPreview
+              itemCount={entries.length}
+              closeBracket={closeBracket}
+              hasHiddenMatches={hasHiddenMatches}
+              displayDataTypes={displayDataTypes}
+              typeLabel={getTypeLabel(value, valueType)}
+              theme={theme}
+            />
+          )}
+          {enableClipboard && <CopyButton value={value} />}
+        </div>
+      )}
+      {(isExpanded || isPropertiesNode) && (
+        <div style={isPropertiesNode ? { marginLeft: -indentWidth * 8 } : undefined}>
           {entries.map(([key, val]) => (
             <JsonNode
               key={String(key)}
@@ -287,10 +291,12 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
               cascadeDepth={childCascadeDepth > 0 ? childCascadeDepth - 1 : cascadeDepth > 0 ? cascadeDepth - 1 : 0}
             />
           ))}
-          <div style={{ paddingLeft }}>
-            <span className={`font-medium ${theme.bracket}`}>{closeBracket}</span>
-          </div>
-        </>
+          {!isPropertiesNode && (
+            <div style={{ paddingLeft }}>
+              <span className={bracketClass}>{closeBracket}</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

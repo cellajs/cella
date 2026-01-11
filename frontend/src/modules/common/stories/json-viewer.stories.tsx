@@ -125,10 +125,6 @@ const meta = {
       control: { type: 'number', min: 1, max: 5 },
       description: 'Levels to expand when clicking a node',
     },
-    singleLineArrays: {
-      control: 'boolean',
-      description: 'Render primitive arrays on single line',
-    },
   },
   args: {
     value: simpleObject,
@@ -141,7 +137,6 @@ const meta = {
     expandAll: false,
     showKeyQuotes: true,
     expandChildrenDepth: 1,
-    singleLineArrays: false,
   },
 } satisfies Meta<typeof JsonViewer>;
 
@@ -179,12 +174,12 @@ export const WithArrays: Story = {
 };
 
 /**
- * Single-line primitive arrays for compact display.
+ * Single-line primitive arrays in schema mode.
  */
 export const SingleLineArrays: Story = {
   args: {
     value: arrayData,
-    singleLineArrays: true,
+    openapiMode: 'schema',
     defaultInspectDepth: 3,
   },
 };
@@ -428,7 +423,7 @@ export const AllFeatures: Story = {
           className="px-3 py-2 border rounded-md w-64"
         />
         <div className="border rounded-md p-4 max-h-[500px] overflow-auto">
-          <JsonViewer {...args} searchText={searchText} displayDataTypes enableClipboard singleLineArrays />
+          <JsonViewer {...args} searchText={searchText} displayDataTypes enableClipboard />
         </div>
       </div>
     );
@@ -571,14 +566,14 @@ export const ShouldHighlightSearchMatches: Story = {
 };
 
 /**
- * Tests that primitive arrays render on single line when enabled.
+ * Tests that primitive arrays render on single line in schema mode.
  */
 export const ShouldRenderSingleLineArrays: Story = {
-  name: 'when singleLineArrays is true, primitive arrays render inline',
+  name: 'when openapiMode is schema, primitive arrays render inline',
   tags: ['!dev', '!autodocs'],
   args: {
     value: { numbers: [1, 2, 3, 4, 5] },
-    singleLineArrays: true,
+    openapiMode: 'schema',
     defaultInspectDepth: 2,
     rootName: false,
   },

@@ -29,7 +29,7 @@ export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
       <span className="opacity-50 italic mx-1 text-xs">
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </span>
-      <span className={`font-medium ${theme.bracket}`}>{closeBracket}</span>
+      <span className={`font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`}>{closeBracket}</span>
       {hasHiddenMatches && (
         <span
           className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-medium rounded ${theme.matchBadge}`}
