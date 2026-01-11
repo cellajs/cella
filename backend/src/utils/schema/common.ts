@@ -42,8 +42,8 @@ export const imageUrlSchema = z.string();
 /** Schema for a cookie value (string) */
 export const cookieSchema = z.string();
 
-/** Schema for either an ID or a slug */
-export const idOrSlugSchema = idSchema.or(slugSchema);
+/** Schema for either an ID or a slug (both are strings, so no need for anyOf) */
+export const idOrSlugSchema = z.string().openapi({ description: 'Entity ID or slug. ID is always preferred.' });
 
 /** Password schema: string - min 8 - max 100 characters */
 export const passwordSchema = z.string().min(8).max(100);

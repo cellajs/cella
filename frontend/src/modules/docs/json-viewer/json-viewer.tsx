@@ -74,7 +74,7 @@ const createRefDataType = (onNavigate: (targetPath: string) => void): DataType<s
 
 /**
  * A lightweight JSON viewer component with collapsible nodes.
- * Supports special 'openapi' mode for $ref click-to-scroll navigation.
+ * Supports OpenAPI spec mode with $ref navigation and mode for schema viewing.
  */
 export const JsonViewer: FC<JsonViewerProps> = ({
   value,
@@ -85,11 +85,12 @@ export const JsonViewer: FC<JsonViewerProps> = ({
   indentWidth = 2,
   valueTypes = [],
   className,
-  collapseStringsAfterLength = 50,
+  collapseStringsAfterLength = 200,
   openapiMode,
   searchText = '',
   expandAll = false,
   currentMatchIndex = 0,
+  searchMatchPath = null,
   showKeyQuotes = true,
   expandChildrenDepth = 1,
 }) => {
@@ -132,6 +133,7 @@ export const JsonViewer: FC<JsonViewerProps> = ({
     valueTypes: combinedValueTypes,
     collapseStringsAfterLength: maxStringLength,
     targetPath,
+    searchMatchPath,
     searchText,
     expandAll,
     currentMatchIndex,
@@ -154,6 +156,11 @@ export const JsonViewer: FC<JsonViewerProps> = ({
           @keyframes json-highlight-fade {
             0%, 70% { background-color: rgb(251 191 36); box-shadow: 0 0 0 2px rgb(251 191 36); }
             100% { background-color: transparent; box-shadow: none; }
+          }
+          .json-current-match {
+            outline: 2px solid rgb(59 130 246) !important;
+            outline-offset: 2px;
+            border-radius: 2px;
           }
         `}
       </style>

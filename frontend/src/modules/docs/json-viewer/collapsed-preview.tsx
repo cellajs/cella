@@ -3,7 +3,7 @@ import type { FC } from 'react';
 interface CollapsedPreviewProps {
   itemCount: number;
   closeBracket: string;
-  hasHiddenMatches: boolean;
+  hiddenMatchCount: number;
   displayDataTypes: boolean;
   typeLabel: string;
   theme: {
@@ -19,7 +19,7 @@ interface CollapsedPreviewProps {
 export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
   itemCount,
   closeBracket,
-  hasHiddenMatches,
+  hiddenMatchCount,
   displayDataTypes,
   typeLabel,
   theme,
@@ -30,12 +30,12 @@ export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </span>
       <span className={`font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`}>{closeBracket}</span>
-      {hasHiddenMatches && (
+      {hiddenMatchCount > 0 && (
         <span
           className={`ml-1.5 px-1.5 py-0.5 text-sm font-medium rounded ${theme.matchBadge}`}
           title="Contains search matches - click to expand"
         >
-          match
+          {hiddenMatchCount} {hiddenMatchCount === 1 ? 'match' : 'matches'}
         </span>
       )}
       {displayDataTypes && <span className="text-sm opacity-50 ml-2">{typeLabel}</span>}

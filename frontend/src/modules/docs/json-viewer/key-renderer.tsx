@@ -48,6 +48,7 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
     <>
       <span
         className={`font-medium ${theme.key} ${isMatch ? theme.searchMatch : ''} ${openapiMode === 'schema' && !isObjectValue ? 'text-foreground/40!' : ''}`}
+        data-search-match={isMatch ? 'true' : undefined}
       >
         {showKeyQuotes ? `"${keyName}"` : keyName}
       </span>

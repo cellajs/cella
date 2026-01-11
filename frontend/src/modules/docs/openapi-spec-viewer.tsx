@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon, XCircleIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { JsonViewer } from '~/modules/common/json-viewer';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import Spinner from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
+import { JsonViewer } from '~/modules/docs/json-viewer';
+import { getPathToNthMatch } from '~/modules/docs/json-viewer/utils';
 import { openApiSpecQueryOptions, openApiUrl } from '~/modules/docs/query';
 import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
@@ -54,7 +55,38 @@ const OpenApiSpecViewer = () => {
   const [searchText, setSearchText] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(-1); // -1 = no selection
+  const [searchMatchPath, setSearchMatchPath] = useState<(string | number)[] | null>(null);
+  const viewerContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to a specific match index - first expand the path, then scroll
+  const scrollToMatch = (index: number) => {
+    if (!viewerContainerRef.current || !data) return;
+
+    // First, compute the path to the match and expand nodes along it
+    const result = getPathToNthMatch(data, searchText, index);
+    if (result) {
+      setSearchMatchPath(result.path);
+    }
+
+    // Delay scroll to allow nodes to expand first
+    setTimeout(() => {
+      if (!viewerContainerRef.current) return;
+
+      const matches = viewerContainerRef.current.querySelectorAll('[data-search-match="true"]');
+      if (matches.length === 0) return;
+
+      // Remove previous current-match highlight
+      const prevCurrent = viewerContainerRef.current.querySelector('.json-current-match');
+      if (prevCurrent) prevCurrent.classList.remove('json-current-match');
+
+      const targetMatch = matches[index];
+      if (targetMatch) {
+        targetMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetMatch.classList.add('json-current-match');
+      }
+    }, 150);
+  };
 
   // Fetch OpenAPI json
   const { data, isLoading, error } = useQuery(openApiSpecQueryOptions);
@@ -68,15 +100,22 @@ const OpenApiSpecViewer = () => {
   // Reset current match index when search changes
   const handleSearchChange = (newSearch: string) => {
     setSearchText(newSearch);
-    setCurrentMatchIndex(0);
+    setCurrentMatchIndex(-1); // Reset to no selection
+    setSearchMatchPath(null);
   };
 
   const handlePrevMatch = () => {
-    setCurrentMatchIndex((prev) => (prev > 0 ? prev - 1 : matchCount - 1));
+    // If no selection or at first match, go to last match
+    const newIndex = currentMatchIndex <= 0 ? matchCount - 1 : currentMatchIndex - 1;
+    setCurrentMatchIndex(newIndex);
+    scrollToMatch(newIndex);
   };
 
   const handleNextMatch = () => {
-    setCurrentMatchIndex((prev) => (prev < matchCount - 1 ? prev + 1 : 0));
+    // If no selection or at last match, go to first match
+    const newIndex = currentMatchIndex < 0 || currentMatchIndex >= matchCount - 1 ? 0 : currentMatchIndex + 1;
+    setCurrentMatchIndex(newIndex);
+    scrollToMatch(newIndex);
   };
 
   if (isLoading) return <Spinner />;
@@ -93,7 +132,7 @@ const OpenApiSpecViewer = () => {
 
   return (
     <>
-      <div className="flex items-center gap-2 max-sm:flex-col w-full mb-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 py-2 -mt-2 mb-2 flex items-center gap-2 max-sm:flex-col w-full">
         {/* Search through JSON */}
         <InputGroup className="max-sm:w-full max-sm:order-last">
           <InputGroupAddon>
@@ -116,7 +155,11 @@ const OpenApiSpecViewer = () => {
                 className="flex items-center overflow-hidden"
               >
                 <span className="text-xs text-muted-foreground whitespace-nowrap px-2">
-                  {matchCount > 0 ? `${currentMatchIndex + 1}/${matchCount}` : t('common:no_results')}
+                  {matchCount > 0
+                    ? currentMatchIndex >= 0
+                      ? `${currentMatchIndex + 1}/${matchCount}`
+                      : `${matchCount}`
+                    : t('common:no_results')}
                 </span>
                 <button
                   type="button"
@@ -148,34 +191,21 @@ const OpenApiSpecViewer = () => {
           </InputGroupAddon>
         </InputGroup>
 
-        {/* Expand / Reset - hidden when searching */}
-        <AnimatePresence>
-          {!isSearching && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden max-sm:w-full"
-            >
-              <Button
-                variant="outline"
-                className="gap-2 max-sm:w-full whitespace-nowrap"
-                aria-label={isExpanded ? 'Reset to default' : 'Expand all'}
-                onClick={() => {
-                  if (isExpanded) {
-                    // Reset to default state by forcing re-mount
-                    setResetKey((k) => k + 1);
-                  }
-                  setIsExpanded(!isExpanded);
-                }}
-              >
-                {isExpanded ? <ChevronsDownUpIcon size={16} /> : <ChevronsUpDownIcon size={16} />}
-                <span>{isExpanded ? t('common:reset') : t('common:expand')}</span>
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Button
+          variant="outline"
+          className="max-sm:hidden gap-2"
+          aria-label={isExpanded ? 'Reset to default' : 'Expand all'}
+          onClick={() => {
+            if (isExpanded) {
+              // Reset to default state by forcing re-mount
+              setResetKey((k) => k + 1);
+            }
+            setIsExpanded(!isExpanded);
+          }}
+        >
+          {isExpanded ? <ChevronsDownUpIcon size={16} /> : <ChevronsUpDownIcon size={16} />}
+          <span>{isExpanded ? t('common:reset') : t('common:expand')}</span>
+        </Button>
 
         {/* Copy, download and open in new tab */}
         <JsonActions
@@ -183,11 +213,12 @@ const OpenApiSpecViewer = () => {
           data={data}
           filename="openapi.json"
           resourceName={t('common:docs.openapi_json')}
+          className="max-sm:w-full"
         />
       </div>
 
       {/* JSON viewer with collapsible nodes and OpenAPI $ref navigation */}
-      <div className="rounded-lg bg-muted/30 p-4 overflow-x-auto">
+      <div ref={viewerContainerRef} className="rounded-lg bg-muted/30 p-4 overflow-x-auto">
         <JsonViewer
           key={resetKey}
           value={data}
@@ -200,6 +231,7 @@ const OpenApiSpecViewer = () => {
           showKeyQuotes={false}
           expandAll={isExpanded}
           currentMatchIndex={currentMatchIndex}
+          searchMatchPath={searchMatchPath}
         />
       </div>
     </>

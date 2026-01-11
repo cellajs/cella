@@ -50,6 +50,8 @@ export interface JsonViewerProps<T = unknown> {
   expandAll?: boolean;
   /** Current match index for navigation (0-based) */
   currentMatchIndex?: number;
+  /** Path to current search match - nodes along this path will expand */
+  searchMatchPath?: (string | number)[] | null;
   /** Whether to show quotes around keys (default: true) */
   showKeyQuotes?: boolean;
   /** How many levels deep to expand when clicking a node (default: 1) */

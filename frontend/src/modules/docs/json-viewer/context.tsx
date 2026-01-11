@@ -12,6 +12,8 @@ export interface JsonViewerContextValue {
   collapseStringsAfterLength: number;
   /** Target path for $ref navigation - nodes along this path will expand */
   targetPath: string[] | null;
+  /** Path to current search match - nodes along this path will expand */
+  searchMatchPath: (string | number)[] | null;
   /** Search text to filter/highlight matching nodes */
   searchText: string;
   /** When true, expand all nodes */
@@ -35,6 +37,7 @@ export const JsonViewerContext = createContext<JsonViewerContextValue>({
   valueTypes: [],
   collapseStringsAfterLength: 50,
   targetPath: null,
+  searchMatchPath: null,
   searchText: '',
   expandAll: false,
   currentMatchIndex: 0,

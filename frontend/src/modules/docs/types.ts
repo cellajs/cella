@@ -72,18 +72,20 @@ export interface GenSchemaProperty {
   maxItems?: number;
   /** Nested properties for object types */
   properties?: Record<string, GenSchemaProperty>;
-  /** Items schema for array types */
+  /** Item type for array types (unwrapped from items.type) */
+  itemType?: string | string[];
+  /** Items schema for array types (only for complex nested objects/arrays) */
   items?: GenSchemaProperty;
   /** Reference path if this was dereferenced (e.g., '#/components/schemas/User') */
   ref?: string;
   /** Description from the referenced schema */
   refDescription?: string;
+  /** Reference to base schema when merged from allOf (for inheritance tracking) */
+  extendsRef?: string;
   /** anyOf schemas (for union types) */
   anyOf?: GenSchemaProperty[];
   /** oneOf schemas (for discriminated unions) */
   oneOf?: GenSchemaProperty[];
-  /** allOf schemas (for composition/inheritance) */
-  allOf?: GenSchemaProperty[];
 }
 
 /**
@@ -99,16 +101,18 @@ export interface GenSchema {
   refDescription?: string;
   /** Properties for object schemas */
   properties?: Record<string, GenSchemaProperty>;
-  /** Items schema for array types */
+  /** Item type for array types (unwrapped from items.type) */
+  itemType?: string | string[];
+  /** Items schema for array types (only for complex nested objects/arrays) */
   items?: GenSchemaProperty;
   /** Enum values if this is an enum type (can include null for nullable enums) */
   enum?: (string | number | boolean | null)[];
+  /** Reference to base schema when merged from allOf (for inheritance tracking) */
+  extendsRef?: string;
   /** anyOf schemas */
   anyOf?: GenSchema[];
   /** oneOf schemas */
   oneOf?: GenSchema[];
-  /** allOf schemas */
-  allOf?: GenSchema[];
 }
 
 /**

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { operations, tags } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import Logo from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { DocsSidebar } from '~/modules/docs/docs-sidebar';
@@ -18,6 +19,7 @@ const DocsLayout = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const showHeader = useScrollVisibility(isMobile);
 
   const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
 
@@ -67,9 +69,13 @@ const DocsLayout = () => {
   // Mobile layout with sheeter sidebar
   if (isMobile) {
     return (
-      <div className="h-screen flex flex-col">
+      <>
         {/* Fixed mobile header */}
-        <header className="fixed top-0 left-0 right-0 z-80 h-14 bg-background/70 backdrop-blur-sm">
+        <header
+          className={`fixed top-0 left-0 right-0 z-80 h-14 bg-background/70 backdrop-blur-sm transition-transform duration-300 ${
+            showHeader ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        >
           <div className="flex h-full items-center gap- px-2">
             <Button ref={triggerRef} variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle menu">
               <MenuIcon className="size-5" />
@@ -85,12 +91,10 @@ const DocsLayout = () => {
         </header>
 
         {/* Main content with top padding for fixed header */}
-        <main className="flex-1 overflow-auto pt-17 p-3 pb-[70vh]">
-          <div className="">
-            <Outlet />
-          </div>
+        <main className="min-h-screen pt-17 p-3 pb-[70vh]">
+          <Outlet />
         </main>
-      </div>
+      </>
     );
   }
 
@@ -106,8 +110,8 @@ const DocsLayout = () => {
       <ResizableSeparator />
 
       <ResizablePanel>
-        <main className="h-screen overflow-auto p-6 pb-[70vh]">
-          <div className="">
+        <main className="h-screen overflow-auto">
+          <div className="p-6 pb-[70vh]">
             <Outlet />
           </div>
         </main>

@@ -125,76 +125,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -205,76 +189,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -285,76 +253,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -365,76 +317,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -445,76 +381,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -631,76 +551,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -711,76 +615,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -791,76 +679,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -871,76 +743,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -951,76 +807,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -1040,76 +880,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -1120,76 +944,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -1200,76 +1008,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -1280,76 +1072,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -1360,76 +1136,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -1546,76 +1306,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -1626,76 +1370,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -1706,76 +1434,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -1786,76 +1498,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -1866,76 +1562,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -1953,11 +1633,8 @@ export const operations: GenOperationDetail[] = [
             enabledOAuth: {
               type: 'array',
               required: true,
-              items: {
-                type: 'string',
-                required: true,
-                enum: ['github'],
-              },
+              itemType: 'string',
+              enum: ['github'],
             },
             hasTotp: {
               type: 'boolean',
@@ -1970,6 +1647,7 @@ export const operations: GenOperationDetail[] = [
             sessions: {
               type: 'array',
               required: true,
+              itemType: 'object',
               items: {
                 type: 'object',
                 required: true,
@@ -2027,6 +1705,7 @@ export const operations: GenOperationDetail[] = [
             passkeys: {
               type: 'array',
               required: true,
+              itemType: 'object',
               items: {
                 type: 'object',
                 required: true,
@@ -2077,76 +1756,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -2157,76 +1820,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -2237,76 +1884,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -2317,76 +1948,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -2397,76 +2012,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -2484,6 +2083,7 @@ export const operations: GenOperationDetail[] = [
             items: {
               type: 'array',
               required: true,
+              itemType: 'object',
               items: {
                 type: 'object',
                 required: true,
@@ -2594,76 +2194,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -2674,76 +2258,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -2754,76 +2322,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -2834,76 +2386,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -2914,76 +2450,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -3005,10 +2525,7 @@ export const operations: GenOperationDetail[] = [
             rejectedItems: {
               type: 'array',
               required: true,
-              items: {
-                type: 'string',
-                required: true,
-              },
+              itemType: 'string',
             },
           },
         },
@@ -3020,76 +2537,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -3100,76 +2601,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -3180,76 +2665,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -3260,76 +2729,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -3340,76 +2793,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -3429,76 +2866,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -3509,76 +2930,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -3589,76 +2994,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -3669,76 +3058,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -3749,76 +3122,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -3879,76 +3236,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -3959,76 +3300,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -4039,76 +3364,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -4119,76 +3428,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -4199,76 +3492,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },
@@ -4288,76 +3565,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/BadRequestError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [400],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [400],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
         },
       },
@@ -4368,76 +3629,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/UnauthorizedError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [401],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [401],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
         },
       },
@@ -4448,76 +3693,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/ForbiddenError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [403],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [403],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
         },
       },
@@ -4528,76 +3757,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/NotFoundError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [404],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [404],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
         },
       },
@@ -4608,76 +3821,60 @@ export const operations: GenOperationDetail[] = [
         ref: '#/components/responses/TooManyRequestsError',
         schema: {
           type: 'object',
-          allOf: [
-            {
-              type: 'object',
-              properties: {
-                name: {
-                  type: 'string',
-                  required: true,
-                },
-                message: {
-                  type: 'string',
-                  required: true,
-                },
-                type: {
-                  type: 'string',
-                  required: true,
-                },
-                status: {
-                  type: 'integer',
-                  required: true,
-                  minimum: 400,
-                  maximum: 599,
-                },
-                severity: {
-                  type: 'string',
-                  required: true,
-                  enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
-                },
-                entityType: {
-                  type: 'string',
-                  required: false,
-                  enum: ['user', 'organization', 'attachment', 'page'],
-                },
-                logId: {
-                  type: 'string',
-                  required: false,
-                },
-                path: {
-                  type: 'string',
-                  required: false,
-                },
-                method: {
-                  type: 'string',
-                  required: false,
-                },
-                timestamp: {
-                  type: 'string',
-                  required: false,
-                },
-                userId: {
-                  type: 'string',
-                  required: false,
-                },
-                organizationId: {
-                  type: 'string',
-                  required: false,
-                },
-              },
-              ref: '#/components/schemas/ApiError',
+          properties: {
+            name: {
+              type: 'string',
+              required: true,
             },
-            {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'number',
-                  required: false,
-                  enum: [429],
-                },
-              },
+            message: {
+              type: 'string',
+              required: true,
             },
-          ],
+            type: {
+              type: 'string',
+              required: true,
+            },
+            status: {
+              type: 'number',
+              required: true,
+              enum: [429],
+            },
+            severity: {
+              type: 'string',
+              required: true,
+              enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+            },
+            entityType: {
+              type: 'string',
+              required: false,
+              enum: ['user', 'organization', 'attachment', 'page'],
+            },
+            logId: {
+              type: 'string',
+              required: false,
+            },
+            path: {
+              type: 'string',
+              required: false,
+            },
+            method: {
+              type: 'string',
+              required: false,
+            },
+            timestamp: {
+              type: 'string',
+              required: false,
+            },
+            userId: {
+              type: 'string',
+              required: false,
+            },
+            organizationId: {
+              type: 'string',
+              required: false,
+            },
+          },
+          extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
         },
       },

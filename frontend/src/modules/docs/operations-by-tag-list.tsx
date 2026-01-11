@@ -49,7 +49,7 @@ const OperationsByTagList = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={`tag/${tag.name}`} className="scroll-mt-16 border-0">
+              <Card id={`tag/${tag.name}`} className="scroll-mt-16 sm:scroll-mt-6 border-0">
                 <CardHeader>
                   <CardTitle className="text-xl leading-8">{tag.name}</CardTitle>
                   {tag.description && <CardDescription className="my-2">{tag.description}</CardDescription>}
@@ -92,7 +92,7 @@ const OperationsByTagList = () => {
                         <div
                           key={operation.hash}
                           id={operation.hash}
-                          className="p-6 mt-4 border-b last:border-b-0 transition-colors"
+                          className="p-6 mt-4 scroll-mt-12 sm:scroll-mt-4 border-b last:border-b-0 transition-colors"
                         >
                           <div className="flex justify-between items-start mb-4">
                             {operation.summary && <p className="text-xl font-medium">{operation.summary}</p>}

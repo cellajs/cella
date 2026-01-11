@@ -3602,16 +3602,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "query"
           },
@@ -4107,16 +4102,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "path"
           }
@@ -4169,16 +4159,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "path"
           }
@@ -4596,16 +4581,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "path"
           }
@@ -4657,16 +4637,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "path"
           }
@@ -6130,16 +6105,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           },
@@ -6235,16 +6205,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           }
@@ -6409,16 +6374,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           }
@@ -6519,16 +6479,11 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           }
@@ -6648,31 +6603,21 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "query"
           },
@@ -6789,31 +6734,21 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "query"
           },
@@ -6925,16 +6860,11 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           }
@@ -7035,16 +6965,11 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           }
@@ -7099,16 +7024,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           },
@@ -7168,16 +7088,11 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "query"
           },
@@ -7388,16 +7303,11 @@
         "parameters": [
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "orgIdOrSlug",
             "in": "path"
           },
@@ -7452,16 +7362,11 @@
           },
           {
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
             },
             "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
             "name": "idOrSlug",
             "in": "query"
           },

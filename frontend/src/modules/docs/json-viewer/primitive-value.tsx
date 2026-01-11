@@ -90,7 +90,7 @@ export const PrimitiveValue: FC<PrimitiveValueProps> = ({
   openapiMode,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const baseClass = 'break-all whitespace-pre-wrap';
+  const baseClass = 'break-word whitespace-pre-line';
 
   switch (type) {
     case 'string': {

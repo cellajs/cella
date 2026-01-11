@@ -3,7 +3,7 @@ import { Braces, ChevronDown, FileType, Loader2, Text } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { JsonViewer } from '~/modules/common/json-viewer';
+import { JsonViewer } from '~/modules/docs/json-viewer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
