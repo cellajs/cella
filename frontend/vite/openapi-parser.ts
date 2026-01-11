@@ -94,7 +94,6 @@ function resolveSchemaProperty(
         type: 'object',
         required: isRequired,
         ref: schema.$ref,
-        refName: schema.$ref.split('/').pop(),
         refDescription: '(circular reference)',
       };
     }
@@ -102,12 +101,11 @@ function resolveSchemaProperty(
     const newVisited = new Set(visited);
     newVisited.add(schema.$ref);
 
-    const { schema: resolved, name } = resolveRef(schema.$ref, spec);
+    const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
       const result = resolveSchemaProperty(resolved, isRequired, spec, newVisited);
       // Add ref metadata
       result.ref = schema.$ref;
-      result.refName = name;
       if (resolved.description) {
         result.refDescription = resolved.description;
       }
@@ -119,7 +117,6 @@ function resolveSchemaProperty(
       type: 'object',
       required: isRequired,
       ref: schema.$ref,
-      refName: name,
     };
   }
 
@@ -181,7 +178,6 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
       return {
         type: 'object',
         ref: schema.$ref,
-        refName: schema.$ref.split('/').pop(),
         refDescription: '(circular reference)',
       };
     }
@@ -189,12 +185,11 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
     const newVisited = new Set(visited);
     newVisited.add(schema.$ref);
 
-    const { schema: resolved, name } = resolveRef(schema.$ref, spec);
+    const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
       const result = resolveSchema(resolved, spec, newVisited);
       // Preserve original ref info
       result.ref = schema.$ref;
-      result.refName = name;
       if (resolved.description) {
         result.refDescription = resolved.description;
       }
@@ -205,7 +200,6 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
     return {
       type: 'object',
       ref: schema.$ref,
-      refName: name,
     };
   }
 

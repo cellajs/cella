@@ -175,7 +175,6 @@ export const operations: GenOperationDetail[] = [
                         },
                       },
                       ref: '#/components/schemas/MembershipBase',
-                      refName: 'MembershipBase',
                     },
                     {
                       type: 'null',
@@ -227,7 +226,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/Organization',
-              refName: 'Organization',
             },
             {
               type: 'object',
@@ -274,7 +272,6 @@ export const operations: GenOperationDetail[] = [
                     },
                   },
                   ref: '#/components/schemas/MembershipBase',
-                  refName: 'MembershipBase',
                 },
               },
             },
@@ -346,7 +343,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -360,7 +356,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/BadRequestError',
-          refName: 'BadRequestError',
         },
       },
       {
@@ -428,7 +423,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -442,7 +436,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/UnauthorizedError',
-          refName: 'UnauthorizedError',
         },
       },
       {
@@ -510,7 +503,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -524,7 +516,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/ForbiddenError',
-          refName: 'ForbiddenError',
         },
       },
       {
@@ -592,7 +583,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -606,7 +596,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/NotFoundError',
-          refName: 'NotFoundError',
         },
       },
       {
@@ -674,7 +663,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -688,7 +676,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/TooManyRequestsError',
-          refName: 'TooManyRequestsError',
         },
       },
     ],
@@ -868,7 +855,6 @@ export const operations: GenOperationDetail[] = [
                           },
                         },
                         ref: '#/components/schemas/MembershipBase',
-                        refName: 'MembershipBase',
                       },
                       {
                         type: 'null',
@@ -920,7 +906,6 @@ export const operations: GenOperationDetail[] = [
                   },
                 },
                 ref: '#/components/schemas/Organization',
-                refName: 'Organization',
               },
             },
             total: {
@@ -995,7 +980,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1009,7 +993,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/BadRequestError',
-          refName: 'BadRequestError',
         },
       },
       {
@@ -1077,7 +1060,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1091,7 +1073,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/UnauthorizedError',
-          refName: 'UnauthorizedError',
         },
       },
       {
@@ -1159,7 +1140,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1173,7 +1153,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/ForbiddenError',
-          refName: 'ForbiddenError',
         },
       },
       {
@@ -1241,7 +1220,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1255,7 +1233,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/NotFoundError',
-          refName: 'NotFoundError',
         },
       },
       {
@@ -1323,7 +1300,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1337,7 +1313,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/TooManyRequestsError',
-          refName: 'TooManyRequestsError',
         },
       },
     ],
@@ -1431,7 +1406,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1445,7 +1419,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/BadRequestError',
-          refName: 'BadRequestError',
         },
       },
       {
@@ -1513,7 +1486,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1527,7 +1499,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/UnauthorizedError',
-          refName: 'UnauthorizedError',
         },
       },
       {
@@ -1595,7 +1566,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1609,7 +1579,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/ForbiddenError',
-          refName: 'ForbiddenError',
         },
       },
       {
@@ -1677,7 +1646,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1691,7 +1659,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/NotFoundError',
-          refName: 'NotFoundError',
         },
       },
       {
@@ -1759,7 +1726,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -1773,7 +1739,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/TooManyRequestsError',
-          refName: 'TooManyRequestsError',
         },
       },
     ],
@@ -1948,7 +1913,6 @@ export const operations: GenOperationDetail[] = [
                     },
                   },
                   ref: '#/components/schemas/MembershipBase',
-                  refName: 'MembershipBase',
                 },
                 {
                   type: 'null',
@@ -2000,7 +1964,6 @@ export const operations: GenOperationDetail[] = [
             },
           },
           ref: '#/components/schemas/Organization',
-          refName: 'Organization',
         },
       },
       {
@@ -2068,7 +2031,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2082,7 +2044,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/BadRequestError',
-          refName: 'BadRequestError',
         },
       },
       {
@@ -2150,7 +2111,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2164,7 +2124,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/UnauthorizedError',
-          refName: 'UnauthorizedError',
         },
       },
       {
@@ -2232,7 +2191,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2246,7 +2204,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/ForbiddenError',
-          refName: 'ForbiddenError',
         },
       },
       {
@@ -2314,7 +2271,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2328,7 +2284,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/NotFoundError',
-          refName: 'NotFoundError',
         },
       },
       {
@@ -2396,7 +2351,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2410,7 +2364,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/TooManyRequestsError',
-          refName: 'TooManyRequestsError',
         },
       },
     ],
@@ -2585,7 +2538,6 @@ export const operations: GenOperationDetail[] = [
                     },
                   },
                   ref: '#/components/schemas/MembershipBase',
-                  refName: 'MembershipBase',
                 },
                 {
                   type: 'null',
@@ -2637,7 +2589,6 @@ export const operations: GenOperationDetail[] = [
             },
           },
           ref: '#/components/schemas/Organization',
-          refName: 'Organization',
         },
       },
       {
@@ -2705,7 +2656,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2719,7 +2669,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/BadRequestError',
-          refName: 'BadRequestError',
         },
       },
       {
@@ -2787,7 +2736,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2801,7 +2749,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/UnauthorizedError',
-          refName: 'UnauthorizedError',
         },
       },
       {
@@ -2869,7 +2816,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2883,7 +2829,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/ForbiddenError',
-          refName: 'ForbiddenError',
         },
       },
       {
@@ -2951,7 +2896,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -2965,7 +2909,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/NotFoundError',
-          refName: 'NotFoundError',
         },
       },
       {
@@ -3033,7 +2976,6 @@ export const operations: GenOperationDetail[] = [
                 },
               },
               ref: '#/components/schemas/ApiError',
-              refName: 'ApiError',
             },
             {
               type: 'object',
@@ -3047,7 +2989,6 @@ export const operations: GenOperationDetail[] = [
             },
           ],
           ref: '#/components/schemas/TooManyRequestsError',
-          refName: 'TooManyRequestsError',
         },
       },
     ],

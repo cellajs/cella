@@ -76,8 +76,6 @@ export interface GenSchemaProperty {
   items?: GenSchemaProperty;
   /** Reference path if this was dereferenced (e.g., '#/components/schemas/User') */
   ref?: string;
-  /** Referenced schema name (e.g., 'User') */
-  refName?: string;
   /** Description from the referenced schema */
   refDescription?: string;
   /** anyOf schemas (for union types) */
@@ -97,8 +95,6 @@ export interface GenSchema {
   type: string | string[];
   /** Original reference path if dereferenced */
   ref?: string;
-  /** Referenced schema name */
-  refName?: string;
   /** Description from the referenced schema or inline */
   refDescription?: string;
   /** Properties for object schemas */

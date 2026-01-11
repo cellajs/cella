@@ -1385,6 +1385,9 @@ export type GetMeResponses = {
    */
   200: {
     user: User;
+    /**
+     * Explain system role here
+     */
     systemRole: 'admin' | 'user';
   };
 };

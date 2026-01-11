@@ -2956,7 +2956,8 @@
                       "enum": [
                         "admin",
                         "user"
-                      ]
+                      ],
+                      "description": "Explain system role here"
                     }
                   },
                   "required": [

@@ -250,14 +250,44 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   // Object or Array
   const isArray = valueType === 'array';
 
+  // In schema mode, check if parent key is 'properties' (type keys inside properties should NOT be filtered)
+  const parentKey = path.length > 0 ? path[path.length - 1] : null;
+  const isInsideProperties = parentKey === 'properties';
+
+  // Get 'type' value if present and we should show it as a label (not inside 'properties')
+  const typeValue =
+    openapiMode === 'schema' &&
+    !isArray &&
+    !isInsideProperties &&
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).type === 'string'
+      ? ((value as Record<string, unknown>).type as string)
+      : null;
+
+  // Get 'ref' value if present and we should show it as a label (not inside 'properties')
+  // Extract just the schema name from the full ref path (e.g., '#/components/schemas/User' -> 'User')
+  const refValue = (() => {
+    if (openapiMode === 'schema' && !isArray && !isInsideProperties && typeof value === 'object' && value !== null) {
+      const ref = (value as Record<string, unknown>).ref;
+      if (typeof ref === 'string') {
+        return ref.split('/').pop() || ref;
+      }
+    }
+    return null;
+  })();
+
   // In schema mode, extract entries and filter out 'required' key
   const rawEntries = isArray
     ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown])
     : Object.entries(value as Record<string, unknown>);
 
   // Filter out 'required' key in schema mode (it will be shown as label instead)
+  // Also filter out 'type' and 'ref' keys when not inside 'properties' (they will be shown as labels after open bracket)
   const filteredEntries =
-    openapiMode === 'schema' && !isArray ? rawEntries.filter(([key]) => key !== 'required') : rawEntries;
+    openapiMode === 'schema' && !isArray
+      ? rawEntries.filter(([key]) => key !== 'required' && (isInsideProperties || (key !== 'type' && key !== 'ref')))
+      : rawEntries;
 
   // In schema mode, sort entries: primitives first, then objects/arrays
   const entries =
@@ -279,10 +309,20 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
       <div className="whitespace-nowrap" style={{ paddingLeft }}>
         {renderKey()}
         {keyName !== false && <span className="opacity-70 mr-1">: </span>}
-        <span className={`font-medium ${theme.bracket}`}>
-          {openBracket}
-          {closeBracket}
-        </span>
+        <span className={`font-medium ${theme.bracket}`}>{openBracket}</span>
+        {typeValue && (
+          <span
+            className={`ml-1 px-1 py-0.5 text-[10px] font-medium rounded ${theme.schemaType} ${getTypeColorClass(typeValue, theme)}`}
+          >
+            {typeValue}
+          </span>
+        )}
+        {refValue && (
+          <span className="ml-1 px-1 py-0.5 text-[10px] font-medium rounded text-primary bg-primary/10">
+            {refValue}
+          </span>
+        )}
+        <span className={`font-medium ${theme.bracket}`}>{closeBracket}</span>
       </div>
     );
   }
@@ -339,6 +379,18 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
         {renderKey()}
         {keyName !== false && <span className="opacity-70 mr-1">: </span>}
         <span className={`font-medium ${theme.bracket}`}>{openBracket}</span>
+        {typeValue && (
+          <span
+            className={`ml-1 px-1 py-0.5 text-[10px] font-medium rounded ${theme.schemaType} ${getTypeColorClass(typeValue, theme)}`}
+          >
+            {typeValue}
+          </span>
+        )}
+        {refValue && (
+          <span className="ml-1 px-1 py-0.5 text-[10px] font-medium rounded text-primary bg-primary/10">
+            {refValue}
+          </span>
+        )}
         {!isExpanded && (
           <>
             <span className="opacity-50 italic mx-1 text-xs">
@@ -439,6 +491,26 @@ interface PrimitiveValueProps {
 
 /** JSON Schema data type keywords */
 const JSON_SCHEMA_TYPES = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
+
+/** Returns the appropriate color class for a JSON Schema type keyword */
+const getTypeColorClass = (
+  typeValue: string,
+  theme: { string: string; number: string; boolean: string; null: string },
+): string => {
+  switch (typeValue) {
+    case 'string':
+      return theme.string;
+    case 'number':
+    case 'integer':
+      return theme.number;
+    case 'boolean':
+      return theme.boolean;
+    case 'null':
+      return theme.null;
+    default:
+      return 'text-purple-600 dark:text-purple-400'; // for array/object
+  }
+};
 
 /** Highlights search matches in text with Tailwind classes */
 const highlightText = (text: string, searchText: string, colorClass: string, searchMatchClass: string) => {
