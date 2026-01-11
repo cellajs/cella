@@ -97,7 +97,7 @@ const DocsLayout = () => {
   // Desktop layout with resizable panels
   return (
     <ResizableGroup orientation="horizontal" className="h-screen">
-      <ResizablePanel defaultSize="20%" className="border-r">
+      <ResizablePanel defaultSize="20%" minSize="16rem" maxSize="40%" className="border-r">
         <div className="h-screen">
           <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
         </div>

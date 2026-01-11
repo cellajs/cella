@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
+import { SimpleHeader } from '../common/simple-header';
 import { buttonVariants } from '../ui/button';
 import { getMethodColor } from './helpers/get-method-color';
 
@@ -39,12 +40,7 @@ const OperationsByTagList = () => {
 
   return (
     <>
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t('common:docs.api_operations')}</h1>
-        <p className="text-muted-foreground">
-          {t('common:docs.operations_across_tags', { operations: operations.length, tags: tags.length })}
-        </p>
-      </header>
+      <SimpleHeader className="mb-8" heading={t('common:docs.api_operations')} />
 
       <div className="flex flex-col gap-12 lg:gap-20">
         {tags.map((tag) => {
@@ -53,9 +49,9 @@ const OperationsByTagList = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={`tag/${tag.name}`} className="scroll-mt-8 border-0">
+              <Card id={`tag/${tag.name}`} className="scroll-mt-16 border-0">
                 <CardHeader>
-                  <CardTitle className="text-3xl leading-12">{tag.name}</CardTitle>
+                  <CardTitle className="text-xl leading-8">{tag.name}</CardTitle>
                   {tag.description && <CardDescription className="my-2">{tag.description}</CardDescription>}
                   <p className="text-sm font-medium mt-4">{t('common:operation', { count: tag.count })}</p>
                 </CardHeader>
@@ -100,7 +96,7 @@ const OperationsByTagList = () => {
                         >
                           <div className="flex justify-between items-start mb-4">
                             {operation.summary && <p className="text-xl font-medium">{operation.summary}</p>}
-                            <div className="text-sm font-mono px-2 py-0.5 text-muted-foreground shrink-0">
+                            <div className="max-sm:hidden text-sm font-mono px-2 py-0.5 text-muted-foreground shrink-0">
                               {operation.id}
                             </div>
                           </div>
@@ -111,7 +107,7 @@ const OperationsByTagList = () => {
                             >
                               {operation.method.toUpperCase()}
                             </Badge>
-                            <code className="text-lg opacity-70 font-mono">{operation.path}</code>
+                            <code className="sm:text-lg opacity-70 font-mono break-all">{operation.path}</code>
                             {operation.deprecated && (
                               <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                                 {t('common:deprecated')}
@@ -120,7 +116,7 @@ const OperationsByTagList = () => {
                           </div>
 
                           {operation.description && (
-                            <div className="mb-4">
+                            <div className="pt-3 pb-8">
                               <DescriptionEditor
                                 operationId={operation.id}
                                 initialDescription={operation.description}

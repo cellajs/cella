@@ -35,7 +35,13 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
+  return (
+    <div
+      data-slot="card-description"
+      className={cn('text-muted-foreground text-sm min-w-0 wrap-break-word', className)}
+      {...props}
+    />
+  );
 }
 
 function CardAction({ className, ...props }: React.ComponentProps<'div'>) {

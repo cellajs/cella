@@ -116,7 +116,6 @@
   "docs.openapi_specification": "OpenAPI specification",
   "docs.openapi_version": "OpenAPI version",
   "docs.operation_id": "Operation ID",
-  "docs.operations_across_tags": "{{operations}} operations across {{tags}} tags",
   "docs.parameters": "Parameters",
   "docs.rate_limiter": "Rate limiter",
   "docs.request_body": "Request body",

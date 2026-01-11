@@ -93,7 +93,7 @@ const OpenApiSpecViewer = () => {
       </div>
 
       {/* JSON editor */}
-      <div className="rounded-lg border bg-muted/30 p-4 overflow-auto">
+      <div className="rounded-lg bg-muted/30 p-4 overflow-auto">
         <JsonEditor
           hideRoot
           key={resetKey}

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type { GenOperationSummary, TagName } from '~/api.gen/docs';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { DataTable } from '~/modules/common/data-table';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -11,55 +12,62 @@ interface TagOperationsTableProps {
   tagName: TagName;
 }
 
-const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[] => [
-  {
-    key: 'method',
-    name: '',
-    visible: true,
-    sortable: false,
-    width: 80,
-    renderHeaderCell: HeaderCell,
-    renderCell: ({ row }) => (
-      <Badge
-        variant="secondary"
-        className={`font-mono uppercase text-xs bg-transparent shadow-none ${getMethodColor(row.method)}`}
-      >
-        {row.method.toUpperCase()}
-      </Badge>
-    ),
-  },
-  {
-    key: 'path',
-    name: '',
-    visible: true,
-    minWidth: 200,
-    sortable: false,
-    renderHeaderCell: HeaderCell,
-    renderCell: ({ row, tabIndex }) => (
-      <Link
-        to="."
-        search={(prev) => ({ ...prev, tag: tagName })}
-        hash={row.hash}
-        replace
-        resetScroll={false}
-        draggable={false}
-        tabIndex={tabIndex}
-        className="font-mono text-sm truncate hover:underline underline-offset-3 decoration-foreground/30"
-      >
-        {row.path}
-      </Link>
-    ),
-  },
-  {
-    key: 'id',
-    name: '',
-    visible: true,
-    sortable: false,
-    width: 200,
-    renderHeaderCell: HeaderCell,
-    renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
-  },
-];
+/**
+ * Columns for TagOperationsTable
+ */
+const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[] => {
+  const isMobile = useBreakpoints('max', 'sm', false);
+
+  return [
+    {
+      key: 'method',
+      name: '',
+      visible: true,
+      sortable: false,
+      width: 80,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (
+        <Badge
+          variant="secondary"
+          className={`font-mono uppercase text-xs bg-transparent shadow-none ${getMethodColor(row.method)}`}
+        >
+          {row.method.toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
+      key: 'path',
+      name: '',
+      visible: true,
+      minWidth: 200,
+      sortable: false,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => (
+        <Link
+          to="."
+          search={(prev) => ({ ...prev, tag: tagName })}
+          hash={row.hash}
+          replace
+          resetScroll={false}
+          draggable={false}
+          tabIndex={tabIndex}
+          className="font-mono text-sm truncate hover:underline underline-offset-3 decoration-foreground/30"
+        >
+          {row.path}
+        </Link>
+      ),
+    },
+    {
+      key: 'id',
+      name: '',
+      visible: !isMobile,
+      sortable: false,
+      width: 200,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
+    },
+  ];
+};
 
 /**
  * Simple read-only operations table for displaying operations within a tag section
@@ -70,7 +78,7 @@ export const TagOperationsTable = ({ operations, tagName }: TagOperationsTablePr
   return (
     <DataTable<GenOperationSummary>
       className="mb-0"
-      columns={columns}
+      columns={columns.filter((col) => col.visible)}
       rows={operations}
       hasNextPage={false}
       rowKeyGetter={(row) => row.hash}

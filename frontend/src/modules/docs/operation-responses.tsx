@@ -54,7 +54,7 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
                 </span>
               </div>
               {response.name && (
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                <span className="max-sm:hidden text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
                   {response.name}
                 </span>
               )}

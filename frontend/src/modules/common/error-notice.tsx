@@ -114,10 +114,10 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/
       {level === 'root' && <Dialoger />}
       <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
         <div className="mt-auto mb-auto">
-          <Card className="max-w-[80vw] sm:w-[40rem] mt-8 bg-transparent border-none">
+          <Card className="max-w-[80vw] sm:w-160 mt-8 bg-transparent border-none">
             <CardHeader className="text-center p-0">
               <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
-              <CardDescription className="text-base flex-col gap-2 p-0">
+              <CardDescription className="text-base text-foreground flex-col gap-2 p-0">
                 <span className="block">{message}</span>
                 <span className="block mt-2 font-light">
                   <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
