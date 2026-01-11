@@ -35,7 +35,7 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
 
   // Show required label if node has required: true on itself
   const requiredLabel = hasSelfRequired && (
-    <span className={`ml-1.5 px-1 py-0.5 text-[10px] font-medium rounded ${theme.required}`}>required</span>
+    <span className={`ml-1.5 px-1 py-0.5 text-xs font-medium rounded ${theme.required}`}>required</span>
   );
 
   // Numeric index (array items)

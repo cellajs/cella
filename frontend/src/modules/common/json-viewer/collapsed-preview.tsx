@@ -32,13 +32,13 @@ export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
       <span className={`font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`}>{closeBracket}</span>
       {hasHiddenMatches && (
         <span
-          className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-medium rounded ${theme.matchBadge}`}
+          className={`ml-1.5 px-1.5 py-0.5 text-sm font-medium rounded ${theme.matchBadge}`}
           title="Contains search matches - click to expand"
         >
           match
         </span>
       )}
-      {displayDataTypes && <span className="text-[10px] opacity-50 ml-2">{typeLabel}</span>}
+      {displayDataTypes && <span className="text-sm opacity-50 ml-2">{typeLabel}</span>}
     </>
   );
 };

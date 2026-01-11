@@ -160,7 +160,7 @@ export const JsonViewer: FC<JsonViewerProps> = ({
       <div
         ref={containerRef}
         data-openapi-mode={openapiMode}
-        className={`group/jv font-mono text-[13px] leading-relaxed text-gray-900 dark:text-gray-100 ${className || ''}`}
+        className={`group/jv font-mono leading-relaxed text-gray-900 dark:text-gray-100 ${className || ''}`}
       >
         <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
       </div>

@@ -43,13 +43,13 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, theme
     <>
       {typeValue && (
         <span
-          className={`ml-1 px-1 py-0.5 text-[10px] font-medium rounded ${theme.schemaType} ${getTypeColorClass(typeValue, theme)}`}
+          className={`ml-1 px-1 py-0.5 text-sm font-medium rounded ${theme.schemaType} ${getTypeColorClass(typeValue, theme)}`}
         >
           {typeValue}
         </span>
       )}
       {refValue && (
-        <span className="ml-1 px-1 py-0.5 text-[10px] font-medium rounded text-primary bg-primary/10">{refValue}</span>
+        <span className="ml-1 px-1 py-0.5 text-sm font-medium rounded text-primary bg-primary/10">{refValue}</span>
       )}
     </>
   );

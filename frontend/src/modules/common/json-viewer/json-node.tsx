@@ -137,7 +137,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
           searchText={searchText}
           openapiMode={openapiMode}
         />
-        {displayDataTypes && <span className="text-[10px] opacity-50 ml-2">{getTypeLabel(value, valueType)}</span>}
+        {displayDataTypes && <span className="text-sm opacity-50 ml-2">{getTypeLabel(value, valueType)}</span>}
       </div>
     );
   }
