@@ -210,18 +210,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -300,18 +292,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -390,18 +374,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -480,18 +456,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -570,18 +538,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -686,18 +646,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -776,18 +728,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -866,18 +810,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -956,18 +892,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1046,18 +974,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1243,18 +1163,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1333,18 +1245,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1423,18 +1327,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1513,18 +1409,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1603,18 +1491,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1800,18 +1680,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1890,18 +1762,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -1980,18 +1844,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -2070,18 +1926,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
@@ -2160,18 +2008,10 @@ export const operations: GenOperationDetail[] = [
                   required: true,
                 },
                 status: {
-                  type: 'object',
+                  type: 'integer',
                   required: true,
-                  anyOf: [
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                    {
-                      type: 'number',
-                      required: false,
-                    },
-                  ],
+                  minimum: 400,
+                  maximum: 599,
                 },
                 severity: {
                   type: 'string',
