@@ -64,6 +64,8 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Zod v4 only: `import { z } from 'zod'`. However, in backend due to using hono/zod-openapi, `import { z } from '@hono/zod-openapi'` is required.
 - camelCase for variables and functions, PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
 - Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.
+- Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
+
 - Links as buttons: For buttons that link to directly targetable online resources, use TanStack Router `<Link>` with `buttonVariants()` instead of `<button>`. Also when the primary action is opening a sheet, if the data targetable by url, allow end-user to open it in a new tab.
 - React-compiler: `useMemo`, `useCallback` can be avoided in most cases.
 - Translations: All user-facing text in UI must use translation strings via `const { t } = useTranslation()` and `t('common:save_changes')`. Never hardcode text. Translation files are in `locales/en/`.
@@ -73,7 +75,6 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Run all: `pnpm test`; per package: `pnpm test` (from that workspace) or package-specific scripts.
 - Name tests `*.test.ts`; add integration tests where behavior spans modules.
 - Aim for reliable, isolated tests; include minimal setup files when needed.
-
 ## Commits & Pull Requests
 - Use Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`; optional scope (e.g., `feat(web): ...`).
 - PRs must include: concise description, linked issues (`#123`), screenshots for UI, and passing checks (build, typecheck, lint, tests).
