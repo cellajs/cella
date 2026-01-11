@@ -1,12 +1,10 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { JsonViewer } from '~/modules/common/json-viewer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 import { getStatusColor } from './helpers/get-status-color';
-import { valuesFirstSort } from './helpers/values-first-sort';
-import { githubDarkTheme, JsonEditor } from './json-editor';
 import type { GenOperationDetail, GenResponseSummary } from './types';
 
 /**
@@ -31,7 +29,6 @@ interface ResponsesAccordionProps {
  */
 const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
 
   if (responses.length === 0) {
     return <div className="text-sm text-muted-foreground py-2">{t('common:docs.no_responses_defined')}</div>;
@@ -63,24 +60,14 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
           <AccordionContent>
             {response.schema ? (
               <div className="p-3 rounded-md bg-muted/50">
-                <JsonEditor
-                  hideRoot
-                  enableSingleLineArrays
-                  enableRequiredAsLabel
-                  data={response.schema}
-                  collapse={4}
-                  keySort={valuesFirstSort}
-                  theme={mode === 'dark' ? githubDarkTheme : undefined}
-                  restrictEdit={true}
-                  searchFilter="all"
-                  enableClipboard={false}
-                  restrictDelete
-                  restrictAdd
-                  showStringQuotes={false}
-                  showArrayIndices={false}
-                  showCollectionCount="when-closed"
-                  indent={2}
-                  rootFontSize="13px"
+                <JsonViewer
+                  value={response.schema}
+                  showKeyQuotes={false}
+                  singleLineArrays={true}
+                  openapiMode="schema"
+                  rootName={false}
+                  defaultInspectDepth={4}
+                  indentWidth={2}
                 />
               </div>
             ) : (

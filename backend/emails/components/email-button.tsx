@@ -1,6 +1,9 @@
 import { Button, Section } from 'jsx-email';
 
-export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string  }) => (
+/**
+ * Email button component for call-to-action links with consistent styling.
+ */
+export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string }) => (
   <Section style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '2rem' }}>
     <Button
       align="center"
