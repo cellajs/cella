@@ -1,4 +1,4 @@
-import { createRoute, useLoaderData, useSearch } from '@tanstack/react-router';
+import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { tags } from '~/api.gen/docs';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -6,25 +6,33 @@ import { tagDetailsQueryOptions } from '~/modules/docs/operation-responses';
 import { initPagesCollection } from '~/modules/pages/collections';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
-import { docsRouteSearchParamsSchema, pagesRouteSearchParamsSchema } from '~/routes/search-params-schemas';
+import {
+  operationsRouteSearchParamsSchema,
+  pagesRouteSearchParamsSchema,
+  schemasRouteSearchParamsSchema,
+} from '~/routes/search-params-schemas';
+import { useDocsStore } from '~/store/docs';
 import appTitle from '~/utils/app-title';
+import { noDirectAccess } from '~/utils/no-direct-access';
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
 const OperationsListPage = lazy(() => import('~/modules/docs/operations-list-page'));
 const OperationsTable = lazy(() => import('~/modules/docs/operations-table'));
-const SchemasList = lazy(() => import('~/modules/docs/schemas-list'));
+const SchemasListPage = lazy(() => import('~/modules/docs/schemas-list-page'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
 const PagePage = lazy(() => import('~/modules/pages/page-page'));
 
 /**
- * Documentation route for API reference and developer guides.
+ * Documentation layout route for API reference and developer guides.
  */
 export const DocsLayoutRoute = createRoute({
   path: '/docs',
   staticData: { isAuth: false },
-  validateSearch: docsRouteSearchParamsSchema,
   head: () => ({ meta: [{ title: appTitle('Docs') }] }),
+  beforeLoad: async () => {
+    noDirectAccess(DocsLayoutRoute.to, DocsOperationsRoute.to);
+  },
   getParentRoute: () => PublicLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
@@ -40,24 +48,25 @@ export const DocsLayoutRoute = createRoute({
 });
 
 /**
- * Index route - shows operations list or table at /docs based on viewMode
+ * Operations route - shows operations list or table view.
  */
-export const DocsIndexRoute = createRoute({
-  path: '/',
+export const DocsOperationsRoute = createRoute({
+  path: '/operations',
   staticData: { isAuth: false },
+  validateSearch: operationsRouteSearchParamsSchema,
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
     // Prefetch all tag details into react-query cache
     await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
   },
   component: () => {
-    const { viewMode = 'list' } = useSearch({ from: '/publicLayout/docs/' });
+    const viewMode = useDocsStore((state) => state.viewMode);
     return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsListPage />}</Suspense>;
   },
 });
 
 /**
- * Overview route - shows OpenAPI info in a table format.
+ * Overview route - shows OpenAPI info in a table format and spec in JSON viewer.
  */
 export const DocsOverviewRoute = createRoute({
   path: '/overview',
@@ -77,10 +86,11 @@ export const DocsOverviewRoute = createRoute({
 export const DocsSchemasRoute = createRoute({
   path: '/schemas',
   staticData: { isAuth: false },
+  validateSearch: schemasRouteSearchParamsSchema,
   getParentRoute: () => DocsLayoutRoute,
   component: () => (
     <Suspense>
-      <SchemasList />
+      <SchemasListPage />
     </Suspense>
   ),
 });

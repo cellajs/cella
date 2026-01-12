@@ -6,6 +6,7 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { ViewModeToggle } from '~/modules/docs/view-mode-toggle';
 
 interface OperationsTableBarProps {
   total: number;
@@ -40,6 +41,7 @@ export const OperationsTableBar = ({
     <TableBarContainer className="mt-0">
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
+          <ViewModeToggle />
           <TableCount count={total} label="common:operation" isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
 

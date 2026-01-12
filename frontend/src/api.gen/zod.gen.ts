@@ -2,6 +2,9 @@
 
 import { z } from 'zod';
 
+/**
+ * Base user schema with essential fields for identification and display.
+ */
 export const zUserBase = z.object({
   id: z.string(),
   slug: z.string(),
@@ -166,30 +169,45 @@ export const zApiError = z.object({
   organizationId: z.optional(z.string()),
 });
 
+/**
+ * Error returned when the request is malformed or contains invalid data.
+ */
 export const zBadRequestError = zApiError.and(
   z.object({
     status: z.optional(z.literal(400)),
   }),
 );
 
+/**
+ * Error returned when authentication is missing or invalid.
+ */
 export const zUnauthorizedError = zApiError.and(
   z.object({
     status: z.optional(z.literal(401)),
   }),
 );
 
+/**
+ * Error returned when the user lacks permission for the requested action.
+ */
 export const zForbiddenError = zApiError.and(
   z.object({
     status: z.optional(z.literal(403)),
   }),
 );
 
+/**
+ * Error returned when the requested resource cannot be found.
+ */
 export const zNotFoundError = zApiError.and(
   z.object({
     status: z.optional(z.literal(404)),
   }),
 );
 
+/**
+ * Error returned when rate limits are exceeded.
+ */
 export const zTooManyRequestsError = zApiError.and(
   z.object({
     status: z.optional(z.literal(429)),
@@ -467,7 +485,7 @@ export const zDeletePasskeyResponse = z.void();
 
 export const zGeneratePasskeyChallengeData = z.object({
   body: z.object({
-    type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
+    type: z.enum(['authentication', 'mfa', 'registration']),
     email: z.optional(z.string()),
   }),
   path: z.optional(z.never()),
@@ -488,7 +506,7 @@ export const zSignInWithPasskeyData = z.object({
     clientDataJSON: z.string(),
     authenticatorObject: z.string(),
     signature: z.string(),
-    type: z.union([z.enum(['authentication']), z.enum(['mfa'])]),
+    type: z.enum(['authentication', 'mfa']),
     email: z.optional(z.string()),
   }),
   path: z.optional(z.never()),

@@ -676,7 +676,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
  * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://api.cellajs.com/docs#tag/auth/post/auth/passkey/generate-challenge) ·· _auth_
  *
  * @param {generatePasskeyChallengeData} options
- * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
+ * @param {enum=} options.body.type - `enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -710,7 +710,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.authenticatorObject - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
- * @param {enum | enum=} options.body.type - `enum | enum` (optional)
+ * @param {enum=} options.body.type - `enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */

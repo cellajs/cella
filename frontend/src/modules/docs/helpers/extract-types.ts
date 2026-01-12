@@ -84,10 +84,10 @@ export const getTypeCodeForResponse = (operationId: string, status: number): str
   const definition = extractDefinition(typesContent, pattern, true);
 
   if (!definition) {
-    return `// Type ${typeName} not found in types.gen.ts`;
+    return `// Type ${typeName} not found in api.gen.ts`;
   }
 
-  return `// From ~/api.gen/types.gen.ts\n${definition}`;
+  return `// From ~/api.gen\n${definition}`;
 };
 
 /**
@@ -119,7 +119,38 @@ export const getTypeCodeForRequest = (operationId: string): string => {
   const definition = extractDefinition(typesContent, pattern, true);
 
   if (!definition) {
-    return `// Type ${typeName} not found in types.gen.ts`;
+    return `// Type ${typeName} not found in api.gen.ts`;
+  }
+
+  return `// From ~/api.gen\n${definition}`;
+};
+
+/**
+ * Get the Zod schema code for a component schema by name.
+ */
+export const getZodCodeForSchema = (schemaName: string): string => {
+  const zodSchemaName = `z${schemaName}`;
+
+  const pattern = new RegExp(`export const ${zodSchemaName} = `);
+  const definition = extractDefinition(zodContent, pattern);
+
+  if (!definition) {
+    return `// Schema ${zodSchemaName} not found in zod.gen.ts`;
+  }
+
+  return `// From ~/api.gen/zod.gen.ts\n${definition}`;
+};
+
+/**
+ * Get the TypeScript type code for a component schema by name.
+ */
+export const getTypeCodeForSchema = (schemaName: string): string => {
+  // Pattern includes opening brace, so pass startsWithBrace = true
+  const pattern = new RegExp(`export type ${schemaName} = \\{`);
+  const definition = extractDefinition(typesContent, pattern, true);
+
+  if (!definition) {
+    return `// Type ${schemaName} not found in types.gen.ts`;
   }
 
   return `// From ~/api.gen/types.gen.ts\n${definition}`;

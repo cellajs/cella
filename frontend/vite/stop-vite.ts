@@ -3,6 +3,9 @@ import os from 'node:os';
 
 const isWindows = os.platform() === 'win32';
 
+/**
+ * Stop any running Vite processes.
+ */
 const stopVite = () => {
   const logStopped = () => {
     console.info(' ');

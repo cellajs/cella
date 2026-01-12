@@ -69,7 +69,7 @@ const DocsLayout = () => {
   // Mobile layout with sheeter sidebar
   if (isMobile) {
     return (
-      <>
+      <div className="[--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
         {/* Fixed mobile header */}
         <header
           className={`fixed top-0 left-0 right-0 z-80 h-14 bg-background/70 backdrop-blur-sm transition-transform duration-300 ${
@@ -94,29 +94,31 @@ const DocsLayout = () => {
         <main className="min-h-screen pt-17 p-3 pb-[70vh]">
           <Outlet />
         </main>
-      </>
+      </div>
     );
   }
 
   // Desktop layout with resizable panels
   return (
-    <ResizableGroup orientation="horizontal" className="h-screen">
-      <ResizablePanel defaultSize="20%" minSize="16rem" maxSize="40%" className="border-r">
-        <div className="h-screen">
-          <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
-        </div>
-      </ResizablePanel>
-
-      <ResizableSeparator />
-
-      <ResizablePanel>
-        <main className="h-screen overflow-auto">
-          <div className="p-6 pb-[70vh]">
-            <Outlet />
+    <div className="h-screen [--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
+      <ResizableGroup orientation="horizontal" className="h-screen">
+        <ResizablePanel defaultSize="20%" minSize="16rem" maxSize="40%">
+          <div className="h-screen">
+            <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
           </div>
-        </main>
-      </ResizablePanel>
-    </ResizableGroup>
+        </ResizablePanel>
+
+        <ResizableSeparator />
+
+        <ResizablePanel>
+          <main className="h-screen overflow-auto">
+            <div className="p-6 pb-[70vh]">
+              <Outlet />
+            </div>
+          </main>
+        </ResizablePanel>
+      </ResizableGroup>
+    </div>
   );
 };
 

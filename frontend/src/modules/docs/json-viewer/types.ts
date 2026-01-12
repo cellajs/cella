@@ -92,7 +92,7 @@ export const defaultTheme: JsonViewerTheme = {
   index: 'text-gray-500 opacity-70 text-xs',
   // Schema mode
   schemaType: 'font-medium italic',
-  required: 'bg-amber-100 dark:bg-amber-900/10 text-amber-700/20 dark:text-amber-200/60',
+  required: 'bg-amber-100/50 dark:bg-amber-900/10 text-amber-700/60 dark:text-amber-200/60',
   // Search
   searchMatch: 'bg-yellow-200 dark:bg-yellow-700 rounded px-0.5',
   matchBadge: 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200',
