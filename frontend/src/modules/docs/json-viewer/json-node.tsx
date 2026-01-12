@@ -53,7 +53,8 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
 
   // Determine if this node should be expanded by default
   const getDefaultExpanded = () => {
-    if (isPropertiesNode || isRootInSchemaMode) return true; // Properties nodes and root in schema mode are always expanded
+    // Properties nodes and root in schema mode are always expanded
+    if (isPropertiesNode || isRootInSchemaMode) return true;
     if (cascadeDepth > 0) return true; // Auto-expand if cascading from parent
     if (expandAll) return true;
     return depth < defaultInspectDepth;
@@ -192,6 +193,17 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     return null;
   })();
 
+  // contentType is displayed as a regular property in the JSON viewer
+  const contentTypeValue = null;
+
+  // Check if this is an array schema (has type: 'array') - used to hoist items.properties
+  const isArraySchema =
+    openapiMode === 'schema' &&
+    !isArray &&
+    typeof value === 'object' &&
+    value !== null &&
+    (value as Record<string, unknown>).type === 'array';
+
   // In schema mode, extract entries and filter out 'required' key
   const rawEntries = isArray
     ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown])
@@ -199,15 +211,37 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
 
   // Filter out 'required' key in schema mode (it will be shown as label instead)
   // Also filter out 'type' and 'ref' keys when not inside 'properties' (they will be shown as labels after open bracket)
+  // For array schemas, filter out 'items' key (its properties will be hoisted)
   const filteredEntries =
     openapiMode === 'schema' && !isArray
-      ? rawEntries.filter(([key]) => key !== 'required' && (isInsideProperties || (key !== 'type' && key !== 'ref')))
+      ? rawEntries.filter(
+          ([key]) =>
+            key !== 'required' &&
+            (isInsideProperties || (key !== 'type' && key !== 'ref')) &&
+            !(isArraySchema && key === 'items'),
+        )
       : rawEntries;
+
+  // For array schemas, hoist items.properties as direct children
+  const hoistedItemsEntries = (() => {
+    if (!isArraySchema) return [];
+    const items = (value as Record<string, unknown>).items;
+    if (typeof items === 'object' && items !== null) {
+      const itemProps = (items as Record<string, unknown>).properties;
+      if (typeof itemProps === 'object' && itemProps !== null) {
+        return Object.entries(itemProps);
+      }
+    }
+    return [];
+  })();
+
+  // Combine filtered entries with hoisted items properties
+  const combinedEntries = [...filteredEntries, ...hoistedItemsEntries];
 
   // In schema mode, sort entries: primitives first, then objects/arrays
   const entries =
     openapiMode === 'schema' && !isArray
-      ? [...filteredEntries].sort(([, a], [, b]) => {
+      ? [...combinedEntries].sort(([, a], [, b]) => {
           const aIsObject = a !== null && typeof a === 'object';
           const bIsObject = b !== null && typeof b === 'object';
           if (aIsObject === bIsObject) return 0;
@@ -236,7 +270,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
         <KeyRenderer {...keyProps} />
         {keyName !== false && <span className="opacity-70 mr-1">: </span>}
         <span className={bracketClass}>{openBracket}</span>
-        <SchemaLabels typeValue={typeValue} refValue={refValue} theme={theme} />
+        <SchemaLabels typeValue={typeValue} refValue={refValue} contentTypeValue={contentTypeValue} theme={theme} />
         <span className={bracketClass}>{closeBracket}</span>
       </div>
     );
@@ -274,6 +308,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   const isExpandable = hasNestedObjects;
 
   // Should hide the expand header (for properties nodes or root in schema mode)
+  // Note: items nodes remain visible (unlike properties) to show the array item structure
   const hideExpandHeader = isPropertiesNode || isRootInSchemaMode;
 
   return (
@@ -305,7 +340,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
           <KeyRenderer {...keyProps} />
           {keyName !== false && <span className="opacity-70 mr-1">: </span>}
           <span className={bracketClass}>{openBracket}</span>
-          <SchemaLabels typeValue={typeValue} refValue={refValue} theme={theme} />
+          <SchemaLabels typeValue={typeValue} refValue={refValue} contentTypeValue={contentTypeValue} theme={theme} />
           {!isExpanded && isExpandable && (
             <CollapsedPreview
               itemCount={entries.length}

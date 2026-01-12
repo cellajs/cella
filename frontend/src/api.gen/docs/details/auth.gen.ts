@@ -16,6 +16,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -73,6 +74,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -80,6 +82,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -137,6 +140,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -144,6 +148,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -201,6 +206,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -208,6 +214,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -265,6 +272,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -272,6 +280,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -329,9 +338,23 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          email: {
+            type: 'string',
+            required: true,
+            format: 'email',
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'invokeToken',
@@ -345,6 +368,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -402,6 +426,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -409,6 +434,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -466,6 +492,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -473,6 +500,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -530,6 +558,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -537,6 +566,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -594,6 +624,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -601,6 +632,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -658,9 +690,25 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      path: {
+        properties: {
+          type: {
+            type: 'string',
+            required: true,
+            enum: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'],
+          },
+          token: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'getTokenData',
@@ -668,6 +716,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 200,
         description: 'Token is valid',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -685,6 +734,7 @@ export const operations: GenOperationDetail[] = [
               required: false,
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -692,6 +742,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -749,6 +800,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -756,6 +808,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -813,6 +866,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -820,6 +874,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -877,6 +932,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -884,6 +940,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -941,6 +998,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -948,6 +1006,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1005,9 +1064,25 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      path: {
+        properties: {
+          type: {
+            type: 'string',
+            required: true,
+            enum: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'],
+          },
+          id: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'startImpersonation',
@@ -1021,6 +1096,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1078,6 +1154,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1085,6 +1162,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1142,6 +1220,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1149,6 +1228,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1206,6 +1286,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1213,6 +1294,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1270,6 +1352,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1277,6 +1360,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1334,9 +1418,20 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          targetUserId: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'stopImpersonation',
@@ -1350,6 +1445,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1407,6 +1503,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1414,6 +1511,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1471,6 +1569,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1478,6 +1577,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1535,6 +1635,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1542,6 +1643,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1599,6 +1701,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1606,6 +1709,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1663,6 +1767,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
@@ -1679,6 +1784,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1736,6 +1842,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1743,6 +1850,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1800,6 +1908,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1807,6 +1916,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1864,6 +1974,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1871,6 +1982,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1928,6 +2040,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -1935,6 +2048,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -1992,9 +2106,16 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+      },
+    },
   },
   {
     operationId: 'signOut',
@@ -2008,6 +2129,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2065,6 +2187,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2072,6 +2195,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2129,6 +2253,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2136,6 +2261,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2193,6 +2319,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2200,6 +2327,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2257,6 +2385,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2264,6 +2393,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2321,6 +2451,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
@@ -2331,6 +2462,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 200,
         description: 'Challenge created',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2343,6 +2475,7 @@ export const operations: GenOperationDetail[] = [
               required: true,
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -2350,6 +2483,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2407,6 +2541,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2414,6 +2549,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2471,6 +2607,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2478,6 +2615,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2535,6 +2673,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2542,6 +2681,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2599,6 +2739,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2606,6 +2747,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2663,6 +2805,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
@@ -2679,6 +2822,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2736,6 +2880,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2743,6 +2888,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2800,6 +2946,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2807,6 +2954,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2864,6 +3012,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2871,6 +3020,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2928,6 +3078,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -2935,6 +3086,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -2992,9 +3144,22 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          code: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'deleteTotp',
@@ -3008,6 +3173,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3065,6 +3231,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3072,6 +3239,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3129,6 +3297,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3136,6 +3305,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3193,6 +3363,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3200,6 +3371,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3257,6 +3429,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3264,6 +3437,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3321,6 +3495,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
@@ -3337,6 +3512,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3394,6 +3570,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3401,6 +3578,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3458,6 +3636,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3465,6 +3644,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3522,6 +3702,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3529,6 +3710,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3586,6 +3768,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3593,6 +3776,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3650,9 +3834,22 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          code: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'signUp',
@@ -3670,6 +3867,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3727,6 +3925,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3734,6 +3933,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3791,6 +3991,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3798,6 +3999,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3855,6 +4057,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3862,6 +4065,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3919,6 +4123,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -3926,6 +4131,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -3983,9 +4189,29 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: false,
+        contentType: 'application/json',
+        properties: {
+          email: {
+            type: 'string',
+            required: true,
+            format: 'email',
+          },
+          password: {
+            type: 'string',
+            required: true,
+            minLength: 8,
+            maxLength: 100,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'signUpWithToken',
@@ -3993,6 +4219,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 201,
         description: 'User signed up',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4001,6 +4228,7 @@ export const operations: GenOperationDetail[] = [
               required: true,
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -4008,6 +4236,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4065,6 +4294,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4072,6 +4302,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4129,6 +4360,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4136,6 +4368,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4193,6 +4426,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4200,6 +4434,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4257,6 +4492,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4264,6 +4500,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4321,9 +4558,37 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      path: {
+        properties: {
+          tokenId: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          email: {
+            type: 'string',
+            required: true,
+            format: 'email',
+          },
+          password: {
+            type: 'string',
+            required: true,
+            minLength: 8,
+            maxLength: 100,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'requestPassword',
@@ -4337,6 +4602,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4394,6 +4660,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4401,6 +4668,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4458,6 +4726,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4465,6 +4734,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4522,6 +4792,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4529,6 +4800,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4586,6 +4858,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4593,6 +4866,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4650,9 +4924,23 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          email: {
+            type: 'string',
+            required: true,
+            format: 'email',
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'createPassword',
@@ -4660,6 +4948,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 201,
         description: 'Password created',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4668,6 +4957,7 @@ export const operations: GenOperationDetail[] = [
               required: true,
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -4675,6 +4965,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4732,6 +5023,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4739,6 +5031,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4796,6 +5089,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4803,6 +5097,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4860,6 +5155,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4867,6 +5163,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4924,6 +5221,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -4931,6 +5229,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -4988,9 +5287,32 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      path: {
+        properties: {
+          tokenId: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          password: {
+            type: 'string',
+            required: true,
+            minLength: 8,
+            maxLength: 100,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'signIn',
@@ -4998,6 +5320,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 200,
         description: 'User signed in',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5010,6 +5333,7 @@ export const operations: GenOperationDetail[] = [
               required: false,
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -5017,6 +5341,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5074,6 +5399,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5081,6 +5407,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5138,6 +5465,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5145,6 +5473,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5202,6 +5531,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5209,6 +5539,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5266,6 +5597,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5273,6 +5605,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5330,9 +5663,29 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          email: {
+            type: 'string',
+            required: true,
+            format: 'email',
+          },
+          password: {
+            type: 'string',
+            required: true,
+            minLength: 8,
+            maxLength: 100,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'createPasskey',
@@ -5340,6 +5693,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 201,
         description: 'Passkey created',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5377,6 +5731,7 @@ export const operations: GenOperationDetail[] = [
               required: true,
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -5384,6 +5739,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5441,6 +5797,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5448,6 +5805,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5505,6 +5863,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5512,6 +5871,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5569,6 +5929,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5576,6 +5937,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5633,6 +5995,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5640,6 +6003,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5697,9 +6061,30 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          attestationObject: {
+            type: 'string',
+            required: true,
+          },
+          clientDataJSON: {
+            type: 'string',
+            required: true,
+          },
+          nameOnDevice: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'deletePasskey',
@@ -5713,6 +6098,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5770,6 +6156,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5777,6 +6164,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5834,6 +6222,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5841,6 +6230,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5898,6 +6288,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5905,6 +6296,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -5962,6 +6354,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -5969,6 +6362,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6026,9 +6420,20 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      path: {
+        properties: {
+          id: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'generatePasskeyChallenge',
@@ -6036,6 +6441,7 @@ export const operations: GenOperationDetail[] = [
       {
         status: 200,
         description: 'Challenge generated',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6049,6 +6455,7 @@ export const operations: GenOperationDetail[] = [
               itemType: 'string',
             },
           },
+          contentType: 'application/json',
         },
       },
       {
@@ -6056,6 +6463,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6113,6 +6521,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6120,6 +6529,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6177,6 +6587,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6184,6 +6595,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6241,6 +6653,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6248,6 +6661,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6305,6 +6719,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6312,6 +6727,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6369,9 +6785,43 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          type: {
+            type: 'object',
+            required: true,
+            anyOf: [
+              {
+                type: 'string',
+                required: false,
+                enum: ['authentication'],
+              },
+              {
+                type: 'string',
+                required: false,
+                enum: ['mfa'],
+              },
+              {
+                type: 'string',
+                required: false,
+                enum: ['registration'],
+              },
+            ],
+          },
+          email: {
+            type: 'string',
+            required: false,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'signInWithPasskey',
@@ -6385,6 +6835,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6442,6 +6893,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6449,6 +6901,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6506,6 +6959,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6513,6 +6967,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6570,6 +7025,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6577,6 +7033,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6634,6 +7091,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6641,6 +7099,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6698,9 +7157,54 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      body: {
+        required: true,
+        contentType: 'application/json',
+        properties: {
+          credentialId: {
+            type: 'string',
+            required: true,
+          },
+          clientDataJSON: {
+            type: 'string',
+            required: true,
+          },
+          authenticatorObject: {
+            type: 'string',
+            required: true,
+          },
+          signature: {
+            type: 'string',
+            required: true,
+          },
+          type: {
+            type: 'object',
+            required: true,
+            anyOf: [
+              {
+                type: 'string',
+                required: false,
+                enum: ['authentication'],
+              },
+              {
+                type: 'string',
+                required: false,
+                enum: ['mfa'],
+              },
+            ],
+          },
+          email: {
+            type: 'string',
+            required: false,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'github',
@@ -6714,6 +7218,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6771,6 +7276,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6778,6 +7284,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6835,6 +7342,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6842,6 +7350,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6899,6 +7408,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6906,6 +7416,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -6963,6 +7474,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -6970,6 +7482,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7027,9 +7540,25 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          type: {
+            type: 'string',
+            required: false,
+            enum: ['auth', 'connect', 'invite', 'verify'],
+          },
+          redirectAfter: {
+            type: 'string',
+            required: false,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'google',
@@ -7043,6 +7572,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7100,6 +7630,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7107,6 +7638,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7164,6 +7696,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7171,6 +7704,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7228,6 +7762,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7235,6 +7770,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7292,6 +7828,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7299,6 +7836,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7356,9 +7894,25 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          type: {
+            type: 'string',
+            required: false,
+            enum: ['auth', 'connect', 'invite', 'verify'],
+          },
+          redirectAfter: {
+            type: 'string',
+            required: false,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'microsoft',
@@ -7372,6 +7926,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7429,6 +7984,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7436,6 +7992,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7493,6 +8050,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7500,6 +8058,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7557,6 +8116,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7564,6 +8124,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7621,6 +8182,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7628,6 +8190,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7685,9 +8248,25 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          type: {
+            type: 'string',
+            required: false,
+            enum: ['auth', 'connect', 'invite', 'verify'],
+          },
+          redirectAfter: {
+            type: 'string',
+            required: false,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'githubCallback',
@@ -7701,6 +8280,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7758,6 +8338,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7765,6 +8346,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7822,6 +8404,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7829,6 +8412,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7886,6 +8470,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7893,6 +8478,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -7950,6 +8536,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -7957,6 +8544,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8014,9 +8602,36 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          code: {
+            type: 'string',
+            required: true,
+          },
+          state: {
+            type: 'string',
+            required: true,
+          },
+          error: {
+            type: 'string',
+            required: false,
+          },
+          error_description: {
+            type: 'string',
+            required: false,
+          },
+          error_uri: {
+            type: 'string',
+            required: false,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'googleCallback',
@@ -8030,6 +8645,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8087,6 +8703,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8094,6 +8711,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8151,6 +8769,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8158,6 +8777,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8215,6 +8835,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8222,6 +8843,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8279,6 +8901,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8286,6 +8909,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8343,9 +8967,24 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          code: {
+            type: 'string',
+            required: true,
+          },
+          state: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
   {
     operationId: 'microsoftCallback',
@@ -8359,6 +8998,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Bad request: problem processing request.',
         name: 'BadRequestError',
         ref: '#/components/responses/BadRequestError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8416,6 +9056,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/BadRequestError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8423,6 +9064,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Unauthorized: authentication required.',
         name: 'UnauthorizedError',
         ref: '#/components/responses/UnauthorizedError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8480,6 +9122,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/UnauthorizedError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8487,6 +9130,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Forbidden: insufficient permissions.',
         name: 'ForbiddenError',
         ref: '#/components/responses/ForbiddenError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8544,6 +9188,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/ForbiddenError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8551,6 +9196,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Not found: resource does not exist.',
         name: 'NotFoundError',
         ref: '#/components/responses/NotFoundError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8608,6 +9254,7 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/NotFoundError',
+          contentType: 'application/json',
         },
       },
       {
@@ -8615,6 +9262,7 @@ export const operations: GenOperationDetail[] = [
         description: 'Rate limit: too many requests.',
         name: 'TooManyRequestsError',
         ref: '#/components/responses/TooManyRequestsError',
+        contentType: 'application/json',
         schema: {
           type: 'object',
           properties: {
@@ -8672,8 +9320,23 @@ export const operations: GenOperationDetail[] = [
           },
           extendsRef: '#/components/schemas/ApiError',
           ref: '#/components/schemas/TooManyRequestsError',
+          contentType: 'application/json',
         },
       },
     ],
+    request: {
+      query: {
+        properties: {
+          code: {
+            type: 'string',
+            required: true,
+          },
+          state: {
+            type: 'string',
+            required: true,
+          },
+        },
+      },
+    },
   },
 ];

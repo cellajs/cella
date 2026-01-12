@@ -65,6 +65,8 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - camelCase for variables and functions, PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
 - Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.
 - Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
+- Icons: We use lucide icons and import them using Icon suffix, such as `PencilIcon`.
+
 
 - Links as buttons: For buttons that link to directly targetable online resources, use TanStack Router `<Link>` with `buttonVariants()` instead of `<button>`. Also when the primary action is opening a sheet, if the data targetable by url, allow end-user to open it in a new tab.
 - React-compiler: `useMemo`, `useCallback` can be avoided in most cases.

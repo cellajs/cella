@@ -6,6 +6,7 @@ import type {
   GenInfoSummary,
   GenOperationDetail,
   GenOperationSummary,
+  GenRequest,
   GenResponseSummary,
   GenSchema,
   GenSchemaProperty,
@@ -43,6 +44,21 @@ type OpenApiSchema = {
   anyOf?: OpenApiSchema[];
   oneOf?: OpenApiSchema[];
   allOf?: OpenApiSchema[];
+};
+
+type OpenApiParameter = {
+  name: string;
+  in: 'path' | 'query' | 'header' | 'cookie';
+  required?: boolean;
+  description?: string;
+  schema?: OpenApiSchema;
+  $ref?: string;
+};
+
+type OpenApiRequestBody = {
+  required?: boolean;
+  content?: Record<string, { schema?: OpenApiSchema }>;
+  $ref?: string;
 };
 
 type OpenApiSpec = {
@@ -230,7 +246,11 @@ function resolveSchemaProperty(
 
   // Handle array items - unwrap simple items to parent level
   if (schema.items) {
-    const resolvedItem = resolveSchemaProperty(schema.items, true, spec, visited);
+    // Note: we pass false for isRequired since array items don't have a meaningful required field
+    // (items are either present in the array or not - there's no "optional" array element concept)
+    const resolvedItem = resolveSchemaProperty(schema.items, false, spec, visited);
+    // Remove the redundant 'required' field from array items
+    delete (resolvedItem as { required?: boolean }).required;
     // Check if item is "complex" (has nested properties or items)
     const isComplexItem = resolvedItem.properties || resolvedItem.items || resolvedItem.anyOf || resolvedItem.oneOf;
 
@@ -490,8 +510,8 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
           tags?: string[];
           deprecated?: boolean;
           security?: unknown[];
-          parameters?: Record<string, unknown>;
-          requestBody?: unknown;
+          parameters?: OpenApiParameter[];
+          requestBody?: OpenApiRequestBody;
           responses?: Record<string, { description?: string; $ref?: string }>;
           'x-guard'?: string[];
           'x-rate-limiter'?: string[];
@@ -517,6 +537,7 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
             let description = response?.description ?? '';
             let name: string | undefined;
             let ref: string | undefined;
+            let contentType: string | undefined;
             let schema: GenSchema | undefined;
 
             // Resolve $ref if present (e.g., "#/components/responses/BadRequestError")
@@ -526,24 +547,38 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
               if (name && componentResponses[name]) {
                 const componentResponse = componentResponses[name];
                 description = componentResponse.description ?? '';
-                // Get schema from component response
-                const responseSchema = componentResponse.content?.['application/json']?.schema;
-                if (responseSchema) {
-                  schema = resolveSchema(responseSchema, typedSpec);
+                // Get schema from component response (check all content types, prefer JSON)
+                if (componentResponse.content) {
+                  const contentTypes = Object.keys(componentResponse.content);
+                  const jsonType = contentTypes.find((ct) => ct.includes('json'));
+                  const selectedContentType = jsonType || contentTypes[0];
+                  if (selectedContentType) {
+                    contentType = selectedContentType;
+                    const responseSchema = componentResponse.content[selectedContentType]?.schema;
+                    if (responseSchema) {
+                      schema = resolveSchema(responseSchema, typedSpec);
+                    }
+                  }
                 }
               }
             }
 
             // Check for inline response content with schema
             const content = (response as { content?: Record<string, { schema?: OpenApiSchema }> })?.content;
-            if (content?.['application/json']?.schema) {
-              const responseSchema = content['application/json'].schema;
-              schema = resolveSchema(responseSchema, typedSpec);
+            if (content) {
+              const contentTypes = Object.keys(content);
+              const jsonType = contentTypes.find((ct) => ct.includes('json'));
+              const selectedContentType = jsonType || contentTypes[0];
+              if (selectedContentType && content[selectedContentType]?.schema) {
+                contentType = selectedContentType;
+                const responseSchema = content[selectedContentType].schema;
+                schema = resolveSchema(responseSchema, typedSpec);
 
-              // Extract ref info if the schema itself is a $ref
-              if (responseSchema.$ref) {
-                ref = responseSchema.$ref;
-                name = responseSchema.$ref.split('/').pop();
+                // Extract ref info if the schema itself is a $ref
+                if (responseSchema.$ref) {
+                  ref = responseSchema.$ref;
+                  name = responseSchema.$ref.split('/').pop();
+                }
               }
             }
 
@@ -554,7 +589,14 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
 
             if (name) responseSummary.name = name;
             if (ref) responseSummary.ref = ref;
-            if (schema) responseSummary.schema = schema;
+            if (contentType) responseSummary.contentType = contentType;
+            if (schema) {
+              // Add contentType to schema so it appears in the viewer
+              if (contentType) {
+                schema.contentType = contentType;
+              }
+              responseSummary.schema = schema;
+            }
 
             responses.push(responseSummary);
           }
@@ -577,11 +619,80 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
 
         operations.push(operationSummary);
 
+        // Build combined request with path, query, and body sections
+        const request: GenRequest = {};
+
+        // Extract path parameters into a 'path' section
+        if (op.parameters && Array.isArray(op.parameters)) {
+          const pathParamProps: Record<string, GenSchemaProperty> = {};
+          const queryParamProps: Record<string, GenSchemaProperty> = {};
+
+          for (const param of op.parameters) {
+            if (param.in !== 'path' && param.in !== 'query') continue;
+
+            const paramSchema = param.schema
+              ? resolveSchemaProperty(param.schema, param.required ?? false, typedSpec)
+              : { type: 'string' as const, required: param.required ?? false };
+
+            // Add description from param level if not in schema
+            if (param.description && !paramSchema.description) {
+              paramSchema.description = param.description;
+            }
+
+            if (param.in === 'path') {
+              pathParamProps[param.name] = paramSchema;
+            } else if (param.in === 'query') {
+              queryParamProps[param.name] = paramSchema;
+            }
+          }
+
+          if (Object.keys(pathParamProps).length > 0) {
+            request.path = {
+              properties: pathParamProps,
+            };
+          }
+
+          if (Object.keys(queryParamProps).length > 0) {
+            request.query = {
+              properties: queryParamProps,
+            };
+          }
+        }
+
+        // Extract request body into a 'body' section
+        if (op.requestBody) {
+          const requestBody = op.requestBody;
+          const content = requestBody.content;
+          if (content) {
+            const contentType = Object.keys(content).find((ct) => ct.includes('json')) || Object.keys(content)[0];
+            if (contentType && content[contentType]?.schema) {
+              const bodySchema = resolveSchema(content[contentType].schema, typedSpec);
+              // Keep required since body itself can be optional/required
+              request.body = {
+                required: requestBody.required ?? false,
+                contentType,
+                properties: bodySchema.properties,
+                items: bodySchema.items,
+                itemType: bodySchema.itemType,
+                enum: bodySchema.enum,
+                ref: bodySchema.ref,
+                refDescription: bodySchema.refDescription,
+                extendsRef: bodySchema.extendsRef,
+              };
+            }
+          }
+        }
+
         // Create operation detail for per-tag files
         const operationDetail: GenOperationDetail = {
           operationId: op.operationId,
           responses,
         };
+
+        // Only add request if there are any sections
+        if (Object.keys(request).length > 0) {
+          operationDetail.request = request;
+        }
 
         // Count operations per tag and store details
         for (const tag of tags) {

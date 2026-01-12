@@ -11,7 +11,7 @@ import appTitle from '~/utils/app-title';
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
-const OperationsByTagList = lazy(() => import('~/modules/docs/operations-by-tag-list'));
+const OperationsListPage = lazy(() => import('~/modules/docs/operations-list-page'));
 const OperationsTable = lazy(() => import('~/modules/docs/operations-table'));
 const SchemasList = lazy(() => import('~/modules/docs/schemas-list'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
@@ -52,7 +52,7 @@ export const DocsIndexRoute = createRoute({
   },
   component: () => {
     const { viewMode = 'list' } = useSearch({ from: '/publicLayout/docs/' });
-    return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsByTagList />}</Suspense>;
+    return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsListPage />}</Suspense>;
   },
 });
 

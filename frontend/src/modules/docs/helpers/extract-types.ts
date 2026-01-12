@@ -89,3 +89,38 @@ export const getTypeCodeForResponse = (operationId: string, status: number): str
 
   return `// From ~/api.gen/types.gen.ts\n${definition}`;
 };
+
+/**
+ * Get the Zod schema code for a specific operation request (Data).
+ */
+export const getZodCodeForRequest = (operationId: string): string => {
+  const pascalCaseOpId = toPascalCase(operationId);
+  const schemaName = `z${pascalCaseOpId}Data`;
+
+  const pattern = new RegExp(`export const ${schemaName} = `);
+  const definition = extractDefinition(zodContent, pattern);
+
+  if (!definition) {
+    return `// Schema ${schemaName} not found in zod.gen.ts`;
+  }
+
+  return `// From ~/api.gen/zod.gen.ts\n${definition}`;
+};
+
+/**
+ * Get the TypeScript type code for a specific operation request (Data).
+ */
+export const getTypeCodeForRequest = (operationId: string): string => {
+  const pascalCaseOpId = toPascalCase(operationId);
+  const typeName = `${pascalCaseOpId}Data`;
+
+  // Pattern includes opening brace, so pass startsWithBrace = true
+  const pattern = new RegExp(`export type ${typeName} = \\{`);
+  const definition = extractDefinition(typesContent, pattern, true);
+
+  if (!definition) {
+    return `// Type ${typeName} not found in types.gen.ts`;
+  }
+
+  return `// From ~/api.gen/types.gen.ts\n${definition}`;
+};

@@ -3,6 +3,7 @@ import type { FC } from 'react';
 interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
+  contentTypeValue?: string | null;
   theme: {
     string: string;
     number: string;
@@ -33,11 +34,11 @@ const getTypeColorClass = (
 };
 
 /**
- * Renders type and ref labels for OpenAPI schema mode.
- * Shows type label (e.g., "object", "string") and ref label (e.g., "User").
+ * Renders type, ref, and contentType labels for OpenAPI schema mode.
+ * Shows type label (e.g., "object", "string"), ref label (e.g., "User"), and contentType (e.g., "application/json").
  */
-export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, theme }) => {
-  if (!typeValue && !refValue) return null;
+export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, contentTypeValue, theme }) => {
+  if (!typeValue && !refValue && !contentTypeValue) return null;
 
   // Normalize typeValue to array for consistent rendering
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
@@ -57,6 +58,7 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, theme
       {refValue && (
         <span className="ml-1 px-1 py-0.5 text-sm font-medium rounded text-primary bg-primary/10">{refValue}</span>
       )}
+      {contentTypeValue && <span className="ml-1.5 italic text-sm text-foreground/40">{contentTypeValue}</span>}
     </>
   );
 };

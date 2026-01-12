@@ -52,8 +52,8 @@ export interface GenSchemaProperty {
   type: string | string[];
   /** Property description from OpenAPI spec */
   description?: string;
-  /** Whether this property is required (inline, not in separate array) */
-  required: boolean;
+  /** Whether this property is required (inline, not in separate array). Omitted for array items. */
+  required?: boolean;
   /** Format constraint (e.g., 'email', 'date-time') */
   format?: string;
   /** Enum values if this is an enum type (can include null for nullable enums) */
@@ -99,6 +99,8 @@ export interface GenSchema {
   ref?: string;
   /** Description from the referenced schema or inline */
   refDescription?: string;
+  /** Content type (e.g., 'application/json') */
+  contentType?: string;
   /** Properties for object schemas */
   properties?: Record<string, GenSchemaProperty>;
   /** Item type for array types (unwrapped from items.type) */
@@ -123,8 +125,75 @@ export interface GenResponseSummary {
   description: string;
   name?: string;
   ref?: string;
+  /** Content type of the response (e.g., 'application/json') */
+  contentType?: string;
   /** Resolved response schema (dereferenced with ref metadata preserved) */
   schema?: GenSchema;
+}
+
+/**
+ * Parameter summary for path/query parameters
+ */
+export interface GenParameterSummary {
+  /** Parameter name */
+  name: string;
+  /** Parameter location (path, query) */
+  in: 'path' | 'query';
+  /** Whether the parameter is required */
+  required: boolean;
+  /** Parameter description */
+  description?: string;
+  /** Parameter schema */
+  schema?: GenSchemaProperty;
+}
+
+/**
+ * Request body summary
+ */
+export interface GenRequestBodySummary {
+  /** Whether the request body is required */
+  required: boolean;
+  /** Content type (e.g., 'application/json') */
+  contentType: string;
+  /** Request body schema */
+  schema?: GenSchema;
+}
+
+/**
+ * Request section for path, query, or body.
+ * These are organizational containers, not actual schema types.
+ */
+export interface GenRequestSection {
+  /** Whether this section is required (only meaningful for body) */
+  required?: boolean;
+  /** Content type for body (e.g., 'application/json') */
+  contentType?: string;
+  /** Properties within the section */
+  properties?: Record<string, GenSchemaProperty>;
+  /** Items schema for array body types */
+  items?: GenSchemaProperty;
+  /** Item type for array body types */
+  itemType?: string | string[];
+  /** Enum values for body */
+  enum?: (string | number | boolean | null)[];
+  /** Reference for body schema */
+  ref?: string;
+  /** Reference description for body schema */
+  refDescription?: string;
+  /** Extends reference for allOf merged body schema */
+  extendsRef?: string;
+}
+
+/**
+ * Combined request with path, query, and body sections
+ */
+export interface GenRequest {
+  /** Path parameters (all always required by nature of URL) */
+  path?: GenRequestSection;
+  /** Query parameters (individual params have their own required status) */
+  query?: GenRequestSection;
+  /** Request body (section can be required/optional) */
+  body?: GenRequestSection;
 }
 
 /**
@@ -133,4 +202,6 @@ export interface GenResponseSummary {
 export interface GenOperationDetail {
   operationId: string;
   responses: GenResponseSummary[];
+  /** Combined request with path, query, and body sections */
+  request?: GenRequest;
 }
