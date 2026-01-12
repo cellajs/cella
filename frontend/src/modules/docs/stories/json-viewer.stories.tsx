@@ -61,6 +61,14 @@ const openApiSchemaData = {
       type: 'array',
       items: { type: 'string' },
     },
+    profile: {
+      type: 'object',
+      required: false,
+      ref: '#/components/schemas/Profile',
+      properties: {
+        bio: { type: 'string', required: false },
+      },
+    },
   },
 };
 
@@ -603,14 +611,14 @@ export const ShouldShowTypeLabelsInSchemaMode: Story = {
   },
   play: async ({ canvas, step }) => {
     await step('Verify type label is displayed', async () => {
-      // Should show "object" type label
+      // Should show "object" type label (from nested profile property)
       const objectLabels = await canvas.findAllByText('object');
       expect(objectLabels.length).toBeGreaterThan(0);
     });
 
     await step('Verify ref label is displayed', async () => {
-      // Should show "User" ref label (extracted from #/components/schemas/User)
-      expect(canvas.queryByText('User')).toBeVisible();
+      // Should show "Profile" ref label (extracted from #/components/schemas/Profile on nested profile property)
+      expect(canvas.queryByText('Profile')).toBeVisible();
     });
   },
 };
