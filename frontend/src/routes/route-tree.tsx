@@ -12,8 +12,8 @@ import {
 } from '~/routes/auth-routes';
 import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
 import {
-  DocsIndexRoute,
   DocsLayoutRoute,
+  DocsOperationsRoute,
   DocsOverviewRoute,
   DocsPageRoute,
   DocsPagesRoute,
@@ -46,7 +46,13 @@ export const routeTree = RootRoute.addChildren([
   PublicLayoutRoute.addChildren([
     AboutRoute,
     ContactRoute,
-    DocsLayoutRoute.addChildren([DocsIndexRoute, DocsOverviewRoute, DocsSchemasRoute, DocsPagesRoute, DocsPageRoute]),
+    DocsLayoutRoute.addChildren([
+      DocsOperationsRoute,
+      DocsOverviewRoute,
+      DocsSchemasRoute,
+      DocsPagesRoute,
+      DocsPageRoute,
+    ]),
     LegalIndexRoute,
     LegalRoute,
     AccessibilityRoute,

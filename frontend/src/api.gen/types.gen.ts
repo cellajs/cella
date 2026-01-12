@@ -4,6 +4,9 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});
 };
 
+/**
+ * Base user schema with essential fields for identification and display.
+ */
 export type UserBase = {
   id: string;
   slug: string;
@@ -168,22 +171,37 @@ export type ApiError = {
   organizationId?: string;
 };
 
+/**
+ * Error returned when the request is malformed or contains invalid data.
+ */
 export type BadRequestError = ApiError & {
   status?: 400;
 };
 
+/**
+ * Error returned when authentication is missing or invalid.
+ */
 export type UnauthorizedError = ApiError & {
   status?: 401;
 };
 
+/**
+ * Error returned when the user lacks permission for the requested action.
+ */
 export type ForbiddenError = ApiError & {
   status?: 403;
 };
 
+/**
+ * Error returned when the requested resource cannot be found.
+ */
 export type NotFoundError = ApiError & {
   status?: 404;
 };
 
+/**
+ * Error returned when rate limits are exceeded.
+ */
 export type TooManyRequestsError = ApiError & {
   status?: 429;
 };

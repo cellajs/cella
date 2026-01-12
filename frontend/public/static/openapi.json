@@ -159,7 +159,8 @@
           "createdAt",
           "email",
           "entityType"
-        ]
+        ],
+        "description": "Base user schema with essential fields for identification and display."
       },
       "ContextEntityBase": {
         "type": "object",
@@ -949,7 +950,8 @@
               }
             }
           }
-        ]
+        ],
+        "description": "Error returned when the request is malformed or contains invalid data."
       },
       "UnauthorizedError": {
         "allOf": [
@@ -967,7 +969,8 @@
               }
             }
           }
-        ]
+        ],
+        "description": "Error returned when authentication is missing or invalid."
       },
       "ForbiddenError": {
         "allOf": [
@@ -985,7 +988,8 @@
               }
             }
           }
-        ]
+        ],
+        "description": "Error returned when the user lacks permission for the requested action."
       },
       "NotFoundError": {
         "allOf": [
@@ -1003,7 +1007,8 @@
               }
             }
           }
-        ]
+        ],
+        "description": "Error returned when the requested resource cannot be found."
       },
       "TooManyRequestsError": {
         "allOf": [
@@ -1021,7 +1026,8 @@
               }
             }
           }
-        ]
+        ],
+        "description": "Error returned when rate limits are exceeded."
       },
       "Page": {
         "type": "object",
@@ -2335,25 +2341,11 @@
                 "type": "object",
                 "properties": {
                   "type": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "authentication"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "mfa"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "registration"
-                        ]
-                      }
+                    "type": "string",
+                    "enum": [
+                      "authentication",
+                      "mfa",
+                      "registration"
                     ]
                   },
                   "email": {
@@ -2446,19 +2438,10 @@
                     "type": "string"
                   },
                   "type": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "authentication"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "mfa"
-                        ]
-                      }
+                    "type": "string",
+                    "enum": [
+                      "authentication",
+                      "mfa"
                     ]
                   },
                   "email": {

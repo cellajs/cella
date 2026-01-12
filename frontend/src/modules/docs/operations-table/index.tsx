@@ -20,8 +20,8 @@ async function updateOperationField(operationId: string, field: 'summary' | 'des
 }
 
 const OperationsTable = () => {
-  const { setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/' });
-  const { q = '' } = useSearch({ from: '/publicLayout/docs/' });
+  const { setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/operations' });
+  const { q = '' } = useSearch({ from: '/publicLayout/docs/operations' });
 
   const [isCompact, setIsCompact] = useState(false);
 

@@ -2,11 +2,13 @@
 
 // Re-export types from central location
 export type {
+  GenComponentSchema,
   GenInfoSummary,
   GenOperationDetail,
   GenOperationSummary,
   GenResponseSummary,
   GenTagSummary,
+  SchemaTag,
 } from '~/modules/docs/types';
 export * as attachments from './details/attachments.gen';
 // Per-tag operation details (lazy-loadable)
@@ -22,4 +24,5 @@ export * as system from './details/system.gen';
 export * as users from './details/users.gen';
 export * from './info.gen';
 export * from './operations.gen';
+export * from './schemas.gen';
 export * from './tags.gen';

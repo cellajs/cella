@@ -13,10 +13,16 @@ import {
 /**
  * Search params schema for docs route.
  */
-export const docsRouteSearchParamsSchema = z.object({
+export const operationsRouteSearchParamsSchema = z.object({
   tag: z.enum(tagNames).optional(),
-  viewMode: z.enum(['list', 'table']).optional(),
   q: z.string().optional(),
+});
+
+/**
+ * Search params schema for schemas route.
+ */
+export const schemasRouteSearchParamsSchema = z.object({
+  schemaTag: z.enum(['base', 'data', 'errors']).optional(),
 });
 
 /**

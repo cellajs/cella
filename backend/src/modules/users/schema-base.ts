@@ -10,4 +10,4 @@ export const userBaseSchema = contextEntityBaseSchema
     email: z.email(),
     entityType: z.literal('user'),
   })
-  .openapi('UserBase');
+  .openapi('UserBase', { description: 'Base user schema with essential fields for identification and display.' });

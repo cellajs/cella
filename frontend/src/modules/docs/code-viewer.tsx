@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { codeToHtml } from 'shiki';
+import { useUIStore } from '~/store/ui';
 
 interface CodeViewerProps {
   code: string;
@@ -13,6 +14,7 @@ interface CodeViewerProps {
 export const CodeViewer = ({ code, language }: CodeViewerProps) => {
   const [html, setHtml] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const mode = useUIStore((state) => state.mode);
 
   useEffect(() => {
     const highlight = async () => {
@@ -20,7 +22,7 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
       try {
         const highlighted = await codeToHtml(code, {
           lang: 'typescript',
-          theme: 'github-dark-default',
+          theme: mode === 'dark' ? 'github-dark-default' : 'github-light-default',
         });
         setHtml(highlighted);
       } catch {
@@ -32,7 +34,7 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
     };
 
     highlight();
-  }, [code, language]);
+  }, [code, language, mode]);
 
   if (isLoading) {
     return <div className="animate-pulse bg-muted rounded h-24" />;

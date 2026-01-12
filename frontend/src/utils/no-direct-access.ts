@@ -16,5 +16,5 @@ import router from '~/lib/router';
 export const noDirectAccess = (currentTo: string, redirectTo: string) => {
   const match = router.matchRoute({ to: currentTo }, { pending: true });
   if (match === false) return;
-  throw redirect({ to: redirectTo, params: true, search: true, replace: true });
+  throw redirect({ to: redirectTo, params: true, search: true, replace: true, hash: true });
 };

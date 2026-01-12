@@ -25,36 +25,46 @@ const errorResponseOptions = [
     code: 400,
     name: 'BadRequestError',
     description: 'Bad request: problem processing request.',
+    schemaDescription: 'Error returned when the request is malformed or contains invalid data.',
     ref: '#/components/responses/BadRequestError',
   },
   {
     code: 401,
     name: 'UnauthorizedError',
     description: 'Unauthorized: authentication required.',
+    schemaDescription: 'Error returned when authentication is missing or invalid.',
     ref: '#/components/responses/UnauthorizedError',
   },
   {
     code: 403,
     name: 'ForbiddenError',
     description: 'Forbidden: insufficient permissions.',
+    schemaDescription: 'Error returned when the user lacks permission for the requested action.',
     ref: '#/components/responses/ForbiddenError',
   },
   {
     code: 404,
     name: 'NotFoundError',
     description: 'Not found: resource does not exist.',
+    schemaDescription: 'Error returned when the requested resource cannot be found.',
     ref: '#/components/responses/NotFoundError',
   },
   {
     code: 429,
     name: 'TooManyRequestsError',
     description: 'Rate limit: too many requests.',
+    schemaDescription: 'Error returned when rate limits are exceeded.',
     ref: '#/components/responses/TooManyRequestsError',
   },
 ] as const;
 
-// Helper to create error body schemas
-const errorBodySchema = (code: ErrorCode) => apiErrorSchema.extend({ status: z.literal(code) });
+// Helper to create error body schemas with OpenAPI metadata
+const errorBodySchema = (code: ErrorCode) => {
+  const option = errorResponseOptions.find((o) => o.code === code);
+  return apiErrorSchema.extend({ status: z.literal(code) }).openapi(option?.name ?? 'Error', {
+    description: option?.schemaDescription,
+  });
+};
 
 // Helper that creates a numeric map for registry work (we simply *don’t* include `ref` here)
 const zodErrorResponses: Partial<Record<ErrorCode, ZodBackedResponse>> = Object.fromEntries(

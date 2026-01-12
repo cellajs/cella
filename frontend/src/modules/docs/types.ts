@@ -205,3 +205,34 @@ export interface GenOperationDetail {
   /** Combined request with path, query, and body sections */
   request?: GenRequest;
 }
+
+/**
+ * Schema tag for categorizing schemas in the docs UI.
+ * - base: Base schemas with fundamental entity fields (name contains 'Base')
+ * - errors: Error response schemas (name contains 'Error')
+ * - data: All other data schemas for API responses and requests
+ */
+export type SchemaTag = 'base' | 'data' | 'errors';
+
+/**
+ * Component schema summary for schemas list page.
+ * Represents a schema from components.schemas in the OpenAPI spec.
+ */
+export interface GenComponentSchema {
+  /** Schema name (key in components.schemas) */
+  name: string;
+  /** Full $ref path (e.g., '#/components/schemas/UserBase') */
+  ref: string;
+  /** Schema description if available */
+  description?: string;
+  /** Schema type (object, array, string, etc.) */
+  type: string | string[];
+  /** Resolved schema with full property details */
+  schema: GenSchema;
+  /** Whether this schema extends another via allOf */
+  extendsRef?: string;
+  /** Schema tag for categorization (base, data, errors) */
+  schemaTag: SchemaTag;
+  /** References to this schema from operations (operationIds that use it) */
+  usedBy?: string[];
+}

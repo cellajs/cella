@@ -48,7 +48,7 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, conte
       {typeValues.map((type, index) => (
         <span key={type}>
           <span
-            className={`ml-1 px-1 py-0.5 text-sm font-medium rounded ${theme.schemaType} ${getTypeColorClass(type, theme)}`}
+            className={`ml-1 px-1 py-0.5 text-xs font-medium rounded ${theme.schemaType} ${getTypeColorClass(type, theme)}`}
           >
             {type}
           </span>
@@ -56,9 +56,9 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, conte
         </span>
       ))}
       {refValue && (
-        <span className="ml-1 px-1 py-0.5 text-sm font-medium rounded text-primary bg-primary/10">{refValue}</span>
+        <span className="ml-1 px-1 py-0.5 text-xs font-medium rounded text-primary bg-primary/10">{refValue}</span>
       )}
-      {contentTypeValue && <span className="ml-1.5 italic text-sm text-foreground/40">{contentTypeValue}</span>}
+      {contentTypeValue && <span className="ml-1.5 italic text-xs text-foreground/40">{contentTypeValue}</span>}
     </>
   );
 };

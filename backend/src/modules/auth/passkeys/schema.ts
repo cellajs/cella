@@ -3,8 +3,8 @@ import { createSelectSchema } from 'drizzle-zod';
 import { t } from 'i18next';
 import { passkeysTable } from '#/db/schema/passkeys';
 
-const passkeyTypeSchema = z.union([z.literal('authentication'), z.literal('mfa')]);
-const challengeTypeSchema = z.union([...passkeyTypeSchema.options, z.literal('registration')]);
+const passkeyTypeSchema = z.enum(['authentication', 'mfa']);
+const challengeTypeSchema = z.enum([...passkeyTypeSchema.options, 'registration']);
 
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
 
