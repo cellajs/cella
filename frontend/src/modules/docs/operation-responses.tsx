@@ -1,13 +1,18 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { Braces, ChevronDown, FileType, Loader2, Text } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { JsonViewer } from '~/modules/docs/json-viewer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import { useUIStore } from '~/store/ui';
+import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
+import { CodeViewer } from './code-viewer';
+import { getTypeCodeForResponse, getZodCodeForResponse } from './helpers/extract-types';
 import { getStatusColor } from './helpers/get-status-color';
-import { valuesFirstSort } from './helpers/values-first-sort';
-import { githubDarkTheme, JsonEditor } from './json-editor';
 import type { GenOperationDetail, GenResponseSummary } from './types';
+
+type SchemaViewMode = 'format' | 'zod' | 'type';
 
 /**
  * Query options for fetching tag operation details.
@@ -24,14 +29,15 @@ export const tagDetailsQueryOptions = (tagName: string) =>
 
 interface ResponsesAccordionProps {
   responses: GenResponseSummary[];
+  operationId: string;
 }
 
 /**
  * Accordion component to display operation responses.
  */
-const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
+const ResponsesAccordion = ({ responses, operationId }: ResponsesAccordionProps) => {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
+  const [viewMode, setViewMode] = useState<SchemaViewMode>('format');
 
   if (responses.length === 0) {
     return <div className="text-sm text-muted-foreground py-2">{t('common:docs.no_responses_defined')}</div>;
@@ -42,19 +48,17 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
       {responses.map((response) => (
         <AccordionItem key={response.status} value={String(response.status)}>
           <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
-            <div className="flex items-center justify-between w-full pr-2">
-              <div className="flex items-center gap-3">
-                <span
-                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
-                >
-                  {response.status}
-                </span>
-                <span className="text-sm text-muted-foreground group-data-[state=open]:text-foreground">
-                  {response.description}
-                </span>
+            <div className="flex items-center justify-between w-full pr-2 gap-3">
+              <div
+                className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
+              >
+                {response.status}
+              </div>
+              <div className="text-sm text-muted-foreground grow group-data-[state=open]:text-foreground">
+                {response.description}
               </div>
               {response.name && (
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                <span className="max-md:hidden truncate text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
                   {response.name}
                 </span>
               )}
@@ -62,26 +66,54 @@ const ResponsesAccordion = ({ responses }: ResponsesAccordionProps) => {
           </AccordionTrigger>
           <AccordionContent>
             {response.schema ? (
-              <div className="p-3 rounded-md bg-muted/50">
-                <JsonEditor
-                  hideRoot
-                  enableSingleLineArrays
-                  enableRequiredAsLabel
-                  data={response.schema}
-                  collapse={4}
-                  keySort={valuesFirstSort}
-                  theme={mode === 'dark' ? githubDarkTheme : undefined}
-                  restrictEdit={true}
-                  searchFilter="all"
-                  enableClipboard={false}
-                  restrictDelete
-                  restrictAdd
-                  showStringQuotes={false}
-                  showArrayIndices={false}
-                  showCollectionCount="when-closed"
-                  indent={2}
-                  rootFontSize="13px"
-                />
+              <div className="relative">
+                <ToggleGroup
+                  type="single"
+                  value={viewMode}
+                  onValueChange={(value) => value && setViewMode(value as SchemaViewMode)}
+                  size="sm"
+                  variant="outline"
+                  className="max-md:hidden absolute top-2 right-2 z-10"
+                >
+                  <ToggleGroupItem value="format" aria-label={t('common:docs.view_format')}>
+                    <Text className="h-4 w-4 mr-1.5 lowercase" />
+                    {t('common:docs.format')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="zod" aria-label={t('common:docs.view_zod')}>
+                    <Braces className="h-4 w-4 mr-1.5" />
+                    zod
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="type" aria-label={t('common:docs.view_type')}>
+                    <FileType className="h-4 w-4 mr-1.5" />
+                    type
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <div className="p-3 md:pt-6 rounded-md bg-muted/50">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={viewMode}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                    >
+                      {viewMode === 'format' && response.schema && (
+                        <JsonViewer
+                          value={response.schema}
+                          showKeyQuotes={false}
+                          openapiMode="schema"
+                          rootName={false}
+                          defaultInspectDepth={5}
+                          indentWidth={3}
+                        />
+                      )}
+                      {viewMode === 'zod' && <CodeViewer code={getZodCodeForResponse(operationId)} language="zod" />}
+                      {viewMode === 'type' && (
+                        <CodeViewer code={getTypeCodeForResponse(operationId, response.status)} language="typescript" />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </div>
             ) : (
               <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
@@ -107,7 +139,7 @@ export const OperationResponses = ({ operationId, tagName }: OperationResponsesP
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
-  return <ResponsesAccordion responses={responses} />;
+  return <ResponsesAccordion responses={responses} operationId={operationId} />;
 };
 
 interface TagExpandButtonProps {

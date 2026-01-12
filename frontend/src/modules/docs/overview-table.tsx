@@ -4,6 +4,7 @@ import { info } from '~/api.gen/docs';
 import { DataTable } from '~/modules/common/data-table';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { Card, CardContent } from '~/modules/ui/card';
 
 interface InfoRow {
   key: string;
@@ -57,21 +58,24 @@ const OverviewTable = () => {
   );
 
   return (
-    <div className="flex flex-col gap-2 rdg-readonly">
-      <DataTable<InfoRow>
-        hideHeader
-        columns={columns}
-        rows={rows}
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.key}
-        isLoading={false}
-        isFetching={false}
-        limit={rows.length}
-        isFiltered={false}
-        rowHeight={42}
-        enableVirtualization={false}
-      />
-    </div>
+    <Card className="mb-12 border-0">
+      <CardContent className="rdg-readonly">
+        <DataTable<InfoRow>
+          className="mb-0 pb-0 border-b"
+          hideHeader
+          columns={columns}
+          rows={rows}
+          hasNextPage={false}
+          rowKeyGetter={(row) => row.key}
+          isLoading={false}
+          isFetching={false}
+          limit={rows.length}
+          isFiltered={false}
+          rowHeight={42}
+          enableVirtualization={false}
+        />
+      </CardContent>
+    </Card>
   );
 };
 

@@ -39,18 +39,18 @@ export const InfiniteLoader = ({
     return <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>;
 
   return (
-    <div className="mb-10">
+    <>
       {/* Infinite loading measure ref, which increases until 50 rows */}
       <div ref={measureRef} className="h-4 w-0 bg-red-700 absolute bottom-0 z-200" style={measureStyle} />
 
       {isFetching && hasNextPage && <Loading />}
       {fetchMore && !isFetching && !hasNextPage && <AllLoaded />}
-    </div>
+    </>
   );
 };
 
 const AllLoaded = () => (
-  <div className="opacity-50 w-full text-xl mt-4 text-center">
+  <div className="opacity-50 w-full text-xl mt-4 mb-10 text-center">
     <div>&#183;</div>
     <div className="-mt-5">&#183;</div>
     <div className="-mt-5">&#183;</div>
@@ -59,7 +59,7 @@ const AllLoaded = () => (
 );
 
 const Loading = () => (
-  <div className="flex space-x-1 opacity-50 justify-center items-center relative top-4 h-0 w-full animate-pulse">
+  <div className="flex space-x-1 opacity-50 justify-center items-center relative top-4 h-0 mb-10 w-full animate-pulse">
     <span className="sr-only">Loading...</span>
     <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
     <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />

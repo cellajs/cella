@@ -4,6 +4,10 @@ import { env } from './src/env';
 
 const extendConfig = env.PGLITE ? { driver: 'pglite' } : {};
 
+/**
+ * Drizzle configuration.
+ * @link https://orm.drizzle.team/docs/drizzle-config-file
+ */
 export default defineConfig({
   schema: './src/db/schema/*',
   out: './drizzle',

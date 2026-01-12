@@ -32,7 +32,12 @@ const meRoutes = {
         description: 'User',
         content: {
           'application/json': {
-            schema: z.object({ user: userSchema, systemRole: z.enum([...appConfig.roles.systemRoles, 'user']) }),
+            schema: z.object({
+              user: userSchema,
+              systemRole: z
+                .enum([...appConfig.roles.systemRoles, 'user'])
+                .openapi({ description: 'Explain system role here' }),
+            }),
           },
         },
       },

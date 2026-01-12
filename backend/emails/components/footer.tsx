@@ -2,6 +2,9 @@ import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
 
+/**
+ * Email footer component with company address and support email link.
+ */
 export const Footer = () => (
   <Text
     style={{

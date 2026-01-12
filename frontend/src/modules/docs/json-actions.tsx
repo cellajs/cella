@@ -72,12 +72,12 @@ export const JsonActions = ({
         onClick={handleOpen}
       >
         <ExternalLinkIcon size={iconSize} />
-        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:open')}</span>
+        <span className="max-lg:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:open')}</span>
       </ToggleGroupItem>
       {/* Copy */}
       <ToggleGroupItem value="copy" aria-label={t('common:copy')} className="gap-2" size={size} onClick={handleCopy}>
         {copied ? <CopyCheckIcon size={iconSize} /> : <CopyIcon size={iconSize} />}
-        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:copy')}</span>
+        <span className="max-lg:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:copy')}</span>
       </ToggleGroupItem>
       {/* Download */}
       <ToggleGroupItem
@@ -89,7 +89,7 @@ export const JsonActions = ({
         onClick={handleDownload}
       >
         {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon size={iconSize} />}
-        <span className="max-sm:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:download')}</span>
+        <span className="max-lg:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:download')}</span>
       </ToggleGroupItem>
     </ToggleGroup>
   );

@@ -77,6 +77,87 @@ function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | u
 }
 
 /**
+ * Merges allOf schemas into a single flat schema.
+ * Properties from later schemas override earlier ones.
+ * Required arrays are combined.
+ * The first $ref encountered is preserved as extendsRef for inheritance tracking.
+ */
+function mergeAllOfSchemas(
+  allOfSchemas: OpenApiSchema[],
+  spec: OpenApiSpec,
+  visited: Set<string>,
+): { mergedSchema: OpenApiSchema; extendsRef?: string } {
+  let extendsRef: string | undefined;
+  const mergedProperties: Record<string, OpenApiSchema> = {};
+  const mergedRequired: string[] = [];
+  let mergedType: string | string[] | undefined;
+  let mergedDescription: string | undefined;
+
+  for (const subSchema of allOfSchemas) {
+    let resolvedSubSchema = subSchema;
+
+    // If it's a $ref, resolve it and track the first one as extendsRef
+    if (subSchema.$ref) {
+      if (!extendsRef) {
+        extendsRef = subSchema.$ref;
+      }
+      const { schema: resolved } = resolveRef(subSchema.$ref, spec);
+      if (resolved) {
+        resolvedSubSchema = resolved;
+      }
+    }
+
+    // Recursively handle nested allOf
+    if (resolvedSubSchema.allOf) {
+      const { mergedSchema: nestedMerged, extendsRef: nestedRef } = mergeAllOfSchemas(
+        resolvedSubSchema.allOf,
+        spec,
+        visited,
+      );
+      resolvedSubSchema = nestedMerged;
+      if (!extendsRef && nestedRef) {
+        extendsRef = nestedRef;
+      }
+    }
+
+    // Merge type (prefer object if any)
+    if (resolvedSubSchema.type) {
+      mergedType = resolvedSubSchema.type;
+    }
+
+    // Merge description (prefer later)
+    if (resolvedSubSchema.description) {
+      mergedDescription = resolvedSubSchema.description;
+    }
+
+    // Merge properties
+    if (resolvedSubSchema.properties) {
+      for (const [key, value] of Object.entries(resolvedSubSchema.properties)) {
+        mergedProperties[key] = value;
+      }
+    }
+
+    // Merge required arrays
+    if (resolvedSubSchema.required) {
+      for (const req of resolvedSubSchema.required) {
+        if (!mergedRequired.includes(req)) {
+          mergedRequired.push(req);
+        }
+      }
+    }
+  }
+
+  const mergedSchema: OpenApiSchema = {
+    type: mergedType || 'object',
+    properties: Object.keys(mergedProperties).length > 0 ? mergedProperties : undefined,
+    required: mergedRequired.length > 0 ? mergedRequired : undefined,
+    description: mergedDescription,
+  };
+
+  return { mergedSchema, extendsRef };
+}
+
+/**
  * Resolves an OpenAPI schema to a GenSchemaProperty, dereferencing $refs
  * and converting the required array to inline required fields.
  */
@@ -94,7 +175,6 @@ function resolveSchemaProperty(
         type: 'object',
         required: isRequired,
         ref: schema.$ref,
-        refName: schema.$ref.split('/').pop(),
         refDescription: '(circular reference)',
       };
     }
@@ -102,12 +182,11 @@ function resolveSchemaProperty(
     const newVisited = new Set(visited);
     newVisited.add(schema.$ref);
 
-    const { schema: resolved, name } = resolveRef(schema.$ref, spec);
+    const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
       const result = resolveSchemaProperty(resolved, isRequired, spec, newVisited);
       // Add ref metadata
       result.ref = schema.$ref;
-      result.refName = name;
       if (resolved.description) {
         result.refDescription = resolved.description;
       }
@@ -119,7 +198,6 @@ function resolveSchemaProperty(
       type: 'object',
       required: isRequired,
       ref: schema.$ref,
-      refName: name,
     };
   }
 
@@ -150,9 +228,29 @@ function resolveSchemaProperty(
     }
   }
 
-  // Handle array items
+  // Handle array items - unwrap simple items to parent level
   if (schema.items) {
-    prop.items = resolveSchemaProperty(schema.items, true, spec, visited);
+    const resolvedItem = resolveSchemaProperty(schema.items, true, spec, visited);
+    // Check if item is "complex" (has nested properties or items)
+    const isComplexItem = resolvedItem.properties || resolvedItem.items || resolvedItem.anyOf || resolvedItem.oneOf;
+
+    // Always set itemType from the resolved item type
+    prop.itemType = resolvedItem.type;
+
+    // Unwrap simple item properties to parent (enum, format, ref, etc.)
+    if (resolvedItem.enum) prop.enum = resolvedItem.enum;
+    if (resolvedItem.format) prop.format = resolvedItem.format;
+    if (resolvedItem.ref) prop.ref = resolvedItem.ref;
+    if (resolvedItem.refDescription) prop.refDescription = resolvedItem.refDescription;
+    if (resolvedItem.minimum !== undefined) prop.minimum = resolvedItem.minimum;
+    if (resolvedItem.maximum !== undefined) prop.maximum = resolvedItem.maximum;
+    if (resolvedItem.minLength !== undefined) prop.minLength = resolvedItem.minLength;
+    if (resolvedItem.maxLength !== undefined) prop.maxLength = resolvedItem.maxLength;
+
+    // Only keep full items for complex nested structures
+    if (isComplexItem) {
+      prop.items = resolvedItem;
+    }
   }
 
   // Handle composition keywords
@@ -162,8 +260,16 @@ function resolveSchemaProperty(
   if (schema.oneOf) {
     prop.oneOf = schema.oneOf.map((s) => resolveSchemaProperty(s, false, spec, visited));
   }
+  // Handle allOf by merging into a flat schema
   if (schema.allOf) {
-    prop.allOf = schema.allOf.map((s) => resolveSchemaProperty(s, false, spec, visited));
+    const { mergedSchema, extendsRef } = mergeAllOfSchemas(schema.allOf, spec, visited);
+    // Recursively resolve the merged schema
+    const merged = resolveSchemaProperty(mergedSchema, isRequired, spec, visited);
+    // Preserve inheritance info
+    if (extendsRef) {
+      merged.extendsRef = extendsRef;
+    }
+    return merged;
   }
 
   return prop;
@@ -181,7 +287,6 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
       return {
         type: 'object',
         ref: schema.$ref,
-        refName: schema.$ref.split('/').pop(),
         refDescription: '(circular reference)',
       };
     }
@@ -189,12 +294,11 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
     const newVisited = new Set(visited);
     newVisited.add(schema.$ref);
 
-    const { schema: resolved, name } = resolveRef(schema.$ref, spec);
+    const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
       const result = resolveSchema(resolved, spec, newVisited);
       // Preserve original ref info
       result.ref = schema.$ref;
-      result.refName = name;
       if (resolved.description) {
         result.refDescription = resolved.description;
       }
@@ -205,7 +309,6 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
     return {
       type: 'object',
       ref: schema.$ref,
-      refName: name,
     };
   }
 
@@ -232,9 +335,24 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
     }
   }
 
-  // Handle array items
+  // Handle array items - unwrap simple items to parent level
   if (schema.items) {
-    result.items = resolveSchemaProperty(schema.items, true, spec, visited);
+    const resolvedItem = resolveSchemaProperty(schema.items, true, spec, visited);
+    // Check if item is "complex" (has nested properties or items)
+    const isComplexItem = resolvedItem.properties || resolvedItem.items || resolvedItem.anyOf || resolvedItem.oneOf;
+
+    // Always set itemType from the resolved item type
+    result.itemType = resolvedItem.type;
+
+    // Unwrap simple item properties to parent (enum, format, ref, etc.)
+    if (resolvedItem.enum) result.enum = resolvedItem.enum;
+    if (resolvedItem.ref) result.ref = resolvedItem.ref;
+    if (resolvedItem.refDescription) result.refDescription = resolvedItem.refDescription;
+
+    // Only keep full items for complex nested structures
+    if (isComplexItem) {
+      result.items = resolvedItem;
+    }
   }
 
   // Handle composition keywords
@@ -244,8 +362,16 @@ function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<st
   if (schema.oneOf) {
     result.oneOf = schema.oneOf.map((s) => resolveSchema(s, spec, visited));
   }
+  // Handle allOf by merging into a flat schema
   if (schema.allOf) {
-    result.allOf = schema.allOf.map((s) => resolveSchema(s, spec, visited));
+    const { mergedSchema, extendsRef } = mergeAllOfSchemas(schema.allOf, spec, visited);
+    // Recursively resolve the merged schema
+    const merged = resolveSchema(mergedSchema, spec, visited);
+    // Preserve inheritance info
+    if (extendsRef) {
+      merged.extendsRef = extendsRef;
+    }
+    return merged;
   }
 
   return result;

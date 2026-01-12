@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 import {
   Command,
@@ -11,19 +12,18 @@ import {
 } from '~/modules/ui/command';
 
 /**
- * Fast, composable, unstyled command menu for React.
+ * Wrapper component that manages CommandInput state
  */
-const meta = {
-  title: 'ui/Command',
-  component: Command,
-  tags: ['autodocs'],
-  argTypes: {},
-  args: {
-    className: 'rounded-lg w-96 border shadow-md',
-  },
-  render: (args) => (
-    <Command {...args}>
-      <CommandInput placeholder="Type a command or search..." value={''} />
+const CommandWithState = ({ className }: { className?: string }) => {
+  const [value, setValue] = useState('');
+  return (
+    <Command className={className}>
+      <CommandInput
+        placeholder="Type a command or search..."
+        value={value}
+        onValueChange={setValue}
+        clearValue={setValue}
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Suggestions">
@@ -39,7 +39,21 @@ const meta = {
         </CommandGroup>
       </CommandList>
     </Command>
-  ),
+  );
+};
+
+/**
+ * Fast, composable, unstyled command menu for React.
+ */
+const meta = {
+  title: 'ui/Command',
+  component: Command,
+  tags: ['autodocs'],
+  argTypes: {},
+  args: {
+    className: 'rounded-lg w-96 border shadow-md',
+  },
+  render: (args) => <CommandWithState className={args.className} />,
   parameters: {
     layout: 'centered',
   },

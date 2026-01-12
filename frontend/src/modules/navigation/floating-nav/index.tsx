@@ -1,16 +1,13 @@
 import { useRouterState } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMounted from '~/hooks/use-mounted';
+import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import type { TriggerNavItemFn } from '~/modules/navigation/types';
 import { Button } from '~/modules/ui/button';
 import { navItems } from '~/nav-config';
 import { cn } from '~/utils/cn';
-
-const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 
 /**
  * Floating navigation for mobile devices.
@@ -18,13 +15,9 @@ const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
  * - Renders buttons defined in route static data.
  */
 const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
-  const { hasWaited } = useMounted();
   const routerState = useRouterState();
   const isMobile = useBreakpoints('max', 'sm');
-
-  const [showButtons, setShowButtons] = useState(true);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
+  const showButtons = useScrollVisibility(isMobile);
 
   const floatingItems = routerState.matches
     .flatMap((el) => el.staticData.floatingNavButtons || [])
@@ -33,37 +26,6 @@ const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) =
   const items = isMobile ? navItems.filter((item) => floatingItems.includes(item.id)) : [];
 
   useBodyClass({ 'floating-nav': isMobile && items.length > 0 });
-
-  // Hide buttons when scrolling down and show when scrolling up
-  useEffect(() => {
-    if (!hasWaited || !isMobile) return;
-
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      const delta = currentY - lastScrollY.current;
-
-      if (Math.abs(delta) > SCROLL_THRESHOLD) {
-        if (delta > 0 && showButtons) {
-          setShowButtons(false); // scrolling down, hide
-        } else if (delta < 0 && !showButtons) {
-          setShowButtons(true); // scrolling up, show
-        }
-        lastScrollY.current = currentY;
-      }
-
-      ticking.current = false;
-    };
-
-    const onScroll = () => {
-      if (!ticking.current) {
-        requestAnimationFrame(handleScroll);
-        ticking.current = true;
-      }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [hasWaited, isMobile, showButtons]);
 
   return (
     <nav id="floating-nav">

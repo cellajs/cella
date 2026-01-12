@@ -1,6 +1,9 @@
 import { Heading } from 'jsx-email';
 import type { JSX } from 'react';
 
+/**
+ * Email header component to display a centered heading with consistent styling.
+ */
 export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }): JSX.Element => (
   <Heading
     style={{

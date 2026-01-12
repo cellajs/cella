@@ -1,6 +1,9 @@
 import { Section } from 'jsx-email';
 import type { JSX } from 'react';
 
+/**
+ * Email body component to wrap content with consistent padding and styling.
+ */
 export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Element => (
   <Section
     style={{
