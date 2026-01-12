@@ -164,8 +164,6 @@ const run = async () => {
       output: {
         ...outputConfig,
         path: tempOutputPath,
-        lint: null,
-        format: null,
         // Override source path to use absolute path (relative paths break with temp folder)
         source: sourceConfig
           ? {

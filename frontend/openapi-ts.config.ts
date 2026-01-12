@@ -23,8 +23,6 @@ export const openApiConfig: UserConfig = {
   },
   output: {
     path: './src/api.gen',
-    lint: null,
-    format: null,
     source: {
       fileName: 'openapi',
       path: '../../public/static',

@@ -155,7 +155,7 @@ export const zApiError = z.object({
   name: z.string(),
   message: z.string(),
   type: z.string(),
-  status: z.number(),
+  status: z.int().gte(400).lte(599),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
   logId: z.optional(z.string()),

@@ -8,7 +8,7 @@ type IntersectionEntry = {
 };
 
 type UseScrollSpyProps = {
-  sectionIds: string[];
+  sectionIds?: string[];
   enableWriteHash?: boolean;
   /** When true (default), uses smooth scrolling. When false, uses instant scroll. */
   smoothScroll?: boolean;

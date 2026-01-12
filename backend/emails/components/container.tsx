@@ -7,6 +7,9 @@ interface EmailContainerProps {
   children: React.ReactNode;
 }
 
+/**
+ * Email container component to wrap email content with consistent styling.
+ */
 export const EmailContainer = ({ previewText, bodyStyle, containerStyle, children }: EmailContainerProps) => (
   <Html>
     <Head />
