@@ -6,7 +6,7 @@ import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import chalk from 'chalk';
 import { appConfig } from 'config';
-import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/basic';
+import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks';
 import { defaultAdminUser } from '../fixtures';
 import { isUserSeeded as isAlreadySeeded } from '../utils';
 import { systemRolesTable } from '#/db/schema/system-roles';
@@ -34,7 +34,7 @@ export const userSeed = async () => {
     .onConflictDoNothing();
 
   // Insert system role record into the database
-  await db.insert(systemRolesTable).values({userId:adminUser.id, role: 'admin' }).onConflictDoNothing();
+  await db.insert(systemRolesTable).values({ userId: adminUser.id, role: 'admin' }).onConflictDoNothing();
 
   // Make password record → Insert into the database
   const passwordRecord = mockPassword(adminUser, hashed);

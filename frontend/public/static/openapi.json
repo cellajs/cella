@@ -3054,6 +3054,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -3181,6 +3203,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4101,6 +4145,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4212,6 +4278,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4580,6 +4668,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "rK5ziKXKdzSbuY2s_8QCE",
+                  "entityType": "organization",
+                  "name": "Murphy LLC",
+                  "slug": "murphy-llc",
+                  "description": "Extended executive database",
+                  "shortName": "Murphy",
+                  "country": "Cocos (Keeling) Islands",
+                  "timezone": "Australia/Adelaide",
+                  "defaultLanguage": "en",
+                  "languages": [
+                    "en"
+                  ],
+                  "notificationEmail": "notifications@murphy-llc.example",
+                  "emailDomains": [],
+                  "color": "#b9ecfa",
+                  "thumbnailUrl": null,
+                  "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                  "bannerUrl": null,
+                  "websiteUrl": "https://murphy-llc.example",
+                  "welcomeText": "Welcome to Murphy LLC!",
+                  "authStrategies": [
+                    "password"
+                  ],
+                  "chatSupport": false,
+                  "createdAt": "2024-12-25T15:29:47.111Z",
+                  "createdBy": null,
+                  "modifiedAt": "2024-12-25T15:29:47.111Z",
+                  "modifiedBy": null,
+                  "membership": {
+                    "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                    "contextType": "organization",
+                    "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                    "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                    "role": "admin",
+                    "order": 1,
+                    "muted": false,
+                    "archived": false
+                  },
+                  "counts": {
+                    "membership": {
+                      "admin": 1,
+                      "member": 19,
+                      "pending": 0,
+                      "total": 3
+                    },
+                    "entities": {
+                      "attachment": 24,
+                      "page": 7
+                    }
+                  }
                 }
               }
             }
@@ -4763,6 +4903,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "rK5ziKXKdzSbuY2s_8QCE",
+                  "entityType": "organization",
+                  "name": "Murphy LLC",
+                  "slug": "murphy-llc",
+                  "description": "Extended executive database",
+                  "shortName": "Murphy",
+                  "country": "Cocos (Keeling) Islands",
+                  "timezone": "Australia/Adelaide",
+                  "defaultLanguage": "en",
+                  "languages": [
+                    "en"
+                  ],
+                  "notificationEmail": "notifications@murphy-llc.example",
+                  "emailDomains": [],
+                  "color": "#b9ecfa",
+                  "thumbnailUrl": null,
+                  "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                  "bannerUrl": null,
+                  "websiteUrl": "https://murphy-llc.example",
+                  "welcomeText": "Welcome to Murphy LLC!",
+                  "authStrategies": [
+                    "password"
+                  ],
+                  "chatSupport": false,
+                  "createdAt": "2024-12-25T15:29:47.111Z",
+                  "createdBy": null,
+                  "modifiedAt": "2024-12-25T15:29:47.111Z",
+                  "modifiedBy": null,
+                  "membership": {
+                    "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                    "contextType": "organization",
+                    "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                    "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                    "role": "admin",
+                    "order": 1,
+                    "muted": false,
+                    "archived": false
+                  },
+                  "counts": {
+                    "membership": {
+                      "admin": 1,
+                      "member": 19,
+                      "pending": 0,
+                      "total": 3
+                    },
+                    "entities": {
+                      "attachment": 24,
+                      "page": 7
+                    }
+                  }
                 }
               }
             }
@@ -4910,6 +5102,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                  "entityType": "page",
+                  "name": "Cibus dolores decet surgo aptus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "supplanto odio culpa",
+                  "status": "unpublished",
+                  "parentId": null,
+                  "displayOrder": 17.33,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
                 }
               }
             }
@@ -5131,6 +5337,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                  "entityType": "page",
+                  "name": "Cibus dolores decet surgo aptus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "supplanto odio culpa",
+                  "status": "unpublished",
+                  "parentId": null,
+                  "displayOrder": 17.33,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
                 }
               }
             }
@@ -5226,6 +5446,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                  "entityType": "page",
+                  "name": "Cibus dolores decet surgo aptus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "supplanto odio culpa",
+                  "status": "unpublished",
+                  "parentId": null,
+                  "displayOrder": 17.33,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
                 }
               }
             }
@@ -6496,6 +6730,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
+                },
+                "example": {
+                  "id": "y5HDs5pltSHUGLcWkE34G",
+                  "entityType": "attachment",
+                  "name": "fondly.m1v",
+                  "description": null,
+                  "public": false,
+                  "bucketName": "attachments",
+                  "groupId": null,
+                  "filename": "fondly.m1v",
+                  "contentType": "video/3gpp2",
+                  "convertedContentType": null,
+                  "size": "9426474",
+                  "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                  "convertedKey": null,
+                  "thumbnailKey": null,
+                  "createdAt": "2024-10-12T17:43:05.360Z",
+                  "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                  "modifiedAt": "2024-10-12T17:43:05.360Z",
+                  "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                  "organizationId": "7EXqgIQTdNUnlmV7IByg2"
                 }
               }
             }
@@ -6886,6 +7141,21 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Membership"
+                },
+                "example": {
+                  "id": "Kyft2jgCOk1uWez4InpSg",
+                  "contextType": "organization",
+                  "userId": "s9bewe1fKAYWRak3UtzV7",
+                  "organizationId": "j49ckRo-048_8QTtlJMCI",
+                  "role": "member",
+                  "order": 90,
+                  "muted": false,
+                  "archived": false,
+                  "createdAt": "2024-10-28T14:52:59.502Z",
+                  "createdBy": "s9bewe1fKAYWRak3UtzV7",
+                  "modifiedAt": "2024-10-28T14:52:59.502Z",
+                  "modifiedBy": null,
+                  "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI"
                 }
               }
             }

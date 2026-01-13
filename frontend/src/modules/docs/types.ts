@@ -145,6 +145,8 @@ export interface GenResponseSummary {
   contentType?: string;
   /** Resolved response schema (dereferenced with ref metadata preserved) */
   schema?: GenSchema;
+  /** Example response value from OpenAPI spec */
+  example?: unknown;
 }
 
 /**

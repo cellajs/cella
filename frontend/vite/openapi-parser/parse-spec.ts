@@ -117,20 +117,44 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
             }
 
             // Check for inline response content with schema
-            const content = (response as { content?: Record<string, { schema?: OpenApiSchema }> })?.content;
+            const content = (response as { content?: Record<string, { schema?: OpenApiSchema; example?: unknown }> })
+              ?.content;
+            let example: unknown;
             if (content) {
               const contentTypes = Object.keys(content);
               const jsonType = contentTypes.find((ct) => ct.includes('json'));
               const selectedContentType = jsonType || contentTypes[0];
-              if (selectedContentType && content[selectedContentType]?.schema) {
-                contentType = selectedContentType;
-                const responseSchema = content[selectedContentType].schema;
-                schema = resolveSchema(responseSchema, spec);
+              if (selectedContentType) {
+                const mediaTypeObject = content[selectedContentType];
 
-                // Extract ref info if the schema itself is a $ref
-                if (responseSchema.$ref) {
-                  ref = responseSchema.$ref;
-                  name = responseSchema.$ref.split('/').pop();
+                if (mediaTypeObject?.schema) {
+                  contentType = selectedContentType;
+                  const responseSchema = mediaTypeObject.schema;
+                  schema = resolveSchema(responseSchema, spec);
+
+                  // Extract ref info if the schema itself is a $ref
+                  if (responseSchema.$ref) {
+                    ref = responseSchema.$ref;
+                    name = responseSchema.$ref.split('/').pop();
+
+                    // Extract example from the referenced component schema
+                    if (name && spec.components?.schemas?.[name]) {
+                      const componentSchema = spec.components.schemas[name];
+                      if (componentSchema.example !== undefined) {
+                        example = componentSchema.example;
+                      }
+                    }
+                  }
+
+                  // Check for inline example on the schema itself
+                  if (example === undefined && responseSchema.example !== undefined) {
+                    example = responseSchema.example;
+                  }
+                }
+
+                // Check for example at the media type level (preferred in OpenAPI 3.1)
+                if (example === undefined && mediaTypeObject?.example !== undefined) {
+                  example = mediaTypeObject.example;
                 }
               }
             }
@@ -150,6 +174,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
               }
               responseSummary.schema = schema;
             }
+            if (example !== undefined) responseSummary.example = example;
 
             responses.push(responseSummary);
           }
