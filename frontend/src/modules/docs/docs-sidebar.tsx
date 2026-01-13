@@ -10,7 +10,7 @@ import { JsonActions } from '~/modules/docs/json-actions';
 import { OperationTagsSidebar } from '~/modules/docs/operation-tags-sidebar';
 import { schemasQueryOptions } from '~/modules/docs/query';
 import { SchemaTagsSidebar } from '~/modules/docs/schema-tags-sidebar';
-import type { GenOperationSummary, GenTagSummary } from '~/modules/docs/types';
+import type { GenTagSummary } from '~/modules/docs/types';
 import type { initPagesCollection } from '~/modules/pages/collections';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -48,7 +48,6 @@ const OpenApiJsonActions = () => {
 };
 
 interface DocsSidebarProps {
-  operations: GenOperationSummary[];
   tags: GenTagSummary[];
   pagesCollection: ReturnType<typeof initPagesCollection>;
 }
@@ -56,7 +55,7 @@ interface DocsSidebarProps {
 /**
  * Sidebar for the Docs section, including logo, Spec JSON actions, API reference (operations & schemas), and pages groups.
  */
-export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarProps) {
+export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
   const { t } = useTranslation();
 
   const { systemRole } = useUserStore();
@@ -159,7 +158,9 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                     >
                       <span>{t('common:operation', { count: 2 })}</span>
                       {(expandedSection !== 'operations' || forcedCollapsed.has('operations')) && (
-                        <span className="ml-2 text-xs text-muted-foreground/90 font-light">{operations.length}</span>
+                        <span className="ml-2 text-xs text-muted-foreground/90 font-light">
+                          {tags.reduce((sum, tag) => sum + tag.count, 0)}
+                        </span>
                       )}
                       <ChevronDownIcon
                         className={cn(
@@ -180,14 +181,16 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
                     )}
                   >
                     <span>{t('common:operation', { count: 2 })}</span>
-                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">{operations.length}</span>
+                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">
+                      {tags.reduce((sum, tag) => sum + tag.count, 0)}
+                    </span>
                   </Link>
                 )}
               </SidebarMenuItem>
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
-                  <OperationTagsSidebar operations={operations} tags={tags} />
+                  <OperationTagsSidebar />
                 </SidebarGroupContent>
               </CollapsibleContent>
             </Collapsible>

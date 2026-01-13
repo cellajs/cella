@@ -1,10 +1,11 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import type { GenOperationSummary, GenTagSummary } from '~/modules/docs/types';
+import { operationsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -13,18 +14,17 @@ import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 import { getMethodColor } from './helpers/get-method-color';
 
-interface OperationTagsSidebarProps {
-  operations: GenOperationSummary[];
-  tags: GenTagSummary[];
-}
-
 /**
  * Sidebar menu listing operation tags with collapsible operation lists.
  * Uses scroll spy to track and highlight the currently visible operation.
  */
-export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarProps) {
+export function OperationTagsSidebar() {
   const isMobile = useBreakpoints('max', 'sm');
   const layoutId = useRef(nanoid()).current;
+
+  // Fetch operations and tags (already cached by route loader)
+  const { data: operations } = useSuspenseQuery(operationsQueryOptions);
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   // Get active tag from URL search params (strict: false for fuzzy route matching)
   const { operationTag: activeTag } = useSearch({ strict: false });

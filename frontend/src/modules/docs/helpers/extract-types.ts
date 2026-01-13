@@ -80,16 +80,23 @@ const extractDefinition = (content: string, pattern: RegExp, startsWithBrace = f
 
 /**
  * Get the Zod schema code for a specific operation response.
+ * For error responses (status >= 400), uses responseName (e.g., 'BadRequestError').
+ * For success responses, uses operationId + 'Response' (e.g., 'GetMeResponse').
  */
-export const getZodCodeForResponse = (zodContent: string, operationId: string): string => {
-  const pascalCaseOpId = toPascalCase(operationId);
-  const schemaName = `z${pascalCaseOpId}Response`;
+export const getZodCodeForResponse = (
+  zodContent: string,
+  operationId: string,
+  status: number,
+  responseName?: string,
+): string => {
+  const isError = status >= 400;
+  const schemaName = isError && responseName ? responseName : `${toPascalCase(operationId)}Response`;
 
-  const pattern = new RegExp(`export const ${schemaName} = `);
+  const pattern = new RegExp(`export const z${schemaName} = `);
   const definition = extractDefinition(zodContent, pattern);
 
   if (!definition) {
-    return `// Schema ${schemaName} not found in zod.gen.ts`;
+    return `// Schema z${schemaName} not found in zod.gen.ts`;
   }
 
   return `// From ~/api.gen/zod.gen.ts\n${definition}`;

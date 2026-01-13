@@ -46,10 +46,10 @@ export const DocsLayoutRoute = createRoute({
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
     const pagesCollection = initPagesCollection();
-    // Prefetch operations and tags used by DocsLayout
+    // Prefetch tags and schemas (schemas used for error response deduplication)
     await Promise.all([
-      queryClient.ensureQueryData(operationsQueryOptions),
       queryClient.ensureQueryData(tagsQueryOptions),
+      queryClient.ensureQueryData(schemasQueryOptions),
     ]);
     return { pagesCollection };
   },
