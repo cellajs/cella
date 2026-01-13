@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
@@ -15,16 +16,15 @@ import { ViewerGroup } from './viewer-group';
 interface OperationRequestProps {
   operationId: string;
   tagName: string;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
 /**
  * Collapsible container for request schema (path, query, body).
  * Only renders if the operation has a request schema.
  */
-export const OperationRequest = ({ operationId, tagName, isOpen, onOpenChange }: OperationRequestProps) => {
+export const OperationRequest = ({ operationId, tagName }: OperationRequestProps) => {
   const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(true);
 
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
@@ -38,7 +38,7 @@ export const OperationRequest = ({ operationId, tagName, isOpen, onOpenChange }:
   if (!request) return null;
 
   return (
-    <Collapsible open={isOpen} onOpenChange={onOpenChange} className="mt-8">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-8">
       <CollapsibleTrigger className="flex items-center gap-2 group w-full text-left">
         <h4 className="text-sm font-medium">{t('common:docs.request')}</h4>
         <ChevronDownIcon

@@ -12,14 +12,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/u
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 
 /**
  * Sidebar menu listing schema tags with collapsible schema lists.
  * Uses scroll spy to track and highlight the currently visible schema.
  */
 export function SchemaTagsSidebar() {
-  const isMobile = useBreakpoints('max', 'sm');
   const layoutId = useRef(nanoid()).current;
+
+  const isMobile = useBreakpoints('max', 'sm');
 
   // Fetch schemas and schema tags via React Query
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
@@ -42,7 +44,7 @@ export function SchemaTagsSidebar() {
 
   const { currentSection, scrollToSection } = useScrollSpy({
     sectionIds: allSectionIds,
-    enableWriteHash: !isMobile,
+    enableWriteHash: true,
     smoothScroll: false,
   });
 
@@ -117,6 +119,7 @@ export function SchemaTagsSidebar() {
                           onClick={(e) => {
                             e.preventDefault();
                             scrollToSection(schemaId);
+                            isMobile && useSheeter.getState().remove();
                           }}
                         >
                           <span className="truncate text-[13px]">{schema.name}</span>

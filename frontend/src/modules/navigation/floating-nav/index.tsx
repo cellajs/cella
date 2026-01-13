@@ -17,7 +17,7 @@ import { cn } from '~/utils/cn';
 const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
   const routerState = useRouterState();
   const isMobile = useBreakpoints('max', 'sm');
-  const showButtons = useScrollVisibility(isMobile);
+  const { isVisible: showButtons } = useScrollVisibility(isMobile);
 
   const floatingItems = routerState.matches
     .flatMap((el) => el.staticData.floatingNavButtons || [])

@@ -78,7 +78,10 @@ const OperationsListPage = () => {
                       replace
                       draggable={false}
                       resetScroll={false}
-                      className={cn(buttonVariants({ variant: 'plain', size: 'lg' }), 'rounded-full')}
+                      className={cn(
+                        buttonVariants({ variant: isOpen ? 'outlineGhost' : 'plain', size: 'lg' }),
+                        'rounded-full',
+                      )}
                       onMouseEnter={() => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))}
                     >
                       {isOpen ? (

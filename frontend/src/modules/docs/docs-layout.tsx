@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link, Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { Link, Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
 import { MenuIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -20,7 +20,13 @@ const DocsLayout = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const showHeader = useScrollVisibility(isMobile);
+  const { isVisible: showHeader, reset: resetHeaderVisibility } = useScrollVisibility(isMobile);
+
+  // Reset header visibility on route or hash change (mobile)
+  const { location } = useRouterState();
+  useEffect(() => {
+    if (isMobile) resetHeaderVisibility();
+  }, [location.pathname, location.hash, isMobile, resetHeaderVisibility]);
 
   const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
 
