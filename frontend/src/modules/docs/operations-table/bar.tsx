@@ -1,11 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { GenOperationSummary } from '~/api.gen/docs';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { GenOperationSummary } from '~/modules/docs/types';
 import { ViewModeToggle } from '~/modules/docs/view-mode-toggle';
 
 interface OperationsTableBarProps {

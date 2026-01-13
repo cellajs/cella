@@ -1,14 +1,14 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
-import type { BasicTemplateType } from '../src/lib/mailer';
-import { AppLogo } from './components/app-logo';
-import { Avatar } from './components/avatar';
-import { EmailContainer } from './components/container';
-import { EmailBody } from './components/email-body';
-import { EmailButton } from './components/email-button';
-import { EmailHeader } from './components/email-header';
-import { Footer } from './components/footer';
+import type { BasicTemplateType } from '../../src/lib/mailer';
+import { AppLogo } from '../components/app-logo';
+import { Avatar } from '../components/avatar';
+import { EmailContainer } from '../components/container';
+import { EmailBody } from '../components/email-body';
+import { EmailButton } from '../components/email-button';
+import { EmailHeader } from '../components/email-header';
+import { Footer } from '../components/footer';
 
 export interface SystemInviteEmailProps extends BasicTemplateType {
   systemInviteLink: string;

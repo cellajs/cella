@@ -14,3 +14,6 @@ export const totpsTable = pgTable('totps', {
   secret: varchar().notNull(),
   createdAt: timestampColumns.createdAt,
 });
+
+export type TOTPModel = typeof totpsTable.$inferSelect;
+export type InsertTOTPModel = typeof totpsTable.$inferInsert;

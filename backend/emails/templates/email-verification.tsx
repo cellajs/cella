@@ -1,13 +1,13 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
-import type { BasicTemplateType } from '../src/lib/mailer';
-import { AppLogo } from './components/app-logo';
-import { EmailContainer } from './components/container';
-import { EmailBody } from './components/email-body';
-import { EmailButton } from './components/email-button';
-import { EmailHeader } from './components/email-header';
-import { Footer } from './components/footer';
+import type { BasicTemplateType } from '../../src/lib/mailer';
+import { AppLogo } from '../components/app-logo';
+import { EmailContainer } from '../components/container';
+import { EmailBody } from '../components/email-body';
+import { EmailButton } from '../components/email-button';
+import { EmailHeader } from '../components/email-header';
+import { Footer } from '../components/footer';
 
 const appName = appConfig.name;
 
@@ -26,7 +26,7 @@ export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: E
       <EmailHeader headerText={i18n.t('backend:email.email_verification.title', { appName, lng })} />
       <EmailBody>
         <Text>
-          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }) }}/>
+          <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }) }} />
         </Text>
 
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />

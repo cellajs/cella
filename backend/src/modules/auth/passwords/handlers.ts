@@ -24,7 +24,7 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails/create-password';
+import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

@@ -155,7 +155,7 @@ export function resolveSchemaProperty(
     required: isRequired,
   };
 
-  // Copy description
+  // Copy description (example is NOT copied - it belongs at GenComponentSchema level only)
   if (schema.description) prop.description = schema.description;
 
   // Copy format constraints
@@ -286,6 +286,8 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
   }
 
   // Handle description and format constraints
+  // Note: example is NOT copied here - it's handled at the GenComponentSchema level in parse-spec.ts
+  // to avoid duplication (schema.example vs schema.schema.example)
   if (schema.description) result.description = schema.description;
   if (schema.format) result.format = schema.format;
   if (schema.minimum !== undefined) result.minimum = schema.minimum;

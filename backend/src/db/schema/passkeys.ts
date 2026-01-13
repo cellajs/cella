@@ -22,3 +22,6 @@ export const passkeysTable = pgTable('passkeys', {
   nameOnDevice: varchar().notNull(),
   createdAt: timestampColumns.createdAt,
 });
+
+export type PasskeyModel = typeof passkeysTable.$inferSelect;
+export type InsertPasskeyModel = typeof passkeysTable.$inferInsert;

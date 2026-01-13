@@ -34,4 +34,6 @@ export const sessionsTable = pgTable('sessions', {
   expiresAt: timestampColumns.expiresAt,
 });
 
+// TODO as UnsafeSessionModel and make SessionModel safe by omitting token
 export type SessionModel = typeof sessionsTable.$inferSelect;
+export type InsertSessionModel = typeof sessionsTable.$inferInsert;

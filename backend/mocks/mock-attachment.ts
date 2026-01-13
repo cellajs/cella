@@ -1,3 +1,4 @@
+import type { AttachmentModel } from '#/db/schema/attachments';
 import { faker } from '@faker-js/faker';
 import { withFakerSeed } from './utils';
 
@@ -6,7 +7,7 @@ import { withFakerSeed } from './utils';
  * Uses deterministic seeding - same key produces same data.
  * Used for DB seeding, tests, and API response examples.
  */
-export const mockAttachment = (key = 'attachment:default') =>
+export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();

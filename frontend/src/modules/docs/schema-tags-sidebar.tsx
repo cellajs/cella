@@ -1,11 +1,12 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
-import type { SchemaTag } from '~/api.gen/docs';
-import { schemas, schemaTags } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
+import type { SchemaTag } from '~/modules/docs/types';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
@@ -19,6 +20,10 @@ import { nanoid } from '~/utils/nanoid';
 export function SchemaTagsSidebar() {
   const isMobile = useBreakpoints('max', 'sm');
   const layoutId = useRef(nanoid()).current;
+
+  // Fetch schemas and schema tags via React Query
+  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
+  const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
   // Get active schema tag from URL search params (works regardless of current route)
   const { location } = useRouterState();

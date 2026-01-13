@@ -5,13 +5,9 @@ import chalk from 'chalk';
 import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
-import { attachmentSchema } from '#/modules/attachments/schema';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
-import { inactiveMembershipSchema, membershipBaseSchema, membershipSchema } from '#/modules/memberships/schema';
-import { organizationSchema } from '#/modules/organizations/schema';
-import { userSchema } from '#/modules/users/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { userBaseSchema } from '#/modules/users/schema-base';
-import { apiErrorSchema } from '#/utils/schema/api-error';
 import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
 
 // OpenAPI configuration
@@ -46,19 +42,10 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
       "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
-  // Register lower-level (base) schemas
+  // Register base schemas (not auto-registered as they're only used for extending other schemas)
   registry.register('UserBase', userBaseSchema);
   registry.register('ContextEntityBase', contextEntityBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
-
-  // Register entity schemas
-  registry.register('User', userSchema);
-  registry.register('Organization', organizationSchema);
-  registry.register('Membership', membershipSchema);
-  registry.register('InactiveMembership', inactiveMembershipSchema);
-  registry.register('Attachment', attachmentSchema);
-
-  registry.register('ApiError', apiErrorSchema);
 
   // Register error responses
   registerAllErrorResponses(registry, errorResponses);

@@ -1,17 +1,27 @@
-import type { GenComponentSchema } from '~/api.gen/docs';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
+import type { GenComponentSchema } from '~/modules/docs/types';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import { getTypeCodeForSchema, getZodCodeForSchema } from './helpers/extract-types';
+import {
+  getTypeCodeForSchema,
+  getZodCodeForSchema,
+  typesContentQueryOptions,
+  zodContentQueryOptions,
+} from './helpers/extract-types';
 
 interface SchemaDetailProps {
   schema: GenComponentSchema;
 }
 
 /**
- * Single schema detail card with collapsible ViewerGroup
+ * Single schema detail card with collapsible ViewerGroup.
+ * Lazily loads types/zod content via React Query.
  */
 export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
+  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
+  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+
   // Strip leading #
   const refId = schema.ref.replace(/^#/, '');
 
@@ -30,8 +40,9 @@ export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
         <div className="mt-2">
           <ViewerGroup
             schema={schema.schema}
-            zodCode={getZodCodeForSchema(schema.name)}
-            typeCode={getTypeCodeForSchema(schema.name)}
+            zodCode={getZodCodeForSchema(zodContent, schema.name)}
+            typeCode={getTypeCodeForSchema(typesContent, schema.name)}
+            example={schema.example}
             defaultInspectDepth={3}
           />
         </div>

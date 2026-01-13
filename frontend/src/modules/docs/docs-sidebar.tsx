@@ -5,12 +5,12 @@ import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenOperationSummary, GenTagSummary } from '~/api.gen/docs';
-import { schemas } from '~/api.gen/docs';
 import Logo from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { OperationTagsSidebar } from '~/modules/docs/operation-tags-sidebar';
+import { schemasQueryOptions } from '~/modules/docs/query';
 import { SchemaTagsSidebar } from '~/modules/docs/schema-tags-sidebar';
+import type { GenOperationSummary, GenTagSummary } from '~/modules/docs/types';
 import type { initPagesCollection } from '~/modules/pages/collections';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -60,6 +60,9 @@ export function DocsSidebar({ operations, tags, pagesCollection }: DocsSidebarPr
   const { t } = useTranslation();
 
   const { systemRole } = useUserStore();
+
+  // Fetch schemas data for sidebar count
+  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
 
   // Get current pathname to determine active/expanded section
   const { location } = useRouterState();

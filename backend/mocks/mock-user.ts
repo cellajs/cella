@@ -58,7 +58,7 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
  * Generates a mock user API response with deterministic seeding.
  * Same key produces same data across runs.
  */
-export const mockUserResponse = (key = 'user:default'): InsertUserModel =>
+export const mockUserResponse = (key = 'user:default'): UserModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();

@@ -1,10 +1,7 @@
 /**
  * Barrel file for all mock generators.
- * Re-exports everything from entity-specific mock files.
- * Maintains backward compatibility for existing imports.
  */
 
-// Re-export all entity mocks
 export {
   mockOrganization,
   mockOrganizationResponse,
@@ -36,6 +33,10 @@ export {
   mockPage,
   mockPageResponse,
 } from './mock-page';
+
+export { mockSuccessWithRejectedItems } from './mock-common';
+
+export { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from './mock-me';
 
 // Re-export utils
 export { pastIsoDate } from './utils';

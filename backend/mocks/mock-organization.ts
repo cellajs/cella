@@ -1,5 +1,7 @@
-import type { InsertOrganizationModel } from '#/db/schema/organizations';
+import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
 import type { AuthStrategy } from '#/db/schema/sessions';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import { nanoid } from '#/utils/nanoid';
 import { faker } from '@faker-js/faker';
 import { appConfig, type Language } from 'config';
@@ -52,7 +54,13 @@ export const mockOrganization = (): InsertOrganizationModel => {
  * Generates a mock organization API response with deterministic seeding.
  * Adds API-only fields (membership, counts) to the base mock.
  */
-export const mockOrganizationResponse = (key = 'organization:default') =>
+export const mockOrganizationResponse = (key = 'organization:default'): OrganizationModel & {
+  membership: MembershipBaseModel;
+  counts: {
+    membership: { admin: number; member: number; pending: number; total: number };
+    entities: { attachment: number; page: number };
+  };
+} =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
@@ -74,6 +82,7 @@ export const mockOrganizationResponse = (key = 'organization:default') =>
       languages: [appConfig.defaultLanguage] as Language[],
       notificationEmail: `notifications@${slug}.example`,
       emailDomains: [] as string[],
+      restrictions: defaultRestrictions(),
       color: faker.color.rgb(),
       thumbnailUrl: null,
       logoUrl: faker.image.url(),

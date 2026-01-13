@@ -1,36 +1,37 @@
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { cn } from '~/utils/cn';
-import { getTypeCodeForResponse, getZodCodeForResponse } from './helpers/extract-types';
+import {
+  getTypeCodeForResponse,
+  getZodCodeForResponse,
+  typesContentQueryOptions,
+  zodContentQueryOptions,
+} from './helpers/extract-types';
 import { getStatusColor } from './helpers/get-status-color';
-import type { GenOperationDetail, GenResponseSummary } from './types';
+import { tagDetailsQueryOptions } from './query';
+import type { GenResponseSummary } from './types';
 import { ViewerGroup } from './viewer-group';
-
-/**
- * Query options for fetching tag operation details.
- */
-export const tagDetailsQueryOptions = (tagName: string) =>
-  queryOptions({
-    queryKey: ['docs', 'tag-details', tagName],
-    queryFn: async () => {
-      const module = await import(`~/api.gen/docs/details/${tagName}.gen.ts`);
-      return module.operations as GenOperationDetail[];
-    },
-    staleTime: Number.POSITIVE_INFINITY, // Never stale - generated at build time
-  });
 
 interface ResponsesAccordionProps {
   responses: GenResponseSummary[];
   operationId: string;
+  zodContent: string;
+  typesContent: string;
   onValueChange?: (value: string) => void;
 }
 
 /**
  * Accordion component to display operation responses.
  */
-const ResponsesAccordion = ({ responses, operationId, onValueChange }: ResponsesAccordionProps) => {
+const ResponsesAccordion = ({
+  responses,
+  operationId,
+  zodContent,
+  typesContent,
+  onValueChange,
+}: ResponsesAccordionProps) => {
   const { t } = useTranslation();
 
   if (responses.length === 0) {
@@ -62,8 +63,9 @@ const ResponsesAccordion = ({ responses, operationId, onValueChange }: Responses
             {response.schema ? (
               <ViewerGroup
                 schema={response.schema}
-                zodCode={getZodCodeForResponse(operationId)}
-                typeCode={getTypeCodeForResponse(operationId, response.status)}
+                zodCode={getZodCodeForResponse(zodContent, operationId)}
+                typeCode={getTypeCodeForResponse(typesContent, operationId, response.status)}
+                example={response.example}
               />
             ) : (
               <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
@@ -87,6 +89,8 @@ interface OperationResponsesProps {
  */
 export const OperationResponses = ({ operationId, tagName, onResponseOpen }: OperationResponsesProps) => {
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
+  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
@@ -96,7 +100,15 @@ export const OperationResponses = ({ operationId, tagName, onResponseOpen }: Ope
     }
   };
 
-  return <ResponsesAccordion responses={responses} operationId={operationId} onValueChange={handleValueChange} />;
+  return (
+    <ResponsesAccordion
+      responses={responses}
+      operationId={operationId}
+      zodContent={zodContent}
+      typesContent={typesContent}
+      onValueChange={handleValueChange}
+    />
+  );
 };
 
 interface TagExpandButtonProps {

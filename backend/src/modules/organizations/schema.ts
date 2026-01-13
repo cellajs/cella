@@ -13,6 +13,7 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
+import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
 // Entity count schema should exclude 'user' and 'organization'
 type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;
@@ -45,7 +46,7 @@ export const organizationSchema = z
     membership: z.union([membershipBaseSchema, z.null()]),
     counts: fullCountsSchema,
   })
-  .openapi('Organization');
+  .openapi('Organization', { example: mockOrganizationResponse() });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
 

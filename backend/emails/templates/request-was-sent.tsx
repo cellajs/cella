@@ -2,16 +2,16 @@ import i18n from 'i18next';
 import { Text } from 'jsx-email';
 
 import { appConfig } from 'config';
-import type { BasicTemplateType } from '../src/lib/mailer';
-import { AppLogo } from './components/app-logo';
-import { EmailContainer } from './components/container';
-import { EmailBody } from './components/email-body';
-import { EmailHeader } from './components/email-header';
-import { Footer } from './components/footer';
+import type { BasicTemplateType } from '../../src/lib/mailer';
+import { AppLogo } from '../components/app-logo';
+import { EmailContainer } from '../components/container';
+import { EmailBody } from '../components/email-body';
+import { EmailHeader } from '../components/email-header';
+import { Footer } from '../components/footer';
 
 export interface RequestResponseEmailProps extends BasicTemplateType {
   type: "waitlist" | "newsletter" | "contact",
-  message: string | null 
+  message: string | null
 }
 
 /**

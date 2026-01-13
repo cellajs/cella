@@ -1,11 +1,22 @@
 import { mockAttachmentResponse } from './mock-attachment';
+import { mockSuccessWithRejectedItems } from './mock-common';
+import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from './mock-me';
 import { mockMembershipResponse } from './mock-membership';
 import { mockOrganizationResponse } from './mock-organization';
 import { mockPageResponse } from './mock-page';
 import { mockUserResponse } from './mock-user';
 
 /** Supported schema names for example generation */
-export type ExampleSchemaName = 'Organization' | 'User' | 'Attachment' | 'Page' | 'Membership';
+export type ExampleSchemaName =
+  | 'Organization'
+  | 'User'
+  | 'Attachment'
+  | 'Page'
+  | 'Membership'
+  | 'SuccessWithRejectedItems'
+  | 'Me'
+  | 'MeAuthData'
+  | 'UploadToken';
 
 /** Type-safe registry mapping OpenAPI schema names to their example generators */
 export const exampleRegistry: Record<ExampleSchemaName, () => unknown> = {
@@ -14,6 +25,10 @@ export const exampleRegistry: Record<ExampleSchemaName, () => unknown> = {
   Attachment: mockAttachmentResponse,
   Page: mockPageResponse,
   Membership: mockMembershipResponse,
+  SuccessWithRejectedItems: mockSuccessWithRejectedItems,
+  Me: mockMeResponse,
+  MeAuthData: mockMeAuthDataResponse,
+  UploadToken: mockUploadTokenResponse,
 };
 
 /** Cache for generated examples - ensures same schema always returns same example */

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "base",
+    "description": "Schemas with base fields only",
+    "count": 3
+  },
+  {
+    "name": "data",
+    "description": "Complete data schemas",
+    "count": 10
+  },
+  {
+    "name": "errors",
+    "description": "Error schemas",
+    "count": 6
+  }
+]

@@ -12,6 +12,7 @@ import type {
   GenResponseSummary,
   GenSchema,
   GenSchemaProperty,
+  GenSchemaTagSummary,
   GenTagSummary,
 } from '../../src/modules/docs/types';
 import { getSchemaTag } from './categorize';
@@ -28,7 +29,7 @@ export interface ParsedOpenApiSpec {
   tags: GenTagSummary[];
   info: GenInfoSummary;
   schemas: GenComponentSchema[];
-  schemaTags: { name: string; description: string; count: number }[];
+  schemaTags: GenSchemaTagSummary[];
   tagDetails: Map<string, GenOperationDetail[]>;
 }
 
@@ -339,13 +340,16 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       if (extendsRef) {
         componentSchema.extendsRef = extendsRef;
       }
+      if (openApiSchema.example !== undefined) {
+        componentSchema.example = openApiSchema.example;
+      }
 
       componentSchemas.push(componentSchema);
     }
   }
 
   // Build schemaTags array from counts with descriptions
-  const schemaTags = [
+  const schemaTags: GenSchemaTagSummary[] = [
     { name: 'base', description: 'Schemas with base fields only', count: schemaTagCounts.base },
     { name: 'data', description: 'Complete data schemas', count: schemaTagCounts.data },
     { name: 'errors', description: 'Error schemas', count: schemaTagCounts.errors },

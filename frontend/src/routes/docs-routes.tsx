@@ -1,8 +1,15 @@
 import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import { tags } from '~/api.gen/docs';
 import ErrorNotice from '~/modules/common/error-notice';
-import { tagDetailsQueryOptions } from '~/modules/docs/operation-responses';
+import {
+  infoQueryOptions,
+  openApiSpecQueryOptions,
+  operationsQueryOptions,
+  schemasQueryOptions,
+  schemaTagsQueryOptions,
+  tagDetailsQueryOptions,
+  tagsQueryOptions,
+} from '~/modules/docs/query';
 import { initPagesCollection } from '~/modules/pages/collections';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
@@ -37,8 +44,13 @@ export const DocsLayoutRoute = createRoute({
   getParentRoute: () => PublicLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
-  loader: () => {
+  loader: async () => {
     const pagesCollection = initPagesCollection();
+    // Prefetch operations and tags used by DocsLayout
+    await Promise.all([
+      queryClient.ensureQueryData(operationsQueryOptions),
+      queryClient.ensureQueryData(tagsQueryOptions),
+    ]);
     return { pagesCollection };
   },
   component: () => (
@@ -60,7 +72,11 @@ export const DocsOperationsRoute = createRoute({
   },
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
-    // Prefetch all tag details into react-query cache
+    // Prefetch operations (for table/list) and tags, then prefetch all tag details
+    const [, tags] = await Promise.all([
+      queryClient.ensureQueryData(operationsQueryOptions),
+      queryClient.ensureQueryData(tagsQueryOptions),
+    ]);
     await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
   },
   component: () => {
@@ -77,6 +93,13 @@ export const DocsOverviewRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('API Overview') }] }),
   getParentRoute: () => DocsLayoutRoute,
+  loader: async () => {
+    // Prefetch info and OpenAPI spec used by OverviewTable and OpenApiSpecViewer
+    await Promise.all([
+      queryClient.ensureQueryData(infoQueryOptions),
+      queryClient.ensureQueryData(openApiSpecQueryOptions),
+    ]);
+  },
   component: () => (
     <Suspense>
       <OverviewPage />
@@ -95,6 +118,13 @@ export const DocsSchemasRoute = createRoute({
     middlewares: [stripParams('operationTag')],
   },
   getParentRoute: () => DocsLayoutRoute,
+  loader: async () => {
+    // Prefetch schemas and schema tags used by SchemasListPage and SchemaTagsSidebar
+    await Promise.all([
+      queryClient.ensureQueryData(schemasQueryOptions),
+      queryClient.ensureQueryData(schemaTagsQueryOptions),
+    ]);
+  },
   component: () => (
     <Suspense>
       <SchemasListPage />

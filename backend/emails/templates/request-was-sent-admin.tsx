@@ -2,11 +2,11 @@ import i18n from 'i18next';
 import { Text } from 'jsx-email';
 
 import { appConfig } from 'config';
-import { AppLogo } from './components/app-logo';
-import { EmailContainer } from './components/container';
-import { EmailBody } from './components/email-body';
-import { EmailHeader } from './components/email-header';
-import { Footer } from './components/footer';
+import { AppLogo } from '../components/app-logo';
+import { EmailContainer } from '../components/container';
+import { EmailBody } from '../components/email-body';
+import { EmailHeader } from '../components/email-header';
+import { Footer } from '../components/footer';
 import { RequestResponseEmailProps } from './request-was-sent';
 
 

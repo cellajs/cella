@@ -1,4 +1,4 @@
-import { BracesIcon, FileTypeIcon, TextIcon } from 'lucide-react';
+import { BirdIcon, BracesIcon, FileTypeIcon, TextIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { CodeViewer } from './code-viewer';
 import type { GenRequest, GenSchema, GenSchemaProperty } from './types';
 
-type SchemaViewMode = 'format' | 'zod' | 'type';
+type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
 interface ViewerGroupProps {
   /** Schema to display in format mode */
@@ -16,6 +16,8 @@ interface ViewerGroupProps {
   zodCode?: string;
   /** Code to display in type mode */
   typeCode?: string;
+  /** Example JSON to display in example mode */
+  example?: unknown;
   /** Default inspect depth for JsonViewer */
   defaultInspectDepth?: number;
 }
@@ -24,7 +26,7 @@ interface ViewerGroupProps {
  * Reusable component for displaying schema data with format/zod/type toggle views.
  * Used for responses, request body, and parameter schemas.
  */
-export const ViewerGroup = ({ schema, zodCode, typeCode, defaultInspectDepth = 5 }: ViewerGroupProps) => {
+export const ViewerGroup = ({ schema, zodCode, typeCode, example, defaultInspectDepth = 5 }: ViewerGroupProps) => {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>('format');
 
@@ -41,6 +43,13 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, defaultInspectDepth = 5
       label: t('common:docs.format'),
       ariaLabel: t('common:docs.view_format'),
       show: true,
+    },
+    {
+      value: 'example',
+      icon: BirdIcon,
+      label: t('common:example'),
+      ariaLabel: t('common:docs.view_example'),
+      show: example !== undefined,
     },
     {
       value: 'zod',
@@ -103,6 +112,9 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, defaultInspectDepth = 5
             )}
             {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} language="zod" />}
             {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} language="typescript" />}
+            {viewMode === 'example' && example !== undefined && (
+              <JsonViewer value={example} rootName={false} defaultInspectDepth={defaultInspectDepth} indentWidth={3} />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -1,22 +1,22 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import type { GenOperationSummary, TagName } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { getMethodColor } from './helpers/get-method-color';
 
 interface TagOperationsTableProps {
   operations: GenOperationSummary[];
-  tagName: TagName;
+  tagName: string;
 }
 
 /**
  * Columns for TagOperationsTable
  */
-const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[] => {
+const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
   const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });

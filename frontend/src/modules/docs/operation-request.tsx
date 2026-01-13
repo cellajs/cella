@@ -3,8 +3,13 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
-import { getTypeCodeForRequest, getZodCodeForRequest } from './helpers/extract-types';
-import { tagDetailsQueryOptions } from './operation-responses';
+import {
+  getTypeCodeForRequest,
+  getZodCodeForRequest,
+  typesContentQueryOptions,
+  zodContentQueryOptions,
+} from './helpers/extract-types';
+import { tagDetailsQueryOptions } from './query';
 import { ViewerGroup } from './viewer-group';
 
 interface OperationRequestProps {
@@ -20,7 +25,11 @@ interface OperationRequestProps {
  */
 export const OperationRequest = ({ operationId, tagName, isOpen, onOpenChange }: OperationRequestProps) => {
   const { t } = useTranslation();
+
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
+  const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+
   const operation = operations.find((op) => op.operationId === operationId);
 
   const request = operation?.request;
@@ -44,8 +53,8 @@ export const OperationRequest = ({ operationId, tagName, isOpen, onOpenChange }:
           <ViewerGroup
             schema={request}
             defaultInspectDepth={5}
-            zodCode={getZodCodeForRequest(operationId)}
-            typeCode={getTypeCodeForRequest(operationId)}
+            zodCode={getZodCodeForRequest(zodContent, operationId)}
+            typeCode={getTypeCodeForRequest(typesContent, operationId)}
           />
         </div>
       </CollapsibleContent>

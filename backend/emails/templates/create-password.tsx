@@ -2,13 +2,13 @@ import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
 
-import type { BasicTemplateType } from '../src/lib/mailer';
-import { AppLogo } from './components/app-logo';
-import { EmailContainer } from './components/container';
-import { EmailBody } from './components/email-body';
-import { EmailButton } from './components/email-button';
-import { EmailHeader } from './components/email-header';
-import { Footer } from './components/footer';
+import type { BasicTemplateType } from '../../src/lib/mailer';
+import { AppLogo } from '../components/app-logo';
+import { EmailContainer } from '../components/container';
+import { EmailBody } from '../components/email-body';
+import { EmailButton } from '../components/email-button';
+import { EmailHeader } from '../components/email-header';
+import { Footer } from '../components/footer';
 
 export interface CreatePasswordEmailProps extends BasicTemplateType {
   createPasswordLink: string;

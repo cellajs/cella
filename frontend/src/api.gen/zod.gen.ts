@@ -37,123 +37,6 @@ export const zMembershipBase = z.object({
   organizationId: z.string(),
 });
 
-export const zUser = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  entityType: z.enum(['user']),
-  name: z.string(),
-  description: z.union([z.string(), z.null()]),
-  slug: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  bannerUrl: z.union([z.string(), z.null()]),
-  email: z.email(),
-  mfaRequired: z.boolean(),
-  firstName: z.union([z.string(), z.null()]),
-  lastName: z.union([z.string(), z.null()]),
-  language: z.enum(['en', 'nl']),
-  newsletter: z.boolean(),
-  userFlags: z.object({
-    finishedOnboarding: z.boolean(),
-  }),
-  modifiedAt: z.union([z.string(), z.null()]),
-  lastSeenAt: z.union([z.string(), z.null()]),
-  lastStartedAt: z.union([z.string(), z.null()]),
-  lastSignInAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
-});
-
-export const zOrganization = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  entityType: z.enum(['organization']),
-  name: z.string(),
-  description: z.union([z.string(), z.null()]),
-  slug: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]),
-  bannerUrl: z.union([z.string(), z.null()]),
-  shortName: z.union([z.string(), z.null()]),
-  country: z.union([z.string(), z.null()]),
-  timezone: z.union([z.string(), z.null()]),
-  defaultLanguage: z.enum(['en', 'nl']),
-  languages: z.array(z.enum(['en', 'nl'])).min(1),
-  notificationEmail: z.union([z.string(), z.null()]),
-  emailDomains: z.array(z.string()),
-  color: z.union([z.string(), z.null()]),
-  logoUrl: z.union([z.string(), z.null()]),
-  websiteUrl: z.union([z.string(), z.null()]),
-  welcomeText: z.union([z.string(), z.null()]),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
-  chatSupport: z.boolean(),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
-  membership: z.union([zMembershipBase, z.null()]),
-  counts: z.object({
-    membership: z.object({
-      admin: z.number(),
-      member: z.number(),
-      pending: z.number(),
-      total: z.number(),
-    }),
-    entities: z.object({
-      attachment: z.number(),
-      page: z.number(),
-    }),
-  }),
-});
-
-export const zMembership = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  contextType: z.enum(['organization']),
-  userId: z.string(),
-  role: z.enum(['member', 'admin']),
-  createdBy: z.string(),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
-  archived: z.boolean(),
-  muted: z.boolean(),
-  order: z.number().gte(-140737488355328).lte(140737488355327),
-  organizationId: z.string(),
-  uniqueKey: z.string(),
-});
-
-export const zInactiveMembership = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  contextType: z.enum(['organization']),
-  email: z.string(),
-  userId: z.union([z.string(), z.null()]),
-  tokenId: z.union([z.string(), z.null()]),
-  role: z.enum(['member', 'admin']),
-  rejectedAt: z.union([z.string(), z.null()]),
-  createdBy: z.string(),
-  organizationId: z.string(),
-  uniqueKey: z.string(),
-});
-
-export const zAttachment = z.object({
-  createdAt: z.string(),
-  id: z.string(),
-  entityType: z.enum(['attachment']),
-  name: z.string(),
-  description: z.union([z.string(), z.null()]),
-  public: z.boolean(),
-  bucketName: z.string(),
-  groupId: z.union([z.string(), z.null()]),
-  filename: z.string(),
-  contentType: z.string(),
-  convertedContentType: z.union([z.string(), z.null()]),
-  size: z.string(),
-  originalKey: z.string(),
-  convertedKey: z.union([z.string(), z.null()]),
-  thumbnailKey: z.union([z.string(), z.null()]),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
-  organizationId: z.string(),
-});
-
 export const zApiError = z.object({
   name: z.string(),
   message: z.string(),
@@ -214,6 +97,141 @@ export const zTooManyRequestsError = zApiError.and(
   }),
 );
 
+export const zUser = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  entityType: z.enum(['user']),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
+  slug: z.string(),
+  thumbnailUrl: z.union([z.string(), z.null()]),
+  bannerUrl: z.union([z.string(), z.null()]),
+  email: z.email(),
+  mfaRequired: z.boolean(),
+  firstName: z.union([z.string(), z.null()]),
+  lastName: z.union([z.string(), z.null()]),
+  language: z.enum(['en', 'nl']),
+  newsletter: z.boolean(),
+  userFlags: z.object({
+    finishedOnboarding: z.boolean(),
+  }),
+  modifiedAt: z.union([z.string(), z.null()]),
+  lastSeenAt: z.union([z.string(), z.null()]),
+  lastStartedAt: z.union([z.string(), z.null()]),
+  lastSignInAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+});
+
+export const zMe = z.object({
+  user: zUser,
+  systemRole: z.enum(['admin', 'user']),
+});
+
+export const zMeAuthData = z.object({
+  enabledOAuth: z.array(z.enum(['github'])),
+  hasTotp: z.boolean(),
+  hasPassword: z.boolean(),
+  sessions: z.array(
+    z.object({
+      createdAt: z.string(),
+      id: z.string(),
+      type: z.enum(['regular', 'impersonation', 'mfa']),
+      userId: z.string(),
+      deviceName: z.union([z.string(), z.null()]),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.union([z.string(), z.null()]),
+      browser: z.union([z.string(), z.null()]),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
+      expiresAt: z.string(),
+      isCurrent: z.boolean(),
+    }),
+  ),
+  passkeys: z.array(
+    z.object({
+      id: z.string(),
+      userId: z.string(),
+      deviceName: z.union([z.string(), z.null()]),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.union([z.string(), z.null()]),
+      browser: z.union([z.string(), z.null()]),
+      nameOnDevice: z.string(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+
+export const zInactiveMembership = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  contextType: z.enum(['organization']),
+  email: z.string(),
+  userId: z.union([z.string(), z.null()]),
+  tokenId: z.union([z.string(), z.null()]),
+  role: z.enum(['member', 'admin']),
+  rejectedAt: z.union([z.string(), z.null()]),
+  createdBy: z.string(),
+  organizationId: z.string(),
+  uniqueKey: z.string(),
+});
+
+export const zSuccessWithRejectedItems = z.object({
+  success: z.boolean(),
+  rejectedItems: z.array(z.string()),
+});
+
+export const zUploadToken = z.object({
+  public: z.boolean(),
+  sub: z.string(),
+  s3: z.boolean(),
+  signature: z.string(),
+  params: z.object({
+    auth: z.object({
+      key: z.string(),
+      expires: z.optional(z.string()),
+    }),
+  }),
+});
+
+export const zOrganization = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  entityType: z.enum(['organization']),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
+  slug: z.string(),
+  thumbnailUrl: z.union([z.string(), z.null()]),
+  bannerUrl: z.union([z.string(), z.null()]),
+  shortName: z.union([z.string(), z.null()]),
+  country: z.union([z.string(), z.null()]),
+  timezone: z.union([z.string(), z.null()]),
+  defaultLanguage: z.enum(['en', 'nl']),
+  languages: z.array(z.enum(['en', 'nl'])).min(1),
+  notificationEmail: z.union([z.string(), z.null()]),
+  emailDomains: z.array(z.string()),
+  color: z.union([z.string(), z.null()]),
+  logoUrl: z.union([z.string(), z.null()]),
+  websiteUrl: z.union([z.string(), z.null()]),
+  welcomeText: z.union([z.string(), z.null()]),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
+  chatSupport: z.boolean(),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  membership: z.union([zMembershipBase, z.null()]),
+  counts: z.object({
+    membership: z.object({
+      admin: z.number(),
+      member: z.number(),
+      pending: z.number(),
+      total: z.number(),
+    }),
+    entities: z.object({
+      attachment: z.number(),
+      page: z.number(),
+    }),
+  }),
+});
+
 export const zPage = z.object({
   createdAt: z.string(),
   id: z.string(),
@@ -227,6 +245,44 @@ export const zPage = z.object({
   createdBy: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
+});
+
+export const zAttachment = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  entityType: z.enum(['attachment']),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
+  public: z.boolean(),
+  bucketName: z.string(),
+  groupId: z.union([z.string(), z.null()]),
+  filename: z.string(),
+  contentType: z.string(),
+  convertedContentType: z.union([z.string(), z.null()]),
+  size: z.string(),
+  originalKey: z.string(),
+  convertedKey: z.union([z.string(), z.null()]),
+  thumbnailKey: z.union([z.string(), z.null()]),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  organizationId: z.string(),
+});
+
+export const zMembership = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  contextType: z.enum(['organization']),
+  userId: z.string(),
+  role: z.enum(['member', 'admin']),
+  createdBy: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  archived: z.boolean(),
+  muted: z.boolean(),
+  order: z.number().gte(-140737488355328).lte(140737488355327),
+  organizationId: z.string(),
+  uniqueKey: z.string(),
 });
 
 export const zCheckEmailData = z.object({
@@ -601,10 +657,7 @@ export const zGetMeData = z.object({
 /**
  * User
  */
-export const zGetMeResponse = z.object({
-  user: zUser,
-  systemRole: z.enum(['admin', 'user']),
-});
+export const zGetMeResponse = zMe;
 
 export const zUpdateMeData = z.object({
   body: z.object({
@@ -663,38 +716,7 @@ export const zGetMyAuthData = z.object({
 /**
  * User sign-up info
  */
-export const zGetMyAuthResponse = z.object({
-  enabledOAuth: z.array(z.enum(['github'])),
-  hasTotp: z.boolean(),
-  hasPassword: z.boolean(),
-  sessions: z.array(
-    z.object({
-      createdAt: z.string(),
-      id: z.string(),
-      type: z.enum(['regular', 'impersonation', 'mfa']),
-      userId: z.string(),
-      deviceName: z.union([z.string(), z.null()]),
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.union([z.string(), z.null()]),
-      browser: z.union([z.string(), z.null()]),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
-      expiresAt: z.string(),
-      isCurrent: z.boolean(),
-    }),
-  ),
-  passkeys: z.array(
-    z.object({
-      id: z.string(),
-      userId: z.string(),
-      deviceName: z.union([z.string(), z.null()]),
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.union([z.string(), z.null()]),
-      browser: z.union([z.string(), z.null()]),
-      nameOnDevice: z.string(),
-      createdAt: z.string(),
-    }),
-  ),
-});
+export const zGetMyAuthResponse = zMeAuthData;
 
 export const zGetMyInvitationsData = z.object({
   body: z.optional(z.never()),
@@ -728,10 +750,7 @@ export const zDeleteMySessionsData = z.object({
 /**
  * Success
  */
-export const zDeleteMySessionsResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const zDeleteMySessionsResponse = zSuccessWithRejectedItems;
 
 export const zDeleteMyMembershipData = z.object({
   body: z.optional(z.never()),
@@ -760,18 +779,7 @@ export const zGetUploadTokenData = z.object({
 /**
  * Upload token with a scope for a user or organization
  */
-export const zGetUploadTokenResponse = z.object({
-  public: z.boolean(),
-  sub: z.string(),
-  s3: z.boolean(),
-  signature: z.string(),
-  params: z.object({
-    auth: z.object({
-      key: z.string(),
-      expires: z.optional(z.string()),
-    }),
-  }),
-});
+export const zGetUploadTokenResponse = zUploadToken;
 
 export const zUnsubscribeMeData = z.object({
   body: z.optional(z.never()),
@@ -792,10 +800,7 @@ export const zDeleteUsersData = z.object({
 /**
  * Success
  */
-export const zDeleteUsersResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const zDeleteUsersResponse = zSuccessWithRejectedItems;
 
 export const zGetUsersData = z.object({
   body: z.optional(z.never()),
@@ -876,10 +881,7 @@ export const zDeleteOrganizationsData = z.object({
 /**
  * Success
  */
-export const zDeleteOrganizationsResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const zDeleteOrganizationsResponse = zSuccessWithRejectedItems;
 
 export const zGetOrganizationsData = z.object({
   body: z.optional(z.never()),
@@ -1091,11 +1093,11 @@ export const zSystemInviteData = z.object({
 /**
  * Invitations are sent
  */
-export const zSystemInviteResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-  invitesSentCount: z.number(),
-});
+export const zSystemInviteResponse = zSuccessWithRejectedItems.and(
+  z.object({
+    invitesSentCount: z.number(),
+  }),
+);
 
 export const zGetPresignedUrlData = z.object({
   body: z.optional(z.never()),
@@ -1268,10 +1270,7 @@ export const zDeleteAttachmentsData = z.object({
 /**
  * Success
  */
-export const zDeleteAttachmentsResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const zDeleteAttachmentsResponse = zSuccessWithRejectedItems;
 
 export const zCreateAttachmentData = z.object({
   body: z
@@ -1352,10 +1351,7 @@ export const zDeleteMembershipsData = z.object({
 /**
  * Success
  */
-export const zDeleteMembershipsResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const zDeleteMembershipsResponse = zSuccessWithRejectedItems;
 
 export const zMembershipInviteData = z.object({
   body: z.object({
@@ -1374,11 +1370,11 @@ export const zMembershipInviteData = z.object({
 /**
  * Number of sent invitations
  */
-export const zMembershipInviteResponse = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-  invitesSentCount: z.number(),
-});
+export const zMembershipInviteResponse = zSuccessWithRejectedItems.and(
+  z.object({
+    invitesSentCount: z.number(),
+  }),
+);
 
 export const zUpdateMembershipData = z.object({
   body: z.optional(

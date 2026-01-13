@@ -2,9 +2,9 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
-import type { GenOperationSummary, GenTagSummary, TagName } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import type { GenOperationSummary, GenTagSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -63,7 +63,7 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
                 {/* Tag section link button */}
                 <Link
                   to="/docs/operations"
-                  search={(prev) => ({ ...prev, operationTag: isExpanded ? undefined : (tag.name as TagName) })}
+                  search={(prev) => ({ ...prev, operationTag: isExpanded ? undefined : tag.name })}
                   hash={isExpanded ? undefined : `tag/${tag.name}`}
                   replace
                   resetScroll={false}

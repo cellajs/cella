@@ -1,6 +1,7 @@
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
+import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
 import { faker } from '@faker-js/faker';
@@ -85,3 +86,33 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
 
 /** Alias for API response examples */
 export const mockMembershipResponse = mockMembership;
+
+/**
+ * Generates a mock inactive membership for API responses.
+ * Uses deterministic seeding - same key produces same data.
+ */
+export const mockInactiveMembership = (key = 'inactive-membership:default'): InactiveMembershipModel =>
+  withFakerSeed(key, () => {
+    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const createdAt = faker.date.past({ refDate }).toISOString();
+    const userId = faker.string.nanoid();
+    const organizationId = faker.string.nanoid();
+    const tokenId = faker.string.nanoid();
+
+    return {
+      id: faker.string.nanoid(),
+      contextType: 'organization' as const,
+      email: faker.internet.email().toLowerCase(),
+      userId,
+      tokenId,
+      role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
+      rejectedAt: null,
+      createdAt,
+      createdBy: faker.string.nanoid(),
+      organizationId,
+      uniqueKey: `${userId}-${organizationId}`,
+    };
+  });
+
+/** Alias for API response examples */
+export const mockInactiveMembershipResponse = mockInactiveMembership;

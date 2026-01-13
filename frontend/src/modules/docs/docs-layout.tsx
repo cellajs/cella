@@ -1,13 +1,14 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
 import { MenuIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { operations, tags } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import Logo from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { DocsSidebar } from '~/modules/docs/docs-sidebar';
+import { operationsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { Button } from '~/modules/ui/button';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -22,6 +23,10 @@ const DocsLayout = () => {
   const showHeader = useScrollVisibility(isMobile);
 
   const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
+
+  // Fetch operations and tags via React Query (reduces bundle size)
+  const { data: operations } = useSuspenseQuery(operationsQueryOptions);
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   // Get sheeter state
   const sheets = useSheeter((state) => state.sheets);

@@ -1,11 +1,13 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
-import { type GenOperationSummary, operations } from '~/api.gen/docs';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { OperationsTableBar } from '~/modules/docs/operations-table/bar';
 import { useColumns } from '~/modules/docs/operations-table/columns';
+import { operationsQueryOptions } from '~/modules/docs/query';
+import type { GenOperationSummary } from '~/modules/docs/types';
 
 /**
  * Update an operation field via the Vite openapi-editor plugin
@@ -27,8 +29,16 @@ const OperationsTable = () => {
 
   const [columns, setColumns] = useColumns(isCompact);
 
+  // Fetch operations via React Query (reduces bundle size)
+  const { data: operations } = useSuspenseQuery(operationsQueryOptions);
+
   // Local state for operations to enable editing
   const [localOperations, setLocalOperations] = useState<GenOperationSummary[]>(operations);
+
+  // Sync local state when operations data changes
+  useEffect(() => {
+    setLocalOperations(operations);
+  }, [operations]);
 
   // Filter operations based on search query
   const filteredOperations = useMemo(() => {

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenOperationSummary } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { Input } from '~/modules/ui/input';
 import { getMethodColor } from '../helpers/get-method-color';

@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { mockSuccessWithRejectedItems } from '../../../mocks/mock-common';
 
 /**
  * Schema for a response with paginated data
@@ -14,7 +15,12 @@ export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
 /**
  * Schema for a successful response with disallowed IDs.
  */
-export const successWithRejectedItemsSchema = z.object({
-  success: z.boolean(),
-  rejectedItems: z.array(z.string()),
-});
+export const successWithRejectedItemsSchema = z
+  .object({
+    success: z.boolean(),
+    rejectedItems: z.array(z.string()),
+  })
+  .openapi('SuccessWithRejectedItems', { example: mockSuccessWithRejectedItems() });
+
+// Re-export type from types.ts for convenience
+export type { SuccessWithRejectedItemsResponse } from './types';
