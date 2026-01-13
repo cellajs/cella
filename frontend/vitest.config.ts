@@ -11,6 +11,15 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     projects: [
+      // Node-side tests (vite plugins, helpers, etc.)
+      {
+        test: {
+          name: 'node',
+          include: ['vite/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
+      // Storybook browser tests
       {
         extends: true,
         plugins: [
