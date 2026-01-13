@@ -14,7 +14,7 @@ import {
  * Search params schema for docs route.
  */
 export const operationsRouteSearchParamsSchema = z.object({
-  tag: z.enum(tagNames).optional(),
+  operationTag: z.enum(tagNames).optional(),
   q: z.string().optional(),
 });
 

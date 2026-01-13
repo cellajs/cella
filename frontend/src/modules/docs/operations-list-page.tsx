@@ -21,7 +21,7 @@ import { buttonVariants } from '../ui/button';
 const OperationsListPage = () => {
   const { t } = useTranslation();
   // Get active tag from URL search param
-  const { tag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
+  const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
 
   const operationsByTag = operations.reduce(
     (acc, operation) => {
@@ -59,7 +59,9 @@ const OperationsListPage = () => {
                     {tag.name}
                     <HashUrlButton id={`tag/${tag.name}`} />
                   </CardTitle>
-                  {tag.description && <CardDescription className="my-2">{tag.description}</CardDescription>}
+                  {tag.description && (
+                    <CardDescription className="my-2 text-base max-w-4xl">{tag.description}</CardDescription>
+                  )}
                   <p className="text-sm font-medium mt-4">{t('common:operation', { count: tag.count })}</p>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 rdg-readonly">
@@ -70,7 +72,7 @@ const OperationsListPage = () => {
                   <div className="flex w-full justify-center">
                     <Link
                       to="."
-                      search={(prev) => ({ ...prev, tag: isOpen ? undefined : (tag.name as TagName) })}
+                      search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : (tag.name as TagName) })}
                       replace
                       draggable={false}
                       resetScroll={false}

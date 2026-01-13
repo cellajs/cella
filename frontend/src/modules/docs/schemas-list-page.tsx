@@ -39,7 +39,7 @@ const SchemasListPage = () => {
                     {tag.name}
                     <HashUrlButton id={tag.name} />
                   </CardTitle>
-                  <CardDescription className="my-2">{tag.description}</CardDescription>
+                  <CardDescription className="my-2 text-base max-w-4xl">{tag.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
                   {/* Schema refs list */}

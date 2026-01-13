@@ -22,7 +22,9 @@ export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
           {schema.name}
           <HashUrlButton id={refId} />
         </CardTitle>
-        {schema.description && <CardDescription className="my-2">{schema.description}</CardDescription>}
+        {schema.description && (
+          <CardDescription className="my-2 text-base max-w-4xl">{schema.description}</CardDescription>
+        )}
       </CardHeader>
       <CardContent>
         <div className="mt-2">

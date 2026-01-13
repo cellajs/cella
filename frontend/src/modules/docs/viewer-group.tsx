@@ -28,6 +28,36 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, defaultInspectDepth = 5
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>('format');
 
+  const toggleItems: {
+    value: SchemaViewMode;
+    icon: typeof TextIcon;
+    label: string;
+    ariaLabel: string;
+    show: boolean;
+  }[] = [
+    {
+      value: 'format',
+      icon: TextIcon,
+      label: t('common:docs.format'),
+      ariaLabel: t('common:docs.view_format'),
+      show: true,
+    },
+    {
+      value: 'zod',
+      icon: BracesIcon,
+      label: t('common:docs.zod'),
+      ariaLabel: t('common:docs.view_zod'),
+      show: !!zodCode,
+    },
+    {
+      value: 'type',
+      icon: FileTypeIcon,
+      label: t('common:type'),
+      ariaLabel: t('common:docs.view_type'),
+      show: !!typeCode,
+    },
+  ];
+
   return (
     <div className="relative">
       <ToggleGroup
@@ -36,26 +66,23 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, defaultInspectDepth = 5
         onValueChange={(value) => value && setViewMode(value as SchemaViewMode)}
         size="xs"
         variant="outline"
-        className="max-md:hidden absolute top-2 right-2 z-10"
+        className="max-md:hidden absolute top-2 bg-muted/50 right-2 z-10"
       >
-        <ToggleGroupItem value="format" aria-label={t('common:docs.view_format')}>
-          <TextIcon className="h-4 w-4 mr-1.5" />
-          <span className="lowercase text-xs">{t('common:docs.format')}</span>
-        </ToggleGroupItem>
-        {zodCode && (
-          <ToggleGroupItem value="zod" aria-label={t('common:docs.view_zod')}>
-            <BracesIcon className="h-4 w-4 mr-1.5" />
-            <span className="lowercase text-xs">{t('common:docs.zod')}</span>
-          </ToggleGroupItem>
-        )}
-        {typeCode && (
-          <ToggleGroupItem value="type" aria-label={t('common:docs.view_type')}>
-            <FileTypeIcon className="h-4 w-4 mr-1.5" />
-            <span className="lowercase text-xs">{t('common:type')}</span>
-          </ToggleGroupItem>
-        )}
+        {toggleItems
+          .filter((item) => item.show)
+          .map(({ value, icon: Icon, label, ariaLabel }) => (
+            <ToggleGroupItem
+              key={value}
+              value={value}
+              aria-label={ariaLabel}
+              className="opacity-50 hover:opacity-70 data-[state=on]:opacity-100"
+            >
+              <Icon className="h-4 w-4 mr-1.5" />
+              <span className="lowercase text-xs">{label}</span>
+            </ToggleGroupItem>
+          ))}
       </ToggleGroup>
-      <div className="p-3 md:pt-6 rounded-md bg-muted/50">
+      <div className="p-3 md:py-6 rounded-md bg-muted/50">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={viewMode}

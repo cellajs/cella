@@ -27,7 +27,7 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
   const layoutId = useRef(nanoid()).current;
 
   // Get active tag from URL search params (strict: false for fuzzy route matching)
-  const { tag: activeTag } = useSearch({ strict: false });
+  const { operationTag: activeTag } = useSearch({ strict: false });
 
   const getOperationsByTag = (tagName: string) => {
     return operations.filter((op) => op.tags.includes(tagName));
@@ -53,13 +53,17 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
 
         return (
           <Collapsible key={tag.name} open={isExpanded}>
-            <SidebarMenuItem>
+            <SidebarMenuItem className="relative group/tag" data-expanded={isExpanded} data-active={isActive}>
+              {/* Rail line - visible when expanded */}
+              <div className="absolute left-2.5 top-4.5 bottom-3 flex-col items-center pointer-events-none hidden group-data-[expanded=true]/tag:flex">
+                <div className="w-px flex-1 bg-muted-foreground/30" />
+              </div>
               {/* Tag section button - to open tag section and show tag operations in sidebar section below */}
               <CollapsibleTrigger asChild>
                 {/* Tag section link button */}
                 <Link
                   to="/docs/operations"
-                  search={(prev) => ({ ...prev, tag: isExpanded ? undefined : (tag.name as TagName) })}
+                  search={(prev) => ({ ...prev, operationTag: isExpanded ? undefined : (tag.name as TagName) })}
                   hash={isExpanded ? undefined : `tag/${tag.name}`}
                   replace
                   resetScroll={false}
@@ -67,35 +71,31 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
                   draggable="false"
                   className={cn(
                     buttonVariants({ variant: 'ghost', size: 'default' }),
-                    'w-full text-left h-8 font-normal group',
-                    isExpanded && 'font-medium',
-                    isActive && 'bg-accent',
+                    'w-full text-left pl-5 h-8 font-normal group opacity-80',
+                    'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
                   )}
                 >
+                  {/* Dot indicator - always visible, increases opacity when expanded */}
+                  <div className="absolute left-[0.53rem] w-1 h-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
                   <span>{tag.name}</span>
-                  {!isExpanded && <span className="ml-2 text-xs text-muted-foreground/90 font-light">{tag.count}</span>}
-                  <ChevronDownIcon
-                    className={cn(
-                      'size-4 invisible group-hover:visible transition-transform duration-200 opacity-40 ml-auto',
-                      isExpanded && 'rotate-180',
-                    )}
-                  />
+                  <span className="ml-2 text-xs text-muted-foreground/90 font-light opacity-0 group-hover:opacity-100 transition-opacity group-data-[expanded=true]/tag:hidden">
+                    {tag.count}
+                  </span>
+                  <ChevronDownIcon className="size-4 invisible group-hover:visible transition-transform duration-200 opacity-40 ml-auto group-data-[expanded=true]/tag:rotate-180" />
                 </Link>
               </CollapsibleTrigger>
               {/* Tag operations list */}
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-                <div className="relative flex flex-col py-1 ml-0.5 pl-1">
-                  {/* Faded rail line */}
-                  <div className="absolute left-0 top-3 bottom-3 w-px bg-muted-foreground/20 rounded-full" />
+                <div className="relative flex flex-col py-1 px-0">
                   {tagOperations.map((operation) => {
                     const isActive = currentSection === operation.hash;
                     return (
-                      <div key={operation.hash} className="relative">
+                      <div key={operation.hash} className="relative group/operation" data-active={isActive}>
                         {isActive && (
                           <motion.span
                             layoutId={layoutId}
                             transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                            className="w-[0.20rem] bg-primary rounded-full absolute -left-1.5 ml-px top-2 bottom-2"
+                            className="w-[0.20rem] bg-primary rounded-full absolute left-2 ml-px top-2 bottom-2"
                           />
                         )}
                         {/* Operation link button */}
@@ -106,8 +106,8 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
                           draggable="false"
                           className={cn(
                             buttonVariants({ variant: 'ghost', size: 'sm' }),
-                            'hover:bg-accent/50 w-full justify-between text-left group font-normal opacity-75 text-sm h-8 gap-2 px-2',
-                            isActive && 'font-medium opacity-100',
+                            'hover:bg-accent/50 w-full justify-between text-left pl-5 group font-normal opacity-50 text-sm h-8 gap-2',
+                            'group-data-[active=true]/operation:opacity-100',
                           )}
                           onClick={(e) => {
                             e.preventDefault();

@@ -1,6 +1,5 @@
 /**
  * Schema resolution functions for OpenAPI parsing.
- * All functions are pure and can be tested in isolation.
  */
 
 import type { GenSchema, GenSchemaProperty } from '../../src/modules/docs/types';

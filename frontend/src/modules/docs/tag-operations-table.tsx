@@ -19,7 +19,7 @@ interface TagOperationsTableProps {
 const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[] => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
-  const { tag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
+  const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
   const { scrollToSection } = useScrollSpy({ smoothScroll: true });
 
   // Handle operation click necessary to expand tag if not already expanded
@@ -30,7 +30,13 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
       return;
     }
     // Otherwise, navigate to expand then scroll
-    navigate({ to: '.', search: (prev) => ({ ...prev, tag: tagName }), hash, replace: true, resetScroll: false });
+    navigate({
+      to: '.',
+      search: (prev) => ({ ...prev, operationTag: tagName }),
+      hash,
+      replace: true,
+      resetScroll: false,
+    });
     // Schedule scroll
     setTimeout(() => scrollToSection(hash), 350);
   };
@@ -62,7 +68,7 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="."
-          search={(prev) => ({ ...prev, tag: tagName })}
+          search={(prev) => ({ ...prev, operationTag: tagName })}
           hash={row.hash}
           replace
           onClick={(e) => {

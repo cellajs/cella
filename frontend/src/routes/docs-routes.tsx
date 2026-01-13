@@ -14,6 +14,7 @@ import {
 import { useDocsStore } from '~/store/docs';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { stripParams } from '~/utils/strip-search-params';
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
@@ -54,6 +55,9 @@ export const DocsOperationsRoute = createRoute({
   path: '/operations',
   staticData: { isAuth: false },
   validateSearch: operationsRouteSearchParamsSchema,
+  search: {
+    middlewares: [stripParams('schemaTag')],
+  },
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
     // Prefetch all tag details into react-query cache
@@ -87,6 +91,9 @@ export const DocsSchemasRoute = createRoute({
   path: '/schemas',
   staticData: { isAuth: false },
   validateSearch: schemasRouteSearchParamsSchema,
+  search: {
+    middlewares: [stripParams('operationTag')],
+  },
   getParentRoute: () => DocsLayoutRoute,
   component: () => (
     <Suspense>

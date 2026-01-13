@@ -46,7 +46,12 @@ const DocsLayout = () => {
           useSheeter.getState().remove(DOCS_SIDEBAR_SHEET_ID);
           return;
         }
-        navigate({ to: '.', search: (prev) => ({ ...prev, tag: undefined }), resetScroll: false, replace: true });
+        navigate({
+          to: '.',
+          search: (prev) => ({ ...prev, operationTag: undefined }),
+          resetScroll: false,
+          replace: true,
+        });
       },
     ],
   ]);

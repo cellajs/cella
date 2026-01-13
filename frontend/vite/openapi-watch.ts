@@ -13,7 +13,6 @@ import { openApiConfig } from '../openapi-ts.config';
  * The actual change detection (whether output differs) is handled by
  * the generate-client.ts script, so this plugin just needs to trigger it.
  */
-
 const getPath = (config: unknown): string => {
   if (typeof config === 'string') return config;
   if (typeof config === 'object' && config !== null && 'path' in config) {
