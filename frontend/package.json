@@ -15,7 +15,7 @@
     "ts": "tsc --pretty",
     "ts:beta": "tsgo --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
-    "tsperf:beta": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsgo --noEmit --extendedDiagnostics",
+    "tsperf:beta": "cross-env NODE_ENV=development tsgo --noEmit --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production vite build",
     "build:dev": "cross-env NODE_ENV=development vite build --mode development",
     "build:staging": "cross-env NODE_ENV=staging vite build --mode staging",
