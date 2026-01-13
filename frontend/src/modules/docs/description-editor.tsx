@@ -113,7 +113,7 @@ export function DescriptionEditor({ operationId, initialDescription, onUpdate }:
   if (!isEditing) {
     return (
       <div className="group relative">
-        <p className="text-muted-foreground whitespace-pre-wrap pr-8">
+        <p className="text-muted-foreground whitespace-pre-line pr-8">
           {initialDescription || t('common:docs.no_description')}
         </p>
         {isDev && (

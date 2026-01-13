@@ -14,6 +14,8 @@ interface JsonNodeProps {
   path: Path;
   keyName?: string | number | false;
   depth: number;
+  /** Visual depth for indentation (doesn't increment for flattened nodes) */
+  visualDepth?: number;
   /** How many more levels to auto-expand (passed down when parent expands with cascade) */
   cascadeDepth?: number;
 }
@@ -21,7 +23,10 @@ interface JsonNodeProps {
 /**
  * Renders a single node in the JSON tree.
  */
-export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, cascadeDepth = 0 }) => {
+export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }) => {
+  // Use visualDepth if provided, otherwise fall back to depth
+  const effectiveVisualDepth = visualDepth ?? depth;
+
   const {
     theme,
     indentWidth,
@@ -45,16 +50,18 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   // Track current cascade depth for children (when user clicks to expand)
   const [childCascadeDepth, setChildCascadeDepth] = useState(0);
 
-  // In schema mode, check if this is a 'properties' node that should be flattened (always expanded)
+  // In schema mode, check if this is a node that should be flattened (always expanded, no key shown)
   const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
+  const isCompositionNode = openapiMode === 'schema' && (keyName === 'anyOf' || keyName === 'oneOf');
+  const isFlattenedNode = isPropertiesNode || isCompositionNode;
 
   // In schema mode, hide the root expand (depth 0) - content is always visible
   const isRootInSchemaMode = openapiMode === 'schema' && depth === 0;
 
   // Determine if this node should be expanded by default
   const getDefaultExpanded = () => {
-    // Properties nodes and root in schema mode are always expanded
-    if (isPropertiesNode || isRootInSchemaMode) return true;
+    // Flattened nodes (properties, anyOf, oneOf) and root in schema mode are always expanded
+    if (isFlattenedNode || isRootInSchemaMode) return true;
     if (cascadeDepth > 0) return true; // Auto-expand if cascading from parent
     if (expandAll) return true;
     return depth < defaultInspectDepth;
@@ -97,7 +104,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     }
   }, [isOnSearchMatchPath, searchMatchPath]);
 
-  const paddingLeft = depth * indentWidth * 8;
+  const paddingLeft = effectiveVisualDepth * indentWidth * 8;
 
   // Check for custom data types first
   for (const dataType of valueTypes) {
@@ -111,7 +118,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
             ) : (
               <span className={`font-medium ${theme.key}`}>{showKeyQuotes ? `"${keyName}"` : keyName}</span>
             ))}
-          {keyName !== false && <span className="opacity-70 mr-1">: </span>}
+          {keyName !== false && <span className="opacity-70 mr-1">:</span>}
           <CustomComponent value={value} path={path} />
         </div>
       );
@@ -147,7 +154,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     return (
       <div className="whitespace-nowrap" style={{ paddingLeft }}>
         <KeyRenderer {...keyProps} />
-        {keyName !== false && <span className="opacity-70 mr-1">: </span>}
+        {keyName !== false && <span className="opacity-70 mr-1">:</span>}
         <PrimitiveValue
           value={value}
           type={valueType}
@@ -181,14 +188,20 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     return null;
   })();
 
+  // Check if we can extract schema labels (type, anyOf, oneOf, ref) from this value
+  const canExtractLabels =
+    openapiMode === 'schema' && !isArray && !isInsideProperties && typeof value === 'object' && value !== null;
+  const valueObj = canExtractLabels ? (value as Record<string, unknown>) : null;
+
+  // Check if this node has 'anyOf' or 'oneOf' (composition type) - will be shown as type label
+  const hasAnyOf = valueObj ? Array.isArray(valueObj.anyOf) : false;
+  const hasOneOf = valueObj ? Array.isArray(valueObj.oneOf) : false;
+
   // Get 'ref' value if present and we should show it as a label (not inside 'properties')
   // Extract just the schema name from the full ref path (e.g., '#/components/schemas/User' -> 'User')
   const refValue = (() => {
-    if (openapiMode === 'schema' && !isArray && !isInsideProperties && typeof value === 'object' && value !== null) {
-      const ref = (value as Record<string, unknown>).ref;
-      if (typeof ref === 'string') {
-        return ref.split('/').pop() || ref;
-      }
+    if (valueObj && typeof valueObj.ref === 'string') {
+      return valueObj.ref.split('/').pop() || valueObj.ref;
     }
     return null;
   })();
@@ -212,6 +225,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   // Filter out 'required' key in schema mode (it will be shown as label instead)
   // Also filter out 'type' and 'ref' keys when not inside 'properties' (they will be shown as labels after open bracket)
   // For array schemas, filter out 'items' key (its properties will be hoisted)
+  // Note: 'anyOf' and 'oneOf' are NOT filtered - they are flattened like 'properties' but still rendered
   const filteredEntries =
     openapiMode === 'schema' && !isArray
       ? rawEntries.filter(
@@ -249,6 +263,17 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
         })
       : filteredEntries;
 
+  // In schema mode, compute the count of hoisted properties (what users see as children)
+  const schemaPropertiesCount = (() => {
+    if (openapiMode !== 'schema' || isArray) return entries.length;
+    const obj = value as Record<string, unknown>;
+    // For array schemas, count items.properties
+    if (isArraySchema) return hoistedItemsEntries.length;
+    // For object schemas, count properties
+    if (obj.properties && typeof obj.properties === 'object') return Object.keys(obj.properties).length;
+    return entries.length;
+  })();
+
   const openBracket = isArray ? '[' : '{';
   const closeBracket = isArray ? ']' : '}';
   const isEmpty = entries.length === 0;
@@ -268,9 +293,16 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     return (
       <div className="whitespace-nowrap" style={{ paddingLeft }}>
         <KeyRenderer {...keyProps} />
-        {keyName !== false && <span className="opacity-70 mr-1">: </span>}
+        {keyName !== false && <span className="opacity-70 mr-1">:</span>}
         <span className={bracketClass}>{openBracket}</span>
-        <SchemaLabels typeValue={typeValue} refValue={refValue} contentTypeValue={contentTypeValue} theme={theme} />
+        <SchemaLabels
+          typeValue={typeValue}
+          refValue={refValue}
+          contentTypeValue={contentTypeValue}
+          hasAnyOf={hasAnyOf}
+          hasOneOf={hasOneOf}
+          theme={theme}
+        />
         <span className={bracketClass}>{closeBracket}</span>
       </div>
     );
@@ -288,7 +320,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
     return (
       <div className="whitespace-nowrap" style={{ paddingLeft }}>
         <KeyRenderer {...keyProps} />
-        {keyName !== false && <span className="opacity-70 mr-1">: </span>}
+        {keyName !== false && <span className="opacity-70 mr-1">:</span>}
         <span className={bracketClass}>[</span>
         {items.map((item, index) => (
           <span key={index}>
@@ -307,12 +339,12 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
   // In schema mode, objects without nested object children are not expandable
   const isExpandable = hasNestedObjects;
 
-  // Should hide the expand header (for properties nodes or root in schema mode)
+  // Should hide the expand header (for flattened nodes or root in schema mode)
   // Note: items nodes remain visible (unlike properties) to show the array item structure
-  const hideExpandHeader = isPropertiesNode || isRootInSchemaMode;
+  const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
 
   return (
-    <div data-properties-node={isPropertiesNode || undefined}>
+    <div data-properties-node={isFlattenedNode || undefined}>
       {!hideExpandHeader && (
         <div
           className={`group/node inline-flex items-center gap-0.5 rounded py-px px-1 -my-px -mx-1 ${isExpandable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' : 'pointer-events-none'}`}
@@ -338,12 +370,19 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
             <ChevronRightIcon size={14} className={`transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
           </span>
           <KeyRenderer {...keyProps} />
-          {keyName !== false && <span className="opacity-70 mr-1">: </span>}
+          {keyName !== false && <span className="opacity-70 mr-1">:</span>}
           <span className={bracketClass}>{openBracket}</span>
-          <SchemaLabels typeValue={typeValue} refValue={refValue} contentTypeValue={contentTypeValue} theme={theme} />
+          <SchemaLabels
+            typeValue={typeValue}
+            refValue={refValue}
+            contentTypeValue={contentTypeValue}
+            hasAnyOf={hasAnyOf}
+            hasOneOf={hasOneOf}
+            theme={theme}
+          />
           {!isExpanded && isExpandable && (
             <CollapsedPreview
-              itemCount={entries.length}
+              itemCount={schemaPropertiesCount}
               closeBracket={closeBracket}
               hiddenMatchCount={hiddenMatchCount}
               displayDataTypes={displayDataTypes}
@@ -355,7 +394,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
         </div>
       )}
       {(isExpanded || hideExpandHeader || !isExpandable) && (
-        <div style={hideExpandHeader ? { marginLeft: -indentWidth * 8 } : undefined}>
+        <div>
           {entries.map(([key, val]) => (
             <JsonNode
               key={String(key)}
@@ -363,6 +402,7 @@ export const JsonNode: FC<JsonNodeProps> = ({ value, path, keyName, depth, casca
               path={[...path, key]}
               keyName={key}
               depth={depth + 1}
+              visualDepth={hideExpandHeader ? effectiveVisualDepth : effectiveVisualDepth + 1}
               cascadeDepth={childCascadeDepth > 0 ? childCascadeDepth - 1 : cascadeDepth > 0 ? cascadeDepth - 1 : 0}
             />
           ))}

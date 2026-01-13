@@ -68,7 +68,7 @@ export const useColumns = () => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) =>
           row.message ? (
-            <span className="font-light whitespace-pre-wrap leading-5">{row.message}</span>
+            <span className="font-light whitespace-pre-line leading-5">{row.message}</span>
           ) : (
             <span className="text-muted">-</span>
           ),

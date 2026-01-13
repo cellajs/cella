@@ -48,8 +48,8 @@ export interface GenInfoSummary {
  * Represents a single property in a schema object.
  */
 export interface GenSchemaProperty {
-  /** Property type (string, number, boolean, object, array, or array for nullable like ['string', 'null']) */
-  type: string | string[];
+  /** Property type (string, number, boolean, object, array, or array for nullable like ['string', 'null']). Omitted when anyOf/oneOf is present. */
+  type?: string | string[];
   /** Property description from OpenAPI spec */
   description?: string;
   /** Whether this property is required (inline, not in separate array). Omitted for array items. */
@@ -93,14 +93,26 @@ export interface GenSchemaProperty {
  * Includes reference metadata when dereferenced from a $ref.
  */
 export interface GenSchema {
-  /** Schema type (object, array, string, etc.) */
-  type: string | string[];
+  /** Schema type (object, array, string, etc.). Omitted when anyOf/oneOf is present. */
+  type?: string | string[];
+  /** Schema description from OpenAPI spec */
+  description?: string;
   /** Original reference path if dereferenced */
   ref?: string;
   /** Description from the referenced schema or inline */
   refDescription?: string;
   /** Content type (e.g., 'application/json') */
   contentType?: string;
+  /** Format constraint (e.g., 'email', 'date-time', 'uuid') */
+  format?: string;
+  /** Minimum value for numbers */
+  minimum?: number;
+  /** Maximum value for numbers */
+  maximum?: number;
+  /** Minimum length for strings */
+  minLength?: number;
+  /** Maximum length for strings */
+  maxLength?: number;
   /** Properties for object schemas */
   properties?: Record<string, GenSchemaProperty>;
   /** Item type for array types (unwrapped from items.type) */
@@ -109,6 +121,10 @@ export interface GenSchema {
   items?: GenSchemaProperty;
   /** Enum values if this is an enum type (can include null for nullable enums) */
   enum?: (string | number | boolean | null)[];
+  /** Minimum items for arrays */
+  minItems?: number;
+  /** Maximum items for arrays */
+  maxItems?: number;
   /** Reference to base schema when merged from allOf (for inheritance tracking) */
   extendsRef?: string;
   /** anyOf schemas */
@@ -168,6 +184,20 @@ export interface GenRequestSection {
   required?: boolean;
   /** Content type for body (e.g., 'application/json') */
   contentType?: string;
+  /** Schema type (for array/object body types) */
+  type?: string | string[];
+  /** Schema description from OpenAPI spec */
+  description?: string;
+  /** Format constraint (e.g., 'email', 'date-time', 'uuid') */
+  format?: string;
+  /** Minimum value for numbers */
+  minimum?: number;
+  /** Maximum value for numbers */
+  maximum?: number;
+  /** Minimum length for strings */
+  minLength?: number;
+  /** Maximum length for strings */
+  maxLength?: number;
   /** Properties within the section */
   properties?: Record<string, GenSchemaProperty>;
   /** Items schema for array body types */
@@ -176,12 +206,20 @@ export interface GenRequestSection {
   itemType?: string | string[];
   /** Enum values for body */
   enum?: (string | number | boolean | null)[];
+  /** Minimum items for arrays */
+  minItems?: number;
+  /** Maximum items for arrays */
+  maxItems?: number;
   /** Reference for body schema */
   ref?: string;
   /** Reference description for body schema */
   refDescription?: string;
   /** Extends reference for allOf merged body schema */
   extendsRef?: string;
+  /** anyOf schemas for body */
+  anyOf?: GenSchema[];
+  /** oneOf schemas for body */
+  oneOf?: GenSchema[];
 }
 
 /**
@@ -225,8 +263,8 @@ export interface GenComponentSchema {
   ref: string;
   /** Schema description if available */
   description?: string;
-  /** Schema type (object, array, string, etc.) */
-  type: string | string[];
+  /** Schema type (object, array, string, etc.). Omitted when anyOf/oneOf is present. */
+  type?: string | string[];
   /** Resolved schema with full property details */
   schema: GenSchema;
   /** Whether this schema extends another via allOf */

@@ -4,6 +4,10 @@ interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
   contentTypeValue?: string | null;
+  /** Whether this node contains anyOf composition */
+  hasAnyOf?: boolean;
+  /** Whether this node contains oneOf composition */
+  hasOneOf?: boolean;
   theme: {
     string: string;
     number: string;
@@ -36,29 +40,45 @@ const getTypeColorClass = (
 /**
  * Renders type, ref, and contentType labels for OpenAPI schema mode.
  * Shows type label (e.g., "object", "string"), ref label (e.g., "User"), and contentType (e.g., "application/json").
+ * Also shows composition labels (anyOf, oneOf) when present.
  */
-export const SchemaLabels: FC<SchemaLabelsProps> = ({ typeValue, refValue, contentTypeValue, theme }) => {
-  if (!typeValue && !refValue && !contentTypeValue) return null;
+export const SchemaLabels: FC<SchemaLabelsProps> = ({
+  typeValue,
+  refValue,
+  contentTypeValue,
+  hasAnyOf,
+  hasOneOf,
+  theme,
+}) => {
+  if (!typeValue && !refValue && !contentTypeValue && !hasAnyOf && !hasOneOf) return null;
 
   // Normalize typeValue to array for consistent rendering
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
+
+  // Composition label (anyOf takes precedence over oneOf if both are present)
+  const compositionLabel = hasAnyOf ? 'anyOf' : hasOneOf ? 'oneOf' : null;
 
   return (
     <>
       {typeValues.map((type, index) => (
         <span key={type}>
           <span
-            className={`ml-1 px-1 py-0.5 text-xs font-medium rounded ${theme.schemaType} ${getTypeColorClass(type, theme)}`}
+            className={`ml-0.5 px-1 py-0.5 text-xs font-medium rounded opacity-70 ${theme.schemaType} ${getTypeColorClass(type, theme)}`}
           >
             {type}
           </span>
           {index < typeValues.length - 1 && <span className="mx-1 opacity-50">|</span>}
         </span>
       ))}
-      {refValue && (
-        <span className="ml-1 px-1 py-0.5 text-xs font-medium rounded text-primary bg-primary/10">{refValue}</span>
+      {compositionLabel && (
+        <span className="ml-0.5 px-1 py-0.5 text-xs font-medium rounded text-amber-600 dark:text-amber-400 bg-amber-500/10">
+          {compositionLabel}
+        </span>
       )}
-      {contentTypeValue && <span className="ml-1.5 italic text-xs text-foreground/40">{contentTypeValue}</span>}
+      {refValue && (
+        <span className="ml-0.5 px-1 py-0.5 text-xs font-medium rounded text-primary bg-primary/10">{refValue}</span>
+      )}
+      {contentTypeValue && <span className="ml-1 italic text-xs text-foreground/40">{contentTypeValue}</span>}
     </>
   );
 };
