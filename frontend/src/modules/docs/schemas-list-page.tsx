@@ -57,10 +57,12 @@ const SchemasListPage = () => {
                         hash={schema.ref.replace(/^#/, '')}
                         replace
                         draggable={false}
-                        className="text-sm font-mono text-muted-foreground hover:underline focus-effect underline-offset-4 decoration-foreground/30 hover:underline- hover:text-foreground transition-colors w-fit"
+                        className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
                       >
-                        {schema.ref.split('/').slice(0, -1).join('/')}/
-                        <span className="font-semibold">{schema.ref.split('/').pop()}</span>
+                        <span className="min-w-0 flex-[0_1_auto] truncate">
+                          {schema.ref.split('/').slice(0, -1).join('/')}
+                        </span>
+                        <span className="shrink-0 font-semibold">/{schema.ref.split('/').pop()}</span>
                       </Link>
                     ))}
                   </div>

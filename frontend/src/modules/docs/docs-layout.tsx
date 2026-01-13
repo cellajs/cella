@@ -70,7 +70,7 @@ const DocsLayout = () => {
         triggerRef,
         className: 'w-72 p-0',
         showCloseButton: false,
-        closeSheetOnRouteChange: true,
+        closeSheetOnRouteChange: false,
       });
     }
   };
@@ -81,11 +81,11 @@ const DocsLayout = () => {
       <div className="[--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
         {/* Fixed mobile header */}
         <header
-          className={`fixed top-0 left-0 right-0 z-80 h-16 bg-background/70 backdrop-blur-sm transition-transform duration-300 ${
+          className={`fixed top-0 left-0 right-0 z-80 h-13 bg-background/70 backdrop-blur-sm transition-transform duration-300 ${
             showHeader ? 'translate-y-0' : '-translate-y-full'
           }`}
         >
-          <div className="flex h-full items-center gap-2 px-2">
+          <div className="flex h-full items-center gap-1 px-1">
             <Button
               ref={triggerRef}
               variant="ghost"
@@ -107,7 +107,7 @@ const DocsLayout = () => {
         </header>
 
         {/* Main content with top padding for fixed header */}
-        <main className="min-h-screen pt-17 p-3 pb-[70vh]">
+        <main className="container min-h-screen pt-20 pb-[70vh]">
           <Outlet />
         </main>
       </div>
@@ -127,8 +127,8 @@ const DocsLayout = () => {
         <ResizableSeparator />
 
         <ResizablePanel>
-          <main className="h-screen overflow-auto">
-            <div className="p-6 pb-[70vh]">
+          <main className="h-screen pt-3 sm:pt-6 overflow-auto">
+            <div className="container pb-[70vh]">
               <Outlet />
             </div>
           </main>

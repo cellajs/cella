@@ -3,7 +3,6 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { operationsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
@@ -12,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/u
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 import { getMethodColor } from './helpers/get-method-color';
 
 /**
@@ -19,7 +19,6 @@ import { getMethodColor } from './helpers/get-method-color';
  * Uses scroll spy to track and highlight the currently visible operation.
  */
 export function OperationTagsSidebar() {
-  const isMobile = useBreakpoints('max', 'sm');
   const layoutId = useRef(nanoid()).current;
 
   // Fetch operations and tags (already cached by route loader)
@@ -40,7 +39,7 @@ export function OperationTagsSidebar() {
 
   const { currentSection, scrollToSection } = useScrollSpy({
     sectionIds: allSectionIds,
-    enableWriteHash: !isMobile,
+    enableWriteHash: true,
     smoothScroll: false,
   });
 
@@ -112,6 +111,7 @@ export function OperationTagsSidebar() {
                           onClick={(e) => {
                             e.preventDefault();
                             scrollToSection(operation.hash);
+                            useSheeter.getState().remove();
                           }}
                         >
                           <span className="truncate flex-1 text-[13px] lowercase">

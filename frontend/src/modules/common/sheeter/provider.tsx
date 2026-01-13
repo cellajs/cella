@@ -30,13 +30,17 @@ export const Sheeter = () => {
 
       if (!hrefChanged || !activeSheets.length) return;
 
-      // Safe to remove all sheets
+      // Filter to only sheets that should close on route change
+      const sheetsToClose = activeSheets.filter((sheet) => sheet.closeSheetOnRouteChange !== false);
+      if (!sheetsToClose.length) return;
+
+      // Safe to remove sheets that opt-in to close on route change
       if (!sheetOpen || sheetOpen !== 'menu' || !navState.keepMenuOpen) {
-        return useSheeter.getState().remove();
+        return useSheeter.getState().removeOnRouteChange();
       }
 
-      // Remove all sheets except the nav sheet
-      const removeSheetIds = activeSheets.filter((sheet) => sheet.id !== 'nav-sheet').map((sheet) => sheet.id);
+      // Remove sheets except the nav sheet (if it should close on route change)
+      const removeSheetIds = sheetsToClose.filter((sheet) => sheet.id !== 'nav-sheet').map((sheet) => sheet.id);
       for (const sheetId of removeSheetIds) {
         useSheeter.getState().remove(sheetId);
       }

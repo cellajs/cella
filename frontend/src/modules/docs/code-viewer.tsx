@@ -42,7 +42,7 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
 
   return (
     <div
-      className="text-sm overflow-x-auto [&_pre]:bg-transparent! [&_pre]:p-0! [&_pre]:m-0! [&_code]:bg-transparent!"
+      className="text-sm [&_pre]:bg-transparent! [&_code]:bg-transparent!"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is safe
       dangerouslySetInnerHTML={{ __html: html }}
     />

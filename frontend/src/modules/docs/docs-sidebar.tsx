@@ -1,5 +1,5 @@
 import { isNull, not, useLiveQuery } from '@tanstack/react-db';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
@@ -60,8 +60,8 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
 
   const { systemRole } = useUserStore();
 
-  // Fetch schemas data for sidebar count
-  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
+  // Fetch schemas data for sidebar count (non-suspense to avoid sheet reload on mobile)
+  const { data: schemas } = useQuery(schemasQueryOptions);
 
   // Get current pathname to determine active/expanded section
   const { location } = useRouterState();
@@ -190,7 +190,9 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
-                  <OperationTagsSidebar />
+                  <Suspense fallback={null}>
+                    <OperationTagsSidebar />
+                  </Suspense>
                 </SidebarGroupContent>
               </CollapsibleContent>
             </Collapsible>
@@ -224,7 +226,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                     )}
                   >
                     <span>{t('common:schema', { count: 2 })}</span>
-                    {(expandedSection !== 'schemas' || forcedCollapsed.has('schemas')) && (
+                    {(expandedSection !== 'schemas' || forcedCollapsed.has('schemas')) && schemas && (
                       <span className="ml-2 text-xs text-muted-foreground/90 font-light">{schemas.length}</span>
                     )}
                     <ChevronDownIcon
@@ -239,7 +241,9 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
-                  <SchemaTagsSidebar />
+                  <Suspense fallback={null}>
+                    <SchemaTagsSidebar />
+                  </Suspense>
                 </SidebarGroupContent>
               </CollapsibleContent>
             </Collapsible>
