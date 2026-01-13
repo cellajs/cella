@@ -21,6 +21,7 @@
 
     /* Type checking */
     "incremental": true,
-    "composite": true
+    "composite": true,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
   }
 }
