@@ -252,6 +252,210 @@
           "organizationId"
         ]
       },
+      "BadRequestError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [
+                  400
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Error returned when the request is malformed or contains invalid data."
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "fatal",
+              "error",
+              "warn",
+              "info",
+              "debug",
+              "trace"
+            ]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "user",
+              "organization",
+              "attachment",
+              "page"
+            ]
+          },
+          "logId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "message",
+          "type",
+          "status",
+          "severity"
+        ]
+      },
+      "UnauthorizedError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [
+                  401
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Error returned when authentication is missing or invalid."
+      },
+      "ForbiddenError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [
+                  403
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Error returned when the user lacks permission for the requested action."
+      },
+      "NotFoundError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [
+                  404
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Error returned when the requested resource cannot be found."
+      },
+      "TooManyRequestsError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [
+                  429
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Error returned when rate limits are exceeded."
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "systemRole": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "Explain system role here"
+          }
+        },
+        "required": [
+          "user",
+          "systemRole"
+        ],
+        "example": {
+          "user": {
+            "id": "KNGgftxF37fbRhY1aJvFC",
+            "entityType": "user",
+            "name": "Odell Gislason DVM",
+            "firstName": "Odell",
+            "lastName": "Gislason",
+            "email": "odell.gislason@yahoo.com",
+            "slug": "odellgislason57",
+            "description": null,
+            "thumbnailUrl": null,
+            "bannerUrl": null,
+            "language": "en",
+            "newsletter": false,
+            "mfaRequired": false,
+            "userFlags": {},
+            "createdAt": "2024-07-14T22:49:14.651Z",
+            "modifiedAt": "2024-07-14T22:49:14.651Z",
+            "modifiedBy": null,
+            "lastSeenAt": "2024-07-14T22:49:14.651Z",
+            "lastStartedAt": "2024-07-14T22:49:14.651Z",
+            "lastSignInAt": "2024-07-14T22:49:14.651Z"
+          },
+          "systemRole": "user"
+        }
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -383,7 +587,376 @@
           "lastStartedAt",
           "lastSignInAt",
           "modifiedBy"
-        ]
+        ],
+        "example": {
+          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "entityType": "user",
+          "name": "Franco Corwin",
+          "firstName": "Franco",
+          "lastName": "Corwin",
+          "email": "franco_corwin@gmail.com",
+          "slug": "francocorwin",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "language": "en",
+          "newsletter": false,
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-12-13T11:17:23.643Z",
+          "modifiedAt": "2024-12-13T11:17:23.643Z",
+          "modifiedBy": null,
+          "lastSeenAt": "2024-12-13T11:17:23.643Z",
+          "lastStartedAt": "2024-12-13T11:17:23.643Z",
+          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+        }
+      },
+      "MeAuthData": {
+        "type": "object",
+        "properties": {
+          "enabledOAuth": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "github"
+              ]
+            }
+          },
+          "hasTotp": {
+            "type": "boolean"
+          },
+          "hasPassword": {
+            "type": "boolean"
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "regular",
+                    "impersonation",
+                    "mfa"
+                  ]
+                },
+                "userId": {
+                  "type": "string"
+                },
+                "deviceName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "deviceType": {
+                  "type": "string",
+                  "enum": [
+                    "desktop",
+                    "mobile"
+                  ]
+                },
+                "deviceOs": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "browser": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "authStrategy": {
+                  "type": "string",
+                  "enum": [
+                    "github",
+                    "google",
+                    "microsoft",
+                    "password",
+                    "passkey",
+                    "totp",
+                    "email"
+                  ]
+                },
+                "expiresAt": {
+                  "type": "string"
+                },
+                "isCurrent": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "createdAt",
+                "id",
+                "type",
+                "userId",
+                "deviceName",
+                "deviceType",
+                "deviceOs",
+                "browser",
+                "authStrategy",
+                "expiresAt",
+                "isCurrent"
+              ]
+            }
+          },
+          "passkeys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string"
+                },
+                "deviceName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "deviceType": {
+                  "type": "string",
+                  "enum": [
+                    "desktop",
+                    "mobile"
+                  ]
+                },
+                "deviceOs": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "browser": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "nameOnDevice": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "deviceName",
+                "deviceType",
+                "deviceOs",
+                "browser",
+                "nameOnDevice",
+                "createdAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "enabledOAuth",
+          "hasTotp",
+          "hasPassword",
+          "sessions",
+          "passkeys"
+        ],
+        "example": {
+          "enabledOAuth": [
+            "github"
+          ],
+          "hasTotp": false,
+          "hasPassword": true,
+          "sessions": [
+            {
+              "id": "XAt10Xd3dBO8leLbQS8OH",
+              "userId": "0VF-w6LQGNtYJc9oOlWUO",
+              "type": "regular",
+              "createdAt": "2024-05-29T08:00:36.178Z",
+              "expiresAt": "2024-06-28T08:00:36.178Z",
+              "deviceName": "Firefox on Windows",
+              "deviceType": "desktop",
+              "deviceOs": "Windows",
+              "browser": "Firefox",
+              "authStrategy": "password",
+              "isCurrent": true
+            }
+          ],
+          "passkeys": []
+        }
+      },
+      "InactiveMembership": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "contextType": {
+            "type": "string",
+            "enum": [
+              "organization"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tokenId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "admin"
+            ]
+          },
+          "rejectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "uniqueKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "contextType",
+          "email",
+          "userId",
+          "tokenId",
+          "role",
+          "rejectedAt",
+          "createdBy",
+          "organizationId",
+          "uniqueKey"
+        ],
+        "example": {
+          "id": "3T-W11w6KXR_D6fzsrlpx",
+          "contextType": "organization",
+          "email": "jennings.krajcik@hotmail.com",
+          "userId": "plDVOsxC8iZyitvf-wZ6L",
+          "tokenId": "SyZ9N_626oSEnLb71FDPf",
+          "role": "member",
+          "rejectedAt": null,
+          "createdAt": "2024-02-08T11:19:07.168Z",
+          "createdBy": "uMqhnUrRwSNdbmQj7Ef1C",
+          "organizationId": "u3pT7uuIQxU3Zmozqhmv7",
+          "uniqueKey": "plDVOsxC8iZyitvf-wZ6L-u3pT7uuIQxU3Zmozqhmv7"
+        }
+      },
+      "SuccessWithRejectedItems": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "rejectedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "rejectedItems"
+        ],
+        "example": {
+          "success": true,
+          "rejectedItems": []
+        }
+      },
+      "UploadToken": {
+        "type": "object",
+        "properties": {
+          "public": {
+            "type": "boolean"
+          },
+          "sub": {
+            "type": "string"
+          },
+          "s3": {
+            "type": "boolean"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object",
+            "properties": {
+              "auth": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "expires": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              }
+            },
+            "required": [
+              "auth"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "public",
+          "sub",
+          "s3",
+          "signature",
+          "params"
+        ],
+        "example": {
+          "public": false,
+          "sub": "2NpNbC-rtGtYVb1XPh3cb",
+          "s3": true,
+          "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+          "params": {
+            "auth": {
+              "key": "uploads/-WevYEtehwyoG0ux7Q1ox",
+              "expires": "2025-01-01T04:15:50.483Z"
+            }
+          }
+        }
       },
       "Organization": {
         "type": "object",
@@ -617,9 +1190,66 @@
           "modifiedBy",
           "membership",
           "counts"
-        ]
+        ],
+        "example": {
+          "id": "rK5ziKXKdzSbuY2s_8QCE",
+          "entityType": "organization",
+          "name": "Murphy LLC",
+          "slug": "murphy-llc",
+          "description": "Extended executive database",
+          "shortName": "Murphy",
+          "country": "Cocos (Keeling) Islands",
+          "timezone": "Australia/Adelaide",
+          "defaultLanguage": "en",
+          "languages": [
+            "en"
+          ],
+          "notificationEmail": "notifications@murphy-llc.example",
+          "emailDomains": [],
+          "restrictions": {
+            "user": 1000,
+            "attachment": 100,
+            "page": 0
+          },
+          "color": "#b9ecfa",
+          "thumbnailUrl": null,
+          "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+          "bannerUrl": null,
+          "websiteUrl": "https://murphy-llc.example",
+          "welcomeText": "Welcome to Murphy LLC!",
+          "authStrategies": [
+            "password"
+          ],
+          "chatSupport": false,
+          "createdAt": "2024-12-25T15:29:47.111Z",
+          "createdBy": null,
+          "modifiedAt": "2024-12-25T15:29:47.111Z",
+          "modifiedBy": null,
+          "membership": {
+            "id": "ZFMnYJm5p-nyT4XZM_aPW",
+            "contextType": "organization",
+            "userId": "4RSiGNUzWMaXMVIBMnxnO",
+            "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+            "role": "admin",
+            "order": 1,
+            "muted": false,
+            "archived": false
+          },
+          "counts": {
+            "membership": {
+              "admin": 1,
+              "member": 19,
+              "pending": 0,
+              "total": 3
+            },
+            "entities": {
+              "attachment": 24,
+              "page": 7
+            }
+          }
+        }
       },
-      "Membership": {
+      "Page": {
         "type": "object",
         "properties": {
           "createdAt": {
@@ -628,21 +1258,39 @@
           "id": {
             "type": "string"
           },
-          "contextType": {
+          "entityType": {
             "type": "string",
             "enum": [
-              "organization"
+              "page"
             ]
           },
-          "userId": {
+          "name": {
             "type": "string"
           },
-          "role": {
+          "description": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "status": {
             "type": "string",
             "enum": [
-              "member",
-              "admin"
+              "unpublished",
+              "published",
+              "archived"
             ]
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayOrder": {
+            "type": "number",
+            "minimum": -140737488355328,
+            "maximum": 140737488355327
           },
           "createdBy": {
             "type": "string"
@@ -658,107 +1306,36 @@
               "string",
               "null"
             ]
-          },
-          "archived": {
-            "type": "boolean"
-          },
-          "muted": {
-            "type": "boolean"
-          },
-          "order": {
-            "type": "number",
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "organizationId": {
-            "type": "string"
-          },
-          "uniqueKey": {
-            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "id",
-          "contextType",
-          "userId",
-          "role",
+          "entityType",
+          "name",
+          "description",
+          "keywords",
+          "status",
+          "parentId",
+          "displayOrder",
           "createdBy",
           "modifiedAt",
-          "modifiedBy",
-          "archived",
-          "muted",
-          "order",
-          "organizationId",
-          "uniqueKey"
-        ]
-      },
-      "InactiveMembership": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "contextType": {
-            "type": "string",
-            "enum": [
-              "organization"
-            ]
-          },
-          "email": {
-            "type": "string"
-          },
-          "userId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "tokenId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "member",
-              "admin"
-            ]
-          },
-          "rejectedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "createdBy": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string"
-          },
-          "uniqueKey": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "contextType",
-          "email",
-          "userId",
-          "tokenId",
-          "role",
-          "rejectedAt",
-          "createdBy",
-          "organizationId",
-          "uniqueKey"
-        ]
+          "modifiedBy"
+        ],
+        "example": {
+          "id": "ipqyAZOx_wYoSB_T2Sbzd",
+          "entityType": "page",
+          "name": "Cibus dolores decet surgo aptus.",
+          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "supplanto odio culpa",
+          "status": "unpublished",
+          "parentId": null,
+          "displayOrder": 17.33,
+          "createdAt": "2024-08-06T10:28:33.226Z",
+          "createdBy": "ph9yKadCThSPHaLw6jUV_",
+          "modifiedAt": "2024-08-06T10:28:33.226Z",
+          "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
+        }
       },
       "Attachment": {
         "type": "object",
@@ -868,168 +1445,30 @@
           "modifiedAt",
           "modifiedBy",
           "organizationId"
-        ]
-      },
-      "ApiError": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "status": {
-            "type": "integer",
-            "minimum": 400,
-            "maximum": 599
-          },
-          "severity": {
-            "type": "string",
-            "enum": [
-              "fatal",
-              "error",
-              "warn",
-              "info",
-              "debug",
-              "trace"
-            ]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": [
-              "user",
-              "organization",
-              "attachment",
-              "page"
-            ]
-          },
-          "logId": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "method": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "message",
-          "type",
-          "status",
-          "severity"
-        ]
-      },
-      "BadRequestError": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiError"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "status": {
-                "type": "number",
-                "enum": [
-                  400
-                ]
-              }
-            }
-          }
         ],
-        "description": "Error returned when the request is malformed or contains invalid data."
+        "example": {
+          "id": "y5HDs5pltSHUGLcWkE34G",
+          "entityType": "attachment",
+          "name": "fondly.m1v",
+          "description": null,
+          "public": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "fondly.m1v",
+          "contentType": "video/3gpp2",
+          "convertedContentType": null,
+          "size": "9426474",
+          "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "createdAt": "2024-10-12T17:43:05.360Z",
+          "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+          "modifiedAt": "2024-10-12T17:43:05.360Z",
+          "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+          "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+        }
       },
-      "UnauthorizedError": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiError"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "status": {
-                "type": "number",
-                "enum": [
-                  401
-                ]
-              }
-            }
-          }
-        ],
-        "description": "Error returned when authentication is missing or invalid."
-      },
-      "ForbiddenError": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiError"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "status": {
-                "type": "number",
-                "enum": [
-                  403
-                ]
-              }
-            }
-          }
-        ],
-        "description": "Error returned when the user lacks permission for the requested action."
-      },
-      "NotFoundError": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiError"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "status": {
-                "type": "number",
-                "enum": [
-                  404
-                ]
-              }
-            }
-          }
-        ],
-        "description": "Error returned when the requested resource cannot be found."
-      },
-      "TooManyRequestsError": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiError"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "status": {
-                "type": "number",
-                "enum": [
-                  429
-                ]
-              }
-            }
-          }
-        ],
-        "description": "Error returned when rate limits are exceeded."
-      },
-      "Page": {
+      "Membership": {
         "type": "object",
         "properties": {
           "createdAt": {
@@ -1038,39 +1477,21 @@
           "id": {
             "type": "string"
           },
-          "entityType": {
+          "contextType": {
             "type": "string",
             "enum": [
-              "page"
+              "organization"
             ]
           },
-          "name": {
+          "userId": {
             "type": "string"
           },
-          "description": {
-            "type": "string"
-          },
-          "keywords": {
-            "type": "string"
-          },
-          "status": {
+          "role": {
             "type": "string",
             "enum": [
-              "unpublished",
-              "published",
-              "archived"
+              "member",
+              "admin"
             ]
-          },
-          "parentId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "displayOrder": {
-            "type": "number",
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
           },
           "createdBy": {
             "type": "string"
@@ -1086,22 +1507,55 @@
               "string",
               "null"
             ]
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "muted": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "number",
+            "minimum": -140737488355328,
+            "maximum": 140737488355327
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "uniqueKey": {
+            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "id",
-          "entityType",
-          "name",
-          "description",
-          "keywords",
-          "status",
-          "parentId",
-          "displayOrder",
+          "contextType",
+          "userId",
+          "role",
           "createdBy",
           "modifiedAt",
-          "modifiedBy"
-        ]
+          "modifiedBy",
+          "archived",
+          "muted",
+          "order",
+          "organizationId",
+          "uniqueKey"
+        ],
+        "example": {
+          "id": "Kyft2jgCOk1uWez4InpSg",
+          "contextType": "organization",
+          "userId": "s9bewe1fKAYWRak3UtzV7",
+          "organizationId": "j49ckRo-048_8QTtlJMCI",
+          "role": "member",
+          "order": 90,
+          "muted": false,
+          "archived": false,
+          "createdAt": "2024-10-28T14:52:59.502Z",
+          "createdBy": "s9bewe1fKAYWRak3UtzV7",
+          "modifiedAt": "2024-10-28T14:52:59.502Z",
+          "modifiedBy": null,
+          "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI"
+        }
       }
     },
     "parameters": {}
@@ -2929,24 +3383,32 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    },
-                    "systemRole": {
-                      "type": "string",
-                      "enum": [
-                        "admin",
-                        "user"
-                      ],
-                      "description": "Explain system role here"
-                    }
+                  "$ref": "#/components/schemas/Me"
+                },
+                "example": {
+                  "user": {
+                    "id": "KNGgftxF37fbRhY1aJvFC",
+                    "entityType": "user",
+                    "name": "Odell Gislason DVM",
+                    "firstName": "Odell",
+                    "lastName": "Gislason",
+                    "email": "odell.gislason@yahoo.com",
+                    "slug": "odellgislason57",
+                    "description": null,
+                    "thumbnailUrl": null,
+                    "bannerUrl": null,
+                    "language": "en",
+                    "newsletter": false,
+                    "mfaRequired": false,
+                    "userFlags": {},
+                    "createdAt": "2024-07-14T22:49:14.651Z",
+                    "modifiedAt": "2024-07-14T22:49:14.651Z",
+                    "modifiedBy": null,
+                    "lastSeenAt": "2024-07-14T22:49:14.651Z",
+                    "lastStartedAt": "2024-07-14T22:49:14.651Z",
+                    "lastSignInAt": "2024-07-14T22:49:14.651Z"
                   },
-                  "required": [
-                    "user",
-                    "systemRole"
-                  ]
+                  "systemRole": "user"
                 }
               }
             }
@@ -3054,6 +3516,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -3181,6 +3665,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -3226,167 +3732,30 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "enabledOAuth": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": [
-                          "github"
-                        ]
-                      }
-                    },
-                    "hasTotp": {
-                      "type": "boolean"
-                    },
-                    "hasPassword": {
-                      "type": "boolean"
-                    },
-                    "sessions": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "id": {
-                            "type": "string"
-                          },
-                          "type": {
-                            "type": "string",
-                            "enum": [
-                              "regular",
-                              "impersonation",
-                              "mfa"
-                            ]
-                          },
-                          "userId": {
-                            "type": "string"
-                          },
-                          "deviceName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "deviceType": {
-                            "type": "string",
-                            "enum": [
-                              "desktop",
-                              "mobile"
-                            ]
-                          },
-                          "deviceOs": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "browser": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "authStrategy": {
-                            "type": "string",
-                            "enum": [
-                              "github",
-                              "google",
-                              "microsoft",
-                              "password",
-                              "passkey",
-                              "totp",
-                              "email"
-                            ]
-                          },
-                          "expiresAt": {
-                            "type": "string"
-                          },
-                          "isCurrent": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "createdAt",
-                          "id",
-                          "type",
-                          "userId",
-                          "deviceName",
-                          "deviceType",
-                          "deviceOs",
-                          "browser",
-                          "authStrategy",
-                          "expiresAt",
-                          "isCurrent"
-                        ]
-                      }
-                    },
-                    "passkeys": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "userId": {
-                            "type": "string"
-                          },
-                          "deviceName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "deviceType": {
-                            "type": "string",
-                            "enum": [
-                              "desktop",
-                              "mobile"
-                            ]
-                          },
-                          "deviceOs": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "browser": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "nameOnDevice": {
-                            "type": "string"
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "userId",
-                          "deviceName",
-                          "deviceType",
-                          "deviceOs",
-                          "browser",
-                          "nameOnDevice",
-                          "createdAt"
-                        ]
-                      }
+                  "$ref": "#/components/schemas/MeAuthData"
+                },
+                "example": {
+                  "enabledOAuth": [
+                    "github"
+                  ],
+                  "hasTotp": false,
+                  "hasPassword": true,
+                  "sessions": [
+                    {
+                      "id": "XAt10Xd3dBO8leLbQS8OH",
+                      "userId": "0VF-w6LQGNtYJc9oOlWUO",
+                      "type": "regular",
+                      "createdAt": "2024-05-29T08:00:36.178Z",
+                      "expiresAt": "2024-06-28T08:00:36.178Z",
+                      "deviceName": "Firefox on Windows",
+                      "deviceType": "desktop",
+                      "deviceOs": "Windows",
+                      "browser": "Firefox",
+                      "authStrategy": "password",
+                      "isCurrent": true
                     }
-                  },
-                  "required": [
-                    "enabledOAuth",
-                    "hasTotp",
-                    "hasPassword",
-                    "sessions",
-                    "passkeys"
-                  ]
+                  ],
+                  "passkeys": []
                 }
               }
             }
@@ -3527,22 +3896,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems"
-                  ]
+                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                },
+                "example": {
+                  "success": true,
+                  "rejectedItems": []
                 }
               }
             }
@@ -3689,51 +4047,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "public": {
-                      "type": "boolean"
-                    },
-                    "sub": {
-                      "type": "string"
-                    },
-                    "s3": {
-                      "type": "boolean"
-                    },
-                    "signature": {
-                      "type": "string"
-                    },
-                    "params": {
-                      "type": "object",
-                      "properties": {
-                        "auth": {
-                          "type": "object",
-                          "properties": {
-                            "key": {
-                              "type": "string"
-                            },
-                            "expires": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "key"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "auth"
-                      ],
-                      "additionalProperties": {}
+                  "$ref": "#/components/schemas/UploadToken"
+                },
+                "example": {
+                  "public": false,
+                  "sub": "2NpNbC-rtGtYVb1XPh3cb",
+                  "s3": true,
+                  "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+                  "params": {
+                    "auth": {
+                      "key": "uploads/-WevYEtehwyoG0ux7Q1ox",
+                      "expires": "2025-01-01T04:15:50.483Z"
                     }
-                  },
-                  "required": [
-                    "public",
-                    "sub",
-                    "s3",
-                    "signature",
-                    "params"
-                  ]
+                  }
                 }
               }
             }
@@ -3949,7 +4275,29 @@
                               "memberships"
                             ]
                           }
-                        ]
+                        ],
+                        "example": {
+                          "id": "adq_jxNCo3ZSdxUwcIyz-",
+                          "entityType": "user",
+                          "name": "Franco Corwin",
+                          "firstName": "Franco",
+                          "lastName": "Corwin",
+                          "email": "franco_corwin@gmail.com",
+                          "slug": "francocorwin",
+                          "description": null,
+                          "thumbnailUrl": null,
+                          "bannerUrl": null,
+                          "language": "en",
+                          "newsletter": false,
+                          "mfaRequired": false,
+                          "userFlags": {},
+                          "createdAt": "2024-12-13T11:17:23.643Z",
+                          "modifiedAt": "2024-12-13T11:17:23.643Z",
+                          "modifiedBy": null,
+                          "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                          "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+                        }
                       }
                     },
                     "total": {
@@ -4027,22 +4375,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems"
-                  ]
+                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                },
+                "example": {
+                  "success": true,
+                  "rejectedItems": []
                 }
               }
             }
@@ -4101,6 +4438,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4212,6 +4571,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                  "id": "adq_jxNCo3ZSdxUwcIyz-",
+                  "entityType": "user",
+                  "name": "Franco Corwin",
+                  "firstName": "Franco",
+                  "lastName": "Corwin",
+                  "email": "franco_corwin@gmail.com",
+                  "slug": "francocorwin",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {},
+                  "createdAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedAt": "2024-12-13T11:17:23.643Z",
+                  "modifiedBy": null,
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4295,7 +4676,64 @@
                         }
                       }
                     }
-                  ]
+                  ],
+                  "example": {
+                    "id": "rK5ziKXKdzSbuY2s_8QCE",
+                    "entityType": "organization",
+                    "name": "Murphy LLC",
+                    "slug": "murphy-llc",
+                    "description": "Extended executive database",
+                    "shortName": "Murphy",
+                    "country": "Cocos (Keeling) Islands",
+                    "timezone": "Australia/Adelaide",
+                    "defaultLanguage": "en",
+                    "languages": [
+                      "en"
+                    ],
+                    "notificationEmail": "notifications@murphy-llc.example",
+                    "emailDomains": [],
+                    "restrictions": {
+                      "user": 1000,
+                      "attachment": 100,
+                      "page": 0
+                    },
+                    "color": "#b9ecfa",
+                    "thumbnailUrl": null,
+                    "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                    "bannerUrl": null,
+                    "websiteUrl": "https://murphy-llc.example",
+                    "welcomeText": "Welcome to Murphy LLC!",
+                    "authStrategies": [
+                      "password"
+                    ],
+                    "chatSupport": false,
+                    "createdAt": "2024-12-25T15:29:47.111Z",
+                    "createdBy": null,
+                    "modifiedAt": "2024-12-25T15:29:47.111Z",
+                    "modifiedBy": null,
+                    "membership": {
+                      "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                      "contextType": "organization",
+                      "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                      "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                      "role": "admin",
+                      "order": 1,
+                      "muted": false,
+                      "archived": false
+                    },
+                    "counts": {
+                      "membership": {
+                        "admin": 1,
+                        "member": 19,
+                        "pending": 0,
+                        "total": 3
+                      },
+                      "entities": {
+                        "attachment": 24,
+                        "page": 7
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -4506,22 +4944,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems"
-                  ]
+                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                },
+                "example": {
+                  "success": true,
+                  "rejectedItems": []
                 }
               }
             }
@@ -4580,6 +5007,63 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "rK5ziKXKdzSbuY2s_8QCE",
+                  "entityType": "organization",
+                  "name": "Murphy LLC",
+                  "slug": "murphy-llc",
+                  "description": "Extended executive database",
+                  "shortName": "Murphy",
+                  "country": "Cocos (Keeling) Islands",
+                  "timezone": "Australia/Adelaide",
+                  "defaultLanguage": "en",
+                  "languages": [
+                    "en"
+                  ],
+                  "notificationEmail": "notifications@murphy-llc.example",
+                  "emailDomains": [],
+                  "restrictions": {
+                    "user": 1000,
+                    "attachment": 100,
+                    "page": 0
+                  },
+                  "color": "#b9ecfa",
+                  "thumbnailUrl": null,
+                  "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                  "bannerUrl": null,
+                  "websiteUrl": "https://murphy-llc.example",
+                  "welcomeText": "Welcome to Murphy LLC!",
+                  "authStrategies": [
+                    "password"
+                  ],
+                  "chatSupport": false,
+                  "createdAt": "2024-12-25T15:29:47.111Z",
+                  "createdBy": null,
+                  "modifiedAt": "2024-12-25T15:29:47.111Z",
+                  "modifiedBy": null,
+                  "membership": {
+                    "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                    "contextType": "organization",
+                    "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                    "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                    "role": "admin",
+                    "order": 1,
+                    "muted": false,
+                    "archived": false
+                  },
+                  "counts": {
+                    "membership": {
+                      "admin": 1,
+                      "member": 19,
+                      "pending": 0,
+                      "total": 3
+                    },
+                    "entities": {
+                      "attachment": 24,
+                      "page": 7
+                    }
+                  }
                 }
               }
             }
@@ -4763,6 +5247,63 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "rK5ziKXKdzSbuY2s_8QCE",
+                  "entityType": "organization",
+                  "name": "Murphy LLC",
+                  "slug": "murphy-llc",
+                  "description": "Extended executive database",
+                  "shortName": "Murphy",
+                  "country": "Cocos (Keeling) Islands",
+                  "timezone": "Australia/Adelaide",
+                  "defaultLanguage": "en",
+                  "languages": [
+                    "en"
+                  ],
+                  "notificationEmail": "notifications@murphy-llc.example",
+                  "emailDomains": [],
+                  "restrictions": {
+                    "user": 1000,
+                    "attachment": 100,
+                    "page": 0
+                  },
+                  "color": "#b9ecfa",
+                  "thumbnailUrl": null,
+                  "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                  "bannerUrl": null,
+                  "websiteUrl": "https://murphy-llc.example",
+                  "welcomeText": "Welcome to Murphy LLC!",
+                  "authStrategies": [
+                    "password"
+                  ],
+                  "chatSupport": false,
+                  "createdAt": "2024-12-25T15:29:47.111Z",
+                  "createdBy": null,
+                  "modifiedAt": "2024-12-25T15:29:47.111Z",
+                  "modifiedBy": null,
+                  "membership": {
+                    "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                    "contextType": "organization",
+                    "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                    "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                    "role": "admin",
+                    "order": 1,
+                    "muted": false,
+                    "archived": false
+                  },
+                  "counts": {
+                    "membership": {
+                      "admin": 1,
+                      "member": 19,
+                      "pending": 0,
+                      "total": 3
+                    },
+                    "entities": {
+                      "attachment": 24,
+                      "page": 7
+                    }
+                  }
                 }
               }
             }
@@ -4910,6 +5451,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                  "entityType": "page",
+                  "name": "Cibus dolores decet surgo aptus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "supplanto odio culpa",
+                  "status": "unpublished",
+                  "parentId": null,
+                  "displayOrder": 17.33,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
                 }
               }
             }
@@ -5131,6 +5686,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                  "entityType": "page",
+                  "name": "Cibus dolores decet surgo aptus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "supplanto odio culpa",
+                  "status": "unpublished",
+                  "parentId": null,
+                  "displayOrder": 17.33,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
                 }
               }
             }
@@ -5226,6 +5795,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
+                },
+                "example": {
+                  "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                  "entityType": "page",
+                  "name": "Cibus dolores decet surgo aptus.",
+                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.\",\"styles\":{}}],\"children\":[]}]",
+                  "keywords": "supplanto odio culpa",
+                  "status": "unpublished",
+                  "parentId": null,
+                  "displayOrder": 17.33,
+                  "createdAt": "2024-08-06T10:28:33.226Z",
+                  "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                  "modifiedAt": "2024-08-06T10:28:33.226Z",
+                  "modifiedBy": "ph9yKadCThSPHaLw6jUV_"
                 }
               }
             }
@@ -5361,26 +5944,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessWithRejectedItems"
                     },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "invitesSentCount": {
-                      "type": "number"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "invitesSentCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "invitesSentCount"
+                      ]
                     }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems",
-                    "invitesSentCount"
-                  ]
+                  ],
+                  "example": {
+                    "success": true,
+                    "rejectedItems": []
+                  }
                 }
               }
             }
@@ -6395,22 +6978,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems"
-                  ]
+                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                },
+                "example": {
+                  "success": true,
+                  "rejectedItems": []
                 }
               }
             }
@@ -6496,6 +7068,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
+                },
+                "example": {
+                  "id": "y5HDs5pltSHUGLcWkE34G",
+                  "entityType": "attachment",
+                  "name": "fondly.m1v",
+                  "description": null,
+                  "public": false,
+                  "bucketName": "attachments",
+                  "groupId": null,
+                  "filename": "fondly.m1v",
+                  "contentType": "video/3gpp2",
+                  "convertedContentType": null,
+                  "size": "9426474",
+                  "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                  "convertedKey": null,
+                  "thumbnailKey": null,
+                  "createdAt": "2024-10-12T17:43:05.360Z",
+                  "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                  "modifiedAt": "2024-10-12T17:43:05.360Z",
+                  "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                  "organizationId": "7EXqgIQTdNUnlmV7IByg2"
                 }
               }
             }
@@ -6656,26 +7249,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessWithRejectedItems"
                     },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "invitesSentCount": {
-                      "type": "number"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "invitesSentCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "invitesSentCount"
+                      ]
                     }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems",
-                    "invitesSentCount"
-                  ]
+                  ],
+                  "example": {
+                    "success": true,
+                    "rejectedItems": []
+                  }
                 }
               }
             }
@@ -6776,22 +7369,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "rejectedItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "rejectedItems"
-                  ]
+                  "$ref": "#/components/schemas/SuccessWithRejectedItems"
+                },
+                "example": {
+                  "success": true,
+                  "rejectedItems": []
                 }
               }
             }
@@ -6886,6 +7468,21 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Membership"
+                },
+                "example": {
+                  "id": "Kyft2jgCOk1uWez4InpSg",
+                  "contextType": "organization",
+                  "userId": "s9bewe1fKAYWRak3UtzV7",
+                  "organizationId": "j49ckRo-048_8QTtlJMCI",
+                  "role": "member",
+                  "order": 90,
+                  "muted": false,
+                  "archived": false,
+                  "createdAt": "2024-10-28T14:52:59.502Z",
+                  "createdBy": "s9bewe1fKAYWRak3UtzV7",
+                  "modifiedAt": "2024-10-28T14:52:59.502Z",
+                  "modifiedBy": null,
+                  "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI"
                 }
               }
             }

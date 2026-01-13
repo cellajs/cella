@@ -36,8 +36,12 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
-import { MemberInviteWithTokenEmail, MemberInviteWithTokenEmailProps } from '../../../emails/member-invite-with-token';
+import {
+  MemberInviteEmail,
+  type MemberInviteEmailProps,
+  MemberInviteWithTokenEmail,
+  type MemberInviteWithTokenEmailProps,
+} from '../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

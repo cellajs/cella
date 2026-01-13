@@ -1,6 +1,30 @@
-// Import the generated files as raw text using Vite's ?raw suffix
-import typesContent from '~/api.gen/types.gen.ts?raw';
-import zodContent from '~/api.gen/zod.gen.ts?raw';
+import { queryOptions } from '@tanstack/react-query';
+
+/**
+ * Query options for lazily loading types.gen.ts content.
+ * Uses dynamic import to code-split the raw content.
+ */
+export const typesContentQueryOptions = queryOptions({
+  queryKey: ['docs', 'types-content'],
+  queryFn: async () => {
+    const module = await import('~/api.gen/types.gen.ts?raw');
+    return module.default as string;
+  },
+  staleTime: Number.POSITIVE_INFINITY,
+});
+
+/**
+ * Query options for lazily loading zod.gen.ts content.
+ * Uses dynamic import to code-split the raw content.
+ */
+export const zodContentQueryOptions = queryOptions({
+  queryKey: ['docs', 'zod-content'],
+  queryFn: async () => {
+    const module = await import('~/api.gen/zod.gen.ts?raw');
+    return module.default as string;
+  },
+  staleTime: Number.POSITIVE_INFINITY,
+});
 
 /**
  * Convert operation ID to PascalCase.
@@ -57,7 +81,7 @@ const extractDefinition = (content: string, pattern: RegExp, startsWithBrace = f
 /**
  * Get the Zod schema code for a specific operation response.
  */
-export const getZodCodeForResponse = (operationId: string): string => {
+export const getZodCodeForResponse = (zodContent: string, operationId: string): string => {
   const pascalCaseOpId = toPascalCase(operationId);
   const schemaName = `z${pascalCaseOpId}Response`;
 
@@ -74,7 +98,7 @@ export const getZodCodeForResponse = (operationId: string): string => {
 /**
  * Get the TypeScript type code for a specific operation response.
  */
-export const getTypeCodeForResponse = (operationId: string, status: number): string => {
+export const getTypeCodeForResponse = (typesContent: string, operationId: string, status: number): string => {
   const pascalCaseOpId = toPascalCase(operationId);
   const isSuccess = status >= 200 && status < 300;
   const typeName = isSuccess ? `${pascalCaseOpId}Responses` : `${pascalCaseOpId}Errors`;
@@ -93,7 +117,7 @@ export const getTypeCodeForResponse = (operationId: string, status: number): str
 /**
  * Get the Zod schema code for a specific operation request (Data).
  */
-export const getZodCodeForRequest = (operationId: string): string => {
+export const getZodCodeForRequest = (zodContent: string, operationId: string): string => {
   const pascalCaseOpId = toPascalCase(operationId);
   const schemaName = `z${pascalCaseOpId}Data`;
 
@@ -110,7 +134,7 @@ export const getZodCodeForRequest = (operationId: string): string => {
 /**
  * Get the TypeScript type code for a specific operation request (Data).
  */
-export const getTypeCodeForRequest = (operationId: string): string => {
+export const getTypeCodeForRequest = (typesContent: string, operationId: string): string => {
   const pascalCaseOpId = toPascalCase(operationId);
   const typeName = `${pascalCaseOpId}Data`;
 
@@ -128,7 +152,7 @@ export const getTypeCodeForRequest = (operationId: string): string => {
 /**
  * Get the Zod schema code for a component schema by name.
  */
-export const getZodCodeForSchema = (schemaName: string): string => {
+export const getZodCodeForSchema = (zodContent: string, schemaName: string): string => {
   const zodSchemaName = `z${schemaName}`;
 
   const pattern = new RegExp(`export const ${zodSchemaName} = `);
@@ -144,7 +168,7 @@ export const getZodCodeForSchema = (schemaName: string): string => {
 /**
  * Get the TypeScript type code for a component schema by name.
  */
-export const getTypeCodeForSchema = (schemaName: string): string => {
+export const getTypeCodeForSchema = (typesContent: string, schemaName: string): string => {
   // Pattern includes opening brace, so pass startsWithBrace = true
   const pattern = new RegExp(`export type ${schemaName} = \\{`);
   const definition = extractDefinition(typesContent, pattern, true);

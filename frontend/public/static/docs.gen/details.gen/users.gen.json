@@ -1,0 +1,2350 @@
+[
+  {
+    "operationId": "getUsers",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Users",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "createdAt": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": [
+                      "user"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "slug": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "thumbnailUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "bannerUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "format": "email"
+                  },
+                  "mfaRequired": {
+                    "type": "boolean",
+                    "required": true
+                  },
+                  "firstName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "lastName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "language": {
+                    "type": "string",
+                    "required": true,
+                    "enum": [
+                      "en",
+                      "nl"
+                    ]
+                  },
+                  "newsletter": {
+                    "type": "boolean",
+                    "required": true
+                  },
+                  "userFlags": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "finishedOnboarding": {
+                        "type": "boolean",
+                        "required": true
+                      }
+                    }
+                  },
+                  "modifiedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "lastSeenAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "lastStartedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "lastSignInAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "modifiedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "memberships": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "object",
+                    "ref": "#/components/schemas/MembershipBase",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "required": true
+                        },
+                        "contextType": {
+                          "type": "string",
+                          "required": true,
+                          "enum": [
+                            "organization"
+                          ]
+                        },
+                        "userId": {
+                          "type": "string",
+                          "required": true
+                        },
+                        "role": {
+                          "type": "string",
+                          "required": true,
+                          "enum": [
+                            "member",
+                            "admin"
+                          ]
+                        },
+                        "archived": {
+                          "type": "boolean",
+                          "required": true
+                        },
+                        "muted": {
+                          "type": "boolean",
+                          "required": true
+                        },
+                        "order": {
+                          "type": "number",
+                          "required": true,
+                          "minimum": -140737488355328,
+                          "maximum": 140737488355327
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "required": true
+                        }
+                      },
+                      "ref": "#/components/schemas/MembershipBase"
+                    }
+                  },
+                  "role": {
+                    "type": "string",
+                    "required": false,
+                    "enum": [
+                      "admin"
+                    ]
+                  }
+                },
+                "extendsRef": "#/components/schemas/User"
+              }
+            },
+            "total": {
+              "type": "number",
+              "required": true
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                400
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/BadRequestError",
+          "refDescription": "Error returned when the request is malformed or contains invalid data.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                401
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/UnauthorizedError",
+          "refDescription": "Error returned when authentication is missing or invalid.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                403
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/ForbiddenError",
+          "refDescription": "Error returned when the user lacks permission for the requested action.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                404
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/NotFoundError",
+          "refDescription": "Error returned when the requested resource cannot be found.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                429
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/TooManyRequestsError",
+          "refDescription": "Error returned when rate limits are exceeded.",
+          "contentType": "application/json"
+        }
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": {
+            "type": "string",
+            "required": false
+          },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "id",
+              "name",
+              "email",
+              "role",
+              "createdAt",
+              "lastSeenAt"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "offset": {
+            "type": "string",
+            "required": false
+          },
+          "limit": {
+            "type": "string",
+            "required": false
+          },
+          "role": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "admin"
+            ]
+          },
+          "targetEntityType": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "organization"
+            ]
+          },
+          "targetEntityId": {
+            "type": "string",
+            "required": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "deleteUsers",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "name": "SuccessWithRejectedItems",
+        "ref": "#/components/schemas/SuccessWithRejectedItems",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "required": true
+            },
+            "rejectedItems": {
+              "type": "array",
+              "required": true,
+              "itemType": "string"
+            }
+          },
+          "ref": "#/components/schemas/SuccessWithRejectedItems",
+          "contentType": "application/json"
+        },
+        "example": {
+          "success": true,
+          "rejectedItems": []
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                400
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/BadRequestError",
+          "refDescription": "Error returned when the request is malformed or contains invalid data.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                401
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/UnauthorizedError",
+          "refDescription": "Error returned when authentication is missing or invalid.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                403
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/ForbiddenError",
+          "refDescription": "Error returned when the user lacks permission for the requested action.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                404
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/NotFoundError",
+          "refDescription": "Error returned when the requested resource cannot be found.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                429
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/TooManyRequestsError",
+          "refDescription": "Error returned when rate limits are exceeded.",
+          "contentType": "application/json"
+        }
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getUser",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User",
+        "name": "User",
+        "ref": "#/components/schemas/User",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "id": {
+              "type": "string",
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "user"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "slug": {
+              "type": "string",
+              "required": true
+            },
+            "thumbnailUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "email": {
+              "type": "string",
+              "required": true,
+              "format": "email"
+            },
+            "mfaRequired": {
+              "type": "boolean",
+              "required": true
+            },
+            "firstName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "language": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "en",
+                "nl"
+              ]
+            },
+            "newsletter": {
+              "type": "boolean",
+              "required": true
+            },
+            "userFlags": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "finishedOnboarding": {
+                  "type": "boolean",
+                  "required": true
+                }
+              }
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastSeenAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastStartedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastSignInAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/User",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "entityType": "user",
+          "name": "Franco Corwin",
+          "firstName": "Franco",
+          "lastName": "Corwin",
+          "email": "franco_corwin@gmail.com",
+          "slug": "francocorwin",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "language": "en",
+          "newsletter": false,
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-12-13T11:17:23.643Z",
+          "modifiedAt": "2024-12-13T11:17:23.643Z",
+          "modifiedBy": null,
+          "lastSeenAt": "2024-12-13T11:17:23.643Z",
+          "lastStartedAt": "2024-12-13T11:17:23.643Z",
+          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                400
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/BadRequestError",
+          "refDescription": "Error returned when the request is malformed or contains invalid data.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                401
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/UnauthorizedError",
+          "refDescription": "Error returned when authentication is missing or invalid.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                403
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/ForbiddenError",
+          "refDescription": "Error returned when the user lacks permission for the requested action.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                404
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/NotFoundError",
+          "refDescription": "Error returned when the requested resource cannot be found.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                429
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/TooManyRequestsError",
+          "refDescription": "Error returned when rate limits are exceeded.",
+          "contentType": "application/json"
+        }
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "idOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "updateUser",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User",
+        "name": "User",
+        "ref": "#/components/schemas/User",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "id": {
+              "type": "string",
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "user"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "slug": {
+              "type": "string",
+              "required": true
+            },
+            "thumbnailUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "email": {
+              "type": "string",
+              "required": true,
+              "format": "email"
+            },
+            "mfaRequired": {
+              "type": "boolean",
+              "required": true
+            },
+            "firstName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "language": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "en",
+                "nl"
+              ]
+            },
+            "newsletter": {
+              "type": "boolean",
+              "required": true
+            },
+            "userFlags": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "finishedOnboarding": {
+                  "type": "boolean",
+                  "required": true
+                }
+              }
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastSeenAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastStartedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "lastSignInAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/User",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "entityType": "user",
+          "name": "Franco Corwin",
+          "firstName": "Franco",
+          "lastName": "Corwin",
+          "email": "franco_corwin@gmail.com",
+          "slug": "francocorwin",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "language": "en",
+          "newsletter": false,
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-12-13T11:17:23.643Z",
+          "modifiedAt": "2024-12-13T11:17:23.643Z",
+          "modifiedBy": null,
+          "lastSeenAt": "2024-12-13T11:17:23.643Z",
+          "lastStartedAt": "2024-12-13T11:17:23.643Z",
+          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                400
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/BadRequestError",
+          "refDescription": "Error returned when the request is malformed or contains invalid data.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                401
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/UnauthorizedError",
+          "refDescription": "Error returned when authentication is missing or invalid.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                403
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/ForbiddenError",
+          "refDescription": "Error returned when the user lacks permission for the requested action.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                404
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/NotFoundError",
+          "refDescription": "Error returned when the requested resource cannot be found.",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "message": {
+              "type": "string",
+              "required": true
+            },
+            "type": {
+              "type": "string",
+              "required": true
+            },
+            "status": {
+              "type": "number",
+              "required": true,
+              "enum": [
+                429
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "required": true,
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace"
+              ]
+            },
+            "entityType": {
+              "type": "string",
+              "required": false,
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "logId": {
+              "type": "string",
+              "required": false
+            },
+            "path": {
+              "type": "string",
+              "required": false
+            },
+            "method": {
+              "type": "string",
+              "required": false
+            },
+            "timestamp": {
+              "type": "string",
+              "required": false
+            },
+            "userId": {
+              "type": "string",
+              "required": false
+            },
+            "organizationId": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "extendsRef": "#/components/schemas/ApiError",
+          "ref": "#/components/schemas/TooManyRequestsError",
+          "refDescription": "Error returned when rate limits are exceeded.",
+          "contentType": "application/json"
+        }
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "idOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "bannerUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "required": false
+          },
+          "firstName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "required": false,
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "required": false,
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "language": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "en",
+              "nl"
+            ]
+          },
+          "newsletter": {
+            "type": "boolean",
+            "required": false
+          },
+          "thumbnailUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "required": false
+          },
+          "slug": {
+            "type": "string",
+            "required": false,
+            "minLength": 2,
+            "maxLength": 100
+          }
+        },
+        "required": false,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

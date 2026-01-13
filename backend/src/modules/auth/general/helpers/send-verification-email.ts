@@ -12,7 +12,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails/email-verification';
+import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails';
 
 interface Props {
   userId: string;

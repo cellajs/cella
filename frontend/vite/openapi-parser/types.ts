@@ -21,6 +21,8 @@ export type OpenApiSchema = {
   anyOf?: OpenApiSchema[];
   oneOf?: OpenApiSchema[];
   allOf?: OpenApiSchema[];
+  /** Example value for documentation */
+  example?: unknown;
 };
 
 export type OpenApiParameter = {

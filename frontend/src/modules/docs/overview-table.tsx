@@ -1,9 +1,10 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { info } from '~/api.gen/docs';
 import { DataTable } from '~/modules/common/data-table';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { infoQueryOptions } from '~/modules/docs/query';
 import { Card, CardContent } from '~/modules/ui/card';
 
 interface InfoRow {
@@ -18,6 +19,9 @@ interface InfoRow {
  */
 const OverviewTable = () => {
   const { t } = useTranslation();
+
+  // Fetch info via React Query (reduces bundle size)
+  const { data: info } = useSuspenseQuery(infoQueryOptions);
 
   // Transform info object into rows for the table
   const rows: InfoRow[] = useMemo(

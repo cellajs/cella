@@ -1,7 +1,6 @@
 // Search query schemas
 
 import z from 'zod';
-import { tagNames } from '~/api.gen/docs';
 import {
   zGetMembersData,
   zGetOrganizationsData,
@@ -12,9 +11,10 @@ import {
 
 /**
  * Search params schema for docs route.
+ * operationTag uses string instead of enum since tag names are fetched at runtime.
  */
 export const operationsRouteSearchParamsSchema = z.object({
-  tag: z.enum(tagNames).optional(),
+  operationTag: z.string().optional(),
   q: z.string().optional(),
 });
 

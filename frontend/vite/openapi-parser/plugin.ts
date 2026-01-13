@@ -2,26 +2,17 @@
  * OpenAPI Parser Plugin for API Documentation
  *
  * Transforms OpenAPI spec into lightweight operation summaries for docs UI.
- * Generates two arrays:
- * - operations: Minimal data for table rows and sidebar
- * - tags: Tag metadata with operation counts
+ * Generates JSON files in public/static/docs.gen for runtime fetching:
+ * - operations.json, tags.json, schemas.json, info.json
+ * - details/{tagName}.json for per-tag operation details
  *
- * Secondary data (full descriptions, parameters, schemas) is accessed
- * on-demand from the full OpenAPI spec.
+ * All data is fetched at runtime via React Query to reduce bundle size.
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { DefinePlugin } from '@hey-api/openapi-ts';
 import { definePluginConfig } from '@hey-api/openapi-ts';
-import {
-  generateIndexFile,
-  generateInfoFile,
-  generateOperationsFile,
-  generateSchemasFile,
-  generateTagDetailsFile,
-  generateTagsFile,
-} from './file-generators';
 import { parseOpenApiSpec } from './parse-spec';
 import type { OpenApiSpec } from './types';
 
@@ -37,45 +28,33 @@ type OpenApiParserPlugin = DefinePlugin<Config>;
 
 /**
  * Handler function for the openapi-parser plugin.
- * Orchestrates parsing and file generation.
+ * Orchestrates parsing and JSON file generation.
  */
 const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   // Parse the OpenAPI spec (pure function)
   const spec = plugin.context.spec as OpenApiSpec;
   const parsed = parseOpenApiSpec(spec);
 
-  // Generate file contents
-  const operationsContent = generateOperationsFile(parsed.operations);
-  const tagsContent = generateTagsFile(parsed.tags);
-  const infoContent = generateInfoFile(parsed.info);
-  const schemasContent = generateSchemasFile(parsed.schemas, parsed.schemaTags);
+  // Create public/static/docs.gen directory for JSON files (runtime fetching)
+  const publicDocsDir = resolve(plugin.context.config.output.path, '../../public/static/docs.gen');
+  mkdirSync(publicDocsDir, { recursive: true });
 
-  // Create docs directory
-  const docsDir = resolve(plugin.context.config.output.path, 'docs');
-  mkdirSync(docsDir, { recursive: true });
+  // Create details.gen subdirectory in public for per-tag JSON files
+  const publicDetailsDir = resolve(publicDocsDir, 'details.gen');
+  mkdirSync(publicDetailsDir, { recursive: true });
 
-  // Create details subdirectory for per-tag detail files
-  const detailsDir = resolve(docsDir, 'details');
-  mkdirSync(detailsDir, { recursive: true });
-
-  // Generate per-tag detail files
-  const tagNames: string[] = [];
+  // Generate per-tag detail JSON files (pretty-printed for readability)
   for (const [tagName, tagOperations] of parsed.tagDetails.entries()) {
-    const tagDetailsContent = generateTagDetailsFile(tagName, tagOperations);
-    const tagFilePath = resolve(detailsDir, `${tagName}.gen.ts`);
-    writeFileSync(tagFilePath, tagDetailsContent, 'utf-8');
-    tagNames.push(tagName);
+    const tagJsonPath = resolve(publicDetailsDir, `${tagName}.gen.json`);
+    writeFileSync(tagJsonPath, JSON.stringify(tagOperations, null, 2), 'utf-8');
   }
 
-  // Generate index file
-  const indexContent = generateIndexFile(tagNames);
-
-  // Write files to docs directory
-  writeFileSync(resolve(docsDir, 'operations.gen.ts'), operationsContent, 'utf-8');
-  writeFileSync(resolve(docsDir, 'tags.gen.ts'), tagsContent, 'utf-8');
-  writeFileSync(resolve(docsDir, 'info.gen.ts'), infoContent, 'utf-8');
-  writeFileSync(resolve(docsDir, 'schemas.gen.ts'), schemasContent, 'utf-8');
-  writeFileSync(resolve(docsDir, 'index.ts'), indexContent, 'utf-8');
+  // Write JSON files to public/static/docs.gen for runtime fetching (pretty-printed, reduces bundle size)
+  writeFileSync(resolve(publicDocsDir, 'operations.gen.json'), JSON.stringify(parsed.operations, null, 2), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'tags.gen.json'), JSON.stringify(parsed.tags, null, 2), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'info.gen.json'), JSON.stringify(parsed.info, null, 2), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'schemas.gen.json'), JSON.stringify(parsed.schemas, null, 2), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'schema-tags.gen.json'), JSON.stringify(parsed.schemaTags, null, 2), 'utf-8');
 };
 
 /**

@@ -40,3 +40,4 @@ export const pagesTable = pgTable(
 );
 
 export type PageModel = typeof pagesTable.$inferSelect;
+export type InsertPageModel = typeof pagesTable.$inferInsert;

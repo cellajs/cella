@@ -1,11 +1,11 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
   mePendingInvitationSchema,
+  meSchema,
   toggleMfaBodySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
@@ -32,12 +32,7 @@ const meRoutes = {
         description: 'User',
         content: {
           'application/json': {
-            schema: z.object({
-              user: userSchema,
-              systemRole: z
-                .enum([...appConfig.roles.systemRoles, 'user'])
-                .openapi({ description: 'Explain system role here' }),
-            }),
+            schema: meSchema,
           },
         },
       },

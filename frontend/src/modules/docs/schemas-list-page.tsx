@@ -1,8 +1,9 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { schemas, schemaTags } from '~/api.gen/docs';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
+import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { SchemaDetail } from '~/modules/docs/schema-detail';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
@@ -17,6 +18,10 @@ const SchemasListPage = () => {
   const { t } = useTranslation();
   // Get active schema tag from URL search param (hash)
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/publicLayout/docs/schemas' });
+
+  // Fetch schemas and schema tags via React Query (reduces bundle size)
+  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
+  const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
   return (
     <>
@@ -39,7 +44,7 @@ const SchemasListPage = () => {
                     {tag.name}
                     <HashUrlButton id={tag.name} />
                   </CardTitle>
-                  <CardDescription className="my-2">{tag.description}</CardDescription>
+                  <CardDescription className="my-2 text-base max-w-4xl">{tag.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
                   {/* Schema refs list */}

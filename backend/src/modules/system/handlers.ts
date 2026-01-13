@@ -28,8 +28,12 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
-import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
+import {
+  NewsletterEmail,
+  type NewsletterEmailProps,
+  SystemInviteEmail,
+  type SystemInviteEmailProps,
+} from '../../../emails';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

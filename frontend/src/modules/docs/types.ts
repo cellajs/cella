@@ -86,6 +86,8 @@ export interface GenSchemaProperty {
   anyOf?: GenSchemaProperty[];
   /** oneOf schemas (for discriminated unions) */
   oneOf?: GenSchemaProperty[];
+  // Note: example is intentionally NOT included here.
+  // Examples belong at the GenComponentSchema level only, not inside nested properties.
 }
 
 /**
@@ -131,6 +133,9 @@ export interface GenSchema {
   anyOf?: GenSchema[];
   /** oneOf schemas */
   oneOf?: GenSchema[];
+  // Note: example is intentionally NOT included here.
+  // Examples belong at the GenComponentSchema level, not inside schema.schema.
+  // This prevents duplication of example data in the generated output.
 }
 
 /**
@@ -145,6 +150,8 @@ export interface GenResponseSummary {
   contentType?: string;
   /** Resolved response schema (dereferenced with ref metadata preserved) */
   schema?: GenSchema;
+  /** Example response value from OpenAPI spec */
+  example?: unknown;
 }
 
 /**
@@ -253,6 +260,25 @@ export interface GenOperationDetail {
 export type SchemaTag = 'base' | 'data' | 'errors';
 
 /**
+ * Schema tag summary with description and count.
+ * Used for schema tag navigation and filtering.
+ */
+export interface GenSchemaTagSummary {
+  /** Tag name identifier */
+  name: SchemaTag;
+  /** Description of what schemas this tag contains */
+  description: string;
+  /** Number of schemas with this tag */
+  count: number;
+}
+
+/**
+ * Tag name type - represents API operation tag names.
+ * This is a string type that allows for dynamic tag names from the OpenAPI spec.
+ */
+export type TagName = string;
+
+/**
  * Component schema summary for schemas list page.
  * Represents a schema from components.schemas in the OpenAPI spec.
  */
@@ -273,4 +299,6 @@ export interface GenComponentSchema {
   schemaTag: SchemaTag;
   /** References to this schema from operations (operationIds that use it) */
   usedBy?: string[];
+  /** Example value from OpenAPI spec */
+  example?: unknown;
 }

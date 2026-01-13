@@ -1,25 +1,25 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import type { GenOperationSummary, TagName } from '~/api.gen/docs';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { getMethodColor } from './helpers/get-method-color';
 
 interface TagOperationsTableProps {
   operations: GenOperationSummary[];
-  tagName: TagName;
+  tagName: string;
 }
 
 /**
  * Columns for TagOperationsTable
  */
-const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[] => {
+const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
-  const { tag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
+  const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
   const { scrollToSection } = useScrollSpy({ smoothScroll: true });
 
   // Handle operation click necessary to expand tag if not already expanded
@@ -30,7 +30,13 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
       return;
     }
     // Otherwise, navigate to expand then scroll
-    navigate({ to: '.', search: (prev) => ({ ...prev, tag: tagName }), hash, replace: true, resetScroll: false });
+    navigate({
+      to: '.',
+      search: (prev) => ({ ...prev, operationTag: tagName }),
+      hash,
+      replace: true,
+      resetScroll: false,
+    });
     // Schedule scroll
     setTimeout(() => scrollToSection(hash), 350);
   };
@@ -62,7 +68,7 @@ const useColumns = (tagName: TagName): ColumnOrColumnGroup<GenOperationSummary>[
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="."
-          search={(prev) => ({ ...prev, tag: tagName })}
+          search={(prev) => ({ ...prev, operationTag: tagName })}
           hash={row.hash}
           replace
           onClick={(e) => {

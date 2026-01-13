@@ -41,3 +41,6 @@ export const attachmentsTable = pgTable(
   },
   (table) => [...attachmentEntityIndexes(table)],
 );
+
+export type AttachmentModel = typeof attachmentsTable.$inferSelect;
+export type InsertAttachmentModel = typeof attachmentsTable.$inferInsert;

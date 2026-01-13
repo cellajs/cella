@@ -1,16 +1,14 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type GenOperationSummary, operations, type TagName, tags } from '~/api.gen/docs';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { OperationDetail } from '~/modules/docs/operation-detail';
-import {
-  TagExpandButtonContent,
-  TagExpandButtonLoading,
-  tagDetailsQueryOptions,
-} from '~/modules/docs/operation-responses';
+import { TagExpandButtonContent, TagExpandButtonLoading } from '~/modules/docs/operation-responses';
+import { operationsQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
+import type { GenOperationSummary } from '~/modules/docs/types';
 import { ViewModeToggle } from '~/modules/docs/view-mode-toggle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
@@ -21,7 +19,11 @@ import { buttonVariants } from '../ui/button';
 const OperationsListPage = () => {
   const { t } = useTranslation();
   // Get active tag from URL search param
-  const { tag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
+  const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
+
+  // Fetch operations and tags via React Query (reduces bundle size)
+  const { data: operations } = useSuspenseQuery(operationsQueryOptions);
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   const operationsByTag = operations.reduce(
     (acc, operation) => {
@@ -59,18 +61,20 @@ const OperationsListPage = () => {
                     {tag.name}
                     <HashUrlButton id={`tag/${tag.name}`} />
                   </CardTitle>
-                  {tag.description && <CardDescription className="my-2">{tag.description}</CardDescription>}
+                  {tag.description && (
+                    <CardDescription className="my-2 text-base max-w-4xl">{tag.description}</CardDescription>
+                  )}
                   <p className="text-sm font-medium mt-4">{t('common:operation', { count: tag.count })}</p>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 rdg-readonly">
                   {/* Readonly data table with operations in this tag */}
-                  <TagOperationsTable operations={tagOperations} tagName={tag.name as TagName} />
+                  <TagOperationsTable operations={tagOperations} tagName={tag.name} />
 
                   {/* Show details button */}
                   <div className="flex w-full justify-center">
                     <Link
                       to="."
-                      search={(prev) => ({ ...prev, tag: isOpen ? undefined : (tag.name as TagName) })}
+                      search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
                       replace
                       draggable={false}
                       resetScroll={false}

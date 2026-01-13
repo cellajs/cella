@@ -29,9 +29,10 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import {
   MemberInviteWithTokenEmail,
-  MemberInviteWithTokenEmailProps,
-} from '../../../../emails/member-invite-with-token';
-import { SystemInviteEmail, SystemInviteEmailProps } from '../../../../emails/system-invite';
+  type MemberInviteWithTokenEmailProps,
+  SystemInviteEmail,
+  type SystemInviteEmailProps,
+} from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

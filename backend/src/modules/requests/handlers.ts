@@ -15,8 +15,7 @@ import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { RequestResponseEmail, RequestResponseEmailProps } from '../../../emails/request-was-sent';
-import { RequestInfoEmail } from '../../../emails/request-was-sent-admin';
+import { RequestInfoEmail, RequestResponseEmail, type RequestResponseEmailProps } from '../../../emails';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];

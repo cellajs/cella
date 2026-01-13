@@ -123,6 +123,27 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "type": "object",
         },
         "Attachment": {
+          "example": {
+            "bucketName": "attachments",
+            "contentType": "video/3gpp2",
+            "convertedContentType": null,
+            "convertedKey": null,
+            "createdAt": "2024-10-12T17:43:05.360Z",
+            "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+            "description": null,
+            "entityType": "attachment",
+            "filename": "fondly.m1v",
+            "groupId": null,
+            "id": "y5HDs5pltSHUGLcWkE34G",
+            "modifiedAt": "2024-10-12T17:43:05.360Z",
+            "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+            "name": "fondly.m1v",
+            "organizationId": "7EXqgIQTdNUnlmV7IByg2",
+            "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+            "public": false,
+            "size": "9426474",
+            "thumbnailKey": null,
+          },
           "properties": {
             "bucketName": {
               "type": "string",
@@ -379,7 +400,253 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "type": "object",
         },
+        "Me": {
+          "example": {
+            "systemRole": "user",
+            "user": {
+              "bannerUrl": null,
+              "createdAt": "2024-07-14T22:49:14.651Z",
+              "description": null,
+              "email": "odell.gislason@yahoo.com",
+              "entityType": "user",
+              "firstName": "Odell",
+              "id": "KNGgftxF37fbRhY1aJvFC",
+              "language": "en",
+              "lastName": "Gislason",
+              "lastSeenAt": "2024-07-14T22:49:14.651Z",
+              "lastSignInAt": "2024-07-14T22:49:14.651Z",
+              "lastStartedAt": "2024-07-14T22:49:14.651Z",
+              "mfaRequired": false,
+              "modifiedAt": "2024-07-14T22:49:14.651Z",
+              "modifiedBy": null,
+              "name": "Odell Gislason DVM",
+              "newsletter": false,
+              "slug": "odellgislason57",
+              "thumbnailUrl": null,
+              "userFlags": {},
+            },
+          },
+          "properties": {
+            "systemRole": {
+              "description": "Explain system role here",
+              "enum": [
+                "admin",
+                "user",
+              ],
+              "type": "string",
+            },
+            "user": {
+              "$ref": "#/components/schemas/User",
+            },
+          },
+          "required": [
+            "user",
+            "systemRole",
+          ],
+          "type": "object",
+        },
+        "MeAuthData": {
+          "example": {
+            "enabledOAuth": [
+              "github",
+            ],
+            "hasPassword": true,
+            "hasTotp": false,
+            "passkeys": [],
+            "sessions": [
+              {
+                "authStrategy": "password",
+                "browser": "Firefox",
+                "createdAt": "2024-05-29T08:00:36.178Z",
+                "deviceName": "Firefox on Windows",
+                "deviceOs": "Windows",
+                "deviceType": "desktop",
+                "expiresAt": "2024-06-28T08:00:36.178Z",
+                "id": "XAt10Xd3dBO8leLbQS8OH",
+                "isCurrent": true,
+                "type": "regular",
+                "userId": "0VF-w6LQGNtYJc9oOlWUO",
+              },
+            ],
+          },
+          "properties": {
+            "enabledOAuth": {
+              "items": {
+                "enum": [
+                  "github",
+                ],
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "hasPassword": {
+              "type": "boolean",
+            },
+            "hasTotp": {
+              "type": "boolean",
+            },
+            "passkeys": {
+              "items": {
+                "properties": {
+                  "browser": {
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "type": "string",
+                  },
+                  "deviceName": {
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceOs": {
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceType": {
+                    "enum": [
+                      "desktop",
+                      "mobile",
+                    ],
+                    "type": "string",
+                  },
+                  "id": {
+                    "type": "string",
+                  },
+                  "nameOnDevice": {
+                    "type": "string",
+                  },
+                  "userId": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "id",
+                  "userId",
+                  "deviceName",
+                  "deviceType",
+                  "deviceOs",
+                  "browser",
+                  "nameOnDevice",
+                  "createdAt",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+            "sessions": {
+              "items": {
+                "properties": {
+                  "authStrategy": {
+                    "enum": [
+                      "github",
+                      "google",
+                      "microsoft",
+                      "password",
+                      "passkey",
+                      "totp",
+                      "email",
+                    ],
+                    "type": "string",
+                  },
+                  "browser": {
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "type": "string",
+                  },
+                  "deviceName": {
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceOs": {
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceType": {
+                    "enum": [
+                      "desktop",
+                      "mobile",
+                    ],
+                    "type": "string",
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                  },
+                  "id": {
+                    "type": "string",
+                  },
+                  "isCurrent": {
+                    "type": "boolean",
+                  },
+                  "type": {
+                    "enum": [
+                      "regular",
+                      "impersonation",
+                      "mfa",
+                    ],
+                    "type": "string",
+                  },
+                  "userId": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "createdAt",
+                  "id",
+                  "type",
+                  "userId",
+                  "deviceName",
+                  "deviceType",
+                  "deviceOs",
+                  "browser",
+                  "authStrategy",
+                  "expiresAt",
+                  "isCurrent",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+          },
+          "required": [
+            "enabledOAuth",
+            "hasTotp",
+            "hasPassword",
+            "sessions",
+            "passkeys",
+          ],
+          "type": "object",
+        },
         "Membership": {
+          "example": {
+            "archived": false,
+            "contextType": "organization",
+            "createdAt": "2024-10-28T14:52:59.502Z",
+            "createdBy": "s9bewe1fKAYWRak3UtzV7",
+            "id": "Kyft2jgCOk1uWez4InpSg",
+            "modifiedAt": "2024-10-28T14:52:59.502Z",
+            "modifiedBy": null,
+            "muted": false,
+            "order": 90,
+            "organizationId": "j49ckRo-048_8QTtlJMCI",
+            "role": "member",
+            "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI",
+            "userId": "s9bewe1fKAYWRak3UtzV7",
+          },
           "properties": {
             "archived": {
               "type": "boolean",
@@ -521,6 +788,63 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "description": "Error returned when the requested resource cannot be found.",
         },
         "Organization": {
+          "example": {
+            "authStrategies": [
+              "password",
+            ],
+            "bannerUrl": null,
+            "chatSupport": false,
+            "color": "#b9ecfa",
+            "country": "Cocos (Keeling) Islands",
+            "counts": {
+              "entities": {
+                "attachment": 24,
+                "page": 7,
+              },
+              "membership": {
+                "admin": 1,
+                "member": 19,
+                "pending": 0,
+                "total": 3,
+              },
+            },
+            "createdAt": "2024-12-25T15:29:47.111Z",
+            "createdBy": null,
+            "defaultLanguage": "en",
+            "description": "Extended executive database",
+            "emailDomains": [],
+            "entityType": "organization",
+            "id": "rK5ziKXKdzSbuY2s_8QCE",
+            "languages": [
+              "en",
+            ],
+            "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+            "membership": {
+              "archived": false,
+              "contextType": "organization",
+              "id": "ZFMnYJm5p-nyT4XZM_aPW",
+              "muted": false,
+              "order": 1,
+              "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+              "role": "admin",
+              "userId": "4RSiGNUzWMaXMVIBMnxnO",
+            },
+            "modifiedAt": "2024-12-25T15:29:47.111Z",
+            "modifiedBy": null,
+            "name": "Murphy LLC",
+            "notificationEmail": "notifications@murphy-llc.example",
+            "restrictions": {
+              "attachment": 100,
+              "page": 0,
+              "user": 1000,
+            },
+            "shortName": "Murphy",
+            "slug": "murphy-llc",
+            "thumbnailUrl": null,
+            "timezone": "Australia/Adelaide",
+            "websiteUrl": "https://murphy-llc.example",
+            "welcomeText": "Welcome to Murphy LLC!",
+          },
           "properties": {
             "authStrategies": {
               "items": {
@@ -755,6 +1079,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "type": "object",
         },
         "Page": {
+          "example": {
+            "createdAt": "2024-08-06T10:28:33.226Z",
+            "createdBy": "ph9yKadCThSPHaLw6jUV_",
+            "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+            "displayOrder": 17.33,
+            "entityType": "page",
+            "id": "ipqyAZOx_wYoSB_T2Sbzd",
+            "keywords": "supplanto odio culpa",
+            "modifiedAt": "2024-08-06T10:28:33.226Z",
+            "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+            "name": "Cibus dolores decet surgo aptus.",
+            "parentId": null,
+            "status": "unpublished",
+          },
           "properties": {
             "createdAt": {
               "type": "string",
@@ -828,6 +1166,28 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "type": "object",
         },
+        "SuccessWithRejectedItems": {
+          "example": {
+            "rejectedItems": [],
+            "success": true,
+          },
+          "properties": {
+            "rejectedItems": {
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "success": {
+              "type": "boolean",
+            },
+          },
+          "required": [
+            "success",
+            "rejectedItems",
+          ],
+          "type": "object",
+        },
         "TooManyRequestsError": {
           "allOf": [
             {
@@ -866,7 +1226,88 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
           "description": "Error returned when authentication is missing or invalid.",
         },
+        "UploadToken": {
+          "example": {
+            "params": {
+              "auth": {
+                "expires": "2025-01-01T04:15:50.483Z",
+                "key": "uploads/-WevYEtehwyoG0ux7Q1ox",
+              },
+            },
+            "public": false,
+            "s3": true,
+            "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+            "sub": "2NpNbC-rtGtYVb1XPh3cb",
+          },
+          "properties": {
+            "params": {
+              "additionalProperties": {},
+              "properties": {
+                "auth": {
+                  "properties": {
+                    "expires": {
+                      "type": "string",
+                    },
+                    "key": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "key",
+                  ],
+                  "type": "object",
+                },
+              },
+              "required": [
+                "auth",
+              ],
+              "type": "object",
+            },
+            "public": {
+              "type": "boolean",
+            },
+            "s3": {
+              "type": "boolean",
+            },
+            "signature": {
+              "type": "string",
+            },
+            "sub": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "public",
+            "sub",
+            "s3",
+            "signature",
+            "params",
+          ],
+          "type": "object",
+        },
         "User": {
+          "example": {
+            "bannerUrl": null,
+            "createdAt": "2024-12-13T11:17:23.643Z",
+            "description": null,
+            "email": "franco_corwin@gmail.com",
+            "entityType": "user",
+            "firstName": "Franco",
+            "id": "adq_jxNCo3ZSdxUwcIyz-",
+            "language": "en",
+            "lastName": "Corwin",
+            "lastSeenAt": "2024-12-13T11:17:23.643Z",
+            "lastSignInAt": "2024-12-13T11:17:23.643Z",
+            "lastStartedAt": "2024-12-13T11:17:23.643Z",
+            "mfaRequired": false,
+            "modifiedAt": "2024-12-13T11:17:23.643Z",
+            "modifiedBy": null,
+            "name": "Franco Corwin",
+            "newsletter": false,
+            "slug": "francocorwin",
+            "thumbnailUrl": null,
+            "userFlags": {},
+          },
           "properties": {
             "bannerUrl": {
               "type": [
@@ -2979,25 +3420,33 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
-                  "schema": {
-                    "properties": {
-                      "systemRole": {
-                        "description": "Explain system role here",
-                        "enum": [
-                          "admin",
-                          "user",
-                        ],
-                        "type": "string",
-                      },
-                      "user": {
-                        "$ref": "#/components/schemas/User",
-                      },
+                  "example": {
+                    "systemRole": "user",
+                    "user": {
+                      "bannerUrl": null,
+                      "createdAt": "2024-07-14T22:49:14.651Z",
+                      "description": null,
+                      "email": "odell.gislason@yahoo.com",
+                      "entityType": "user",
+                      "firstName": "Odell",
+                      "id": "KNGgftxF37fbRhY1aJvFC",
+                      "language": "en",
+                      "lastName": "Gislason",
+                      "lastSeenAt": "2024-07-14T22:49:14.651Z",
+                      "lastSignInAt": "2024-07-14T22:49:14.651Z",
+                      "lastStartedAt": "2024-07-14T22:49:14.651Z",
+                      "mfaRequired": false,
+                      "modifiedAt": "2024-07-14T22:49:14.651Z",
+                      "modifiedBy": null,
+                      "name": "Odell Gislason DVM",
+                      "newsletter": false,
+                      "slug": "odellgislason57",
+                      "thumbnailUrl": null,
+                      "userFlags": {},
                     },
-                    "required": [
-                      "user",
-                      "systemRole",
-                    ],
-                    "type": "object",
+                  },
+                  "schema": {
+                    "$ref": "#/components/schemas/Me",
                   },
                 },
               },
@@ -3103,6 +3552,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "bannerUrl": null,
+                    "createdAt": "2024-12-13T11:17:23.643Z",
+                    "description": null,
+                    "email": "franco_corwin@gmail.com",
+                    "entityType": "user",
+                    "firstName": "Franco",
+                    "id": "adq_jxNCo3ZSdxUwcIyz-",
+                    "language": "en",
+                    "lastName": "Corwin",
+                    "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                    "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                    "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-12-13T11:17:23.643Z",
+                    "modifiedBy": null,
+                    "name": "Franco Corwin",
+                    "newsletter": false,
+                    "slug": "francocorwin",
+                    "thumbnailUrl": null,
+                    "userFlags": {},
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/User",
                   },
@@ -3149,168 +3620,31 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
-                  "schema": {
-                    "properties": {
-                      "enabledOAuth": {
-                        "items": {
-                          "enum": [
-                            "github",
-                          ],
-                          "type": "string",
-                        },
-                        "type": "array",
-                      },
-                      "hasPassword": {
-                        "type": "boolean",
-                      },
-                      "hasTotp": {
-                        "type": "boolean",
-                      },
-                      "passkeys": {
-                        "items": {
-                          "properties": {
-                            "browser": {
-                              "type": [
-                                "string",
-                                "null",
-                              ],
-                            },
-                            "createdAt": {
-                              "type": "string",
-                            },
-                            "deviceName": {
-                              "type": [
-                                "string",
-                                "null",
-                              ],
-                            },
-                            "deviceOs": {
-                              "type": [
-                                "string",
-                                "null",
-                              ],
-                            },
-                            "deviceType": {
-                              "enum": [
-                                "desktop",
-                                "mobile",
-                              ],
-                              "type": "string",
-                            },
-                            "id": {
-                              "type": "string",
-                            },
-                            "nameOnDevice": {
-                              "type": "string",
-                            },
-                            "userId": {
-                              "type": "string",
-                            },
-                          },
-                          "required": [
-                            "id",
-                            "userId",
-                            "deviceName",
-                            "deviceType",
-                            "deviceOs",
-                            "browser",
-                            "nameOnDevice",
-                            "createdAt",
-                          ],
-                          "type": "object",
-                        },
-                        "type": "array",
-                      },
-                      "sessions": {
-                        "items": {
-                          "properties": {
-                            "authStrategy": {
-                              "enum": [
-                                "github",
-                                "google",
-                                "microsoft",
-                                "password",
-                                "passkey",
-                                "totp",
-                                "email",
-                              ],
-                              "type": "string",
-                            },
-                            "browser": {
-                              "type": [
-                                "string",
-                                "null",
-                              ],
-                            },
-                            "createdAt": {
-                              "type": "string",
-                            },
-                            "deviceName": {
-                              "type": [
-                                "string",
-                                "null",
-                              ],
-                            },
-                            "deviceOs": {
-                              "type": [
-                                "string",
-                                "null",
-                              ],
-                            },
-                            "deviceType": {
-                              "enum": [
-                                "desktop",
-                                "mobile",
-                              ],
-                              "type": "string",
-                            },
-                            "expiresAt": {
-                              "type": "string",
-                            },
-                            "id": {
-                              "type": "string",
-                            },
-                            "isCurrent": {
-                              "type": "boolean",
-                            },
-                            "type": {
-                              "enum": [
-                                "regular",
-                                "impersonation",
-                                "mfa",
-                              ],
-                              "type": "string",
-                            },
-                            "userId": {
-                              "type": "string",
-                            },
-                          },
-                          "required": [
-                            "createdAt",
-                            "id",
-                            "type",
-                            "userId",
-                            "deviceName",
-                            "deviceType",
-                            "deviceOs",
-                            "browser",
-                            "authStrategy",
-                            "expiresAt",
-                            "isCurrent",
-                          ],
-                          "type": "object",
-                        },
-                        "type": "array",
-                      },
-                    },
-                    "required": [
-                      "enabledOAuth",
-                      "hasTotp",
-                      "hasPassword",
-                      "sessions",
-                      "passkeys",
+                  "example": {
+                    "enabledOAuth": [
+                      "github",
                     ],
-                    "type": "object",
+                    "hasPassword": true,
+                    "hasTotp": false,
+                    "passkeys": [],
+                    "sessions": [
+                      {
+                        "authStrategy": "password",
+                        "browser": "Firefox",
+                        "createdAt": "2024-05-29T08:00:36.178Z",
+                        "deviceName": "Firefox on Windows",
+                        "deviceOs": "Windows",
+                        "deviceType": "desktop",
+                        "expiresAt": "2024-06-28T08:00:36.178Z",
+                        "id": "XAt10Xd3dBO8leLbQS8OH",
+                        "isCurrent": true,
+                        "type": "regular",
+                        "userId": "0VF-w6LQGNtYJc9oOlWUO",
+                      },
+                    ],
+                  },
+                  "schema": {
+                    "$ref": "#/components/schemas/MeAuthData",
                   },
                 },
               },
@@ -3534,6 +3868,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "bannerUrl": null,
+                    "createdAt": "2024-12-13T11:17:23.643Z",
+                    "description": null,
+                    "email": "franco_corwin@gmail.com",
+                    "entityType": "user",
+                    "firstName": "Franco",
+                    "id": "adq_jxNCo3ZSdxUwcIyz-",
+                    "language": "en",
+                    "lastName": "Corwin",
+                    "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                    "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                    "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-12-13T11:17:23.643Z",
+                    "modifiedBy": null,
+                    "name": "Franco Corwin",
+                    "newsletter": false,
+                    "slug": "francocorwin",
+                    "thumbnailUrl": null,
+                    "userFlags": {},
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/User",
                   },
@@ -3602,23 +3958,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "rejectedItems": [],
+                    "success": true,
+                  },
                   "schema": {
-                    "properties": {
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
-                        },
-                        "type": "array",
-                      },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                    ],
-                    "type": "object",
+                    "$ref": "#/components/schemas/SuccessWithRejectedItems",
                   },
                 },
               },
@@ -3757,52 +4102,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
-                  "schema": {
-                    "properties": {
-                      "params": {
-                        "additionalProperties": {},
-                        "properties": {
-                          "auth": {
-                            "properties": {
-                              "expires": {
-                                "type": "string",
-                              },
-                              "key": {
-                                "type": "string",
-                              },
-                            },
-                            "required": [
-                              "key",
-                            ],
-                            "type": "object",
-                          },
-                        },
-                        "required": [
-                          "auth",
-                        ],
-                        "type": "object",
-                      },
-                      "public": {
-                        "type": "boolean",
-                      },
-                      "s3": {
-                        "type": "boolean",
-                      },
-                      "signature": {
-                        "type": "string",
-                      },
-                      "sub": {
-                        "type": "string",
+                  "example": {
+                    "params": {
+                      "auth": {
+                        "expires": "2025-01-01T04:15:50.483Z",
+                        "key": "uploads/-WevYEtehwyoG0ux7Q1ox",
                       },
                     },
-                    "required": [
-                      "public",
-                      "sub",
-                      "s3",
-                      "signature",
-                      "params",
-                    ],
-                    "type": "object",
+                    "public": false,
+                    "s3": true,
+                    "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+                    "sub": "2NpNbC-rtGtYVb1XPh3cb",
+                  },
+                  "schema": {
+                    "$ref": "#/components/schemas/UploadToken",
                   },
                 },
               },
@@ -3996,23 +4309,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "rejectedItems": [],
+                    "success": true,
+                  },
                   "schema": {
-                    "properties": {
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
-                        },
-                        "type": "array",
-                      },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                    ],
-                    "type": "object",
+                    "$ref": "#/components/schemas/SuccessWithRejectedItems",
                   },
                 },
               },
@@ -4239,6 +4541,63 @@ The documentation is generated from source code using \`zod\` schemas, converted
                         "type": "object",
                       },
                     ],
+                    "example": {
+                      "authStrategies": [
+                        "password",
+                      ],
+                      "bannerUrl": null,
+                      "chatSupport": false,
+                      "color": "#b9ecfa",
+                      "country": "Cocos (Keeling) Islands",
+                      "counts": {
+                        "entities": {
+                          "attachment": 24,
+                          "page": 7,
+                        },
+                        "membership": {
+                          "admin": 1,
+                          "member": 19,
+                          "pending": 0,
+                          "total": 3,
+                        },
+                      },
+                      "createdAt": "2024-12-25T15:29:47.111Z",
+                      "createdBy": null,
+                      "defaultLanguage": "en",
+                      "description": "Extended executive database",
+                      "emailDomains": [],
+                      "entityType": "organization",
+                      "id": "rK5ziKXKdzSbuY2s_8QCE",
+                      "languages": [
+                        "en",
+                      ],
+                      "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                      "membership": {
+                        "archived": false,
+                        "contextType": "organization",
+                        "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                        "muted": false,
+                        "order": 1,
+                        "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                        "role": "admin",
+                        "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                      },
+                      "modifiedAt": "2024-12-25T15:29:47.111Z",
+                      "modifiedBy": null,
+                      "name": "Murphy LLC",
+                      "notificationEmail": "notifications@murphy-llc.example",
+                      "restrictions": {
+                        "attachment": 100,
+                        "page": 0,
+                        "user": 1000,
+                      },
+                      "shortName": "Murphy",
+                      "slug": "murphy-llc",
+                      "thumbnailUrl": null,
+                      "timezone": "Australia/Adelaide",
+                      "websiteUrl": "https://murphy-llc.example",
+                      "welcomeText": "Welcome to Murphy LLC!",
+                    },
                   },
                 },
               },
@@ -4295,6 +4654,63 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "authStrategies": [
+                      "password",
+                    ],
+                    "bannerUrl": null,
+                    "chatSupport": false,
+                    "color": "#b9ecfa",
+                    "country": "Cocos (Keeling) Islands",
+                    "counts": {
+                      "entities": {
+                        "attachment": 24,
+                        "page": 7,
+                      },
+                      "membership": {
+                        "admin": 1,
+                        "member": 19,
+                        "pending": 0,
+                        "total": 3,
+                      },
+                    },
+                    "createdAt": "2024-12-25T15:29:47.111Z",
+                    "createdBy": null,
+                    "defaultLanguage": "en",
+                    "description": "Extended executive database",
+                    "emailDomains": [],
+                    "entityType": "organization",
+                    "id": "rK5ziKXKdzSbuY2s_8QCE",
+                    "languages": [
+                      "en",
+                    ],
+                    "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                      "muted": false,
+                      "order": 1,
+                      "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                      "role": "admin",
+                      "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                    },
+                    "modifiedAt": "2024-12-25T15:29:47.111Z",
+                    "modifiedBy": null,
+                    "name": "Murphy LLC",
+                    "notificationEmail": "notifications@murphy-llc.example",
+                    "restrictions": {
+                      "attachment": 100,
+                      "page": 0,
+                      "user": 1000,
+                    },
+                    "shortName": "Murphy",
+                    "slug": "murphy-llc",
+                    "thumbnailUrl": null,
+                    "timezone": "Australia/Adelaide",
+                    "websiteUrl": "https://murphy-llc.example",
+                    "welcomeText": "Welcome to Murphy LLC!",
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Organization",
                   },
@@ -4478,6 +4894,63 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "authStrategies": [
+                      "password",
+                    ],
+                    "bannerUrl": null,
+                    "chatSupport": false,
+                    "color": "#b9ecfa",
+                    "country": "Cocos (Keeling) Islands",
+                    "counts": {
+                      "entities": {
+                        "attachment": 24,
+                        "page": 7,
+                      },
+                      "membership": {
+                        "admin": 1,
+                        "member": 19,
+                        "pending": 0,
+                        "total": 3,
+                      },
+                    },
+                    "createdAt": "2024-12-25T15:29:47.111Z",
+                    "createdBy": null,
+                    "defaultLanguage": "en",
+                    "description": "Extended executive database",
+                    "emailDomains": [],
+                    "entityType": "organization",
+                    "id": "rK5ziKXKdzSbuY2s_8QCE",
+                    "languages": [
+                      "en",
+                    ],
+                    "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                    "membership": {
+                      "archived": false,
+                      "contextType": "organization",
+                      "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                      "muted": false,
+                      "order": 1,
+                      "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                      "role": "admin",
+                      "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                    },
+                    "modifiedAt": "2024-12-25T15:29:47.111Z",
+                    "modifiedBy": null,
+                    "name": "Murphy LLC",
+                    "notificationEmail": "notifications@murphy-llc.example",
+                    "restrictions": {
+                      "attachment": 100,
+                      "page": 0,
+                      "user": 1000,
+                    },
+                    "shortName": "Murphy",
+                    "slug": "murphy-llc",
+                    "thumbnailUrl": null,
+                    "timezone": "Australia/Adelaide",
+                    "websiteUrl": "https://murphy-llc.example",
+                    "welcomeText": "Welcome to Murphy LLC!",
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Organization",
                   },
@@ -4708,6 +5181,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "201": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "createdAt": "2024-08-06T10:28:33.226Z",
+                    "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                    "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+                    "displayOrder": 17.33,
+                    "entityType": "page",
+                    "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                    "keywords": "supplanto odio culpa",
+                    "modifiedAt": "2024-08-06T10:28:33.226Z",
+                    "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+                    "name": "Cibus dolores decet surgo aptus.",
+                    "parentId": null,
+                    "status": "unpublished",
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Page",
                   },
@@ -4850,6 +5337,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "createdAt": "2024-08-06T10:28:33.226Z",
+                    "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                    "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+                    "displayOrder": 17.33,
+                    "entityType": "page",
+                    "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                    "keywords": "supplanto odio culpa",
+                    "modifiedAt": "2024-08-06T10:28:33.226Z",
+                    "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+                    "name": "Cibus dolores decet surgo aptus.",
+                    "parentId": null,
+                    "status": "unpublished",
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Page",
                   },
@@ -4940,6 +5441,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "createdAt": "2024-08-06T10:28:33.226Z",
+                    "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                    "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+                    "displayOrder": 17.33,
+                    "entityType": "page",
+                    "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                    "keywords": "supplanto odio culpa",
+                    "modifiedAt": "2024-08-06T10:28:33.226Z",
+                    "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+                    "name": "Cibus dolores decet surgo aptus.",
+                    "parentId": null,
+                    "status": "unpublished",
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Page",
                   },
@@ -5339,26 +5854,26 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "content": {
                 "application/json": {
                   "schema": {
-                    "properties": {
-                      "invitesSentCount": {
-                        "type": "number",
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/SuccessWithRejectedItems",
                       },
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
+                      {
+                        "properties": {
+                          "invitesSentCount": {
+                            "type": "number",
+                          },
                         },
-                        "type": "array",
+                        "required": [
+                          "invitesSentCount",
+                        ],
+                        "type": "object",
                       },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                      "invitesSentCount",
                     ],
-                    "type": "object",
+                    "example": {
+                      "rejectedItems": [],
+                      "success": true,
+                    },
                   },
                 },
               },
@@ -5640,23 +6155,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "rejectedItems": [],
+                    "success": true,
+                  },
                   "schema": {
-                    "properties": {
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
-                        },
-                        "type": "array",
-                      },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                    ],
-                    "type": "object",
+                    "$ref": "#/components/schemas/SuccessWithRejectedItems",
                   },
                 },
               },
@@ -5815,6 +6319,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
                               "type": "object",
                             },
                           ],
+                          "example": {
+                            "bannerUrl": null,
+                            "createdAt": "2024-12-13T11:17:23.643Z",
+                            "description": null,
+                            "email": "franco_corwin@gmail.com",
+                            "entityType": "user",
+                            "firstName": "Franco",
+                            "id": "adq_jxNCo3ZSdxUwcIyz-",
+                            "language": "en",
+                            "lastName": "Corwin",
+                            "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                            "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                            "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                            "mfaRequired": false,
+                            "modifiedAt": "2024-12-13T11:17:23.643Z",
+                            "modifiedBy": null,
+                            "name": "Franco Corwin",
+                            "newsletter": false,
+                            "slug": "francocorwin",
+                            "thumbnailUrl": null,
+                            "userFlags": {},
+                          },
                         },
                         "type": "array",
                       },
@@ -5883,6 +6409,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "bannerUrl": null,
+                    "createdAt": "2024-12-13T11:17:23.643Z",
+                    "description": null,
+                    "email": "franco_corwin@gmail.com",
+                    "entityType": "user",
+                    "firstName": "Franco",
+                    "id": "adq_jxNCo3ZSdxUwcIyz-",
+                    "language": "en",
+                    "lastName": "Corwin",
+                    "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                    "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                    "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-12-13T11:17:23.643Z",
+                    "modifiedBy": null,
+                    "name": "Franco Corwin",
+                    "newsletter": false,
+                    "slug": "francocorwin",
+                    "thumbnailUrl": null,
+                    "userFlags": {},
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/User",
                   },
@@ -5993,6 +6541,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "bannerUrl": null,
+                    "createdAt": "2024-12-13T11:17:23.643Z",
+                    "description": null,
+                    "email": "franco_corwin@gmail.com",
+                    "entityType": "user",
+                    "firstName": "Franco",
+                    "id": "adq_jxNCo3ZSdxUwcIyz-",
+                    "language": "en",
+                    "lastName": "Corwin",
+                    "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                    "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                    "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                    "mfaRequired": false,
+                    "modifiedAt": "2024-12-13T11:17:23.643Z",
+                    "modifiedBy": null,
+                    "name": "Franco Corwin",
+                    "newsletter": false,
+                    "slug": "francocorwin",
+                    "thumbnailUrl": null,
+                    "userFlags": {},
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/User",
                   },
@@ -6075,23 +6645,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "rejectedItems": [],
+                    "success": true,
+                  },
                   "schema": {
-                    "properties": {
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
-                        },
-                        "type": "array",
-                      },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                    ],
-                    "type": "object",
+                    "$ref": "#/components/schemas/SuccessWithRejectedItems",
                   },
                 },
               },
@@ -6445,6 +7004,27 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "bucketName": "attachments",
+                    "contentType": "video/3gpp2",
+                    "convertedContentType": null,
+                    "convertedKey": null,
+                    "createdAt": "2024-10-12T17:43:05.360Z",
+                    "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                    "description": null,
+                    "entityType": "attachment",
+                    "filename": "fondly.m1v",
+                    "groupId": null,
+                    "id": "y5HDs5pltSHUGLcWkE34G",
+                    "modifiedAt": "2024-10-12T17:43:05.360Z",
+                    "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                    "name": "fondly.m1v",
+                    "organizationId": "7EXqgIQTdNUnlmV7IByg2",
+                    "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                    "public": false,
+                    "size": "9426474",
+                    "thumbnailKey": null,
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Attachment",
                   },
@@ -6595,23 +7175,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "rejectedItems": [],
+                    "success": true,
+                  },
                   "schema": {
-                    "properties": {
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
-                        },
-                        "type": "array",
-                      },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                    ],
-                    "type": "object",
+                    "$ref": "#/components/schemas/SuccessWithRejectedItems",
                   },
                 },
               },
@@ -6723,26 +7292,26 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "content": {
                 "application/json": {
                   "schema": {
-                    "properties": {
-                      "invitesSentCount": {
-                        "type": "number",
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/SuccessWithRejectedItems",
                       },
-                      "rejectedItems": {
-                        "items": {
-                          "type": "string",
+                      {
+                        "properties": {
+                          "invitesSentCount": {
+                            "type": "number",
+                          },
                         },
-                        "type": "array",
+                        "required": [
+                          "invitesSentCount",
+                        ],
+                        "type": "object",
                       },
-                      "success": {
-                        "type": "boolean",
-                      },
-                    },
-                    "required": [
-                      "success",
-                      "rejectedItems",
-                      "invitesSentCount",
                     ],
-                    "type": "object",
+                    "example": {
+                      "rejectedItems": [],
+                      "success": true,
+                    },
                   },
                 },
               },
@@ -7300,6 +7869,21 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "200": {
               "content": {
                 "application/json": {
+                  "example": {
+                    "archived": false,
+                    "contextType": "organization",
+                    "createdAt": "2024-10-28T14:52:59.502Z",
+                    "createdBy": "s9bewe1fKAYWRak3UtzV7",
+                    "id": "Kyft2jgCOk1uWez4InpSg",
+                    "modifiedAt": "2024-10-28T14:52:59.502Z",
+                    "modifiedBy": null,
+                    "muted": false,
+                    "order": 90,
+                    "organizationId": "j49ckRo-048_8QTtlJMCI",
+                    "role": "member",
+                    "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI",
+                    "userId": "s9bewe1fKAYWRak3UtzV7",
+                  },
                   "schema": {
                     "$ref": "#/components/schemas/Membership",
                   },
@@ -8865,7 +9449,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "name": "base",
       },
       {
-        "count": 6,
+        "count": 10,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -9032,751 +9616,6 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "type": "object",
       },
       {
-        "name": "User",
-        "ref": "#/components/schemas/User",
-        "schema": {
-          "properties": {
-            "bannerUrl": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "description": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "email": {
-              "format": "email",
-              "required": true,
-              "type": "string",
-            },
-            "entityType": {
-              "enum": [
-                "user",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "firstName": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "language": {
-              "enum": [
-                "en",
-                "nl",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "lastName": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "lastSeenAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "lastSignInAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "lastStartedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "mfaRequired": {
-              "required": true,
-              "type": "boolean",
-            },
-            "modifiedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "modifiedBy": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "name": {
-              "required": true,
-              "type": "string",
-            },
-            "newsletter": {
-              "required": true,
-              "type": "boolean",
-            },
-            "slug": {
-              "required": true,
-              "type": "string",
-            },
-            "thumbnailUrl": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "userFlags": {
-              "properties": {
-                "finishedOnboarding": {
-                  "required": true,
-                  "type": "boolean",
-                },
-              },
-              "required": true,
-              "type": "object",
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "Organization",
-        "ref": "#/components/schemas/Organization",
-        "schema": {
-          "properties": {
-            "authStrategies": {
-              "enum": [
-                "github",
-                "google",
-                "microsoft",
-                "password",
-                "passkey",
-                "totp",
-                "email",
-              ],
-              "itemType": "string",
-              "required": true,
-              "type": "array",
-            },
-            "bannerUrl": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "chatSupport": {
-              "required": true,
-              "type": "boolean",
-            },
-            "color": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "country": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "counts": {
-              "properties": {
-                "entities": {
-                  "properties": {
-                    "attachment": {
-                      "required": true,
-                      "type": "number",
-                    },
-                    "page": {
-                      "required": true,
-                      "type": "number",
-                    },
-                  },
-                  "required": true,
-                  "type": "object",
-                },
-                "membership": {
-                  "properties": {
-                    "admin": {
-                      "required": true,
-                      "type": "number",
-                    },
-                    "member": {
-                      "required": true,
-                      "type": "number",
-                    },
-                    "pending": {
-                      "required": true,
-                      "type": "number",
-                    },
-                    "total": {
-                      "required": true,
-                      "type": "number",
-                    },
-                  },
-                  "required": true,
-                  "type": "object",
-                },
-              },
-              "required": true,
-              "type": "object",
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "createdBy": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "defaultLanguage": {
-              "enum": [
-                "en",
-                "nl",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "description": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "emailDomains": {
-              "itemType": "string",
-              "required": true,
-              "type": "array",
-            },
-            "entityType": {
-              "enum": [
-                "organization",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "languages": {
-              "enum": [
-                "en",
-                "nl",
-              ],
-              "itemType": "string",
-              "minItems": 1,
-              "required": true,
-              "type": "array",
-            },
-            "logoUrl": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "membership": {
-              "anyOf": [
-                {
-                  "properties": {
-                    "archived": {
-                      "required": true,
-                      "type": "boolean",
-                    },
-                    "contextType": {
-                      "enum": [
-                        "organization",
-                      ],
-                      "required": true,
-                      "type": "string",
-                    },
-                    "id": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "muted": {
-                      "required": true,
-                      "type": "boolean",
-                    },
-                    "order": {
-                      "maximum": 140737488355327,
-                      "minimum": -140737488355328,
-                      "required": true,
-                      "type": "number",
-                    },
-                    "organizationId": {
-                      "required": true,
-                      "type": "string",
-                    },
-                    "role": {
-                      "enum": [
-                        "member",
-                        "admin",
-                      ],
-                      "required": true,
-                      "type": "string",
-                    },
-                    "userId": {
-                      "required": true,
-                      "type": "string",
-                    },
-                  },
-                  "ref": "#/components/schemas/MembershipBase",
-                  "required": false,
-                  "type": "object",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-              ],
-              "required": true,
-            },
-            "modifiedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "modifiedBy": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "name": {
-              "required": true,
-              "type": "string",
-            },
-            "notificationEmail": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "shortName": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "slug": {
-              "required": true,
-              "type": "string",
-            },
-            "thumbnailUrl": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "timezone": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "websiteUrl": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "welcomeText": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "Membership",
-        "ref": "#/components/schemas/Membership",
-        "schema": {
-          "properties": {
-            "archived": {
-              "required": true,
-              "type": "boolean",
-            },
-            "contextType": {
-              "enum": [
-                "organization",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "createdBy": {
-              "required": true,
-              "type": "string",
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "modifiedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "modifiedBy": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "muted": {
-              "required": true,
-              "type": "boolean",
-            },
-            "order": {
-              "maximum": 140737488355327,
-              "minimum": -140737488355328,
-              "required": true,
-              "type": "number",
-            },
-            "organizationId": {
-              "required": true,
-              "type": "string",
-            },
-            "role": {
-              "enum": [
-                "member",
-                "admin",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "uniqueKey": {
-              "required": true,
-              "type": "string",
-            },
-            "userId": {
-              "required": true,
-              "type": "string",
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "InactiveMembership",
-        "ref": "#/components/schemas/InactiveMembership",
-        "schema": {
-          "properties": {
-            "contextType": {
-              "enum": [
-                "organization",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "createdBy": {
-              "required": true,
-              "type": "string",
-            },
-            "email": {
-              "required": true,
-              "type": "string",
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "organizationId": {
-              "required": true,
-              "type": "string",
-            },
-            "rejectedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "role": {
-              "enum": [
-                "member",
-                "admin",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "tokenId": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "uniqueKey": {
-              "required": true,
-              "type": "string",
-            },
-            "userId": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "Attachment",
-        "ref": "#/components/schemas/Attachment",
-        "schema": {
-          "properties": {
-            "bucketName": {
-              "required": true,
-              "type": "string",
-            },
-            "contentType": {
-              "required": true,
-              "type": "string",
-            },
-            "convertedContentType": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "convertedKey": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "createdBy": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "description": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "entityType": {
-              "enum": [
-                "attachment",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "filename": {
-              "required": true,
-              "type": "string",
-            },
-            "groupId": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "id": {
-              "required": true,
-              "type": "string",
-            },
-            "modifiedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "modifiedBy": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "name": {
-              "required": true,
-              "type": "string",
-            },
-            "organizationId": {
-              "required": true,
-              "type": "string",
-            },
-            "originalKey": {
-              "required": true,
-              "type": "string",
-            },
-            "public": {
-              "required": true,
-              "type": "boolean",
-            },
-            "size": {
-              "required": true,
-              "type": "string",
-            },
-            "thumbnailKey": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "type": "object",
-      },
-      {
-        "name": "ApiError",
-        "ref": "#/components/schemas/ApiError",
-        "schema": {
-          "properties": {
-            "entityType": {
-              "enum": [
-                "user",
-                "organization",
-                "attachment",
-                "page",
-              ],
-              "required": false,
-              "type": "string",
-            },
-            "logId": {
-              "required": false,
-              "type": "string",
-            },
-            "message": {
-              "required": true,
-              "type": "string",
-            },
-            "method": {
-              "required": false,
-              "type": "string",
-            },
-            "name": {
-              "required": true,
-              "type": "string",
-            },
-            "organizationId": {
-              "required": false,
-              "type": "string",
-            },
-            "path": {
-              "required": false,
-              "type": "string",
-            },
-            "severity": {
-              "enum": [
-                "fatal",
-                "error",
-                "warn",
-                "info",
-                "debug",
-                "trace",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "status": {
-              "maximum": 599,
-              "minimum": 400,
-              "required": true,
-              "type": "integer",
-            },
-            "timestamp": {
-              "required": false,
-              "type": "string",
-            },
-            "type": {
-              "required": true,
-              "type": "string",
-            },
-            "userId": {
-              "required": false,
-              "type": "string",
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "errors",
-        "type": "object",
-      },
-      {
         "description": "Error returned when the request is malformed or contains invalid data.",
         "extendsRef": "#/components/schemas/ApiError",
         "name": "BadRequestError",
@@ -9836,6 +9675,81 @@ The documentation is generated from source code using \`zod\` schemas, converted
               ],
               "required": true,
               "type": "number",
+            },
+            "timestamp": {
+              "required": false,
+              "type": "string",
+            },
+            "type": {
+              "required": true,
+              "type": "string",
+            },
+            "userId": {
+              "required": false,
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "errors",
+        "type": "object",
+      },
+      {
+        "name": "ApiError",
+        "ref": "#/components/schemas/ApiError",
+        "schema": {
+          "properties": {
+            "entityType": {
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page",
+              ],
+              "required": false,
+              "type": "string",
+            },
+            "logId": {
+              "required": false,
+              "type": "string",
+            },
+            "message": {
+              "required": true,
+              "type": "string",
+            },
+            "method": {
+              "required": false,
+              "type": "string",
+            },
+            "name": {
+              "required": true,
+              "type": "string",
+            },
+            "organizationId": {
+              "required": false,
+              "type": "string",
+            },
+            "path": {
+              "required": false,
+              "type": "string",
+            },
+            "severity": {
+              "enum": [
+                "fatal",
+                "error",
+                "warn",
+                "info",
+                "debug",
+                "trace",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "status": {
+              "maximum": 599,
+              "minimum": 400,
+              "required": true,
+              "type": "integer",
             },
             "timestamp": {
               "required": false,
@@ -10172,6 +10086,865 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "type": "object",
       },
       {
+        "name": "Me",
+        "ref": "#/components/schemas/Me",
+        "schema": {
+          "properties": {
+            "systemRole": {
+              "description": "Explain system role here",
+              "enum": [
+                "admin",
+                "user",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "user": {
+              "properties": {
+                "bannerUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "createdAt": {
+                  "required": true,
+                  "type": "string",
+                },
+                "description": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "email": {
+                  "format": "email",
+                  "required": true,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "firstName": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "id": {
+                  "required": true,
+                  "type": "string",
+                },
+                "language": {
+                  "enum": [
+                    "en",
+                    "nl",
+                  ],
+                  "required": true,
+                  "type": "string",
+                },
+                "lastName": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "lastSeenAt": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "lastSignInAt": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "lastStartedAt": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "mfaRequired": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "modifiedAt": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "modifiedBy": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "name": {
+                  "required": true,
+                  "type": "string",
+                },
+                "newsletter": {
+                  "required": true,
+                  "type": "boolean",
+                },
+                "slug": {
+                  "required": true,
+                  "type": "string",
+                },
+                "thumbnailUrl": {
+                  "required": true,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "userFlags": {
+                  "properties": {
+                    "finishedOnboarding": {
+                      "required": true,
+                      "type": "boolean",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+              },
+              "ref": "#/components/schemas/User",
+              "required": true,
+              "type": "object",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "User",
+        "ref": "#/components/schemas/User",
+        "schema": {
+          "properties": {
+            "bannerUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "description": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "email": {
+              "format": "email",
+              "required": true,
+              "type": "string",
+            },
+            "entityType": {
+              "enum": [
+                "user",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "firstName": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "language": {
+              "enum": [
+                "en",
+                "nl",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "lastName": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "lastSeenAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "lastSignInAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "lastStartedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "mfaRequired": {
+              "required": true,
+              "type": "boolean",
+            },
+            "modifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "modifiedBy": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "name": {
+              "required": true,
+              "type": "string",
+            },
+            "newsletter": {
+              "required": true,
+              "type": "boolean",
+            },
+            "slug": {
+              "required": true,
+              "type": "string",
+            },
+            "thumbnailUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "userFlags": {
+              "properties": {
+                "finishedOnboarding": {
+                  "required": true,
+                  "type": "boolean",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "MeAuthData",
+        "ref": "#/components/schemas/MeAuthData",
+        "schema": {
+          "properties": {
+            "enabledOAuth": {
+              "enum": [
+                "github",
+              ],
+              "itemType": "string",
+              "required": true,
+              "type": "array",
+            },
+            "hasPassword": {
+              "required": true,
+              "type": "boolean",
+            },
+            "hasTotp": {
+              "required": true,
+              "type": "boolean",
+            },
+            "passkeys": {
+              "itemType": "object",
+              "items": {
+                "properties": {
+                  "browser": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "deviceName": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceOs": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceType": {
+                    "enum": [
+                      "desktop",
+                      "mobile",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "nameOnDevice": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "userId": {
+                    "required": true,
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "required": true,
+              "type": "array",
+            },
+            "sessions": {
+              "itemType": "object",
+              "items": {
+                "properties": {
+                  "authStrategy": {
+                    "enum": [
+                      "github",
+                      "google",
+                      "microsoft",
+                      "password",
+                      "passkey",
+                      "totp",
+                      "email",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "browser": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "deviceName": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceOs": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deviceType": {
+                    "enum": [
+                      "desktop",
+                      "mobile",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "expiresAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "isCurrent": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "type": {
+                    "enum": [
+                      "regular",
+                      "impersonation",
+                      "mfa",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "userId": {
+                    "required": true,
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "required": true,
+              "type": "array",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "InactiveMembership",
+        "ref": "#/components/schemas/InactiveMembership",
+        "schema": {
+          "properties": {
+            "contextType": {
+              "enum": [
+                "organization",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "createdBy": {
+              "required": true,
+              "type": "string",
+            },
+            "email": {
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "organizationId": {
+              "required": true,
+              "type": "string",
+            },
+            "rejectedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "role": {
+              "enum": [
+                "member",
+                "admin",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "tokenId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "uniqueKey": {
+              "required": true,
+              "type": "string",
+            },
+            "userId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "SuccessWithRejectedItems",
+        "ref": "#/components/schemas/SuccessWithRejectedItems",
+        "schema": {
+          "properties": {
+            "rejectedItems": {
+              "itemType": "string",
+              "required": true,
+              "type": "array",
+            },
+            "success": {
+              "required": true,
+              "type": "boolean",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "UploadToken",
+        "ref": "#/components/schemas/UploadToken",
+        "schema": {
+          "properties": {
+            "params": {
+              "properties": {
+                "auth": {
+                  "properties": {
+                    "expires": {
+                      "required": false,
+                      "type": "string",
+                    },
+                    "key": {
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+            "public": {
+              "required": true,
+              "type": "boolean",
+            },
+            "s3": {
+              "required": true,
+              "type": "boolean",
+            },
+            "signature": {
+              "required": true,
+              "type": "string",
+            },
+            "sub": {
+              "required": true,
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "Organization",
+        "ref": "#/components/schemas/Organization",
+        "schema": {
+          "properties": {
+            "authStrategies": {
+              "enum": [
+                "github",
+                "google",
+                "microsoft",
+                "password",
+                "passkey",
+                "totp",
+                "email",
+              ],
+              "itemType": "string",
+              "required": true,
+              "type": "array",
+            },
+            "bannerUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "chatSupport": {
+              "required": true,
+              "type": "boolean",
+            },
+            "color": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "country": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "counts": {
+              "properties": {
+                "entities": {
+                  "properties": {
+                    "attachment": {
+                      "required": true,
+                      "type": "number",
+                    },
+                    "page": {
+                      "required": true,
+                      "type": "number",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+                "membership": {
+                  "properties": {
+                    "admin": {
+                      "required": true,
+                      "type": "number",
+                    },
+                    "member": {
+                      "required": true,
+                      "type": "number",
+                    },
+                    "pending": {
+                      "required": true,
+                      "type": "number",
+                    },
+                    "total": {
+                      "required": true,
+                      "type": "number",
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "createdBy": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "defaultLanguage": {
+              "enum": [
+                "en",
+                "nl",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "description": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "emailDomains": {
+              "itemType": "string",
+              "required": true,
+              "type": "array",
+            },
+            "entityType": {
+              "enum": [
+                "organization",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "languages": {
+              "enum": [
+                "en",
+                "nl",
+              ],
+              "itemType": "string",
+              "minItems": 1,
+              "required": true,
+              "type": "array",
+            },
+            "logoUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "membership": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "archived": {
+                      "required": true,
+                      "type": "boolean",
+                    },
+                    "contextType": {
+                      "enum": [
+                        "organization",
+                      ],
+                      "required": true,
+                      "type": "string",
+                    },
+                    "id": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "muted": {
+                      "required": true,
+                      "type": "boolean",
+                    },
+                    "order": {
+                      "maximum": 140737488355327,
+                      "minimum": -140737488355328,
+                      "required": true,
+                      "type": "number",
+                    },
+                    "organizationId": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "role": {
+                      "enum": [
+                        "member",
+                        "admin",
+                      ],
+                      "required": true,
+                      "type": "string",
+                    },
+                    "userId": {
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "ref": "#/components/schemas/MembershipBase",
+                  "required": false,
+                  "type": "object",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+              ],
+              "required": true,
+            },
+            "modifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "modifiedBy": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "name": {
+              "required": true,
+              "type": "string",
+            },
+            "notificationEmail": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "shortName": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "slug": {
+              "required": true,
+              "type": "string",
+            },
+            "thumbnailUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "timezone": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "websiteUrl": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "welcomeText": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
         "name": "Page",
         "ref": "#/components/schemas/Page",
         "schema": {
@@ -10240,6 +11013,198 @@ The documentation is generated from source code using \`zod\` schemas, converted
                 "published",
                 "archived",
               ],
+              "required": true,
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
+        "schema": {
+          "properties": {
+            "bucketName": {
+              "required": true,
+              "type": "string",
+            },
+            "contentType": {
+              "required": true,
+              "type": "string",
+            },
+            "convertedContentType": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "convertedKey": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "createdBy": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "description": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "entityType": {
+              "enum": [
+                "attachment",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "filename": {
+              "required": true,
+              "type": "string",
+            },
+            "groupId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "modifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "modifiedBy": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "name": {
+              "required": true,
+              "type": "string",
+            },
+            "organizationId": {
+              "required": true,
+              "type": "string",
+            },
+            "originalKey": {
+              "required": true,
+              "type": "string",
+            },
+            "public": {
+              "required": true,
+              "type": "boolean",
+            },
+            "size": {
+              "required": true,
+              "type": "string",
+            },
+            "thumbnailKey": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "name": "Membership",
+        "ref": "#/components/schemas/Membership",
+        "schema": {
+          "properties": {
+            "archived": {
+              "required": true,
+              "type": "boolean",
+            },
+            "contextType": {
+              "enum": [
+                "organization",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "createdBy": {
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "modifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "modifiedBy": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "muted": {
+              "required": true,
+              "type": "boolean",
+            },
+            "order": {
+              "maximum": 140737488355327,
+              "minimum": -140737488355328,
+              "required": true,
+              "type": "number",
+            },
+            "organizationId": {
+              "required": true,
+              "type": "string",
+            },
+            "role": {
+              "enum": [
+                "member",
+                "admin",
+              ],
+              "required": true,
+              "type": "string",
+            },
+            "uniqueKey": {
+              "required": true,
+              "type": "string",
+            },
+            "userId": {
               "required": true,
               "type": "string",
             },
@@ -11395,6 +12360,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Success",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
+              "name": "SuccessWithRejectedItems",
+              "ref": "#/components/schemas/SuccessWithRejectedItems",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -11408,6 +12379,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "boolean",
                   },
                 },
+                "ref": "#/components/schemas/SuccessWithRejectedItems",
                 "type": "object",
               },
               "status": 200,
@@ -11855,6 +12827,27 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Attachment was updated",
+              "example": {
+                "bucketName": "attachments",
+                "contentType": "video/3gpp2",
+                "convertedContentType": null,
+                "convertedKey": null,
+                "createdAt": "2024-10-12T17:43:05.360Z",
+                "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                "description": null,
+                "entityType": "attachment",
+                "filename": "fondly.m1v",
+                "groupId": null,
+                "id": "y5HDs5pltSHUGLcWkE34G",
+                "modifiedAt": "2024-10-12T17:43:05.360Z",
+                "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+                "name": "fondly.m1v",
+                "organizationId": "7EXqgIQTdNUnlmV7IByg2",
+                "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                "public": false,
+                "size": "9426474",
+                "thumbnailKey": null,
+              },
               "name": "Attachment",
               "ref": "#/components/schemas/Attachment",
               "schema": {
@@ -24592,6 +25585,33 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "User",
+              "example": {
+                "systemRole": "user",
+                "user": {
+                  "bannerUrl": null,
+                  "createdAt": "2024-07-14T22:49:14.651Z",
+                  "description": null,
+                  "email": "odell.gislason@yahoo.com",
+                  "entityType": "user",
+                  "firstName": "Odell",
+                  "id": "KNGgftxF37fbRhY1aJvFC",
+                  "language": "en",
+                  "lastName": "Gislason",
+                  "lastSeenAt": "2024-07-14T22:49:14.651Z",
+                  "lastSignInAt": "2024-07-14T22:49:14.651Z",
+                  "lastStartedAt": "2024-07-14T22:49:14.651Z",
+                  "mfaRequired": false,
+                  "modifiedAt": "2024-07-14T22:49:14.651Z",
+                  "modifiedBy": null,
+                  "name": "Odell Gislason DVM",
+                  "newsletter": false,
+                  "slug": "odellgislason57",
+                  "thumbnailUrl": null,
+                  "userFlags": {},
+                },
+              },
+              "name": "Me",
+              "ref": "#/components/schemas/Me",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -24736,6 +25756,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "object",
                   },
                 },
+                "ref": "#/components/schemas/Me",
                 "type": "object",
               },
               "status": 200,
@@ -25222,6 +26243,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "User",
+              "example": {
+                "bannerUrl": null,
+                "createdAt": "2024-12-13T11:17:23.643Z",
+                "description": null,
+                "email": "franco_corwin@gmail.com",
+                "entityType": "user",
+                "firstName": "Franco",
+                "id": "adq_jxNCo3ZSdxUwcIyz-",
+                "language": "en",
+                "lastName": "Corwin",
+                "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                "mfaRequired": false,
+                "modifiedAt": "2024-12-13T11:17:23.643Z",
+                "modifiedBy": null,
+                "name": "Franco Corwin",
+                "newsletter": false,
+                "slug": "francocorwin",
+                "thumbnailUrl": null,
+                "userFlags": {},
+              },
               "name": "User",
               "ref": "#/components/schemas/User",
               "schema": {
@@ -26223,6 +27266,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "User",
+              "example": {
+                "bannerUrl": null,
+                "createdAt": "2024-12-13T11:17:23.643Z",
+                "description": null,
+                "email": "franco_corwin@gmail.com",
+                "entityType": "user",
+                "firstName": "Franco",
+                "id": "adq_jxNCo3ZSdxUwcIyz-",
+                "language": "en",
+                "lastName": "Corwin",
+                "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                "mfaRequired": false,
+                "modifiedAt": "2024-12-13T11:17:23.643Z",
+                "modifiedBy": null,
+                "name": "Franco Corwin",
+                "newsletter": false,
+                "slug": "francocorwin",
+                "thumbnailUrl": null,
+                "userFlags": {},
+              },
               "name": "User",
               "ref": "#/components/schemas/User",
               "schema": {
@@ -26771,6 +27836,31 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "User sign-up info",
+              "example": {
+                "enabledOAuth": [
+                  "github",
+                ],
+                "hasPassword": true,
+                "hasTotp": false,
+                "passkeys": [],
+                "sessions": [
+                  {
+                    "authStrategy": "password",
+                    "browser": "Firefox",
+                    "createdAt": "2024-05-29T08:00:36.178Z",
+                    "deviceName": "Firefox on Windows",
+                    "deviceOs": "Windows",
+                    "deviceType": "desktop",
+                    "expiresAt": "2024-06-28T08:00:36.178Z",
+                    "id": "XAt10Xd3dBO8leLbQS8OH",
+                    "isCurrent": true,
+                    "type": "regular",
+                    "userId": "0VF-w6LQGNtYJc9oOlWUO",
+                  },
+                ],
+              },
+              "name": "MeAuthData",
+              "ref": "#/components/schemas/MeAuthData",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -26927,6 +28017,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "array",
                   },
                 },
+                "ref": "#/components/schemas/MeAuthData",
                 "type": "object",
               },
               "status": 200,
@@ -27906,6 +28997,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Success",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
+              "name": "SuccessWithRejectedItems",
+              "ref": "#/components/schemas/SuccessWithRejectedItems",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -27919,6 +29016,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "boolean",
                   },
                 },
+                "ref": "#/components/schemas/SuccessWithRejectedItems",
                 "type": "object",
               },
               "status": 200,
@@ -28800,6 +29898,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Upload token with a scope for a user or organization",
+              "example": {
+                "params": {
+                  "auth": {
+                    "expires": "2025-01-01T04:15:50.483Z",
+                    "key": "uploads/-WevYEtehwyoG0ux7Q1ox",
+                  },
+                },
+                "public": false,
+                "s3": true,
+                "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+                "sub": "2NpNbC-rtGtYVb1XPh3cb",
+              },
+              "name": "UploadToken",
+              "ref": "#/components/schemas/UploadToken",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -28840,6 +29952,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "string",
                   },
                 },
+                "ref": "#/components/schemas/UploadToken",
                 "type": "object",
               },
               "status": 200,
@@ -29735,8 +30848,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Number of sent invitations",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
               "schema": {
                 "contentType": "application/json",
+                "extendsRef": "#/components/schemas/SuccessWithRejectedItems",
                 "properties": {
                   "invitesSentCount": {
                     "required": true,
@@ -30210,6 +31328,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Success",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
+              "name": "SuccessWithRejectedItems",
+              "ref": "#/components/schemas/SuccessWithRejectedItems",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -30223,6 +31347,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "boolean",
                   },
                 },
+                "ref": "#/components/schemas/SuccessWithRejectedItems",
                 "type": "object",
               },
               "status": 200,
@@ -30682,6 +31807,21 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Membership updated",
+              "example": {
+                "archived": false,
+                "contextType": "organization",
+                "createdAt": "2024-10-28T14:52:59.502Z",
+                "createdBy": "s9bewe1fKAYWRak3UtzV7",
+                "id": "Kyft2jgCOk1uWez4InpSg",
+                "modifiedAt": "2024-10-28T14:52:59.502Z",
+                "modifiedBy": null,
+                "muted": false,
+                "order": 90,
+                "organizationId": "j49ckRo-048_8QTtlJMCI",
+                "role": "member",
+                "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI",
+                "userId": "s9bewe1fKAYWRak3UtzV7",
+              },
               "name": "Membership",
               "ref": "#/components/schemas/Membership",
               "schema": {
@@ -33741,6 +34881,63 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Organization was created",
+              "example": {
+                "authStrategies": [
+                  "password",
+                ],
+                "bannerUrl": null,
+                "chatSupport": false,
+                "color": "#b9ecfa",
+                "country": "Cocos (Keeling) Islands",
+                "counts": {
+                  "entities": {
+                    "attachment": 24,
+                    "page": 7,
+                  },
+                  "membership": {
+                    "admin": 1,
+                    "member": 19,
+                    "pending": 0,
+                    "total": 3,
+                  },
+                },
+                "createdAt": "2024-12-25T15:29:47.111Z",
+                "createdBy": null,
+                "defaultLanguage": "en",
+                "description": "Extended executive database",
+                "emailDomains": [],
+                "entityType": "organization",
+                "id": "rK5ziKXKdzSbuY2s_8QCE",
+                "languages": [
+                  "en",
+                ],
+                "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                "membership": {
+                  "archived": false,
+                  "contextType": "organization",
+                  "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                  "muted": false,
+                  "order": 1,
+                  "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                  "role": "admin",
+                  "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                },
+                "modifiedAt": "2024-12-25T15:29:47.111Z",
+                "modifiedBy": null,
+                "name": "Murphy LLC",
+                "notificationEmail": "notifications@murphy-llc.example",
+                "restrictions": {
+                  "attachment": 100,
+                  "page": 0,
+                  "user": 1000,
+                },
+                "shortName": "Murphy",
+                "slug": "murphy-llc",
+                "thumbnailUrl": null,
+                "timezone": "Australia/Adelaide",
+                "websiteUrl": "https://murphy-llc.example",
+                "welcomeText": "Welcome to Murphy LLC!",
+              },
               "schema": {
                 "contentType": "application/json",
                 "extendsRef": "#/components/schemas/Organization",
@@ -35184,6 +36381,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Success",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
+              "name": "SuccessWithRejectedItems",
+              "ref": "#/components/schemas/SuccessWithRejectedItems",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -35197,6 +36400,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "boolean",
                   },
                 },
+                "ref": "#/components/schemas/SuccessWithRejectedItems",
                 "type": "object",
               },
               "status": 200,
@@ -35625,6 +36829,63 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Organization",
+              "example": {
+                "authStrategies": [
+                  "password",
+                ],
+                "bannerUrl": null,
+                "chatSupport": false,
+                "color": "#b9ecfa",
+                "country": "Cocos (Keeling) Islands",
+                "counts": {
+                  "entities": {
+                    "attachment": 24,
+                    "page": 7,
+                  },
+                  "membership": {
+                    "admin": 1,
+                    "member": 19,
+                    "pending": 0,
+                    "total": 3,
+                  },
+                },
+                "createdAt": "2024-12-25T15:29:47.111Z",
+                "createdBy": null,
+                "defaultLanguage": "en",
+                "description": "Extended executive database",
+                "emailDomains": [],
+                "entityType": "organization",
+                "id": "rK5ziKXKdzSbuY2s_8QCE",
+                "languages": [
+                  "en",
+                ],
+                "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                "membership": {
+                  "archived": false,
+                  "contextType": "organization",
+                  "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                  "muted": false,
+                  "order": 1,
+                  "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                  "role": "admin",
+                  "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                },
+                "modifiedAt": "2024-12-25T15:29:47.111Z",
+                "modifiedBy": null,
+                "name": "Murphy LLC",
+                "notificationEmail": "notifications@murphy-llc.example",
+                "restrictions": {
+                  "attachment": 100,
+                  "page": 0,
+                  "user": 1000,
+                },
+                "shortName": "Murphy",
+                "slug": "murphy-llc",
+                "thumbnailUrl": null,
+                "timezone": "Australia/Adelaide",
+                "websiteUrl": "https://murphy-llc.example",
+                "welcomeText": "Welcome to Murphy LLC!",
+              },
               "name": "Organization",
               "ref": "#/components/schemas/Organization",
               "schema": {
@@ -36455,6 +37716,63 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Organization was updated",
+              "example": {
+                "authStrategies": [
+                  "password",
+                ],
+                "bannerUrl": null,
+                "chatSupport": false,
+                "color": "#b9ecfa",
+                "country": "Cocos (Keeling) Islands",
+                "counts": {
+                  "entities": {
+                    "attachment": 24,
+                    "page": 7,
+                  },
+                  "membership": {
+                    "admin": 1,
+                    "member": 19,
+                    "pending": 0,
+                    "total": 3,
+                  },
+                },
+                "createdAt": "2024-12-25T15:29:47.111Z",
+                "createdBy": null,
+                "defaultLanguage": "en",
+                "description": "Extended executive database",
+                "emailDomains": [],
+                "entityType": "organization",
+                "id": "rK5ziKXKdzSbuY2s_8QCE",
+                "languages": [
+                  "en",
+                ],
+                "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+                "membership": {
+                  "archived": false,
+                  "contextType": "organization",
+                  "id": "ZFMnYJm5p-nyT4XZM_aPW",
+                  "muted": false,
+                  "order": 1,
+                  "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+                  "role": "admin",
+                  "userId": "4RSiGNUzWMaXMVIBMnxnO",
+                },
+                "modifiedAt": "2024-12-25T15:29:47.111Z",
+                "modifiedBy": null,
+                "name": "Murphy LLC",
+                "notificationEmail": "notifications@murphy-llc.example",
+                "restrictions": {
+                  "attachment": 100,
+                  "page": 0,
+                  "user": 1000,
+                },
+                "shortName": "Murphy",
+                "slug": "murphy-llc",
+                "thumbnailUrl": null,
+                "timezone": "Australia/Adelaide",
+                "websiteUrl": "https://murphy-llc.example",
+                "welcomeText": "Welcome to Murphy LLC!",
+              },
               "name": "Organization",
               "ref": "#/components/schemas/Organization",
               "schema": {
@@ -37599,6 +38917,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Page",
+              "example": {
+                "createdAt": "2024-08-06T10:28:33.226Z",
+                "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+                "displayOrder": 17.33,
+                "entityType": "page",
+                "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                "keywords": "supplanto odio culpa",
+                "modifiedAt": "2024-08-06T10:28:33.226Z",
+                "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+                "name": "Cibus dolores decet surgo aptus.",
+                "parentId": null,
+                "status": "unpublished",
+              },
               "name": "Page",
               "ref": "#/components/schemas/Page",
               "schema": {
@@ -39069,6 +40401,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Page",
+              "example": {
+                "createdAt": "2024-08-06T10:28:33.226Z",
+                "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+                "displayOrder": 17.33,
+                "entityType": "page",
+                "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                "keywords": "supplanto odio culpa",
+                "modifiedAt": "2024-08-06T10:28:33.226Z",
+                "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+                "name": "Cibus dolores decet surgo aptus.",
+                "parentId": null,
+                "status": "unpublished",
+              },
               "name": "Page",
               "ref": "#/components/schemas/Page",
               "schema": {
@@ -39611,6 +40957,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Page updated",
+              "example": {
+                "createdAt": "2024-08-06T10:28:33.226Z",
+                "createdBy": "ph9yKadCThSPHaLw6jUV_",
+                "description": "[{"content":[{"type":"text","text":"Praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\\nDepono sto benigne delego decumbo adaugeo. Valetudo video aer addo crinis amissio alius allatus solium delectus. Tutamen inventore contra complectus summa umquam nobis dapifer.","styles":{}}],"children":[]}]",
+                "displayOrder": 17.33,
+                "entityType": "page",
+                "id": "ipqyAZOx_wYoSB_T2Sbzd",
+                "keywords": "supplanto odio culpa",
+                "modifiedAt": "2024-08-06T10:28:33.226Z",
+                "modifiedBy": "ph9yKadCThSPHaLw6jUV_",
+                "name": "Cibus dolores decet surgo aptus.",
+                "parentId": null,
+                "status": "unpublished",
+              },
               "name": "Page",
               "ref": "#/components/schemas/Page",
               "schema": {
@@ -41539,8 +42899,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Invitations are sent",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
               "schema": {
                 "contentType": "application/json",
+                "extendsRef": "#/components/schemas/SuccessWithRejectedItems",
                 "properties": {
                   "invitesSentCount": {
                     "required": true,
@@ -43993,6 +45358,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "Success",
+              "example": {
+                "rejectedItems": [],
+                "success": true,
+              },
+              "name": "SuccessWithRejectedItems",
+              "ref": "#/components/schemas/SuccessWithRejectedItems",
               "schema": {
                 "contentType": "application/json",
                 "properties": {
@@ -44006,6 +45377,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "boolean",
                   },
                 },
+                "ref": "#/components/schemas/SuccessWithRejectedItems",
                 "type": "object",
               },
               "status": 200,
@@ -44434,6 +45806,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "User",
+              "example": {
+                "bannerUrl": null,
+                "createdAt": "2024-12-13T11:17:23.643Z",
+                "description": null,
+                "email": "franco_corwin@gmail.com",
+                "entityType": "user",
+                "firstName": "Franco",
+                "id": "adq_jxNCo3ZSdxUwcIyz-",
+                "language": "en",
+                "lastName": "Corwin",
+                "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                "mfaRequired": false,
+                "modifiedAt": "2024-12-13T11:17:23.643Z",
+                "modifiedBy": null,
+                "name": "Franco Corwin",
+                "newsletter": false,
+                "slug": "francocorwin",
+                "thumbnailUrl": null,
+                "userFlags": {},
+              },
               "name": "User",
               "ref": "#/components/schemas/User",
               "schema": {
@@ -45050,6 +46444,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
             {
               "contentType": "application/json",
               "description": "User",
+              "example": {
+                "bannerUrl": null,
+                "createdAt": "2024-12-13T11:17:23.643Z",
+                "description": null,
+                "email": "franco_corwin@gmail.com",
+                "entityType": "user",
+                "firstName": "Franco",
+                "id": "adq_jxNCo3ZSdxUwcIyz-",
+                "language": "en",
+                "lastName": "Corwin",
+                "lastSeenAt": "2024-12-13T11:17:23.643Z",
+                "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                "lastStartedAt": "2024-12-13T11:17:23.643Z",
+                "mfaRequired": false,
+                "modifiedAt": "2024-12-13T11:17:23.643Z",
+                "modifiedBy": null,
+                "name": "Franco Corwin",
+                "newsletter": false,
+                "slug": "francocorwin",
+                "thumbnailUrl": null,
+                "userFlags": {},
+              },
               "name": "User",
               "ref": "#/components/schemas/User",
               "schema": {

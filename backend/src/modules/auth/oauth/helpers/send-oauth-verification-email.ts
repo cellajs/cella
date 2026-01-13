@@ -14,7 +14,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OAuthVerificationEmail, OAuthVerificationEmailProps } from '../../../../../emails/oauth-verification';
+import { OAuthVerificationEmail, type OAuthVerificationEmailProps } from '../../../../../emails';
 
 interface Props {
   userId: string;

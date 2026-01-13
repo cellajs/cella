@@ -10,6 +10,7 @@ import {
   validNameSchema,
   validSlugSchema,
 } from '#/utils/schema/common';
+import { mockUserResponse } from '../../../mocks/mock-user';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
@@ -26,7 +27,7 @@ export const userFlagsSchema = z.object(
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
   userFlags: userFlagsSchema,
-}).openapi('User');
+}).openapi('User', { example: mockUserResponse() });
 
 export const memberSchema = z
   .object({

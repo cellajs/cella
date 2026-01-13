@@ -9,7 +9,7 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/basic';
+import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks';
 import { defaultAdminUser } from '../fixtures';
 import { isOrganizationSeeded as isAlreadySeeded } from '../utils';
 
@@ -53,8 +53,8 @@ export const organizationsSeed = async () => {
       .values(userRecords)
       .returning()
       .onConflictDoNothing();
-      
-   // Make password record for each user → Insert into the database
+
+    // Make password record for each user → Insert into the database
     const passwordRecords = users.map(user => mockPassword(user, hashed));
     await db.insert(passwordsTable).values(passwordRecords).onConflictDoNothing();
 

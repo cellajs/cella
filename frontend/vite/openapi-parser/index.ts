@@ -9,15 +9,7 @@ export type { SchemaTag } from './categorize';
 // Categorization
 export { getSchemaTag } from './categorize';
 // File generators
-export {
-  generateIndexFile,
-  generateInfoFile,
-  generateOperationHash,
-  generateOperationsFile,
-  generateSchemasFile,
-  generateTagDetailsFile,
-  generateTagsFile,
-} from './file-generators';
+export { generateOperationHash } from './file-generators';
 export type { ParsedOpenApiSpec } from './parse-spec';
 
 // Spec parsing

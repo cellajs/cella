@@ -20,4 +20,5 @@ export const unsubscribeTokensTable = pgTable(
   (table) => [index('users_token_index').on(table.token)],
 );
 
+export type UnsubscribeTokenModel = typeof unsubscribeTokensTable.$inferSelect;
 export type InsertUnsubscribeTokenModel = typeof unsubscribeTokensTable.$inferInsert;

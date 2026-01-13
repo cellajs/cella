@@ -10,12 +10,15 @@ import {
   paginationQuerySchema,
   validEmailSchema,
 } from '#/utils/schema/common';
+import { mockInactiveMembershipResponse, mockMembershipResponse } from '../../../mocks/mock-membership';
 
-export const membershipSchema = z.object(createSelectSchema(membershipsTable).shape).openapi('Membership');
+export const membershipSchema = z
+  .object(createSelectSchema(membershipsTable).shape)
+  .openapi('Membership', { example: mockMembershipResponse() });
 
 export const inactiveMembershipSchema = z
   .object(createSelectSchema(inactiveMembershipsTable).shape)
-  .openapi('InactiveMembership');
+  .openapi('InactiveMembership', { example: mockInactiveMembershipResponse() });
 
 export const membershipBaseSchema = membershipSchema
   .omit({

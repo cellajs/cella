@@ -8,7 +8,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
-import { mockEmail, mockUser } from '../../mocks/basic';
+import { mockEmail, mockUser } from '../../mocks';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders } from '../fixtures';
 import {

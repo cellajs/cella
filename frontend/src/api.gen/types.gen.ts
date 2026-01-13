@@ -39,6 +39,64 @@ export type MembershipBase = {
   organizationId: string;
 };
 
+/**
+ * Error returned when the request is malformed or contains invalid data.
+ */
+export type BadRequestError = ApiError & {
+  status?: 400;
+};
+
+export type ApiError = {
+  name: string;
+  message: string;
+  type: string;
+  status: number;
+  severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+  entityType?: 'user' | 'organization' | 'attachment' | 'page';
+  logId?: string;
+  path?: string;
+  method?: string;
+  timestamp?: string;
+  userId?: string;
+  organizationId?: string;
+};
+
+/**
+ * Error returned when authentication is missing or invalid.
+ */
+export type UnauthorizedError = ApiError & {
+  status?: 401;
+};
+
+/**
+ * Error returned when the user lacks permission for the requested action.
+ */
+export type ForbiddenError = ApiError & {
+  status?: 403;
+};
+
+/**
+ * Error returned when the requested resource cannot be found.
+ */
+export type NotFoundError = ApiError & {
+  status?: 404;
+};
+
+/**
+ * Error returned when rate limits are exceeded.
+ */
+export type TooManyRequestsError = ApiError & {
+  status?: 429;
+};
+
+export type Me = {
+  user: User;
+  /**
+   * Explain system role here
+   */
+  systemRole: 'admin' | 'user';
+};
+
 export type User = {
   createdAt: string;
   id: string;
@@ -62,6 +120,73 @@ export type User = {
   lastStartedAt: string | null;
   lastSignInAt: string | null;
   modifiedBy: string | null;
+};
+
+export type MeAuthData = {
+  enabledOAuth: Array<'github'>;
+  hasTotp: boolean;
+  hasPassword: boolean;
+  sessions: Array<{
+    createdAt: string;
+    id: string;
+    type: 'regular' | 'impersonation' | 'mfa';
+    userId: string;
+    deviceName: string | null;
+    deviceType: 'desktop' | 'mobile';
+    deviceOs: string | null;
+    browser: string | null;
+    authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
+    expiresAt: string;
+    isCurrent: boolean;
+  }>;
+  passkeys: Array<{
+    id: string;
+    userId: string;
+    deviceName: string | null;
+    deviceType: 'desktop' | 'mobile';
+    deviceOs: string | null;
+    browser: string | null;
+    nameOnDevice: string;
+    createdAt: string;
+  }>;
+};
+
+export type InactiveMembership = {
+  createdAt: string;
+  id: string;
+  contextType: 'organization';
+  email: string;
+  userId: string | null;
+  tokenId: string | null;
+  role: 'member' | 'admin';
+  rejectedAt: string | null;
+  createdBy: string;
+  organizationId: string;
+  uniqueKey: string;
+};
+
+export type SuccessWithRejectedItems = {
+  success: boolean;
+  rejectedItems: Array<string>;
+};
+
+export type UploadToken = {
+  public: boolean;
+  sub: string;
+  s3: boolean;
+  signature: string;
+  params: {
+    auth: {
+      key: string;
+      expires?: string;
+    };
+    [key: string]:
+      | unknown
+      | {
+          key: string;
+          expires?: string;
+        };
+  };
 };
 
 export type Organization = {
@@ -104,34 +229,19 @@ export type Organization = {
   };
 };
 
-export type Membership = {
+export type Page = {
   createdAt: string;
   id: string;
-  contextType: 'organization';
-  userId: string;
-  role: 'member' | 'admin';
+  entityType: 'page';
+  name: string;
+  description: string;
+  keywords: string;
+  status: 'unpublished' | 'published' | 'archived';
+  parentId: string | null;
+  displayOrder: number;
   createdBy: string;
   modifiedAt: string | null;
   modifiedBy: string | null;
-  archived: boolean;
-  muted: boolean;
-  order: number;
-  organizationId: string;
-  uniqueKey: string;
-};
-
-export type InactiveMembership = {
-  createdAt: string;
-  id: string;
-  contextType: 'organization';
-  email: string;
-  userId: string | null;
-  tokenId: string | null;
-  role: 'member' | 'admin';
-  rejectedAt: string | null;
-  createdBy: string;
-  organizationId: string;
-  uniqueKey: string;
 };
 
 export type Attachment = {
@@ -156,69 +266,20 @@ export type Attachment = {
   organizationId: string;
 };
 
-export type ApiError = {
-  name: string;
-  message: string;
-  type: string;
-  status: number;
-  severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  entityType?: 'user' | 'organization' | 'attachment' | 'page';
-  logId?: string;
-  path?: string;
-  method?: string;
-  timestamp?: string;
-  userId?: string;
-  organizationId?: string;
-};
-
-/**
- * Error returned when the request is malformed or contains invalid data.
- */
-export type BadRequestError = ApiError & {
-  status?: 400;
-};
-
-/**
- * Error returned when authentication is missing or invalid.
- */
-export type UnauthorizedError = ApiError & {
-  status?: 401;
-};
-
-/**
- * Error returned when the user lacks permission for the requested action.
- */
-export type ForbiddenError = ApiError & {
-  status?: 403;
-};
-
-/**
- * Error returned when the requested resource cannot be found.
- */
-export type NotFoundError = ApiError & {
-  status?: 404;
-};
-
-/**
- * Error returned when rate limits are exceeded.
- */
-export type TooManyRequestsError = ApiError & {
-  status?: 429;
-};
-
-export type Page = {
+export type Membership = {
   createdAt: string;
   id: string;
-  entityType: 'page';
-  name: string;
-  description: string;
-  keywords: string;
-  status: 'unpublished' | 'published' | 'archived';
-  parentId: string | null;
-  displayOrder: number;
+  contextType: 'organization';
+  userId: string;
+  role: 'member' | 'admin';
   createdBy: string;
   modifiedAt: string | null;
   modifiedBy: string | null;
+  archived: boolean;
+  muted: boolean;
+  order: number;
+  organizationId: string;
+  uniqueKey: string;
 };
 
 export type CheckEmailData = {
@@ -1401,13 +1462,7 @@ export type GetMeResponses = {
   /**
    * User
    */
-  200: {
-    user: User;
-    /**
-     * Explain system role here
-     */
-    systemRole: 'admin' | 'user';
-  };
+  200: Me;
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
@@ -1550,34 +1605,7 @@ export type GetMyAuthResponses = {
   /**
    * User sign-up info
    */
-  200: {
-    enabledOAuth: Array<'github'>;
-    hasTotp: boolean;
-    hasPassword: boolean;
-    sessions: Array<{
-      createdAt: string;
-      id: string;
-      type: 'regular' | 'impersonation' | 'mfa';
-      userId: string;
-      deviceName: string | null;
-      deviceType: 'desktop' | 'mobile';
-      deviceOs: string | null;
-      browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
-      expiresAt: string;
-      isCurrent: boolean;
-    }>;
-    passkeys: Array<{
-      id: string;
-      userId: string;
-      deviceName: string | null;
-      deviceType: 'desktop' | 'mobile';
-      deviceOs: string | null;
-      browser: string | null;
-      nameOnDevice: string;
-      createdAt: string;
-    }>;
-  };
+  200: MeAuthData;
 };
 
 export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
@@ -1667,10 +1695,7 @@ export type DeleteMySessionsResponses = {
   /**
    * Success
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
-  };
+  200: SuccessWithRejectedItems;
 };
 
 export type DeleteMySessionsResponse = DeleteMySessionsResponses[keyof DeleteMySessionsResponses];
@@ -1762,24 +1787,7 @@ export type GetUploadTokenResponses = {
   /**
    * Upload token with a scope for a user or organization
    */
-  200: {
-    public: boolean;
-    sub: string;
-    s3: boolean;
-    signature: string;
-    params: {
-      auth: {
-        key: string;
-        expires?: string;
-      };
-      [key: string]:
-        | unknown
-        | {
-            key: string;
-            expires?: string;
-          };
-    };
-  };
+  200: UploadToken;
 };
 
 export type GetUploadTokenResponse = GetUploadTokenResponses[keyof GetUploadTokenResponses];
@@ -1856,10 +1864,7 @@ export type DeleteUsersResponses = {
   /**
    * Success
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
-  };
+  200: SuccessWithRejectedItems;
 };
 
 export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
@@ -2060,10 +2065,7 @@ export type DeleteOrganizationsResponses = {
   /**
    * Success
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
-  };
+  200: SuccessWithRejectedItems;
 };
 
 export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
@@ -2634,9 +2636,7 @@ export type SystemInviteResponses = {
   /**
    * Invitations are sent
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
+  200: SuccessWithRejectedItems & {
     invitesSentCount: number;
   };
 };
@@ -3112,10 +3112,7 @@ export type DeleteAttachmentsResponses = {
   /**
    * Success
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
-  };
+  200: SuccessWithRejectedItems;
 };
 
 export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
@@ -3326,10 +3323,7 @@ export type DeleteMembershipsResponses = {
   /**
    * Success
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
-  };
+  200: SuccessWithRejectedItems;
 };
 
 export type DeleteMembershipsResponse = DeleteMembershipsResponses[keyof DeleteMembershipsResponses];
@@ -3384,9 +3378,7 @@ export type MembershipInviteResponses = {
   /**
    * Number of sent invitations
    */
-  200: {
-    success: boolean;
-    rejectedItems: Array<string>;
+  200: SuccessWithRejectedItems & {
     invitesSentCount: number;
   };
 };
