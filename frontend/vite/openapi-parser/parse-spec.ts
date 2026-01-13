@@ -168,7 +168,10 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
             if (name) responseSummary.name = name;
             if (ref) responseSummary.ref = ref;
             if (contentType) responseSummary.contentType = contentType;
-            if (schema) {
+
+            // Skip embedding error schemas - they'll be resolved from schemas.gen.json using response.name
+            const isErrorSchema = schema?.ref?.endsWith('Error') && schema.ref.includes('/schemas/');
+            if (!isErrorSchema && schema) {
               // Add contentType to schema so it appears in the viewer
               if (contentType) {
                 schema.contentType = contentType;

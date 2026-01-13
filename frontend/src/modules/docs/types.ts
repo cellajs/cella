@@ -148,7 +148,7 @@ export interface GenResponseSummary {
   ref?: string;
   /** Content type of the response (e.g., 'application/json') */
   contentType?: string;
-  /** Resolved response schema (dereferenced with ref metadata preserved) */
+  /** Resolved response schema (dereferenced with ref metadata preserved). Omitted for error responses (resolved via name from schemas.gen.json) */
   schema?: GenSchema;
   /** Example response value from OpenAPI spec */
   example?: unknown;

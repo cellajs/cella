@@ -91,7 +91,7 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, example, defaultInspect
             </ToggleGroupItem>
           ))}
       </ToggleGroup>
-      <div className="p-3 md:py-6 rounded-md bg-muted/50">
+      <div className="p-3 md:py-6 rounded-md bg-muted/50 overflow-x-auto">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={viewMode}

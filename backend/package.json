@@ -94,7 +94,7 @@
     "react-dom": "^19.2.3",
     "react-i18next": "^16.5.2",
     "slugify": "^1.6.6",
-    "ua-parser-js": "^2.0.7",
+    "ua-parser-js": "^2.0.8",
     "zod": "^4.3.5"
   },
   "devDependencies": {
@@ -103,7 +103,7 @@
     "@ngrok/ngrok": "^1.7.0",
     "@types/jsdom": "^27.0.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.10.7",
+    "@types/node": "^24.10.8",
     "@types/papaparse": "^5.5.2",
     "@types/pg": "^8.16.0",
     "@types/react": "^19.2.8",

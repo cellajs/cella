@@ -1,30 +1,29 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import type { GenOperationSummary, GenTagSummary } from '~/modules/docs/types';
+import { operationsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 import { getMethodColor } from './helpers/get-method-color';
-
-interface OperationTagsSidebarProps {
-  operations: GenOperationSummary[];
-  tags: GenTagSummary[];
-}
 
 /**
  * Sidebar menu listing operation tags with collapsible operation lists.
  * Uses scroll spy to track and highlight the currently visible operation.
  */
-export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarProps) {
-  const isMobile = useBreakpoints('max', 'sm');
+export function OperationTagsSidebar() {
   const layoutId = useRef(nanoid()).current;
+
+  // Fetch operations and tags (already cached by route loader)
+  const { data: operations } = useSuspenseQuery(operationsQueryOptions);
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   // Get active tag from URL search params (strict: false for fuzzy route matching)
   const { operationTag: activeTag } = useSearch({ strict: false });
@@ -40,7 +39,7 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
 
   const { currentSection, scrollToSection } = useScrollSpy({
     sectionIds: allSectionIds,
-    enableWriteHash: !isMobile,
+    enableWriteHash: true,
     smoothScroll: false,
   });
 
@@ -112,6 +111,7 @@ export function OperationTagsSidebar({ operations, tags }: OperationTagsSidebarP
                           onClick={(e) => {
                             e.preventDefault();
                             scrollToSection(operation.hash);
+                            useSheeter.getState().remove();
                           }}
                         >
                           <span className="truncate flex-1 text-[13px] lowercase">

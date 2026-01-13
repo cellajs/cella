@@ -10,12 +10,24 @@ import {
   zodContentQueryOptions,
 } from './helpers/extract-types';
 import { getStatusColor } from './helpers/get-status-color';
-import { tagDetailsQueryOptions } from './query';
-import type { GenResponseSummary } from './types';
+import { schemasQueryOptions, tagDetailsQueryOptions } from './query';
+import type { GenComponentSchema, GenResponseSummary, GenSchema } from './types';
 import { ViewerGroup } from './viewer-group';
+
+/** Resolve response schema, looking up by name from prefetched schemas for error responses */
+const resolveResponseSchema = (response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined => {
+  if (response.schema) return response.schema;
+  // For error responses (no embedded schema), look up by name in schemas.gen.json
+  if (response.name) {
+    const schemaEntry = schemas.find((s) => s.name === response.name);
+    return schemaEntry?.schema;
+  }
+  return undefined;
+};
 
 interface ResponsesAccordionProps {
   responses: GenResponseSummary[];
+  schemas: GenComponentSchema[];
   operationId: string;
   zodContent: string;
   typesContent: string;
@@ -27,6 +39,7 @@ interface ResponsesAccordionProps {
  */
 const ResponsesAccordion = ({
   responses,
+  schemas,
   operationId,
   zodContent,
   typesContent,
@@ -40,39 +53,42 @@ const ResponsesAccordion = ({
 
   return (
     <Accordion type="single" className="w-full" collapsible onValueChange={onValueChange}>
-      {responses.map((response) => (
-        <AccordionItem key={response.status} value={String(response.status)}>
-          <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
-            <div className="flex items-center justify-between w-full pr-2 gap-3">
-              <div
-                className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
-              >
-                {response.status}
+      {responses.map((response) => {
+        const schema = resolveResponseSchema(response, schemas);
+        return (
+          <AccordionItem key={response.status} value={String(response.status)}>
+            <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[state=open]:opacity-100">
+              <div className="flex items-center justify-between w-full pr-2 gap-3">
+                <div
+                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[state=open]:opacity-100 ${getStatusColor(response.status)}`}
+                >
+                  {response.status}
+                </div>
+                <div className="text-sm text-muted-foreground grow group-data-[state=open]:text-foreground">
+                  {response.description}
+                </div>
+                {response.name && (
+                  <span className="max-md:hidden truncate text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    {response.name}
+                  </span>
+                )}
               </div>
-              <div className="text-sm text-muted-foreground grow group-data-[state=open]:text-foreground">
-                {response.description}
-              </div>
-              {response.name && (
-                <span className="max-md:hidden truncate text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                  {response.name}
-                </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              {schema ? (
+                <ViewerGroup
+                  schema={schema}
+                  zodCode={getZodCodeForResponse(zodContent, operationId, response.status, response.name)}
+                  typeCode={getTypeCodeForResponse(typesContent, operationId, response.status)}
+                  example={response.example}
+                />
+              ) : (
+                <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
               )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            {response.schema ? (
-              <ViewerGroup
-                schema={response.schema}
-                zodCode={getZodCodeForResponse(zodContent, operationId)}
-                typeCode={getTypeCodeForResponse(typesContent, operationId, response.status)}
-                example={response.example}
-              />
-            ) : (
-              <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      ))}
+            </AccordionContent>
+          </AccordionItem>
+        );
+      })}
     </Accordion>
   );
 };
@@ -89,8 +105,10 @@ interface OperationResponsesProps {
  */
 export const OperationResponses = ({ operationId, tagName, onResponseOpen }: OperationResponsesProps) => {
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
   const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
+
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
@@ -103,6 +121,7 @@ export const OperationResponses = ({ operationId, tagName, onResponseOpen }: Ope
   return (
     <ResponsesAccordion
       responses={responses}
+      schemas={schemas}
       operationId={operationId}
       zodContent={zodContent}
       typesContent={typesContent}
