@@ -14,6 +14,7 @@ import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '
 import {
   DocsLayoutRoute,
   DocsOperationsRoute,
+  DocsOperationsTableRoute,
   DocsOverviewRoute,
   DocsPageRoute,
   DocsPagesRoute,
@@ -48,6 +49,7 @@ export const routeTree = RootRoute.addChildren([
     ContactRoute,
     DocsLayoutRoute.addChildren([
       DocsOperationsRoute,
+      DocsOperationsTableRoute,
       DocsOverviewRoute,
       DocsSchemasRoute,
       DocsPagesRoute,

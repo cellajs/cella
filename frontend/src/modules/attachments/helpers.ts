@@ -11,6 +11,7 @@ const baseAttachmentValues = {
   thumbnailKey: null,
   modifiedAt: null,
   modifiedBy: null,
+  keywords: '',
 };
 
 export const parseUploadedAttachments = (

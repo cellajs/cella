@@ -1,5 +1,4 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import useSearchParams from '~/hooks/use-search-params';
@@ -23,8 +22,9 @@ async function updateOperationField(operationId: string, field: 'summary' | 'des
 }
 
 const OperationsTable = () => {
-  const { setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/operations' });
-  const { q = '' } = useSearch({ from: '/publicLayout/docs/operations' });
+  const { search, setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/operations/table' });
+
+  const q = search.q || '';
 
   const [isCompact, setIsCompact] = useState(false);
 

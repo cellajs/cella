@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/lib/x-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import {

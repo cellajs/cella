@@ -1,5 +1,5 @@
 import z from 'zod';
-import { createXRoute } from '#/lib/x-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { baseElectricSyncQuery, idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';

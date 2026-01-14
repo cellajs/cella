@@ -9,23 +9,27 @@ export type ClientOptions = {
  */
 export type UserBase = {
   id: string;
-  slug: string;
   name: string;
+  description: string | null;
   createdAt: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
+  modifiedAt: string | null;
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
   email: string;
   entityType: 'user';
 };
 
 export type ContextEntityBase = {
   id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  modifiedAt: string | null;
   entityType: 'organization';
   slug: string;
-  name: string;
-  createdAt: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
 };
 
 export type MembershipBase = {
@@ -190,14 +194,17 @@ export type UploadToken = {
 };
 
 export type Organization = {
-  createdAt: string;
   id: string;
   entityType: 'organization';
   name: string;
   description: string | null;
+  createdAt: string;
+  modifiedAt: string | null;
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
+  createdBy: string | null;
+  modifiedBy: string | null;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -211,9 +218,6 @@ export type Organization = {
   welcomeText: string | null;
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
-  createdBy: string | null;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
   membership: MembershipBase | null;
   counts: {
     membership: {
@@ -230,26 +234,30 @@ export type Organization = {
 };
 
 export type Page = {
-  createdAt: string;
   id: string;
   entityType: 'page';
   name: string;
-  description: string;
+  description: string | null;
+  createdAt: string;
+  modifiedAt: string | null;
   keywords: string;
+  createdBy: string | null;
+  modifiedBy: string | null;
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
-  createdBy: string;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
 };
 
 export type Attachment = {
-  createdAt: string;
   id: string;
   entityType: 'attachment';
   name: string;
   description: string | null;
+  createdAt: string;
+  modifiedAt: string | null;
+  keywords: string;
+  createdBy: string | null;
+  modifiedBy: string | null;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -260,9 +268,6 @@ export type Attachment = {
   originalKey: string;
   convertedKey: string | null;
   thumbnailKey: string | null;
-  createdBy: string | null;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
   organizationId: string;
 };
 
@@ -2507,7 +2512,7 @@ export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
 export type UpdatePageData = {
   body: {
     name?: string;
-    description?: string;
+    description?: string | null;
     keywords?: string;
     displayOrder?: number;
     status?: 'unpublished' | 'published' | 'archived';
@@ -3119,11 +3124,15 @@ export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteA
 
 export type CreateAttachmentData = {
   body: Array<{
-    createdAt?: string;
     id?: string;
     entityType?: 'attachment';
     name?: string;
     description?: string | null;
+    createdAt?: string;
+    modifiedAt?: string | null;
+    keywords: string;
+    createdBy?: string | null;
+    modifiedBy?: string | null;
     public?: boolean;
     bucketName: string;
     groupId?: string | null;
@@ -3134,9 +3143,6 @@ export type CreateAttachmentData = {
     originalKey: string;
     convertedKey?: string | null;
     thumbnailKey?: string | null;
-    createdBy?: string | null;
-    modifiedAt?: string | null;
-    modifiedBy?: string | null;
     organizationId: string;
   }>;
   path: {
@@ -3623,7 +3629,7 @@ export type GetPendingMembershipsResponses = {
     items: Array<{
       id: string;
       email: string;
-      thumbnailUrl?: string | null;
+      thumbnailUrl: string | null;
       role: 'member' | 'admin' | null;
       createdAt: string;
       createdBy: string | null;

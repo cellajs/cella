@@ -97,10 +97,6 @@
             "type": "object",
             "required": true,
             "properties": {
-              "createdAt": {
-                "type": "string",
-                "required": true
-              },
               "id": {
                 "type": "string",
                 "required": true
@@ -117,6 +113,35 @@
                 "required": true
               },
               "description": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "required": true
+              },
+              "createdAt": {
+                "type": "string",
+                "required": true
+              },
+              "modifiedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "required": true
+              },
+              "keywords": {
+                "type": "string",
+                "required": true
+              },
+              "createdBy": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "required": true
+              },
+              "modifiedBy": {
                 "type": [
                   "string",
                   "null"
@@ -169,27 +194,6 @@
                 "required": true
               },
               "thumbnailKey": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "required": true
-              },
-              "createdBy": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "required": true
-              },
-              "modifiedAt": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "required": true
-              },
-              "modifiedBy": {
                 "type": [
                   "string",
                   "null"
@@ -259,10 +263,6 @@
           "type": "object",
           "required": true,
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": false
-            },
             "id": {
               "type": "string",
               "required": false
@@ -279,6 +279,35 @@
               "required": false
             },
             "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": false
+            },
+            "createdAt": {
+              "type": "string",
+              "required": false
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": false
+            },
+            "keywords": {
+              "type": "string",
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": false
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -331,27 +360,6 @@
               "required": false
             },
             "thumbnailKey": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": false
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": false
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": false
-            },
-            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -475,10 +483,6 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
             "id": {
               "type": "string",
               "required": true
@@ -495,6 +499,35 @@
               "required": true
             },
             "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "keywords": {
+              "type": "string",
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -553,27 +586,6 @@
               ],
               "required": true
             },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
             "organizationId": {
               "type": "string",
               "required": true
@@ -587,21 +599,22 @@
           "entityType": "attachment",
           "name": "fondly.m1v",
           "description": null,
+          "keywords": "verecundia vilitas temptatio",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "fondly.m1v",
-          "contentType": "video/3gpp2",
+          "contentType": "application/x-httpd-php",
           "convertedContentType": null,
-          "size": "9426474",
-          "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+          "size": "5568754",
+          "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
           "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-          "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+          "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
         }
       },
       {

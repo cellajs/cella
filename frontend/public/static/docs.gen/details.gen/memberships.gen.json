@@ -422,6 +422,28 @@
               "type": "string",
               "required": true
             },
+            "name": {
+              "type": "string",
+              "required": true
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "entityType": {
               "type": "string",
               "required": true,
@@ -433,27 +455,19 @@
               "type": "string",
               "required": true
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
             "thumbnailUrl": {
               "type": [
                 "string",
                 "null"
               ],
-              "required": false
+              "required": true
             },
             "bannerUrl": {
               "type": [
                 "string",
                 "null"
               ],
-              "required": false
+              "required": true
             }
           },
           "ref": "#/components/schemas/ContextEntityBase",
@@ -841,7 +855,7 @@
                       "string",
                       "null"
                     ],
-                    "required": false
+                    "required": true
                   },
                   "role": {
                     "type": [

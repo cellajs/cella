@@ -11,15 +11,29 @@
           "type": "string",
           "required": true
         },
-        "slug": {
-          "type": "string",
-          "required": true
-        },
         "name": {
           "type": "string",
           "required": true
         },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
         "createdAt": {
+          "type": "string",
+          "required": true
+        },
+        "modifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "slug": {
           "type": "string",
           "required": true
         },
@@ -28,14 +42,14 @@
             "string",
             "null"
           ],
-          "required": false
+          "required": true
         },
         "bannerUrl": {
           "type": [
             "string",
             "null"
           ],
-          "required": false
+          "required": true
         },
         "email": {
           "type": "string",
@@ -65,6 +79,28 @@
           "type": "string",
           "required": true
         },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
+        "modifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
         "entityType": {
           "type": "string",
           "required": true,
@@ -76,27 +112,19 @@
           "type": "string",
           "required": true
         },
-        "name": {
-          "type": "string",
-          "required": true
-        },
-        "createdAt": {
-          "type": "string",
-          "required": true
-        },
         "thumbnailUrl": {
           "type": [
             "string",
             "null"
           ],
-          "required": false
+          "required": true
         },
         "bannerUrl": {
           "type": [
             "string",
             "null"
           ],
-          "required": false
+          "required": true
         }
       }
     },
@@ -1317,10 +1345,6 @@
     "schema": {
       "type": "object",
       "properties": {
-        "createdAt": {
-          "type": "string",
-          "required": true
-        },
         "id": {
           "type": "string",
           "required": true
@@ -1343,6 +1367,17 @@
           ],
           "required": true
         },
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
+        "modifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
         "slug": {
           "type": "string",
           "required": true
@@ -1355,6 +1390,20 @@
           "required": true
         },
         "bannerUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "createdBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "modifiedBy": {
           "type": [
             "string",
             "null"
@@ -1456,27 +1505,6 @@
         },
         "chatSupport": {
           "type": "boolean",
-          "required": true
-        },
-        "createdBy": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
-        "modifiedAt": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
-        "modifiedBy": {
-          "type": [
-            "string",
-            "null"
-          ],
           "required": true
         },
         "membership": {
@@ -1646,10 +1674,6 @@
     "schema": {
       "type": "object",
       "properties": {
-        "createdAt": {
-          "type": "string",
-          "required": true
-        },
         "id": {
           "type": "string",
           "required": true
@@ -1666,11 +1690,39 @@
           "required": true
         },
         "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "createdAt": {
           "type": "string",
+          "required": true
+        },
+        "modifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
           "required": true
         },
         "keywords": {
           "type": "string",
+          "required": true
+        },
+        "createdBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "modifiedBy": {
+          "type": [
+            "string",
+            "null"
+          ],
           "required": true
         },
         "status": {
@@ -1694,24 +1746,6 @@
           "required": true,
           "minimum": -140737488355328,
           "maximum": 140737488355327
-        },
-        "createdBy": {
-          "type": "string",
-          "required": true
-        },
-        "modifiedAt": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
-        "modifiedBy": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
         }
       }
     },
@@ -1738,10 +1772,6 @@
     "schema": {
       "type": "object",
       "properties": {
-        "createdAt": {
-          "type": "string",
-          "required": true
-        },
         "id": {
           "type": "string",
           "required": true
@@ -1758,6 +1788,35 @@
           "required": true
         },
         "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
+        "modifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "keywords": {
+          "type": "string",
+          "required": true
+        },
+        "createdBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "modifiedBy": {
           "type": [
             "string",
             "null"
@@ -1816,27 +1875,6 @@
           ],
           "required": true
         },
-        "createdBy": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
-        "modifiedAt": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
-        "modifiedBy": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
         "organizationId": {
           "type": "string",
           "required": true
@@ -1849,21 +1887,22 @@
       "entityType": "attachment",
       "name": "fondly.m1v",
       "description": null,
+      "keywords": "verecundia vilitas temptatio",
       "public": false,
       "bucketName": "attachments",
       "groupId": null,
       "filename": "fondly.m1v",
-      "contentType": "video/3gpp2",
+      "contentType": "application/x-httpd-php",
       "convertedContentType": null,
-      "size": "9426474",
-      "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+      "size": "5568754",
+      "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
       "convertedKey": null,
       "thumbnailKey": null,
       "createdAt": "2024-10-12T17:43:05.360Z",
       "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
       "modifiedAt": "2024-10-12T17:43:05.360Z",
       "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-      "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+      "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
     }
   },
   {

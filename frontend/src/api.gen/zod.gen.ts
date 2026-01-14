@@ -7,23 +7,27 @@ import { z } from 'zod';
  */
 export const zUserBase = z.object({
   id: z.string(),
-  slug: z.string(),
   name: z.string(),
+  description: z.union([z.string(), z.null()]),
   createdAt: z.string(),
-  thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-  bannerUrl: z.optional(z.union([z.string(), z.null()])),
+  modifiedAt: z.union([z.string(), z.null()]),
+  slug: z.string(),
+  thumbnailUrl: z.union([z.string(), z.null()]),
+  bannerUrl: z.union([z.string(), z.null()]),
   email: z.email(),
   entityType: z.enum(['user']),
 });
 
 export const zContextEntityBase = z.object({
   id: z.string(),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
   entityType: z.enum(['organization']),
   slug: z.string(),
-  name: z.string(),
-  createdAt: z.string(),
-  thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-  bannerUrl: z.optional(z.union([z.string(), z.null()])),
+  thumbnailUrl: z.union([z.string(), z.null()]),
+  bannerUrl: z.union([z.string(), z.null()]),
 });
 
 export const zMembershipBase = z.object({
@@ -193,14 +197,17 @@ export const zUploadToken = z.object({
 });
 
 export const zOrganization = z.object({
-  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
   shortName: z.union([z.string(), z.null()]),
   country: z.union([z.string(), z.null()]),
   timezone: z.union([z.string(), z.null()]),
@@ -214,9 +221,6 @@ export const zOrganization = z.object({
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
   membership: z.union([zMembershipBase, z.null()]),
   counts: z.object({
     membership: z.object({
@@ -233,26 +237,30 @@ export const zOrganization = z.object({
 });
 
 export const zPage = z.object({
-  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['page']),
   name: z.string(),
-  description: z.string(),
+  description: z.union([z.string(), z.null()]),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
   keywords: z.string(),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
   status: z.enum(['unpublished', 'published', 'archived']),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-  createdBy: z.string(),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
 });
 
 export const zAttachment = z.object({
-  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['attachment']),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+  keywords: z.string(),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
   public: z.boolean(),
   bucketName: z.string(),
   groupId: z.union([z.string(), z.null()]),
@@ -263,9 +271,6 @@ export const zAttachment = z.object({
   originalKey: z.string(),
   convertedKey: z.union([z.string(), z.null()]),
   thumbnailKey: z.union([z.string(), z.null()]),
-  createdBy: z.union([z.string(), z.null()]),
-  modifiedAt: z.union([z.string(), z.null()]),
-  modifiedBy: z.union([z.string(), z.null()]),
   organizationId: z.string(),
 });
 
@@ -1051,7 +1056,7 @@ export const zGetPageResponse = zPage;
 export const zUpdatePageData = z.object({
   body: z.object({
     name: z.optional(z.string()),
-    description: z.optional(z.string()),
+    description: z.optional(z.union([z.string(), z.null()])),
     keywords: z.optional(z.string()),
     displayOrder: z.optional(z.number().gte(-140737488355328).lte(140737488355327)),
     status: z.optional(z.enum(['unpublished', 'published', 'archived'])),
@@ -1276,11 +1281,15 @@ export const zCreateAttachmentData = z.object({
   body: z
     .array(
       z.object({
-        createdAt: z.optional(z.string()),
         id: z.optional(z.string()),
         entityType: z.optional(z.enum(['attachment'])),
         name: z.optional(z.string()),
         description: z.optional(z.union([z.string(), z.null()])),
+        createdAt: z.optional(z.string()),
+        modifiedAt: z.optional(z.union([z.string(), z.null()])),
+        keywords: z.string(),
+        createdBy: z.optional(z.union([z.string(), z.null()])),
+        modifiedBy: z.optional(z.union([z.string(), z.null()])),
         public: z.optional(z.boolean()),
         bucketName: z.string(),
         groupId: z.optional(z.union([z.string(), z.null()])),
@@ -1291,9 +1300,6 @@ export const zCreateAttachmentData = z.object({
         originalKey: z.string(),
         convertedKey: z.optional(z.union([z.string(), z.null()])),
         thumbnailKey: z.optional(z.union([z.string(), z.null()])),
-        createdBy: z.optional(z.union([z.string(), z.null()])),
-        modifiedAt: z.optional(z.union([z.string(), z.null()])),
-        modifiedBy: z.optional(z.union([z.string(), z.null()])),
         organizationId: z.string(),
       }),
     )
@@ -1483,7 +1489,7 @@ export const zGetPendingMembershipsResponse = z.object({
     z.object({
       id: z.string(),
       email: z.email(),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+      thumbnailUrl: z.union([z.string(), z.null()]),
       role: z.nullable(z.enum(['member', 'admin'])),
       createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),

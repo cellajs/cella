@@ -170,13 +170,25 @@
           "id": {
             "type": "string"
           },
-          "slug": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slug": {
             "type": "string"
           },
           "thumbnailUrl": {
@@ -204,9 +216,13 @@
         },
         "required": [
           "id",
-          "slug",
           "name",
+          "description",
           "createdAt",
+          "modifiedAt",
+          "slug",
+          "thumbnailUrl",
+          "bannerUrl",
           "email",
           "entityType"
         ],
@@ -218,6 +234,24 @@
           "id": {
             "type": "string"
           },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "entityType": {
             "type": "string",
             "enum": [
@@ -225,12 +259,6 @@
             ]
           },
           "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
             "type": "string"
           },
           "thumbnailUrl": {
@@ -248,10 +276,14 @@
         },
         "required": [
           "id",
+          "name",
+          "description",
+          "createdAt",
+          "modifiedAt",
           "entityType",
           "slug",
-          "name",
-          "createdAt"
+          "thumbnailUrl",
+          "bannerUrl"
         ]
       },
       "MembershipBase": {
@@ -1011,9 +1043,6 @@
       "Organization": {
         "type": "object",
         "properties": {
-          "createdAt": {
-            "type": "string"
-          },
           "id": {
             "type": "string"
           },
@@ -1032,6 +1061,15 @@
               "null"
             ]
           },
+          "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "slug": {
             "type": "string"
           },
@@ -1042,6 +1080,18 @@
             ]
           },
           "bannerUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
             "type": [
               "string",
               "null"
@@ -1137,24 +1187,6 @@
           "chatSupport": {
             "type": "boolean"
           },
-          "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "membership": {
             "anyOf": [
               {
@@ -1214,14 +1246,17 @@
           }
         },
         "required": [
-          "createdAt",
           "id",
           "entityType",
           "name",
           "description",
+          "createdAt",
+          "modifiedAt",
           "slug",
           "thumbnailUrl",
           "bannerUrl",
+          "createdBy",
+          "modifiedBy",
           "shortName",
           "country",
           "timezone",
@@ -1235,9 +1270,6 @@
           "welcomeText",
           "authStrategies",
           "chatSupport",
-          "createdBy",
-          "modifiedAt",
-          "modifiedBy",
           "membership",
           "counts"
         ],
@@ -1302,9 +1334,6 @@
       "Page": {
         "type": "object",
         "properties": {
-          "createdAt": {
-            "type": "string"
-          },
           "id": {
             "type": "string"
           },
@@ -1318,10 +1347,34 @@
             "type": "string"
           },
           "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
             "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "keywords": {
             "type": "string"
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "type": "string",
@@ -1341,36 +1394,21 @@
             "type": "number",
             "minimum": -140737488355328,
             "maximum": 140737488355327
-          },
-          "createdBy": {
-            "type": "string"
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
-          "createdAt",
           "id",
           "entityType",
           "name",
           "description",
+          "createdAt",
+          "modifiedAt",
           "keywords",
+          "createdBy",
+          "modifiedBy",
           "status",
           "parentId",
-          "displayOrder",
-          "createdBy",
-          "modifiedAt",
-          "modifiedBy"
+          "displayOrder"
         ],
         "example": {
           "id": "ipqyAZOx_wYoSB_T2Sbzd",
@@ -1390,9 +1428,6 @@
       "Attachment": {
         "type": "object",
         "properties": {
-          "createdAt": {
-            "type": "string"
-          },
           "id": {
             "type": "string"
           },
@@ -1406,6 +1441,30 @@
             "type": "string"
           },
           "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
             "type": [
               "string",
               "null"
@@ -1453,34 +1512,20 @@
               "null"
             ]
           },
-          "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "organizationId": {
             "type": "string"
           }
         },
         "required": [
-          "createdAt",
           "id",
           "entityType",
           "name",
           "description",
+          "createdAt",
+          "modifiedAt",
+          "keywords",
+          "createdBy",
+          "modifiedBy",
           "public",
           "bucketName",
           "groupId",
@@ -1491,9 +1536,6 @@
           "originalKey",
           "convertedKey",
           "thumbnailKey",
-          "createdBy",
-          "modifiedAt",
-          "modifiedBy",
           "organizationId"
         ],
         "example": {
@@ -1501,21 +1543,22 @@
           "entityType": "attachment",
           "name": "fondly.m1v",
           "description": null,
+          "keywords": "verecundia vilitas temptatio",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "fondly.m1v",
-          "contentType": "video/3gpp2",
+          "contentType": "application/x-httpd-php",
           "convertedContentType": null,
-          "size": "9426474",
-          "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+          "size": "5568754",
+          "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
           "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-          "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+          "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
         }
       },
       "Membership": {
@@ -5809,7 +5852,10 @@
                     "type": "string"
                   },
                   "description": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "keywords": {
                     "type": "string"
@@ -6839,9 +6885,6 @@
                 "items": {
                   "type": "object",
                   "properties": {
-                    "createdAt": {
-                      "type": "string"
-                    },
                     "id": {
                       "type": "string"
                     },
@@ -6855,6 +6898,30 @@
                       "type": "string"
                     },
                     "description": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "modifiedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "keywords": {
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "modifiedBy": {
                       "type": [
                         "string",
                         "null"
@@ -6902,29 +6969,12 @@
                         "null"
                       ]
                     },
-                    "createdBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "modifiedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "modifiedBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
                     "organizationId": {
                       "type": "string"
                     }
                   },
                   "required": [
+                    "keywords",
                     "bucketName",
                     "filename",
                     "contentType",
@@ -7124,21 +7174,22 @@
                   "entityType": "attachment",
                   "name": "fondly.m1v",
                   "description": null,
+                  "keywords": "verecundia vilitas temptatio",
                   "public": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "fondly.m1v",
-                  "contentType": "video/3gpp2",
+                  "contentType": "application/x-httpd-php",
                   "convertedContentType": null,
-                  "size": "9426474",
-                  "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                  "size": "5568754",
+                  "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
                   "convertedKey": null,
                   "thumbnailKey": null,
                   "createdAt": "2024-10-12T17:43:05.360Z",
                   "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-                  "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+                  "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
                 }
               }
             }
@@ -8062,6 +8113,7 @@
                         "required": [
                           "id",
                           "email",
+                          "thumbnailUrl",
                           "role",
                           "createdAt",
                           "createdBy"

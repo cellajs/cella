@@ -9,10 +9,6 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
             "id": {
               "type": "string",
               "required": true
@@ -35,6 +31,17 @@
               ],
               "required": true
             },
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "slug": {
               "type": "string",
               "required": true
@@ -47,6 +54,20 @@
               "required": true
             },
             "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -148,27 +169,6 @@
             },
             "chatSupport": {
               "type": "boolean",
-              "required": true
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
               "required": true
             },
             "membership": {
@@ -399,10 +399,6 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  },
                   "id": {
                     "type": "string",
                     "required": true
@@ -425,6 +421,17 @@
                     ],
                     "required": true
                   },
+                  "createdAt": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "modifiedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
                   "slug": {
                     "type": "string",
                     "required": true
@@ -437,6 +444,20 @@
                     "required": true
                   },
                   "bannerUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "createdBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "modifiedBy": {
                     "type": [
                       "string",
                       "null"
@@ -538,27 +559,6 @@
                   },
                   "chatSupport": {
                     "type": "boolean",
-                    "required": true
-                  },
-                  "createdBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
-                  "modifiedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
-                  "modifiedBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
                     "required": true
                   },
                   "membership": {
@@ -859,10 +859,6 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
             "id": {
               "type": "string",
               "required": true
@@ -885,6 +881,17 @@
               ],
               "required": true
             },
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "slug": {
               "type": "string",
               "required": true
@@ -897,6 +904,20 @@
               "required": true
             },
             "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -998,27 +1019,6 @@
             },
             "chatSupport": {
               "type": "boolean",
-              "required": true
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
               "required": true
             },
             "membership": {
@@ -1242,10 +1242,6 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
             "id": {
               "type": "string",
               "required": true
@@ -1268,6 +1264,17 @@
               ],
               "required": true
             },
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "slug": {
               "type": "string",
               "required": true
@@ -1280,6 +1287,20 @@
               "required": true
             },
             "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -1381,27 +1402,6 @@
             },
             "chatSupport": {
               "type": "boolean",
-              "required": true
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
               "required": true
             },
             "membership": {

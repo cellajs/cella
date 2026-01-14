@@ -24,7 +24,6 @@ import {
   SidebarMenuItem,
 } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
-import { useDocsStore } from '~/store/docs';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
@@ -70,14 +69,12 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
   // Get current pathname to determine active/expanded section
   const { location } = useRouterState();
   const isOperationsRoute = location.pathname === '/docs/operations';
+  const isOperationsTableRoute = location.pathname === '/docs/operations/table';
   const isSchemasRoute = location.pathname.includes('/docs/schemas');
 
   // Derive expanded section directly from route (mutually exclusive)
+  // Only expand operations sidebar when on list view, not table view
   const expandedSection = isOperationsRoute ? 'operations' : isSchemasRoute ? 'schemas' : null;
-
-  // Get viewMode from docs store
-  const viewMode = useDocsStore((state) => state.viewMode);
-  const setViewMode = useDocsStore((state) => state.setViewMode);
 
   // Track if current section is forcibly collapsed
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(null);
@@ -103,7 +100,10 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
     queryClient.prefetchQuery(tagsQueryOptions);
   };
 
-  const isListMode = viewMode === 'list';
+  // Determine if we're in list mode (not on table route)
+  const isListMode = !isOperationsTableRoute;
+  // Operations sidebar is active when on either operations route
+  const isOperationsActive = isOperationsRoute || isOperationsTableRoute;
 
   return (
     <SidebarContent className="pt-4 pb-12 bg-card min-h-screen">
@@ -115,7 +115,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
           aria-label="Go to homepage"
           onClick={closeSheet}
         >
-          <Logo height={32} animate />
+          <Logo height={32} />
         </Link>
       </div>
 
@@ -147,12 +147,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                     onMouseEnter={prefetchOperations}
                     onFocus={prefetchOperations}
                     onClick={(e) => {
-                      // Switch to list mode if in table mode
-                      if (!isListMode) {
-                        setViewMode('list');
-                        setForcedCollapsed(null);
-                        return;
-                      }
+                      // If already on operations list route, toggle collapse
                       if (isOperationsRoute) {
                         e.preventDefault();
                         setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
@@ -163,7 +158,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal items-center group px-3 lowercase',
-                      isOperationsRoute && 'font-medium bg-accent',
+                      isOperationsActive && 'font-medium bg-accent',
                     )}
                   >
                     <span>{t('common:operation', { count: 2 })}</span>

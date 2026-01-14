@@ -1546,7 +1546,7 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.name - `string` (optional)
- * @param {string=} options.body.description - `string` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string=} options.body.keywords - `string` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
