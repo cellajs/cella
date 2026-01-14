@@ -3,6 +3,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { operationsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
@@ -20,6 +21,8 @@ import { getMethodColor } from './helpers/get-method-color';
  */
 export function OperationTagsSidebar() {
   const layoutId = useRef(nanoid()).current;
+
+  const isMobile = useBreakpoints('max', 'sm');
 
   // Fetch operations and tags (already cached by route loader)
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
@@ -111,7 +114,7 @@ export function OperationTagsSidebar() {
                           onClick={(e) => {
                             e.preventDefault();
                             scrollToSection(operation.hash);
-                            useSheeter.getState().remove();
+                            isMobile && useSheeter.getState().remove();
                           }}
                         >
                           <span className="truncate flex-1 text-[13px] lowercase">

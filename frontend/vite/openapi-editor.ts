@@ -50,7 +50,7 @@ function updateBackendField(
 
       for (const call of callExpressions) {
         const expression = call.getExpression();
-        if (expression.getText() !== 'createCustomRoute') continue;
+        if (expression.getText() !== 'createXRoute') continue;
 
         const args = call.getArguments();
         if (args.length === 0) continue;

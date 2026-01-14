@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
 import { RateLimiterRes } from 'rate-limiter-flexible';
+import { xMiddleware } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { xMiddleware } from '#/lib/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
 import { RateLimitIdentifier, RateLimitMode, RateLimitOptions } from '#/middlewares/rate-limiter/types';
 
@@ -43,6 +43,7 @@ export const slowOptions = {
  * @param identifiers - `("ip" | "email")[]` A list of identifiers to consider when generating rate limit key.
  * @param options - Optional custom configuration for rate limiting.
  * @param name - Optional name override for OpenAPI documentation (defaults to `${key}Limiter`).
+ * @param description - Optional description for OpenAPI documentation.
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
@@ -52,96 +53,102 @@ export const rateLimiter = (
   identifiers: RateLimitIdentifier[],
   options?: RateLimitOptions,
   name?: string,
+  description?: string,
 ): MiddlewareHandler<Env> => {
   const config = { ...defaultOptions, ...options };
   const limiter = getRateLimiterInstance({ ...config, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 
-  return xMiddleware(name ?? `${key}Limiter`, 'x-rate-limiter', async (ctx, next) => {
-    // Extract identifiers from multiple sources
-    const extractedIdentifiers = await extractIdentifiers(ctx, identifiers);
+  return xMiddleware(
+    name ?? `${key}Limiter`,
+    'x-rate-limiter',
+    async (ctx, next) => {
+      // Extract identifiers from multiple sources
+      const extractedIdentifiers = await extractIdentifiers(ctx, identifiers);
 
-    // Stop if required identifiers are not available
-    if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
-      throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
-    }
+      // Stop if required identifiers are not available
+      if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
+        throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
+      }
 
-    // Generate rate limit key with fallback logic
-    let rateLimitKey = '';
+      // Generate rate limit key with fallback logic
+      let rateLimitKey = '';
 
-    for (const identifier of identifiers) {
-      const value = extractedIdentifiers[identifier];
-      if (!value) continue;
+      for (const identifier of identifiers) {
+        const value = extractedIdentifiers[identifier];
+        if (!value) continue;
 
-      switch (identifier) {
-        case 'ip': {
-          rateLimitKey += `ip:${value}`;
-          break;
-        }
-        case 'email': {
-          rateLimitKey += `email:${value}`;
-          break;
-        }
-        case 'userId': {
-          rateLimitKey += `userId:${value}`;
-          break;
+        switch (identifier) {
+          case 'ip': {
+            rateLimitKey += `ip:${value}`;
+            break;
+          }
+          case 'email': {
+            rateLimitKey += `email:${value}`;
+            break;
+          }
+          case 'userId': {
+            rateLimitKey += `userId:${value}`;
+            break;
+          }
         }
       }
-    }
 
-    const limitState = await limiter.get(rateLimitKey);
-    const slowLimitState = await slowLimiter.get(rateLimitKey);
+      const limitState = await limiter.get(rateLimitKey);
+      const slowLimitState = await slowLimiter.get(rateLimitKey);
 
-    // If already rate limited, return 429
-    if (limitState !== null && limitState.consumedPoints > limiter.points)
-      return rateLimitError(ctx, limitState, rateLimitKey);
+      // If already rate limited, return 429
+      if (limitState !== null && limitState.consumedPoints > limiter.points)
+        return rateLimitError(ctx, limitState, rateLimitKey);
 
-    // If slow brute forcing, return 429
-    if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points)
-      return rateLimitError(ctx, slowLimitState, rateLimitKey);
+      // If slow brute forcing, return 429
+      if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points)
+        return rateLimitError(ctx, slowLimitState, rateLimitKey);
 
-    // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
-    if (mode === 'limit') {
-      try {
-        await limiter.consume(rateLimitKey);
-      } catch (rlRejected) {
-        if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
-        throw rlRejected;
+      // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
+      if (mode === 'limit') {
+        try {
+          await limiter.consume(rateLimitKey);
+        } catch (rlRejected) {
+          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
+          throw rlRejected;
+        }
       }
-    }
 
-    // Continue with request itself
-    await next();
+      // Continue with request itself
+      await next();
 
-    const isSuccess = config.successStatusCodes?.includes(ctx.res.status) ?? false;
-    const isFail = config.failStatusCodes?.includes(ctx.res.status) ?? false;
-    const isIgnored = config.ignoredStatusCodes?.includes(ctx.res.status) ?? false;
+      const isSuccess = config.successStatusCodes?.includes(ctx.res.status) ?? false;
+      const isFail = config.failStatusCodes?.includes(ctx.res.status) ?? false;
+      const isIgnored = config.ignoredStatusCodes?.includes(ctx.res.status) ?? false;
 
-    if (isSuccess && !isIgnored) {
-      // If the mode is 'success', consume points on successful requests
-      if (mode === 'success') {
+      if (isSuccess && !isIgnored) {
+        // If the mode is 'success', consume points on successful requests
+        if (mode === 'success') {
+          try {
+            await limiter.consume(rateLimitKey);
+          } catch {}
+          // If the mode is 'failseries', delete the rate limit on successful request
+        } else if (mode === 'failseries') {
+          await limiter.delete(rateLimitKey);
+        }
+      } else if (isFail && !isIgnored && ['fail', 'failseries'].includes(mode)) {
+        const slowRateLimitKey = extractedIdentifiers.ip || rateLimitKey;
+
+        // To prevent slow brute force attacks, consume points on every failed request during 24 hours window duration
+        try {
+          await slowLimiter.consume(slowRateLimitKey);
+        } catch (rlRejected) {
+          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, slowRateLimitKey);
+          throw rlRejected;
+        }
+
+        // Consume points for the specific rate limit
         try {
           await limiter.consume(rateLimitKey);
         } catch {}
-        // If the mode is 'failseries', delete the rate limit on successful request
-      } else if (mode === 'failseries') {
-        await limiter.delete(rateLimitKey);
       }
-    } else if (isFail && !isIgnored && ['fail', 'failseries'].includes(mode)) {
-      const slowRateLimitKey = extractedIdentifiers.ip || rateLimitKey;
-
-      // To prevent slow brute force attacks, consume points on every failed request during 24 hours window duration
-      try {
-        await slowLimiter.consume(slowRateLimitKey);
-      } catch (rlRejected) {
-        if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, slowRateLimitKey);
-        throw rlRejected;
-      }
-
-      // Consume points for the specific rate limit
-      try {
-        await limiter.consume(rateLimitKey);
-      } catch {}
-    }
-  });
+    },
+    description,
+  );
 };

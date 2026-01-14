@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -19,11 +19,11 @@ const meRoutes = {
   /**
    * Get self
    */
-  getMe: createCustomRoute({
+  getMe: createXRoute({
     operationId: 'getMe',
     method: 'get',
     path: '/',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Get self',
     description: 'Returns the *current user*.',
@@ -42,11 +42,11 @@ const meRoutes = {
   /**
    * Get list of invitations
    */
-  getMyInvitations: createCustomRoute({
+  getMyInvitations: createXRoute({
     operationId: 'getMyInvitations',
     method: 'get',
     path: '/invitations',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
@@ -61,11 +61,11 @@ const meRoutes = {
   /**
    * Update self
    */
-  updateMe: createCustomRoute({
+  updateMe: createXRoute({
     operationId: 'updateMe',
     method: 'put',
     path: '/',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Update self',
     description: 'Updates the *current user*.',
@@ -90,11 +90,11 @@ const meRoutes = {
   /**
    * Delete self
    */
-  deleteMe: createCustomRoute({
+  deleteMe: createXRoute({
     operationId: 'deleteMe',
     method: 'delete',
     path: '/',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Delete self',
     description:
@@ -107,11 +107,11 @@ const meRoutes = {
   /**
    * Get auth data
    */
-  getMyAuth: createCustomRoute({
+  getMyAuth: createXRoute({
     operationId: 'getMyAuth',
     method: 'get',
     path: '/auth',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Get auth data',
     description:
@@ -127,11 +127,11 @@ const meRoutes = {
   /**
    * Terminate sessions
    */
-  deleteMySessions: createCustomRoute({
+  deleteMySessions: createXRoute({
     operationId: 'deleteMySessions',
     method: 'delete',
     path: '/sessions',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
@@ -153,11 +153,11 @@ const meRoutes = {
   /**
    * Leave entity
    */
-  deleteMyMembership: createCustomRoute({
+  deleteMyMembership: createXRoute({
     operationId: 'deleteMyMembership',
     method: 'delete',
     path: '/leave',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
@@ -172,12 +172,12 @@ const meRoutes = {
   /**
    * Unsubscribe
    */
-  unsubscribeMe: createCustomRoute({
+  unsubscribeMe: createXRoute({
     operationId: 'unsubscribeMe',
     method: 'get',
     path: '/unsubscribe',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('unsubscribe')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('unsubscribe'),
     tags: ['me'],
     summary: 'Unsubscribe',
     description:
@@ -194,11 +194,11 @@ const meRoutes = {
   /**
    * Get upload token
    */
-  getUploadToken: createCustomRoute({
+  getUploadToken: createXRoute({
     operationId: 'getUploadToken',
     method: 'get',
     path: '/upload-token',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Get upload token',
     description:
@@ -215,11 +215,11 @@ const meRoutes = {
   /**
    * Toggle MFA
    */
-  toggleMfa: createCustomRoute({
+  toggleMfa: createXRoute({
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['me'],
     summary: 'Toggle MFA',
     description:

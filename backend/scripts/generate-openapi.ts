@@ -10,7 +10,7 @@ process.env.AVOID_DB_CONNECTION = 'true';
   try {
     const [{ default: app }, { default: docs }] = await Promise.all([
       import('#/routes'),
-      import('#/lib/docs'),
+      import('#/docs/docs'),
     ]);
 
     await docs(app, true);

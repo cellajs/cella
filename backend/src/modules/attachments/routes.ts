@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { attachmentCreateManySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
@@ -17,11 +17,11 @@ const attachmentRoutes = {
   /**
    * Create one or more attachments
    */
-  createAttachments: createCustomRoute({
+  createAttachments: createXRoute({
     operationId: 'createAttachment',
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Create attachments',
     description:
@@ -48,11 +48,11 @@ const attachmentRoutes = {
   /**
    * Update an attachment
    */
-  updateAttachment: createCustomRoute({
+  updateAttachment: createXRoute({
     operationId: 'updateAttachment',
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Update attachment',
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
@@ -78,11 +78,11 @@ const attachmentRoutes = {
   /**
    * Delete one or more attachments
    */
-  deleteAttachments: createCustomRoute({
+  deleteAttachments: createXRoute({
     operationId: 'deleteAttachments',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Delete attachments',
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
@@ -108,11 +108,11 @@ const attachmentRoutes = {
   /**
    * Sync attachments using Electric shape proxy
    */
-  syncAttachments: createCustomRoute({
+  syncAttachments: createXRoute({
     operationId: 'syncAttachments',
     method: 'get',
     path: '/sync-attachments',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Sync attachments',
     description: `Sync attachment data by proxying requests to ElectricSQL's shape endpoint for \`attachments\` table.
@@ -126,12 +126,12 @@ const attachmentRoutes = {
   /**
    * Redirect to attachment
    */
-  redirectToAttachment: createCustomRoute({
+  redirectToAttachment: createXRoute({
     operationId: 'redirectToAttachment',
     method: 'get',
     path: '/{id}/link',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('attachment_redirect')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('attachment_redirect'),
     tags: ['attachments'],
     summary: 'Redirect to attachment',
     description: "Redirects to the file's public or presigned URL, depending on storage visibility.",

@@ -1,10 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDown, ChevronDownIcon, Loader2 } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
-import { cn } from '~/utils/cn';
 import {
   getTypeCodeForResponse,
   getZodCodeForResponse,
@@ -27,7 +23,7 @@ const resolveResponseSchema = (response: GenResponseSummary, schemas: GenCompone
   return undefined;
 };
 
-interface ResponsesAccordionProps {
+interface ExamplesAccordionProps {
   responses: GenResponseSummary[];
   schemas: GenComponentSchema[];
   operationId: string;
@@ -36,18 +32,25 @@ interface ResponsesAccordionProps {
 }
 
 /**
- * Accordion component to display operation responses.
+ * Accordion component to display operation response examples.
+ * Only shows responses that have examples, with example view preselected.
  */
-const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) => {
+const ExamplesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ExamplesAccordionProps) => {
   const { t } = useTranslation();
 
-  if (responses.length === 0) {
-    return <div className="text-sm text-muted-foreground py-2">{t('common:docs.no_responses_defined')}</div>;
+  // Filter to only responses with examples
+  const responsesWithExamples = responses.filter((r) => r.example !== undefined);
+
+  if (responsesWithExamples.length === 0) {
+    return <div className="text-sm text-muted-foreground py-2">{t('common:docs.no_examples_defined')}</div>;
   }
 
+  // Default to first response with example expanded
+  const defaultValue = String(responsesWithExamples[0].status);
+
   return (
-    <Accordion type="single" className="w-full" collapsible>
-      {responses.map((response) => {
+    <Accordion type="single" className="w-full" collapsible defaultValue={defaultValue}>
+      {responsesWithExamples.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
@@ -75,6 +78,7 @@ const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, types
                   zodCode={getZodCodeForResponse(zodContent, operationId, response.status, response.name)}
                   typeCode={getTypeCodeForResponse(typesContent, operationId, response.status)}
                   example={response.example}
+                  defaultViewMode="example"
                 />
               ) : (
                 <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
@@ -87,18 +91,17 @@ const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, types
   );
 };
 
-interface OperationResponsesProps {
+interface OperationExamplesProps {
   operationId: string;
   tagName: string;
 }
 
 /**
- * Operation responses component that uses useSuspenseQuery for Suspense integration.
+ * Operation examples component that shows responses with examples.
  * Wrap the parent component in a Suspense boundary for optimal batching.
  */
-export const OperationResponses = ({ operationId, tagName }: OperationResponsesProps) => {
+export const OperationExamples = ({ operationId, tagName }: OperationExamplesProps) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
@@ -108,65 +111,23 @@ export const OperationResponses = ({ operationId, tagName }: OperationResponsesP
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-8">
-      <CollapsibleTrigger className="flex items-center gap-2 group w-full text-left">
-        <h4 className="text-sm font-medium">{t('common:docs.responses')}</h4>
-        <ChevronDownIcon
-          className={cn(
-            'size-4 transition-transform duration-200 opacity-40 group-hover:opacity-70',
-            isOpen && 'rotate-180',
-          )}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-        <div className="mt-2">
-          <ResponsesAccordion
-            responses={responses}
-            schemas={schemas}
-            operationId={operationId}
-            zodContent={zodContent}
-            typesContent={typesContent}
-          />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
+  // Filter to only responses with examples
+  const responsesWithExamples = responses.filter((r) => r.example !== undefined);
 
-interface TagExpandButtonProps {
-  tagName: string;
-  isOpen: boolean;
-}
-
-/**
- * Button content that triggers data load via useSuspenseQuery.
- * When wrapped in Suspense, shows loading state until data is ready.
- */
-export const TagExpandButtonContent = ({ tagName, isOpen }: TagExpandButtonProps) => {
-  const { t } = useTranslation();
-  // This triggers the Suspense - data will be cached for when content renders
-  useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  if (responsesWithExamples.length === 0) {
+    return <div className="py-4 text-center text-muted-foreground">{t('common:docs.no_examples_defined')}</div>;
+  }
 
   return (
-    <>
-      {t('common:docs.hide_details')}
-      <ChevronDown
-        className={cn('ml-2 h-4 w-4 transition-transform duration-200 opacity-50', isOpen && 'rotate-180')}
+    <div className="mt-4">
+      <h4 className="text-sm font-medium mb-4">{t('common:docs.response_examples')}</h4>
+      <ExamplesAccordion
+        responses={responses}
+        schemas={schemas}
+        operationId={operationId}
+        zodContent={zodContent}
+        typesContent={typesContent}
       />
-    </>
-  );
-};
-
-/**
- * Loading fallback for the expand button - shows spinner instead of chevron
- */
-export const TagExpandButtonLoading = () => {
-  const { t } = useTranslation();
-  return (
-    <>
-      {t('common:docs.show_details')}
-      <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
-    </>
+    </div>
   );
 };

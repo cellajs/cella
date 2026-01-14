@@ -12,7 +12,6 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "pnpm-lock.yaml",
       "render.yaml",
       "compose.yaml",
-      "cella.config.js",
       "cella.config.ts",
       "config/default.ts",
       "config/staging.ts",
@@ -50,7 +49,6 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "backend/src/attachment-config.ts",
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
-      "backend/src/lib/docs-config.ts",
       "json/text-blocks.json",
       "locales/en/about.json",
       "locales/en/app.json"

@@ -43,7 +43,7 @@ const OperationsListPage = () => {
       <div className="flex items-center gap-3 mb-6">
         <ViewModeToggle />
 
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground lowercase">
           {operations.length} {t('common:operation', { count: operations.length })}
         </span>
       </div>
@@ -78,7 +78,10 @@ const OperationsListPage = () => {
                       replace
                       draggable={false}
                       resetScroll={false}
-                      className={cn(buttonVariants({ variant: 'plain', size: 'lg' }), 'rounded-full')}
+                      className={cn(
+                        buttonVariants({ variant: isOpen ? 'outlineGhost' : 'plain', size: 'lg' }),
+                        'rounded-full',
+                      )}
                       onMouseEnter={() => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))}
                     >
                       {isOpen ? (

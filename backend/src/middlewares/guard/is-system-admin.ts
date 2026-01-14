@@ -1,6 +1,6 @@
+import { xMiddleware } from '#/docs/x-middleware';
 import { getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { xMiddleware } from '#/lib/x-middleware';
 
 /**
  * Middleware to check if user is a system admin based on their role.

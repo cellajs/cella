@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link, Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { Link, Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
 import { MenuIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -13,14 +13,22 @@ import { Button } from '~/modules/ui/button';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { DocsLayoutRoute } from '~/routes/docs-routes';
+import { useUIStore } from '~/store/ui';
 
 const DOCS_SIDEBAR_SHEET_ID = 'docs-sidebar';
 
 const DocsLayout = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
+  const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const showHeader = useScrollVisibility(isMobile);
+  const { isVisible: showHeader, reset: resetHeaderVisibility } = useScrollVisibility(isMobile);
+
+  // Reset header visibility on route or hash change (mobile)
+  const { location } = useRouterState();
+  useEffect(() => {
+    if (isMobile) resetHeaderVisibility();
+  }, [location.pathname, location.hash, isMobile, resetHeaderVisibility]);
 
   const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
 
@@ -118,13 +126,17 @@ const DocsLayout = () => {
   return (
     <div className="h-screen [--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
       <ResizableGroup orientation="horizontal" className="h-screen">
-        <ResizablePanel defaultSize="20%" minSize="16rem" maxSize="40%">
-          <div className="h-screen">
-            <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
-          </div>
-        </ResizablePanel>
+        {!focusView && (
+          <>
+            <ResizablePanel defaultSize="20%" minSize="16rem" maxSize="40%">
+              <div className="h-screen">
+                <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
+              </div>
+            </ResizablePanel>
 
-        <ResizableSeparator />
+            <ResizableSeparator />
+          </>
+        )}
 
         <ResizablePanel>
           <main className="h-screen pt-3 sm:pt-6 overflow-auto">

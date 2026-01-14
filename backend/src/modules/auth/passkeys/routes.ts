@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -16,12 +16,12 @@ const authPasskeysRoutes = {
   /**
    * Generate passkey challenge
    */
-  generatePasskeyChallenge: createCustomRoute({
+  generatePasskeyChallenge: createXRoute({
     operationId: 'generatePasskeyChallenge',
     method: 'post',
     path: '/passkey/generate-challenge',
-    guard: isPublicAccess,
-    middleware: [passkeyChallengeLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: passkeyChallengeLimiter,
     tags: ['auth'],
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
@@ -42,11 +42,11 @@ const authPasskeysRoutes = {
   /**
    * Create passkey
    */
-  createPasskey: createCustomRoute({
+  createPasskey: createXRoute({
     operationId: 'createPasskey',
     method: 'post',
     path: '/passkey',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['auth'],
     summary: 'Create passkey',
     description:
@@ -68,11 +68,11 @@ const authPasskeysRoutes = {
   /**
    * Delete passkey
    */
-  deletePasskey: createCustomRoute({
+  deletePasskey: createXRoute({
     operationId: 'deletePasskey',
     method: 'delete',
     path: '/passkey/{id}',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['auth'],
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the *current user*.',
@@ -87,12 +87,12 @@ const authPasskeysRoutes = {
   /**
    * Verify passkey
    */
-  signInWithPasskey: createCustomRoute({
+  signInWithPasskey: createXRoute({
     operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('passkey')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('passkey'),
     tags: ['auth'],
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',

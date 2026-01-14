@@ -154,9 +154,20 @@ export const useScrollSpy = ({ sectionIds = [], enableWriteHash = false, smoothS
 
       let newSection: IntersectionEntry | undefined;
 
-      // If any fully intersect, use the first one
+      // If any fully intersect, pick the one closest to the top of the viewport
       if (fullyIntersecting.length > 0) {
-        newSection = fullyIntersecting[0];
+        if (fullyIntersecting.length === 1) {
+          newSection = fullyIntersecting[0];
+        } else {
+          // Sort by vertical position (closest to top wins)
+          const sorted = fullyIntersecting
+            .map((entry) => {
+              const el = document.getElementById(entry.id);
+              return { ...entry, top: el?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY };
+            })
+            .sort((a, b) => a.top - b.top);
+          newSection = sorted[0];
+        }
       } else {
         // Otherwise use highest ratio
         const mostProminent = entriesArray.reduce((prev, curr) => (curr.ratio > prev.ratio ? curr : prev), {

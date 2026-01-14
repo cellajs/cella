@@ -1,4 +1,4 @@
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import { checkSlugBodySchema } from '#/modules/entities/schema';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
@@ -7,11 +7,11 @@ const entityRoutes = {
   /**
    * Check slug availability
    */
-  checkSlug: createCustomRoute({
+  checkSlug: createXRoute({
     operationId: 'checkSlug',
     method: 'post',
     path: '/check-slug',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['entities'],
     summary: 'Check slug availability',
     description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).

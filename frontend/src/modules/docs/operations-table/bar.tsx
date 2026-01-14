@@ -5,6 +5,7 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { FocusView } from '~/modules/common/focus-view';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { ViewModeToggle } from '~/modules/docs/view-mode-toggle';
 
@@ -59,6 +60,7 @@ export const OperationsTableBar = ({
         isCompact={isCompact}
         setIsCompact={setIsCompact}
       />
+      <FocusView iconOnly />
     </TableBarContainer>
   );
 };

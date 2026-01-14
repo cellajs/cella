@@ -18,6 +18,9 @@ interface UIStoreState {
   theme: Theme; // Selected theme ('none' for default)
   setTheme: (theme: Theme) => void; // Updates the theme
 
+  focusView: boolean; // Focused view mode state
+  setFocusView: (status: boolean) => void; // Toggles focus view state
+
   clearUIStore: () => void; // Resets store to initial state
 }
 
@@ -25,11 +28,12 @@ interface UIStoreState {
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 // Default state values
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'focusView'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
   impersonating: false,
+  focusView: false,
 };
 
 /**
@@ -60,6 +64,17 @@ export const useUIStore = create<UIStoreState>()(
             state.theme = theme;
           });
         },
+        setFocusView: (status) => {
+          set((state) => {
+            state.focusView = status;
+            // Only move scroll to table if .focus-view-scroll is present
+            if (status && document.getElementsByClassName('focus-view-scroll').length) {
+              document.body.classList.add('focus-view-table');
+            } else {
+              document.body.classList.remove('focus-view-table');
+            }
+          });
+        },
         clearUIStore: () =>
           set(() => ({
             offlineAccess: false,
@@ -74,6 +89,7 @@ export const useUIStore = create<UIStoreState>()(
           impersonating: state.impersonating,
           mode: state.mode,
           theme: state.theme,
+          focusView: state.focusView,
         }),
         storage: createJSONStorage(() => localStorage),
       },

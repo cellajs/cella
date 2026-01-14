@@ -5,6 +5,7 @@ import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import Logo from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { OperationTagsSidebar } from '~/modules/docs/operation-tags-sidebar';
@@ -25,6 +26,7 @@ import {
 import { useDocsStore } from '~/store/docs';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 import UserTheme from '../me/user-theme';
 import { openApiSpecQueryOptions, openApiUrl } from './query';
 
@@ -57,6 +59,7 @@ interface DocsSidebarProps {
  */
 export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm');
 
   const { systemRole } = useUserStore();
 
@@ -279,6 +282,9 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                       buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',
                     )}
+                    onClick={() => {
+                      isMobile && useSheeter.getState().remove();
+                    }}
                   >
                     <span className="truncate">{page.name}</span>
                   </Link>
