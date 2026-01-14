@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -12,11 +12,11 @@ const authGeneralRoutes = {
   /**
    * Start impersonating
    */
-  startImpersonation: createCustomRoute({
+  startImpersonation: createXRoute({
     operationId: 'startImpersonation',
     method: 'get',
     path: '/impersonation/start',
-    guard: [isAuthenticated, hasSystemAccess],
+    xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['auth'],
     summary: 'Start impersonating',
     description:
@@ -33,11 +33,11 @@ const authGeneralRoutes = {
   /**
    * Stop impersonating
    */
-  stopImpersonation: createCustomRoute({
+  stopImpersonation: createXRoute({
     operationId: 'stopImpersonation',
     method: 'get',
     path: '/impersonation/stop',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['auth'],
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
@@ -49,12 +49,13 @@ const authGeneralRoutes = {
   /**
    * Check if email exists
    */
-  checkEmail: createCustomRoute({
+  checkEmail: createXRoute({
     operationId: 'checkEmail',
     method: 'post',
     path: '/check-email',
-    guard: isPublicAccess,
-    middleware: [isNoBot, emailEnumLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: emailEnumLimiter,
+    middleware: isNoBot,
     tags: ['auth'],
     summary: 'Check if email exists',
     description: 'Checks if a user with the specified email address exists in the system.',
@@ -72,12 +73,13 @@ const authGeneralRoutes = {
   /**
    * Invoke token session
    */
-  invokeToken: createCustomRoute({
+  invokeToken: createXRoute({
     operationId: 'invokeToken',
     method: 'get',
     path: '/invoke-token/{type}/{token}',
-    guard: isPublicAccess,
-    middleware: [isNoBot, tokenLimiter('token')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('token'),
+    middleware: isNoBot,
     tags: ['auth'],
     summary: 'Invoke token session',
     description:
@@ -96,12 +98,13 @@ const authGeneralRoutes = {
   /**
    * Get token data
    */
-  getTokenData: createCustomRoute({
+  getTokenData: createXRoute({
     operationId: 'getTokenData',
     method: 'get',
     path: '/token/{type}/{id}',
-    guard: isPublicAccess,
-    middleware: [isNoBot, tokenLimiter('token')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('token'),
+    middleware: isNoBot,
     tags: ['auth'],
     summary: 'Get token data',
     description:
@@ -120,12 +123,12 @@ const authGeneralRoutes = {
   /**
    * Resend invitation
    */
-  resendInvitationWithToken: createCustomRoute({
+  resendInvitationWithToken: createXRoute({
     operationId: 'resendInvitationWithToken',
     method: 'post',
     path: '/resend-invitation',
-    guard: isPublicAccess,
-    middleware: [spamLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: spamLimiter,
     tags: ['auth'],
     summary: 'Resend invitation',
     description: 'Resends an invitation email with token to a new user using the provided email address and token ID.',
@@ -142,11 +145,11 @@ const authGeneralRoutes = {
   /**
    * Sign out
    */
-  signOut: createCustomRoute({
+  signOut: createXRoute({
     operationId: 'signOut',
     method: 'post',
     path: '/sign-out',
-    guard: isPublicAccess,
+    xGuard: isPublicAccess,
     tags: ['auth'],
     summary: 'Sign out',
     description: 'Signs out the *current user* and clears the active session.',

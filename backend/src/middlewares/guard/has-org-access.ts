@@ -2,9 +2,9 @@ import * as Sentry from '@sentry/node';
 import { eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
+import { xMiddleware } from '#/docs/x-middleware';
 import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { xMiddleware } from '#/lib/x-middleware';
 
 /**
  * Middleware to ensure the user has access to an organization-scoped route.

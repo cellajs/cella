@@ -42,7 +42,17 @@ export type OpenApiRequestBody = {
 
 export type OpenApiSpec = {
   openapi?: string;
-  info?: { title?: string; version?: string; description?: string };
+  info?: {
+    title?: string;
+    version?: string;
+    description?: string;
+    'x-extensions'?: Array<{
+      key: string;
+      id: string;
+      translationKey: string;
+      description: string;
+    }>;
+  };
   tags?: { name: string; description?: string }[];
   components?: {
     schemas?: Record<string, OpenApiSchema>;

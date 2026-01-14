@@ -1,5 +1,5 @@
 import z from 'zod';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { baseElectricSyncQuery, idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
@@ -10,11 +10,11 @@ const pagesRoutes = {
   /**
    * Sync pages using Electric shape proxy
    */
-  syncPages: createCustomRoute({
+  syncPages: createXRoute({
     operationId: 'syncPages',
     method: 'get',
     path: '/sync-pages',
-    guard: isPublicAccess,
+    xGuard: isPublicAccess,
     tags: ['pages'],
     summary: 'Sync pages',
     description: `Sync page data by proxying requests to ElectricSQL's shape endpoint for \`pages\` table.`,
@@ -27,11 +27,11 @@ const pagesRoutes = {
   /**
    * Create a page
    */
-  createPage: createCustomRoute({
+  createPage: createXRoute({
     operationId: 'createPage',
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, isSystemAdmin],
+    xGuard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Create pages',
     description: 'Insert one or more new *pages*.',
@@ -56,11 +56,11 @@ const pagesRoutes = {
   /**
    * Get pages
    */
-  getPages: createCustomRoute({
+  getPages: createXRoute({
     operationId: 'getPages',
     method: 'get',
     path: '/',
-    guard: [isPublicAccess],
+    xGuard: [isPublicAccess],
     tags: ['pages'],
     summary: 'Get pages',
     description: 'Get all matching *pages*.',
@@ -80,11 +80,11 @@ const pagesRoutes = {
   /**
    * Get page
    */
-  getPage: createCustomRoute({
+  getPage: createXRoute({
     operationId: 'getPage',
     method: 'get',
     path: '/{id}',
-    guard: [isPublicAccess],
+    xGuard: [isPublicAccess],
     tags: ['pages'],
     summary: 'Get page',
     description: 'Get a single *page* by ID.',
@@ -104,11 +104,11 @@ const pagesRoutes = {
   /**
    * Update page
    */
-  updatePage: createCustomRoute({
+  updatePage: createXRoute({
     operationId: 'updatePage',
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated, isSystemAdmin],
+    xGuard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Update page',
     description: 'Update a single *page* by ID.',
@@ -132,11 +132,11 @@ const pagesRoutes = {
   /**
    * Delete page
    */
-  deletePages: createCustomRoute({
+  deletePages: createXRoute({
     operationId: 'deletePages',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, isSystemAdmin],
+    xGuard: [isAuthenticated, isSystemAdmin],
     tags: ['pages'],
     summary: 'Delete pages',
     description: 'Delete one or more *pages* by ID.',

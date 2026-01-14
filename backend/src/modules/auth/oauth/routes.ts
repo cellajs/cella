@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/schema';
@@ -10,11 +10,11 @@ const authOAuthRoutes = {
   /**
    * Authenticate with GitHub
    */
-  github: createCustomRoute({
+  github: createXRoute({
     operationId: 'github',
     method: 'get',
     path: '/github',
-    guard: isPublicAccess,
+    xGuard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description:
@@ -31,12 +31,12 @@ const authOAuthRoutes = {
   /**
    * Callback for GitHub
    */
-  githubCallback: createCustomRoute({
+  githubCallback: createXRoute({
     operationId: 'githubCallback',
     method: 'get',
     path: '/github/callback',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('github')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('github'),
     tags: ['auth'],
     summary: 'Callback for GitHub',
     description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
@@ -58,11 +58,11 @@ const authOAuthRoutes = {
   /**
    * Authenticate with Google
    */
-  google: createCustomRoute({
+  google: createXRoute({
     operationId: 'google',
     method: 'get',
     path: '/google',
-    guard: isPublicAccess,
+    xGuard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description:
@@ -79,12 +79,12 @@ const authOAuthRoutes = {
   /**
    * Callback for Google
    */
-  googleCallback: createCustomRoute({
+  googleCallback: createXRoute({
     operationId: 'googleCallback',
     method: 'get',
     path: '/google/callback',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('google')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('google'),
     tags: ['auth'],
     summary: 'Callback for Google',
     description: 'Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.',
@@ -100,11 +100,11 @@ const authOAuthRoutes = {
   /**
    * Authenticate with Microsoft
    */
-  microsoft: createCustomRoute({
+  microsoft: createXRoute({
     operationId: 'microsoft',
     method: 'get',
     path: '/microsoft',
-    guard: isPublicAccess,
+    xGuard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description:
@@ -121,12 +121,12 @@ const authOAuthRoutes = {
   /**
    * Callback for Microsoft
    */
-  microsoftCallback: createCustomRoute({
+  microsoftCallback: createXRoute({
     operationId: 'microsoftCallback',
     method: 'get',
     path: '/microsoft/callback',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('microsoft')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('microsoft'),
     tags: ['auth'],
     summary: 'Callback for Microsoft',
     description:

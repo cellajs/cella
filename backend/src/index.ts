@@ -1,5 +1,5 @@
 import { db, migrateConfig } from '#/db/db';
-import docs from '#/lib/docs';
+import docs from '#/docs/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
 import * as Sentry from '@sentry/node';

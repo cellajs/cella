@@ -2,11 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 
 interface JsonActionsProps {
   url: string;
@@ -31,6 +33,7 @@ export const JsonActions = ({
   viewerUrl,
 }: JsonActionsProps) => {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm');
 
   const { copyToClipboard, copied } = useCopyToClipboard();
   const { download, isInProgress } = useDownloader();
@@ -58,7 +61,12 @@ export const JsonActions = ({
       {/* View */}
       {viewerUrl && (
         <ToggleGroupItem value="view" aria-label={t('common:view')} className="gap-2 flex-none" size={size} asChild>
-          <Link to={viewerUrl}>
+          <Link
+            to={viewerUrl}
+            onClick={() => {
+              isMobile && useSheeter.getState().remove();
+            }}
+          >
             <span className="group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
           </Link>
         </ToggleGroupItem>

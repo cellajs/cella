@@ -43,7 +43,7 @@ const OperationsListPage = () => {
       <div className="flex items-center gap-3 mb-6">
         <ViewModeToggle />
 
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground lowercase">
           {operations.length} {t('common:operation', { count: operations.length })}
         </span>
       </div>

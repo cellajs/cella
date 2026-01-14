@@ -1,4 +1,4 @@
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import {
   organizationCreateBodySchema,
@@ -15,11 +15,11 @@ const organizationRoutes = {
   /**
    * Create an organization
    */
-  createOrganization: createCustomRoute({
+  createOrganization: createXRoute({
     operationId: 'createOrganization',
     method: 'post',
     path: '/',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['organizations'],
     summary: 'Create organization',
     description: 'Creates a new *organization*.',
@@ -40,11 +40,11 @@ const organizationRoutes = {
   /**
    * Get list of organizations
    */
-  getOrganizations: createCustomRoute({
+  getOrganizations: createXRoute({
     operationId: 'getOrganizations',
     method: 'get',
     path: '/',
-    guard: [isAuthenticated],
+    xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Returns a list of *organizations*.',
@@ -60,11 +60,11 @@ const organizationRoutes = {
   /**
    * Update an organization
    */
-  updateOrganization: createCustomRoute({
+  updateOrganization: createXRoute({
     operationId: 'updateOrganization',
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated],
+    xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Update organization',
     description: 'Updates an *organization* by ID or slug.',
@@ -85,11 +85,11 @@ const organizationRoutes = {
   /**
    * Get an organization
    */
-  getOrganization: createCustomRoute({
+  getOrganization: createXRoute({
     operationId: 'getOrganization',
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated],
+    xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID or slug.',
@@ -105,11 +105,11 @@ const organizationRoutes = {
   /**
    * Delete organizations
    */
-  deleteOrganizations: createCustomRoute({
+  deleteOrganizations: createXRoute({
     operationId: 'deleteOrganizations',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated],
+    xGuard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Delete organizations',
     description: 'Deletes one or more *organizations* by ID.',

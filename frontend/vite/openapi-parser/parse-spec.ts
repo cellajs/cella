@@ -5,6 +5,7 @@
 
 import type {
   GenComponentSchema,
+  GenExtensionDefinition,
   GenInfoSummary,
   GenOperationDetail,
   GenOperationSummary,
@@ -41,6 +42,9 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const operations: GenOperationSummary[] = [];
   const tagMap = new Map<string, { description?: string; count: number }>();
   const tagDetailsMap = new Map<string, GenOperationDetail[]>();
+
+  // Extract extension definitions from info
+  const extensionDefs: GenExtensionDefinition[] = spec.info?.['x-extensions'] ?? [];
 
   // Get tag descriptions from the OpenAPI spec directly
   if (spec.tags) {
@@ -184,6 +188,18 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
+        // Check if any response has an example
+        const hasExample = responses.some((r) => r.example !== undefined);
+
+        // Extract extensions dynamically based on extensionDefs
+        const extensions: Record<string, string[]> = {};
+        for (const ext of extensionDefs) {
+          const value = op[ext.key as keyof typeof op] as string[] | undefined;
+          if (value && Array.isArray(value)) {
+            extensions[ext.id] = value;
+          }
+        }
+
         const operationSummary: GenOperationSummary = {
           id: op.operationId,
           hash: generateOperationHash(method, path, opTags),
@@ -195,8 +211,8 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           deprecated: op.deprecated ?? false,
           hasParams: Object.keys(op.parameters ?? {}).length > 0,
           hasRequestBody: !!op.requestBody,
-          xGuard: op['x-guard'],
-          xRateLimiter: op['x-rate-limiter'],
+          hasExample,
+          extensions,
         };
 
         operations.push(operationSummary);
@@ -306,6 +322,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     version: specInfo.version ?? '',
     description: specInfo.description ?? '',
     openapiVersion: spec.openapi ?? '',
+    extensions: extensionDefs,
   };
 
   // Extract component schemas

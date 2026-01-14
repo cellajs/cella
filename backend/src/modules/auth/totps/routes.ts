@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/schema';
@@ -10,11 +10,11 @@ const authTotpsRoutes = {
   /**
    * Generate TOTP key
    */
-  generateTotpKey: createCustomRoute({
+  generateTotpKey: createXRoute({
     operationId: 'generateTotpKey',
     method: 'post',
     path: '/totp/generate-key',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['auth'],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
@@ -29,11 +29,11 @@ const authTotpsRoutes = {
   /**
    * Set TOTP
    */
-  createTotp: createCustomRoute({
+  createTotp: createXRoute({
     operationId: 'createTotp',
     method: 'post',
     path: '/totp',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['auth'],
     summary: 'Set TOTP',
     description:
@@ -55,11 +55,11 @@ const authTotpsRoutes = {
   /**
    * Delete TOTP
    */
-  deleteTotp: createCustomRoute({
+  deleteTotp: createXRoute({
     operationId: 'deleteTotp',
     method: 'delete',
     path: '/totp',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['auth'],
     summary: 'Delete TOTP',
     description: 'Delete TOTP credential for current user.',
@@ -71,12 +71,12 @@ const authTotpsRoutes = {
   /**
    * Verify TOTP
    */
-  signInWithTotp: createCustomRoute({
+  signInWithTotp: createXRoute({
     operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
-    guard: isPublicAccess,
-    middleware: [totpVerificationLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: totpVerificationLimiter,
     tags: ['auth'],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',

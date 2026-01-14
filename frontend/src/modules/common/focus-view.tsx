@@ -7,6 +7,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 interface FocusViewProps {
@@ -16,13 +17,14 @@ interface FocusViewProps {
 
 export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { t } = useTranslation();
-  const { focusView, setFocusView, setNavSheetOpen } = useNavigationStore();
+  const { focusView, setFocusView } = useUIStore();
+  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
   const removeSheet = useSheeter.getState().remove;
 
   const toggleFocus = () => {
     toaster(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
     setFocusView(!focusView);
-    removeSheet('nav-sheet');
+    removeSheet();
     setNavSheetOpen(null);
     window.scrollTo(0, 0);
   };
@@ -38,7 +40,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
 };
 
 export const FocusViewContainer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
-  const focusView = useNavigationStore((state) => state.focusView);
+  const focusView = useUIStore((state) => state.focusView);
 
   useBodyClass({ 'focus-view': focusView });
 

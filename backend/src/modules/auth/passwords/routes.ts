@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { isPublicAccess } from '#/middlewares/guard';
 import { hasValidSingleUseToken } from '#/middlewares/has-valid-single-use-token';
 import { isNoBot } from '#/middlewares/is-no-bot';
@@ -13,12 +13,13 @@ const authPasswordsRoutes = {
   /**
    * Sign up with password
    */
-  signUp: createCustomRoute({
+  signUp: createXRoute({
     operationId: 'signUp',
     method: 'post',
     path: '/sign-up',
-    guard: isPublicAccess,
-    middleware: [isNoBot, spamLimiter, emailEnumLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: [spamLimiter, emailEnumLimiter],
+    middleware: [isNoBot],
     tags: ['auth'],
     summary: 'Sign up with password',
     description:
@@ -43,12 +44,13 @@ const authPasswordsRoutes = {
   /**
    * Sign up to accept invite
    */
-  signUpWithToken: createCustomRoute({
+  signUpWithToken: createXRoute({
     operationId: 'signUpWithToken',
     method: 'post',
     path: '/sign-up/{tokenId}',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('signup_invitation'), emailEnumLimiter, hasValidSingleUseToken('invitation')],
+    xGuard: isPublicAccess,
+    xRateLimiter: [tokenLimiter('signup_invitation'), emailEnumLimiter],
+    middleware: [hasValidSingleUseToken('invitation')],
     tags: ['auth'],
     summary: 'Sign up to accept invite',
     description: 'Registers a user using an email and password in response to a system or organization invitation.',
@@ -71,12 +73,12 @@ const authPasswordsRoutes = {
   /**
    * Request new password
    */
-  requestPassword: createCustomRoute({
+  requestPassword: createXRoute({
     operationId: 'requestPassword',
     method: 'post',
     path: '/request-password',
-    guard: isPublicAccess,
-    middleware: [spamLimiter, emailEnumLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Request new password',
     description: "Sends an email with a link to reset the user's password.",
@@ -96,12 +98,13 @@ const authPasswordsRoutes = {
   /**
    * Create password
    */
-  createPasswordWithToken: createCustomRoute({
+  createPasswordWithToken: createXRoute({
     operationId: 'createPassword',
     method: 'post',
     path: '/create-password/{tokenId}',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter('password-reset'), hasValidSingleUseToken('password-reset')],
+    xGuard: isPublicAccess,
+    xRateLimiter: tokenLimiter('password-reset'),
+    middleware: [hasValidSingleUseToken('password-reset')],
     tags: ['auth'],
     summary: 'Create password',
     description:
@@ -124,12 +127,12 @@ const authPasswordsRoutes = {
   /**
    * Sign in with password
    */
-  signIn: createCustomRoute({
+  signIn: createXRoute({
     operationId: 'signIn',
     method: 'post',
     path: '/sign-in',
-    guard: isPublicAccess,
-    middleware: [passwordLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: passwordLimiter,
     tags: ['auth'],
     summary: 'Sign in with password',
     description: 'Authenticates an existing user using their email and password.',

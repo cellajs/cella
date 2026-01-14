@@ -21,7 +21,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 
 ## Routing
 - **Backend (Hono + OpenAPI)**:
-  - Routes are defined in `backend/src/modules/<module>/routes.ts` using `createCustomRoute`. This defines the OpenAPI specification (method, path, guard, request/response schemas).
+  - Routes are defined in `backend/src/modules/<module>/routes.ts` using `createXRoute`. This defines the OpenAPI specification (method, path, guard, request/response schemas).
   - Route handlers are implemented in `backend/src/modules/<module>/handlers.ts` using the `.openapi()` method on an `OpenAPIHono` instance.
   - All module handlers are aggregated in `backend/src/routes.ts`.
 - **Frontend (TanStack Router)**:
@@ -60,7 +60,8 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Formatter/Linter: Biome (see `biome.json`). Run it with `pnpm lint` or `pnpm lint:fix`.
 - Indentation: 2 spaces; line width: 100; quotes: single; semicolons: as needed; trailing commas: ES5.
 - TypeScript-first; keep strict types and meaningful names.
-- Prefer feature-oriented folders; test files near code or under `__tests__/`.
+- Type assertions: Avoid `as` type assertions. Prefer type-safe patterns like `Object.assign` for intersection types, factory functions with `satisfies`, or const assertions (`as const`). When unavoidable, isolate assertions in well-documented helper functions.
+- Prefer feature-oriented folders; test files near code or under `tests/`.
 - Zod v4 only: `import { z } from 'zod'`. However, in backend due to using hono/zod-openapi, `import { z } from '@hono/zod-openapi'` is required.
 - camelCase for variables and functions, PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
 - Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.

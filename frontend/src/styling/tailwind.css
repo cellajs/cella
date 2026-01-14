@@ -203,6 +203,22 @@
     @apply bg-background text-foreground min-h-full overscroll-none;
   }
 
+  .container {
+    padding-inline: 0.7rem !important;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-inline: 1rem !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-inline: 1.5rem !important;
+    }
+  }
+
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   @media (max-width: 639px) {
     html {

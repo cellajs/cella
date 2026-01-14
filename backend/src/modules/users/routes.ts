@@ -1,4 +1,4 @@
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { systemRoleBaseSchema } from '#/modules/system/schema';
@@ -11,11 +11,11 @@ const userRoutes = {
   /**
    * Get list of users
    */
-  getUsers: createCustomRoute({
+  getUsers: createXRoute({
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Returns a list of *users*.',
@@ -40,11 +40,11 @@ const userRoutes = {
   /**
    * Delete users
    */
-  deleteUsers: createCustomRoute({
+  deleteUsers: createXRoute({
     operationId: 'deleteUsers',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, hasSystemAccess],
+    xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Delete users',
     description:
@@ -66,11 +66,11 @@ const userRoutes = {
   /**
    * Get a user
    */
-  getUser: createCustomRoute({
+  getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',
     path: '/{idOrSlug}',
-    guard: isAuthenticated,
+    xGuard: isAuthenticated,
     tags: ['users'],
     summary: 'Get user',
     description: 'Retrieves a *user* by ID or slug.',
@@ -86,11 +86,11 @@ const userRoutes = {
   /**
    * Update a user
    */
-  updateUser: createCustomRoute({
+  updateUser: createXRoute({
     operationId: 'updateUser',
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, hasSystemAccess],
+    xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Update user',
     description: 'Updates a *user* identified by ID or slug.',

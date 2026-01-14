@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import {
@@ -26,11 +26,11 @@ const membershipRoutes = {
   /**
    * Create memberships
    */
-  createMemberships: createCustomRoute({
+  createMemberships: createXRoute({
     operationId: 'membershipInvite',
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Create memberships',
     description:
@@ -56,11 +56,11 @@ const membershipRoutes = {
   /**
    * Delete memberships
    */
-  deleteMemberships: createCustomRoute({
+  deleteMemberships: createXRoute({
     operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Delete memberships',
     description:
@@ -88,11 +88,11 @@ const membershipRoutes = {
   /**
    * Update membership
    */
-  updateMembership: createCustomRoute({
+  updateMembership: createXRoute({
     operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Update membership',
     description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
@@ -113,11 +113,11 @@ const membershipRoutes = {
   /**
    * Respond to membership invitation
    */
-  handleMembershipInvitation: createCustomRoute({
+  handleMembershipInvitation: createXRoute({
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    guard: [isAuthenticated],
+    xGuard: [isAuthenticated],
     tags: ['memberships'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
@@ -135,11 +135,11 @@ const membershipRoutes = {
   /**
    * Get list of members
    */
-  getMembers: createCustomRoute({
+  getMembers: createXRoute({
     operationId: 'getMembers',
     method: 'get',
     path: '/members',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of members',
     description:
@@ -163,11 +163,11 @@ const membershipRoutes = {
   /**
    * Get list of pending memberships
    */
-  getPendingMemberships: createCustomRoute({
+  getPendingMemberships: createXRoute({
     operationId: 'getPendingMemberships',
     method: 'get',
     path: '/pending',
-    guard: [isAuthenticated, hasOrgAccess],
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of pending memberships',
     description:

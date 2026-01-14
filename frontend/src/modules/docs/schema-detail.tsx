@@ -26,7 +26,7 @@ export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
   const refId = schema.ref.replace(/^#/, '');
 
   return (
-    <Card id={refId} className="scroll-mt-10 sm:scroll-mt-2 border-0">
+    <Card id={refId} className="scroll-mt-14 sm:scroll-mt-2 border-0">
       <CardHeader className="group">
         <CardTitle className="text-xl leading-8 gap-2">
           {schema.name}

@@ -18,7 +18,7 @@ Both backend and frontend use **modular structure** in `src/modules/` (e.g., `au
 Routes are OpenAPI-first using `@hono/zod-openapi`:
 ```typescript
 // backend/src/modules/<module>/routes.ts - Define OpenAPI spec
-createCustomRoute({ operationId, method, path, guard, request, responses })
+createXRoute({ operationId, method, path, guard, request, responses })
 
 // backend/src/modules/<module>/handlers.ts - Implement handlers
 app.openapi(routes.operationName, async (ctx) => { ... })
