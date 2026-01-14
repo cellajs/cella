@@ -59,6 +59,7 @@ describe('parseOpenApiSpec', () => {
       version: '1.0.0',
       description: '',
       openapiVersion: '3.0.0',
+      extensions: [],
     });
   });
 

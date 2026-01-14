@@ -70,8 +70,8 @@ export const env = createEnv({
     ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
 
     PINO_LOG_LEVEL: z
-      .enum(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]])
-      .default(appConfig.mode === 'production' ? 'info' : 'debug'),
+      .enum([...(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]]), 'silent'])
+      .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
 
     ...additionalEnvSchema.shape,
   },
