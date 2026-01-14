@@ -111,6 +111,9 @@ jobs:
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install
 
+      - name: Generate OpenAPI spec
+        run: pnpm --filter backend generate-openapi
+
       - run: pnpm test
 
   # Will run a quick startup check to ensure the app starts without issues
