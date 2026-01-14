@@ -109,7 +109,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install
+        run: cd frontend && pnpm exec playwright install
 
       - run: pnpm test
 
