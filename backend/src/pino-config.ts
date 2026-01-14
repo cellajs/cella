@@ -13,6 +13,7 @@ const redactedFields = [
 
 // In production, we use the default pino logger
 const isProduction = appConfig.mode === 'production';
+const isTest = appConfig.mode === 'test';
 
 /**
  * Logger for all requests.
@@ -20,7 +21,7 @@ const isProduction = appConfig.mode === 'production';
  */
 export const requestLogger = pino(
   {
-    level: isProduction ? 'info' : 'debug',
+    level: isTest ? 'silent' : isProduction ? 'info' : 'debug',
     redact: {
       paths: [...redactedFields, 'req.headers.authorization', 'req.headers.cookie'],
       censor: '[REDACTED]',

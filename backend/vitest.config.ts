@@ -15,6 +15,8 @@ export default defineConfig({
   test: {
     env: {
       PGLITE: 'true',
+      PINO_LOG_LEVEL: 'silent',
+      NODE_ENV: 'test'
     },
   },
 });
