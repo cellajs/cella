@@ -1520,6 +1520,56 @@ Each module includes a set of endpoints that expose functionality related to a s
 The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.",
       "title": "Cella DEVELOPMENT API",
       "version": "v1",
+      "x-extensions": [
+        {
+          "description": "Authorization middleware applied to the endpoint",
+          "id": "xGuard",
+          "key": "x-guard",
+          "required": true,
+          "translationKey": "common:docs.guard",
+          "values": {
+            "hasSystemAccess": {
+              "description": "Requires system admin + IP whitelist",
+            },
+            "isAuthenticated": {
+              "description": "Requires valid session",
+            },
+            "isPublicAccess": {
+              "description": "No authentication required",
+            },
+          },
+        },
+        {
+          "description": "Rate limiting rules applied to the endpoint",
+          "id": "xRateLimiter",
+          "key": "x-rate-limiter",
+          "required": false,
+          "translationKey": "common:docs.rate_limiter",
+          "values": {
+            "emailEnumLimiter": {
+              "description": "Blocks IP for 30 min after 10 consecutive failures",
+            },
+            "passkeyChallengeLimiter": {
+              "description": "Max 5 passkey challenges/hour per IP",
+            },
+            "passwordLimiter": {
+              "description": "Blocks email/IP for 30 min after 10 consecutive failures",
+            },
+            "presignedUrlLimiter": {
+              "description": "Max 2000 requests/hour per user/IP for presigned URLs",
+            },
+            "spamLimiter": {
+              "description": "Max 10 requests/hour per IP for email-sending endpoints",
+            },
+            "tokenLimiter": {
+              "description": "Blocks IP for 30 min after 10 consecutive token failures",
+            },
+            "totpVerificationLimiter": {
+              "description": "Blocks for 30 min after 5 failed TOTP attempts",
+            },
+          },
+        },
+      ],
     },
     "openapi": "3.1.0",
     "paths": {
@@ -8085,6 +8135,56 @@ This API is organized into modules based on logical domains (e.g. \`auth\`, \`or
 Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
 
 The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.",
+      "extensions": [
+        {
+          "description": "Authorization middleware applied to the endpoint",
+          "id": "xGuard",
+          "key": "x-guard",
+          "required": true,
+          "translationKey": "common:docs.guard",
+          "values": {
+            "hasSystemAccess": {
+              "description": "Requires system admin + IP whitelist",
+            },
+            "isAuthenticated": {
+              "description": "Requires valid session",
+            },
+            "isPublicAccess": {
+              "description": "No authentication required",
+            },
+          },
+        },
+        {
+          "description": "Rate limiting rules applied to the endpoint",
+          "id": "xRateLimiter",
+          "key": "x-rate-limiter",
+          "required": false,
+          "translationKey": "common:docs.rate_limiter",
+          "values": {
+            "emailEnumLimiter": {
+              "description": "Blocks IP for 30 min after 10 consecutive failures",
+            },
+            "passkeyChallengeLimiter": {
+              "description": "Max 5 passkey challenges/hour per IP",
+            },
+            "passwordLimiter": {
+              "description": "Blocks email/IP for 30 min after 10 consecutive failures",
+            },
+            "presignedUrlLimiter": {
+              "description": "Max 2000 requests/hour per user/IP for presigned URLs",
+            },
+            "spamLimiter": {
+              "description": "Max 10 requests/hour per IP for email-sending endpoints",
+            },
+            "tokenLimiter": {
+              "description": "Blocks IP for 30 min after 10 consecutive token failures",
+            },
+            "totpVerificationLimiter": {
+              "description": "Blocks for 30 min after 5 failed TOTP attempts",
+            },
+          },
+        },
+      ],
       "openapiVersion": "3.1.0",
       "title": "Cella DEVELOPMENT API",
       "version": "v1",
@@ -8093,6 +8193,15 @@ The documentation is generated from source code using \`zod\` schemas, converted
       {
         "deprecated": false,
         "description": "Checks if a user with the specified email address exists in the system.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "emailEnumLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/check-email",
@@ -8103,16 +8212,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "emailEnumLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/invoke-token/{type}/{token}",
@@ -8123,16 +8235,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/token/{type}/{id}",
@@ -8143,16 +8258,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/impersonation/start",
@@ -8163,15 +8280,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/impersonation/stop",
@@ -8182,14 +8301,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "spamLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/resend-invitation",
@@ -8200,16 +8324,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "spamLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Signs out the *current user* and clears the active session.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/auth/POST/auth/sign-out",
@@ -8220,14 +8345,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/auth/POST/auth/totp/generate-key",
@@ -8238,14 +8366,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/totp",
@@ -8256,14 +8387,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Delete TOTP credential for current user.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/auth/DELETE/auth/totp",
@@ -8274,14 +8408,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Validates the TOTP code and completes TOTP based authentication.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "totpVerificationLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/totp-verification",
@@ -8292,16 +8431,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "totpVerificationLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "spamLimiter",
+            "emailEnumLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/sign-up",
@@ -8312,17 +8455,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "spamLimiter",
-          "emailEnumLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Registers a user using an email and password in response to a system or organization invitation.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+            "emailEnumLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/sign-up/{tokenId}",
@@ -8333,17 +8479,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-          "emailEnumLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Sends an email with a link to reset the user's password.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "spamLimiter",
+            "emailEnumLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/request-password",
@@ -8354,17 +8503,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "spamLimiter",
-          "emailEnumLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/create-password/{tokenId}",
@@ -8375,16 +8526,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Authenticates an existing user using their email and password.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "passwordLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/sign-in",
@@ -8395,16 +8549,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "passwordLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/passkey",
@@ -8415,14 +8570,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Delete a passkey by id from the *current user*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/DELETE/auth/passkey/{id}",
@@ -8433,14 +8591,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "passkeyChallengeLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/passkey/generate-challenge",
@@ -8451,16 +8614,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "passkeyChallengeLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Validates the signed challenge and completes passkey based authentication.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/auth/POST/auth/passkey-verification",
@@ -8471,16 +8637,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/github",
@@ -8491,14 +8658,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/google",
@@ -8509,14 +8679,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/microsoft",
@@ -8527,14 +8700,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/github/callback",
@@ -8545,16 +8723,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/google/callback",
@@ -8565,16 +8746,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/auth/GET/auth/microsoft/callback",
@@ -8585,16 +8769,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "auth",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Returns the *current user*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/me/GET/me",
@@ -8605,14 +8790,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Updates the *current user*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/me/PUT/me",
@@ -8623,14 +8811,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/me/DELETE/me",
@@ -8641,14 +8832,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/me/PUT/me/mfa",
@@ -8659,14 +8853,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/me/GET/me/auth",
@@ -8677,14 +8874,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Returns a list of pending memberships with entity data.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/me/GET/me/invitations",
@@ -8695,14 +8895,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/me/DELETE/me/sessions",
@@ -8713,14 +8916,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Removes the *current user* from an entity they are a member of.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/me/DELETE/me/leave",
@@ -8731,14 +8937,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/me/GET/me/upload-token",
@@ -8749,14 +8958,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/me/GET/me/unsubscribe",
@@ -8767,16 +8981,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "me",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Returns a list of *users*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/users/GET/users",
@@ -8787,14 +9002,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "users",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/users/DELETE/users",
@@ -8805,15 +9024,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "users",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Retrieves a *user* by ID or slug.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/users/GET/users/{idOrSlug}",
@@ -8824,14 +9045,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "users",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Updates a *user* identified by ID or slug.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/users/PUT/users/{idOrSlug}",
@@ -8842,15 +9067,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "users",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Creates a new *organization*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/organizations/POST/organizations",
@@ -8861,14 +9088,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "organizations",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Returns a list of *organizations*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/organizations/GET/organizations",
@@ -8879,14 +9109,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "organizations",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Deletes one or more *organizations* by ID.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/organizations/DELETE/organizations",
@@ -8897,14 +9130,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "organizations",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Retrieves an *organization* by ID or slug.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/organizations/GET/organizations/{idOrSlug}",
@@ -8915,14 +9151,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "organizations",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Updates an *organization* by ID or slug.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/organizations/PUT/organizations/{idOrSlug}",
@@ -8933,14 +9172,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "organizations",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for \`pages\` table.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/pages/GET/pages/sync-pages",
@@ -8951,14 +9193,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "pages",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Insert one or more new *pages*.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "isSystemAdmin",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/pages/POST/pages",
@@ -8969,15 +9215,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "pages",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "isSystemAdmin",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Get all matching *pages*.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/pages/GET/pages",
@@ -8988,14 +9236,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "pages",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Delete one or more *pages* by ID.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "isSystemAdmin",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/pages/DELETE/pages",
@@ -9006,15 +9258,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "pages",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "isSystemAdmin",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Get a single *page* by ID.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/pages/GET/pages/{id}",
@@ -9025,14 +9279,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "pages",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Update a single *page* by ID.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "isSystemAdmin",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/pages/PUT/pages/{id}",
@@ -9043,16 +9301,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "pages",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "isSystemAdmin",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
       Primarily used to prevent slug collisions before creating or updating an entity.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/entities/POST/entities/check-slug",
@@ -9063,14 +9323,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "entities",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/system/POST/system/invite",
@@ -9081,15 +9345,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "system",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "presignedUrlLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/system/GET/system/presigned-url",
@@ -9100,16 +9368,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "system",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "presignedUrlLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/system/POST/system/paddle-webhook",
@@ -9120,16 +9391,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "system",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Sends a newsletter to members of one or more specified organizations.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/system/POST/system/newsletter",
@@ -9140,15 +9413,20 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "system",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "emailEnumLimiter",
+            "spamLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/requests/POST/requests",
@@ -9159,17 +9437,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "requests",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "emailEnumLimiter",
-          "spamLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/requests/GET/requests",
@@ -9180,15 +9459,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "requests",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Deletes one or more *requests* from the system by their IDs.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": true,
         "hash": "tag/requests/DELETE/requests",
@@ -9199,16 +9481,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "requests",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
       Primarily intended for internal monitoring and diagnostics.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/metrics/GET/metrics",
@@ -9219,16 +9504,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "metrics",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasSystemAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
       This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": false,
         "hasRequestBody": false,
         "hash": "tag/metrics/GET/metrics/public",
@@ -9239,15 +9526,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "metrics",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for \`attachments\` table.
       Organization parameter is required to scope the data.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/sync-attachments",
@@ -9258,15 +9549,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "attachments",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/attachments/POST/{orgIdOrSlug}/attachments",
@@ -9277,15 +9571,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "attachments",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachments",
@@ -9296,15 +9593,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "attachments",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachments/{id}",
@@ -9315,15 +9615,19 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "attachments",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
+        "extensions": {
+          "xGuard": [
+            "isPublicAccess",
+          ],
+          "xRateLimiter": [
+            "tokenLimiter",
+          ],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}/link",
@@ -9334,16 +9638,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "attachments",
         ],
-        "xGuard": [
-          "isPublicAccess",
-        ],
-        "xRateLimiter": [
-          "tokenLimiter",
-        ],
       },
       {
         "deprecated": false,
         "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships",
@@ -9354,15 +9660,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "memberships",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/memberships/DELETE/{orgIdOrSlug}/memberships",
@@ -9373,15 +9682,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "memberships",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Updates the *membership* metadata, such as role, \`muted\`, or \`archived\` status.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": true,
         "hasParams": true,
         "hasRequestBody": true,
         "hash": "tag/memberships/PUT/{orgIdOrSlug}/memberships/{id}",
@@ -9392,15 +9704,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "memberships",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}",
@@ -9411,14 +9725,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "memberships",
         ],
-        "xGuard": [
-          "isAuthenticated",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/members",
@@ -9429,15 +9747,18 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "memberships",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
       {
         "deprecated": false,
         "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasOrgAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
         "hasParams": true,
         "hasRequestBody": false,
         "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/pending",
@@ -9448,11 +9769,6 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "tags": [
           "memberships",
         ],
-        "xGuard": [
-          "isAuthenticated",
-          "hasOrgAccess",
-        ],
-        "xRateLimiter": [],
       },
     ],
     "schemaTags": [
