@@ -17,6 +17,7 @@ export default defineConfig({
           name: 'node',
           include: ['vite/**/*.test.ts'],
           environment: 'node',
+          setupFiles: ['./vitest.setup.ts'],
         },
       },
       // Storybook browser tests
