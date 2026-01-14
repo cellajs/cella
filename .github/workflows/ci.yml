@@ -6,9 +6,9 @@ permissions:
 # Controls which events and branches will trigger the workflow
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main, development ]
+    branches: [main, development]
 
 # Cancel older runs of the same PR when a new push arrives
 concurrency:
@@ -32,7 +32,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Create .env files
         run: |
@@ -66,7 +66,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Restore node_modules
         uses: actions/cache@v3
@@ -94,7 +94,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Create .env files
         run: |
@@ -107,6 +107,10 @@ jobs:
           path: |
             **/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install
+
       - run: pnpm test
 
   # Will run a quick startup check to ensure the app starts without issues
