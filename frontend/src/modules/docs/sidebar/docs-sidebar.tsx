@@ -5,11 +5,12 @@ import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import Logo from '~/modules/common/logo';
 import { JsonActions } from '~/modules/docs/json-actions';
-import { OperationTagsSidebar } from '~/modules/docs/operation-tags-sidebar';
-import { schemasQueryOptions } from '~/modules/docs/query';
-import { SchemaTagsSidebar } from '~/modules/docs/schema-tags-sidebar';
+import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
+import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
+import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
 import type { initPagesCollection } from '~/modules/pages/collections';
 import { buttonVariants } from '~/modules/ui/button';
@@ -22,11 +23,13 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from '~/modules/ui/sidebar';
+import { queryClient } from '~/query/query-client';
 import { useDocsStore } from '~/store/docs';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
-import UserTheme from '../me/user-theme';
-import { openApiSpecQueryOptions, openApiUrl } from './query';
+import { useSheeter } from '../../common/sheeter/use-sheeter';
+import UserTheme from '../../me/user-theme';
+import { openApiSpecQueryOptions, openApiUrl } from '../query';
 
 const DebugToolbars =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
@@ -57,6 +60,7 @@ interface DocsSidebarProps {
  */
 export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm');
 
   const { systemRole } = useUserStore();
 
@@ -73,18 +77,10 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
 
   // Get viewMode from docs store
   const viewMode = useDocsStore((state) => state.viewMode);
+  const setViewMode = useDocsStore((state) => state.setViewMode);
 
-  // Track sections that are forcibly collapsed (only applies in list mode)
-  const [forcedCollapsed, setForcedCollapsed] = useState<Set<string>>(new Set());
-
-  const toggleForcedCollapse = (section: string) => {
-    setForcedCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(section)) next.delete(section);
-      else next.add(section);
-      return next;
-    });
-  };
+  // Track if current section is forcibly collapsed
+  const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(null);
 
   // Live query for pages - only published pages, ordered by name
   const { data: pages } = useLiveQuery(
@@ -96,6 +92,17 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
     [],
   );
 
+  const closeSheet = () => {
+    if (!isMobile) return;
+    useSheeter.getState().remove();
+  };
+
+  // Prefetch operations data on hover for instant expand
+  const prefetchOperations = () => {
+    queryClient.prefetchQuery(operationsQueryOptions);
+    queryClient.prefetchQuery(tagsQueryOptions);
+  };
+
   const isListMode = viewMode === 'list';
 
   return (
@@ -106,8 +113,9 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
           to="/"
           className="inline-block transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md"
           aria-label="Go to homepage"
+          onClick={closeSheet}
         >
-          <Logo height={32} />
+          <Logo height={32} animate />
         </Link>
       </div>
 
@@ -130,68 +138,57 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
         <SidebarGroupContent>
           {/* Operations */}
           <SidebarGroup className="p-1 pt-0">
-            <Collapsible open={isListMode && expandedSection === 'operations' && !forcedCollapsed.has('operations')}>
+            <Collapsible open={isListMode && expandedSection === 'operations' && forcedCollapsed !== 'operations'}>
               <SidebarMenuItem className="list-none">
-                {isListMode ? (
-                  <CollapsibleTrigger asChild>
-                    <Link
-                      to="/docs"
-                      search={(prev) => prev}
-                      onClick={(e) => {
-                        if (isOperationsRoute) {
-                          e.preventDefault();
-                          toggleForcedCollapse('operations');
-                        } else {
-                          // Clear forced collapse when navigating to operations
-                          setForcedCollapsed((prev) => {
-                            const next = new Set(prev);
-                            next.delete('operations');
-                            return next;
-                          });
-                        }
-                      }}
-                      className={cn(
-                        buttonVariants({ variant: 'ghost' }),
-                        'w-full justify-start font-normal items-center group px-3 lowercase',
-                        isOperationsRoute && 'font-medium bg-accent',
-                      )}
-                    >
-                      <span>{t('common:operation', { count: 2 })}</span>
-                      {(expandedSection !== 'operations' || forcedCollapsed.has('operations')) && (
-                        <span className="ml-2 text-xs text-muted-foreground/90 font-light">
-                          {tags.reduce((sum, tag) => sum + tag.count, 0)}
-                        </span>
-                      )}
-                      <ChevronDownIcon
-                        className={cn(
-                          'size-4 ml-auto transition-transform duration-200 opacity-40',
-                          expandedSection === 'operations' && !forcedCollapsed.has('operations') && 'rotate-180',
-                        )}
-                      />
-                    </Link>
-                  </CollapsibleTrigger>
-                ) : (
+                <CollapsibleTrigger asChild>
                   <Link
                     to="/docs/operations"
                     search={(prev) => prev}
+                    onMouseEnter={prefetchOperations}
+                    onFocus={prefetchOperations}
+                    onClick={(e) => {
+                      // Switch to list mode if in table mode
+                      if (!isListMode) {
+                        setViewMode('list');
+                        setForcedCollapsed(null);
+                        return;
+                      }
+                      if (isOperationsRoute) {
+                        e.preventDefault();
+                        setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
+                      } else {
+                        setForcedCollapsed(null);
+                      }
+                    }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
-                      'w-full justify-start font-normal group px-3 lowercase',
+                      'w-full justify-start font-normal items-center group px-3 lowercase',
                       isOperationsRoute && 'font-medium bg-accent',
                     )}
                   >
                     <span>{t('common:operation', { count: 2 })}</span>
-                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">
-                      {tags.reduce((sum, tag) => sum + tag.count, 0)}
-                    </span>
+                    {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
+                      <span className="ml-2 text-xs text-muted-foreground/90 font-light">
+                        {tags.reduce((sum, tag) => sum + tag.count, 0)}
+                      </span>
+                    )}
+                    <ChevronDownIcon
+                      className={cn(
+                        'size-4 ml-auto transition-transform duration-200 opacity-40',
+                        isListMode &&
+                          expandedSection === 'operations' &&
+                          forcedCollapsed !== 'operations' &&
+                          'rotate-180',
+                      )}
+                    />
                   </Link>
-                )}
+                </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
                   <Suspense fallback={null}>
-                    <OperationTagsSidebar />
+                    <OperationsSidebar />
                   </Suspense>
                 </SidebarGroupContent>
               </CollapsibleContent>
@@ -200,7 +197,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
 
           {/* Schemas */}
           <SidebarGroup className="p-1 pt-0">
-            <Collapsible open={expandedSection === 'schemas' && !forcedCollapsed.has('schemas')}>
+            <Collapsible open={expandedSection === 'schemas' && forcedCollapsed !== 'schemas'}>
               <SidebarMenuItem className="list-none">
                 <CollapsibleTrigger asChild>
                   <Link
@@ -209,14 +206,9 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                     onClick={(e) => {
                       if (isSchemasRoute) {
                         e.preventDefault();
-                        toggleForcedCollapse('schemas');
+                        setForcedCollapsed((prev) => (prev === 'schemas' ? null : 'schemas'));
                       } else {
-                        // Clear forced collapse when navigating to schemas
-                        setForcedCollapsed((prev) => {
-                          const next = new Set(prev);
-                          next.delete('schemas');
-                          return next;
-                        });
+                        setForcedCollapsed(null);
                       }
                     }}
                     className={cn(
@@ -226,23 +218,23 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                     )}
                   >
                     <span>{t('common:schema', { count: 2 })}</span>
-                    {(expandedSection !== 'schemas' || forcedCollapsed.has('schemas')) && schemas && (
+                    {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
                       <span className="ml-2 text-xs text-muted-foreground/90 font-light">{schemas.length}</span>
                     )}
                     <ChevronDownIcon
                       className={cn(
                         'size-4 ml-auto transition-transform duration-200 opacity-40',
-                        expandedSection === 'schemas' && !forcedCollapsed.has('schemas') && 'rotate-180',
+                        expandedSection === 'schemas' && forcedCollapsed !== 'schemas' && 'rotate-180',
                       )}
                     />
                   </Link>
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
                   <Suspense fallback={null}>
-                    <SchemaTagsSidebar />
+                    <SchemasSidebar />
                   </Suspense>
                 </SidebarGroupContent>
               </CollapsibleContent>
@@ -279,6 +271,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
                       buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',
                     )}
+                    onClick={closeSheet}
                   >
                     <span className="truncate">{page.name}</span>
                   </Link>

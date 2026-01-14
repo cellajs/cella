@@ -3,24 +3,14 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import chalk from 'chalk';
 import { appConfig } from 'config';
+import { buildExtensionRegistry } from '#/docs/openapi-extensions';
+import { openapiTags, registerAppSchema } from '#/docs/tags-config';
+import { getExtensionValueDescriptions } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
-import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { userBaseSchema } from '#/modules/users/schema-base';
 import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
-
-// OpenAPI configuration
-const openApiConfig = {
-  servers: [{ url: appConfig.backendUrl }],
-  info: {
-    title: `${appConfig.name} API`,
-    version: appConfig.apiVersion,
-    description: appConfig.apiDescription,
-  },
-  openapi: '3.1.0',
-  tags: apiModulesList,
-};
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
@@ -32,6 +22,22 @@ const openApiConfig = {
  */
 const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   const registry = app.openAPIRegistry;
+
+  // Build extension registry with collected value descriptions
+  const extensionRegistry = buildExtensionRegistry(getExtensionValueDescriptions());
+
+  // OpenAPI configuration
+  const openApiConfig = {
+    servers: [{ url: appConfig.backendUrl }],
+    info: {
+      title: `${appConfig.name} API`,
+      version: appConfig.apiVersion,
+      description: appConfig.apiDescription,
+      'x-extensions': extensionRegistry,
+    },
+    openapi: '3.1.0',
+    tags: openapiTags,
+  };
 
   // Set security schemes
   registry.registerComponent('securitySchemes', 'cookieAuth', {

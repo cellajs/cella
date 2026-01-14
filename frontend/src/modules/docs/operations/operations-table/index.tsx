@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
-import { OperationsTableBar } from '~/modules/docs/operations-table/bar';
-import { useColumns } from '~/modules/docs/operations-table/columns';
-import { operationsQueryOptions } from '~/modules/docs/query';
+import { FocusViewContainer } from '~/modules/common/focus-view';
+import { OperationsTableBar } from '~/modules/docs/operations/operations-table/bar';
+import { useColumns } from '~/modules/docs/operations/operations-table/columns';
+import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
 import type { GenOperationSummary } from '~/modules/docs/types';
 
 /**
@@ -27,7 +28,11 @@ const OperationsTable = () => {
 
   const [isCompact, setIsCompact] = useState(false);
 
-  const [columns, setColumns] = useColumns(isCompact);
+  // Fetch info to get extension definitions
+  const { data: info } = useSuspenseQuery(infoQueryOptions);
+  const extensions = info.extensions;
+
+  const [columns, setColumns] = useColumns(isCompact, extensions);
 
   // Fetch operations via React Query (reduces bundle size)
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
@@ -40,17 +45,28 @@ const OperationsTable = () => {
     setLocalOperations(operations);
   }, [operations]);
 
-  // Filter operations based on search query
+  // Filter operations based on search query (searches all text fields)
+  // Multiple space-separated terms are treated as AND conditions
   const filteredOperations = useMemo(() => {
     if (!q) return localOperations;
-    const lowerQ = q.toLowerCase();
-    return localOperations.filter(
-      (op) =>
-        op.summary.toLowerCase().includes(lowerQ) ||
-        op.id.toLowerCase().includes(lowerQ) ||
-        op.method.toLowerCase().includes(lowerQ) ||
-        op.path.toLowerCase().includes(lowerQ),
-    );
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return localOperations;
+
+    return localOperations.filter((op) => {
+      // Check if a single term matches any field in the operation
+      const matchesTerm = (term: string) =>
+        op.summary.toLowerCase().includes(term) ||
+        op.id.toLowerCase().includes(term) ||
+        op.method.toLowerCase().includes(term) ||
+        op.path.toLowerCase().includes(term) ||
+        op.description?.toLowerCase().includes(term) ||
+        op.tags?.some((tag) => tag.toLowerCase().includes(term)) ||
+        // Search across all dynamic extensions
+        Object.values(op.extensions).some((values) => values.some((value) => value.toLowerCase().includes(term)));
+
+      // All terms must match (AND logic)
+      return terms.every(matchesTerm);
+    });
   }, [q, localOperations]);
 
   // Handle row changes for editable cells
@@ -84,30 +100,32 @@ const OperationsTable = () => {
   );
 
   return (
-    <div className="flex flex-col gap-2">
-      <OperationsTableBar
-        total={filteredOperations.length}
-        searchVars={{ q }}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-      />
-      <DataTable<GenOperationSummary>
-        columns={columns.filter((column) => column.visible)}
-        rows={filteredOperations}
-        onRowsChange={onRowsChange}
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.hash}
-        isLoading={false}
-        isFetching={false}
-        limit={filteredOperations.length}
-        isFiltered={!!q}
-        rowHeight={42}
-        enableVirtualization={false}
-      />
-    </div>
+    <FocusViewContainer className="container min-h-screen">
+      <div className="flex flex-col gap-2">
+        <OperationsTableBar
+          total={filteredOperations.length}
+          searchVars={{ q }}
+          setSearch={setSearch}
+          columns={columns}
+          setColumns={setColumns}
+          isCompact={isCompact}
+          setIsCompact={setIsCompact}
+        />
+        <DataTable<GenOperationSummary>
+          columns={columns.filter((column) => column.visible)}
+          rows={filteredOperations}
+          onRowsChange={onRowsChange}
+          hasNextPage={false}
+          rowKeyGetter={(row) => row.hash}
+          isLoading={false}
+          isFetching={false}
+          limit={filteredOperations.length}
+          isFiltered={!!q}
+          rowHeight={42}
+          enableVirtualization={false}
+        />
+      </div>
+    </FocusViewContainer>
   );
 };
 

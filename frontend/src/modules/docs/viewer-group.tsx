@@ -7,7 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { CodeViewer } from './code-viewer';
 import type { GenRequest, GenSchema, GenSchemaProperty } from './types';
 
-type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
+export type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
 interface ViewerGroupProps {
   /** Schema to display in format mode */
@@ -20,15 +20,24 @@ interface ViewerGroupProps {
   example?: unknown;
   /** Default inspect depth for JsonViewer */
   defaultInspectDepth?: number;
+  /** Default view mode to show initially */
+  defaultViewMode?: SchemaViewMode;
 }
 
 /**
  * Reusable component for displaying schema data with format/zod/type toggle views.
  * Used for responses, request body, and parameter schemas.
  */
-export const ViewerGroup = ({ schema, zodCode, typeCode, example, defaultInspectDepth = 5 }: ViewerGroupProps) => {
+export const ViewerGroup = ({
+  schema,
+  zodCode,
+  typeCode,
+  example,
+  defaultInspectDepth = 5,
+  defaultViewMode = 'format',
+}: ViewerGroupProps) => {
   const { t } = useTranslation();
-  const [viewMode, setViewMode] = useState<SchemaViewMode>('format');
+  const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
 
   const toggleItems: {
     value: SchemaViewMode;
@@ -91,7 +100,7 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, example, defaultInspect
             </ToggleGroupItem>
           ))}
       </ToggleGroup>
-      <div className="p-3 md:py-6 rounded-md bg-muted/50 overflow-x-auto">
+      <div className="rounded-md bg-muted/50 overflow-x-auto">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={viewMode}
@@ -99,6 +108,7 @@ export const ViewerGroup = ({ schema, zodCode, typeCode, example, defaultInspect
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="p-3 md:py-6"
           >
             {viewMode === 'format' && (
               <JsonViewer

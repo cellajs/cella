@@ -1,4 +1,4 @@
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -11,12 +11,13 @@ const requestRoutes = {
   /**
    * Create request
    */
-  createRequest: createCustomRoute({
+  createRequest: createXRoute({
     operationId: 'createRequest',
     method: 'post',
     path: '/',
-    guard: isPublicAccess,
-    middleware: [isNoBot, emailEnumLimiter, spamLimiter],
+    xGuard: isPublicAccess,
+    xRateLimiter: [emailEnumLimiter, spamLimiter],
+    middleware: [isNoBot],
     tags: ['requests'],
     summary: 'Create request',
     description:
@@ -38,11 +39,11 @@ const requestRoutes = {
   /**
    * Get list of requests
    */
-  getRequests: createCustomRoute({
+  getRequests: createXRoute({
     operationId: 'getRequests',
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, hasSystemAccess],
+    xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
@@ -62,11 +63,11 @@ const requestRoutes = {
   /**
    * Delete requests
    */
-  deleteRequests: createCustomRoute({
+  deleteRequests: createXRoute({
     operationId: 'deleteRequests',
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, hasSystemAccess],
+    xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
     summary: 'Delete requests',
     description: 'Deletes one or more *requests* from the system by their IDs.',

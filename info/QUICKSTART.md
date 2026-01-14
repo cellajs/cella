@@ -39,11 +39,11 @@ pnpm check
 
 ## Cella CLI
 
-Cella CLI is currently limited to: creating a cella project, listing diverged files and pulling upstream changes. Config can be found in `cella.config.js`.
+Cella CLI is currently limited to: creating a cella project, listing diverged files and pulling upstream changes. Config can be found in `cella.config.ts`.
 
 ### List diverged
 
-Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.js will not be listed.
+Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.ts will not be listed.
 
 ```bash
 pnpm diverged

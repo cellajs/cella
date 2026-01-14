@@ -27,9 +27,6 @@ interface NavigationStoreState {
 
   navLoading: boolean; // Navigation is in a loading state
   setNavLoading: (status: boolean) => void; // Updates the loading state
-
-  focusView: boolean; // Focused view mode state
-  setFocusView: (status: boolean) => void; // Toggles focus view state
 }
 
 interface InitStore
@@ -39,7 +36,6 @@ interface InitStore
     | 'keepMenuOpen'
     | 'detailedMenu'
     | 'navLoading'
-    | 'focusView'
     | 'activeSections'
     | 'navSheetOpen'
     | 'keepOpenPreference'
@@ -53,7 +49,6 @@ const initStore: InitStore = {
   keepOpenPreference: false,
   detailedMenu: false,
   navLoading: false,
-  focusView: false,
   activeSections: null,
 };
 
@@ -104,17 +99,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
           setNavLoading: (status) => {
             set((state) => {
               state.navLoading = status;
-            });
-          },
-          setFocusView: (status) => {
-            set((state) => {
-              state.focusView = status;
-              // Only move scroll to table if .focus-view-scroll is present
-              if (status && document.getElementsByClassName('focus-view-scroll').length) {
-                document.body.classList.add('focus-view-table');
-              } else {
-                document.body.classList.remove('focus-view-table');
-              }
             });
           },
           toggleSection: (section) => {

@@ -12,12 +12,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "emailEnumLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "emailEnumLimiter"
+      ]
+    }
   },
   {
     "id": "invokeToken",
@@ -32,12 +35,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "getTokenData",
@@ -52,12 +58,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "startImpersonation",
@@ -72,11 +81,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "stopImpersonation",
@@ -91,10 +103,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "resendInvitationWithToken",
@@ -109,12 +124,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "spamLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "spamLimiter"
+      ]
+    }
   },
   {
     "id": "signOut",
@@ -129,10 +147,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "generateTotpKey",
@@ -147,10 +168,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "createTotp",
@@ -165,10 +189,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteTotp",
@@ -183,10 +210,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "signInWithTotp",
@@ -201,12 +231,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "totpVerificationLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "totpVerificationLimiter"
+      ]
+    }
   },
   {
     "id": "signUp",
@@ -221,13 +254,16 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "spamLimiter",
-      "emailEnumLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "spamLimiter",
+        "emailEnumLimiter"
+      ]
+    }
   },
   {
     "id": "signUpWithToken",
@@ -242,13 +278,16 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter",
-      "emailEnumLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter",
+        "emailEnumLimiter"
+      ]
+    }
   },
   {
     "id": "requestPassword",
@@ -263,13 +302,16 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "spamLimiter",
-      "emailEnumLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "spamLimiter",
+        "emailEnumLimiter"
+      ]
+    }
   },
   {
     "id": "createPassword",
@@ -284,12 +326,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "signIn",
@@ -304,12 +349,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "passwordLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "passwordLimiter"
+      ]
+    }
   },
   {
     "id": "createPasskey",
@@ -324,10 +372,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deletePasskey",
@@ -342,10 +393,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "generatePasskeyChallenge",
@@ -360,12 +414,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "passkeyChallengeLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "passkeyChallengeLimiter"
+      ]
+    }
   },
   {
     "id": "signInWithPasskey",
@@ -380,12 +437,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "github",
@@ -400,10 +460,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "google",
@@ -418,10 +481,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "microsoft",
@@ -436,10 +502,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "githubCallback",
@@ -454,12 +523,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "googleCallback",
@@ -474,12 +546,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "microsoftCallback",
@@ -494,12 +569,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "getMe",
@@ -514,10 +592,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "updateMe",
@@ -532,10 +613,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteMe",
@@ -550,10 +634,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "toggleMfa",
@@ -568,10 +655,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getMyAuth",
@@ -586,10 +676,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getMyInvitations",
@@ -604,10 +697,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteMySessions",
@@ -622,10 +718,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteMyMembership",
@@ -640,10 +739,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getUploadToken",
@@ -658,10 +760,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "unsubscribeMe",
@@ -676,12 +781,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "getUsers",
@@ -696,10 +804,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteUsers",
@@ -714,11 +825,14 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getUser",
@@ -733,10 +847,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "updateUser",
@@ -751,11 +868,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "createOrganization",
@@ -770,10 +890,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getOrganizations",
@@ -788,10 +911,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteOrganizations",
@@ -806,10 +932,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getOrganization",
@@ -824,10 +953,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "updateOrganization",
@@ -842,10 +974,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "syncPages",
@@ -860,10 +995,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "createPage",
@@ -878,11 +1016,14 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "isSystemAdmin"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "isSystemAdmin"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getPages",
@@ -897,10 +1038,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deletePages",
@@ -915,11 +1059,14 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "isSystemAdmin"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "isSystemAdmin"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getPage",
@@ -934,10 +1081,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "updatePage",
@@ -952,11 +1102,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "isSystemAdmin"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "isSystemAdmin"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "checkSlug",
@@ -971,10 +1124,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "systemInvite",
@@ -989,11 +1145,14 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getPresignedUrl",
@@ -1008,12 +1167,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "presignedUrlLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "presignedUrlLimiter"
+      ]
+    }
   },
   {
     "id": "paddleWebhook",
@@ -1028,12 +1190,15 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "sendNewsletter",
@@ -1048,11 +1213,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "createRequest",
@@ -1067,13 +1235,16 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "emailEnumLimiter",
-      "spamLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "emailEnumLimiter",
+        "spamLimiter"
+      ]
+    }
   },
   {
     "id": "getRequests",
@@ -1088,11 +1259,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteRequests",
@@ -1107,11 +1281,14 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getMetrics",
@@ -1126,11 +1303,14 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated",
-      "hasSystemAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getPublicCounts",
@@ -1145,10 +1325,13 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "syncAttachments",
@@ -1163,11 +1346,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "createAttachment",
@@ -1182,11 +1368,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteAttachments",
@@ -1201,11 +1390,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "updateAttachment",
@@ -1220,11 +1412,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "redirectToAttachment",
@@ -1239,12 +1434,15 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isPublicAccess"
-    ],
-    "xRateLimiter": [
-      "tokenLimiter"
-    ]
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isPublicAccess"
+      ],
+      "xRateLimiter": [
+        "tokenLimiter"
+      ]
+    }
   },
   {
     "id": "membershipInvite",
@@ -1259,11 +1457,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "deleteMemberships",
@@ -1278,11 +1479,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "updateMembership",
@@ -1297,11 +1501,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": true,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "handleMembershipInvitation",
@@ -1316,10 +1523,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getMembers",
@@ -1334,11 +1544,14 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   },
   {
     "id": "getPendingMemberships",
@@ -1353,10 +1566,13 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
-    "xGuard": [
-      "isAuthenticated",
-      "hasOrgAccess"
-    ],
-    "xRateLimiter": []
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasOrgAccess"
+      ],
+      "xRateLimiter": []
+    }
   }
 ]

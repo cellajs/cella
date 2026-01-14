@@ -11,6 +11,7 @@ import SidebarNav from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 
 // Sheet class for floating sheets
 export const navSheetClassName =
@@ -33,7 +34,7 @@ const AppNav = () => {
   const updateSheet = useSheeter((state) => state.update);
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
-  const setFocusView = useNavigationStore((state) => state.setFocusView);
+  const setFocusView = useUIStore((state) => state.setFocusView);
   const setNavLoading = useNavigationStore((state) => state.setNavLoading);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
@@ -80,7 +81,6 @@ const AppNav = () => {
         side: sheetSide,
         showCloseButton: false,
         modal: isMobile,
-        closeSheetOnRouteChange: false,
         className: navSheetClassName,
         container,
         onClose: () => setNavSheetOpen(null, isDesktop),
@@ -101,8 +101,8 @@ const AppNav = () => {
     router.subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;
 
-      const navState = useNavigationStore.getState();
-      if (navState.focusView) setFocusView(false);
+      const uiState = useUIStore.getState();
+      if (uiState.focusView) setFocusView(false);
 
       useDialoger.getState().remove();
       useSheeter.getState().removeOnRouteChange({ isCleanup: true });

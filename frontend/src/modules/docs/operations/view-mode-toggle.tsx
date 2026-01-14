@@ -10,7 +10,7 @@ interface ViewModeToggleProps {
  * Toggle between list and table view modes.
  * Updates the docs store `viewMode` when changed.
  */
-export const ViewModeToggle = ({ size = 'sm' }: ViewModeToggleProps) => {
+export const ViewModeToggle = ({ size = 'default' }: ViewModeToggleProps) => {
   const viewMode = useDocsStore((state) => state.viewMode);
   const setViewMode = useDocsStore((state) => state.setViewMode);
 

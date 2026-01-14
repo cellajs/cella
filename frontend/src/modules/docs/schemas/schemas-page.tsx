@@ -1,20 +1,22 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
-import { SchemaDetail } from '~/modules/docs/schema-detail';
+import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
-import { buttonVariants } from '../ui/button';
+import { buttonVariants } from '../../ui/button';
 
 /**
- * Schemas list page displaying all component schemas from the OpenAPI spec.
+ * Schemas page displaying all component schemas from the OpenAPI spec.
  * Schemas are categorized into base, data, and errors tags.
  */
-const SchemasListPage = () => {
+const SchemasPage = () => {
   const { t } = useTranslation();
   // Get active schema tag from URL search param (hash)
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/publicLayout/docs/schemas' });
@@ -23,8 +25,18 @@ const SchemasListPage = () => {
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
+  // Tag section IDs - schema refs are contributed by SchemaDetail when rendered
+  const schemaTagIds = schemaTags.map((t) => t.name);
+
+  // Enable scroll spy with tag section IDs, enable hash writing
+  useScrollSpy({
+    sectionIds: schemaTagIds,
+    enableWriteHash: true,
+    smoothScroll: false,
+  });
+
   return (
-    <>
+    <div className="container">
       <div className="flex items-center gap-3 mb-6">
         <span className="text-sm text-muted-foreground">
           {schemas.length} {t('common:schema', { count: schemas.length })}
@@ -38,7 +50,7 @@ const SchemasListPage = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={tag.name} className="scroll-mt-16 sm:scroll-mt-6 border-0">
+              <Card id={tag.name} className="scroll-mt-16 sm:scroll-mt-6 border-0 rounded-b-none">
                 <CardHeader className="group">
                   <CardTitle className="text-2xl leading-12 gap-2">
                     {tag.name}
@@ -89,22 +101,20 @@ const SchemasListPage = () => {
                     />
                   </Link>
                 </CardContent>
-
-                {/* Schema details list */}
-                <CollapsibleContent>
-                  <div className="border-t">
-                    {tagSchemas.map((schema) => (
-                      <SchemaDetail key={schema.name} schema={schema} />
-                    ))}
-                  </div>
-                </CollapsibleContent>
               </Card>
+
+              {/* Schema details list - outside Card so Card height is reasonable for scroll spy */}
+              <CollapsibleContent>
+                <Suspense>
+                  <TagSchemasList schemas={tagSchemas} />
+                </Suspense>
+              </CollapsibleContent>
             </Collapsible>
           );
         })}
       </div>
-    </>
+    </div>
   );
 };
 
-export default SchemasListPage;
+export default SchemasPage;

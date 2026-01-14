@@ -5,6 +5,30 @@
  */
 
 /**
+ * Metadata for an individual extension value (e.g., a specific limiter or guard)
+ */
+export interface GenExtensionValueMetadata {
+  description: string;
+}
+
+/**
+ * Definition for a custom OpenAPI extension.
+ * Provided by backend via info.x-extensions.
+ */
+export interface GenExtensionDefinition {
+  /** OpenAPI extension key, e.g., 'x-guard' */
+  key: string;
+  /** Identifier for frontend property names, e.g., 'xGuard' */
+  id: string;
+  /** Translation key for i18n support */
+  translationKey: string;
+  /** Description of the extension's purpose */
+  description: string;
+  /** Optional metadata for each value (e.g., each limiter's description) */
+  values?: Record<string, GenExtensionValueMetadata>;
+}
+
+/**
  * Operation summary with minimal data for table/sidebar rendering
  */
 export interface GenOperationSummary {
@@ -18,10 +42,10 @@ export interface GenOperationSummary {
   deprecated: boolean;
   hasParams: boolean;
   hasRequestBody: boolean;
-  /** x-guard specification extension - guard middleware */
-  xGuard?: string[];
-  /** x-rate-limiter specification extension - rate limiting rules */
-  xRateLimiter?: string[];
+  /** Whether any response has an example value */
+  hasExample: boolean;
+  /** Dynamic x-extensions keyed by camelCase name */
+  extensions: Record<string, string[]>;
 }
 
 /**
@@ -41,6 +65,8 @@ export interface GenInfoSummary {
   version: string;
   description: string;
   openapiVersion: string;
+  /** Custom OpenAPI extensions defined by the backend */
+  extensions: GenExtensionDefinition[];
 }
 
 /**

@@ -1,18 +1,20 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronDownIcon, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 import {
   getTypeCodeForResponse,
   getZodCodeForResponse,
   typesContentQueryOptions,
   zodContentQueryOptions,
-} from './helpers/extract-types';
-import { getStatusColor } from './helpers/get-status-color';
-import { schemasQueryOptions, tagDetailsQueryOptions } from './query';
-import type { GenComponentSchema, GenResponseSummary, GenSchema } from './types';
-import { ViewerGroup } from './viewer-group';
+} from '../helpers/extract-types';
+import { getStatusColor } from '../helpers/get-status-color';
+import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
+import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types';
+import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
 const resolveResponseSchema = (response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined => {
@@ -31,20 +33,12 @@ interface ResponsesAccordionProps {
   operationId: string;
   zodContent: string;
   typesContent: string;
-  onValueChange?: (value: string) => void;
 }
 
 /**
  * Accordion component to display operation responses.
  */
-const ResponsesAccordion = ({
-  responses,
-  schemas,
-  operationId,
-  zodContent,
-  typesContent,
-  onValueChange,
-}: ResponsesAccordionProps) => {
+const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) => {
   const { t } = useTranslation();
 
   if (responses.length === 0) {
@@ -52,7 +46,7 @@ const ResponsesAccordion = ({
   }
 
   return (
-    <Accordion type="single" className="w-full" collapsible onValueChange={onValueChange}>
+    <Accordion type="single" className="w-full" collapsible>
       {responses.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (
@@ -96,14 +90,16 @@ const ResponsesAccordion = ({
 interface OperationResponsesProps {
   operationId: string;
   tagName: string;
-  onResponseOpen?: () => void;
 }
 
 /**
  * Operation responses component that uses useSuspenseQuery for Suspense integration.
  * Wrap the parent component in a Suspense boundary for optimal batching.
  */
-export const OperationResponses = ({ operationId, tagName, onResponseOpen }: OperationResponsesProps) => {
+export const OperationResponses = ({ operationId, tagName }: OperationResponsesProps) => {
+  const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(true);
+
   const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
@@ -112,21 +108,29 @@ export const OperationResponses = ({ operationId, tagName, onResponseOpen }: Ope
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
-  const handleValueChange = (value: string) => {
-    if (value && onResponseOpen) {
-      onResponseOpen();
-    }
-  };
-
   return (
-    <ResponsesAccordion
-      responses={responses}
-      schemas={schemas}
-      operationId={operationId}
-      zodContent={zodContent}
-      typesContent={typesContent}
-      onValueChange={handleValueChange}
-    />
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-8">
+      <CollapsibleTrigger className="flex items-center gap-2 group w-full text-left">
+        <h4 className="text-sm font-medium">{t('common:docs.responses')}</h4>
+        <ChevronDownIcon
+          className={cn(
+            'size-4 transition-transform duration-200 opacity-40 group-hover:opacity-70',
+            isOpen && 'rotate-180',
+          )}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+        <div className="mt-2">
+          <ResponsesAccordion
+            responses={responses}
+            schemas={schemas}
+            operationId={operationId}
+            zodContent={zodContent}
+            typesContent={typesContent}
+          />
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 

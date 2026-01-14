@@ -18,7 +18,7 @@ export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonE
   const createSheet = useSheeter.getState().create;
 
   createSheet(
-    <div className="container w-full">
+    <div className="container">
       <Card className="mb-20">
         <CardContent>
           <UpdateUserForm user={user} sheet />

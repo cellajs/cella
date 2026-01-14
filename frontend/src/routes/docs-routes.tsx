@@ -25,9 +25,9 @@ import { stripParams } from '~/utils/strip-search-params';
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
-const OperationsListPage = lazy(() => import('~/modules/docs/operations-list-page'));
-const OperationsTable = lazy(() => import('~/modules/docs/operations-table'));
-const SchemasListPage = lazy(() => import('~/modules/docs/schemas-list-page'));
+const OperationsPage = lazy(() => import('~/modules/docs/operations/operations-page'));
+const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table'));
+const SchemasPage = lazy(() => import('~/modules/docs/schemas/schemas-page'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
 const PagePage = lazy(() => import('~/modules/pages/page-page'));
 
@@ -81,7 +81,7 @@ export const DocsOperationsRoute = createRoute({
   },
   component: () => {
     const viewMode = useDocsStore((state) => state.viewMode);
-    return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsListPage />}</Suspense>;
+    return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsPage />}</Suspense>;
   },
 });
 
@@ -119,7 +119,7 @@ export const DocsSchemasRoute = createRoute({
   },
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
-    // Prefetch schemas and schema tags used by SchemasListPage and SchemaTagsSidebar
+    // Prefetch schemas and schema tags used by SchemasPage and SchemasSidebar
     await Promise.all([
       queryClient.ensureQueryData(schemasQueryOptions),
       queryClient.ensureQueryData(schemaTagsQueryOptions),
@@ -127,7 +127,7 @@ export const DocsSchemasRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <SchemasListPage />
+      <SchemasPage />
     </Suspense>
   ),
 });
@@ -138,6 +138,9 @@ export const DocsSchemasRoute = createRoute({
 export const DocsPagesRoute = createRoute({
   path: '/pages',
   validateSearch: pagesRouteSearchParamsSchema,
+  search: {
+    middlewares: [stripParams('operationTag', 'schemaTag')],
+  },
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Pages') }] }),
   getParentRoute: () => DocsLayoutRoute,

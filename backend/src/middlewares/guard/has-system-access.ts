@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
+import { setMiddlewareExtension } from '#/docs/x-middleware';
 import { AppError } from '#/lib/errors';
-import { setMiddlewareExtension } from '#/lib/x-middleware';
 import { isSystemAdmin } from '#/middlewares/guard/is-system-admin';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
@@ -22,4 +22,9 @@ const combinedMiddleware: MiddlewareHandler = every(
   }),
 );
 
-export const hasSystemAccess = setMiddlewareExtension(combinedMiddleware, 'hasSystemAccess', 'x-guard');
+export const hasSystemAccess = setMiddlewareExtension(
+  combinedMiddleware,
+  'hasSystemAccess',
+  'x-guard',
+  'Requires system admin + IP whitelist',
+);

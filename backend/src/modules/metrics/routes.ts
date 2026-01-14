@@ -1,4 +1,4 @@
-import { createCustomRoute } from '#/lib/custom-routes';
+import { createXRoute } from '#/lib/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { metricListSchema, publicCountsSchema } from '#/modules/metrics/schema';
@@ -8,11 +8,11 @@ const metricRouteConfig = {
   /**
    * Get metrics
    */
-  getMetrics: createCustomRoute({
+  getMetrics: createXRoute({
     operationId: 'getMetrics',
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, hasSystemAccess],
+    xGuard: [isAuthenticated, hasSystemAccess],
     tags: ['metrics'],
     summary: 'Get metrics',
     description: `EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
@@ -28,11 +28,11 @@ const metricRouteConfig = {
   /**
    * Get public counts
    */
-  getPublicCounts: createCustomRoute({
+  getPublicCounts: createXRoute({
     operationId: 'getPublicCounts',
     method: 'get',
     path: '/public',
-    guard: isPublicAccess,
+    xGuard: isPublicAccess,
     middleware: isNoBot,
     tags: ['metrics'],
     summary: 'Get public counts',

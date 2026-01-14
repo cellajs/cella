@@ -7,17 +7,94 @@ export interface LogoProps extends React.SVGProps<SVGSVGElement> {
   textColor?: string;
   height?: number;
   iconOnly?: boolean;
+  animate?: boolean;
 }
 
-function Logo({ className, iconColor, textColor, height = 50, iconOnly = false, ...props }: LogoProps) {
+function Logo({
+  className,
+  iconColor,
+  textColor,
+  height = 50,
+  iconOnly = false,
+  animate = false,
+  ...props
+}: LogoProps) {
   const { mode, theme } = useUIStore();
   const defaultTextColor = mode === 'light' ? '#333' : '#fff';
   const defaultIconColor = theme === 'none' ? '#333' : appConfig.theme.colors[theme];
   if (!textColor) textColor = defaultTextColor;
   if (!iconColor) iconColor = defaultIconColor;
 
+  // Animation: true enables full cycle, false disables
+  const shouldAnimate = animate !== false;
+
+  // Animation timing constants
+  const STAGGER_DELAY = 0.1; // Delay between each path animation
+  const ANIMATION_DURATION = 0.6; // Duration of each animation phase
+  const PAUSE_DURATION = 3; // Pause between each phase
+  const SCALE_DOWN = 0.8; // Scale down fraction at midpoint
+
+  // Total cycle includes: scale + pause + rotate + pause + both + pause
+  const PHASE_DURATION = ANIMATION_DURATION + 2 * STAGGER_DELAY;
+  const TOTAL_CYCLE = (PHASE_DURATION + PAUSE_DURATION) * 3;
+
+  // Staggered animation styles for each path (inner to outer)
+  const getPathStyle = (index: number): React.CSSProperties =>
+    shouldAnimate
+      ? {
+          transformOrigin: 'center',
+          transformBox: 'fill-box' as const,
+          animation: `logo-anim-${index} ${TOTAL_CYCLE}s ease-out infinite`,
+        }
+      : {};
+
+  // Calculate keyframe percentages for each path based on their stagger delay
+  const getKeyframes = (index: number) => {
+    const delay = (2 - index) * STAGGER_DELAY; // inner to outer
+
+    // Inner gets full SCALE_DOWN, middle gets half, outer gets third
+    const scaleAmount = 1 - SCALE_DOWN;
+    const divisor = index === 2 ? 1 : index === 1 ? 2 : 3;
+    const scale = 1 - scaleAmount / divisor;
+
+    // Phase 1: Scale only
+    const p1Start = (delay / TOTAL_CYCLE) * 100;
+    const p1Mid = ((delay + ANIMATION_DURATION / 2) / TOTAL_CYCLE) * 100;
+    const p1End = ((delay + ANIMATION_DURATION) / TOTAL_CYCLE) * 100;
+    const p1PauseEnd = ((PHASE_DURATION + PAUSE_DURATION) / TOTAL_CYCLE) * 100;
+
+    // Phase 2: Rotate only
+    const p2Offset = PHASE_DURATION + PAUSE_DURATION;
+    const p2Start = ((p2Offset + delay) / TOTAL_CYCLE) * 100;
+    const p2End = ((p2Offset + delay + ANIMATION_DURATION) / TOTAL_CYCLE) * 100;
+    const p2PauseEnd = ((p2Offset + PHASE_DURATION + PAUSE_DURATION) / TOTAL_CYCLE) * 100;
+
+    // Phase 3: Both rotate and scale
+    const p3Offset = (PHASE_DURATION + PAUSE_DURATION) * 2;
+    const p3Start = ((p3Offset + delay) / TOTAL_CYCLE) * 100;
+    const p3Mid = ((p3Offset + delay + ANIMATION_DURATION / 2) / TOTAL_CYCLE) * 100;
+    const p3End = ((p3Offset + delay + ANIMATION_DURATION) / TOTAL_CYCLE) * 100;
+
+    return `@keyframes logo-anim-${index} {
+      /* Phase 1: Scale only */
+      0%, ${p1Start}% { transform: scale(1); }
+      ${p1Mid}% { transform: scale(${scale}); }
+      ${p1End}%, ${p1PauseEnd}% { transform: scale(1); }
+      
+      /* Phase 2: Rotate only */
+      ${p2Start}% { transform: rotate(-90deg); }
+      ${p2End}%, ${p2PauseEnd}% { transform: rotate(0deg); }
+      
+      /* Phase 3: Both */
+      ${p3Start}% { transform: rotate(-90deg) scale(1); }
+      ${p3Mid}% { transform: rotate(-45deg) scale(${scale}); }
+      ${p3End}%, 100% { transform: rotate(0deg) scale(1); }
+    }`;
+  };
+
   return (
     <>
+      {shouldAnimate && <style>{[0, 1, 2].map(getKeyframes).join('\n')}</style>}
       <svg
         id="svg-logo"
         xmlns="http://www.w3.org/2000/svg"
@@ -28,19 +105,22 @@ function Logo({ className, iconColor, textColor, height = 50, iconOnly = false, 
         viewBox={`0 0 ${iconOnly ? 500 : 1800} 500`}
       >
         <title>Logo</title>
-        <g id="svg-logo-icon" fill="none" fillRule="evenodd" style={{ transformBox: 'fill-box' }} transform="rotate(0)">
+        <g id="svg-logo-icon" fill="none" fillRule="evenodd">
           <path
             fill={iconColor}
+            style={getPathStyle(0)}
             d="M335 15a150 150 0 0 1 150 150v170a150 150 0 0 1-150 150H165A150 150 0 0 1 15 335V165A150 150 0 0 1 165 15h170Zm-50 150h-70a50 50 0 0 0-50 50v70a50 50 0 0 0 50 50h70a50 50 0 0 0 50-50v-70a50 50 0 0 0-50-50Z"
           />
           <path
             fill="#FFF"
             fillOpacity=".4"
+            style={getPathStyle(1)}
             d="M315 65a120 120 0 0 1 120 120v130a120 120 0 0 1-120 120H185A120 120 0 0 1 65 315V185A120 120 0 0 1 185 65h130Zm-30 100h-70a50 50 0 0 0-50 50v70a50 50 0 0 0 50 50h70a50 50 0 0 0 50-50v-70a50 50 0 0 0-50-50Z"
           />
           <path
             fill="#FFF"
             fillOpacity=".5"
+            style={getPathStyle(2)}
             d="M295 115a90 90 0 0 1 90 90v90a90 90 0 0 1-90 90h-90a90 90 0 0 1-90-90v-90a90 90 0 0 1 90-90h90Zm-10 50h-70a50 50 0 0 0-50 50v70a50 50 0 0 0 50 50h70a50 50 0 0 0 50-50v-70a50 50 0 0 0-50-50Z"
           />
         </g>

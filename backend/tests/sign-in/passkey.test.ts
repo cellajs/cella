@@ -120,7 +120,7 @@ describe('Passkey Authentication', async () => {
 
       expect(res.status).toBe(403);
       const error = await parseResponse<ErrorResponse>(res);
-      expect(error.type).toBe('form.invalid_union');
+      expect(error.type).toBe('form.invalid_value');
     });
   });
 

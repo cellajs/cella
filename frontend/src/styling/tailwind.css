@@ -203,6 +203,10 @@
     @apply bg-background text-foreground min-h-full overscroll-none;
   }
 
+  .container {
+    @apply max-w-400 w-full px-3 sm:px-4 mx-auto;
+  }
+
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   @media (max-width: 639px) {
     html {

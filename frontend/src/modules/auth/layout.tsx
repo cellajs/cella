@@ -17,7 +17,7 @@ const AuthLayout = () => {
     <div
       data-started={hasStarted}
       data-waited={hasWaited}
-      className="group container rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-screen items-center"
+      className="container group rich-gradient before:fixed after:fixed flex flex-col min-h-[90vh] sm:min-h-screen items-center"
     >
       {/* Render bg animation */}
       <Suspense fallback={<div className="fixed left-0 top-0 w-full h-full bg-loading-placeholder" />}>

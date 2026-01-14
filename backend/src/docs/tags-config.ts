@@ -1,6 +1,9 @@
 import type { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 
-export const apiModulesList = [
+/**
+ * Predefined OpenAPI tags for the API documentation.
+ */
+export const openapiTags = [
   {
     name: 'me',
     description: `Endpoints related to the *current user*, meaning the user associated with the active session making the request.

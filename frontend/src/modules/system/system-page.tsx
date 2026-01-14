@@ -12,7 +12,7 @@ const SystemPage = () => {
       <SimpleHeader
         heading={t('common:system_panel')}
         text={t('common:system_panel.text')}
-        className="container pt-4 md:pt-6 md:px-6"
+        className="pt-4 md:pt-6 md:px-6"
       />
 
       <PageNav
@@ -25,7 +25,7 @@ const SystemPage = () => {
         ]}
       />
 
-      <FocusViewContainer className="container">
+      <FocusViewContainer className="container min-h-screen">
         <Outlet />
       </FocusViewContainer>
     </>
