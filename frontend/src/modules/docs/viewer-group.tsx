@@ -100,7 +100,7 @@ export const ViewerGroup = ({
             </ToggleGroupItem>
           ))}
       </ToggleGroup>
-      <div className="p-3 md:py-6 rounded-md bg-muted/50 overflow-x-auto">
+      <div className="rounded-md bg-muted/50 overflow-x-auto">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={viewMode}
@@ -108,6 +108,7 @@ export const ViewerGroup = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="p-3 md:py-6"
           >
             {viewMode === 'format' && (
               <JsonViewer

@@ -39,7 +39,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   // Inject examples into responses based on schema names
   const responsesWithExamples = injectResponseExamples(config.responses);
 
-  // Strip extension props (xGuard, xRateLimiter) to prevent them leaking as null in OpenAPI
+  // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();
   const cleanConfig = Object.fromEntries(
     Object.entries(config).filter(([key]) => !extensionPropIds.includes(key)),

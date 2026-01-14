@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DataTable } from '~/modules/common/data-table';
@@ -19,26 +19,19 @@ interface TagOperationsTableProps {
 const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
-  const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
   const { scrollToSection } = useScrollSpy({ smoothScroll: true });
 
   // Handle operation click necessary to expand tag if not already expanded
   const handleOperationClick = (hash: string) => {
-    // If already expanded, just scroll
-    if (activeTag === tagName) {
-      scrollToSection(hash);
-      return;
-    }
-    // Otherwise, navigate to expand then scroll
     navigate({
       to: '.',
       search: (prev) => ({ ...prev, operationTag: tagName }),
       hash,
       replace: true,
       resetScroll: false,
+    }).finally(() => {
+      setTimeout(() => scrollToSection(hash), 50);
     });
-    // Schedule scroll
-    setTimeout(() => scrollToSection(hash), 350);
   };
 
   return [
@@ -72,6 +65,7 @@ const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
           hash={row.hash}
           replace
           onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
             handleOperationClick(row.hash);
           }}

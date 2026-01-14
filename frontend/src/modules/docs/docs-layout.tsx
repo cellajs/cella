@@ -7,8 +7,8 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import Logo from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { DocsSidebar } from '~/modules/docs/docs-sidebar';
 import { tagsQueryOptions } from '~/modules/docs/query';
+import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { Button } from '~/modules/ui/button';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -115,7 +115,7 @@ const DocsLayout = () => {
         </header>
 
         {/* Main content with top padding for fixed header */}
-        <main className="container min-h-screen pt-20 pb-[70vh]">
+        <main className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
           <Outlet />
         </main>
       </div>
@@ -133,16 +133,12 @@ const DocsLayout = () => {
                 <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
               </div>
             </ResizablePanel>
-
             <ResizableSeparator />
           </>
         )}
-
         <ResizablePanel>
-          <main className="h-screen pt-3 sm:pt-6 overflow-auto">
-            <div className="container pb-[70vh]">
-              <Outlet />
-            </div>
+          <main className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
+            <Outlet />
           </main>
         </ResizablePanel>
       </ResizableGroup>

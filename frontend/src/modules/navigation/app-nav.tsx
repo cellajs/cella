@@ -81,7 +81,6 @@ const AppNav = () => {
         side: sheetSide,
         showCloseButton: false,
         modal: isMobile,
-        closeSheetOnRouteChange: false,
         className: navSheetClassName,
         container,
         onClose: () => setNavSheetOpen(null, isDesktop),

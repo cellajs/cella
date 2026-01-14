@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
-import { OperationsTableBar } from '~/modules/docs/operations-table/bar';
-import { useColumns } from '~/modules/docs/operations-table/columns';
+import { FocusViewContainer } from '~/modules/common/focus-view';
+import { OperationsTableBar } from '~/modules/docs/operations/operations-table/bar';
+import { useColumns } from '~/modules/docs/operations/operations-table/columns';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
 import type { GenOperationSummary } from '~/modules/docs/types';
 
@@ -99,30 +100,32 @@ const OperationsTable = () => {
   );
 
   return (
-    <div className="flex flex-col gap-2">
-      <OperationsTableBar
-        total={filteredOperations.length}
-        searchVars={{ q }}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-      />
-      <DataTable<GenOperationSummary>
-        columns={columns.filter((column) => column.visible)}
-        rows={filteredOperations}
-        onRowsChange={onRowsChange}
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.hash}
-        isLoading={false}
-        isFetching={false}
-        limit={filteredOperations.length}
-        isFiltered={!!q}
-        rowHeight={42}
-        enableVirtualization={false}
-      />
-    </div>
+    <FocusViewContainer className="container min-h-screen">
+      <div className="flex flex-col gap-2">
+        <OperationsTableBar
+          total={filteredOperations.length}
+          searchVars={{ q }}
+          setSearch={setSearch}
+          columns={columns}
+          setColumns={setColumns}
+          isCompact={isCompact}
+          setIsCompact={setIsCompact}
+        />
+        <DataTable<GenOperationSummary>
+          columns={columns.filter((column) => column.visible)}
+          rows={filteredOperations}
+          onRowsChange={onRowsChange}
+          hasNextPage={false}
+          rowKeyGetter={(row) => row.hash}
+          isLoading={false}
+          isFetching={false}
+          limit={filteredOperations.length}
+          isFiltered={!!q}
+          rowHeight={42}
+          enableVirtualization={false}
+        />
+      </div>
+    </FocusViewContainer>
   );
 };
 

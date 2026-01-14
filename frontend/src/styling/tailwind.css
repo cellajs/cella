@@ -204,19 +204,7 @@
   }
 
   .container {
-    padding-inline: 0.7rem !important;
-  }
-
-  @media (min-width: 640px) {
-    .container {
-      padding-inline: 1rem !important;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .container {
-      padding-inline: 1.5rem !important;
-    }
+    @apply max-w-400 w-full px-3 sm:px-4 mx-auto;
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */

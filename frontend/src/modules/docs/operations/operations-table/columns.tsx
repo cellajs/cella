@@ -7,20 +7,22 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
-import { OperationDetail } from '~/modules/docs/operation-detail';
-import { OperationExamples } from '~/modules/docs/operation-examples';
+import { OperationDetail } from '~/modules/docs/operations/operation-detail';
+import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import type { GenExtensionDefinition, GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { Input } from '~/modules/ui/input';
-import { getMethodColor } from '../helpers/get-method-color';
+import { getMethodColor } from '../../helpers/get-method-color';
 
 /**
  * Opens a sheet with operation detail view
  */
 const openOperationSheet = (operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) => {
   useSheeter.getState().create(
-    <Suspense fallback={<Spinner className="h-48" />}>
-      <OperationDetail operation={operation} />
+    <Suspense fallback={<Spinner className="mt-[40vh]" />}>
+      <div className="container pb-[50vh] pt-3">
+        <OperationDetail operation={operation} />
+      </div>
     </Suspense>,
     {
       id: `operation-${operation.id}`,
@@ -37,8 +39,10 @@ const openOperationSheet = (operation: GenOperationSummary, buttonRef: RefObject
  */
 const openExamplesSheet = (operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) => {
   useSheeter.getState().create(
-    <Suspense fallback={<Spinner className="h-48" />}>
-      <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />
+    <Suspense fallback={<Spinner className="mt-[40vh]" />}>
+      <div className="container pb-[50vh] pt-3">
+        <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />
+      </div>
     </Suspense>,
     {
       id: `examples-${operation.id}`,
@@ -80,7 +84,7 @@ const ExampleCell = ({ row }: { row: GenOperationSummary }) => {
     <button
       ref={buttonRef}
       type="button"
-      className="flex items-center opacity-60 hover:opacity-100"
+      className="flex items-center w-full justify-center opacity-60 hover:opacity-100"
       onClick={() => openExamplesSheet(row, buttonRef)}
     >
       <BirdIcon className="h-4 w-4" />
@@ -151,7 +155,7 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         visible: true,
         resizable: false,
         sortable: false,
-        width: 70,
+        width: 50,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <ExampleCell row={row} />,
       },

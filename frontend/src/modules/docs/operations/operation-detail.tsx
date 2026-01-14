@@ -1,31 +1,34 @@
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { DescriptionEditor } from '~/modules/docs/description-editor';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
-import { OperationRequest } from '~/modules/docs/operation-request';
-import { OperationResponses } from '~/modules/docs/operation-responses';
+import { OperationRequest } from '~/modules/docs/operations/operation-request';
+import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import Spinner from '../common/spinner';
-import { getMethodColor } from './helpers/get-method-color';
+import { cn } from '~/utils/cn';
+import Spinner from '../../common/spinner';
+import { getMethodColor } from '../helpers/get-method-color';
 
 interface OperationDetailProps {
   operation: GenOperationSummary;
+  className?: string;
 }
 
 /**
  * Single operation detail with collapsible request and responses sections.
  * Displays method, path, description, request parameters, and responses.
  */
-export const OperationDetail = ({ operation }: OperationDetailProps) => {
+export const OperationDetail = ({ operation, className }: OperationDetailProps) => {
   const { t } = useTranslation();
 
   return (
-    <Card id={operation.hash} className="scroll-mt-14 sm:scroll-mt-2 border-0">
+    <Card id={operation.hash} className={cn('scroll-mt-14 sm:scroll-mt-2 border-0', className)}>
       <CardHeader className="group">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-xl leading-8 gap-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="sm:text-xl leading-8 gap-2">
             {operation.summary}
             <HashUrlButton id={operation.hash} />
           </CardTitle>
@@ -63,5 +66,27 @@ export const OperationDetail = ({ operation }: OperationDetailProps) => {
         <OperationResponses operationId={operation.id} tagName={operation.tags[0]} />
       </CardContent>
     </Card>
+  );
+};
+
+interface TagOperationsListProps {
+  operations: GenOperationSummary[];
+}
+
+/**
+ * Renders a list of operation details and registers all operation hashes
+ * with the shared scroll spy in a single hook call.
+ */
+export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
+  // Register all operation hashes for this tag section
+  const sectionIds = useMemo(() => operations.map((op) => op.hash), [operations]);
+  useScrollSpy({ sectionIds });
+
+  return (
+    <div className="border-t">
+      {operations.map((operation) => (
+        <OperationDetail key={operation.hash} operation={operation} className="rounded-none last:rounded-b-lg" />
+      ))}
+    </div>
   );
 };

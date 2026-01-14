@@ -89,7 +89,7 @@ const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
         }
       />
       <Suspense>
-        <FocusViewContainer className="container">
+        <FocusViewContainer className="container min-h-screen">
           <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} isSheet={isSheet} />
         </FocusViewContainer>
       </Suspense>

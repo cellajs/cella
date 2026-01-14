@@ -38,7 +38,7 @@ export const LegalContent = () => {
   usePreloadLazyComponents(lazyComponents);
 
   return (
-    <div className="container md:flex md:flex-row my-4 md:mt-8 mx-auto gap-4">
+    <div className="container md:flex md:flex-row my-4 md:mt-8 gap-4">
       <div className="mx-auto md:min-w-48 md:w-[25%] md:mt-3">
         <StickyBox className="z-10 group" offsetTop={12}>
           <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} collapseText />

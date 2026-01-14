@@ -47,7 +47,7 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
   // Show loading state while waiting for sync
   if (!page) {
     return (
-      <div className="container my-4 md:mt-8 mx-auto flex justify-center">
+      <div className="my-4 md:mt-8 mx-auto flex justify-center">
         <Spinner className="my-16 h-6 w-6" />
       </div>
     );
@@ -80,7 +80,7 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
 
   if (mode === 'edit') {
     return (
-      <div className="container my-4 md:mt-8 mx-auto">
+      <div className="container">
         <div className="mx-auto max-w-4xl">
           {headerSection}
           <UpdatePageForm page={page} pagesCollection={pagesCollection} />
@@ -90,7 +90,7 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
   }
 
   return (
-    <div className="container my-4 md:mt-8 mx-auto">
+    <div className="container">
       <div className="mx-auto max-w-4xl">
         {headerSection}
         <div className="prose dark:prose-invert">

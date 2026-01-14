@@ -23,7 +23,7 @@ export const PendingMemberships = ({ entity }: PendingMembershipsTableProps) => 
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     createSheet(
-      <div className="container w-full">
+      <div className="container">
         <Suspense>
           <PendingMembershipsTable entity={entity} />
         </Suspense>

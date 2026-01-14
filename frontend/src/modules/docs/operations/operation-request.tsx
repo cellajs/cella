@@ -9,9 +9,9 @@ import {
   getZodCodeForRequest,
   typesContentQueryOptions,
   zodContentQueryOptions,
-} from './helpers/extract-types';
-import { tagDetailsQueryOptions } from './query';
-import { ViewerGroup } from './viewer-group';
+} from '../helpers/extract-types';
+import { tagDetailsQueryOptions } from '../query';
+import { ViewerGroup } from '../viewer-group';
 
 interface OperationRequestProps {
   operationId: string;

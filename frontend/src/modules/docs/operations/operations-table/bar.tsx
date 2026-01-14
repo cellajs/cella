@@ -6,8 +6,8 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
+import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 import type { GenOperationSummary } from '~/modules/docs/types';
-import { ViewModeToggle } from '~/modules/docs/view-mode-toggle';
 
 interface OperationsTableBarProps {
   total: number;

@@ -1,24 +1,28 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import type { GenComponentSchema } from '~/modules/docs/types';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { cn } from '~/utils/cn';
 import {
   getTypeCodeForSchema,
   getZodCodeForSchema,
   typesContentQueryOptions,
   zodContentQueryOptions,
-} from './helpers/extract-types';
+} from '../helpers/extract-types';
 
 interface SchemaDetailProps {
   schema: GenComponentSchema;
+  className?: string;
 }
 
 /**
  * Single schema detail card with collapsible ViewerGroup.
  * Lazily loads types/zod content via React Query.
  */
-export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
+export const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
   const { data: zodContent } = useSuspenseQuery(zodContentQueryOptions);
   const { data: typesContent } = useSuspenseQuery(typesContentQueryOptions);
 
@@ -26,7 +30,7 @@ export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
   const refId = schema.ref.replace(/^#/, '');
 
   return (
-    <Card id={refId} className="scroll-mt-14 sm:scroll-mt-2 border-0">
+    <Card id={refId} className={cn('scroll-mt-14 sm:scroll-mt-2 border-0', className)}>
       <CardHeader className="group">
         <CardTitle className="text-xl leading-8 gap-2">
           {schema.name}
@@ -48,5 +52,27 @@ export const SchemaDetail = ({ schema }: SchemaDetailProps) => {
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+interface TagSchemasListProps {
+  schemas: GenComponentSchema[];
+}
+
+/**
+ * Renders a list of schema details and registers all schema refs
+ * with the shared scroll spy in a single hook call.
+ */
+export const TagSchemasList = ({ schemas }: TagSchemasListProps) => {
+  // Register all schema refs for this tag section
+  const sectionIds = useMemo(() => schemas.map((s) => s.ref.replace(/^#/, '')), [schemas]);
+  useScrollSpy({ sectionIds });
+
+  return (
+    <div className="border-t">
+      {schemas.map((schema) => (
+        <SchemaDetail key={schema.name} schema={schema} className="rounded-none last:rounded-b-lg" />
+      ))}
+    </div>
   );
 };

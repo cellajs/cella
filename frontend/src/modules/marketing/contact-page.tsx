@@ -42,7 +42,7 @@ const ContactPage = () => {
         <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
         <ContactFormMap />
       </div>
-      <div className="container mb-12 mx-auto">
+      <div className="container mb-12">
         <div className="flex flex-wrap justify-evenly gap-2">
           {methods.map((method) => (
             <div key={t(method.title)} className="mb-10 text-center h-48 w-40 sm:w-48">

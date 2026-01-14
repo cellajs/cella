@@ -82,14 +82,13 @@ export const useUIStore = create<UIStoreState>()(
           })),
       })),
       {
-        version: 1,
+        version: 2,
         name: `${appConfig.slug}-ui`,
         partialize: (state) => ({
           offlineAccess: state.offlineAccess,
           impersonating: state.impersonating,
           mode: state.mode,
           theme: state.theme,
-          focusView: state.focusView,
         }),
         storage: createJSONStorage(() => localStorage),
       },
