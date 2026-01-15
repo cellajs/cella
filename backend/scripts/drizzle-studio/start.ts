@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STUDIO_PORT } from './port';
+import { checkMark } from '#/utils/console';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '..');
@@ -18,7 +19,7 @@ const startDrizzleStudio = () => {
   const studioProcess = spawn(cmd, { cwd: parentDir, stdio: 'inherit', shell: true });
 
   console.info(' ');
-  console.info(`✅ Drizzle Studio started`);
+  console.info(`${checkMark} Drizzle Studio started`);
   console.info(' ');
 
   const cleanup = (code: number | null) => {

@@ -1,5 +1,5 @@
-import type { PageModel } from '#/db/schema/pages';
 import { faker } from '@faker-js/faker';
+import type { PageModel } from '#/db/schema/pages';
 import { withFakerSeed } from './utils';
 
 /**
@@ -17,10 +17,12 @@ export const mockPage = (key = 'page:default'): PageModel =>
       id: faker.string.nanoid(),
       entityType: 'page' as const,
       name: faker.lorem.sentence({ min: 2, max: 5 }),
-      description: JSON.stringify([{
-        content: [{ type: 'text', text: faker.lorem.paragraphs(2), styles: {} }],
-        children: [],
-      }]),
+      description: JSON.stringify([
+        {
+          content: [{ type: 'text', text: faker.lorem.paragraphs(2), styles: {} }],
+          children: [],
+        },
+      ]),
       keywords: faker.lorem.words(3),
       status: 'unpublished' as const,
       parentId: null,

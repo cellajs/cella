@@ -9,6 +9,8 @@ export interface CLIConfig {
   forkLocation: string;
   forkBranch: string;
   forkSyncBranch: string;
+  /** When true, skip interactive prompts and use defaults/CLI flags */
+  ci: boolean;
 }
 
 // Define supported configuration actions (continue or customize)

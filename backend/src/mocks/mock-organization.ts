@@ -1,16 +1,23 @@
-import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
-import type { AuthStrategy } from '#/db/schema/sessions';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { defaultRestrictions } from '#/db/utils/organization-restrictions';
-import { nanoid } from '#/utils/nanoid';
 import { faker } from '@faker-js/faker';
 import { appConfig, type Language } from 'config';
 import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
+import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
+import type { AuthStrategy } from '#/db/schema/sessions';
+import { defaultRestrictions } from '#/db/utils/organization-restrictions';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { nanoid } from '#/utils/nanoid';
 import { pastIsoDate, withFakerSeed } from './utils';
 
 // Enforces unique organization names
 const organizationName = new UniqueEnforcer();
+
+/**
+ * Reset unique enforcers - call this when clearing the database in tests.
+ */
+export const resetOrganizationMockEnforcers = () => {
+  organizationName.reset();
+};
 
 /**
  * Generates a mock organization record with all fields populated.
@@ -54,7 +61,9 @@ export const mockOrganization = (): InsertOrganizationModel => {
  * Generates a mock organization API response with deterministic seeding.
  * Adds API-only fields (membership, counts) to the base mock.
  */
-export const mockOrganizationResponse = (key = 'organization:default'): OrganizationModel & {
+export const mockOrganizationResponse = (
+  key = 'organization:default',
+): OrganizationModel & {
   membership: MembershipBaseModel;
   counts: {
     membership: { admin: number; member: number; pending: number; total: number };
@@ -106,7 +115,12 @@ export const mockOrganizationResponse = (key = 'organization:default'): Organiza
         archived: false,
       },
       counts: {
-        membership: { admin: 1, member: faker.number.int({ min: 0, max: 20 }), pending: 0, total: faker.number.int({ min: 1, max: 25 }) },
+        membership: {
+          admin: 1,
+          member: faker.number.int({ min: 0, max: 20 }),
+          pending: 0,
+          total: faker.number.int({ min: 1, max: 25 }),
+        },
         entities: { attachment: faker.number.int({ min: 0, max: 50 }), page: faker.number.int({ min: 0, max: 20 }) },
       },
     };

@@ -2,6 +2,7 @@ name: cella
 
 volumes:
   pg_data:
+  pg_test_data:
 
 services:
   db:
@@ -23,6 +24,26 @@ services:
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data
+
+  db_test:
+    container_name: cella_db_test
+    image: postgres:17
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5434:5432
+    profiles:
+      - test
+    volumes:
+      - pg_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
 
   electric:
     container_name: cella_electric

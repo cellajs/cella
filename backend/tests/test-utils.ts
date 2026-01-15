@@ -3,26 +3,19 @@
  *
  * This file contains helper functions to:
  * - Mock global behaviors like `fetch`
- * - Migrate the test database
  * - Clean up the database (e.g., clear users and emails tables)
  * - Dynamically enable/disable config flags (e.g., auth strategies)
  *
+ * Database migrations are handled by global-setup.ts before tests run.
  * These functions are intended to be used in test files to keep setup DRY and consistent.
  */
 
-import path from 'node:path';
 import { appConfig } from 'config';
-import { migrate } from 'drizzle-orm/pglite/migrator';
+import { sql } from 'drizzle-orm';
 import { Context, Next } from 'hono';
 import { vi } from 'vitest';
 import { db } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { passwordsTable } from '#/db/schema/passwords';
-import { sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
+import { resetOrganizationMockEnforcers, resetUserMockEnforcers } from '#/mocks';
 
 /**
  * Types
@@ -74,26 +67,18 @@ export function mockFetchRequest() {
 }
 
 /**
- * Migrate the database to the latest schema.
- * @param {string} migrationsFolder - The folder containing migration files.
- */
-export async function migrateDatabase(migrationsFolder: string = 'drizzle') {
-  return migrate(db, {
-    migrationsFolder: path.resolve(process.cwd(), migrationsFolder),
-  });
-}
-
-/**
- * Clear the database by removing all users and emails.
+ * Clear the database by truncating all test-related tables.
+ * Uses TRUNCATE CASCADE which is much faster than individual DELETEs.
+ * Also resets mock enforcers to prevent conflicts with unique values.
  */
 export async function clearDatabase() {
-  await db.delete(sessionsTable);
-  await db.delete(tokensTable);
-  await db.delete(passkeysTable);
-  await db.delete(passwordsTable);
-  await db.delete(oauthAccountsTable);
-  await db.delete(emailsTable);
-  await db.delete(usersTable);
+  // Reset mock enforcers so unique values don't conflict across tests
+  resetUserMockEnforcers();
+  resetOrganizationMockEnforcers();
+
+  await db.execute(sql`TRUNCATE TABLE 
+    sessions, tokens, passkeys, passwords, oauth_accounts, emails, users 
+    CASCADE`);
 }
 
 /**

@@ -93,5 +93,15 @@
     "repoUrl": "https://github.com/lucide-icons/lucide",
     "changelogUrl": null,
     "fetchedAt": 1768470846126
+  },
+  "@electric-sql/pglite": {
+    "repoUrl": "https://github.com/electric-sql/pglite",
+    "changelogUrl": null,
+    "fetchedAt": 1768483712605
+  },
+  "virtua": {
+    "repoUrl": "https://github.com/inokawa/virtua",
+    "changelogUrl": null,
+    "fetchedAt": 1768483712616
   }
 }

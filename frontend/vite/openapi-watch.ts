@@ -3,6 +3,7 @@ import { existsSync, type FSWatcher, watch } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 import { openApiConfig } from '../openapi-ts.config';
+import { checkMark, crossMark, STATUS_PREFIX } from './console';
 
 /**
  * Vite plugin that watches the backend OpenAPI spec file for changes.
@@ -69,7 +70,7 @@ export const openApiWatch = (): Plugin => {
           if (!apiGenMissingWarned) {
             apiGenMissingWarned = true;
             originalError(
-              '\n[openapi-watch] ❌ api.gen is missing. Run `pnpm generate:openapi` to regenerate.\n',
+              `\n[openapi-watch] ${crossMark} api.gen is missing. Run \`pnpm generate:openapi\` to regenerate.\n`,
               options,
             );
           }
@@ -82,12 +83,14 @@ export const openApiWatch = (): Plugin => {
       const apiGenWatcher = watch(outputPath, { persistent: false }, (eventType) => {
         if (eventType === 'rename' && !apiGenExists() && !apiGenMissingWarned) {
           apiGenMissingWarned = true;
-          console.error('\n[openapi-watch] ❌ api.gen was deleted. Run `pnpm generate:openapi` to regenerate.\n');
+          console.error(
+            `\n[openapi-watch] ${crossMark} api.gen was deleted. Run \`pnpm generate:openapi\` to regenerate.\n`,
+          );
         }
         // Reset when api.gen comes back
         if (apiGenExists() && apiGenMissingWarned) {
           apiGenMissingWarned = false;
-          console.info('[openapi-watch] ✅ api.gen restored');
+          console.info(`[openapi-watch] ${checkMark} api.gen restored`);
         }
       });
 
@@ -140,9 +143,9 @@ export const openApiWatch = (): Plugin => {
             // Log output (trimmed)
             const output = (stdout || stderr).trim();
             if (output) {
-              // Extract just the status line
-              const statusLine = output.split('\n').find((line) => line.startsWith('✅') || line.startsWith('📝'));
-              if (statusLine) console.info(`[openapi-watch] ${statusLine}`);
+              // Extract status line
+              const statusLine = output.split('\n').find((line) => line.startsWith(STATUS_PREFIX));
+              if (statusLine) console.info(`[openapi-watch]${statusLine.slice(STATUS_PREFIX.length)}`);
             }
 
             // Trigger HMR reload

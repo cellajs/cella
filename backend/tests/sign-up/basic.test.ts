@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser } from '../helpers';
-import { clearDatabase, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
+import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
@@ -14,7 +14,6 @@ setTestConfig({
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase();
 
   // Tmp solution: Mock the sendVerificationEmail function to avoid background running tasks...
   // Later we should only mock the email sending part, not the whole function.

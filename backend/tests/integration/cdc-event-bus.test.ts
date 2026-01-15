@@ -22,14 +22,14 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import type { ActivityEvent } from '#/lib/event-bus';
 import { eventBus } from '#/lib/event-bus';
+import { mockOrganization } from '#/mocks/mock-organization';
+import { mockUser } from '#/mocks/mock-user';
 import { nanoid } from '#/utils/nanoid';
-import { mockOrganization } from '../../mocks/mock-organization';
-import { mockUser } from '../../mocks/mock-user';
-import { clearDatabase, ensureCdcSetup, migrateDatabase, startEventBus, stopEventBus, waitForEvent } from './setup';
+import { clearDatabase, ensureCdcSetup, startEventBus, stopEventBus, waitForEvent } from './test-utils';
 
 describe('EventBus Integration', () => {
   beforeAll(async () => {
-    await migrateDatabase();
+    // Migrations are handled by global-setup.ts
     await clearDatabase();
     await startEventBus();
   });
@@ -90,7 +90,8 @@ describe('EventBus Integration', () => {
     });
   });
 
-  describe('Activity trigger → EventBus', () => {
+  // Skip CDC-dependent tests when CDC is disabled
+  describe.skipIf(process.env.CDC_DISABLED === 'true')('Activity trigger → EventBus', () => {
     it('should receive event when activity is inserted directly', async () => {
       // This tests the PostgreSQL trigger path
       const eventPromise = waitForEvent<ActivityEvent>('membership.created', 5000);
@@ -160,10 +161,9 @@ describe('EventBus Integration', () => {
   });
 });
 
-describe('CDC Setup Verification', () => {
-  beforeAll(async () => {
-    await migrateDatabase();
-  });
+// Skip CDC setup verification when CDC is disabled
+describe.skipIf(process.env.CDC_DISABLED === 'true')('CDC Setup Verification', () => {
+  // Migrations are handled by global-setup.ts
 
   it('should have CDC publication configured', async () => {
     const { publicationExists } = await ensureCdcSetup();
@@ -192,7 +192,6 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
   let testUser: { id: string; email: string };
 
   beforeAll(async () => {
-    await migrateDatabase();
     await clearDatabase();
     await startEventBus();
 

@@ -147,7 +147,7 @@ jobs:
         run: pnpm --filter @cellajs/sync test
 
       - name: Run sync analysis (dry-run)
-        run: pnpm sync --sync-service analyze
+        run: pnpm sync --sync-service analyze --yes
 
   # Integration tests with real Postgres + CDC + EventBus
   test-integration:

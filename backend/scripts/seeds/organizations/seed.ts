@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
+import { checkMark,loadingMark } from '#/utils/console';
 
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
@@ -9,7 +10,7 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks';
+import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 import { isOrganizationSeeded as isAlreadySeeded } from '../utils';
 
@@ -20,7 +21,7 @@ export const PLAIN_USER_PASSWORD = '12345678';
 
 // Seed organizations with data
 export const organizationsSeed = async () => {
-  console.info(' \n◔ Seeding organizations...');
+  console.info(` \n${loadingMark} Seeding organizations...`);
 
   // Case: Records already exist → skip seeding
   if (await isAlreadySeeded()) return console.warn('Organizations table not empty → skip seeding');
@@ -33,7 +34,7 @@ export const organizationsSeed = async () => {
     .returning()
     .onConflictDoNothing();
 
-  console.info(' \n◔ Seeding members and memberships, this can take a while...');
+  console.info(` \n${loadingMark} Seeding members and memberships, this can take a while...`);
 
   // Fetch the default admin user
   const [adminUser] = await db
@@ -95,7 +96,7 @@ export const organizationsSeed = async () => {
       .onConflictDoNothing();
   }
 
-  console.info(` \n✅ Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each\n `);
+  console.info(` \n${checkMark} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each\n `);
 };
 
 /**

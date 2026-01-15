@@ -1,5 +1,5 @@
-import type { ActivityModel } from '#/db/schema/activities';
 import { faker } from '@faker-js/faker';
+import type { ActivityModel } from '#/db/schema/activities';
 import { withFakerSeed } from './utils';
 
 /**
@@ -27,7 +27,10 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
       entityId: faker.string.nanoid(),
       organizationId: faker.string.nanoid(),
       createdAt,
-      changedKeys: action === 'update' ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 1, max: 3 }) : null,
+      changedKeys:
+        action === 'update'
+          ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 1, max: 3 })
+          : null,
     };
   });
 

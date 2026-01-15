@@ -12,8 +12,8 @@
     "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/index.ts",
     "ts": "tsc --pretty",
     "ts:beta": "tsgo --pretty",
-    "tsperf": "rm -rf dist && tsc --extendedDiagnostics",
-    "tsperf:beta": "rm -rf dist && tsgo --extendedDiagnostics",
+    "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsc --extendedDiagnostics",
+    "tsperf:beta": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
     "build:staging": "cross-env NODE_ENV=staging tsup",
@@ -39,7 +39,7 @@
     "emails:build": "email build emails",
     "emails:create": "email create",
     "emails:preview": "email preview emails",
-    "test": "pnpm vitest",
+    "test": "docker compose --profile test up -d db_test --wait && cross-env CDC_DISABLED=true pnpm vitest run && docker compose --profile test stop db_test || docker compose --profile test stop db_test",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {

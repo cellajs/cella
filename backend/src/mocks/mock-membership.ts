@@ -1,11 +1,11 @@
+import { faker } from '@faker-js/faker';
+import { appConfig } from 'config';
+import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
-import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { faker } from '@faker-js/faker';
-import { appConfig } from 'config';
 import { pastIsoDate, withFakerSeed } from './utils';
 
 // Tracks the current order offset for memberships per context (e.g., organization)

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { mockSuccessWithRejectedItems } from '../../../mocks/mock-common';
+import { mockSuccessWithRejectedItems } from '#/mocks/mock-common';
 
 /**
  * Schema for a response with paginated data

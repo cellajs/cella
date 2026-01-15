@@ -19,6 +19,7 @@ import {
 
 import { AppConfig } from "../../config/types";
 import { showConfiguration } from "./display";
+import { SYNC_SERVICES } from "../../config/sync-services";
 
 /**
  * Handle sync service selection.
@@ -27,8 +28,15 @@ import { showConfiguration } from "./display";
  */
 export async function handleSyncService(cli: CLIConfig): Promise<void> {
   if (!cli.syncService) {
-    cli.syncService = await promptSyncService();
-    config.syncService = cli.syncService as AppConfig['syncService'];
+    if (cli.ci) {
+      // In CI mode, default to analyze (safe, non-destructive)
+      cli.syncService = SYNC_SERVICES.ANALYZE;
+      config.syncService = SYNC_SERVICES.ANALYZE;
+      console.info(`Using sync service (CI default): ${pc.cyan(`${cli.syncService}\n`)}`);
+    } else {
+      cli.syncService = await promptSyncService();
+      config.syncService = cli.syncService as AppConfig['syncService'];
+    }
   } else {
     console.info(`Using sync service: ${pc.cyan(`${cli.syncService}\n`)}`);
   }
@@ -40,6 +48,11 @@ export async function handleSyncService(cli: CLIConfig): Promise<void> {
  * @param cli - The CLI configuration object
  */
 export async function handleConfigurationAction(cli: CLIConfig): Promise<void> {
+  // Skip prompts in CI mode
+  if (cli.ci) {
+    return;
+  }
+
   const configurationState: ConfigurationAction = await promptConfigurationAction();
 
   if (configurationState === 'continue') {

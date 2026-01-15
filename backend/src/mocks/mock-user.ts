@@ -1,13 +1,13 @@
+import { faker } from '@faker-js/faker';
+import { appConfig, type UserFlags } from 'config';
+import { UniqueEnforcer } from 'enforce-unique';
+import slugify from 'slugify';
 import type { InsertEmailModel } from '#/db/schema/emails';
 import type { InsertPasswordModel } from '#/db/schema/passwords';
 import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens';
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { faker } from '@faker-js/faker';
-import { appConfig, type UserFlags } from 'config';
-import { UniqueEnforcer } from 'enforce-unique';
-import slugify from 'slugify';
 import { pastIsoDate, withFakerSeed } from './utils';
 
 /** Optional overrides for mock user generation */
@@ -20,6 +20,14 @@ const userSlug = new UniqueEnforcer();
 const userEmail = new UniqueEnforcer();
 
 /**
+ * Reset unique enforcers - call this when clearing the database in tests.
+ */
+export const resetUserMockEnforcers = () => {
+  userSlug.reset();
+  userEmail.reset();
+};
+
+/**
  * Generates a mock user with all fields populated.
  * Used for DB seeding and tests.
  * Enforces unique email and slug.
@@ -27,7 +35,10 @@ const userEmail = new UniqueEnforcer();
 export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
   const email = overrides.email ?? userEmail.enforce(() => faker.internet.email(firstAndLastName).toLowerCase());
-  const slug = userSlug.enforce(() => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }), { maxTime: 500, maxRetries: 500 });
+  const slug = userSlug.enforce(
+    () => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }),
+    { maxTime: 500, maxRetries: 500 },
+  );
   const createdAt = pastIsoDate();
 
   return {

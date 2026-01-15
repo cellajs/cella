@@ -1,5 +1,5 @@
-import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { faker } from '@faker-js/faker';
+import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockUserResponse } from './mock-user';
 import { withFakerSeed } from './utils';
 

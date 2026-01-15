@@ -1,5 +1,5 @@
-import type { AttachmentModel } from '#/db/schema/attachments';
 import { faker } from '@faker-js/faker';
+import type { AttachmentModel } from '#/db/schema/attachments';
 import { withFakerSeed } from './utils';
 
 /**

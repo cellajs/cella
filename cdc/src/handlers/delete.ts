@@ -16,14 +16,19 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
   const action = 'delete';
   const entityOrResourceType = ctx.entityType ?? ctx.resourceType;
   const type = `${entityOrResourceType}.${actionToVerb(action)}`;
+  const tableName = getTableName(entry.table);
+
+  // For user deletes, the userId would reference the deleted user (from modifiedBy/createdBy/userId),
+  // which no longer exists. Set to null to avoid foreign key violation.
+  const userId = tableName === 'users' ? null : ctx.userId;
 
   return {
     id: nanoid(),
-    userId: ctx.userId,
+    userId,
     entityType: ctx.entityType,
     resourceType: ctx.resourceType,
     action,
-    tableName: getTableName(entry.table),
+    tableName,
     type,
     entityId: ctx.entityId,
     organizationId: ctx.organizationId,

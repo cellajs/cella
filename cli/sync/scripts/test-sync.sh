@@ -66,9 +66,9 @@ EOF
 git add cella.config.ts
 git commit -m "chore: add test cella config"
 
-echo "✅ Test fork created successfully"
+echo "✔ Test fork created successfully"
 echo ""
-echo "📊 Running sync analysis..."
+echo "Running sync analysis..."
 
 # Run the sync in analyze-only mode
 cd "$CELLA_DIR"
@@ -80,4 +80,4 @@ CELLA_TEST_FORK_PATH="$TEST_DIR" tsx ./cli/sync/src/index.ts \
   --boilerplate-branch development
 
 echo ""
-echo "✅ Sync analysis completed successfully!"
+echo "✔ Sync analysis completed successfully!"

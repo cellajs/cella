@@ -8,6 +8,7 @@
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import pc from 'picocolors';
+import { checkMark } from '#/utils/console';
 
 export interface GenerateScript {
   /** Human-readable name for the script */
@@ -63,6 +64,6 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
     }
   }
 
-  console.info(pc.bold(pc.greenBright('✔ All generation scripts completed')));
+  console.info(`${checkMark} ${pc.bold('All generation scripts completed')}`);
   console.info('');
 }

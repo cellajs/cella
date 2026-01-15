@@ -5,7 +5,15 @@ import { startCdcWorker } from './worker';
  *
  * This script starts the Change Data Capture worker that subscribes to
  * PostgreSQL logical replication and creates activities from database changes.
+ *
+ * Set CDC_DISABLED=true to skip starting the worker (useful for tests).
  */
+
+// Check if CDC is disabled
+if (process.env.CDC_DISABLED === 'true') {
+  console.log('CDC worker disabled via CDC_DISABLED=true');
+  process.exit(0);
+}
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {

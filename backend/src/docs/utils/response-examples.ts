@@ -1,6 +1,6 @@
 import { getRefId } from '@asteasolutions/zod-to-openapi';
 import type { ZodType } from 'zod';
-import { getExampleForSchema } from '../../../mocks/example-registry';
+import { getExampleForSchema } from '#/mocks/example-registry';
 
 type ResponseConfig = { content?: { 'application/json'?: { schema?: unknown; example?: unknown } } };
 type ResponsesConfig = { [statusCode: string]: unknown };
