@@ -5,15 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1768437245723,
-      "tag": "0000_curvy_robin_chapel",
+      "when": 1768462525638,
+      "tag": "0000_pink_charles_xavier",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1768437246323,
+      "when": 1768462526173,
       "tag": "0001_cdc_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768462526353,
+      "tag": "0002_activity_notify_trigger",
       "breakpoints": true
     }
   ]

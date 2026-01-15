@@ -9,6 +9,7 @@ import { appConfig } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
+import { eventBus } from '#/lib/event-bus';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
@@ -44,6 +45,9 @@ const main = async () => {
   } else {
     await pgMigrate(db, migrateConfig);
   }
+
+  // Start event bus (listens to CDC activities via pg NOTIFY)
+  await eventBus.start();
 
   // Start server
   serve(

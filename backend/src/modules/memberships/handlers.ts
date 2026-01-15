@@ -20,7 +20,7 @@ import {
 } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import { eventManager } from '#/lib/events';
+
 import { mailer } from '#/lib/mailer';
 import { sendSSEByUserIds } from '#/lib/sse';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
@@ -567,9 +567,7 @@ const membershipRouteHandlers = app
 
       await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      const membership = activatedMemberships[0];
-      eventManager.emit('acceptedMembership', membership);
-
+      // Event emitted via CDC -> activities table -> eventBus ('membership.created')
       logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
     }
 

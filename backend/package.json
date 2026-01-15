@@ -30,14 +30,17 @@
     "db:clear": "tsx scripts/clear-db.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate:cdc-migration": "tsx scripts/generate-cdc-migration.ts",
-    "generate": "pnpm generate:pg",
+    "generate:activity-trigger": "tsx scripts/generate-activity-trigger.ts",
+    "add-migration": "tsx scripts/add-migration.ts",
+    "generate": "tsx scripts/generate.ts",
     "generate-openapi": "tsx scripts/generate-openapi.ts || true",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "emails:build": "email build emails",
     "emails:create": "email create",
     "emails:preview": "email preview emails",
-    "test": "pnpm vitest"
+    "test": "pnpm vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",

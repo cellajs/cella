@@ -11,13 +11,12 @@
  * so it will be applied automatically with other migrations.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../cdc/src/constants';
-import { entityTables } from '#/entity-config';
-import { resourceTables } from '#/activities-config';
-import { getTableName } from 'drizzle-orm';
 import chalk from 'chalk';
+import { getTableName } from 'drizzle-orm';
+import { resourceTables } from '#/activities-config';
+import { entityTables } from '#/entity-config';
+import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../cdc/src/constants';
+import { logMigrationResult, upsertMigration } from './lib/drizzle-migration';
 
 // Build table names directly from backend imports
 const trackedTableNames = [
@@ -92,57 +91,9 @@ ${trackedTableNames.map((table) => `ALTER TABLE ${table} REPLICA IDENTITY FULL;`
 -- FROM pg_replication_slots WHERE slot_name = '${CDC_SLOT_NAME}';
 `;
 
-const drizzleDir = join(import.meta.dirname, '../drizzle');
-const journalPath = join(drizzleDir, 'meta/_journal.json');
-
-// Read the current journal
-const journal = JSON.parse(readFileSync(journalPath, 'utf-8')) as {
-  version: string;
-  dialect: string;
-  entries: Array<{ idx: number; version: string; when: number; tag: string; breakpoints: boolean }>;
-};
-
-// Check if CDC migration already exists
-const cdcMigrationTag = 'cdc_setup';
-const existingCdcEntry = journal.entries.find((e) => e.tag.endsWith(cdcMigrationTag));
-
-if (existingCdcEntry) {
-  // Update existing migration file
-  const existingFilename = `${existingCdcEntry.tag}.sql`;
-  const existingPath = join(drizzleDir, existingFilename);
-
-  writeFileSync(existingPath, migrationSql);
-
-  console.info('');
-  console.info(`${chalk.greenBright.bold('✔')} CDC migration updated!`);
-  console.info('');
-  console.info(`  Updated: drizzle/${existingFilename}`);
-} else {
-  // Create new migration with Drizzle naming convention
-  const nextIdx = journal.entries.length;
-  const migrationTag = `${String(nextIdx).padStart(4, '0')}_${cdcMigrationTag}`;
-  const filename = `${migrationTag}.sql`;
-  const outputPath = join(drizzleDir, filename);
-
-  // Write the migration file
-  writeFileSync(outputPath, migrationSql);
-
-  // Add entry to journal
-  journal.entries.push({
-    idx: nextIdx,
-    version: journal.version,
-    when: Date.now(),
-    tag: migrationTag,
-    breakpoints: true,
-  });
-
-  writeFileSync(journalPath, JSON.stringify(journal, null, 2));
-
-  console.info('');
-  console.info(`${chalk.greenBright.bold('✔')} CDC migration generated and added to Drizzle journal!`);
-  console.info('');
-  console.info(`  Output: drizzle/${filename}`);
-}
+// Use shared migration utility
+const result = upsertMigration('cdc_setup', migrationSql);
+logMigrationResult(result, 'CDC setup');
 
 console.info('');
 console.info(`  ${chalk.greenBright.bold('Tracked tables:')}`);

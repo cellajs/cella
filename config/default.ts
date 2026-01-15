@@ -263,6 +263,11 @@ export const config = {
   /******************************************************************************
    * DEV & SEEDING
    ******************************************************************************/
+  generateScripts: [
+    { name: 'Drizzle migrations', command: 'drizzle-kit generate --config drizzle.config.ts' },
+    { name: 'CDC setup migration', command: 'tsx scripts/generate-cdc-migration.ts' },
+    { name: 'Activity notify trigger', command: 'tsx scripts/generate-activity-trigger.ts' },
+  ],
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
 };
 
