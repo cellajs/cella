@@ -142,11 +142,24 @@ export const CHANGELOG_PATHS = [
 export const DEFAULT_BRANCHES = ['main', 'master'] as const;
 
 /**
+ * Checks whether the provided URL points to a GitHub repository.
+ */
+function isGitHubRepoUrl(repoUrl: string | null): boolean {
+  if (!repoUrl) return false;
+  try {
+    const parsed = new URL(repoUrl);
+    return parsed.hostname === 'github.com' || parsed.hostname === 'www.github.com';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Checks if a file exists in a GitHub repo and returns the branch name if found.
  * Returns null if file doesn't exist on any branch.
  */
 export async function findGitHubFile(repoUrl: string, filePath: string): Promise<string | null> {
-  if (!repoUrl.includes('github.com')) return null;
+  if (!isGitHubRepoUrl(repoUrl)) return null;
 
   for (const branch of DEFAULT_BRANCHES) {
     const rawUrl = repoUrl
@@ -172,7 +185,7 @@ export async function findChangelogUrl(
   packageName: string,
   cache: ChangelogCache
 ): Promise<string | null> {
-  if (!repoUrl || !repoUrl.includes('github.com')) return null;
+  if (!isGitHubRepoUrl(repoUrl)) return null;
 
   // Check cache first
   const cached = cache[packageName];
@@ -209,7 +222,7 @@ export async function findChangelogUrl(
  * Get GitHub releases URL
  */
 export function getReleasesUrl(repoUrl: string | null): string | null {
-  if (!repoUrl || !repoUrl.includes('github.com')) return null;
+  if (!isGitHubRepoUrl(repoUrl)) return null;
   return `${repoUrl}/releases`;
 }
 
