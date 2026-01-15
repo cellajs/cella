@@ -5,7 +5,7 @@ import { generateMockContextEntityIdColumns, withFakerSeed } from './utils';
 /**
  * Generates a mock attachment with all fields populated.
  * Uses deterministic seeding - same key produces same data.
- * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
+ * Context entity ID columns are generated dynamically based on relatable context entity types.
  */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
@@ -34,7 +34,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
-      ...generateMockContextEntityIdColumns(),
+      ...generateMockContextEntityIdColumns('relatable'),
     };
   });
 

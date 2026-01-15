@@ -2,7 +2,7 @@ import { boolean, index, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
-const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns();
+const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns('relatable');
 
 /**
  * Attachments table to store file metadata and relations.

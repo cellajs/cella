@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -15,20 +15,24 @@ const tokenTypeEnum = appConfig.tokenTypes;
  *
  * @link http://localhost:4000/docs#tag/tokens
  */
-export const tokensTable = pgTable('tokens', {
-  createdAt: timestampColumns.createdAt,
-  id: varchar().primaryKey().$defaultFn(nanoid),
-  token: varchar().notNull(),
-  singleUseToken: varchar(),
-  type: varchar({ enum: tokenTypeEnum }).notNull(),
-  email: varchar().notNull(),
-  userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-  oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
-  inactiveMembershipId: varchar(),
-  createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-  expiresAt: timestampColumns.expiresAt,
-  invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
-});
+export const tokensTable = pgTable(
+  'tokens',
+  {
+    createdAt: timestampColumns.createdAt,
+    id: varchar().primaryKey().$defaultFn(nanoid),
+    token: varchar().notNull(),
+    singleUseToken: varchar(),
+    type: varchar({ enum: tokenTypeEnum }).notNull(),
+    email: varchar().notNull(),
+    userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+    oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+    inactiveMembershipId: varchar(),
+    createdBy: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+    expiresAt: timestampColumns.expiresAt,
+    invokedAt: timestamp({ withTimezone: true, mode: 'date' }),
+  },
+  (table) => [index('tokens_token_type_idx').on(table.token, table.type)],
+);
 
 export type TokenModel = typeof tokensTable.$inferSelect;
 export type InsertTokenModel = typeof tokensTable.$inferInsert;
