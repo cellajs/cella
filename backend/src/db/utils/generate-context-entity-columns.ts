@@ -1,7 +1,15 @@
 import { appConfig } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
+import { organizationsTable } from '#/db/schema/organizations';
 import type { ContextEntityTypeColumns } from '#/db/types';
-import { entityTables } from '#/entity-config';
+
+/**
+ * Mapping of context entity types to their tables.
+ * Defined here to avoid circular dependency with entity-config.ts.
+ */
+const contextEntityTables = {
+  organization: organizationsTable,
+} as const;
 
 /**
  * Generate id columns dynamically based on `appConfig.contextEntityTypes`,
@@ -11,7 +19,7 @@ import { entityTables } from '#/entity-config';
  */
 export const generateContextEntityIdColumns = () =>
   appConfig.contextEntityTypes.reduce((columns, entityType) => {
-    const table = entityTables[entityType]; // Retrieve associated table for entity
+    const table = contextEntityTables[entityType]; // Retrieve associated table for context entity
     const columnName = appConfig.entityIdColumnKeys[entityType]; // Determine the entity ID column name
 
     // Add the column with a foreign key reference, ensuring cascading deletion

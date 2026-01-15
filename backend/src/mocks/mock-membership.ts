@@ -6,7 +6,7 @@ import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { pastIsoDate, withFakerSeed } from './utils';
+import { generateMockContextEntityIdColumns, pastIsoDate, withFakerSeed } from './utils';
 
 // Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
@@ -43,13 +43,14 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
 /**
  * Generates a mock membership base for API responses.
  * Uses deterministic seeding - same key produces same data.
+ * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
  */
 export const mockMembershipBase = (key = 'membership-base:default'): MembershipBaseModel =>
   withFakerSeed(key, () => ({
     id: faker.string.nanoid(),
     contextType: 'organization' as const,
     userId: faker.string.nanoid(),
-    organizationId: faker.string.nanoid(),
+    ...generateMockContextEntityIdColumns(),
     role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
     order: faker.number.int({ min: 1, max: 100 }),
     muted: false,
@@ -59,19 +60,20 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
 /**
  * Generates a mock full membership for API responses.
  * Uses deterministic seeding - same key produces same data.
+ * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
  */
 export const mockMembership = (key = 'membership:default'): MembershipModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = faker.string.nanoid();
-    const organizationId = faker.string.nanoid();
+    const contextEntityColumns = generateMockContextEntityIdColumns();
 
     return {
       id: faker.string.nanoid(),
       contextType: 'organization' as const,
       userId,
-      organizationId,
+      ...contextEntityColumns,
       role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
       order: faker.number.int({ min: 1, max: 100 }),
       muted: false,
@@ -80,7 +82,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: null,
-      uniqueKey: `${userId}-${organizationId}`,
+      uniqueKey: `${userId}-${contextEntityColumns.organizationId}`,
     };
   });
 
@@ -90,13 +92,14 @@ export const mockMembershipResponse = mockMembership;
 /**
  * Generates a mock inactive membership for API responses.
  * Uses deterministic seeding - same key produces same data.
+ * Context entity ID columns are generated dynamically based on appConfig.contextEntityTypes.
  */
 export const mockInactiveMembership = (key = 'inactive-membership:default'): InactiveMembershipModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = faker.string.nanoid();
-    const organizationId = faker.string.nanoid();
+    const contextEntityColumns = generateMockContextEntityIdColumns();
     const tokenId = faker.string.nanoid();
 
     return {
@@ -109,8 +112,8 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       rejectedAt: null,
       createdAt,
       createdBy: faker.string.nanoid(),
-      organizationId,
-      uniqueKey: `${userId}-${organizationId}`,
+      ...contextEntityColumns,
+      uniqueKey: `${userId}-${contextEntityColumns.organizationId}`,
     };
   });
 

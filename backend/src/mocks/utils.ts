@@ -1,10 +1,52 @@
 import { faker } from '@faker-js/faker';
+import { appConfig, type ContextEntityType } from 'config';
 
 /**
  * Generates a random ISO date in the past.
  * @returns An ISO 8601 string representing a past date.
  */
 export const pastIsoDate = () => faker.date.past().toISOString();
+
+/**
+ * Type for dynamically generated context entity ID columns in mocks.
+ * Maps each context entity type to its corresponding ID column (e.g., organization -> organizationId).
+ */
+export type MockContextEntityIdColumns = {
+  [K in ContextEntityType as (typeof appConfig.entityIdColumnKeys)[K]]: string;
+};
+
+type ContextEntityConfig = {
+  contextEntityTypes: readonly string[];
+  entityIdColumnKeys: Record<string, string>;
+};
+
+/**
+ * Generates mock ID columns dynamically based on context entity types.
+ * Accepts config parameter for testability.
+ *
+ * @param config - Configuration with contextEntityTypes and entityIdColumnKeys.
+ * @returns An object with ID columns for all context entity types.
+ */
+export const generateMockContextEntityIdColumnsWithConfig = <T extends ContextEntityConfig>(
+  config: T,
+): Record<string, string> =>
+  config.contextEntityTypes.reduce(
+    (columns, entityType) => {
+      const columnName = config.entityIdColumnKeys[entityType];
+      columns[columnName] = faker.string.nanoid();
+      return columns;
+    },
+    {} as Record<string, string>,
+  );
+
+/**
+ * Generates mock ID columns dynamically based on `appConfig.contextEntityTypes`.
+ * Similar to generateContextEntityIdColumns for DB schemas, but for mock data.
+ *
+ * @returns An object with ID columns for all context entity types.
+ */
+export const generateMockContextEntityIdColumns = (): MockContextEntityIdColumns =>
+  generateMockContextEntityIdColumnsWithConfig(appConfig) as MockContextEntityIdColumns;
 
 /**
  * Converts a string key to a numeric seed for faker.

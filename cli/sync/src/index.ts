@@ -6,6 +6,7 @@ import { runSync } from "./run-sync";
 import { runAnalyze } from "./run-analyze";
 import { config } from "./config";
 import { runPackages } from "./run-packages";
+import { validateConfig } from "./modules/cli/handlers";
 
 // Constants representing which sync modules should trigger which operations
 const SYNC_MODULES = ['boilerplate-fork', 'boilerplate-fork+packages'];
@@ -16,6 +17,7 @@ const PACKAGE_MODULES = ['boilerplate-fork+packages', 'packages'];
  *
  * This includes:
  *  - Running the initial CLI (config)
+ *  - Validating the swizzle configuration
  *  - Performing repository and configuration preflight checks
  *  - Analyzing file differences between boilerplate and fork
  *  - Running the repository sync (if enabled)
@@ -28,6 +30,9 @@ const PACKAGE_MODULES = ['boilerplate-fork+packages', 'packages'];
 async function main(): Promise<void> {
   // Prompt configuration
   await runCli();
+
+  // Validate swizzle config (check file patterns exist)
+  await validateConfig();
   
   // Validate environment and repository state
   await runSetup();

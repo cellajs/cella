@@ -46,7 +46,6 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "backend/scripts/seeds/data/*",
       "backend/src/custom-env.ts",
       "backend/src/entity-config.ts",
-      "backend/src/attachment-config.ts",
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
       "json/text-blocks.json",

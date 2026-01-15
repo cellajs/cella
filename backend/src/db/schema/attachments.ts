@@ -1,6 +1,8 @@
-import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { attachmentEntityColumns, attachmentEntityIndexes } from '#/attachment-config';
+import { boolean, index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
+
+const { organizationId, ...otherEntityIdColumns } = generateContextEntityIdColumns();
 
 /**
  * Attachments table to store file metadata and relations.
@@ -20,9 +22,11 @@ export const attachmentsTable = pgTable(
     originalKey: varchar().notNull(),
     convertedKey: varchar(),
     thumbnailKey: varchar(),
-    ...attachmentEntityColumns,
+    // Context entity columns
+    organizationId: organizationId.notNull(),
+    ...otherEntityIdColumns,
   },
-  (table) => [...attachmentEntityIndexes(table)],
+  (table) => [index('attachments_organization_id_index').on(table.organizationId)],
 );
 
 export type AttachmentModel = typeof attachmentsTable.$inferSelect;
