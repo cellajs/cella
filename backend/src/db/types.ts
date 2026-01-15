@@ -30,7 +30,6 @@ export type GeneratedColumn = PgColumn<{
   generated: undefined;
 }>;
 
-export type ContextEntityTypeColumns = Record<
-  ContextEntityTypeIdColumnNames,
-  PgVarcharBuilderInitial<'', [string, ...string[]], undefined>
->;
+export type ContextEntityTypeColumns = {
+  [K in ContextEntityTypeIdColumnNames]: PgVarcharBuilderInitial<'', [string, ...string[]], undefined>;
+};
