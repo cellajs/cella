@@ -122,7 +122,7 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
       {/* API spec action buttons and user theme */}
       <SidebarGroup>
         <div className="flex justify-center pb-3">
-          <Suspense fallback={null}>
+          <Suspense fallback={<div className="h-7 w-60 rounded-md border border-input bg-background/50" />}>
             <OpenApiJsonActions />
             <UserTheme buttonClassName="ml-2 h-7 w-8" size={16} />
           </Suspense>

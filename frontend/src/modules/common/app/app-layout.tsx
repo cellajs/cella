@@ -1,6 +1,6 @@
 import { ErrorBoundary } from 'react-error-boundary';
-import { AppContent } from '~/modules/common/app/content';
-import AppSheets from '~/modules/common/app/sheets';
+import { AppContent } from '~/modules/common/app/app-content';
+import AppSheets from '~/modules/common/app/app-sheets';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
@@ -12,7 +12,12 @@ import { Uploader } from '~/modules/common/uploader/uploader';
 import AppNav from '~/modules/navigation/app-nav';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 
-// Dialoger, dropdowner and sheeter are put here so they fall inside SSE provider.
+/**
+ * Main application layout component.
+ * - Wraps the app in error boundaries and SSE provider.
+ * - Renders navigation, content area, dialogs, sheets, and other global components.
+ * - dialoger, dropdowner and sheeter need to be inside SSE provider to receive SSE events.
+ */
 const AppLayout = () => {
   return (
     <div id="appLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">

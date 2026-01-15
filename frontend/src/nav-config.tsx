@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { HomeIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import type { RefObject } from 'react';
-import type { FooterLinkProps } from '~/modules/common/app/footer';
+import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { AccountSheet } from '~/modules/navigation/account-sheet';

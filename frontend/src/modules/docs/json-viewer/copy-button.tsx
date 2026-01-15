@@ -1,5 +1,6 @@
 import { CheckIcon, CopyIcon } from 'lucide-react';
-import { type FC, useState } from 'react';
+import type { FC } from 'react';
+import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 
 interface CopyButtonProps {
   value: unknown;
@@ -10,17 +11,11 @@ interface CopyButtonProps {
  * Shows a checkmark briefly after successful copy.
  */
 export const CopyButton: FC<CopyButtonProps> = ({ value }) => {
-  const [copied, setCopied] = useState(false);
+  const { copied, copyToClipboard } = useCopyToClipboard(2000);
 
-  const handleCopy = async (e: React.MouseEvent) => {
+  const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+    copyToClipboard(JSON.stringify(value, null, 2));
   };
 
   return (

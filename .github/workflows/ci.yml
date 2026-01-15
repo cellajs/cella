@@ -116,6 +116,39 @@ jobs:
 
       - run: pnpm test
 
+  # Tests for the sync CLI tool
+  test-sync-cli:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Required for git operations in sync CLI
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          cache: "pnpm"
+
+      - name: Restore node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Run sync CLI unit tests
+        run: pnpm --filter @cellajs/sync test
+
+      - name: Run sync analysis (dry-run)
+        run: pnpm sync --sync-service analyze
+
   # Integration tests with real Postgres + CDC + EventBus
   test-integration:
     runs-on: ubuntu-latest

@@ -3,10 +3,10 @@ import { appConfig } from 'config';
 import i18n from 'i18next';
 import { z } from 'zod';
 import AuthErrorPage from '~/modules/auth/auth-error-page';
+import AuthLayout from '~/modules/auth/auth-layout';
 import AuthenticatePage from '~/modules/auth/authenticate-page';
 import CreatePasswordPage from '~/modules/auth/create-password-page';
 import EmailVerificationPage from '~/modules/auth/email-verification-page';
-import AuthPage from '~/modules/auth/layout';
 import MfaPage from '~/modules/auth/mfa-page';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
@@ -31,7 +31,7 @@ export const AuthLayoutRoute = createRoute({
   id: 'authLayout',
   staticData: { isAuth: false },
   getParentRoute: () => PublicLayoutRoute,
-  component: () => <AuthPage />,
+  component: () => <AuthLayout />,
 });
 
 /**

@@ -21,7 +21,10 @@
   },
   "scripts": {
     "sync": "tsx index.ts",
-    "ts": "tsc --noEmit"
+    "ts": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "./scripts/test-sync.sh"
   },
   "dependencies": {
     "@inquirer/prompts": "^6.0.1",
