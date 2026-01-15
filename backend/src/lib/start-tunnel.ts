@@ -1,5 +1,5 @@
 import type { AddressInfo } from 'node:net';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { env } from '../env';
 
 /**
@@ -30,20 +30,20 @@ const startTunnel = async (info: AddressInfo): Promise<string | null> => {
 
     // Optional: Add a graceful shutdown for tunnel (ensures tunnel is properly closed)
     process.on('SIGINT', async () => {
-      console.warn(chalk.yellow('Shutting down tunnel'));
+      console.warn(pc.yellow('Shutting down tunnel'));
       await ngrok.disconnect();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.warn(chalk.yellow('Shutting down tunnel'));
+      console.warn(pc.yellow('Shutting down tunnel'));
       await ngrok.disconnect();
       process.exit(0);
     });
 
     return listener.url();
   } catch (err) {
-    console.warn(chalk.red('Tunnel connection failed'), err);
+    console.warn(pc.red('Tunnel connection failed'), err);
     // Depending on your development setup, you might want to `process.exit(1)` here
     // if the tunnel is critical for development. For now, it just logs and returns null.
     return null;

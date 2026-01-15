@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/lib/x-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { isPublicAccess } from '#/middlewares/guard';
 import { hasValidSingleUseToken } from '#/middlewares/has-valid-single-use-token';
 import { isNoBot } from '#/middlewares/is-no-bot';

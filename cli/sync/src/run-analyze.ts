@@ -9,6 +9,7 @@ import { analyzedSwizzleLine, shouldLogAnalyzedSwizzleModule, logAnalyzedSwizzle
 import { extractSwizzleEntries } from "./modules/swizzle/analyze";
 import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
 import { FileAnalysis } from "./types";
+import { checkMark } from "./utils/console";
 import { config } from "./config";
 
 /**
@@ -69,7 +70,7 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   );
 
   spinner.stop();
-  console.info(pc.green("✔ File analysis complete."));
+  console.info(`${checkMark} ${pc.green("File analysis complete.")}`);
   spinner.start("Update swizzle...");
 
   // Extract swizzle entries from analyzed files and update swizzle metadata
@@ -77,7 +78,7 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   writeSwizzleMetadata(swizzleEntries);
 
   spinner.stop();
-  console.info(pc.green("✔ Swizzle update complete."));
+  console.info(`${checkMark} ${pc.green("Swizzle update complete.")}`);
 
   // Log the analyzed files
   if (shouldLogAnalyzedFileModule()) {

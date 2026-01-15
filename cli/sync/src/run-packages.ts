@@ -8,6 +8,7 @@ import { gitAddAll, gitCheckout, gitCommit, gitPush } from "./utils/git/command"
 import { getRemoteJsonFile } from "./utils/git/helpers";
 import { getDepsToUpdate } from "./modules/package/get-deps-to-update";
 import { logPackageSummaryLines, packageSummaryLines } from "./log/package-summary";
+import { checkMark } from "./utils/console";
 
 /**
  * Synchronizes package dependencies between the boilerplate repository and the fork.
@@ -140,7 +141,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
     }
   }
 
-  console.info(pc.green("✔ Sync Package.json complete.\n"));
+  console.info(`${checkMark} ${pc.green("Sync Package.json complete.\n")}`);
 
   // Log all package summaries
   logPackageSummaryLines(allSummaryLines);

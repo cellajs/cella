@@ -35,6 +35,13 @@
               ],
               "required": true
             },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "slug": {
               "type": "string",
               "required": true
@@ -47,6 +54,20 @@
               "required": true
             },
             "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -148,27 +169,6 @@
             },
             "chatSupport": {
               "type": "boolean",
-              "required": true
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
               "required": true
             },
             "membership": {
@@ -425,6 +425,13 @@
                     ],
                     "required": true
                   },
+                  "modifiedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
                   "slug": {
                     "type": "string",
                     "required": true
@@ -437,6 +444,20 @@
                     "required": true
                   },
                   "bannerUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "createdBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "modifiedBy": {
                     "type": [
                       "string",
                       "null"
@@ -538,27 +559,6 @@
                   },
                   "chatSupport": {
                     "type": "boolean",
-                    "required": true
-                  },
-                  "createdBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
-                  "modifiedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
-                  "modifiedBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
                     "required": true
                   },
                   "membership": {
@@ -885,6 +885,13 @@
               ],
               "required": true
             },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "slug": {
               "type": "string",
               "required": true
@@ -897,6 +904,20 @@
               "required": true
             },
             "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -998,27 +1019,6 @@
             },
             "chatSupport": {
               "type": "boolean",
-              "required": true
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
               "required": true
             },
             "membership": {
@@ -1268,6 +1268,13 @@
               ],
               "required": true
             },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
             "slug": {
               "type": "string",
               "required": true
@@ -1280,6 +1287,20 @@
               "required": true
             },
             "bannerUrl": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
               "type": [
                 "string",
                 "null"
@@ -1381,27 +1402,6 @@
             },
             "chatSupport": {
               "type": "boolean",
-              "required": true
-            },
-            "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
               "required": true
             },
             "membership": {

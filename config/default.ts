@@ -57,6 +57,7 @@ export const config = {
   // Currently available: 'password', 'passkey', 'oauth' and 'totp'.
   // Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
   enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
+
   // Currently supported: 'github', 'google', 'microsoft'.
   enabledOAuthProviders: ['github'] as const,
   tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
@@ -70,12 +71,11 @@ export const config = {
    * API CONFIGURATION
    ******************************************************************************/
   apiVersion: 'v1',
-  apiDescription: `⚠️ ATTENTION: PRERELEASE!
-  
-This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
-Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
+  apiDescription: `⚠️ ATTENTION: PRERELEASE!  
+                  This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
+                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
 
-The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
+                  The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
   /******************************************************************************
    * ENTITIES & DATA MODEL
@@ -83,12 +83,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
   contextEntityTypes: ['organization'] as const, // Entities with memberships
   productEntityTypes: ['attachment', 'page'] as const, // Content entities
+
   entityIdColumnKeys: {
     user: 'userId',
     organization: 'organizationId',
     attachment: 'attachmentId',
     page: 'pageId',
   } as const,
+
   // Define user menu structure of context entities with optionally nested subentities
   // ⚠️ IMPORTANT: If you define a `subentityType`, the corresponding table must include `${entity}Id` foreign key.
   menuStructure: [
@@ -177,7 +179,6 @@ The documentation is generated from source code using \`zod\` schemas, converted
     colors: {
       rose: '#e11d48',
     },
-    colorDarkBackground: 'oklch(0.145 0.0092 275.5)',
     strokeWidth: 1.5,
     screenSizes: {
       xs: '420px',
@@ -262,7 +263,12 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /******************************************************************************
    * DEV & SEEDING
    ******************************************************************************/
-  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:pages'],
+  generateScripts: [
+    { name: 'Drizzle migrations', command: 'drizzle-kit generate --config drizzle.config.ts' },
+    { name: 'CDC setup migration', command: 'tsx scripts/generate-cdc-migration.ts' },
+    { name: 'Activity notify trigger', command: 'tsx scripts/generate-activity-trigger.ts' },
+  ],
+  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
 };
 
 export default config;

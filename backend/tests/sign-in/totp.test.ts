@@ -5,18 +5,17 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
+import { pastIsoDate } from '#/mocks/utils';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
-import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['password', 'totp'] });
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase();
 
   // Mock sendVerificationEmail function to avoid background running tasks
   vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({

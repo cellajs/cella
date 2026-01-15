@@ -1,6 +1,6 @@
 import yoctoSpinner from 'yocto-spinner';
-import { CELLA_REMOTE_URL } from './constants.ts';
-import { runGitCommand } from './utils/run-git-command.ts';
+import { CELLA_REMOTE_URL } from './constants.js';
+import { runGitCommand } from './utils/run-git-command.js';
 
 interface AddRemoteOptions {
   targetFolder: string;

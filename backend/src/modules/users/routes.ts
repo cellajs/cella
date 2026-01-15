@@ -1,4 +1,4 @@
-import { createXRoute } from '#/lib/x-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { systemRoleBaseSchema } from '#/modules/system/schema';

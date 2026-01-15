@@ -132,7 +132,7 @@ const OpenApiSpecViewer = () => {
 
   return (
     <>
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 py-2 -mt-2 mb-2 flex items-center gap-2 max-sm:flex-col w-full">
+      <div className="sticky -top-6 z-10 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 py-2 -mt-2 mb-2 flex items-center gap-2 max-sm:flex-col w-full">
         {/* Search through JSON */}
         <InputGroup className="max-sm:w-full max-sm:order-last">
           <InputGroupAddon>

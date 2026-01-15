@@ -4,7 +4,7 @@ export const cellaConfig: DeepPartial<AppConfig> = {
   swizzle: {
     removedFiles: [
       "info/*",
-      "cli/create-cella/*"
+      "cli/create/*"
     ],
     editedFiles: [
       "README.md",

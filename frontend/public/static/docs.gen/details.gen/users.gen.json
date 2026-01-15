@@ -112,13 +112,6 @@
                     ],
                     "required": true
                   },
-                  "lastSeenAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
                   "lastStartedAt": {
                     "type": [
                       "string",
@@ -139,6 +132,19 @@
                       "null"
                     ],
                     "required": true
+                  },
+                  "lastSeenAt": {
+                    "required": true,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "required": false
+                      },
+                      {
+                        "type": "null",
+                        "required": false
+                      }
+                    ]
                   },
                   "memberships": {
                     "type": "array",
@@ -496,13 +502,6 @@
               ],
               "required": true
             },
-            "lastSeenAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
             "lastStartedAt": {
               "type": [
                 "string",
@@ -523,6 +522,19 @@
                 "null"
               ],
               "required": true
+            },
+            "lastSeenAt": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "type": "null",
+                  "required": false
+                }
+              ]
             }
           },
           "ref": "#/components/schemas/User",
@@ -546,9 +558,9 @@
           "createdAt": "2024-12-13T11:17:23.643Z",
           "modifiedAt": "2024-12-13T11:17:23.643Z",
           "modifiedBy": null,
-          "lastSeenAt": "2024-12-13T11:17:23.643Z",
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
-          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+          "lastSignInAt": "2024-12-13T11:17:23.643Z",
+          "lastSeenAt": "2024-12-13T11:17:23.643Z"
         }
       },
       {
@@ -707,13 +719,6 @@
               ],
               "required": true
             },
-            "lastSeenAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
             "lastStartedAt": {
               "type": [
                 "string",
@@ -734,6 +739,19 @@
                 "null"
               ],
               "required": true
+            },
+            "lastSeenAt": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "type": "null",
+                  "required": false
+                }
+              ]
             }
           },
           "ref": "#/components/schemas/User",
@@ -757,9 +775,9 @@
           "createdAt": "2024-12-13T11:17:23.643Z",
           "modifiedAt": "2024-12-13T11:17:23.643Z",
           "modifiedBy": null,
-          "lastSeenAt": "2024-12-13T11:17:23.643Z",
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
-          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+          "lastSignInAt": "2024-12-13T11:17:23.643Z",
+          "lastSeenAt": "2024-12-13T11:17:23.643Z"
         }
       },
       {

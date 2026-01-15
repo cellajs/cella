@@ -1,8 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, ne, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
+import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
@@ -50,13 +51,14 @@ const usersRouteHandlers = app
     ];
 
     // Base user query with ordering
+    // Note: lastSeenAt requires subquery since it's in user_activity table
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
         name: usersTable.name,
         email: usersTable.email,
         createdAt: usersTable.createdAt,
-        lastSeenAt: usersTable.lastSeenAt,
+        lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
         role: systemRolesTable.role,
       },
       sort,

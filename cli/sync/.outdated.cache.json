@@ -1,0 +1,107 @@
+{
+  "giget": {
+    "repoUrl": "https://github.com/unjs/giget",
+    "changelogUrl": "https://github.com/unjs/giget/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768470841207
+  },
+  "cross-env": {
+    "repoUrl": "https://github.com/kentcdodds/cross-env",
+    "changelogUrl": "https://github.com/kentcdodds/cross-env/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768470841311
+  },
+  "@chromatic-com/storybook": {
+    "repoUrl": "https://github.com/chromaui/addon-visual-tests",
+    "changelogUrl": "https://github.com/chromaui/addon-visual-tests/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768470841327
+  },
+  "dotenv": {
+    "repoUrl": "https://github.com/motdotla/dotenv",
+    "changelogUrl": "https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md",
+    "fetchedAt": 1768470841482
+  },
+  "immer": {
+    "repoUrl": "https://github.com/immerjs/immer",
+    "changelogUrl": null,
+    "fetchedAt": 1768470843291
+  },
+  "pdfjs-dist": {
+    "repoUrl": "https://github.com/mozilla/pdf.js",
+    "changelogUrl": null,
+    "fetchedAt": 1768470843315
+  },
+  "@inquirer/prompts": {
+    "repoUrl": "https://github.com/SBoudrias/Inquirer.js",
+    "changelogUrl": null,
+    "fetchedAt": 1768470843464
+  },
+  "gleap": {
+    "repoUrl": "https://github.com/GleapSDK/JavaScript-SDK",
+    "changelogUrl": null,
+    "fetchedAt": 1768470843465
+  },
+  "@types/node": {
+    "repoUrl": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "changelogUrl": null,
+    "fetchedAt": 1768470843480
+  },
+  "@getbrevo/brevo": {
+    "repoUrl": "https://github.com/getbrevo/brevo-node",
+    "changelogUrl": null,
+    "fetchedAt": 1768470843656
+  },
+  "@opentelemetry/instrumentation-http": {
+    "repoUrl": "https://github.com/open-telemetry/opentelemetry-js",
+    "changelogUrl": "https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768470844008
+  },
+  "@opentelemetry/sdk-node": {
+    "repoUrl": "https://github.com/open-telemetry/opentelemetry-js",
+    "changelogUrl": "https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768470844029
+  },
+  "validate-npm-package-name": {
+    "repoUrl": "https://github.com/npm/validate-npm-package-name",
+    "changelogUrl": "https://github.com/npm/validate-npm-package-name/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768470844089
+  },
+  "react-i18next": {
+    "repoUrl": "https://github.com/i18next/react-i18next",
+    "changelogUrl": "https://github.com/i18next/react-i18next/blob/master/CHANGELOG.md",
+    "fetchedAt": 1768470844427
+  },
+  "@typescript/native-preview": {
+    "repoUrl": "https://github.com/microsoft/typescript-go",
+    "changelogUrl": "https://github.com/microsoft/typescript-go/blob/main/CHANGES.md",
+    "fetchedAt": 1768470845739
+  },
+  "p-limit": {
+    "repoUrl": "https://github.com/sindresorhus/p-limit",
+    "changelogUrl": null,
+    "fetchedAt": 1768470846009
+  },
+  "jspdf": {
+    "repoUrl": "https://github.com/parallax/jsPDF",
+    "changelogUrl": null,
+    "fetchedAt": 1768470846070
+  },
+  "yocto-spinner": {
+    "repoUrl": "https://github.com/sindresorhus/yocto-spinner",
+    "changelogUrl": null,
+    "fetchedAt": 1768470846086
+  },
+  "lucide-react": {
+    "repoUrl": "https://github.com/lucide-icons/lucide",
+    "changelogUrl": null,
+    "fetchedAt": 1768470846126
+  },
+  "@electric-sql/pglite": {
+    "repoUrl": "https://github.com/electric-sql/pglite",
+    "changelogUrl": null,
+    "fetchedAt": 1768483712605
+  },
+  "virtua": {
+    "repoUrl": "https://github.com/inokawa/virtua",
+    "changelogUrl": null,
+    "fetchedAt": 1768483712616
+  }
+}

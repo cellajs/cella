@@ -10,7 +10,7 @@ import { Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { userSelect } from '#/modules/users/helpers/select';
+import { type UserWithActivity, userSelect } from '#/modules/users/helpers/select';
 import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -95,7 +95,7 @@ export const setUserSession = async (
  */
 export const validateSession = async (
   hashedSessionToken: string,
-): Promise<{ session: SessionModel; user: UserModel }> => {
+): Promise<{ session: SessionModel; user: UserWithActivity }> => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)

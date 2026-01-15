@@ -2,13 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import colors from 'picocolors';
 
-import { TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '../constants.ts';
+import { TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '../constants.js';
 
 /**
  * Cleans the specified template by removing designated folders and files.
- * @param params - Parameters containing the target folder and project name.
+ * @param params - Parameters containing the target folder.
  */
-export async function cleanTemplate({ targetFolder, projectName }: { targetFolder: string; projectName: string }): Promise<void> {
+export async function cleanTemplate({ targetFolder }: { targetFolder: string }): Promise<void> {
   // Change the current working directory to targetFolder if not already set
   if (process.cwd() !== targetFolder) {
     process.chdir(targetFolder);

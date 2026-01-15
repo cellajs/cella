@@ -1,5 +1,6 @@
 packages:
   - 'backend'
+  - 'cdc'
   - 'config'
   - 'cli/*'
   - 'frontend'

@@ -1,6 +1,6 @@
+import { Link, useRouterState } from '@tanstack/react-router';
 import { ListIcon, TableIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import { type DocsViewMode, useDocsStore } from '~/store/docs';
 
 interface ViewModeToggleProps {
   size?: 'xs' | 'sm' | 'default' | 'lg';
@@ -8,27 +8,24 @@ interface ViewModeToggleProps {
 
 /**
  * Toggle between list and table view modes.
- * Updates the docs store `viewMode` when changed.
+ * Navigates between /docs/operations (list) and /docs/operations/table (table) routes.
  */
 export const ViewModeToggle = ({ size = 'default' }: ViewModeToggleProps) => {
-  const viewMode = useDocsStore((state) => state.viewMode);
-  const setViewMode = useDocsStore((state) => state.setViewMode);
+  const { location } = useRouterState();
+  const isTableRoute = location.pathname === '/docs/operations/table';
+  const viewMode = isTableRoute ? 'table' : 'list';
 
   return (
-    <ToggleGroup
-      type="single"
-      size={size}
-      variant="outline"
-      value={viewMode}
-      onValueChange={(newValue: DocsViewMode) => {
-        if (newValue) setViewMode(newValue);
-      }}
-    >
-      <ToggleGroupItem value="list" size={size}>
-        <ListIcon className="size-4" />
+    <ToggleGroup type="single" size={size} variant="outline" value={viewMode}>
+      <ToggleGroupItem value="list" size={size} asChild>
+        <Link to="/docs/operations">
+          <ListIcon className="size-4" />
+        </Link>
       </ToggleGroupItem>
-      <ToggleGroupItem value="table" size={size}>
-        <TableIcon className="size-4" />
+      <ToggleGroupItem value="table" size={size} asChild>
+        <Link to="/docs/operations/table">
+          <TableIcon className="size-4" />
+        </Link>
       </ToggleGroupItem>
     </ToggleGroup>
   );

@@ -105,11 +105,35 @@
               "required": true
             },
             "description": {
-              "type": "string",
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
               "required": true
             },
             "keywords": {
               "type": "string",
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": [
+                "string",
+                "null"
+              ],
               "required": true
             },
             "status": {
@@ -133,24 +157,6 @@
               "required": true,
               "minimum": -140737488355328,
               "maximum": 140737488355327
-            },
-            "createdBy": {
-              "type": "string",
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
             }
           },
           "ref": "#/components/schemas/Page",
@@ -259,11 +265,35 @@
                     "required": true
                   },
                   "description": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "modifiedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "required": true
                   },
                   "keywords": {
                     "type": "string",
+                    "required": true
+                  },
+                  "createdBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "modifiedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "required": true
                   },
                   "status": {
@@ -287,24 +317,6 @@
                     "required": true,
                     "minimum": -140737488355328,
                     "maximum": 140737488355327
-                  },
-                  "createdBy": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "modifiedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
-                  "modifiedBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
                   }
                 },
                 "ref": "#/components/schemas/Page"
@@ -482,11 +494,35 @@
               "required": true
             },
             "description": {
-              "type": "string",
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
               "required": true
             },
             "keywords": {
               "type": "string",
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": [
+                "string",
+                "null"
+              ],
               "required": true
             },
             "status": {
@@ -510,24 +546,6 @@
               "required": true,
               "minimum": -140737488355328,
               "maximum": 140737488355327
-            },
-            "createdBy": {
-              "type": "string",
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
             }
           },
           "ref": "#/components/schemas/Page",
@@ -627,11 +645,35 @@
               "required": true
             },
             "description": {
-              "type": "string",
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
               "required": true
             },
             "keywords": {
               "type": "string",
+              "required": true
+            },
+            "createdBy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": [
+                "string",
+                "null"
+              ],
               "required": true
             },
             "status": {
@@ -655,24 +697,6 @@
               "required": true,
               "minimum": -140737488355328,
               "maximum": 140737488355327
-            },
-            "createdBy": {
-              "type": "string",
-              "required": true
-            },
-            "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
             }
           },
           "ref": "#/components/schemas/Page",
@@ -746,7 +770,10 @@
             "required": false
           },
           "description": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "required": false
           },
           "keywords": {

@@ -18,7 +18,6 @@ import {
   pagesRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
 } from '~/routes/search-params-schemas';
-import { useDocsStore } from '~/store/docs';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { stripParams } from '~/utils/strip-search-params';
@@ -61,7 +60,7 @@ export const DocsLayoutRoute = createRoute({
 });
 
 /**
- * Operations route - shows operations list or table view.
+ * Operations route - shows operations list view.
  */
 export const DocsOperationsRoute = createRoute({
   path: '/operations',
@@ -70,19 +69,40 @@ export const DocsOperationsRoute = createRoute({
   search: {
     middlewares: [stripParams('schemaTag')],
   },
+  head: () => ({ meta: [{ title: appTitle('Operations') }] }),
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
-    // Prefetch operations (for table/list) and tags, then prefetch all tag details
+    // Prefetch operations and tags, then prefetch all tag details
     const [, tags] = await Promise.all([
       queryClient.ensureQueryData(operationsQueryOptions),
       queryClient.ensureQueryData(tagsQueryOptions),
     ]);
     await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
   },
-  component: () => {
-    const viewMode = useDocsStore((state) => state.viewMode);
-    return <Suspense>{viewMode === 'table' ? <OperationsTable /> : <OperationsPage />}</Suspense>;
+  component: () => (
+    <Suspense>
+      <OperationsPage />
+    </Suspense>
+  ),
+});
+
+/**
+ * Operations table route - shows operations in a table format.
+ */
+export const DocsOperationsTableRoute = createRoute({
+  path: '/operations/table',
+  staticData: { isAuth: false },
+  getParentRoute: () => DocsLayoutRoute,
+  head: () => ({ meta: [{ title: appTitle('Operations table') }] }),
+  loader: async () => {
+    // Prefetch operations for table view
+    await queryClient.ensureQueryData(operationsQueryOptions);
   },
+  component: () => (
+    <Suspense>
+      <OperationsTable />
+    </Suspense>
+  ),
 });
 
 /**
@@ -91,7 +111,7 @@ export const DocsOperationsRoute = createRoute({
 export const DocsOverviewRoute = createRoute({
   path: '/overview',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('API Overview') }] }),
+  head: () => ({ meta: [{ title: appTitle('API overview') }] }),
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
     // Prefetch info and OpenAPI spec used by OverviewTable and OpenApiSpecViewer
@@ -117,6 +137,7 @@ export const DocsSchemasRoute = createRoute({
   search: {
     middlewares: [stripParams('operationTag')],
   },
+  head: () => ({ meta: [{ title: appTitle('Schemas') }] }),
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
     // Prefetch schemas and schema tags used by SchemasPage and SchemasSidebar

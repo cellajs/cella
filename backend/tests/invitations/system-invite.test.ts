@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { defaultHeaders } from '../fixtures';
 import { createPasswordUser, createSystemAdminUser, parseResponse } from '../helpers';
-import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
@@ -14,7 +14,6 @@ setTestConfig({
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase();
 
   // Mock email sending
   vi.mock('#/modules/system/handlers', async () => {

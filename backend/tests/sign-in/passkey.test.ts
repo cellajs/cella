@@ -7,13 +7,13 @@ import { emailsTable } from '#/db/schema/emails';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
+import { mockEmail, mockUser } from '#/mocks';
+import { pastIsoDate } from '#/mocks/utils';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { mockEmail, mockUser } from '../../mocks';
-import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { ErrorResponse, parseResponse } from '../helpers';
-import { clearDatabase, migrateDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../setup';
+import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
 
 const newPasskeyRecord = (userId: string, nameOnDevice = 'Test Device') => ({
   userId,
@@ -28,7 +28,6 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase();
 
   // Mock rate limiter to avoid 429 errors in tests
   mockRateLimiter();

@@ -25,7 +25,7 @@ export const OperationDetail = ({ operation, className }: OperationDetailProps) 
   const { t } = useTranslation();
 
   return (
-    <Card id={operation.hash} className={cn('scroll-mt-14 sm:scroll-mt-2 border-0', className)}>
+    <Card id={operation.hash} className={cn('border-0', className)}>
       <CardHeader className="group">
         <div className="flex justify-between items-center">
           <CardTitle className="sm:text-xl leading-8 gap-2">

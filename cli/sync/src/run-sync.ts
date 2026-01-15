@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { handleBoilerplateIntoForkMerge } from "./modules/git/handle-boilerplate-into-fork-merge";
 import { FileAnalysis } from "./types";
 import { handleSquashMerge } from "./utils/git/handle-squash-merge";
-import { handleMerge } from "./utils/git/handle-merge";
+import { checkMark } from "./utils/console";
 import { config } from "./config"
 
 /**
@@ -39,7 +39,7 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
 
   // Merge boilerplate into fork (sync-branch)
   await handleBoilerplateIntoForkMerge(config.boilerplate, config.fork, analyzedFiles);
-  console.info(pc.green("✔ Boilerplate changes merged into fork sync branch."));
+  console.info(`${checkMark} ${pc.green("Boilerplate changes merged into fork sync branch.")}`);
 
   // Squash merge sync-branch → target branch
   const squashMergeIntoPath = config.fork.localPath;
@@ -48,7 +48,7 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
 
   // The last parameter (5) indicates we include the last 5 commit messages in the squash commit
   await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
-  console.info(pc.green("✔ Sync branch squash-merged into target branch."));
+  console.info(`${checkMark} ${pc.green("Sync branch squash-merged into target branch.")}`);
 
-  console.info(pc.green("✔ Sync completed.\n"));
+  console.info(`${checkMark} ${pc.green("Sync completed.\n")}`);
 }

@@ -5,8 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766247093127,
-      "tag": "0000_large_raza",
+      "when": 1768483548571,
+      "tag": "0000_spicy_exodus",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768483549157,
+      "tag": "0001_cdc_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768483549352,
+      "tag": "0002_activity_notify_trigger",
       "breakpoints": true
     }
   ]

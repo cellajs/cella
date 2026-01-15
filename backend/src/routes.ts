@@ -1,3 +1,4 @@
+import activityRouteHandlers from '#/modules/activities/handlers';
 import attachmentRouteHandlers from '#/modules/attachments/handlers';
 import authGeneralRouteHandlers from '#/modules/auth/general/handlers';
 import authOAuthRouteHandlers from '#/modules/auth/oauth/handlers';
@@ -17,6 +18,7 @@ import baseApp from '#/server';
 
 // Define backend routes of your app
 const app = baseApp
+  .route('/activities', activityRouteHandlers)
   .route('/auth/', authGeneralRouteHandlers)
   .route('/auth/', authTotpRouteHandlers)
   .route('/auth/', authPasswordsRouteHandlers)

@@ -8,10 +8,12 @@ const RESET_COOLDOWN_MS = 3000; // Cooldown period after reset where scroll even
  * Shows when scrolling up, hides when scrolling down.
  * @param enabled - Whether to enable scroll tracking
  * @param containerRef - Optional ref to a scrollable container (defaults to window)
- * @returns Object with isVisible state and reset function
+ * @returns Object with isVisible state, scrollTop position, and reset function
  */
 export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTMLElement | null>) => {
   const [isVisible, setIsVisible] = useState(true);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [container, setContainer] = useState<HTMLElement | Window | null>(null);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
   const cooldownUntil = useRef(0);
@@ -22,24 +24,57 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
     cooldownUntil.current = Date.now() + RESET_COOLDOWN_MS;
   }, [containerRef]);
 
+  // Wait for containerRef to be attached (refs are set after render)
   useEffect(() => {
     if (!enabled) {
-      setIsVisible(true);
+      setContainer(null);
       return;
     }
 
-    const container = containerRef?.current;
-    const scrollTarget = container || window;
+    // If no containerRef provided, use window immediately
+    if (!containerRef) {
+      setContainer(window);
+      return;
+    }
+
+    // Check if ref is already attached
+    if (containerRef.current) {
+      setContainer(containerRef.current);
+      return;
+    }
+
+    // Poll for ref attachment (happens after first render)
+    const checkRef = () => {
+      if (containerRef.current) {
+        setContainer(containerRef.current);
+      }
+    };
+
+    // Use requestAnimationFrame to check after render
+    const rafId = requestAnimationFrame(checkRef);
+    return () => cancelAnimationFrame(rafId);
+  }, [enabled, containerRef]);
+
+  // Attach scroll listener once container is available
+  useEffect(() => {
+    if (!enabled || !container) {
+      if (!enabled) setIsVisible(true);
+      return;
+    }
 
     const handleScroll = () => {
+      const currentY = container instanceof Window ? container.scrollY : container.scrollTop;
+
+      // Always update scrollTop for consumers
+      setScrollTop(currentY);
+
       // Skip visibility changes during cooldown period
       if (Date.now() < cooldownUntil.current) {
-        lastScrollY.current = container ? container.scrollTop : window.scrollY;
+        lastScrollY.current = currentY;
         ticking.current = false;
         return;
       }
 
-      const currentY = container ? container.scrollTop : window.scrollY;
       const delta = currentY - lastScrollY.current;
 
       if (Math.abs(delta) > SCROLL_THRESHOLD) {
@@ -57,9 +92,9 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
       }
     };
 
-    scrollTarget.addEventListener('scroll', onScroll, { passive: true });
-    return () => scrollTarget.removeEventListener('scroll', onScroll);
-  }, [enabled, containerRef]);
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [enabled, container]);
 
-  return { isVisible, reset };
+  return { isVisible, scrollTop, reset };
 };

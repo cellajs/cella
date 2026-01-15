@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/lib/x-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/schema';

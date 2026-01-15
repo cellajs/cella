@@ -1,5 +1,5 @@
 {
-  "projectName": "Cella Sync Engine",
+  "projectName": "Cella sync engine",
   "description": "A CLI tool to handle git synchronization tasks between a `boilerplate` and `fork` instance, with automatic conflict analysis and resolution, packages updates.",
   "version": "0.1.0",
   "language": "TypeScript",
