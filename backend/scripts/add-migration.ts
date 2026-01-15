@@ -17,14 +17,14 @@
  * The migration will be automatically applied with other Drizzle migrations.
  */
 
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { logMigrationResult, resolveSqlContent, upsertMigration } from './lib/drizzle-migration';
 
 // CLI entry point
 const args = process.argv.slice(2);
 
 if (args.length < 2) {
-  console.error(chalk.redBright.bold('Usage: pnpm add-migration <tag> <sql-file-or-string>'));
+  console.error(pc.bold(pc.redBright('Usage: pnpm add-migration <tag> <sql-file-or-string>')));
   console.error('');
   console.error('Examples:');
   console.error('  pnpm add-migration activity_notify ./sql/trigger.sql');
@@ -40,6 +40,6 @@ try {
   logMigrationResult(result);
   console.info('');
 } catch (err) {
-  console.error(chalk.redBright.bold('✘ Failed to add migration:'), err);
+  console.error(pc.bold(pc.redBright('✘ Failed to add migration:')), err);
   process.exit(1);
 }

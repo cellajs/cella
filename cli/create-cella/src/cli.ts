@@ -1,8 +1,8 @@
 import { basename, resolve } from 'node:path';
 import { Command, InvalidArgumentError } from 'commander';
 
-import { NAME, VERSION } from './constants.ts';
-import { validateProjectName } from './utils/validate-project-name.ts';
+import { NAME, VERSION } from './constants.js';
+import { validateProjectName } from './utils/validate-project-name.js';
 
 // Define types for CLI options
 interface CLIOptions {
@@ -50,7 +50,7 @@ export const command = new Command(NAME)
       const validation = validateProjectName(basename(resolve(name)));
 
       if (!validation.valid) {
-        throw new InvalidArgumentError(`Invalid branch name: ${validation.problems[0]}`);
+        throw new InvalidArgumentError(`Invalid branch name: ${validation.problems?.[0] ?? 'unknown error'}`);
       }
 
       createNewBranch = true;
@@ -66,7 +66,7 @@ export const command = new Command(NAME)
       const validation = validateProjectName(basename(resolve(name)));
 
       if (!validation.valid) {
-        throw new InvalidArgumentError(`Invalid project name: ${validation.problems[0]}`);
+        throw new InvalidArgumentError(`Invalid project name: ${validation.problems?.[0] ?? 'unknown error'}`);
       }
 
       directory = name;
@@ -75,13 +75,7 @@ export const command = new Command(NAME)
   .parse();
 
 // Gather the CLI options and arguments
-const options: CLIOptions = command.opts<CLIOptions>({
-  skipNewBranch: false,
-  skipClean: false,
-  skipGit: false,
-  skipInstall: false,
-  skipGenerate: false,
-});
+const options: CLIOptions = command.opts<CLIOptions>();
 
 // Export the CLI configuration for use in other modules
 export const cli: CLIConfig = {

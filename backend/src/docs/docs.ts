@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
-import chalk from 'chalk';
 import { appConfig } from 'config';
+import pc from 'picocolors';
 import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
@@ -65,7 +65,7 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   // Get JSON doc and save to file
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
   await fs.writeFile('./openapi.cache.json', JSON.stringify(openApiDoc, null, 2));
-  console.info(`${chalk.greenBright.bold('✔')} OpenAPI document written to ./openapi.cache.json`);
+  console.info(`${pc.bold(pc.greenBright('✔'))} OpenAPI document written to ./openapi.cache.json`);
 
   if (skipScalar) return;
 

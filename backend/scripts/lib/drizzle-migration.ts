@@ -7,7 +7,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 // Go up two levels: lib -> scripts -> backend, then into drizzle
 const drizzleDir = join(import.meta.dirname, '../../drizzle');
@@ -125,5 +125,5 @@ export function logMigrationResult(result: MigrationResult, context?: string): v
   console.info('');
   const action = result.updated ? 'updated' : 'created';
   const contextStr = context ? ` (${context})` : '';
-  console.info(`${chalk.greenBright.bold('✔')} Migration ${action}${contextStr}: drizzle/${result.filename}`);
+  console.info(`${pc.bold(pc.greenBright('✔'))} Migration ${action}${contextStr}: drizzle/${result.filename}`);
 }

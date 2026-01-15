@@ -6,11 +6,11 @@ import { confirm, input, select } from '@inquirer/prompts';
 import colors from 'picocolors';
 
 import { cli } from './cli';
-import { AUTHOR, DESCRIPTION, GITHUB, LOGO, TEMPLATE_URL, VERSION, WEBSITE } from './constants.ts';
-import { create } from './create.ts';
+import { AUTHOR, DESCRIPTION, GITHUB, LOGO, TEMPLATE_URL, VERSION, WEBSITE } from './constants';
+import { create } from './create';
 import { extractPackageJsonVersionFromUri } from './utils/extract-package-json-version-from-uri';
-import { isEmptyDirectory } from './utils/is-empty-directory.ts';
-import { validateProjectName } from './utils/validate-project-name.ts';
+import { isEmptyDirectory } from './utils/is-empty-directory';
+import { validateProjectName } from './utils/validate-project-name';
 
 interface CreateOptions {
   projectName: string;
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
       default: 'my-cella-app',
       validate: (name) => {
         const validation = validateProjectName(basename(resolve(name)));
-        return validation.valid ? true : `Invalid project name: ${validation.problems[0]}`;
+        return validation.valid ? true : `Invalid project name: ${validation.problems?.[0] ?? 'unknown error'}`;
       },
     });
   }
@@ -92,7 +92,7 @@ async function main(): Promise<void> {
       default: 'development',
       validate: (name) => {
         const validation = validateProjectName(basename(resolve(name)));
-        return validation.valid ? true : `Invalid branch name: ${validation.problems[0]}`;
+        return validation.valid ? true : `Invalid branch name: ${validation.problems?.[0] ?? 'unknown error'}`;
       },
     });
   }

@@ -27,12 +27,13 @@
     "clean": "rimraf ./dist",
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "ts": "tsc --noEmit"
   },
   "dependencies": {
     "@inquirer/prompts": "^6.0.1",
     "axios": "^1.13.2",
-    "commander": "^12.1.0",
+    "commander": "^14.0.2",
     "cross-spawn": "^7.0.6",
     "giget": "^1.2.5",
     "picocolors": "^1.1.1",
@@ -40,6 +41,8 @@
     "yocto-spinner": "^0.1.2"
   },
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/validate-npm-package-name": "^4.0.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0"
   }

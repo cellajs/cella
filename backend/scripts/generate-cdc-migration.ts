@@ -11,7 +11,7 @@
  * so it will be applied automatically with other migrations.
  */
 
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
 import { resourceTables } from '#/activities-config';
 import { entityTables } from '#/entity-config';
@@ -25,7 +25,7 @@ const trackedTableNames = [
 ];
 
 if (trackedTableNames.length === 0) {
-  console.error(chalk.redBright.bold('✘ No tracked tables found for CDC!'));
+  console.error(pc.bold(pc.redBright('✘ No tracked tables found for CDC!')));
   console.error('  Please ensure that entityTables and resourceTables are defined correctly.');
   process.exit(1);
 }
@@ -96,7 +96,7 @@ const result = upsertMigration('cdc_setup', migrationSql);
 logMigrationResult(result, 'CDC setup');
 
 console.info('');
-console.info(`  ${chalk.greenBright.bold('Tracked tables:')}`);
+console.info(`  ${pc.bold(pc.greenBright('Tracked tables:'))}`);
 for (const table of trackedTableNames) {
   console.info(`    - ${table}`);
 }

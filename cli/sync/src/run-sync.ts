@@ -3,7 +3,6 @@ import pc from "picocolors";
 import { handleBoilerplateIntoForkMerge } from "./modules/git/handle-boilerplate-into-fork-merge";
 import { FileAnalysis } from "./types";
 import { handleSquashMerge } from "./utils/git/handle-squash-merge";
-import { handleMerge } from "./utils/git/handle-merge";
 import { config } from "./config"
 
 /**

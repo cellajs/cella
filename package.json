@@ -49,20 +49,18 @@
     "build:dev": "pnpm -r --parallel build:dev",
     "build:staging": "pnpm -r --parallel build:staging",
     "start": "pnpm -r --parallel start",
-    "upstream:pull": "tsx ./cli/sync-cella/index.ts pull-upstream --config-file cella.config.js",
-    "fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",
-    "diverged": "tsx ./cli/sync-cella/index.ts diverged --config-file cella.config.js",
     "test": "pnpm -r --parallel test",
     "sync": "tsx ./cli/sync/src/index.ts",
+    "diverged": "tsx ./cli/sync/src/index.ts --sync-service diverged",
     "deps:update": "pnpm -r update",
-    "deps:outdated": "pnpm -r outdated"
+    "deps:outdated": "tsx ./cli/sync/src/run-outdated.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
     "@evilmartians/lefthook": "^2.0.15",
     "@typescript/native-preview": "7.0.0-dev.20260113.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.80.2",
+    "knip": "^5.81.0",
     "rimraf": "^6.1.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

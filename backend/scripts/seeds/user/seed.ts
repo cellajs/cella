@@ -4,7 +4,7 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { appConfig } from 'config';
 import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks';
 import { defaultAdminUser } from '../fixtures';
@@ -52,6 +52,6 @@ export const userSeed = async () => {
     .onConflictDoNothing();
 
   console.info(
-    ` \n✅ Created admin user with verified email ${chalk.greenBright.bold(adminUser.email)} and password ${chalk.greenBright.bold(defaultAdminUser.password)}.\n `,
+    ` \n✅ Created admin user with verified email ${pc.bold(pc.greenBright(adminUser.email))} and password ${pc.bold(pc.greenBright(defaultAdminUser.password))}.\n `,
   );
 };

@@ -12,13 +12,13 @@
   },
   "dependencies": {
     "config": "workspace:*",
-    "dotenv": "^16.5.0",
-    "drizzle-orm": "^0.45.0",
+    "dotenv": "^16.6.1",
+    "drizzle-orm": "^0.45.1",
     "pg-logical-replication": "^2.3.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

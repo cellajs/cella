@@ -4,11 +4,11 @@ import '#/lib/i18n';
 import { serve } from '@hono/node-server';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
-import chalk from 'chalk';
 import { appConfig } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
+import pc from 'picocolors';
 import { eventBus } from '#/lib/event-bus';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
@@ -62,12 +62,12 @@ const main = async () => {
       ascii();
       console.info(' ');
 
-      console.info(`${chalk.greenBright.bold(appConfig.name)} 
-Frontend: ${chalk.cyanBright.bold(appConfig.frontendUrl)} 
-Backend: ${chalk.cyanBright.bold(appConfig.backendUrl)} 
-Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}
-Docs: ${chalk.cyanBright(`${appConfig.backendUrl}/docs`)}
-Storybook: ${chalk.cyanBright(`http://localhost:6006/`)}`);
+      console.info(`${pc.bold(pc.greenBright(appConfig.name))} 
+Frontend: ${pc.bold(pc.cyanBright(appConfig.frontendUrl))} 
+Backend: ${pc.bold(pc.cyanBright(appConfig.backendUrl))} 
+Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}
+Docs: ${pc.cyanBright(`${appConfig.backendUrl}/docs`)}
+Storybook: ${pc.cyanBright(`http://localhost:6006/`)}`);
 
       console.info(' ');
     },

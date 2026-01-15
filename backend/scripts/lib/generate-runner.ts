@@ -7,7 +7,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 export interface GenerateScript {
   /** Human-readable name for the script */
@@ -46,23 +46,23 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
   const backendDir = join(import.meta.dirname, '../..');
 
   console.info('');
-  console.info(chalk.bold(`Running ${scripts.length} generation scripts...`));
+  console.info(pc.bold(`Running ${scripts.length} generation scripts...`));
   console.info('');
 
   for (const script of scripts) {
-    const label = chalk.cyan(`[${script.name}]`);
+    const label = pc.cyan(`[${script.name}]`);
     console.info(`${label} Starting...`);
 
     try {
       await runCommand(script.command, backendDir);
-      console.info(`${label} ${chalk.green('Done')}`);
+      console.info(`${label} ${pc.green('Done')}`);
       console.info('');
     } catch (err) {
-      console.error(`${label} ${chalk.red('Failed')}`);
+      console.error(`${label} ${pc.red('Failed')}`);
       throw err;
     }
   }
 
-  console.info(chalk.greenBright.bold('✔ All generation scripts completed'));
+  console.info(pc.bold(pc.greenBright('✔ All generation scripts completed')));
   console.info('');
 }

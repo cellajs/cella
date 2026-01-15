@@ -1,5 +1,5 @@
 {
-  "name": "@cella/sync",
+  "name": "@cellajs/sync",
   "version": "0.0.1",
   "private": false,
   "license": "MIT",
@@ -12,7 +12,7 @@
   "homepage": "https://cellajs.com",
   "author": "CellaJS <info@cellajs.com>",
   "engines": {
-    "node": ">=24.1.0"
+    "node": "24.x"
   },
   "type": "module",
   "main": "index.ts",
@@ -20,23 +20,20 @@
     "sync": "index.ts"
   },
   "scripts": {
-    "sync": "tsx index.ts"
+    "sync": "tsx index.ts",
+    "ts": "tsc --noEmit"
   },
   "dependencies": {
     "@inquirer/prompts": "^6.0.1",
-    "commander": "^12.1.0",
-    "cross-spawn": "^7.0.6",
-    "inquirer-file-selector": "^0.4.0",
-    "micromatch": "^4.0.8",
+    "commander": "^14.0.2",
     "p-limit": "^6.2.0",
     "picocolors": "^1.1.1",
     "semver": "^7.7.3",
-    "validate-npm-package-name": "^5.0.1",
     "yocto-spinner": "^0.1.2"
   },
   "devDependencies": {
-    "@types/micromatch": "^4.0.10",
     "@types/semver": "^7.7.1",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0"
   }
 }
