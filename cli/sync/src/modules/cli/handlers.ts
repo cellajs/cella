@@ -2,6 +2,7 @@ import pc from "picocolors";
 
 import { CLIConfig, ConfigurationAction, CustomizeOption } from "./types";
 import { config } from "../../config";
+import { validateSwizzleConfig, logValidationWarnings } from "../../config/validate";
 import { SyncService } from "../../config/sync-services";
 
 import {
@@ -234,4 +235,16 @@ export function onInitialConfigLoad(cli: CLIConfig) {
   if (cli.forkSyncBranch) {
     config.fork = { syncBranch: cli.forkSyncBranch };
   }
+}
+
+/**
+ * Validates the swizzle configuration and logs any warnings.
+ * Called after config is loaded to catch invalid file patterns early.
+ */
+export async function validateConfig(): Promise<void> {
+  const { warnings } = await validateSwizzleConfig(
+    config.swizzle,
+    config.fork.workingDirectory
+  );
+  logValidationWarnings(warnings);
 }

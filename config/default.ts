@@ -268,7 +268,7 @@ export const config = {
     { name: 'CDC setup migration', command: 'tsx scripts/generate-cdc-migration.ts' },
     { name: 'Activity notify trigger', command: 'tsx scripts/generate-activity-trigger.ts' },
   ],
-  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
+  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 };
 
 export default config;

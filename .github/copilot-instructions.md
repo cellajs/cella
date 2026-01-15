@@ -80,7 +80,7 @@ pnpm test           # Run all Vitest tests
 ## Conventions
 
 - Use `schema-base.ts` files to prevent circular imports between modules
-- Test files: `*.test.ts` adjacent to source or in `__tests__/`
+- Test files: `*.test.ts` adjacent to source or in `tests/`
 - Commit format: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - PRs: Include description, linked issues, screenshots for UI changes
 

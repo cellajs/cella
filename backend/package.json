@@ -28,9 +28,6 @@
     "seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/reset-db.ts",
     "db:clear": "tsx scripts/clear-db.ts",
-    "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
-    "generate:cdc-migration": "tsx scripts/generate-cdc-migration.ts",
-    "generate:activity-trigger": "tsx scripts/generate-activity-trigger.ts",
     "add-migration": "tsx scripts/add-migration.ts",
     "generate": "tsx scripts/generate.ts",
     "generate-openapi": "tsx scripts/generate-openapi.ts || true",
@@ -39,8 +36,8 @@
     "emails:build": "email build emails",
     "emails:create": "email create",
     "emails:preview": "email preview emails",
-    "test": "docker compose --profile test up -d db_test --wait && cross-env CDC_DISABLED=true pnpm vitest run && docker compose --profile test stop db_test || docker compose --profile test stop db_test",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test": "docker compose --profile test up -d db_test --wait && cross-env CDC_DISABLED=true vitest run --exclude 'tests/integration/**' && docker compose --profile test stop db_test || docker compose --profile test stop db_test",
+    "test:integration": "cross-env PINO_LOG_LEVEL=info INTEGRATION_TEST=true vitest run tests/integration"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",

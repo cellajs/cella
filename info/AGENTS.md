@@ -75,7 +75,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Translations: All user-facing text in UI must use translation strings via `const { t } = useTranslation()` and `t('common:save_changes')`. Never hardcode text. Translation files are in `locales/en/`.
 
 ## Testing
-- Framework: Vitest. Typical locations: `__tests__/` or `*.test.ts` adjacent to source.
+- Framework: Vitest. Typical locations: `tests/` or `*.test.ts` adjacent to source.
 - Run all: `pnpm test`; per package: `pnpm test` (from that workspace) or package-specific scripts.
 - Name tests `*.test.ts`; add integration tests where behavior spans modules.
 - Aim for reliable, isolated tests; include minimal setup files when needed.
