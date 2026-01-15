@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, type ContextEntityType } from 'config';
+import { relatableContextEntityTables } from '#/relatable-config';
 
 /**
  * Generates a random ISO date in the past.
@@ -39,14 +40,24 @@ export const generateMockContextEntityIdColumnsWithConfig = <T extends ContextEn
     {} as Record<string, string>,
   );
 
+/** Relatable context entity types derived from relatableContextEntityTables. */
+const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as ContextEntityType[];
+
 /**
- * Generates mock ID columns dynamically based on `appConfig.contextEntityTypes`.
+ * Generates mock ID columns dynamically based on context entity types.
  * Similar to generateContextEntityIdColumns for DB schemas, but for mock data.
  *
- * @returns An object with ID columns for all context entity types.
+ * @param mode - 'all' includes all context entity types from appConfig, 'relatable' only includes those from relatableContextEntityTables. Defaults to 'all'.
+ * @returns An object with ID columns for context entity types.
  */
-export const generateMockContextEntityIdColumns = (): MockContextEntityIdColumns =>
-  generateMockContextEntityIdColumnsWithConfig(appConfig) as MockContextEntityIdColumns;
+export const generateMockContextEntityIdColumns = (mode: 'all' | 'relatable' = 'all'): MockContextEntityIdColumns => {
+  const entityTypes = mode === 'all' ? appConfig.contextEntityTypes : relatableContextEntityTypes;
+  const config = {
+    contextEntityTypes: entityTypes,
+    entityIdColumnKeys: appConfig.entityIdColumnKeys,
+  };
+  return generateMockContextEntityIdColumnsWithConfig(config) as MockContextEntityIdColumns;
+};
 
 /**
  * Converts a string key to a numeric seed for faker.
