@@ -1,28 +1,29 @@
 import { appConfig } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
-import { organizationsTable } from '#/db/schema/organizations';
 import type { ContextEntityTypeColumns } from '#/db/types';
+import { type RelatableContextEntityType, relatableContextEntityTables } from '#/relatable-config';
+
+/** All relatable context entity types (keys of relatableContextEntityTables). */
+const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as RelatableContextEntityType[];
 
 /**
- * Mapping of context entity types to their tables.
- * Defined here to avoid circular dependency with entity-config.ts.
- */
-const contextEntityTables = {
-  organization: organizationsTable,
-} as const;
-
-/**
- * Generate id columns dynamically based on `appConfig.contextEntityTypes`,
+ * Generate id columns dynamically based on relatable context entity types,
  * loops through and create references for each entity type, ensuring proper relational mapping.
  *
+ * @param include - Optional list of context entity types to include. Defaults to all relatable context entity types.
  * @returns A set of dynamically generated columns for context entities.
  */
-export const generateContextEntityIdColumns = () =>
-  appConfig.contextEntityTypes.reduce((columns, entityType) => {
-    const table = contextEntityTables[entityType]; // Retrieve associated table for context entity
+export const generateContextEntityIdColumns = (include?: RelatableContextEntityType[]): ContextEntityTypeColumns => {
+  const entityTypes = include ?? relatableContextEntityTypes;
+  const columns = {} as ContextEntityTypeColumns;
+
+  for (const entityType of entityTypes) {
+    const table = relatableContextEntityTables[entityType]; // Retrieve associated table for context entity
     const columnName = appConfig.entityIdColumnKeys[entityType]; // Determine the entity ID column name
 
     // Add the column with a foreign key reference, ensuring cascading deletion
-    columns[columnName] = varchar().references(() => table.id, { onDelete: 'cascade' });
-    return columns;
-  }, {} as ContextEntityTypeColumns);
+    (columns as Record<string, unknown>)[columnName] = varchar().references(() => table.id, { onDelete: 'cascade' });
+  }
+
+  return columns;
+};
