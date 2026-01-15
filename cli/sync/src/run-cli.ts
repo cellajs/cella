@@ -15,6 +15,7 @@ let forkSyncBranch = '';
 let boilerplateLocation = '';
 let boilerplateRemoteName = '';
 let forkLocation = '';
+let ciMode = false;
 
 /**
  * Defines the root CLI command using Commander.
@@ -32,6 +33,11 @@ export const command = new Command(NAME)
   .version(VERSION, '-v, --version', `Output the current version of ${NAME}.`)
   .usage('[options]')
   .helpOption('-h, --help', 'Display this help message.')
+  .option(
+    '-y, --yes',
+    'Skip interactive prompts and use defaults/CLI flags (CI mode).',
+    () => { ciMode = true; },
+  )
   .option(
     '--sync-service <name>',
     'Explicitly tell the CLI which sync service to use.',
@@ -88,6 +94,7 @@ const cli: CLIConfig = {
   forkLocation,
   forkBranch,
   forkSyncBranch,
+  ci: ciMode,
 };
 
 /**

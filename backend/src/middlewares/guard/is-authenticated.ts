@@ -1,14 +1,13 @@
 import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { updateLastSeenAt } from '#/db/helpers/user-activity';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
-import { usersTable } from '#/db/schema/users';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { TimeSpan } from '#/utils/time-span';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.
@@ -29,18 +28,9 @@ export const isAuthenticated = xMiddleware(
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
 
-      // Update user last seen date
+      // Update user last seen date (throttled to 5 min intervals, stored in user_activity table)
       if (ctx.req.method === 'GET') {
-        const newLastSeenAt = new Date();
-        const shouldUpdate =
-          !user.lastSeenAt ||
-          new Date(user.lastSeenAt).getTime() < newLastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
-        if (shouldUpdate)
-          await db
-            .update(usersTable)
-            .set({ lastSeenAt: newLastSeenAt.toISOString() })
-            .where(eq(usersTable.id, user.id))
-            .returning();
+        await updateLastSeenAt(user.id, user.lastSeenAt);
       }
 
       // Set user in context and add to monitoring

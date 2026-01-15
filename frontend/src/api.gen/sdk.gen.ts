@@ -69,6 +69,9 @@ import type {
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
+  GetActivitiesData,
+  GetActivitiesErrors,
+  GetActivitiesResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -229,6 +232,44 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
    */
   meta?: Record<string, unknown>;
 };
+
+/**
+ * Get list of activities
+ *
+ * Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.
+ *
+ * **GET /activities** ·· [getActivities](https://api.cellajs.com/docs#tag/activities/get/activities) ·· _activities_
+ *
+ * @param {getActivitiesData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.userid - `string` (optional)
+ * @param {enum=} options.query.entitytype - `enum` (optional)
+ * @param {enum=} options.query.resourcetype - `enum` (optional)
+ * @param {enum=} options.query.action - `enum` (optional)
+ * @param {string=} options.query.tablename - `string` (optional)
+ * @param {string=} options.query.type - `string` (optional)
+ * @param {string=} options.query.entityid - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getActivities = <ThrowOnError extends boolean = true>(
+  options?: Options<GetActivitiesData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetActivitiesResponses, GetActivitiesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/activities',
+    ...options,
+  });
 
 /**
  * Check if email exists
@@ -1546,7 +1587,7 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.name - `string` (optional)
- * @param {string=} options.body.description - `string` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string=} options.body.keywords - `string` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @param {enum=} options.body.status - `enum` (optional)

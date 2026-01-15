@@ -1,78 +1,104 @@
 import { useRouterState } from '@tanstack/react-router';
-import type { LucideProps } from 'lucide-react';
-import type React from 'react';
+import { type RefObject, useEffect } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
+import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
 import type { TriggerNavItemFn } from '~/modules/navigation/types';
-import { Button } from '~/modules/ui/button';
 import { navItems } from '~/nav-config';
-import { cn } from '~/utils/cn';
+
+interface FloatingNavProps {
+  /** Custom items to render (bypasses route-based navItems) */
+  items?: FloatingNavItem[];
+  /** For app navigation - triggers nav item by id */
+  triggerNavItem?: TriggerNavItemFn;
+  /** Ref to scroll container for visibility tracking (defaults to window) */
+  scrollContainerRef?: RefObject<HTMLElement | null>;
+  /** Custom body class to add when floating nav is active */
+  bodyClass?: string;
+  /** When this value changes, visibility is reset to visible */
+  resetTrigger?: unknown;
+  /** Callback when scroll position changes */
+  onScrollTopChange?: (scrollTop: number) => void;
+}
 
 /**
  * Floating navigation for mobile devices.
  * - Shows/hides buttons based on scroll direction.
- * - Renders buttons defined in route static data.
+ * - Supports custom items or route-based nav items from staticData.
  */
-const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
+const FloatingNav = ({
+  items: customItems,
+  triggerNavItem,
+  scrollContainerRef,
+  bodyClass = 'floating-nav',
+  resetTrigger,
+  onScrollTopChange,
+}: FloatingNavProps) => {
   const routerState = useRouterState();
   const isMobile = useBreakpoints('max', 'sm');
-  const { isVisible: showButtons } = useScrollVisibility(isMobile);
+  const { isVisible: showButtons, scrollTop, reset } = useScrollVisibility(isMobile, scrollContainerRef);
 
-  const floatingItems = routerState.matches
-    .flatMap((el) => el.staticData.floatingNavButtons || [])
-    .filter((id, index, self) => self.indexOf(id) === index); // dedupe
+  // Notify parent of scroll position changes
+  useEffect(() => {
+    onScrollTopChange?.(scrollTop);
+  }, [scrollTop, onScrollTopChange]);
 
-  const items = isMobile ? navItems.filter((item) => floatingItems.includes(item.id)) : [];
+  // Reset visibility when resetTrigger changes (e.g., sidebar closes)
+  useEffect(() => {
+    if (resetTrigger !== undefined) reset();
+  }, [resetTrigger, reset]);
 
-  useBodyClass({ 'floating-nav': isMobile && items.length > 0 });
+  // Build items array - either custom items or from route staticData
+  let items: FloatingNavItem[] = [];
+
+  if (customItems) {
+    // Use custom items directly (keep all for animation, visibility handled per-item)
+    items = customItems;
+  } else if (triggerNavItem) {
+    // Build from route staticData (original behavior for app nav)
+    const floatingItemIds = routerState.matches
+      .flatMap((el) => el.staticData.floatingNavButtons || [])
+      .filter((id, index, self) => self.indexOf(id) === index);
+
+    items = isMobile
+      ? navItems
+          .filter((item) => floatingItemIds.includes(item.id))
+          .map((item) => ({
+            id: item.id,
+            icon: item.icon,
+            onClick: () => triggerNavItem(item.id),
+          }))
+      : [];
+  }
+
+  // Count items that could be visible (for body class and empty check)
+  const visibleItems = items.filter((item) => item.visible !== false);
+
+  useBodyClass({ [bodyClass]: isMobile && visibleItems.length > 0 });
+
+  if (items.length === 0) return null;
 
   return (
     <nav id="floating-nav">
-      {items.map((navItem, index) => (
-        <FloatingNavButton
-          key={navItem.id}
-          className={showButtons ? 'opacity-100' : 'opacity-0 -bottom-12 scale-50'}
-          id={navItem.id}
-          icon={navItem.icon}
-          onClick={() => triggerNavItem(navItem.id)}
-          direction={items.length > 1 && index === 0 ? 'left' : 'right'}
-        />
-      ))}
+      {items.map((item, index) => {
+        // Combine global showButtons with individual item visibility
+        const isItemVisible = showButtons && item.visible !== false;
+        return (
+          <FloatingNavButton
+            key={item.id}
+            className={isItemVisible ? 'opacity-100' : 'opacity-0 -bottom-12 scale-50 pointer-events-none'}
+            id={item.id}
+            icon={item.icon}
+            onClick={item.onClick}
+            ariaLabel={item.ariaLabel}
+            direction={item.direction ?? (visibleItems.length > 1 && index === 0 ? 'left' : 'right')}
+          />
+        );
+      })}
     </nav>
   );
 };
 
-interface ButtonProps {
-  id: string;
-  icon: React.ElementType<LucideProps>;
-  onClick: () => void;
-  className?: string;
-  direction?: 'left' | 'right';
-}
-
-/**
- * Floating navigation button
- */
-export const FloatingNavButton = ({ id, icon: Icon, onClick, className, direction = 'right' }: ButtonProps) => {
-  return (
-    <Button
-      id={id}
-      size="icon"
-      data-direction={direction}
-      variant="secondary"
-      onClick={onClick}
-      className={cn(
-        `fixed z-105 w-14 h-14 flex items-center shadow-lg bg-secondary hover:bg-secondary justify-center rounded-full bottom-4 
-        transition-all duration-300 ease-in-out transform opacity-100 active:scale-95
-        data-[direction=left]:left-4 data-[direction=right]:right-4`,
-        className,
-      )}
-      aria-label="Navigate"
-    >
-      <Icon size={24} strokeWidth={1.5} />
-    </Button>
-  );
-};
-
 export default FloatingNav;
+export { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';

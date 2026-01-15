@@ -6,7 +6,7 @@ import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
 import router from '~/lib/router';
-import { AppFooter } from '~/modules/common/app/footer';
+import { AppFooter } from '~/modules/common/app/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Button } from '~/modules/ui/button';

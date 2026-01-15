@@ -1,4 +1,4 @@
-export const NAME = 'create-cella';
+export const NAME = 'create';
 
 // URL of the template repository
 export const TEMPLATE_URL = 'github:cellajs/cella';
@@ -19,7 +19,7 @@ export const GITHUB: string = packageJson.repository.url;
 // Files or folders to be removed from the template after downloading
 export const TO_REMOVE: string[] = [
   'info',
-  './cli/create-cella',
+  './cli/create',
 ];
 
 // Specific folder contents to be cleaned out from the template

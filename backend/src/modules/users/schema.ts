@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
+import { mockUserResponse } from '#/mocks/mock-user';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import {
   contextEntityTypeSchema,
@@ -10,7 +11,6 @@ import {
   validNameSchema,
   validSlugSchema,
 } from '#/utils/schema/common';
-import { mockUserResponse } from '../../../mocks/mock-user';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
@@ -27,7 +27,12 @@ export const userFlagsSchema = z.object(
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
   userFlags: userFlagsSchema,
-}).openapi('User', { example: mockUserResponse() });
+})
+  .extend({
+    // lastSeenAt from last_seen table (populated via subquery in userSelect)
+    lastSeenAt: z.union([z.string(), z.null()]),
+  })
+  .openapi('User', { example: mockUserResponse() });
 
 export const memberSchema = z
   .object({

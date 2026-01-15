@@ -6,6 +6,7 @@ import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
+import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
@@ -19,7 +20,7 @@ import {
 } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import { eventManager } from '#/lib/events';
+
 import { mailer } from '#/lib/mailer';
 import { sendSSEByUserIds } from '#/lib/sse';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
@@ -566,9 +567,7 @@ const membershipRouteHandlers = app
 
       await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-      const membership = activatedMemberships[0];
-      eventManager.emit('acceptedMembership', membership);
-
+      // Event emitted via CDC -> activities table -> eventBus ('membership.created')
       logEvent('info', 'Accepted membership', { ids: activatedMemberships.map((m) => m.id) });
     }
 
@@ -620,7 +619,7 @@ const membershipRouteHandlers = app
         name: usersTable.name,
         email: usersTable.email,
         createdAt: usersTable.createdAt,
-        lastSeenAt: usersTable.lastSeenAt,
+        lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
         role: membershipsTable.role,
       },
       sort,

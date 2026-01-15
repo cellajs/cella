@@ -50,7 +50,7 @@ const SchemasPage = () => {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={tag.name} className="scroll-mt-16 sm:scroll-mt-6 border-0 rounded-b-none">
+              <Card id={tag.name} className="scroll-mt-4 border-0 rounded-b-none">
                 <CardHeader className="group">
                   <CardTitle className="text-2xl leading-12 gap-2">
                     {tag.name}

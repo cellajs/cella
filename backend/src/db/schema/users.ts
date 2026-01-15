@@ -35,9 +35,8 @@ export const usersTable = pgTable(
       .notNull()
       .default({} as UserFlags),
     modifiedAt: timestampColumns.modifiedAt,
-    lastSeenAt: timestamp({ mode: 'string' }), // last time a GET request has been made in last 5 minutes
-    lastStartedAt: timestamp({ mode: 'string' }), // last time GET me
-    lastSignInAt: timestamp({ mode: 'string' }), // last time user went through authentication flow
+    lastStartedAt: timestamp({ mode: 'string' }), // Last time GET /me was called
+    lastSignInAt: timestamp({ mode: 'string' }), // Last time user completed authentication flow
     modifiedBy: varchar(),
   },
   (table) => [

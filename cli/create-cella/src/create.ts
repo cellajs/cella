@@ -4,11 +4,11 @@ import { join, relative } from 'node:path';
 import { downloadTemplate } from 'giget';
 import colors from 'picocolors';
 import yoctoSpinner from 'yocto-spinner';
-import { addRemote } from './add-remote.ts';
-import { TEMPLATE_URL } from './constants.ts';
-import { cleanTemplate } from './utils/clean-template.ts';
-import { runGitCommand } from './utils/run-git-command.ts';
-import { generate, install } from './utils/run-package-manager-command.ts';
+import { addRemote } from './add-remote.js';
+import { TEMPLATE_URL } from './constants.js';
+import { cleanTemplate } from './utils/clean-template.js';
+import { runGitCommand } from './utils/run-git-command.js';
+import { generate, install } from './utils/run-package-manager-command.js';
 
 interface CreateOptions {
   projectName: string;
@@ -69,7 +69,6 @@ export async function create({
     try {
       await cleanTemplate({
         targetFolder,
-        projectName,
       });
       cleanSpinner.success('`cella` template cleaned');
     } catch (e) {

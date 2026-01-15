@@ -7,7 +7,7 @@
   "info": {
     "title": "Cella DEVELOPMENT API",
     "version": "v1",
-    "description": "⚠️ ATTENTION: PRERELEASE!\n  \nThis API is organized into modules based on logical domains (e.g. `auth`, `organizations`, `memberships`).\nEach module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.\n\nThe documentation is generated from source code using `zod` schemas, converted into OpenAPI via `zod-openapi` and served through the `hono` framework.",
+    "description": "⚠️ ATTENTION: PRERELEASE!  \n                  This API is organized into modules based on logical domains (e.g. `auth`, `organizations`, `memberships`).\n                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.\n\n                  The documentation is generated from source code using `zod` schemas, converted into OpenAPI via `zod-openapi` and served through the `hono` framework.",
     "x-extensions": [
       {
         "key": "x-guard",
@@ -63,43 +63,51 @@
   "tags": [
     {
       "name": "me",
-      "description": "Endpoints related to the *current user*, meaning the user associated with the active session making the request.\n      These routes are distinct from general `users` endpoints: while `users` may operate on any user in the system, `me` endpoints are scoped exclusively to the *current user* and follow a different authorization flow."
+      "description": "Endpoints related to the *current user*, meaning the user associated with the active session making\n        the request. These routes are distinct from general `users` endpoints: while `users` may operate on\n        any user in the system, `me` endpoints are scoped exclusively to the *current user* and follow a\n        different authorization flow."
     },
     {
       "name": "users",
-      "description": "Endpoints for managing *users* at the system level.\n      Unlike context entities (such as `organizations`), a `user` is a \"global\" entity and not scoped to a specific context.\n      These endpoints are intended for administrative operations on any user in the system."
+      "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as\n        `organizations`), a `user` is a \"global\" entity and not scoped to a specific context. These endpoints\n        are intended for administrative operations on any user in the system."
     },
     {
       "name": "memberships",
-      "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a `user` and a contextual `entity` (e.g., an `organization`).  \n      Each membership includes role information and status flags such as `archived` or `muted`.  \n      Memberships can also reference parent entities, enabling hierarchical context."
+      "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a\n        `user` and a contextual `entity` (e.g., an `organization`). Each membership includes role information\n        and status flags such as `archived` or `muted`. Memberships can also reference parent entities,\n        enabling hierarchical context."
     },
     {
       "name": "organizations",
-      "description": "Endpoints for managing `organizations`, which are core context entities.  \n      Organizations are the highest ancestor in the parent hierarchy.  \n      They define access boundaries and are often the minimal primary scope for permission and resource management."
+      "description": "Endpoints for managing `organizations`, which are core context entities. Organizations are\n        the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal\n        primary scope for permission and resource management."
     },
     {
       "name": "requests",
-      "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries."
+      "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,\n        and waitlist entries."
     },
     {
       "name": "entities",
-      "description": "Endpoints that operate across multiple *entity types*, such as `users` and `organizations`.\n      *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.\n      These endpoints offer shared logic across modules, including slug validation and entity visibility."
+      "description": "Endpoints that operate across multiple *entity types*, such as `users` and `organizations`.\n        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child\n        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation\n        and entity visibility."
     },
     {
       "name": "system",
-      "description": "*System level* endpoints for administrative actions and platform wide functionality.\n      These endpoints support operations such as user invitations, file uploads, and webhook handling."
+      "description": "*System level* endpoints for administrative actions and platform wide functionality. These endpoints\n        support operations such as user invitations, file uploads, and webhook handling."
     },
     {
       "name": "auth",
-      "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  \n      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins."
+      "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth\n        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password\n        recovery, email verification, account linking, and impersonation for system admins."
     },
     {
       "name": "attachments",
-      "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.\n      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities."
+      "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to\n        entities such as organizations or users. Files are uploaded directly by the client; the API handles\n        metadata registration, linking, access, and preview utilities."
+    },
+    {
+      "name": "pages",
+      "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline\n        capabilities. Pages can be organized hierarchically and are used in /docs."
     },
     {
       "name": "metrics",
-      "description": "Endpoints for retrieving system level statistics and basic observability data.\n      Includes internal metrics as well as simple, high level counts for entities such as `users` and `organizations`."
+      "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal\n        metrics as well as simple, high level counts for entities such as `users` and `organizations`."
+    },
+    {
+      "name": "activities",
+      "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery."
     }
   ],
   "components": {
@@ -170,13 +178,25 @@
           "id": {
             "type": "string"
           },
-          "slug": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slug": {
             "type": "string"
           },
           "thumbnailUrl": {
@@ -204,9 +224,13 @@
         },
         "required": [
           "id",
-          "slug",
           "name",
+          "description",
           "createdAt",
+          "modifiedAt",
+          "slug",
+          "thumbnailUrl",
+          "bannerUrl",
           "email",
           "entityType"
         ],
@@ -218,6 +242,24 @@
           "id": {
             "type": "string"
           },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "entityType": {
             "type": "string",
             "enum": [
@@ -225,12 +267,6 @@
             ]
           },
           "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
             "type": "string"
           },
           "thumbnailUrl": {
@@ -248,10 +284,14 @@
         },
         "required": [
           "id",
+          "name",
+          "description",
+          "createdAt",
+          "modifiedAt",
           "entityType",
           "slug",
-          "name",
-          "createdAt"
+          "thumbnailUrl",
+          "bannerUrl"
         ]
       },
       "MembershipBase": {
@@ -461,6 +501,130 @@
         ],
         "description": "Error returned when rate limits are exceeded."
       },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "entityType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "user",
+              "organization",
+              "attachment",
+              "page",
+              null
+            ]
+          },
+          "resourceType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "request",
+              "membership",
+              null
+            ]
+          },
+          "action": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "create",
+              "update",
+              "delete",
+              null
+            ]
+          },
+          "tableName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organizationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "changedKeys": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "entityType",
+          "resourceType",
+          "action",
+          "tableName",
+          "type",
+          "entityId",
+          "organizationId",
+          "createdAt",
+          "changedKeys"
+        ],
+        "example": {
+          "id": "g5__fW93ByeIlGms20zR5",
+          "userId": "Gy33LaMhOBksGGLOyFBi_",
+          "entityType": "attachment",
+          "resourceType": null,
+          "action": "update",
+          "tableName": "memberships",
+          "type": "membership.updated",
+          "entityId": "fTDTba6wRNGDVOJig8N9j",
+          "organizationId": "RTn7SLcdnPww_NxwToUIR",
+          "createdAt": "2024-10-11T19:21:02.239Z",
+          "changedKeys": [
+            "description",
+            "name"
+          ]
+        }
+      },
       "Me": {
         "type": "object",
         "properties": {
@@ -499,9 +663,9 @@
             "createdAt": "2024-07-14T22:49:14.651Z",
             "modifiedAt": "2024-07-14T22:49:14.651Z",
             "modifiedBy": null,
-            "lastSeenAt": "2024-07-14T22:49:14.651Z",
             "lastStartedAt": "2024-07-14T22:49:14.651Z",
-            "lastSignInAt": "2024-07-14T22:49:14.651Z"
+            "lastSignInAt": "2024-07-14T22:49:14.651Z",
+            "lastSeenAt": "2024-07-14T22:49:14.651Z"
           },
           "systemRole": "user"
         }
@@ -591,12 +755,6 @@
               "null"
             ]
           },
-          "lastSeenAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "lastStartedAt": {
             "type": [
               "string",
@@ -613,6 +771,16 @@
             "type": [
               "string",
               "null"
+            ]
+          },
+          "lastSeenAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         },
@@ -633,10 +801,10 @@
           "newsletter",
           "userFlags",
           "modifiedAt",
-          "lastSeenAt",
           "lastStartedAt",
           "lastSignInAt",
-          "modifiedBy"
+          "modifiedBy",
+          "lastSeenAt"
         ],
         "example": {
           "id": "adq_jxNCo3ZSdxUwcIyz-",
@@ -656,9 +824,9 @@
           "createdAt": "2024-12-13T11:17:23.643Z",
           "modifiedAt": "2024-12-13T11:17:23.643Z",
           "modifiedBy": null,
-          "lastSeenAt": "2024-12-13T11:17:23.643Z",
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
-          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+          "lastSignInAt": "2024-12-13T11:17:23.643Z",
+          "lastSeenAt": "2024-12-13T11:17:23.643Z"
         }
       },
       "MeAuthData": {
@@ -1032,6 +1200,12 @@
               "null"
             ]
           },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "slug": {
             "type": "string"
           },
@@ -1042,6 +1216,18 @@
             ]
           },
           "bannerUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
             "type": [
               "string",
               "null"
@@ -1137,24 +1323,6 @@
           "chatSupport": {
             "type": "boolean"
           },
-          "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "membership": {
             "anyOf": [
               {
@@ -1219,9 +1387,12 @@
           "entityType",
           "name",
           "description",
+          "modifiedAt",
           "slug",
           "thumbnailUrl",
           "bannerUrl",
+          "createdBy",
+          "modifiedBy",
           "shortName",
           "country",
           "timezone",
@@ -1235,9 +1406,6 @@
           "welcomeText",
           "authStrategies",
           "chatSupport",
-          "createdBy",
-          "modifiedAt",
-          "modifiedBy",
           "membership",
           "counts"
         ],
@@ -1318,10 +1486,31 @@
             "type": "string"
           },
           "description": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "keywords": {
             "type": "string"
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "type": "string",
@@ -1341,21 +1530,6 @@
             "type": "number",
             "minimum": -140737488355328,
             "maximum": 140737488355327
-          },
-          "createdBy": {
-            "type": "string"
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
@@ -1364,13 +1538,13 @@
           "entityType",
           "name",
           "description",
+          "modifiedAt",
           "keywords",
+          "createdBy",
+          "modifiedBy",
           "status",
           "parentId",
-          "displayOrder",
-          "createdBy",
-          "modifiedAt",
-          "modifiedBy"
+          "displayOrder"
         ],
         "example": {
           "id": "ipqyAZOx_wYoSB_T2Sbzd",
@@ -1406,6 +1580,27 @@
             "type": "string"
           },
           "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
             "type": [
               "string",
               "null"
@@ -1453,24 +1648,6 @@
               "null"
             ]
           },
-          "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "organizationId": {
             "type": "string"
           }
@@ -1481,6 +1658,10 @@
           "entityType",
           "name",
           "description",
+          "modifiedAt",
+          "keywords",
+          "createdBy",
+          "modifiedBy",
           "public",
           "bucketName",
           "groupId",
@@ -1491,9 +1672,6 @@
           "originalKey",
           "convertedKey",
           "thumbnailKey",
-          "createdBy",
-          "modifiedAt",
-          "modifiedBy",
           "organizationId"
         ],
         "example": {
@@ -1501,21 +1679,22 @@
           "entityType": "attachment",
           "name": "fondly.m1v",
           "description": null,
+          "keywords": "verecundia vilitas temptatio",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "fondly.m1v",
-          "contentType": "video/3gpp2",
+          "contentType": "application/x-httpd-php",
           "convertedContentType": null,
-          "size": "9426474",
-          "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+          "size": "5568754",
+          "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
           "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-          "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+          "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
         }
       },
       "Membership": {
@@ -1611,6 +1790,192 @@
     "parameters": {}
   },
   "paths": {
+    "/activities": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getActivities",
+        "tags": [
+          "activities"
+        ],
+        "summary": "Get list of activities",
+        "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "type",
+                "tableName"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "userId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page"
+              ]
+            },
+            "required": false,
+            "name": "entityType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "request",
+                "membership"
+              ]
+            },
+            "required": false,
+            "name": "resourceType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "create",
+                "update",
+                "delete"
+              ]
+            },
+            "required": false,
+            "name": "action",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "tableName",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "entityId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Activity"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/check-email": {
       "post": {
         "security": [],
@@ -3454,9 +3819,9 @@
                     "createdAt": "2024-07-14T22:49:14.651Z",
                     "modifiedAt": "2024-07-14T22:49:14.651Z",
                     "modifiedBy": null,
-                    "lastSeenAt": "2024-07-14T22:49:14.651Z",
                     "lastStartedAt": "2024-07-14T22:49:14.651Z",
-                    "lastSignInAt": "2024-07-14T22:49:14.651Z"
+                    "lastSignInAt": "2024-07-14T22:49:14.651Z",
+                    "lastSeenAt": "2024-07-14T22:49:14.651Z"
                   },
                   "systemRole": "user"
                 }
@@ -3585,9 +3950,9 @@
                   "createdAt": "2024-12-13T11:17:23.643Z",
                   "modifiedAt": "2024-12-13T11:17:23.643Z",
                   "modifiedBy": null,
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
                   "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -3734,9 +4099,9 @@
                   "createdAt": "2024-12-13T11:17:23.643Z",
                   "modifiedAt": "2024-12-13T11:17:23.643Z",
                   "modifiedBy": null,
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
                   "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4344,9 +4709,9 @@
                           "createdAt": "2024-12-13T11:17:23.643Z",
                           "modifiedAt": "2024-12-13T11:17:23.643Z",
                           "modifiedBy": null,
-                          "lastSeenAt": "2024-12-13T11:17:23.643Z",
                           "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                          "lastSignInAt": "2024-12-13T11:17:23.643Z"
+                          "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                          "lastSeenAt": "2024-12-13T11:17:23.643Z"
                         }
                       }
                     },
@@ -4507,9 +4872,9 @@
                   "createdAt": "2024-12-13T11:17:23.643Z",
                   "modifiedAt": "2024-12-13T11:17:23.643Z",
                   "modifiedBy": null,
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
                   "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4640,9 +5005,9 @@
                   "createdAt": "2024-12-13T11:17:23.643Z",
                   "modifiedAt": "2024-12-13T11:17:23.643Z",
                   "modifiedBy": null,
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z",
                   "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z"
+                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
+                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -5809,7 +6174,10 @@
                     "type": "string"
                   },
                   "description": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "keywords": {
                     "type": "string"
@@ -6860,6 +7228,27 @@
                         "null"
                       ]
                     },
+                    "modifiedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "keywords": {
+                      "type": "string"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "modifiedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "public": {
                       "type": "boolean"
                     },
@@ -6902,29 +7291,12 @@
                         "null"
                       ]
                     },
-                    "createdBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "modifiedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "modifiedBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
                     "organizationId": {
                       "type": "string"
                     }
                   },
                   "required": [
+                    "keywords",
                     "bucketName",
                     "filename",
                     "contentType",
@@ -7124,21 +7496,22 @@
                   "entityType": "attachment",
                   "name": "fondly.m1v",
                   "description": null,
+                  "keywords": "verecundia vilitas temptatio",
                   "public": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "fondly.m1v",
-                  "contentType": "video/3gpp2",
+                  "contentType": "application/x-httpd-php",
                   "convertedContentType": null,
-                  "size": "9426474",
-                  "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                  "size": "5568754",
+                  "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
                   "convertedKey": null,
                   "thumbnailKey": null,
                   "createdAt": "2024-10-12T17:43:05.360Z",
                   "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-                  "organizationId": "7EXqgIQTdNUnlmV7IByg2"
+                  "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
                 }
               }
             }
@@ -7831,12 +8204,6 @@
                               "null"
                             ]
                           },
-                          "lastSeenAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
                           "lastStartedAt": {
                             "type": [
                               "string",
@@ -7853,6 +8220,16 @@
                             "type": [
                               "string",
                               "null"
+                            ]
+                          },
+                          "lastSeenAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
                             ]
                           },
                           "membership": {
@@ -7874,10 +8251,10 @@
                           "lastName",
                           "language",
                           "modifiedAt",
-                          "lastSeenAt",
                           "lastStartedAt",
                           "lastSignInAt",
                           "modifiedBy",
+                          "lastSeenAt",
                           "membership"
                         ]
                       }
@@ -8062,6 +8439,7 @@
                         "required": [
                           "id",
                           "email",
+                          "thumbnailUrl",
                           "role",
                           "createdAt",
                           "createdBy"

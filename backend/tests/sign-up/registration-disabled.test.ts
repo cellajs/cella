@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { clearDatabase, migrateDatabase, mockFetchRequest, setTestConfig } from '../setup';
+import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
 setTestConfig({
   registrationEnabled: false,
@@ -9,7 +9,6 @@ setTestConfig({
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase();
 });
 
 afterEach(async () => {

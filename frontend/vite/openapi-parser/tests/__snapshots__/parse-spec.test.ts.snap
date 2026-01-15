@@ -58,6 +58,130 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         },
       },
       "schemas": {
+        "Activity": {
+          "example": {
+            "action": "update",
+            "changedKeys": [
+              "description",
+              "name",
+            ],
+            "createdAt": "2024-10-11T19:21:02.239Z",
+            "entityId": "fTDTba6wRNGDVOJig8N9j",
+            "entityType": "attachment",
+            "id": "g5__fW93ByeIlGms20zR5",
+            "organizationId": "RTn7SLcdnPww_NxwToUIR",
+            "resourceType": null,
+            "tableName": "memberships",
+            "type": "membership.updated",
+            "userId": "Gy33LaMhOBksGGLOyFBi_",
+          },
+          "properties": {
+            "action": {
+              "enum": [
+                "create",
+                "update",
+                "delete",
+                null,
+              ],
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "changedKeys": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "number",
+                },
+                {
+                  "type": "boolean",
+                },
+                {
+                  "type": "null",
+                },
+                {
+                  "additionalProperties": {},
+                  "type": "object",
+                },
+                {
+                  "items": {},
+                  "type": "array",
+                },
+              ],
+            },
+            "createdAt": {
+              "type": "string",
+            },
+            "entityId": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "entityType": {
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page",
+                null,
+              ],
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "id": {
+              "type": "string",
+            },
+            "organizationId": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "resourceType": {
+              "enum": [
+                "request",
+                "membership",
+                null,
+              ],
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "tableName": {
+              "type": "string",
+            },
+            "type": {
+              "type": "string",
+            },
+            "userId": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "required": [
+            "id",
+            "userId",
+            "entityType",
+            "resourceType",
+            "action",
+            "tableName",
+            "type",
+            "entityId",
+            "organizationId",
+            "createdAt",
+            "changedKeys",
+          ],
+          "type": "object",
+        },
         "ApiError": {
           "properties": {
             "entityType": {
@@ -125,7 +249,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "Attachment": {
           "example": {
             "bucketName": "attachments",
-            "contentType": "video/3gpp2",
+            "contentType": "application/x-httpd-php",
             "convertedContentType": null,
             "convertedKey": null,
             "createdAt": "2024-10-12T17:43:05.360Z",
@@ -135,13 +259,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "filename": "fondly.m1v",
             "groupId": null,
             "id": "y5HDs5pltSHUGLcWkE34G",
+            "keywords": "verecundia vilitas temptatio",
             "modifiedAt": "2024-10-12T17:43:05.360Z",
             "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
             "name": "fondly.m1v",
-            "organizationId": "7EXqgIQTdNUnlmV7IByg2",
-            "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+            "organizationId": "qPfBDu0oUdbMbGFUc0pbs",
+            "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
             "public": false,
-            "size": "9426474",
+            "size": "5568754",
             "thumbnailKey": null,
           },
           "properties": {
@@ -196,6 +321,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "id": {
               "type": "string",
             },
+            "keywords": {
+              "type": "string",
+            },
             "modifiedAt": {
               "type": [
                 "string",
@@ -236,6 +364,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "entityType",
             "name",
             "description",
+            "modifiedAt",
+            "keywords",
+            "createdBy",
+            "modifiedBy",
             "public",
             "bucketName",
             "groupId",
@@ -246,9 +378,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "originalKey",
             "convertedKey",
             "thumbnailKey",
-            "createdBy",
-            "modifiedAt",
-            "modifiedBy",
             "organizationId",
           ],
           "type": "object",
@@ -283,6 +412,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "createdAt": {
               "type": "string",
             },
+            "description": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
             "entityType": {
               "enum": [
                 "organization",
@@ -291,6 +426,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "id": {
               "type": "string",
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "name": {
               "type": "string",
@@ -307,10 +448,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           },
           "required": [
             "id",
+            "name",
+            "description",
+            "createdAt",
+            "modifiedAt",
             "entityType",
             "slug",
-            "name",
-            "createdAt",
+            "thumbnailUrl",
+            "bannerUrl",
           ],
           "type": "object",
         },
@@ -1067,9 +1212,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "entityType",
             "name",
             "description",
+            "modifiedAt",
             "slug",
             "thumbnailUrl",
             "bannerUrl",
+            "createdBy",
+            "modifiedBy",
             "shortName",
             "country",
             "timezone",
@@ -1083,9 +1231,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "welcomeText",
             "authStrategies",
             "chatSupport",
-            "createdBy",
-            "modifiedAt",
-            "modifiedBy",
             "membership",
             "counts",
           ],
@@ -1111,10 +1256,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "type": "string",
             },
             "createdBy": {
-              "type": "string",
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "description": {
-              "type": "string",
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "displayOrder": {
               "maximum": 140737488355327,
@@ -1169,13 +1320,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "entityType",
             "name",
             "description",
+            "modifiedAt",
             "keywords",
+            "createdBy",
+            "modifiedBy",
             "status",
             "parentId",
             "displayOrder",
-            "createdBy",
-            "modifiedAt",
-            "modifiedBy",
           ],
           "type": "object",
         },
@@ -1370,9 +1521,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "lastSeenAt": {
-              "type": [
-                "string",
-                "null",
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
               ],
             },
             "lastSignInAt": {
@@ -1446,10 +1601,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "newsletter",
             "userFlags",
             "modifiedAt",
-            "lastSeenAt",
             "lastStartedAt",
             "lastSignInAt",
             "modifiedBy",
+            "lastSeenAt",
           ],
           "type": "object",
         },
@@ -1465,6 +1620,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "createdAt": {
               "type": "string",
             },
+            "description": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
             "email": {
               "format": "email",
               "type": "string",
@@ -1477,6 +1638,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "id": {
               "type": "string",
+            },
+            "modifiedAt": {
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "name": {
               "type": "string",
@@ -1493,9 +1660,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           },
           "required": [
             "id",
-            "slug",
             "name",
+            "description",
             "createdAt",
+            "modifiedAt",
+            "slug",
+            "thumbnailUrl",
+            "bannerUrl",
             "email",
             "entityType",
           ],
@@ -1512,12 +1683,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
     },
     "info": {
-      "description": "⚠️ ATTENTION: PRERELEASE!
-  
-This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
-Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
+      "description": "⚠️ ATTENTION: PRERELEASE!  
+                  This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
+                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
 
-The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.",
+                  The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.",
       "title": "Cella DEVELOPMENT API",
       "version": "v1",
       "x-extensions": [
@@ -1573,6 +1743,192 @@ The documentation is generated from source code using \`zod\` schemas, converted
     },
     "openapi": "3.1.0",
     "paths": {
+      "/activities": {
+        "get": {
+          "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
+          "operationId": "getActivities",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "q",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "sort",
+              "required": false,
+              "schema": {
+                "default": "createdAt",
+                "enum": [
+                  "createdAt",
+                  "type",
+                  "tableName",
+                ],
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "order",
+              "required": false,
+              "schema": {
+                "default": "asc",
+                "enum": [
+                  "asc",
+                  "desc",
+                ],
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "offset",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "limit",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "userId",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "entityType",
+              "required": false,
+              "schema": {
+                "enum": [
+                  "user",
+                  "organization",
+                  "attachment",
+                  "page",
+                ],
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "resourceType",
+              "required": false,
+              "schema": {
+                "enum": [
+                  "request",
+                  "membership",
+                ],
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "action",
+              "required": false,
+              "schema": {
+                "enum": [
+                  "create",
+                  "update",
+                  "delete",
+                ],
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "tableName",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "type",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+            {
+              "in": "query",
+              "name": "entityId",
+              "required": false,
+              "schema": {
+                "type": "string",
+              },
+            },
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "items": {
+                        "items": {
+                          "$ref": "#/components/schemas/Activity",
+                        },
+                        "type": "array",
+                      },
+                      "total": {
+                        "type": "number",
+                      },
+                    },
+                    "required": [
+                      "items",
+                      "total",
+                    ],
+                    "type": "object",
+                  },
+                },
+              },
+              "description": "Activities",
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequestError",
+            },
+            "401": {
+              "$ref": "#/components/responses/UnauthorizedError",
+            },
+            "403": {
+              "$ref": "#/components/responses/ForbiddenError",
+            },
+            "404": {
+              "$ref": "#/components/responses/NotFoundError",
+            },
+            "429": {
+              "$ref": "#/components/responses/TooManyRequestsError",
+            },
+          },
+          "security": [
+            {
+              "cookieAuth": [],
+            },
+          ],
+          "summary": "Get list of activities",
+          "tags": [
+            "activities",
+          ],
+          "x-guard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "x-rate-limiter": [],
+        },
+      },
       "/auth/check-email": {
         "post": {
           "description": "Checks if a user with the specified email address exists in the system.",
@@ -5466,7 +5822,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
                 "schema": {
                   "properties": {
                     "description": {
-                      "type": "string",
+                      "type": [
+                        "string",
+                        "null",
+                      ],
                     },
                     "displayOrder": {
                       "maximum": 140737488355327,
@@ -6822,6 +7181,9 @@ The documentation is generated from source code using \`zod\` schemas, converted
                       "id": {
                         "type": "string",
                       },
+                      "keywords": {
+                        "type": "string",
+                      },
                       "modifiedAt": {
                         "type": [
                           "string",
@@ -6857,6 +7219,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                       },
                     },
                     "required": [
+                      "keywords",
                       "bucketName",
                       "filename",
                       "contentType",
@@ -7069,7 +7432,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                 "application/json": {
                   "example": {
                     "bucketName": "attachments",
-                    "contentType": "video/3gpp2",
+                    "contentType": "application/x-httpd-php",
                     "convertedContentType": null,
                     "convertedKey": null,
                     "createdAt": "2024-10-12T17:43:05.360Z",
@@ -7079,13 +7442,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "filename": "fondly.m1v",
                     "groupId": null,
                     "id": "y5HDs5pltSHUGLcWkE34G",
+                    "keywords": "verecundia vilitas temptatio",
                     "modifiedAt": "2024-10-12T17:43:05.360Z",
                     "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
                     "name": "fondly.m1v",
-                    "organizationId": "7EXqgIQTdNUnlmV7IByg2",
-                    "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                    "organizationId": "qPfBDu0oUdbMbGFUc0pbs",
+                    "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
                     "public": false,
-                    "size": "9426474",
+                    "size": "5568754",
                     "thumbnailKey": null,
                   },
                   "schema": {
@@ -7572,9 +7936,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
                               ],
                             },
                             "lastSeenAt": {
-                              "type": [
-                                "string",
-                                "null",
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                },
+                                {
+                                  "type": "null",
+                                },
                               ],
                             },
                             "lastSignInAt": {
@@ -7635,10 +8003,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
                             "lastName",
                             "language",
                             "modifiedAt",
-                            "lastSeenAt",
                             "lastStartedAt",
                             "lastSignInAt",
                             "modifiedBy",
+                            "lastSeenAt",
                             "membership",
                           ],
                           "type": "object",
@@ -7823,6 +8191,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                           "required": [
                             "id",
                             "email",
+                            "thumbnailUrl",
                             "role",
                             "createdAt",
                             "createdBy",
@@ -8072,69 +8441,86 @@ The documentation is generated from source code using \`zod\` schemas, converted
     ],
     "tags": [
       {
-        "description": "Endpoints related to the *current user*, meaning the user associated with the active session making the request.
-      These routes are distinct from general \`users\` endpoints: while \`users\` may operate on any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.",
+        "description": "Endpoints related to the *current user*, meaning the user associated with the active session making
+        the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
+        any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
+        different authorization flow.",
         "name": "me",
       },
       {
-        "description": "Endpoints for managing *users* at the system level.
-      Unlike context entities (such as \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context.
-      These endpoints are intended for administrative operations on any user in the system.",
+        "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as
+        \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context. These endpoints
+        are intended for administrative operations on any user in the system.",
         "name": "users",
       },
       {
-        "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a \`user\` and a contextual \`entity\` (e.g., an \`organization\`).  
-      Each membership includes role information and status flags such as \`archived\` or \`muted\`.  
-      Memberships can also reference parent entities, enabling hierarchical context.",
+        "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a
+        \`user\` and a contextual \`entity\` (e.g., an \`organization\`). Each membership includes role information
+        and status flags such as \`archived\` or \`muted\`. Memberships can also reference parent entities,
+        enabling hierarchical context.",
         "name": "memberships",
       },
       {
-        "description": "Endpoints for managing \`organizations\`, which are core context entities.  
-      Organizations are the highest ancestor in the parent hierarchy.  
-      They define access boundaries and are often the minimal primary scope for permission and resource management.",
+        "description": "Endpoints for managing \`organizations\`, which are core context entities. Organizations are
+        the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal
+        primary scope for permission and resource management.",
         "name": "organizations",
       },
       {
-        "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.",
+        "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,
+        and waitlist entries.",
         "name": "requests",
       },
       {
         "description": "Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
-      *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.
-      These endpoints offer shared logic across modules, including slug validation and entity visibility.",
+        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child
+        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
+        and entity visibility.",
         "name": "entities",
       },
       {
-        "description": "*System level* endpoints for administrative actions and platform wide functionality.
-      These endpoints support operations such as user invitations, file uploads, and webhook handling.",
+        "description": "*System level* endpoints for administrative actions and platform wide functionality. These endpoints
+        support operations such as user invitations, file uploads, and webhook handling.",
         "name": "system",
       },
       {
-        "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  
-      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.",
+        "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth
+        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password
+        recovery, email verification, account linking, and impersonation for system admins.",
         "name": "auth",
       },
       {
-        "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.
-      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.",
+        "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to
+        entities such as organizations or users. Files are uploaded directly by the client; the API handles
+        metadata registration, linking, access, and preview utilities.",
         "name": "attachments",
       },
       {
-        "description": "Endpoints for retrieving system level statistics and basic observability data.
-      Includes internal metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.",
+        "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline
+        capabilities. Pages can be organized hierarchically and are used in /docs.",
+        "name": "pages",
+      },
+      {
+        "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal
+        metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.",
         "name": "metrics",
+      },
+      {
+        "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
+        delete operations across all resources. This serves as an audit trail and can be extended for webhook
+        delivery.",
+        "name": "activities",
       },
     ],
     "webhooks": {},
   },
   "output": {
     "info": {
-      "description": "⚠️ ATTENTION: PRERELEASE!
-  
-This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
-Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
+      "description": "⚠️ ATTENTION: PRERELEASE!  
+                  This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
+                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
 
-The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.",
+                  The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.",
       "extensions": [
         {
           "description": "Authorization middleware applied to the endpoint",
@@ -8190,6 +8576,28 @@ The documentation is generated from source code using \`zod\` schemas, converted
       "version": "v1",
     },
     "operations": [
+      {
+        "deprecated": false,
+        "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
+        "extensions": {
+          "xGuard": [
+            "isAuthenticated",
+            "hasSystemAccess",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hash": "tag/activities/GET/activities",
+        "id": "getActivities",
+        "method": "get",
+        "path": "/activities",
+        "summary": "Get list of activities",
+        "tags": [
+          "activities",
+        ],
+      },
       {
         "deprecated": false,
         "description": "Checks if a user with the specified email address exists in the system.",
@@ -9778,7 +10186,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "name": "base",
       },
       {
-        "count": 10,
+        "count": 11,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -9797,7 +10205,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
           "description": "Base user schema with essential fields for identification and display.",
           "properties": {
             "bannerUrl": {
-              "required": false,
+              "required": true,
               "type": [
                 "string",
                 "null",
@@ -9806,6 +10214,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "createdAt": {
               "required": true,
               "type": "string",
+            },
+            "description": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "email": {
               "format": "email",
@@ -9823,6 +10238,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "required": true,
               "type": "string",
             },
+            "modifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
             "name": {
               "required": true,
               "type": "string",
@@ -9832,7 +10254,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "type": "string",
             },
             "thumbnailUrl": {
-              "required": false,
+              "required": true,
               "type": [
                 "string",
                 "null",
@@ -9850,7 +10272,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
         "schema": {
           "properties": {
             "bannerUrl": {
-              "required": false,
+              "required": true,
               "type": [
                 "string",
                 "null",
@@ -9859,6 +10281,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
             "createdAt": {
               "required": true,
               "type": "string",
+            },
+            "description": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "entityType": {
               "enum": [
@@ -9871,6 +10300,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "required": true,
               "type": "string",
             },
+            "modifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
             "name": {
               "required": true,
               "type": "string",
@@ -9880,7 +10316,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "type": "string",
             },
             "thumbnailUrl": {
-              "required": false,
+              "required": true,
               "type": [
                 "string",
                 "null",
@@ -10416,6 +10852,139 @@ The documentation is generated from source code using \`zod\` schemas, converted
       },
       {
         "example": {
+          "action": "update",
+          "changedKeys": [
+            "description",
+            "name",
+          ],
+          "createdAt": "2024-10-11T19:21:02.239Z",
+          "entityId": "fTDTba6wRNGDVOJig8N9j",
+          "entityType": "attachment",
+          "id": "g5__fW93ByeIlGms20zR5",
+          "organizationId": "RTn7SLcdnPww_NxwToUIR",
+          "resourceType": null,
+          "tableName": "memberships",
+          "type": "membership.updated",
+          "userId": "Gy33LaMhOBksGGLOyFBi_",
+        },
+        "name": "Activity",
+        "ref": "#/components/schemas/Activity",
+        "schema": {
+          "properties": {
+            "action": {
+              "enum": [
+                "create",
+                "update",
+                "delete",
+                null,
+              ],
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "changedKeys": {
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "number",
+                },
+                {
+                  "required": false,
+                  "type": "boolean",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+                {
+                  "required": false,
+                  "type": "object",
+                },
+                {
+                  "itemType": "object",
+                  "required": false,
+                  "type": "array",
+                },
+              ],
+              "required": true,
+            },
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "entityId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "entityType": {
+              "enum": [
+                "user",
+                "organization",
+                "attachment",
+                "page",
+                null,
+              ],
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "id": {
+              "required": true,
+              "type": "string",
+            },
+            "organizationId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "resourceType": {
+              "enum": [
+                "request",
+                "membership",
+                null,
+              ],
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "tableName": {
+              "required": true,
+              "type": "string",
+            },
+            "type": {
+              "required": true,
+              "type": "string",
+            },
+            "userId": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "example": {
           "systemRole": "user",
           "user": {
             "bannerUrl": null,
@@ -10512,11 +11081,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                   ],
                 },
                 "lastSeenAt": {
-                  "required": true,
-                  "type": [
-                    "string",
-                    "null",
+                  "anyOf": [
+                    {
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "required": false,
+                      "type": "null",
+                    },
                   ],
+                  "required": true,
                 },
                 "lastSignInAt": {
                   "required": true,
@@ -10674,11 +11249,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
               ],
             },
             "lastSeenAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
               ],
+              "required": true,
             },
             "lastSignInAt": {
               "required": true,
@@ -11454,11 +12035,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
             },
             "createdBy": {
               "required": true,
-              "type": "string",
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "description": {
               "required": true,
-              "type": "string",
+              "type": [
+                "string",
+                "null",
+              ],
             },
             "displayOrder": {
               "maximum": 140737488355327,
@@ -11524,7 +12111,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
       {
         "example": {
           "bucketName": "attachments",
-          "contentType": "video/3gpp2",
+          "contentType": "application/x-httpd-php",
           "convertedContentType": null,
           "convertedKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
@@ -11534,13 +12121,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
           "filename": "fondly.m1v",
           "groupId": null,
           "id": "y5HDs5pltSHUGLcWkE34G",
+          "keywords": "verecundia vilitas temptatio",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
           "name": "fondly.m1v",
-          "organizationId": "7EXqgIQTdNUnlmV7IByg2",
-          "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+          "organizationId": "qPfBDu0oUdbMbGFUc0pbs",
+          "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
           "public": false,
-          "size": "9426474",
+          "size": "5568754",
           "thumbnailKey": null,
         },
         "name": "Attachment",
@@ -11606,6 +12194,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
               ],
             },
             "id": {
+              "required": true,
+              "type": "string",
+            },
+            "keywords": {
               "required": true,
               "type": "string",
             },
@@ -11751,6 +12343,259 @@ The documentation is generated from source code using \`zod\` schemas, converted
       },
     ],
     "tagDetails": {
+      "activities": [
+        {
+          "operationId": "getActivities",
+          "request": {
+            "query": {
+              "properties": {
+                "action": {
+                  "enum": [
+                    "create",
+                    "update",
+                    "delete",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "entityId": {
+                  "required": false,
+                  "type": "string",
+                },
+                "entityType": {
+                  "enum": [
+                    "user",
+                    "organization",
+                    "attachment",
+                    "page",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "limit": {
+                  "required": false,
+                  "type": "string",
+                },
+                "offset": {
+                  "required": false,
+                  "type": "string",
+                },
+                "order": {
+                  "enum": [
+                    "asc",
+                    "desc",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "q": {
+                  "required": false,
+                  "type": "string",
+                },
+                "resourceType": {
+                  "enum": [
+                    "request",
+                    "membership",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "sort": {
+                  "enum": [
+                    "createdAt",
+                    "type",
+                    "tableName",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
+                "tableName": {
+                  "required": false,
+                  "type": "string",
+                },
+                "type": {
+                  "required": false,
+                  "type": "string",
+                },
+                "userId": {
+                  "required": false,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Activities",
+              "schema": {
+                "contentType": "application/json",
+                "properties": {
+                  "items": {
+                    "itemType": "object",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "enum": [
+                            "create",
+                            "update",
+                            "delete",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "changedKeys": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
+                        "createdAt": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "entityId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "entityType": {
+                          "enum": [
+                            "user",
+                            "organization",
+                            "attachment",
+                            "page",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "id": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "organizationId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "resourceType": {
+                          "enum": [
+                            "request",
+                            "membership",
+                            null,
+                          ],
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "tableName": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "type": {
+                          "required": true,
+                          "type": "string",
+                        },
+                        "userId": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                      },
+                      "ref": "#/components/schemas/Activity",
+                      "type": "object",
+                    },
+                    "ref": "#/components/schemas/Activity",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "total": {
+                    "required": true,
+                    "type": "number",
+                  },
+                },
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+      ],
       "attachments": [
         {
           "operationId": "syncAttachments",
@@ -11905,6 +12750,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "required": false,
                     "type": "string",
                   },
+                  "keywords": {
+                    "required": true,
+                    "type": "string",
+                  },
                   "modifiedAt": {
                     "required": false,
                     "type": [
@@ -12033,6 +12882,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
                       ],
                     },
                     "id": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "keywords": {
                       "required": true,
                       "type": "string",
                     },
@@ -12254,7 +13107,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "description": "Attachment was updated",
               "example": {
                 "bucketName": "attachments",
-                "contentType": "video/3gpp2",
+                "contentType": "application/x-httpd-php",
                 "convertedContentType": null,
                 "convertedKey": null,
                 "createdAt": "2024-10-12T17:43:05.360Z",
@@ -12264,13 +13117,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
                 "filename": "fondly.m1v",
                 "groupId": null,
                 "id": "y5HDs5pltSHUGLcWkE34G",
+                "keywords": "verecundia vilitas temptatio",
                 "modifiedAt": "2024-10-12T17:43:05.360Z",
                 "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
                 "name": "fondly.m1v",
-                "organizationId": "7EXqgIQTdNUnlmV7IByg2",
-                "originalKey": "uploads/pWeTkHooGPOefR5BDJKbQ/fondly.m1v",
+                "organizationId": "qPfBDu0oUdbMbGFUc0pbs",
+                "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
                 "public": false,
-                "size": "9426474",
+                "size": "5568754",
                 "thumbnailKey": null,
               },
               "name": "Attachment",
@@ -12337,6 +13191,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     ],
                   },
                   "id": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "keywords": {
                     "required": true,
                     "type": "string",
                   },
@@ -14378,11 +15236,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                         ],
                       },
                       "lastSeenAt": {
-                        "required": true,
-                        "type": [
-                          "string",
-                          "null",
+                        "anyOf": [
+                          {
+                            "required": false,
+                            "type": "string",
+                          },
+                          {
+                            "required": false,
+                            "type": "null",
+                          },
                         ],
+                        "required": true,
                       },
                       "lastSignInAt": {
                         "required": true,
@@ -14652,11 +15516,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     ],
                   },
                   "lastSeenAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
                     ],
+                    "required": true,
                   },
                   "lastSignInAt": {
                     "required": true,
@@ -14935,11 +15805,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     ],
                   },
                   "lastSeenAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
                     ],
+                    "required": true,
                   },
                   "lastSignInAt": {
                     "required": true,
@@ -15290,7 +16166,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                         "entity": {
                           "properties": {
                             "bannerUrl": {
-                              "required": false,
+                              "required": true,
                               "type": [
                                 "string",
                                 "null",
@@ -15299,6 +16175,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
                             "createdAt": {
                               "required": true,
                               "type": "string",
+                            },
+                            "description": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
                             },
                             "entityType": {
                               "enum": [
@@ -15311,6 +16194,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
                               "required": true,
                               "type": "string",
                             },
+                            "modifiedAt": {
+                              "required": true,
+                              "type": [
+                                "string",
+                                "null",
+                              ],
+                            },
                             "name": {
                               "required": true,
                               "type": "string",
@@ -15320,7 +16210,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                               "type": "string",
                             },
                             "thumbnailUrl": {
-                              "required": false,
+                              "required": true,
                               "type": [
                                 "string",
                                 "null",
@@ -16227,7 +17117,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                 "contentType": "application/json",
                 "properties": {
                   "bannerUrl": {
-                    "required": false,
+                    "required": true,
                     "type": [
                       "string",
                       "null",
@@ -16236,6 +17126,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
                   "createdAt": {
                     "required": true,
                     "type": "string",
+                  },
+                  "description": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "entityType": {
                     "enum": [
@@ -16248,6 +17145,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "required": true,
                     "type": "string",
                   },
+                  "modifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
                   "name": {
                     "required": true,
                     "type": "string",
@@ -16257,7 +17161,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     "type": "string",
                   },
                   "thumbnailUrl": {
-                    "required": false,
+                    "required": true,
                     "type": [
                       "string",
                       "null",
@@ -16443,11 +17347,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                           ],
                         },
                         "lastSeenAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
                           ],
+                          "required": true,
                         },
                         "lastSignInAt": {
                           "required": true,
@@ -16696,7 +17606,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
                           ],
                         },
                         "thumbnailUrl": {
-                          "required": false,
+                          "required": true,
                           "type": [
                             "string",
                             "null",
@@ -18757,11 +19667,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                   },
                   "createdBy": {
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "description": {
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "displayOrder": {
                     "maximum": 140737488355327,
@@ -18915,11 +19831,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                         },
                         "createdBy": {
                           "required": true,
-                          "type": "string",
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
                         "description": {
                           "required": true,
-                          "type": "string",
+                          "type": [
+                            "string",
+                            "null",
+                          ],
                         },
                         "displayOrder": {
                           "maximum": 140737488355327,
@@ -19131,11 +20053,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                   },
                   "createdBy": {
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "description": {
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "displayOrder": {
                     "maximum": 140737488355327,
@@ -19243,7 +20171,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
               "properties": {
                 "description": {
                   "required": false,
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null",
+                  ],
                 },
                 "displayOrder": {
                   "maximum": 140737488355327,
@@ -19317,11 +20248,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                   },
                   "createdBy": {
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "description": {
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
                   "displayOrder": {
                     "maximum": 140737488355327,
@@ -20162,11 +21099,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                           ],
                         },
                         "lastSeenAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
                           ],
+                          "required": true,
                         },
                         "lastSignInAt": {
                           "required": true,
@@ -20525,11 +21468,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     ],
                   },
                   "lastSeenAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
                     ],
+                    "required": true,
                   },
                   "lastSignInAt": {
                     "required": true,
@@ -20793,11 +21742,17 @@ The documentation is generated from source code using \`zod\` schemas, converted
                     ],
                   },
                   "lastSeenAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
                     ],
+                    "required": true,
                   },
                   "lastSignInAt": {
                     "required": true,
@@ -20908,71 +21863,86 @@ The documentation is generated from source code using \`zod\` schemas, converted
     "tags": [
       {
         "count": 10,
-        "description": "Endpoints related to the *current user*, meaning the user associated with the active session making the request.
-      These routes are distinct from general \`users\` endpoints: while \`users\` may operate on any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.",
+        "description": "Endpoints related to the *current user*, meaning the user associated with the active session making
+        the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
+        any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
+        different authorization flow.",
         "name": "me",
       },
       {
         "count": 4,
-        "description": "Endpoints for managing *users* at the system level.
-      Unlike context entities (such as \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context.
-      These endpoints are intended for administrative operations on any user in the system.",
+        "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as
+        \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context. These endpoints
+        are intended for administrative operations on any user in the system.",
         "name": "users",
       },
       {
         "count": 6,
-        "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a \`user\` and a contextual \`entity\` (e.g., an \`organization\`).  
-      Each membership includes role information and status flags such as \`archived\` or \`muted\`.  
-      Memberships can also reference parent entities, enabling hierarchical context.",
+        "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a
+        \`user\` and a contextual \`entity\` (e.g., an \`organization\`). Each membership includes role information
+        and status flags such as \`archived\` or \`muted\`. Memberships can also reference parent entities,
+        enabling hierarchical context.",
         "name": "memberships",
       },
       {
         "count": 5,
-        "description": "Endpoints for managing \`organizations\`, which are core context entities.  
-      Organizations are the highest ancestor in the parent hierarchy.  
-      They define access boundaries and are often the minimal primary scope for permission and resource management.",
+        "description": "Endpoints for managing \`organizations\`, which are core context entities. Organizations are
+        the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal
+        primary scope for permission and resource management.",
         "name": "organizations",
       },
       {
         "count": 3,
-        "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.",
+        "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,
+        and waitlist entries.",
         "name": "requests",
       },
       {
         "count": 1,
         "description": "Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
-      *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.
-      These endpoints offer shared logic across modules, including slug validation and entity visibility.",
+        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child
+        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
+        and entity visibility.",
         "name": "entities",
       },
       {
         "count": 4,
-        "description": "*System level* endpoints for administrative actions and platform wide functionality.
-      These endpoints support operations such as user invitations, file uploads, and webhook handling.",
+        "description": "*System level* endpoints for administrative actions and platform wide functionality. These endpoints
+        support operations such as user invitations, file uploads, and webhook handling.",
         "name": "system",
       },
       {
         "count": 26,
-        "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  
-      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.",
+        "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth
+        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password
+        recovery, email verification, account linking, and impersonation for system admins.",
         "name": "auth",
       },
       {
         "count": 5,
-        "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.
-      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.",
+        "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to
+        entities such as organizations or users. Files are uploaded directly by the client; the API handles
+        metadata registration, linking, access, and preview utilities.",
         "name": "attachments",
       },
       {
+        "count": 6,
+        "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline
+        capabilities. Pages can be organized hierarchically and are used in /docs.",
+        "name": "pages",
+      },
+      {
         "count": 2,
-        "description": "Endpoints for retrieving system level statistics and basic observability data.
-      Includes internal metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.",
+        "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal
+        metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.",
         "name": "metrics",
       },
       {
-        "count": 6,
-        "description": undefined,
-        "name": "pages",
+        "count": 1,
+        "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
+        delete operations across all resources. This serves as an audit trail and can be extended for webhook
+        delivery.",
+        "name": "activities",
       },
     ],
   },

@@ -23,6 +23,7 @@ export {
   deleteUsers,
   generatePasskeyChallenge,
   generateTotpKey,
+  getActivities,
   getMe,
   getMembers,
   getMetrics,
@@ -76,6 +77,7 @@ export {
   updateUser,
 } from './sdk.gen';
 export type {
+  Activity,
   ApiError,
   Attachment,
   BadRequestError,
@@ -191,6 +193,11 @@ export type {
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponse,
   GenerateTotpKeyResponses,
+  GetActivitiesData,
+  GetActivitiesError,
+  GetActivitiesErrors,
+  GetActivitiesResponse,
+  GetActivitiesResponses,
   GetMeData,
   GetMeError,
   GetMeErrors,

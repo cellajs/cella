@@ -1,15 +1,13 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link, Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
-import { MenuIcon } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { ArrowUpIcon, MenuIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
-import Logo from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
-import { Button } from '~/modules/ui/button';
+import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { DocsLayoutRoute } from '~/routes/docs-routes';
@@ -22,13 +20,8 @@ const DocsLayout = () => {
   const isMobile = useBreakpoints('max', 'sm');
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const { isVisible: showHeader, reset: resetHeaderVisibility } = useScrollVisibility(isMobile);
-
-  // Reset header visibility on route or hash change (mobile)
-  const { location } = useRouterState();
-  useEffect(() => {
-    if (isMobile) resetHeaderVisibility();
-  }, [location.pathname, location.hash, isMobile, resetHeaderVisibility]);
+  const mainRef = useRef<HTMLElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
 
@@ -83,39 +76,35 @@ const DocsLayout = () => {
     }
   };
 
-  // Mobile layout with sheeter sidebar
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Floating nav items for mobile
+  const floatingNavItems: FloatingNavItem[] = [
+    { id: 'docs-menu', icon: MenuIcon, onClick: toggleSidebar, ariaLabel: 'Toggle menu', direction: 'left' },
+    {
+      id: 'docs-scroll-top',
+      icon: ArrowUpIcon,
+      onClick: scrollToTop,
+      ariaLabel: 'Scroll to top',
+      visible: showScrollTop,
+      direction: 'right',
+    },
+  ];
+
+  // Mobile layout with floating nav
   if (isMobile) {
     return (
-      <div className="[--card:oklch(0.987_0.0013_285.76)] dark:[--card:oklch(0.232_0.0095_285.56)]">
-        {/* Fixed mobile header */}
-        <header
-          className={`fixed top-0 left-0 right-0 z-80 h-13 bg-background/70 backdrop-blur-sm transition-transform duration-300 ${
-            showHeader ? 'translate-y-0' : '-translate-y-full'
-          }`}
-        >
-          <div className="flex h-full items-center gap-1 px-1">
-            <Button
-              ref={triggerRef}
-              variant="ghost"
-              size="icon"
-              className="size-11"
-              onClick={toggleSidebar}
-              aria-label="Toggle menu"
-            >
-              <MenuIcon className="size-6" />
-            </Button>
-            <Link
-              to="/docs"
-              className="transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md p-0.5"
-              aria-label="Go to docs"
-            >
-              <Logo height={38} iconOnly />
-            </Link>
-          </div>
-        </header>
-
-        {/* Main content with top padding for fixed header */}
-        <main className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
+      <div>
+        <FloatingNav
+          items={floatingNavItems}
+          scrollContainerRef={mainRef}
+          bodyClass="docs-floating-nav"
+          resetTrigger={sidebarOpen}
+          onScrollTopChange={(scrollTop) => setShowScrollTop(scrollTop > 300)}
+        />
+        <main ref={mainRef} className="h-screen pt-3 sm:pt-6 overflow-auto pb-[70vh]">
           <Outlet />
         </main>
       </div>

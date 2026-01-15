@@ -9,23 +9,27 @@ export type ClientOptions = {
  */
 export type UserBase = {
   id: string;
-  slug: string;
   name: string;
+  description: string | null;
   createdAt: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
+  modifiedAt: string | null;
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
   email: string;
   entityType: 'user';
 };
 
 export type ContextEntityBase = {
   id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  modifiedAt: string | null;
   entityType: 'organization';
   slug: string;
-  name: string;
-  createdAt: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
 };
 
 export type MembershipBase = {
@@ -89,6 +93,28 @@ export type TooManyRequestsError = ApiError & {
   status?: 429;
 };
 
+export type Activity = {
+  id: string;
+  userId: string | null;
+  entityType: 'user' | 'organization' | 'attachment' | 'page' | null;
+  resourceType: 'request' | 'membership' | null;
+  action: 'create' | 'update' | 'delete' | null;
+  tableName: string;
+  type: string;
+  entityId: string | null;
+  organizationId: string | null;
+  createdAt: string;
+  changedKeys:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
+};
+
 export type Me = {
   user: User;
   /**
@@ -116,10 +142,10 @@ export type User = {
     finishedOnboarding: boolean;
   };
   modifiedAt: string | null;
-  lastSeenAt: string | null;
   lastStartedAt: string | null;
   lastSignInAt: string | null;
   modifiedBy: string | null;
+  lastSeenAt: string | null;
 };
 
 export type MeAuthData = {
@@ -195,9 +221,12 @@ export type Organization = {
   entityType: 'organization';
   name: string;
   description: string | null;
+  modifiedAt: string | null;
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
+  createdBy: string | null;
+  modifiedBy: string | null;
   shortName: string | null;
   country: string | null;
   timezone: string | null;
@@ -211,9 +240,6 @@ export type Organization = {
   welcomeText: string | null;
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
-  createdBy: string | null;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
   membership: MembershipBase | null;
   counts: {
     membership: {
@@ -234,14 +260,14 @@ export type Page = {
   id: string;
   entityType: 'page';
   name: string;
-  description: string;
+  description: string | null;
+  modifiedAt: string | null;
   keywords: string;
+  createdBy: string | null;
+  modifiedBy: string | null;
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
-  createdBy: string;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
 };
 
 export type Attachment = {
@@ -250,6 +276,10 @@ export type Attachment = {
   entityType: 'attachment';
   name: string;
   description: string | null;
+  modifiedAt: string | null;
+  keywords: string;
+  createdBy: string | null;
+  modifiedBy: string | null;
   public: boolean;
   bucketName: string;
   groupId: string | null;
@@ -260,9 +290,6 @@ export type Attachment = {
   originalKey: string;
   convertedKey: string | null;
   thumbnailKey: string | null;
-  createdBy: string | null;
-  modifiedAt: string | null;
-  modifiedBy: string | null;
   organizationId: string;
 };
 
@@ -281,6 +308,63 @@ export type Membership = {
   organizationId: string;
   uniqueKey: string;
 };
+
+export type GetActivitiesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'createdAt' | 'type' | 'tableName';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    userId?: string;
+    entityType?: 'user' | 'organization' | 'attachment' | 'page';
+    resourceType?: 'request' | 'membership';
+    action?: 'create' | 'update' | 'delete';
+    tableName?: string;
+    type?: string;
+    entityId?: string;
+  };
+  url: '/activities';
+};
+
+export type GetActivitiesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetActivitiesError = GetActivitiesErrors[keyof GetActivitiesErrors];
+
+export type GetActivitiesResponses = {
+  /**
+   * Activities
+   */
+  200: {
+    items: Array<Activity>;
+    total: number;
+  };
+};
+
+export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
 
 export type CheckEmailData = {
   body: {
@@ -2507,7 +2591,7 @@ export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
 export type UpdatePageData = {
   body: {
     name?: string;
-    description?: string;
+    description?: string | null;
     keywords?: string;
     displayOrder?: number;
     status?: 'unpublished' | 'published' | 'archived';
@@ -3124,6 +3208,10 @@ export type CreateAttachmentData = {
     entityType?: 'attachment';
     name?: string;
     description?: string | null;
+    modifiedAt?: string | null;
+    keywords: string;
+    createdBy?: string | null;
+    modifiedBy?: string | null;
     public?: boolean;
     bucketName: string;
     groupId?: string | null;
@@ -3134,9 +3222,6 @@ export type CreateAttachmentData = {
     originalKey: string;
     convertedKey?: string | null;
     thumbnailKey?: string | null;
-    createdBy?: string | null;
-    modifiedAt?: string | null;
-    modifiedBy?: string | null;
     organizationId: string;
   }>;
   path: {
@@ -3555,10 +3640,10 @@ export type GetMembersResponses = {
       lastName: string | null;
       language: 'en' | 'nl';
       modifiedAt: string | null;
-      lastSeenAt: string | null;
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
+      lastSeenAt: string | null;
       membership: MembershipBase;
     }>;
     total: number;
@@ -3623,7 +3708,7 @@ export type GetPendingMembershipsResponses = {
     items: Array<{
       id: string;
       email: string;
-      thumbnailUrl?: string | null;
+      thumbnailUrl: string | null;
       role: 'member' | 'admin' | null;
       createdAt: string;
       createdBy: string | null;

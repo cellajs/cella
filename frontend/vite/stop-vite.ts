@@ -1,5 +1,6 @@
 import { exec } from 'node:child_process';
 import os from 'node:os';
+import { checkMark } from './console';
 
 const isWindows = os.platform() === 'win32';
 
@@ -9,7 +10,7 @@ const isWindows = os.platform() === 'win32';
 const stopVite = () => {
   const logStopped = () => {
     console.info(' ');
-    console.info('✔ Vite stopped');
+    console.info(`${checkMark} Vite stopped`);
     console.info(' ');
   };
   const logError = (message: string) => console.error(`✖ Failed to stop Vite: ${message}`);

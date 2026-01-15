@@ -1,10 +1,8 @@
 import { appConfig, type Language } from 'config';
 import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 import type { AuthStrategy } from '#/db/schema/sessions';
-import { usersTable } from '#/db/schema/users';
+import { contextEntityColumns } from '#/db/utils/context-entity-columns';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 
 const languagesEnum = appConfig.languages;
 
@@ -14,17 +12,7 @@ const languagesEnum = appConfig.languages;
 export const organizationsTable = pgTable(
   'organizations',
   {
-    // Base columns
-    createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    entityType: varchar({ enum: ['organization'] })
-      .notNull()
-      .default('organization'),
-    name: varchar().notNull(),
-    description: varchar(),
-    slug: varchar().unique().notNull(),
-    thumbnailUrl: varchar(),
-    bannerUrl: varchar(),
+    ...contextEntityColumns('organization'),
     // Specific columns
     shortName: varchar(),
     country: varchar(),
@@ -40,9 +28,6 @@ export const organizationsTable = pgTable(
     welcomeText: varchar(),
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     chatSupport: boolean().notNull().default(false),
-    createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-    modifiedAt: timestampColumns.modifiedAt,
-    modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   },
   (table) => [
     index('organizations_name_index').on(table.name.desc()),

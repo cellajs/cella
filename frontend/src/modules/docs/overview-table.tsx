@@ -54,7 +54,7 @@ const OverviewTable = () => {
         resizable: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
-          <div className="whitespace-pre-wrap leading-5 py-3 text-muted-foreground">{row.value}</div>
+          <div className="whitespace-pre-line leading-5 py-3 text-muted-foreground">{row.value}</div>
         ),
       },
     ],

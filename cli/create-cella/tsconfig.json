@@ -1,17 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "target": "ESNext",
-    "module": "ESNext",
-
-    "strict": false,
-    "incremental": false,
-    "declaration": true,
-    "composite": false
-  },
-  "moduleResolution": "Bundler",
+  "extends": "../tsconfig.base.json",
   "include": ["src", "tsup.config.ts"]
 }

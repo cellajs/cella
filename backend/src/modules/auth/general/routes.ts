@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { createXRoute } from '#/lib/x-routes';
+import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';

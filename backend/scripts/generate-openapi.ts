@@ -1,5 +1,7 @@
 process.env.AVOID_DB_CONNECTION = 'true';
 
+import { checkMark, crossMark } from '#/utils/console';
+
 /** * Generate OpenAPI documentation and save it to a file.
  *
  * This script initializes the OpenAPI documentation for the application,
@@ -16,8 +18,8 @@ process.env.AVOID_DB_CONNECTION = 'true';
     await docs(app, true);
     process.exit(0);
   } catch (err) {
-    console.error('❌ Failed to generate fresh OpenAPI cache');
-    if (err instanceof Error) console.error(err.message.includes('SKIP_DB') ? '✅ Continuing without DB access' : err.stack || err.message);
+    console.error(`${crossMark} Failed to generate fresh OpenAPI cache`);
+    if (err instanceof Error) console.error(err.message.includes('SKIP_DB') ? `${checkMark} Continuing without DB access` : err.stack || err.message);
     else console.error(err);
     process.exit(1);
   }

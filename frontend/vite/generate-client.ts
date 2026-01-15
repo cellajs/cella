@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@hey-api/openapi-ts';
 import { openApiConfig } from '../openapi-ts.config';
+import { changeMark, checkMark, crossMark, loadingMark, STATUS_PREFIX } from './console';
 
 /**
  * Incremental client generation script.
@@ -123,7 +124,7 @@ const run = async () => {
   // Acquire lock to prevent concurrent runs from multiple terminals
   const lockAcquired = await acquireLock();
   if (!lockAcquired) {
-    console.info('⏳ Another generate-client process is running. Waited too long, exiting.');
+    console.info(`${loadingMark} Another generate-client process is running. Waited too long, exiting.`);
     process.exit(1);
   }
 
@@ -148,7 +149,7 @@ const run = async () => {
       mkdirSync(publicStaticPath, { recursive: true });
     }
 
-    console.info('🔄 Generating client to temp folder...');
+    console.info(`${loadingMark} Generating client to temp folder...`);
 
     // Get output config
     const outputConfig = typeof openApiConfig.output === 'object' ? openApiConfig.output : {};
@@ -192,12 +193,12 @@ const run = async () => {
 
     if (tempHash === existingHash) {
       const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-      console.info(`✅ Generated client unchanged — keeping existing output (${elapsed}s)`);
+      console.info(`${STATUS_PREFIX} ${checkMark} Generated client unchanged — keeping existing output (${elapsed}s)`);
       rmSync(tempOutputPath, { recursive: true });
       return;
     }
 
-    console.info('📝 Client changed — updating output...');
+    console.info(`${STATUS_PREFIX} ${changeMark} Client changed — updating output...`);
 
     // Use a safe update pattern:
     // 1. Ensure target directory exists
@@ -229,7 +230,7 @@ const run = async () => {
     rmSync(tempOutputPath, { recursive: true });
 
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-    console.info(`✅ Client generation complete (${elapsed}s)`);
+    console.info(`${STATUS_PREFIX} ${checkMark} Client generation complete (${elapsed}s)`);
   } finally {
     // Always release the lock when done
     releaseLock();
@@ -242,6 +243,6 @@ run().catch((err) => {
     rmSync(tempOutputPath, { recursive: true });
   }
   releaseLock();
-  console.error('❌ Client generation failed:', err);
+  console.error(`${STATUS_PREFIX} ${crossMark} Client generation failed:`, err);
   process.exit(1);
 });
