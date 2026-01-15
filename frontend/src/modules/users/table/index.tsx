@@ -5,8 +5,8 @@ import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { usersQueryOptions } from '~/modules/users/query';
-import { UsersTableBar } from '~/modules/users/table/bar';
-import { useColumns } from '~/modules/users/table/columns';
+import { UsersTableBar } from '~/modules/users/table/users-bar';
+import { useColumns } from '~/modules/users/table/users-columns';
 import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modules/users/types';
 
 const LIMIT = appConfig.requestLimits.users;

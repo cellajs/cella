@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { getTableColumns } from 'drizzle-orm/utils';
 import { membershipsTable } from '#/db/schema/memberships';
 import { pickColumns } from '#/db/utils/pick-columns';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 
 export type MembershipBaseModel = z.infer<typeof membershipBaseSchema>;
 

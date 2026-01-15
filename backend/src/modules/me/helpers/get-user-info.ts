@@ -9,7 +9,7 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { totpsTable } from '#/db/schema/totps';
 import { Env } from '#/lib/context';
 import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
-import type { sessionSchema } from '#/modules/me/schema';
+import type { sessionSchema } from '#/modules/me/me-schema';
 
 /**
  * Fetches all authentication-related data for a user in parallel.

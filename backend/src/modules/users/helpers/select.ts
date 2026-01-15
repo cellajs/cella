@@ -3,7 +3,7 @@ import { getTableColumns, sql } from 'drizzle-orm';
 import { lastSeenTable } from '#/db/schema/last-seen';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { pickColumns } from '#/db/utils/pick-columns';
-import { userBaseSchema } from '#/modules/users/schema-base';
+import { userBaseSchema } from '#/modules/users/users-schema-base';
 
 /**
  * User with lastSeenAt from last_seen table.

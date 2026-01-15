@@ -1,4 +1,4 @@
-import { streams } from '#/modules/me/handlers';
+import { streams } from '#/modules/me/me-handlers';
 
 /**
  * SSE is used to send real-time updates to the client. Useful for simple updates such as an updated entity or a notification.

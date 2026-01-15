@@ -5,7 +5,7 @@ import { Env } from '#/lib/context';
 import { AppError, ConstructedError } from '#/lib/errors';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { oauthQuerySchema } from '#/modules/auth/oauth/schema';
+import { oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';

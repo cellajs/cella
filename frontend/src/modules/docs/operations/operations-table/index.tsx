@@ -4,8 +4,8 @@ import type { RowsChangeData } from 'react-data-grid';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { OperationsTableBar } from '~/modules/docs/operations/operations-table/bar';
-import { useColumns } from '~/modules/docs/operations/operations-table/columns';
+import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';
+import { useColumns } from '~/modules/docs/operations/operations-table/operations-columns';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
 import type { GenOperationSummary } from '~/modules/docs/types';
 
