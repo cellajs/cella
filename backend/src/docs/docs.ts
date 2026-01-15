@@ -6,9 +6,9 @@ import { buildExtensionRegistry } from '#/docs/openapi-extensions';
 import { openapiTags, registerAppSchema } from '#/docs/tags-config';
 import { getExtensionValueDescriptions } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
-import { contextEntityBaseSchema } from '#/modules/entities/schema-base';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
-import { userBaseSchema } from '#/modules/users/schema-base';
+import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { userBaseSchema } from '#/modules/users/users-schema-base';
 import { checkMark } from '#/utils/console';
 import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
 

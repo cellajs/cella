@@ -30,7 +30,7 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "frontend/src/offline-config.tsx",
       "frontend/src/styling/gradients.css",
       "frontend/src/routes/route-tree.tsx",
-      "frontend/src/routes/marketing.tsx",
+      "frontend/src/routes/marketing-routes.tsx",
       "frontend/src/api.gen/*",
       "frontend/src/modules/common/logo.tsx",
       "frontend/src/modules/common/bg-animation/*",

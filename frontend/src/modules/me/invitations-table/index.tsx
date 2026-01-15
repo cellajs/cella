@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { DataTable } from '~/modules/common/data-table';
-import { useColumns } from '~/modules/me/invitations-table/columns';
+import { useColumns } from '~/modules/me/invitations-table/invitations-columns';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { Invitation } from '~/modules/me/types';
 

@@ -8,8 +8,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { requestsQueryOptions } from '~/modules/requests/query';
-import { RequestsTableBar } from '~/modules/requests/table/bar';
-import { useColumns } from '~/modules/requests/table/columns';
+import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
+import { useColumns } from '~/modules/requests/table/requests-columns';
 import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
 
 const LIMIT = appConfig.requestLimits.requests;

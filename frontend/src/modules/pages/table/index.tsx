@@ -11,9 +11,12 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { pagesLimit } from '~/modules/pages/query';
 import type { PagesRouteSearchParams } from '~/modules/pages/types';
 import { DocsPagesRoute } from '~/routes/docs-routes';
-import { PagesTableBar } from './table-bar';
-import { usePagesTableColumns } from './use-columns';
+import { PagesTableBar } from './pages-bar';
+import { usePagesTableColumns } from './pages-columns';
 
+/**
+ * Pages table component for listing pages in a data table.
+ */
 const PagesTable = () => {
   const { t } = useTranslation();
   const [isCompact, setIsCompact] = useState(false);

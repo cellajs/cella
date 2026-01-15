@@ -6,7 +6,7 @@ import { entityTables } from '#/entity-config';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
 import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
-import type { membershipCountSchema } from '#/modules/organizations/schema';
+import type { membershipCountSchema } from '#/modules/organizations/organizations-schema';
 
 /**
  * Fetches aggregated counts for a specific entity, including:
