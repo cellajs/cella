@@ -48,7 +48,6 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
     createdAt,
     modifiedAt: createdAt,
     modifiedBy: null,
-    lastSeenAt: createdAt,
     lastStartedAt: createdAt,
     lastSignInAt: createdAt,
   };
@@ -84,9 +83,10 @@ export const mockUserResponse = (key = 'user:default'): UserModel =>
       createdAt,
       modifiedAt: createdAt,
       modifiedBy: null,
-      lastSeenAt: createdAt,
       lastStartedAt: createdAt,
       lastSignInAt: createdAt,
+      // lastSeenAt from last_seen table (populated via subquery in real queries)
+      lastSeenAt: createdAt,
     };
   });
 

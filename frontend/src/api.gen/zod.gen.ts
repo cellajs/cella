@@ -101,6 +101,27 @@ export const zTooManyRequestsError = zApiError.and(
   }),
 );
 
+export const zActivity = z.object({
+  id: z.string(),
+  userId: z.union([z.string(), z.null()]),
+  entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
+  resourceType: z.nullable(z.enum(['request', 'membership'])),
+  action: z.nullable(z.enum(['create', 'update', 'delete'])),
+  tableName: z.string(),
+  type: z.string(),
+  entityId: z.union([z.string(), z.null()]),
+  organizationId: z.union([z.string(), z.null()]),
+  createdAt: z.string(),
+  changedKeys: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.record(z.string(), z.unknown()),
+    z.array(z.unknown()),
+  ]),
+});
+
 export const zUser = z.object({
   createdAt: z.string(),
   id: z.string(),
@@ -120,10 +141,10 @@ export const zUser = z.object({
     finishedOnboarding: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
-  lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
   lastSignInAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
+  lastSeenAt: z.union([z.string(), z.null()]),
 });
 
 export const zMe = z.object({
@@ -197,11 +218,11 @@ export const zUploadToken = z.object({
 });
 
 export const zOrganization = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),
@@ -237,11 +258,11 @@ export const zOrganization = z.object({
 });
 
 export const zPage = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['page']),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
@@ -252,11 +273,11 @@ export const zPage = z.object({
 });
 
 export const zAttachment = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['attachment']),
   name: z.string(),
   description: z.union([z.string(), z.null()]),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   keywords: z.string(),
   createdBy: z.union([z.string(), z.null()]),
@@ -288,6 +309,35 @@ export const zMembership = z.object({
   order: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.string(),
   uniqueKey: z.string(),
+});
+
+export const zGetActivitiesData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['createdAt', 'type', 'tableName'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      userId: z.optional(z.string()),
+      entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
+      resourceType: z.optional(z.enum(['request', 'membership'])),
+      action: z.optional(z.enum(['create', 'update', 'delete'])),
+      tableName: z.optional(z.string()),
+      type: z.optional(z.string()),
+      entityId: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Activities
+ */
+export const zGetActivitiesResponse = z.object({
+  items: z.array(zActivity),
+  total: z.number(),
 });
 
 export const zCheckEmailData = z.object({
@@ -1281,11 +1331,11 @@ export const zCreateAttachmentData = z.object({
   body: z
     .array(
       z.object({
+        createdAt: z.optional(z.string()),
         id: z.optional(z.string()),
         entityType: z.optional(z.enum(['attachment'])),
         name: z.optional(z.string()),
         description: z.optional(z.union([z.string(), z.null()])),
-        createdAt: z.optional(z.string()),
         modifiedAt: z.optional(z.union([z.string(), z.null()])),
         keywords: z.string(),
         createdBy: z.optional(z.union([z.string(), z.null()])),
@@ -1455,10 +1505,10 @@ export const zGetMembersResponse = z.object({
       lastName: z.union([z.string(), z.null()]),
       language: z.enum(['en', 'nl']),
       modifiedAt: z.union([z.string(), z.null()]),
-      lastSeenAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),
       lastSignInAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
+      lastSeenAt: z.union([z.string(), z.null()]),
       membership: zMembershipBase,
     }),
   ),

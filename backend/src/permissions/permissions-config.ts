@@ -12,7 +12,7 @@ import {
 /**
  * Define the actions that can be performed on an entity.
  */
-export type EntityAction = 'create' | 'read' | 'update' | 'delete';
+export type CrudAction = 'create' | 'read' | 'update' | 'delete';
 
 /**
  * Define hierarchical structure for context entities with roles, and for product entities without roles.

@@ -1,64 +1,85 @@
 import type { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 
 /**
- * Predefined OpenAPI tags for the API documentation.
+ * OpenAPI tag ids, also used in activities table.
  */
-export const openapiTags = [
-  {
-    name: 'me',
-    description: `Endpoints related to the *current user*, meaning the user associated with the active session making the request.
-      These routes are distinct from general \`users\` endpoints: while \`users\` may operate on any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.`,
-  },
-  {
-    name: 'users',
-    description: `Endpoints for managing *users* at the system level.
-      Unlike context entities (such as \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context.
-      These endpoints are intended for administrative operations on any user in the system.`,
-  },
-  {
-    name: 'memberships',
-    description: `Endpoints for managing *memberships*, which represent one-to-one relationships between a \`user\` and a contextual \`entity\` (e.g., an \`organization\`).  
-      Each membership includes role information and status flags such as \`archived\` or \`muted\`.  
-      Memberships can also reference parent entities, enabling hierarchical context.`,
-  },
-  {
-    name: 'organizations',
-    description: `Endpoints for managing \`organizations\`, which are core context entities.  
-      Organizations are the highest ancestor in the parent hierarchy.  
-      They define access boundaries and are often the minimal primary scope for permission and resource management.`,
-  },
-  {
-    name: 'requests',
-    description:
-      'Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.',
-  },
-  {
-    name: 'entities',
-    description: `Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
-      *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.
-      These endpoints offer shared logic across modules, including slug validation and entity visibility.`,
-  },
-  {
-    name: 'system',
-    description: `*System level* endpoints for administrative actions and platform wide functionality.
-      These endpoints support operations such as user invitations, file uploads, and webhook handling.`,
-  },
-  {
-    name: 'auth',
-    description: `*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  
-      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.`,
-  },
-  {
-    name: 'attachments',
-    description: `Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.
-      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.`,
-  },
-  {
-    name: 'metrics',
-    description: `Endpoints for retrieving system level statistics and basic observability data.
-      Includes internal metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.`,
-  },
-];
+export const openapiTagIds = [
+  'me',
+  'users',
+  'memberships',
+  'organizations',
+  'requests',
+  'entities',
+  'system',
+  'auth',
+  'attachments',
+  'pages',
+  'metrics',
+  'activities',
+] as const;
+
+export type OpenApiTagId = (typeof openapiTagIds)[number];
+
+/**
+ * Tag descriptions for OpenAPI documentation.
+ */
+const tagDescriptions: Record<OpenApiTagId, string> = {
+  me: `Endpoints related to the *current user*, meaning the user associated with the active session making
+        the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
+        any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
+        different authorization flow.`,
+
+  users: `Endpoints for managing *users* at the system level. Unlike context entities (such as
+        \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context. These endpoints
+        are intended for administrative operations on any user in the system.`,
+
+  memberships: `Endpoints for managing *memberships*, which represent one-to-one relationships between a
+        \`user\` and a contextual \`entity\` (e.g., an \`organization\`). Each membership includes role information
+        and status flags such as \`archived\` or \`muted\`. Memberships can also reference parent entities,
+        enabling hierarchical context.`,
+
+  organizations: `Endpoints for managing \`organizations\`, which are core context entities. Organizations are
+        the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal
+        primary scope for permission and resource management.`,
+
+  requests: `Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,
+        and waitlist entries.`,
+
+  entities: `Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
+        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child
+        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
+        and entity visibility.`,
+
+  system: `*System level* endpoints for administrative actions and platform wide functionality. These endpoints
+        support operations such as user invitations, file uploads, and webhook handling.`,
+
+  auth: `*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth
+        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password
+        recovery, email verification, account linking, and impersonation for system admins.`,
+
+  attachments: `Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to
+        entities such as organizations or users. Files are uploaded directly by the client; the API handles
+        metadata registration, linking, access, and preview utilities.`,
+
+  pages: `Endpoints for managing *pages*, which are product entities supporting realtime sync and offline
+        capabilities. Pages can be organized hierarchically and are used in /docs.`,
+
+  metrics: `Endpoints for retrieving system level statistics and basic observability data. Includes internal
+        metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.`,
+
+  activities: `Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
+        delete operations across all resources. This serves as an audit trail and can be extended for webhook
+        delivery.`,
+};
+
+/**
+ * Predefined OpenAPI tags for the API documentation.
+ * Derived from openapiTagIds with descriptions.
+ */
+export const openapiTags = openapiTagIds.map((name) => ({
+  name,
+  description: tagDescriptions[name],
+}));
 
 /**
  * Allows registering app-specific OpenAPI schemas.

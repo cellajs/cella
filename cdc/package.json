@@ -1,0 +1,24 @@
+{
+  "name": "@cella/cdc",
+  "version": "0.0.2",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx watch --env-file=../backend/.env src/index.ts",
+    "ts": "tsc --pretty"
+  },
+  "dependencies": {
+    "config": "workspace:*",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.45.0",
+    "pg-logical-replication": "^2.3.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

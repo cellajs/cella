@@ -653,6 +653,139 @@
     "extendsRef": "#/components/schemas/ApiError"
   },
   {
+    "name": "Activity",
+    "ref": "#/components/schemas/Activity",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "userId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "entityType": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true,
+          "enum": [
+            "user",
+            "organization",
+            "attachment",
+            "page",
+            null
+          ]
+        },
+        "resourceType": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true,
+          "enum": [
+            "request",
+            "membership",
+            null
+          ]
+        },
+        "action": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true,
+          "enum": [
+            "create",
+            "update",
+            "delete",
+            null
+          ]
+        },
+        "tableName": {
+          "type": "string",
+          "required": true
+        },
+        "type": {
+          "type": "string",
+          "required": true
+        },
+        "entityId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "organizationId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "required": true
+        },
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
+        "changedKeys": {
+          "required": true,
+          "anyOf": [
+            {
+              "type": "string",
+              "required": false
+            },
+            {
+              "type": "number",
+              "required": false
+            },
+            {
+              "type": "boolean",
+              "required": false
+            },
+            {
+              "type": "null",
+              "required": false
+            },
+            {
+              "type": "object",
+              "required": false
+            },
+            {
+              "type": "array",
+              "required": false,
+              "itemType": "object"
+            }
+          ]
+        }
+      }
+    },
+    "schemaTag": "data",
+    "example": {
+      "id": "g5__fW93ByeIlGms20zR5",
+      "userId": "Gy33LaMhOBksGGLOyFBi_",
+      "entityType": "attachment",
+      "resourceType": null,
+      "action": "update",
+      "tableName": "memberships",
+      "type": "membership.updated",
+      "entityId": "fTDTba6wRNGDVOJig8N9j",
+      "organizationId": "RTn7SLcdnPww_NxwToUIR",
+      "createdAt": "2024-10-11T19:21:02.239Z",
+      "changedKeys": [
+        "description",
+        "name"
+      ]
+    }
+  },
+  {
     "name": "Me",
     "ref": "#/components/schemas/Me",
     "type": "object",
@@ -759,13 +892,6 @@
               ],
               "required": true
             },
-            "lastSeenAt": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "required": true
-            },
             "lastStartedAt": {
               "type": [
                 "string",
@@ -786,6 +912,19 @@
                 "null"
               ],
               "required": true
+            },
+            "lastSeenAt": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "type": "null",
+                  "required": false
+                }
+              ]
             }
           },
           "ref": "#/components/schemas/User"
@@ -821,9 +960,9 @@
         "createdAt": "2024-07-14T22:49:14.651Z",
         "modifiedAt": "2024-07-14T22:49:14.651Z",
         "modifiedBy": null,
-        "lastSeenAt": "2024-07-14T22:49:14.651Z",
         "lastStartedAt": "2024-07-14T22:49:14.651Z",
-        "lastSignInAt": "2024-07-14T22:49:14.651Z"
+        "lastSignInAt": "2024-07-14T22:49:14.651Z",
+        "lastSeenAt": "2024-07-14T22:49:14.651Z"
       },
       "systemRole": "user"
     }
@@ -931,13 +1070,6 @@
           ],
           "required": true
         },
-        "lastSeenAt": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "required": true
-        },
         "lastStartedAt": {
           "type": [
             "string",
@@ -958,6 +1090,19 @@
             "null"
           ],
           "required": true
+        },
+        "lastSeenAt": {
+          "required": true,
+          "anyOf": [
+            {
+              "type": "string",
+              "required": false
+            },
+            {
+              "type": "null",
+              "required": false
+            }
+          ]
         }
       }
     },
@@ -980,9 +1125,9 @@
       "createdAt": "2024-12-13T11:17:23.643Z",
       "modifiedAt": "2024-12-13T11:17:23.643Z",
       "modifiedBy": null,
-      "lastSeenAt": "2024-12-13T11:17:23.643Z",
       "lastStartedAt": "2024-12-13T11:17:23.643Z",
-      "lastSignInAt": "2024-12-13T11:17:23.643Z"
+      "lastSignInAt": "2024-12-13T11:17:23.643Z",
+      "lastSeenAt": "2024-12-13T11:17:23.643Z"
     }
   },
   {
@@ -1345,6 +1490,10 @@
     "schema": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
         "id": {
           "type": "string",
           "required": true
@@ -1365,10 +1514,6 @@
             "string",
             "null"
           ],
-          "required": true
-        },
-        "createdAt": {
-          "type": "string",
           "required": true
         },
         "modifiedAt": {
@@ -1674,6 +1819,10 @@
     "schema": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
         "id": {
           "type": "string",
           "required": true
@@ -1694,10 +1843,6 @@
             "string",
             "null"
           ],
-          "required": true
-        },
-        "createdAt": {
-          "type": "string",
           "required": true
         },
         "modifiedAt": {
@@ -1772,6 +1917,10 @@
     "schema": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "type": "string",
+          "required": true
+        },
         "id": {
           "type": "string",
           "required": true
@@ -1792,10 +1941,6 @@
             "string",
             "null"
           ],
-          "required": true
-        },
-        "createdAt": {
-          "type": "string",
           "required": true
         },
         "modifiedAt": {

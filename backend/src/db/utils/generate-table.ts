@@ -10,10 +10,11 @@ import { type PgColumnBuilderBase, pgTable } from 'drizzle-orm/pg-core';
  * @returns  - The generated database table.
  */
 export const generateTable = <
+  TTableName extends string,
   TBaseColumns extends Record<string, PgColumnBuilderBase>,
   TAdditionalColumns extends Record<string, PgColumnBuilderBase>,
 >(
-  tableName: string,
+  tableName: TTableName,
   baseColumns: TBaseColumns,
   additionalColumns: TAdditionalColumns,
 ) =>

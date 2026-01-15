@@ -1,9 +1,27 @@
+CREATE TABLE "activities" (
+	"id" varchar PRIMARY KEY NOT NULL,
+	"user_id" varchar,
+	"entity_type" varchar,
+	"resource_type" varchar,
+	"action" varchar,
+	"table_name" varchar NOT NULL,
+	"type" varchar NOT NULL,
+	"entity_id" varchar,
+	"organization_id" varchar,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"changed_keys" jsonb
+);
+--> statement-breakpoint
 CREATE TABLE "attachments" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"entity_type" varchar DEFAULT 'attachment' NOT NULL,
 	"name" varchar DEFAULT 'New attachment' NOT NULL,
 	"description" varchar,
+	"modified_at" timestamp,
+	"keywords" varchar NOT NULL,
+	"created_by" varchar,
+	"modified_by" varchar,
 	"public" boolean DEFAULT false NOT NULL,
 	"bucket_name" varchar NOT NULL,
 	"group_id" varchar,
@@ -14,9 +32,6 @@ CREATE TABLE "attachments" (
 	"original_key" varchar NOT NULL,
 	"converted_key" varchar,
 	"thumbnail_key" varchar,
-	"created_by" varchar,
-	"modified_at" timestamp,
-	"modified_by" varchar,
 	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
@@ -44,6 +59,11 @@ CREATE TABLE "inactive_memberships" (
 	"organization_id" varchar NOT NULL,
 	"unique_key" varchar NOT NULL,
 	CONSTRAINT "inactive_memberships_uniqueKey_unique" UNIQUE("unique_key")
+);
+--> statement-breakpoint
+CREATE TABLE "last_seen" (
+	"user_id" varchar PRIMARY KEY NOT NULL,
+	"last_seen_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "memberships" (
@@ -81,9 +101,12 @@ CREATE TABLE "organizations" (
 	"entity_type" varchar DEFAULT 'organization' NOT NULL,
 	"name" varchar NOT NULL,
 	"description" varchar,
+	"modified_at" timestamp,
 	"slug" varchar NOT NULL,
 	"thumbnail_url" varchar,
 	"banner_url" varchar,
+	"created_by" varchar,
+	"modified_by" varchar,
 	"short_name" varchar,
 	"country" varchar,
 	"timezone" varchar,
@@ -98,9 +121,6 @@ CREATE TABLE "organizations" (
 	"welcome_text" varchar,
 	"auth_strategies" json DEFAULT '[]'::json NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
-	"created_by" varchar,
-	"modified_at" timestamp,
-	"modified_by" varchar,
 	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
@@ -109,14 +129,14 @@ CREATE TABLE "pages" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"entity_type" varchar DEFAULT 'page' NOT NULL,
 	"name" varchar DEFAULT 'New page' NOT NULL,
-	"description" varchar NOT NULL,
+	"description" varchar,
+	"modified_at" timestamp,
 	"keywords" varchar NOT NULL,
+	"created_by" varchar,
+	"modified_by" varchar,
 	"status" varchar DEFAULT 'unpublished' NOT NULL,
 	"parent_id" varchar,
 	"display_order" double precision NOT NULL,
-	"created_by" varchar NOT NULL,
-	"modified_at" timestamp,
-	"modified_by" varchar,
 	CONSTRAINT "group_order" UNIQUE("parent_id","display_order")
 );
 --> statement-breakpoint
@@ -222,7 +242,6 @@ CREATE TABLE "users" (
 	"newsletter" boolean DEFAULT false NOT NULL,
 	"user_flags" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"modified_at" timestamp,
-	"last_seen_at" timestamp,
 	"last_started_at" timestamp,
 	"last_sign_in_at" timestamp,
 	"modified_by" varchar,
@@ -230,6 +249,8 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+ALTER TABLE "activities" ADD CONSTRAINT "activities_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activities" ADD CONSTRAINT "activities_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -239,6 +260,7 @@ ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_user_id_
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "last_seen" ADD CONSTRAINT "last_seen_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -246,9 +268,9 @@ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizati
 ALTER TABLE "oauth_accounts" ADD CONSTRAINT "oauth_accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pages" ADD CONSTRAINT "pages_parent_id_pages_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pages" ADD CONSTRAINT "pages_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pages" ADD CONSTRAINT "pages_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pages" ADD CONSTRAINT "pages_parent_id_pages_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "passwords" ADD CONSTRAINT "passwords_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "requests" ADD CONSTRAINT "requests_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -260,6 +282,12 @@ ALTER TABLE "tokens" ADD CONSTRAINT "tokens_created_by_users_id_fk" FOREIGN KEY 
 ALTER TABLE "totps" ADD CONSTRAINT "totps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "activities_created_at_index" ON "activities" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "activities_type_index" ON "activities" USING btree ("type");--> statement-breakpoint
+CREATE INDEX "activities_user_id_index" ON "activities" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "activities_entity_id_index" ON "activities" USING btree ("entity_id");--> statement-breakpoint
+CREATE INDEX "activities_table_name_index" ON "activities" USING btree ("table_name");--> statement-breakpoint
+CREATE INDEX "activities_organization_id_index" ON "activities" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "attachments_organization_id_index" ON "attachments" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "organizations_name_index" ON "organizations" USING btree ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "organizations_created_at_index" ON "organizations" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint

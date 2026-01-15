@@ -633,13 +633,6 @@
                     ],
                     "required": true
                   },
-                  "lastSeenAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "required": true
-                  },
                   "lastStartedAt": {
                     "type": [
                       "string",
@@ -660,6 +653,19 @@
                       "null"
                     ],
                     "required": true
+                  },
+                  "lastSeenAt": {
+                    "required": true,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "required": false
+                      },
+                      {
+                        "type": "null",
+                        "required": false
+                      }
+                    ]
                   },
                   "membership": {
                     "type": "object",

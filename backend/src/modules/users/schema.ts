@@ -27,7 +27,12 @@ export const userFlagsSchema = z.object(
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
   userFlags: userFlagsSchema,
-}).openapi('User', { example: mockUserResponse() });
+})
+  .extend({
+    // lastSeenAt from last_seen table (populated via subquery in userSelect)
+    lastSeenAt: z.union([z.string(), z.null()]),
+  })
+  .openapi('User', { example: mockUserResponse() });
 
 export const memberSchema = z
   .object({

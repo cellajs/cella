@@ -7,6 +7,8 @@ import { nanoid } from '#/utils/nanoid';
  * Contains id, entityType, name, description, createdAt, and modifiedAt.
  */
 export const baseEntityColumns = <T extends string>(entityType: T) => ({
+  // Created at on top to have it as first column in the table
+  createdAt: timestampColumns.createdAt,
   // Identity
   id: varchar().primaryKey().$defaultFn(nanoid),
   entityType: varchar({ enum: [entityType] })
@@ -15,7 +17,6 @@ export const baseEntityColumns = <T extends string>(entityType: T) => ({
   // Metadata
   name: varchar().notNull(),
   description: varchar(),
-  // Timestamps
-  createdAt: timestampColumns.createdAt,
+  // Modification tracking
   modifiedAt: timestampColumns.modifiedAt,
 });

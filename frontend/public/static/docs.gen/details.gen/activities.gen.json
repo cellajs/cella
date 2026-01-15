@@ -1,0 +1,253 @@
+[
+  {
+    "operationId": "getActivities",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Activities",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Activity",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "userId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "entityType": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true,
+                    "enum": [
+                      "user",
+                      "organization",
+                      "attachment",
+                      "page",
+                      null
+                    ]
+                  },
+                  "resourceType": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true,
+                    "enum": [
+                      "request",
+                      "membership",
+                      null
+                    ]
+                  },
+                  "action": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true,
+                    "enum": [
+                      "create",
+                      "update",
+                      "delete",
+                      null
+                    ]
+                  },
+                  "tableName": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "type": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "entityId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "organizationId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "required": true
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "changedKeys": {
+                    "required": true,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "required": false
+                      },
+                      {
+                        "type": "number",
+                        "required": false
+                      },
+                      {
+                        "type": "boolean",
+                        "required": false
+                      },
+                      {
+                        "type": "null",
+                        "required": false
+                      },
+                      {
+                        "type": "object",
+                        "required": false
+                      },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
+                  }
+                },
+                "ref": "#/components/schemas/Activity"
+              }
+            },
+            "total": {
+              "type": "number",
+              "required": true
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": {
+            "type": "string",
+            "required": false
+          },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "createdAt",
+              "type",
+              "tableName"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "offset": {
+            "type": "string",
+            "required": false
+          },
+          "limit": {
+            "type": "string",
+            "required": false
+          },
+          "userId": {
+            "type": "string",
+            "required": false
+          },
+          "entityType": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "user",
+              "organization",
+              "attachment",
+              "page"
+            ]
+          },
+          "resourceType": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "request",
+              "membership"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "create",
+              "update",
+              "delete"
+            ]
+          },
+          "tableName": {
+            "type": "string",
+            "required": false
+          },
+          "type": {
+            "type": "string",
+            "required": false
+          },
+          "entityId": {
+            "type": "string",
+            "required": false
+          }
+        }
+      }
+    }
+  }
+]

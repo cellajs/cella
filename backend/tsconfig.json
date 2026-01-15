@@ -20,6 +20,6 @@
       "#json/*": ["../json/*"],
     },
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "../config/*", "../json/*", "../locales/*", "mocks",  "tests", "scripts", "trigger.config.ts", "../config/*"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "../config/*", "../json/*", "../locales/*", "mocks",  "tests", "scripts", "trigger.config.ts", "../config/*", "../cdc/src/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

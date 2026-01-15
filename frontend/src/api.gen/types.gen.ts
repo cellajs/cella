@@ -93,6 +93,28 @@ export type TooManyRequestsError = ApiError & {
   status?: 429;
 };
 
+export type Activity = {
+  id: string;
+  userId: string | null;
+  entityType: 'user' | 'organization' | 'attachment' | 'page' | null;
+  resourceType: 'request' | 'membership' | null;
+  action: 'create' | 'update' | 'delete' | null;
+  tableName: string;
+  type: string;
+  entityId: string | null;
+  organizationId: string | null;
+  createdAt: string;
+  changedKeys:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
+};
+
 export type Me = {
   user: User;
   /**
@@ -120,10 +142,10 @@ export type User = {
     finishedOnboarding: boolean;
   };
   modifiedAt: string | null;
-  lastSeenAt: string | null;
   lastStartedAt: string | null;
   lastSignInAt: string | null;
   modifiedBy: string | null;
+  lastSeenAt: string | null;
 };
 
 export type MeAuthData = {
@@ -194,11 +216,11 @@ export type UploadToken = {
 };
 
 export type Organization = {
+  createdAt: string;
   id: string;
   entityType: 'organization';
   name: string;
   description: string | null;
-  createdAt: string;
   modifiedAt: string | null;
   slug: string;
   thumbnailUrl: string | null;
@@ -234,11 +256,11 @@ export type Organization = {
 };
 
 export type Page = {
+  createdAt: string;
   id: string;
   entityType: 'page';
   name: string;
   description: string | null;
-  createdAt: string;
   modifiedAt: string | null;
   keywords: string;
   createdBy: string | null;
@@ -249,11 +271,11 @@ export type Page = {
 };
 
 export type Attachment = {
+  createdAt: string;
   id: string;
   entityType: 'attachment';
   name: string;
   description: string | null;
-  createdAt: string;
   modifiedAt: string | null;
   keywords: string;
   createdBy: string | null;
@@ -286,6 +308,63 @@ export type Membership = {
   organizationId: string;
   uniqueKey: string;
 };
+
+export type GetActivitiesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'createdAt' | 'type' | 'tableName';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    userId?: string;
+    entityType?: 'user' | 'organization' | 'attachment' | 'page';
+    resourceType?: 'request' | 'membership';
+    action?: 'create' | 'update' | 'delete';
+    tableName?: string;
+    type?: string;
+    entityId?: string;
+  };
+  url: '/activities';
+};
+
+export type GetActivitiesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetActivitiesError = GetActivitiesErrors[keyof GetActivitiesErrors];
+
+export type GetActivitiesResponses = {
+  /**
+   * Activities
+   */
+  200: {
+    items: Array<Activity>;
+    total: number;
+  };
+};
+
+export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
 
 export type CheckEmailData = {
   body: {
@@ -3124,11 +3203,11 @@ export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteA
 
 export type CreateAttachmentData = {
   body: Array<{
+    createdAt?: string;
     id?: string;
     entityType?: 'attachment';
     name?: string;
     description?: string | null;
-    createdAt?: string;
     modifiedAt?: string | null;
     keywords: string;
     createdBy?: string | null;
@@ -3561,10 +3640,10 @@ export type GetMembersResponses = {
       lastName: string | null;
       language: 'en' | 'nl';
       modifiedAt: string | null;
-      lastSeenAt: string | null;
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
+      lastSeenAt: string | null;
       membership: MembershipBase;
     }>;
     total: number;

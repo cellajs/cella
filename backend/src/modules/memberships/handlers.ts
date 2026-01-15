@@ -6,6 +6,7 @@ import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
+import { lastSeenTable } from '#/db/schema/last-seen';
 import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
@@ -620,7 +621,7 @@ const membershipRouteHandlers = app
         name: usersTable.name,
         email: usersTable.email,
         createdAt: usersTable.createdAt,
-        lastSeenAt: usersTable.lastSeenAt,
+        lastSeenAt: sql`(SELECT ${lastSeenTable.lastSeenAt} FROM ${lastSeenTable} WHERE ${lastSeenTable.userId} = ${usersTable.id})`,
         role: membershipsTable.role,
       },
       sort,

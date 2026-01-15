@@ -1,56 +1,62 @@
 [
   {
     "name": "me",
-    "description": "Endpoints related to the *current user*, meaning the user associated with the active session making the request.\n      These routes are distinct from general `users` endpoints: while `users` may operate on any user in the system, `me` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.",
+    "description": "Endpoints related to the *current user*, meaning the user associated with the active session making\n        the request. These routes are distinct from general `users` endpoints: while `users` may operate on\n        any user in the system, `me` endpoints are scoped exclusively to the *current user* and follow a\n        different authorization flow.",
     "count": 10
   },
   {
     "name": "users",
-    "description": "Endpoints for managing *users* at the system level.\n      Unlike context entities (such as `organizations`), a `user` is a \"global\" entity and not scoped to a specific context.\n      These endpoints are intended for administrative operations on any user in the system.",
+    "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as\n        `organizations`), a `user` is a \"global\" entity and not scoped to a specific context. These endpoints\n        are intended for administrative operations on any user in the system.",
     "count": 4
   },
   {
     "name": "memberships",
-    "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a `user` and a contextual `entity` (e.g., an `organization`).  \n      Each membership includes role information and status flags such as `archived` or `muted`.  \n      Memberships can also reference parent entities, enabling hierarchical context.",
+    "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a\n        `user` and a contextual `entity` (e.g., an `organization`). Each membership includes role information\n        and status flags such as `archived` or `muted`. Memberships can also reference parent entities,\n        enabling hierarchical context.",
     "count": 6
   },
   {
     "name": "organizations",
-    "description": "Endpoints for managing `organizations`, which are core context entities.  \n      Organizations are the highest ancestor in the parent hierarchy.  \n      They define access boundaries and are often the minimal primary scope for permission and resource management.",
+    "description": "Endpoints for managing `organizations`, which are core context entities. Organizations are\n        the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal\n        primary scope for permission and resource management.",
     "count": 5
   },
   {
     "name": "requests",
-    "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.",
+    "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,\n        and waitlist entries.",
     "count": 3
   },
   {
     "name": "entities",
-    "description": "Endpoints that operate across multiple *entity types*, such as `users` and `organizations`.\n      *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.\n      These endpoints offer shared logic across modules, including slug validation and entity visibility.",
+    "description": "Endpoints that operate across multiple *entity types*, such as `users` and `organizations`.\n        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child\n        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation\n        and entity visibility.",
     "count": 1
   },
   {
     "name": "system",
-    "description": "*System level* endpoints for administrative actions and platform wide functionality.\n      These endpoints support operations such as user invitations, file uploads, and webhook handling.",
+    "description": "*System level* endpoints for administrative actions and platform wide functionality. These endpoints\n        support operations such as user invitations, file uploads, and webhook handling.",
     "count": 4
   },
   {
     "name": "auth",
-    "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  \n      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.",
+    "description": "*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth\n        (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in, password\n        recovery, email verification, account linking, and impersonation for system admins.",
     "count": 26
   },
   {
     "name": "attachments",
-    "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.\n      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.",
+    "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to\n        entities such as organizations or users. Files are uploaded directly by the client; the API handles\n        metadata registration, linking, access, and preview utilities.",
     "count": 5
   },
   {
+    "name": "pages",
+    "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline\n        capabilities. Pages can be organized hierarchically and are used in /docs.",
+    "count": 6
+  },
+  {
     "name": "metrics",
-    "description": "Endpoints for retrieving system level statistics and basic observability data.\n      Includes internal metrics as well as simple, high level counts for entities such as `users` and `organizations`.",
+    "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal\n        metrics as well as simple, high level counts for entities such as `users` and `organizations`.",
     "count": 2
   },
   {
-    "name": "pages",
-    "count": 6
+    "name": "activities",
+    "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery.",
+    "count": 1
   }
 ]

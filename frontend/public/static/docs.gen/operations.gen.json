@@ -1,5 +1,27 @@
 [
   {
+    "id": "getActivities",
+    "hash": "tag/activities/GET/activities",
+    "method": "get",
+    "path": "/activities",
+    "tags": [
+      "activities"
+    ],
+    "summary": "Get list of activities",
+    "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [
+        "isAuthenticated",
+        "hasSystemAccess"
+      ],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "checkEmail",
     "hash": "tag/auth/POST/auth/check-email",
     "method": "post",

@@ -9,6 +9,10 @@
         "schema": {
           "type": "object",
           "properties": {
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
             "id": {
               "type": "string",
               "required": true
@@ -29,10 +33,6 @@
                 "string",
                 "null"
               ],
-              "required": true
-            },
-            "createdAt": {
-              "type": "string",
               "required": true
             },
             "modifiedAt": {
@@ -399,6 +399,10 @@
               "items": {
                 "type": "object",
                 "properties": {
+                  "createdAt": {
+                    "type": "string",
+                    "required": true
+                  },
                   "id": {
                     "type": "string",
                     "required": true
@@ -419,10 +423,6 @@
                       "string",
                       "null"
                     ],
-                    "required": true
-                  },
-                  "createdAt": {
-                    "type": "string",
                     "required": true
                   },
                   "modifiedAt": {
@@ -859,6 +859,10 @@
         "schema": {
           "type": "object",
           "properties": {
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
             "id": {
               "type": "string",
               "required": true
@@ -879,10 +883,6 @@
                 "string",
                 "null"
               ],
-              "required": true
-            },
-            "createdAt": {
-              "type": "string",
               "required": true
             },
             "modifiedAt": {
@@ -1242,6 +1242,10 @@
         "schema": {
           "type": "object",
           "properties": {
+            "createdAt": {
+              "type": "string",
+              "required": true
+            },
             "id": {
               "type": "string",
               "required": true
@@ -1262,10 +1266,6 @@
                 "string",
                 "null"
               ],
-              "required": true
-            },
-            "createdAt": {
-              "type": "string",
               "required": true
             },
             "modifiedAt": {
