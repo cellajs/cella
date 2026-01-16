@@ -6,7 +6,7 @@ import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base
  * Users do not have the permissions field (only context entities do).
  */
 export const userBaseSchema = contextEntityBaseSchema
-  .omit({ entityType: true, permissions: true })
+  .omit({ entityType: true })
   .extend({
     email: z.email(),
     entityType: z.literal('user'),

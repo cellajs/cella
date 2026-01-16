@@ -9,19 +9,13 @@
         "schema": {
           "type": "object",
           "properties": {
-            "success": {
-              "type": "boolean",
-              "required": true
-            },
+            "success": { "type": "boolean", "required": true },
             "rejectedItems": {
               "type": "array",
               "required": true,
               "itemType": "string"
             },
-            "invitesSentCount": {
-              "type": "number",
-              "required": true
-            }
+            "invitesSentCount": { "type": "number", "required": true }
           },
           "extendsRef": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
@@ -87,9 +81,7 @@
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           }
         }
       },
@@ -109,10 +101,7 @@
           "role": {
             "type": "string",
             "required": true,
-            "enum": [
-              "member",
-              "admin"
-            ]
+            "enum": ["member", "admin"]
           }
         },
         "required": true,
@@ -132,10 +121,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "success": {
-              "type": "boolean",
-              "required": true
-            },
+            "success": { "type": "boolean", "required": true },
             "rejectedItems": {
               "type": "array",
               "required": true,
@@ -206,9 +192,7 @@
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           }
         }
       },
@@ -240,73 +224,38 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "contextType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
-            "userId": {
-              "type": "string",
-              "required": true
-            },
+            "userId": { "type": "string", "required": true },
             "role": {
               "type": "string",
               "required": true,
-              "enum": [
-                "member",
-                "admin"
-              ]
+              "enum": ["member", "admin"]
             },
-            "createdBy": {
-              "type": "string",
-              "required": true
-            },
+            "createdBy": { "type": "string", "required": true },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "archived": {
-              "type": "boolean",
-              "required": true
-            },
-            "muted": {
-              "type": "boolean",
-              "required": true
-            },
+            "archived": { "type": "boolean", "required": true },
+            "muted": { "type": "boolean", "required": true },
             "order": {
               "type": "number",
               "required": true,
               "minimum": -140737488355328,
               "maximum": 140737488355327
             },
-            "organizationId": {
-              "type": "string",
-              "required": true
-            },
-            "uniqueKey": {
-              "type": "string",
-              "required": true
-            }
+            "organizationId": { "type": "string", "required": true },
+            "uniqueKey": { "type": "string", "required": true }
           },
           "ref": "#/components/schemas/Membership",
           "contentType": "application/json"
@@ -366,10 +315,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          },
+          "id": { "type": "string", "required": true },
           "orgIdOrSlug": {
             "type": "string",
             "required": true,
@@ -383,23 +329,11 @@
           "role": {
             "type": "string",
             "required": false,
-            "enum": [
-              "member",
-              "admin"
-            ]
+            "enum": ["member", "admin"]
           },
-          "muted": {
-            "type": "boolean",
-            "required": false
-          },
-          "archived": {
-            "type": "boolean",
-            "required": false
-          },
-          "order": {
-            "type": "number",
-            "required": false
-          }
+          "muted": { "type": "boolean", "required": false },
+          "archived": { "type": "boolean", "required": false },
+          "order": { "type": "number", "required": false }
         },
         "required": false,
         "contentType": "application/json"
@@ -418,164 +352,30 @@
         "schema": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string",
-              "required": true
-            },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
-            "slug": {
-              "type": "string",
-              "required": true
-            },
+            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "bannerUrl": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
-            },
-            "permissions": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "member": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "create": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "read": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "update": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "delete": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "search": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    }
-                  }
-                },
-                "admin": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "create": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "read": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "update": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "delete": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    },
-                    "search": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "0 = denied, 1 = allowed",
-                      "enum": [
-                        0,
-                        1
-                      ]
-                    }
-                  }
-                }
-              }
             }
           },
           "ref": "#/components/schemas/ContextEntityBase",
@@ -621,17 +421,11 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          },
+          "id": { "type": "string", "required": true },
           "acceptOrReject": {
             "type": "string",
             "required": true,
-            "enum": [
-              "accept",
-              "reject"
-            ]
+            "enum": ["accept", "reject"]
           },
           "orgIdOrSlug": {
             "type": "string",
@@ -659,48 +453,25 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
                   "entityType": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "user"
-                    ]
+                    "enum": ["user"]
                   },
-                  "name": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "name": { "type": "string", "required": true },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
-                  "slug": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "slug": { "type": "string", "required": true },
                   "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "bannerUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "email": {
@@ -708,128 +479,75 @@
                     "required": true,
                     "format": "email"
                   },
-                  "mfaRequired": {
-                    "type": "boolean",
-                    "required": true
-                  },
+                  "mfaRequired": { "type": "boolean", "required": true },
                   "firstName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "lastName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "language": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "en",
-                      "nl"
-                    ]
+                    "enum": ["en", "nl"]
                   },
                   "modifiedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "lastStartedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "lastSignInAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "modifiedBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "lastSeenAt": {
                     "required": true,
                     "anyOf": [
-                      {
-                        "type": "string",
-                        "required": false
-                      },
-                      {
-                        "type": "null",
-                        "required": false
-                      }
+                      { "type": "string", "required": false },
+                      { "type": "null", "required": false }
                     ]
                   },
                   "membership": {
                     "type": "object",
                     "required": true,
                     "properties": {
-                      "id": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "id": { "type": "string", "required": true },
                       "contextType": {
                         "type": "string",
                         "required": true,
-                        "enum": [
-                          "organization"
-                        ]
+                        "enum": ["organization"]
                       },
-                      "userId": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "userId": { "type": "string", "required": true },
                       "role": {
                         "type": "string",
                         "required": true,
-                        "enum": [
-                          "member",
-                          "admin"
-                        ]
+                        "enum": ["member", "admin"]
                       },
-                      "archived": {
-                        "type": "boolean",
-                        "required": true
-                      },
-                      "muted": {
-                        "type": "boolean",
-                        "required": true
-                      },
+                      "archived": { "type": "boolean", "required": true },
+                      "muted": { "type": "boolean", "required": true },
                       "order": {
                         "type": "number",
                         "required": true,
                         "minimum": -140737488355328,
                         "maximum": 140737488355327
                       },
-                      "organizationId": {
-                        "type": "string",
-                        "required": true
-                      }
+                      "organizationId": { "type": "string", "required": true }
                     },
                     "ref": "#/components/schemas/MembershipBase"
                   }
                 }
               }
             },
-            "total": {
-              "type": "number",
-              "required": true
-            }
+            "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }
@@ -882,38 +600,19 @@
       },
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false
-          },
+          "q": { "type": "string", "required": false },
           "sort": {
             "type": "string",
             "required": false,
-            "enum": [
-              "id",
-              "name",
-              "email",
-              "role",
-              "createdAt",
-              "lastSeenAt"
-            ]
+            "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt"]
           },
           "order": {
             "type": "string",
             "required": false,
-            "enum": [
-              "asc",
-              "desc"
-            ]
+            "enum": ["asc", "desc"]
           },
-          "offset": {
-            "type": "string",
-            "required": false
-          },
-          "limit": {
-            "type": "string",
-            "required": false
-          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
           "idOrSlug": {
             "type": "string",
             "required": true,
@@ -922,17 +621,12 @@
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           },
           "role": {
             "type": "string",
             "required": false,
-            "enum": [
-              "member",
-              "admin"
-            ]
+            "enum": ["member", "admin"]
           }
         }
       }
@@ -955,52 +649,30 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "id": { "type": "string", "required": true },
                   "email": {
                     "type": "string",
                     "required": true,
                     "format": "email"
                   },
                   "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "role": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true,
-                    "enum": [
-                      "member",
-                      "admin",
-                      null
-                    ]
+                    "enum": ["member", "admin", null]
                   },
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "createdAt": { "type": "string", "required": true },
                   "createdBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   }
                 }
               }
             },
-            "total": {
-              "type": "number",
-              "required": true
-            }
+            "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }
@@ -1053,33 +725,19 @@
       },
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false
-          },
+          "q": { "type": "string", "required": false },
           "sort": {
             "type": "string",
             "required": false,
-            "enum": [
-              "createdAt"
-            ]
+            "enum": ["createdAt"]
           },
           "order": {
             "type": "string",
             "required": false,
-            "enum": [
-              "asc",
-              "desc"
-            ]
+            "enum": ["asc", "desc"]
           },
-          "offset": {
-            "type": "string",
-            "required": false
-          },
-          "limit": {
-            "type": "string",
-            "required": false
-          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
           "idOrSlug": {
             "type": "string",
             "required": true,
@@ -1088,9 +746,7 @@
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           }
         }
       }

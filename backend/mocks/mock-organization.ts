@@ -4,7 +4,6 @@ import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
 import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
 import type { AuthStrategy } from '#/db/schema/sessions';
-import { createDefaultPermissions } from '#/db/utils/entity-permissions-columns';
 import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
@@ -51,7 +50,6 @@ export const mockOrganization = (): InsertOrganizationModel => {
     welcomeText: `Welcome to ${name}!`,
     authStrategies: ['password'] as AuthStrategy[],
     chatSupport: faker.datatype.boolean(),
-    permissions: createDefaultPermissions(),
     createdAt,
     createdBy: null,
     modifiedAt: createdAt,
@@ -94,7 +92,6 @@ export const mockOrganizationResponse = (
       notificationEmail: `notifications@${slug}.example`,
       emailDomains: [] as string[],
       restrictions: defaultRestrictions(),
-      permissions: createDefaultPermissions(),
       color: faker.color.rgb(),
       thumbnailUrl: null,
       logoUrl: faker.image.url(),

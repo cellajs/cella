@@ -2,10 +2,7 @@
   {
     "operationId": "syncPages",
     "responses": [
-      {
-        "status": 200,
-        "description": "Success"
-      },
+      { "status": 200, "description": "Success" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -45,30 +42,12 @@
     "request": {
       "query": {
         "properties": {
-          "table": {
-            "type": "string",
-            "required": true
-          },
-          "offset": {
-            "type": "string",
-            "required": true
-          },
-          "handle": {
-            "type": "string",
-            "required": false
-          },
-          "cursor": {
-            "type": "string",
-            "required": false
-          },
-          "live": {
-            "type": "string",
-            "required": false
-          },
-          "where": {
-            "type": "string",
-            "required": false
-          }
+          "table": { "type": "string", "required": true },
+          "offset": { "type": "string", "required": true },
+          "handle": { "type": "string", "required": false },
+          "cursor": { "type": "string", "required": false },
+          "live": { "type": "string", "required": false },
+          "where": { "type": "string", "required": false }
         }
       }
     }
@@ -85,71 +64,38 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "page"
-              ]
+              "enum": ["page"]
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "keywords": {
-              "type": "string",
-              "required": true
-            },
+            "keywords": { "type": "string", "required": true },
             "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "status": {
               "type": "string",
               "required": true,
-              "enum": [
-                "unpublished",
-                "published",
-                "archived"
-              ]
+              "enum": ["unpublished", "published", "archived"]
             },
             "parentId": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "displayOrder": {
@@ -217,10 +163,7 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "required": false
-          }
+          "name": { "type": "string", "required": false }
         },
         "required": true,
         "contentType": "application/json"
@@ -245,71 +188,38 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
                   "entityType": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "page"
-                    ]
+                    "enum": ["page"]
                   },
-                  "name": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "name": { "type": "string", "required": true },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "modifiedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "keywords": { "type": "string", "required": true },
                   "createdBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "modifiedBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "status": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "unpublished",
-                      "published",
-                      "archived"
-                    ]
+                    "enum": ["unpublished", "published", "archived"]
                   },
                   "parentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "displayOrder": {
@@ -322,10 +232,7 @@
                 "ref": "#/components/schemas/Page"
               }
             },
-            "total": {
-              "type": "number",
-              "required": true
-            }
+            "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }
@@ -369,35 +276,19 @@
     "request": {
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false
-          },
+          "q": { "type": "string", "required": false },
           "sort": {
             "type": "string",
             "required": false,
-            "enum": [
-              "name",
-              "status",
-              "createdAt"
-            ]
+            "enum": ["name", "status", "createdAt"]
           },
           "order": {
             "type": "string",
             "required": false,
-            "enum": [
-              "asc",
-              "desc"
-            ]
+            "enum": ["asc", "desc"]
           },
-          "offset": {
-            "type": "string",
-            "required": false
-          },
-          "limit": {
-            "type": "string",
-            "required": false
-          }
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false }
         }
       }
     }
@@ -405,10 +296,7 @@
   {
     "operationId": "deletePages",
     "responses": [
-      {
-        "status": 204,
-        "description": "Page(s) deleted"
-      },
+      { "status": 204, "description": "Page(s) deleted" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -474,71 +362,38 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "page"
-              ]
+              "enum": ["page"]
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "keywords": {
-              "type": "string",
-              "required": true
-            },
+            "keywords": { "type": "string", "required": true },
             "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "status": {
               "type": "string",
               "required": true,
-              "enum": [
-                "unpublished",
-                "published",
-                "archived"
-              ]
+              "enum": ["unpublished", "published", "archived"]
             },
             "parentId": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "displayOrder": {
@@ -605,10 +460,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          }
+          "id": { "type": "string", "required": true }
         }
       }
     }
@@ -625,71 +477,38 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "page"
-              ]
+              "enum": ["page"]
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "keywords": {
-              "type": "string",
-              "required": true
-            },
+            "keywords": { "type": "string", "required": true },
             "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "status": {
               "type": "string",
               "required": true,
-              "enum": [
-                "unpublished",
-                "published",
-                "archived"
-              ]
+              "enum": ["unpublished", "published", "archived"]
             },
             "parentId": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "displayOrder": {
@@ -756,30 +575,18 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          }
+          "id": { "type": "string", "required": true }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "required": false
-          },
+          "name": { "type": "string", "required": false },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": false
           },
-          "keywords": {
-            "type": "string",
-            "required": false
-          },
+          "keywords": { "type": "string", "required": false },
           "displayOrder": {
             "type": "number",
             "required": false,
@@ -789,17 +596,10 @@
           "status": {
             "type": "string",
             "required": false,
-            "enum": [
-              "unpublished",
-              "published",
-              "archived"
-            ]
+            "enum": ["unpublished", "published", "archived"]
           },
           "parentId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": false
           }
         },

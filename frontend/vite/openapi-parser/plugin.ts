@@ -13,6 +13,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { DefinePlugin } from '@hey-api/openapi-ts';
 import { definePluginConfig } from '@hey-api/openapi-ts';
+import { formatJson } from './format-json';
 import { parseOpenApiSpec } from './parse-spec';
 import type { OpenApiSpec } from './types';
 
@@ -46,15 +47,15 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   // Generate per-tag detail JSON files (pretty-printed for readability)
   for (const [tagName, tagOperations] of parsed.tagDetails.entries()) {
     const tagJsonPath = resolve(publicDetailsDir, `${tagName}.gen.json`);
-    writeFileSync(tagJsonPath, JSON.stringify(tagOperations, null, 2), 'utf-8');
+    writeFileSync(tagJsonPath, formatJson(tagOperations), 'utf-8');
   }
 
-  // Write JSON files to public/static/docs.gen for runtime fetching (pretty-printed, reduces bundle size)
-  writeFileSync(resolve(publicDocsDir, 'operations.gen.json'), JSON.stringify(parsed.operations, null, 2), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'tags.gen.json'), JSON.stringify(parsed.tags, null, 2), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'info.gen.json'), JSON.stringify(parsed.info, null, 2), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'schemas.gen.json'), JSON.stringify(parsed.schemas, null, 2), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'schema-tags.gen.json'), JSON.stringify(parsed.schemaTags, null, 2), 'utf-8');
+  // Write JSON files to public/static/docs.gen for runtime fetching (reduces bundle size)
+  writeFileSync(resolve(publicDocsDir, 'operations.gen.json'), formatJson(parsed.operations), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'tags.gen.json'), formatJson(parsed.tags), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'info.gen.json'), formatJson(parsed.info), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'schemas.gen.json'), formatJson(parsed.schemas), 'utf-8');
+  writeFileSync(resolve(publicDocsDir, 'schema-tags.gen.json'), formatJson(parsed.schemaTags), 'utf-8');
 };
 
 /**

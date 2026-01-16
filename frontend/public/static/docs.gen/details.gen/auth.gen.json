@@ -2,10 +2,7 @@
   {
     "operationId": "checkEmail",
     "responses": [
-      {
-        "status": 204,
-        "description": "Email exists"
-      },
+      { "status": 204, "description": "Email exists" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -60,10 +57,7 @@
   {
     "operationId": "invokeToken",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect with token session"
-      },
+      { "status": 302, "description": "Redirect with token session" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -106,18 +100,9 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": [
-              "email-verification",
-              "oauth-verification",
-              "password-reset",
-              "invitation",
-              "confirm-mfa"
-            ]
+            "enum": ["email-verification", "oauth-verification", "password-reset", "invitation", "confirm-mfa"]
           },
-          "token": {
-            "type": "string",
-            "required": true
-          }
+          "token": { "type": "string", "required": true }
         }
       }
     }
@@ -137,14 +122,8 @@
               "required": true,
               "format": "email"
             },
-            "userId": {
-              "type": "string",
-              "required": false
-            },
-            "inactiveMembershipId": {
-              "type": "string",
-              "required": false
-            }
+            "userId": { "type": "string", "required": false },
+            "inactiveMembershipId": { "type": "string", "required": false }
           },
           "contentType": "application/json"
         }
@@ -191,18 +170,9 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": [
-              "email-verification",
-              "oauth-verification",
-              "password-reset",
-              "invitation",
-              "confirm-mfa"
-            ]
+            "enum": ["email-verification", "oauth-verification", "password-reset", "invitation", "confirm-mfa"]
           },
-          "id": {
-            "type": "string",
-            "required": true
-          }
+          "id": { "type": "string", "required": true }
         }
       }
     }
@@ -210,10 +180,7 @@
   {
     "operationId": "startImpersonation",
     "responses": [
-      {
-        "status": 204,
-        "description": "Impersonating"
-      },
+      { "status": 204, "description": "Impersonating" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -253,10 +220,7 @@
     "request": {
       "query": {
         "properties": {
-          "targetUserId": {
-            "type": "string",
-            "required": true
-          }
+          "targetUserId": { "type": "string", "required": true }
         }
       }
     }
@@ -264,10 +228,7 @@
   {
     "operationId": "stopImpersonation",
     "responses": [
-      {
-        "status": 204,
-        "description": "Stopped impersonating"
-      },
+      { "status": 204, "description": "Stopped impersonating" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -308,10 +269,7 @@
   {
     "operationId": "resendInvitationWithToken",
     "responses": [
-      {
-        "status": 204,
-        "description": "Invitation email sent"
-      },
+      { "status": 204, "description": "Invitation email sent" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -359,10 +317,7 @@
                 "required": true,
                 "format": "email"
               },
-              "tokenId": {
-                "type": "string",
-                "required": false
-              }
+              "tokenId": { "type": "string", "required": false }
             }
           },
           {
@@ -373,10 +328,7 @@
                 "required": false,
                 "format": "email"
               },
-              "tokenId": {
-                "type": "string",
-                "required": true
-              }
+              "tokenId": { "type": "string", "required": true }
             }
           }
         ],
@@ -388,10 +340,7 @@
   {
     "operationId": "signOut",
     "responses": [
-      {
-        "status": 204,
-        "description": "User signed out"
-      },
+      { "status": 204, "description": "User signed out" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -439,14 +388,8 @@
         "schema": {
           "type": "object",
           "properties": {
-            "totpUri": {
-              "type": "string",
-              "required": true
-            },
-            "manualKey": {
-              "type": "string",
-              "required": true
-            }
+            "totpUri": { "type": "string", "required": true },
+            "manualKey": { "type": "string", "required": true }
           },
           "contentType": "application/json"
         }
@@ -491,10 +434,7 @@
   {
     "operationId": "createTotp",
     "responses": [
-      {
-        "status": 201,
-        "description": "TOTP created"
-      },
+      { "status": 201, "description": "TOTP created" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -535,10 +475,7 @@
       "body": {
         "type": "object",
         "properties": {
-          "code": {
-            "type": "string",
-            "required": true
-          }
+          "code": { "type": "string", "required": true }
         },
         "required": true,
         "contentType": "application/json"
@@ -548,10 +485,7 @@
   {
     "operationId": "deleteTotp",
     "responses": [
-      {
-        "status": 204,
-        "description": "TOTP deleted"
-      },
+      { "status": 204, "description": "TOTP deleted" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -592,10 +526,7 @@
   {
     "operationId": "signInWithTotp",
     "responses": [
-      {
-        "status": 204,
-        "description": "TOTP verified"
-      },
+      { "status": 204, "description": "TOTP verified" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -636,10 +567,7 @@
       "body": {
         "type": "object",
         "properties": {
-          "code": {
-            "type": "string",
-            "required": true
-          }
+          "code": { "type": "string", "required": true }
         },
         "required": true,
         "contentType": "application/json"
@@ -649,14 +577,8 @@
   {
     "operationId": "signUp",
     "responses": [
-      {
-        "status": 201,
-        "description": "User signed up"
-      },
-      {
-        "status": 302,
-        "description": "Redirect to frontend"
-      },
+      { "status": 201, "description": "User signed up" },
+      { "status": 302, "description": "Redirect to frontend" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -724,10 +646,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "membershipInvite": {
-              "type": "boolean",
-              "required": true
-            }
+            "membershipInvite": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
         }
@@ -771,10 +690,7 @@
     "request": {
       "path": {
         "properties": {
-          "tokenId": {
-            "type": "string",
-            "required": true
-          }
+          "tokenId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -800,10 +716,7 @@
   {
     "operationId": "requestPassword",
     "responses": [
-      {
-        "status": 204,
-        "description": "Password reset email sent"
-      },
+      { "status": 204, "description": "Password reset email sent" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -865,10 +778,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "mfa": {
-              "type": "boolean",
-              "required": true
-            }
+            "mfa": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
         }
@@ -912,10 +822,7 @@
     "request": {
       "path": {
         "properties": {
-          "tokenId": {
-            "type": "string",
-            "required": true
-          }
+          "tokenId": { "type": "string", "required": true }
         }
       },
       "body": {
@@ -943,14 +850,8 @@
         "schema": {
           "type": "object",
           "properties": {
-            "emailVerified": {
-              "type": "boolean",
-              "required": true
-            },
-            "mfa": {
-              "type": "boolean",
-              "required": false
-            }
+            "emailVerified": { "type": "boolean", "required": true },
+            "mfa": { "type": "boolean", "required": false }
           },
           "contentType": "application/json"
         }
@@ -1022,51 +923,27 @@
         "schema": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string",
-              "required": true
-            },
-            "userId": {
-              "type": "string",
-              "required": true
-            },
+            "id": { "type": "string", "required": true },
+            "userId": { "type": "string", "required": true },
             "deviceName": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "deviceType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "desktop",
-                "mobile"
-              ]
+              "enum": ["desktop", "mobile"]
             },
             "deviceOs": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "browser": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "nameOnDevice": {
-              "type": "string",
-              "required": true
-            },
-            "createdAt": {
-              "type": "string",
-              "required": true
-            }
+            "nameOnDevice": { "type": "string", "required": true },
+            "createdAt": { "type": "string", "required": true }
           },
           "contentType": "application/json"
         }
@@ -1111,18 +988,9 @@
       "body": {
         "type": "object",
         "properties": {
-          "attestationObject": {
-            "type": "string",
-            "required": true
-          },
-          "clientDataJSON": {
-            "type": "string",
-            "required": true
-          },
-          "nameOnDevice": {
-            "type": "string",
-            "required": true
-          }
+          "attestationObject": { "type": "string", "required": true },
+          "clientDataJSON": { "type": "string", "required": true },
+          "nameOnDevice": { "type": "string", "required": true }
         },
         "required": true,
         "contentType": "application/json"
@@ -1132,10 +1000,7 @@
   {
     "operationId": "deletePasskey",
     "responses": [
-      {
-        "status": 204,
-        "description": "Passkey deleted"
-      },
+      { "status": 204, "description": "Passkey deleted" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1175,10 +1040,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          }
+          "id": { "type": "string", "required": true }
         }
       }
     }
@@ -1193,10 +1055,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "challengeBase64": {
-              "type": "string",
-              "required": true
-            },
+            "challengeBase64": { "type": "string", "required": true },
             "credentialIds": {
               "type": "array",
               "required": true,
@@ -1249,16 +1108,9 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": [
-              "authentication",
-              "mfa",
-              "registration"
-            ]
+            "enum": ["authentication", "mfa", "registration"]
           },
-          "email": {
-            "type": "string",
-            "required": false
-          }
+          "email": { "type": "string", "required": false }
         },
         "required": true,
         "contentType": "application/json"
@@ -1268,10 +1120,7 @@
   {
     "operationId": "signInWithPasskey",
     "responses": [
-      {
-        "status": 204,
-        "description": "Passkey verified"
-      },
+      { "status": 204, "description": "Passkey verified" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1312,34 +1161,16 @@
       "body": {
         "type": "object",
         "properties": {
-          "credentialId": {
-            "type": "string",
-            "required": true
-          },
-          "clientDataJSON": {
-            "type": "string",
-            "required": true
-          },
-          "authenticatorObject": {
-            "type": "string",
-            "required": true
-          },
-          "signature": {
-            "type": "string",
-            "required": true
-          },
+          "credentialId": { "type": "string", "required": true },
+          "clientDataJSON": { "type": "string", "required": true },
+          "authenticatorObject": { "type": "string", "required": true },
+          "signature": { "type": "string", "required": true },
           "type": {
             "type": "string",
             "required": true,
-            "enum": [
-              "authentication",
-              "mfa"
-            ]
+            "enum": ["authentication", "mfa"]
           },
-          "email": {
-            "type": "string",
-            "required": false
-          }
+          "email": { "type": "string", "required": false }
         },
         "required": true,
         "contentType": "application/json"
@@ -1349,10 +1180,7 @@
   {
     "operationId": "github",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to GitHub"
-      },
+      { "status": 302, "description": "Redirect to GitHub" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1395,17 +1223,9 @@
           "type": {
             "type": "string",
             "required": false,
-            "enum": [
-              "auth",
-              "connect",
-              "invite",
-              "verify"
-            ]
+            "enum": ["auth", "connect", "invite", "verify"]
           },
-          "redirectAfter": {
-            "type": "string",
-            "required": false
-          }
+          "redirectAfter": { "type": "string", "required": false }
         }
       }
     }
@@ -1413,10 +1233,7 @@
   {
     "operationId": "google",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to Google"
-      },
+      { "status": 302, "description": "Redirect to Google" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1459,17 +1276,9 @@
           "type": {
             "type": "string",
             "required": false,
-            "enum": [
-              "auth",
-              "connect",
-              "invite",
-              "verify"
-            ]
+            "enum": ["auth", "connect", "invite", "verify"]
           },
-          "redirectAfter": {
-            "type": "string",
-            "required": false
-          }
+          "redirectAfter": { "type": "string", "required": false }
         }
       }
     }
@@ -1477,10 +1286,7 @@
   {
     "operationId": "microsoft",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to Microsoft"
-      },
+      { "status": 302, "description": "Redirect to Microsoft" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1523,17 +1329,9 @@
           "type": {
             "type": "string",
             "required": false,
-            "enum": [
-              "auth",
-              "connect",
-              "invite",
-              "verify"
-            ]
+            "enum": ["auth", "connect", "invite", "verify"]
           },
-          "redirectAfter": {
-            "type": "string",
-            "required": false
-          }
+          "redirectAfter": { "type": "string", "required": false }
         }
       }
     }
@@ -1541,10 +1339,7 @@
   {
     "operationId": "githubCallback",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to frontend"
-      },
+      { "status": 302, "description": "Redirect to frontend" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1584,26 +1379,11 @@
     "request": {
       "query": {
         "properties": {
-          "code": {
-            "type": "string",
-            "required": true
-          },
-          "state": {
-            "type": "string",
-            "required": true
-          },
-          "error": {
-            "type": "string",
-            "required": false
-          },
-          "error_description": {
-            "type": "string",
-            "required": false
-          },
-          "error_uri": {
-            "type": "string",
-            "required": false
-          }
+          "code": { "type": "string", "required": true },
+          "state": { "type": "string", "required": true },
+          "error": { "type": "string", "required": false },
+          "error_description": { "type": "string", "required": false },
+          "error_uri": { "type": "string", "required": false }
         }
       }
     }
@@ -1611,10 +1391,7 @@
   {
     "operationId": "googleCallback",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to frontend"
-      },
+      { "status": 302, "description": "Redirect to frontend" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1654,14 +1431,8 @@
     "request": {
       "query": {
         "properties": {
-          "code": {
-            "type": "string",
-            "required": true
-          },
-          "state": {
-            "type": "string",
-            "required": true
-          }
+          "code": { "type": "string", "required": true },
+          "state": { "type": "string", "required": true }
         }
       }
     }
@@ -1669,10 +1440,7 @@
   {
     "operationId": "microsoftCallback",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to frontend"
-      },
+      { "status": 302, "description": "Redirect to frontend" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1712,14 +1480,8 @@
     "request": {
       "query": {
         "properties": {
-          "code": {
-            "type": "string",
-            "required": true
-          },
-          "state": {
-            "type": "string",
-            "required": true
-          }
+          "code": { "type": "string", "required": true },
+          "state": { "type": "string", "required": true }
         }
       }
     }

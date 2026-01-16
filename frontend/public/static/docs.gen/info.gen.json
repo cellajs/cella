@@ -11,15 +11,9 @@
       "description": "Authorization middleware applied to the endpoint",
       "required": true,
       "values": {
-        "isPublicAccess": {
-          "description": "No authentication required"
-        },
-        "hasSystemAccess": {
-          "description": "Requires system admin + IP whitelist"
-        },
-        "isAuthenticated": {
-          "description": "Requires valid session"
-        }
+        "isPublicAccess": { "description": "No authentication required" },
+        "hasSystemAccess": { "description": "Requires system admin + IP whitelist" },
+        "isAuthenticated": { "description": "Requires valid session" }
       }
     },
     {
@@ -29,27 +23,13 @@
       "description": "Rate limiting rules applied to the endpoint",
       "required": false,
       "values": {
-        "spamLimiter": {
-          "description": "Max 10 requests/hour per IP for email-sending endpoints"
-        },
-        "emailEnumLimiter": {
-          "description": "Blocks IP for 30 min after 10 consecutive failures"
-        },
-        "passwordLimiter": {
-          "description": "Blocks email/IP for 30 min after 10 consecutive failures"
-        },
-        "presignedUrlLimiter": {
-          "description": "Max 2000 requests/hour per user/IP for presigned URLs"
-        },
-        "totpVerificationLimiter": {
-          "description": "Blocks for 30 min after 5 failed TOTP attempts"
-        },
-        "passkeyChallengeLimiter": {
-          "description": "Max 5 passkey challenges/hour per IP"
-        },
-        "tokenLimiter": {
-          "description": "Blocks IP for 30 min after 10 consecutive token failures"
-        }
+        "spamLimiter": { "description": "Max 10 requests/hour per IP for email-sending endpoints" },
+        "emailEnumLimiter": { "description": "Blocks IP for 30 min after 10 consecutive failures" },
+        "passwordLimiter": { "description": "Blocks email/IP for 30 min after 10 consecutive failures" },
+        "presignedUrlLimiter": { "description": "Max 2000 requests/hour per user/IP for presigned URLs" },
+        "totpVerificationLimiter": { "description": "Blocks for 30 min after 5 failed TOTP attempts" },
+        "passkeyChallengeLimiter": { "description": "Max 5 passkey challenges/hour per IP" },
+        "tokenLimiter": { "description": "Blocks IP for 30 min after 10 consecutive token failures" }
       }
     }
   ]

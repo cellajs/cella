@@ -13,14 +13,8 @@
             "type": "object",
             "required": true,
             "properties": {
-              "date": {
-                "type": "string",
-                "required": true
-              },
-              "count": {
-                "type": "number",
-                "required": true
-              }
+              "date": { "type": "string", "required": true },
+              "count": { "type": "number", "required": true }
             }
           },
           "contentType": "application/json"
@@ -73,22 +67,10 @@
         "schema": {
           "type": "object",
           "properties": {
-            "user": {
-              "type": "number",
-              "required": true
-            },
-            "organization": {
-              "type": "number",
-              "required": true
-            },
-            "attachment": {
-              "type": "number",
-              "required": true
-            },
-            "page": {
-              "type": "number",
-              "required": true
-            }
+            "user": { "type": "number", "required": true },
+            "organization": { "type": "number", "required": true },
+            "attachment": { "type": "number", "required": true },
+            "page": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }

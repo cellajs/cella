@@ -30,52 +30,6 @@ export type ContextEntityBase = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  permissions: {
-    member: {
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      create: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      read: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      update: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      delete: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      search: 0 | 1;
-    };
-    admin: {
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      create: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      read: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      update: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      delete: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      search: 0 | 1;
-    };
-  };
 };
 
 export type MembershipBase = {
@@ -286,52 +240,6 @@ export type Organization = {
   welcomeText: string | null;
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
-  permissions: {
-    member: {
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      create: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      read: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      update: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      delete: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      search: 0 | 1;
-    };
-    admin: {
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      create: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      read: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      update: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      delete: 0 | 1;
-      /**
-       * 0 = denied, 1 = allowed
-       */
-      search: 0 | 1;
-    };
-  };
   membership: MembershipBase | null;
   counts: {
     membership: {

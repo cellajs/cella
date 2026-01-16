@@ -1,6 +1,6 @@
 import type { UserConfig } from '@hey-api/openapi-ts';
 import { defineConfig } from '@hey-api/openapi-ts';
-import { defineConfig as openapiParserPlugin } from './vite/openapi-parser';
+import { defineConfig as openapiParserPlugin } from './vite/openapi-parser/index';
 import { defineConfig as tsdocPlugin } from './vite/tsdoc-plugin';
 
 /**

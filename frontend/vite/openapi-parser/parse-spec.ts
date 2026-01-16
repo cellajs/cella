@@ -70,6 +70,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       for (const [method, operation] of Object.entries(pathItem as Record<string, unknown>)) {
         if (!validMethods.has(method)) continue;
 
+        // Type for OpenAPI operation with dynamic x-extensions
         const op = operation as {
           operationId?: string;
           description?: string;
@@ -80,9 +81,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           parameters?: OpenApiParameter[];
           requestBody?: OpenApiRequestBody;
           responses?: Record<string, { description?: string; $ref?: string }>;
-          'x-guard'?: string[];
-          'x-rate-limiter'?: string[];
-        };
+        } & Record<string, unknown>;
 
         if (!op?.operationId) continue;
 
@@ -194,8 +193,8 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         // Extract extensions dynamically based on extensionDefs
         const extensions: Record<string, string[]> = {};
         for (const ext of extensionDefs) {
-          const value = op[ext.key as keyof typeof op] as string[] | undefined;
-          if (value && Array.isArray(value)) {
+          const value = op[ext.key];
+          if (Array.isArray(value)) {
             extensions[ext.id] = value;
           }
         }

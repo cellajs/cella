@@ -9,38 +9,19 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "message": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "email": {
-              "type": "string",
-              "required": true
-            },
+            "email": { "type": "string", "required": true },
             "type": {
               "type": "string",
               "required": true,
-              "enum": [
-                "waitlist",
-                "newsletter",
-                "contact"
-              ]
+              "enum": ["waitlist", "newsletter", "contact"]
             },
-            "wasInvited": {
-              "type": "boolean",
-              "required": true
-            }
+            "wasInvited": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
         }
@@ -93,17 +74,10 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": [
-              "waitlist",
-              "newsletter",
-              "contact"
-            ]
+            "enum": ["waitlist", "newsletter", "contact"]
           },
           "message": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": true
           }
         },
@@ -129,45 +103,23 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
                   "message": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
-                  "email": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "email": { "type": "string", "required": true },
                   "type": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "waitlist",
-                      "newsletter",
-                      "contact"
-                    ]
+                    "enum": ["waitlist", "newsletter", "contact"]
                   },
-                  "wasInvited": {
-                    "type": "boolean",
-                    "required": true
-                  }
+                  "wasInvited": { "type": "boolean", "required": true }
                 }
               }
             },
-            "total": {
-              "type": "number",
-              "required": true
-            }
+            "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }
@@ -211,36 +163,19 @@
     "request": {
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false
-          },
+          "q": { "type": "string", "required": false },
           "sort": {
             "type": "string",
             "required": false,
-            "enum": [
-              "id",
-              "email",
-              "type",
-              "createdAt"
-            ]
+            "enum": ["id", "email", "type", "createdAt"]
           },
           "order": {
             "type": "string",
             "required": false,
-            "enum": [
-              "asc",
-              "desc"
-            ]
+            "enum": ["asc", "desc"]
           },
-          "offset": {
-            "type": "string",
-            "required": false
-          },
-          "limit": {
-            "type": "string",
-            "required": false
-          }
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false }
         }
       }
     }
@@ -248,10 +183,7 @@
   {
     "operationId": "deleteRequests",
     "responses": [
-      {
-        "status": 204,
-        "description": "Requests deleted"
-      },
+      { "status": 204, "description": "Requests deleted" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",

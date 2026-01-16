@@ -280,119 +280,6 @@
               "string",
               "null"
             ]
-          },
-          "permissions": {
-            "type": "object",
-            "properties": {
-              "member": {
-                "type": "object",
-                "properties": {
-                  "create": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "read": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "update": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "delete": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "search": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  }
-                },
-                "required": [
-                  "create",
-                  "read",
-                  "update",
-                  "delete",
-                  "search"
-                ]
-              },
-              "admin": {
-                "type": "object",
-                "properties": {
-                  "create": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "read": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "update": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "delete": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "search": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  }
-                },
-                "required": [
-                  "create",
-                  "read",
-                  "update",
-                  "delete",
-                  "search"
-                ]
-              }
-            },
-            "required": [
-              "member",
-              "admin"
-            ]
           }
         },
         "required": [
@@ -404,8 +291,7 @@
           "entityType",
           "slug",
           "thumbnailUrl",
-          "bannerUrl",
-          "permissions"
+          "bannerUrl"
         ]
       },
       "MembershipBase": {
@@ -1437,119 +1323,6 @@
           "chatSupport": {
             "type": "boolean"
           },
-          "permissions": {
-            "type": "object",
-            "properties": {
-              "member": {
-                "type": "object",
-                "properties": {
-                  "create": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "read": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "update": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "delete": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "search": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  }
-                },
-                "required": [
-                  "create",
-                  "read",
-                  "update",
-                  "delete",
-                  "search"
-                ]
-              },
-              "admin": {
-                "type": "object",
-                "properties": {
-                  "create": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "read": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "update": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "delete": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  },
-                  "search": {
-                    "type": "integer",
-                    "enum": [
-                      0,
-                      1
-                    ],
-                    "description": "0 = denied, 1 = allowed"
-                  }
-                },
-                "required": [
-                  "create",
-                  "read",
-                  "update",
-                  "delete",
-                  "search"
-                ]
-              }
-            },
-            "required": [
-              "member",
-              "admin"
-            ]
-          },
           "membership": {
             "anyOf": [
               {
@@ -1633,7 +1406,6 @@
           "welcomeText",
           "authStrategies",
           "chatSupport",
-          "permissions",
           "membership",
           "counts"
         ],
@@ -1656,22 +1428,6 @@
             "user": 1000,
             "attachment": 100,
             "page": 0
-          },
-          "permissions": {
-            "member": {
-              "create": 0,
-              "read": 0,
-              "update": 0,
-              "delete": 0,
-              "search": 0
-            },
-            "admin": {
-              "create": 0,
-              "read": 0,
-              "update": 0,
-              "delete": 0,
-              "search": 0
-            }
           },
           "color": "#b9ecfa",
           "thumbnailUrl": null,
@@ -5356,22 +5112,6 @@
                       "attachment": 100,
                       "page": 0
                     },
-                    "permissions": {
-                      "member": {
-                        "create": 0,
-                        "read": 0,
-                        "update": 0,
-                        "delete": 0,
-                        "search": 0
-                      },
-                      "admin": {
-                        "create": 0,
-                        "read": 0,
-                        "update": 0,
-                        "delete": 0,
-                        "search": 0
-                      }
-                    },
                     "color": "#b9ecfa",
                     "thumbnailUrl": null,
                     "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
@@ -5703,22 +5443,6 @@
                     "attachment": 100,
                     "page": 0
                   },
-                  "permissions": {
-                    "member": {
-                      "create": 0,
-                      "read": 0,
-                      "update": 0,
-                      "delete": 0,
-                      "search": 0
-                    },
-                    "admin": {
-                      "create": 0,
-                      "read": 0,
-                      "update": 0,
-                      "delete": 0,
-                      "search": 0
-                    }
-                  },
                   "color": "#b9ecfa",
                   "thumbnailUrl": null,
                   "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
@@ -5958,22 +5682,6 @@
                     "user": 1000,
                     "attachment": 100,
                     "page": 0
-                  },
-                  "permissions": {
-                    "member": {
-                      "create": 0,
-                      "read": 0,
-                      "update": 0,
-                      "delete": 0,
-                      "search": 0
-                    },
-                    "admin": {
-                      "create": 0,
-                      "read": 0,
-                      "update": 0,
-                      "delete": 0,
-                      "search": 0
-                    }
                   },
                   "color": "#b9ecfa",
                   "thumbnailUrl": null,
