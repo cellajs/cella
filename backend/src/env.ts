@@ -16,6 +16,7 @@ dotenv({
 export const env = createEnv({
   server: {
     DEV_MODE: z.enum(['basic', 'core', 'full']).default('core'),
+    DEBUG: z.coerce.boolean().default(false),
     DATABASE_URL: z.url(),
     NODE_ENV: z.union([
       z.literal('development'),

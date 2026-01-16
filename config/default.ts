@@ -78,9 +78,10 @@ export const config = {
                   The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
   /******************************************************************************
-   * ENTITIES & DATA MODEL
+   * ENTITY DATA MODEL
    ******************************************************************************/
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+
   contextEntityTypes: ['organization'] as const, // Entities with memberships
   productEntityTypes: ['attachment', 'page'] as const, // Content entities
 

@@ -24,7 +24,7 @@ const isStorybook = process.env.STORYBOOK === 'true';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
-  logLevel: 'info',
+  logLevel: process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
     host: '0.0.0.0',
     port: Number(frontendUrl.port),

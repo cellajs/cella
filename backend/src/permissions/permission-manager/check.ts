@@ -1,4 +1,5 @@
 import { appConfig, type ContextEntityType, type EntityActionType, type ProductEntityType } from 'config';
+import { env } from '#/env';
 import { getAncestorContexts, getContextRoles, isProductEntity } from './hierarchy';
 import type {
   AccessPolicies,
@@ -219,8 +220,7 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
     membership,
   };
 
-  // Debug output when DEBUG_PERMISSIONS env var is set
-  if (process.env.DEBUG_PERMISSIONS) {
+  if (env.DEBUG) {
     console.debug(formatPermissionDecision(decision));
   }
 
