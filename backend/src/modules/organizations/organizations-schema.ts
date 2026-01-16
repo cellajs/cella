@@ -3,6 +3,7 @@ import { appConfig, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
+import { entityPermissionsSchema } from '#/db/utils/entity-permissions-columns';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   languageSchema,
@@ -39,7 +40,8 @@ export const fullCountsSchema = z.object({ membership: membershipCountSchema, en
 
 export const organizationSchema = z
   .object({
-    ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
+    ...createSelectSchema(organizationsTable).omit({ restrictions: true, permissions: true }).shape,
+    permissions: entityPermissionsSchema,
     languages: z.array(languageSchema).min(1),
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),

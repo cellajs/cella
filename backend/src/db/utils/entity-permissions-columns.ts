@@ -48,14 +48,24 @@ export const entityPermissionsColumns = () => ({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Zod schema for API validation (derived from TypeScript types)
+// Zod schema for API validation
 // ─────────────────────────────────────────────────────────────────────────────
 
+const permissionValueSchema = z
+  .union([z.literal(0), z.literal(1)])
+  .openapi({ type: 'integer', enum: [0, 1], description: '0 = denied, 1 = allowed' });
+
+const actionPermissionsSchema = z.object(
+  Object.fromEntries(appConfig.entityActions.map((action) => [action, permissionValueSchema])) as {
+    [K in (typeof appConfig.entityActions)[number]]: typeof permissionValueSchema;
+  },
+);
+
 /**
- * Entity permissions schema for API validation.
- * Structure matches EntityPermissions type: { [role]: { [action]: 0|1 } }
+ * Zod schema for entity permissions validation.
  */
-export const entityPermissionsSchema = z.custom<EntityPermissions>(
-  (val) => val !== null && typeof val === 'object',
-  { message: 'Invalid permissions object' },
+export const entityPermissionsSchema = z.object(
+  Object.fromEntries(appConfig.roles.entityRoles.map((role) => [role, actionPermissionsSchema])) as {
+    [R in (typeof appConfig.roles.entityRoles)[number]]: typeof actionPermissionsSchema;
+  },
 );

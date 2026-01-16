@@ -1335,30 +1335,6 @@
               "null"
             ]
           },
-          "permissions": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
-                "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
-              }
-            ]
-          },
           "createdBy": {
             "type": [
               "string",
@@ -1461,6 +1437,119 @@
           "chatSupport": {
             "type": "boolean"
           },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "member": {
+                "type": "object",
+                "properties": {
+                  "create": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "read": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "update": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "delete": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "search": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  }
+                },
+                "required": [
+                  "create",
+                  "read",
+                  "update",
+                  "delete",
+                  "search"
+                ]
+              },
+              "admin": {
+                "type": "object",
+                "properties": {
+                  "create": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "read": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "update": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "delete": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  },
+                  "search": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "0 = denied, 1 = allowed"
+                  }
+                },
+                "required": [
+                  "create",
+                  "read",
+                  "update",
+                  "delete",
+                  "search"
+                ]
+              }
+            },
+            "required": [
+              "member",
+              "admin"
+            ]
+          },
           "membership": {
             "anyOf": [
               {
@@ -1529,7 +1618,6 @@
           "slug",
           "thumbnailUrl",
           "bannerUrl",
-          "permissions",
           "createdBy",
           "modifiedBy",
           "shortName",
@@ -1545,6 +1633,7 @@
           "welcomeText",
           "authStrategies",
           "chatSupport",
+          "permissions",
           "membership",
           "counts"
         ],

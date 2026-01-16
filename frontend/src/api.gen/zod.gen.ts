@@ -243,14 +243,6 @@ export const zOrganization = z.object({
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
-  permissions: z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.record(z.string(), z.unknown()),
-    z.array(z.unknown()),
-  ]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
   shortName: z.union([z.string(), z.null()]),
@@ -266,6 +258,22 @@ export const zOrganization = z.object({
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
+  permissions: z.object({
+    member: z.object({
+      create: z.union([z.literal(0), z.literal(1)]),
+      read: z.union([z.literal(0), z.literal(1)]),
+      update: z.union([z.literal(0), z.literal(1)]),
+      delete: z.union([z.literal(0), z.literal(1)]),
+      search: z.union([z.literal(0), z.literal(1)]),
+    }),
+    admin: z.object({
+      create: z.union([z.literal(0), z.literal(1)]),
+      read: z.union([z.literal(0), z.literal(1)]),
+      update: z.union([z.literal(0), z.literal(1)]),
+      delete: z.union([z.literal(0), z.literal(1)]),
+      search: z.union([z.literal(0), z.literal(1)]),
+    }),
+  }),
   membership: z.union([zMembershipBase, z.null()]),
   counts: z.object({
     membership: z.object({

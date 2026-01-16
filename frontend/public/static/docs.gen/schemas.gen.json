@@ -1649,36 +1649,6 @@
           ],
           "required": true
         },
-        "permissions": {
-          "required": true,
-          "anyOf": [
-            {
-              "type": "string",
-              "required": false
-            },
-            {
-              "type": "number",
-              "required": false
-            },
-            {
-              "type": "boolean",
-              "required": false
-            },
-            {
-              "type": "null",
-              "required": false
-            },
-            {
-              "type": "object",
-              "required": false
-            },
-            {
-              "type": "array",
-              "required": false,
-              "itemType": "object"
-            }
-          ]
-        },
         "createdBy": {
           "type": [
             "string",
@@ -1789,6 +1759,114 @@
         "chatSupport": {
           "type": "boolean",
           "required": true
+        },
+        "permissions": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "member": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "create": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "read": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "update": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "delete": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "search": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                }
+              }
+            },
+            "admin": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "create": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "read": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "update": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "delete": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "search": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "0 = denied, 1 = allowed",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                }
+              }
+            }
+          }
         },
         "membership": {
           "required": true,
