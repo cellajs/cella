@@ -14,7 +14,7 @@ function isLocked(version: string) {
 
 /**
  * Compares remote and local dependencies to determine which need updates.
- * @param remoteDeps - Record of dependencies from the remote (boilerplate) package.json
+ * @param remoteDeps - Record of dependencies from the remote (upstream) package.json
  * @param localDeps - Record of dependencies from the local (fork) package.json
  * 
  * @returns Record of dependencies that need to be updated in the local package.json

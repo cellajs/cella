@@ -2,9 +2,9 @@ import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
 import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { Avatar } from '../components/avatar';
-import { EmailContainer } from '../components/container';
+import { EmailLogo } from '../components/email-logo';
+import { Avatar } from '../components/email-avatar';
+import { EmailContainer } from '../components/email-container';
 import { EmailBody } from '../components/email-body';
 import { EmailButton } from '../components/email-button';
 import { EmailHeader } from '../components/email-header';
@@ -47,7 +47,7 @@ export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: S
         <Text style={{ fontSize: '.85rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>{i18n.t('backend:email.invite_expires', { lng })}</Text>
       </EmailBody>
 
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

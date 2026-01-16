@@ -7,7 +7,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import requestRoutes from '#/modules/requests/requests-routes';
@@ -39,7 +39,7 @@ const requestRouteHandlers = app
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);
 
-      if (existingUser) throw new AppError({ status: 400, type: 'request_email_is_user' });
+      if (existingUser) throw new AppError(400, 'request_email_is_user', 'info');
     }
 
     // Check if not duplicate for unique requests
@@ -48,7 +48,7 @@ const requestRouteHandlers = app
         .select()
         .from(requestsTable)
         .where(and(eq(requestsTable.email, normalizedEmail), inArray(requestsTable.type, uniqueRequests)));
-      if (existingRequest?.type === type) throw new AppError({ status: 409, type: 'request_exists' });
+      if (existingRequest?.type === type) throw new AppError(409, 'request_exists', 'info');
     }
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
@@ -146,7 +146,7 @@ const requestRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error');
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));

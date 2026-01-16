@@ -9,7 +9,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { mockEmail, mockUser } from '../../mocks';
+import { mockEmail, mockUser } from '../../mocks/mock-user';
 import { pastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { ErrorResponse, parseResponse } from '../helpers';

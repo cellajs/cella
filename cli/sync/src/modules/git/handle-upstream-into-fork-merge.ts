@@ -9,14 +9,14 @@ import { handleMerge } from '../../utils/git/handle-merge';
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
  * 
- * @param boilerplateConfig - Configuration for the boilerplate repository
+ * @param upstreamConfig - Configuration for the upstream repository
  * @param forkConfig - Configuration for the forked repository
  * @param analyzedFiles - List of pre-analyzed files with merge strategies
  * 
  * @returns A Promise that resolves when the merge process is complete.
  */
-export async function handleBoilerplateIntoForkMerge(
-  boilerplateConfig: RepoConfig,
+export async function handleUpstreamIntoForkMerge(
+  upstreamConfig: RepoConfig,
   forkConfig: RepoConfig,
   analyzedFiles: FileAnalysis[],
 ): Promise<void> {
@@ -27,7 +27,7 @@ export async function handleBoilerplateIntoForkMerge(
   await handleMerge(
     forkConfig.workingDirectory,
     forkConfig.syncBranchRef,
-    boilerplateConfig.branchRef,
+    upstreamConfig.branchRef,
     async function resolveConflicts() {
       // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
       await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);

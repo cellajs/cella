@@ -5,19 +5,19 @@ export * from './git';
 export * from './swizzle';
 
 /**
- * Represents the analysis of a single file when comparing a fork with its boilerplate.
+ * Represents the analysis of a single file when comparing a fork with its upstream.
  */
 export type FileAnalysis = {
   /** The relative path of the file in the repository */
   filePath: string;
 
-  /** The file entry from the boilerplate */
-  boilerplateFile: FileEntry;
+  /** The file entry from the upstream repository */
+  upstreamFile: FileEntry;
 
   /** The file entry from the fork, if it exists */
   forkFile?: FileEntry;
 
-  /** Optional summary of commits comparing the fork and boilerplate */
+  /** Optional summary of commits comparing the fork and upstream */
   commitSummary?: CommitSummary;
 
   /** Status of the file's blob comparison */

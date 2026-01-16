@@ -14,7 +14,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
@@ -58,7 +58,7 @@ const systemRouteHandlers = app
 
     // Normalize + de-dupe
     const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
-    if (normalizedEmails.length === 0) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (normalizedEmails.length === 0) throw new AppError(400, 'no_recipients', 'warn');
 
     const now = new Date();
 
@@ -214,7 +214,7 @@ const systemRouteHandlers = app
         const { allowed } = isPermissionAllowed(memberships, 'read', attachment);
 
         if (!isSystemAdmin && !allowed)
-          throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
+          throw new AppError(403, 'forbidden', 'warn', { entityType: attachment.entityType });
       }
     }
 
@@ -278,8 +278,7 @@ const systemRouteHandlers = app
       );
 
     // Stop if no recipients
-    if (!recipientsRecords.length && !toSelf)
-      throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!recipientsRecords.length && !toSelf) throw new AppError(400, 'no_recipients', 'warn');
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({

@@ -6,7 +6,7 @@ import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
@@ -89,7 +89,7 @@ export const handleCreateUser = async ({ newUser, emailVerified }: HandleCreateU
     return user;
   } catch (error) {
     // If user with this email already exists, return an error
-    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn' });
+    throw new AppError(409, 'email_exists', 'warn');
   }
 };
 

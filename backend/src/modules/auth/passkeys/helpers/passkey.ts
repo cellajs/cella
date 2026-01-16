@@ -22,7 +22,7 @@ import { and, eq } from 'drizzle-orm';
 import { Context } from 'hono';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 
 /**
@@ -106,7 +106,7 @@ export const validatePasskey = async (
   // Retrieve the passkey challenge stored in a secure cookie
   const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
   deleteAuthCookie(ctx, 'passkey-challenge');
-  if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+  if (!challengeFromCookie) throw new AppError(401, 'invalid_credentials', 'warn');
 
   // Fetch passkey record for this user and credential ID
   const [passkeyRecord] = await db
@@ -115,7 +115,7 @@ export const validatePasskey = async (
     .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.credentialId, credentialId)))
     .limit(1);
 
-  if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
+  if (!passkeyRecord) throw new AppError(404, 'passkey_not_found', 'warn');
 
   // Verify signature against public key and challenge
   const isValid = await verifyPassKeyPublic({
@@ -124,7 +124,7 @@ export const validatePasskey = async (
     challengeFromCookie,
   });
 
-  if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+  if (!isValid) throw new AppError(401, 'invalid_token', 'warn');
 };
 
 /**

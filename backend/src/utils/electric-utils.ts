@@ -1,6 +1,6 @@
 import { appConfig, EntityType } from 'config';
 import { env } from '#/env';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 
 /**
  * @see https://github.com/electric-sql/electric/blob/main/packages/typescript-client/src/constants.ts
@@ -82,12 +82,9 @@ export const proxyElectricSync = async (
   } catch (cause) {
     const error = cause instanceof Error ? cause : new Error('Unknown electric error', { cause });
 
-    throw new AppError({
+    throw new AppError(500, 'sync_failed', 'error', {
       name: error.name,
       message: error.message,
-      status: 500,
-      type: 'sync_failed',
-      severity: 'error',
       entityType,
       originalError: error,
     });

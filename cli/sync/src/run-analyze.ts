@@ -13,13 +13,13 @@ import { checkMark } from "./utils/console";
 import { config } from "./config";
 
 /**
- * Executes the complete file analysis workflow for a sync between the boilerplate and fork.
+ * Executes the complete file analysis workflow for a sync between the upstream and fork.
  *
  * This process includes:
  *
  * **1. Fetching file hashes**  
  *    Retrieves the full list of tracked files (via blob SHA hashes) for:
- *    - the boilerplate repository
+ *    - the upstream repository
  *    - the fork's sync branch
  *
  * **2. Running file-by-file analysis**  
@@ -52,20 +52,20 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
   spinner.start();
 
-  // Fetch file hashes from both boilerplate and fork repositories in parallel
-  const [boilerplateFiles, forkFiles] = await Promise.all([
-    getGitFileHashes(config.boilerplate.workingDirectory, config.boilerplate.branchRef),
+  // Fetch file hashes from both upstream and fork repositories in parallel
+  const [upstreamFiles, forkFiles] = await Promise.all([
+    getGitFileHashes(config.upstream.workingDirectory, config.upstream.branchRef),
     getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranchRef),
   ]);
 
   spinner.stop();
   spinner.start("Analyzing file histories...");
 
-  // Analyze files by comparing boilerplate and fork file hashes
+  // Analyze files by comparing upstream and fork file hashes
   const analyzedFiles = await analyzeManyFiles(
-    config.boilerplate,
+    config.upstream,
     config.fork,
-    boilerplateFiles,
+    upstreamFiles,
     forkFiles
   );
 

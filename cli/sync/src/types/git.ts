@@ -33,7 +33,7 @@ export type CommitEntry = {
 
 /**
  * Summarizes the relationship between two Git branches or commits.
- * Typically used to determine how a fork branch compares to an upstream or boilerplate branch.
+ * Typically used to determine how a fork branch compares to an upstream branch.
  */
 export type CommitSummary = {
   /**
@@ -71,19 +71,19 @@ export type CommitSummary = {
 /**
  * Represents the recommended merge strategy for a specific file when syncing branches.
  * Used to determine whether to keep, remove, or manually resolve a file
- * based on differences between a fork and its upstream/boilerplate.
+ * based on differences between a fork and its upstream.
  */
 export type FileMergeStrategy = {
   /**
    * The recommended strategy for handling this file.
    * - `'keep-fork'` - Keep the version from the fork
-   * - `'keep-boilerplate'` - Use the version from the boilerplate
+   * - `'keep-upstream'` - Use the version from upstream
    * - `'remove-from-fork'` - Remove the file from the fork
-   * - `'remove-from-boilerplate'` - Remove the file from the boilerplate
+   * - `'remove-from-upstream'` - Remove the file from upstream
    * - `'manual'` - Requires manual resolution
    * - `'unknown'` - Strategy could not be determined
    */
-  strategy: 'keep-fork' | 'keep-boilerplate' | 'remove-from-fork' | 'remove-from-boilerplate' | 'manual' | 'unknown';
+  strategy: 'keep-fork' | 'keep-upstream' | 'remove-from-fork' | 'remove-from-upstream' | 'manual' | 'unknown';
 
   /** Reason or explanation why this strategy was chosen */
   reason: string;

@@ -55,10 +55,10 @@ export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOp
     message: 'Select the configuration you want to customize:',
     pageSize: 15,
     choices: [
-      new Separator('Boilerplate:'),
-      { name: `Boilerplate location: ${pc.bold(`✓ ${config.boilerplate.location}`)}`, value: 'boilerplateLocation' },
-      { name: `Boilerplate branch: <${pc.bold(config.boilerplate.branch)}>`, value: 'boilerplateBranch' },
-      { name: `Boilerplate remote name: <${pc.bold(config.boilerplate.remoteName)}>`, value: 'boilerplateRemoteName' },
+      new Separator('Upstream:'),
+      { name: `Upstream location: ${pc.bold(`✓ ${config.upstream.location}`)}`, value: 'upstreamLocation' },
+      { name: `Upstream branch: <${pc.bold(config.upstream.branch)}>`, value: 'upstreamBranch' },
+      { name: `Upstream remote name: <${pc.bold(config.upstream.remoteName)}>`, value: 'upstreamRemoteName' },
 
       new Separator('Fork:'),
       { name: `Fork location: ${pc.bold(`✓ ${config.fork.location}`)}`, value: 'forkLocation' },
@@ -76,8 +76,8 @@ export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOp
         { name: `Package.json changes: <${pc.bold(config.behavior.packageJsonMode === 'dryRun' ? 'Dry run (only log)' : 'Apply Changes (write, commit)')}>`, value: 'packageJsonMode' },
       ] : []),
 
-      ...(['boilerplate-fork', 'boilerplate-fork+packages'].includes(config.syncService) ? [
-        new Separator('Boilerplate-Fork+Packages:'),
+      ...(['upstream-fork', 'upstream-fork+packages'].includes(config.syncService) ? [
+        new Separator('Upstream-Fork+Packages:'),
         { name: `Run GIT push: <${pc.bold(config.behavior.skipAllPushes ? 'No' : 'Yes')}>`, value: 'skipAllPushes' },
         { name: `Squash - max preview commits: <${pc.bold(config.behavior.maxGitPreviewsForSquashCommits)}>`, value: 'maxGitPreviewsForSquashCommits' },
       ] : []),
@@ -93,10 +93,10 @@ export async function promptWhichConfigurationToCustomize(): Promise<CustomizeOp
 /**
  * Prompt the user to configure location (local or remote).
  */
-export async function promptConfigureLocation(type: 'boilerplate' | 'fork'): Promise<'local' | 'remote'> {
+export async function promptConfigureLocation(type: 'upstream' | 'fork'): Promise<'local' | 'remote'> {
   const location = await select<string>({
     message: `Select the ${type} location:`,
-    default: type === 'boilerplate' ? config.boilerplate.location : config.fork.location,
+    default: type === 'upstream' ? config.upstream.location : config.fork.location,
     choices: [
       { name: 'Local', value: 'local' },
       { name: 'Remote', value: 'remote', disabled: type === 'fork' && SERVICES_RUNNING_FROM_LOCAL_FORK.includes(config.syncService) },
@@ -125,10 +125,10 @@ export async function promptPackageJsonMode(): Promise<'dryRun' | 'applyChanges'
 /**
  * Prompt the user to configure branch name.
  * 
- * @param type - The repository type of the branch to customize ('boilerplate' or 'fork')
+ * @param type - The repository type of the branch to customize ('upstream' or 'fork')
  * @param branchType - The specific branch type to customize ('branch' or 'syncBranch')
  */
-export async function promptConfigureBranch(type: 'boilerplate' | 'fork', branchType: 'branch' | 'syncBranch'): Promise<string> {
+export async function promptConfigureBranch(type: 'upstream' | 'fork', branchType: 'branch' | 'syncBranch'): Promise<string> {
   const branch = await input({ message: `Enter ${type} ${branchType}:` });
   if (!branch || branch.trim() === '') {
     console.error(pc.red('x Error:'), `${type} ${branchType} name cannot be empty.`);
@@ -140,9 +140,9 @@ export async function promptConfigureBranch(type: 'boilerplate' | 'fork', branch
 /**
  * Prompt the user to configure remote name.
  * 
- * @param type - The repository type of the remote name to customize ('boilerplate' or 'fork')
+ * @param type - The repository type of the remote name to customize ('upstream' or 'fork')
  */
-export async function promptConfigureRemoteName(type: 'boilerplate' | 'fork'): Promise<string> {
+export async function promptConfigureRemoteName(type: 'upstream' | 'fork'): Promise<string> {
   const remoteName = await input({ message: `Enter ${type} remote name:` });
   if (!remoteName || remoteName.trim() === '') {
     console.error(pc.red('x Error:'), `${type} Remote name cannot be empty.`);

@@ -2,7 +2,8 @@ import { appConfig } from 'config';
 import { checkMark, loadingMark } from '#/utils/console';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
-import { mockMany, mockPage } from '../../../mocks';
+import { mockPage } from '../../../mocks/mock-page';
+import { mockMany } from '../../../mocks/mock-common';
 import { defaultAdminUser } from '../fixtures';
 
 const isProduction = appConfig.mode === 'production';

@@ -8,7 +8,7 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -57,19 +57,16 @@ const authTotpsRouteHandlers = app
 
     // Retrieve the encoded totp secret from cookie
     const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
-    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
+    if (!encodedSecret) throw new AppError(400, 'invalid_credentials', 'warn');
 
     // Verify TOTP code
     try {
       const isValid = signInWithTotp(code, encodedSecret);
-      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
+      if (!isValid) throw new AppError(403, 'invalid_token', 'warn');
     } catch (error) {
       if (error instanceof AppError) throw error;
 
-      throw new AppError({
-        status: 500,
-        type: 'invalid_credentials',
-        severity: 'error',
+      throw new AppError(500, 'invalid_credentials', 'error', {
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -111,7 +108,7 @@ const authTotpsRouteHandlers = app
 
     // Verify if strategy allowed
     if (!enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
     // Define strategy and session type for metadata/logging purposes
@@ -125,10 +122,7 @@ const authTotpsRouteHandlers = app
     } catch (error) {
       if (error instanceof AppError) throw error;
 
-      throw new AppError({
-        status: 500,
-        type: 'totp_verification_failed',
-        severity: 'error',
+      throw new AppError(500, 'totp_verification_failed', 'error', {
         meta,
         ...(error instanceof Error ? { originalError: error } : {}),
       });

@@ -2,7 +2,7 @@ import { MinimalRepoConfig } from "./types";
 
 /**
  * Default configuration for the fork repository.
- * The fork repository contains the user's fork of the boilerplate repository.
+ * The fork repository contains the user's fork of the upstream repository.
  */
 export const forkDefaultConfig: MinimalRepoConfig = {
   /**

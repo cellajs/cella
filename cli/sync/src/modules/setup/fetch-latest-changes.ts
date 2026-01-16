@@ -15,7 +15,7 @@ import { checkCleanState } from "./check-clean-state";
  * @returns Promise that resolves when the latest changes are fetched
  * 
  * @example
- * await fetchLatestChanges(boilerplateConfig);
+ * await fetchLatestChanges(upstreamConfig);
  */
 export async function fetchLatestChanges(repoConfig: RepoConfig) {
   // For remote repositories, ensure latest changes are fetched

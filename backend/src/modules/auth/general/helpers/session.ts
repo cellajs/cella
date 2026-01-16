@@ -7,7 +7,7 @@ import { systemRolesTable } from '#/db/schema/system-roles';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { type UserWithActivity, userSelect } from '#/modules/users/helpers/select';
@@ -42,8 +42,7 @@ export const setUserSession = async (
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
-    if (!allowAll && (!ip || !allowList.includes(ip)))
-      throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
+    if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError(403, 'system_access_forbidden', 'warn');
   }
 
   // Get device information
@@ -103,12 +102,12 @@ export const validateSession = async (
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
   // If no result is found throw no session
-  if (!result) throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
+  if (!result) throw new AppError(401, 'no_session', 'warn');
 
   const { session } = result;
 
   // Check if the session has expired and invalidate it if so
-  if (isExpiredDate(session.expiresAt)) throw new AppError({ status: 401, type: 'session_expired', severity: 'warn' });
+  if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
   return result;
 };
@@ -139,7 +138,7 @@ export const getParsedSessionCookie = async (
     return sessionCookieSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
     if (deleteOnError) deleteAuthCookie(ctx, 'session');
-    throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    throw new AppError(401, 'unauthorized', 'warn');
   } finally {
     if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
   }

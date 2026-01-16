@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { xMiddleware } from '#/docs/x-middleware';
 import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 
 /**
  * Middleware to ensure the user has access to an organization-scoped route.
@@ -16,7 +16,7 @@ import { AppError } from '#/lib/errors';
  */
 export const hasOrgAccess = xMiddleware('hasOrgAccess', 'x-guard', async (ctx, next) => {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
-  if (!orgIdOrSlug) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (!orgIdOrSlug) throw new AppError(400, 'invalid_request', 'error');
 
   const memberships = getContextMemberships();
   const userSystemRole = getContextUserSystemRole();
@@ -25,14 +25,13 @@ export const hasOrgAccess = xMiddleware('hasOrgAccess', 'x-guard', async (ctx, n
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
   const [organization] = await db.select().from(organizationsTable).where(idOrSlugFilter);
 
-  if (!organization)
-    throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+  if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
   // Check if user has access to organization (or is a system admin)
   const orgMembership =
     memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
   if (userSystemRole !== 'admin' && !orgMembership) {
-    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
   }
   const orgWithMembership = { ...organization, membership: orgMembership };
 

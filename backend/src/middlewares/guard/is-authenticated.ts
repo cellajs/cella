@@ -5,7 +5,7 @@ import { updateLastSeenAt } from '#/db/helpers/user-activity';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { xMiddleware } from '#/docs/x-middleware';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 

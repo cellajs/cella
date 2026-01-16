@@ -2,7 +2,7 @@ import type { TokenType } from 'config';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 
@@ -15,7 +15,7 @@ import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
  */
 export const hasValidSingleUseToken = (tokenType: TokenType): MiddlewareHandler<Env> =>
   createMiddleware<Env>(async (ctx, next) => {
-    if (ctx.req.method !== 'POST') throw new AppError({ status: 400, type: 'insecure_request', severity: 'error' });
+    if (ctx.req.method !== 'POST') throw new AppError(400, 'insecure_request', 'error');
 
     // Check if single use token exists and invoke it
     const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });

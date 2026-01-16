@@ -65,6 +65,7 @@ pnpm test           # Run all Vitest tests
 - **Components**: PascalCase
 - **Translation keys**: snake_case
 - **React Compiler**: Avoid `useMemo`/`useCallback` in most cases
+- **Import/export** Avoid barrel files unless for utils folders. Dont re-export except for proper barrel files.
 
 ## File Locations
 

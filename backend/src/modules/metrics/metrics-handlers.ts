@@ -4,7 +4,7 @@ import { count } from 'drizzle-orm';
 import { register } from 'prom-client';
 import type { z } from 'zod';
 import { db } from '#/db/db';
-import { entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-table-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';

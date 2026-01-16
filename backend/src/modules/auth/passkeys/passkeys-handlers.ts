@@ -9,7 +9,7 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
@@ -33,7 +33,7 @@ const authPasskeysRouteHandlers = app
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
     deleteAuthCookie(ctx, 'passkey-challenge');
 
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
+    if (!challengeFromCookie) throw new AppError(401, 'invalid_credentials', 'error');
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(
       clientDataJSON,
@@ -139,7 +139,7 @@ const authPasskeysRouteHandlers = app
     const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
     if (type === 'authentication' && !appConfig.enabledAuthStrategies.includes(meta.strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta });
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta });
     }
 
     let user: UserModel | null = null;
@@ -165,17 +165,14 @@ const authPasskeysRouteHandlers = app
     }
 
     // Fail early if user not found
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta });
 
     try {
       await validatePasskey(ctx, { ...passkeyData, userId: user.id });
     } catch (error) {
       if (error instanceof AppError) throw error;
 
-      throw new AppError({
-        status: 500,
-        type: 'passkey_verification_failed',
-        severity: 'error',
+      throw new AppError(500, 'passkey_verification_failed', 'error', {
         meta,
         ...(error instanceof Error ? { originalError: error } : {}),
       });

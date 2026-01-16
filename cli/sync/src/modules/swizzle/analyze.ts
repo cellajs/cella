@@ -51,13 +51,13 @@ export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
  * @returns A boolean indicating if the existing metadata is valid
  */
 function isSwizzleMetadataValid(entry: SwizzleEntry, analyzedFile: FileAnalysis): boolean {
-  // Case: The swizzled commit still matches the boilerplate commit
-  if (entry.boilerplateLastCommitSha === analyzedFile.boilerplateFile?.lastCommitSha) {
+  // Case: The swizzled commit still matches the upstream commit
+  if (entry.upstreamLastCommitSha === analyzedFile.upstreamFile?.lastCommitSha) {
     return true;
   }
 
-  // Case: The swizzled blob still matches the boilerplate blob
-  if (entry.boilerplateBlobSha === analyzedFile.boilerplateFile?.blobSha) {
+  // Case: The swizzled blob still matches the upstream blob
+  if (entry.upstreamBlobSha === analyzedFile.upstreamFile?.blobSha) {
     return true;
   }
 

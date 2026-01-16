@@ -1,14 +1,16 @@
-import { DeepPartial, AppConfig } from "./cli/sync/src/config/types";
+import { DeepPartial, SyncConfig } from "./cli/sync/src/config/types";
 
-export const cellaConfig: DeepPartial<AppConfig> = {
-  boilerplate: {
+export const cellaConfig: DeepPartial<SyncConfig> = {
+  upstream: {
     remoteUrl: 'git@github.com:cellajs/cella.git',
   },
-  swizzle: {
-    removedFiles: [
+  overrides: {
+    // Files and directories to be fully ignored
+    ignored: [
       "info/*",
     ],
-    editedFiles: [
+    // Files customized in fork; prefer fork version during merge conflicts
+    customized: [
       "README.md",
       "package.json",
       "pnpm-lock.yaml",
@@ -25,6 +27,7 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",
+      "frontend/public/static/openapi.json",
       "frontend/public/static/docs.gen/*",
       "frontend/public/static/icons/*",
       "frontend/public/static/images/*",
@@ -56,7 +59,7 @@ export const cellaConfig: DeepPartial<AppConfig> = {
       "backend/src/entity-config.ts",
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
-      "backend/src/lib/docs-config.ts",
+      "backend/src/docs/tags-config.ts",
       "json/text-blocks.json",
       "locales/en/about.json",
       "locales/en/app.json"

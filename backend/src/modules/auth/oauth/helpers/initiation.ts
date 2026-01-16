@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import type { Context } from 'hono';
 import z from 'zod';
 import { Env } from '#/lib/context';
-import { AppError, ConstructedError } from '#/lib/errors';
+import { AppError, type ErrorKey } from '#/lib/error';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
@@ -43,13 +43,11 @@ export const handleOAuthInitiation = async (
     try {
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
-      if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
+      if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
     } catch (err) {
       if (err instanceof AppError) {
-        throw new AppError({
-          ...err,
-          type: err.type as ConstructedError['type'],
-          shouldRedirect: true,
+        throw new AppError(err.status, err.type as ErrorKey, err.severity, {
+          willRedirect: true,
           meta: { ...err.meta, errorPagePath: '/auth/error' },
         });
       }

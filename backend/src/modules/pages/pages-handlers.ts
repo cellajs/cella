@@ -6,7 +6,7 @@ import { PageModel, pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity.ts';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/pages/pages-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { defaultHook } from '#/utils/default-hook';
@@ -28,7 +28,7 @@ const pagesRouteHandlers = app
     const { table, ...query } = ctx.req.valid('query');
 
     // Validate query params
-    if (table !== 'pages') throw new AppError({ status: 400, type: 'sync_table_mismatch', severity: 'error' });
+    if (table !== 'pages') throw new AppError(400, 'sync_table_mismatch', 'error');
 
     return await proxyElectricSync(table, query);
   })
@@ -131,7 +131,7 @@ const pagesRouteHandlers = app
     const { id } = ctx.req.valid('param');
 
     const page = await resolveEntity('page', id);
-    if (!page) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'page' });
+    if (!page) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
     return ctx.json(page, 200);
   })
@@ -166,7 +166,7 @@ const pagesRouteHandlers = app
    */
   .openapi(pagesRoutes.deletePages, async (ctx) => {
     const { ids } = ctx.req.valid('json');
-    if (!ids.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'page' });
+    if (!ids.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'page' });
 
     await db.delete(pagesTable).where(inArray(pagesTable.id, ids));
 

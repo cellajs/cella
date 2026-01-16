@@ -1,21 +1,21 @@
 import { existsSync } from 'node:fs';
 import { glob } from 'node:fs/promises';
 import pc from 'picocolors';
-import type { SwizzleConfig } from './index';
+import type { OverridesConfig } from './index';
 
 /**
- * Validates that files/patterns in swizzle config actually exist in the filesystem.
+ * Validates that files/patterns in overrides config actually exist in the filesystem.
  * Warns about patterns that don't match any files.
  */
-export async function validateSwizzleConfig(
-  swizzle: SwizzleConfig,
+export async function validateOverridesConfig(
+  overrides: OverridesConfig,
   workingDirectory: string
 ): Promise<{ valid: boolean; warnings: string[] }> {
   const warnings: string[] = [];
 
   const allPatterns = [
-    ...swizzle.editedFiles,
-    ...swizzle.removedFiles,
+    ...overrides.customized,
+    ...overrides.ignored,
   ];
 
   for (const pattern of allPatterns) {
@@ -50,7 +50,7 @@ export async function validateSwizzleConfig(
 export function logValidationWarnings(warnings: string[]): void {
   if (warnings.length === 0) return;
 
-  console.warn(pc.yellow('\n⚠️  Swizzle config validation warnings:'));
+  console.warn(pc.yellow('\n⚠️  Overrides config validation warnings:'));
   for (const warning of warnings) {
     console.warn(pc.yellow(`   • ${warning}`));
   }

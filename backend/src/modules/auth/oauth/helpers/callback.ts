@@ -7,7 +7,7 @@ import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-ac
 import type { UserModel } from '#/db/schema/users';
 import { usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
-import { AppError, ConstructedError } from '#/lib/errors';
+import { AppError, type ErrorKey } from '#/lib/error';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
@@ -101,10 +101,8 @@ export const handleOAuthCallback = async (
   } catch (err) {
     if (err instanceof AppError) {
       const errorPagePath = type === 'connect' ? '/account' : '/auth/error';
-      throw new AppError({
-        ...err,
-        type: err.type as ConstructedError['type'],
-        shouldRedirect: true,
+      throw new AppError(err.status, err.type as ErrorKey, err.severity, {
+        willRedirect: true,
         meta: { ...err.meta, errorPagePath },
       });
     }
@@ -145,14 +143,14 @@ const authCallbackFlow = async ({
     .limit(2);
 
   // Multiple users with the same email → conflict
-  if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
+  if (users.length > 1) throw new AppError(409, 'oauth_conflict', 'error');
 
   // Existing user (by email) found -> suggest sign in and connect
-  if (users.length === 1) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'warn' });
+  if (users.length === 1) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // No user found and registration is disabled
   if (!appConfig.has.registrationEnabled) {
-    throw new AppError({ status: 403, type: 'sign_up_restricted' });
+    throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
   // No user match → create a new user and OAuth account
@@ -183,14 +181,14 @@ const connectCallbackFlow = async ({
 
   // Get user from valid session
   const { user } = await validateSession(sessionToken);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
+  if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   const connectUserId = user.id;
 
   if (oauthAccount) {
     // OAuth account is linked to a different user
     if (oauthAccount.userId !== connectUserId) {
-      throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
+      throw new AppError(409, 'oauth_conflict', 'error');
     }
 
     // Already linked + verified → return verified result
@@ -207,7 +205,7 @@ const connectCallbackFlow = async ({
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
+    throw new AppError(409, 'oauth_conflict', 'error');
   }
 
   // Safe to connect → create and link OAuth account to current user
@@ -236,11 +234,11 @@ const inviteCallbackFlow = async ({
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
-    throw new AppError({ status: 409, type: 'oauth_wrong_email', severity: 'error' });
+    throw new AppError(409, 'oauth_wrong_email', 'error');
   }
 
   // OAuth account already linked
-  if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_conflict', severity: 'error' });
+  if (oauthAccount) throw new AppError(409, 'oauth_conflict', 'error');
 
   // No linked OAuth account and email already in use by an existing user
   const users = await db
@@ -248,7 +246,7 @@ const inviteCallbackFlow = async ({
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, providerUser.email));
-  if (users.length) throw new AppError({ status: 409, type: 'oauth_email_exists', severity: 'error' });
+  if (users.length) throw new AppError(409, 'oauth_email_exists', 'error');
 
   // TODO User already signed up meanwhile?
 
@@ -269,7 +267,7 @@ const verifyCallbackFlow = async ({
   const verifyToken = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
 
   // No OauthAccount → invalid verification
-  if (!oauthAccount) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error' });
+  if (!oauthAccount) throw new AppError(400, 'oauth_failed', 'error');
 
   // Invalid token settings → invalid verification
   if (
@@ -278,7 +276,7 @@ const verifyCallbackFlow = async ({
     verifyToken.oauthAccountId !== oauthAccount.id ||
     oauthAccount.provider !== provider
   ) {
-    throw new AppError({ status: 400, type: 'oauth_failed', severity: 'error' });
+    throw new AppError(400, 'oauth_failed', 'error');
   }
 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));

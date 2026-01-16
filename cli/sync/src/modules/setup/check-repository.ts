@@ -13,7 +13,7 @@ import { gitLsRemote, gitRevParseIsInsideWorkTree } from "../../utils/git/comman
  * @returns void
  * 
  * @example
- * await checkRepository(boilerplateConfig);
+ * await checkRepository(upstreamConfig);
  */
 export async function checkRepository(repoConfig: RepoConfig) {
   // Folder must be a directory

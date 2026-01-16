@@ -3,9 +3,9 @@ import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
 
 import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { Avatar } from '../components/avatar';
-import { EmailContainer } from '../components/container';
+import { EmailLogo } from '../components/email-logo';
+import { Avatar } from '../components/email-avatar';
+import { EmailContainer } from '../components/email-container';
 import { EmailBody } from '../components/email-body';
 import { EmailButton } from '../components/email-button';
 import { EmailHeader } from '../components/email-header';
@@ -48,7 +48,7 @@ export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, mem
         <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={memberInviteLink} />
       </EmailBody>
 
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

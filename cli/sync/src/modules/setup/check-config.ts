@@ -23,7 +23,7 @@ type checklistItem = {
  * @returns void
  * 
  * @example
- * checkConfig(boilerplateConfig, boilerplateConfigChecklist);
+ * checkConfig(upstreamConfig, upstreamConfigChecklist);
  */
 export function checkConfig(repoConfig: RepoConfig, checklist: checklistItem[]) {
   for (const item of checklist) {

@@ -1,18 +1,18 @@
 // Import all types
 import type {
-  AppConfig,
+  SyncConfig,
   MinimalRepoConfig,
   MinimalLogConfig,
   MinimalBehaviorConfig,
-  MinimalSwizzleConfig,
+  MinimalOverridesConfig,
 } from "./types";
 
 // Import default configurations
 import { forkDefaultConfig } from "./fork.default";
-import { boilerplateDefaultConfig } from "./boilerplate.default";
+import { upstreamDefaultConfig } from "./upstream.default";
 import { logDefaultConfig, logDivergedConfig } from "./log.default";
 import { behaviorDefaultConfig } from "./behavior.default";
-import { swizzleDefaultConfig } from "./swizzle.default";
+import { overridesDefaultConfig } from "./overrides.default";
 
 // Import custom config
 import { cellaConfig as customConfig } from "../../../../cella.config"
@@ -24,10 +24,10 @@ import { SYNC_SERVICES, SERVICES_RUNNING_FROM_LOCAL_FORK } from "./sync-services
  */
 const {
   fork: customForkConfig = {},
-  boilerplate: customBoilerplateConfig = {},
+  upstream: customUpstreamConfig = {},
   log: customLogConfig = {},
   behavior: customBehaviorConfig = {},
-  swizzle: customSwizzleConfig = {},
+  overrides: customOverridesConfig = {},
 } = customConfig;
 
 /**
@@ -37,7 +37,7 @@ const {
  * - RepoConfig
  * - LogConfig
  * - BehaviorConfig
- * - SwizzleConfig
+ * - OverridesConfig
  *
  * Defines enhanced configuration types with computed properties
  * We extend the minimal config types to include dynamic properties
@@ -55,9 +55,9 @@ export type RepoConfig = MinimalRepoConfig & {
   location: 'local' | 'remote',
 
   /**
-   * Type of the repository: 'fork' or 'boilerplate'
+   * Type of the repository: 'fork' or 'upstream'
    */
-  type: 'fork' | 'boilerplate',
+  type: 'fork' | 'upstream',
 
   /**
    * Indicates if the repository is remote
@@ -86,11 +86,11 @@ export type RepoConfig = MinimalRepoConfig & {
 };
 
 /**
- * Swizzle configuration with computed properties
+ * Overrides configuration with computed properties
  */
-export type SwizzleConfig = MinimalSwizzleConfig & {
+export type OverridesConfig = MinimalOverridesConfig & {
   /**
-   * Full local file system path to the swizzle metadata file
+   * Full local file system path to the overrides metadata file
    */
   localMetadataFilePath: string;
 }
@@ -115,21 +115,21 @@ export class Config {
   /**
    * Internal state holding the configuration values
    */
-  private state: AppConfig;
+  private state: SyncConfig;
 
-  constructor(initial: Partial<AppConfig> = {}) {
+  constructor(initial: Partial<SyncConfig> = {}) {
     this.state = {
       // Static defaults
-      syncService: SYNC_SERVICES.BOILERPLATE_FORK,
+      syncService: SYNC_SERVICES.UPSTREAM_FORK,
       forkLocation: 'local',
-      boilerplateLocation: 'remote',
+      upstreamLocation: 'remote',
 
       // Defaults merged with customs
       fork: { ...forkDefaultConfig, ...customForkConfig },
-      boilerplate: { ...boilerplateDefaultConfig, ...customBoilerplateConfig },
+      upstream: { ...upstreamDefaultConfig, ...customUpstreamConfig },
       log: { ...logDefaultConfig, ...customLogConfig },
       behavior: { ...behaviorDefaultConfig, ...customBehaviorConfig },
-      swizzle: { ...swizzleDefaultConfig, ...customSwizzleConfig },
+      overrides: { ...overridesDefaultConfig, ...customOverridesConfig },
 
       // Global overrides
       ...initial
@@ -160,25 +160,25 @@ export class Config {
   }
 
   /**
-   * Getter and setter for the boilerplate repository configuration with computed properties.
+   * Getter and setter for the upstream repository configuration with computed properties.
    * - Get: the full RepoConfig with dynamic properties
-   * - Set: partial updates to the boilerplate configuration
+   * - Set: partial updates to the upstream configuration
    */
-  get boilerplate(): RepoConfig {
+  get upstream(): RepoConfig {
     return {
-      ...this.state.boilerplate,
+      ...this.state.upstream,
 
-      location: this.state.boilerplateLocation,
-      type: 'boilerplate',
-      isRemote: this.boilerplateIsRemote,
-      branchRef: this.boilerplateBranchRef,
-      syncBranchRef: this.boilerplateSyncBranchRef,
-      repoReference: this.state.boilerplateLocation === 'local' ? this.state.boilerplate.localPath : this.state.boilerplate.remoteUrl,
+      location: this.state.upstreamLocation,
+      type: 'upstream',
+      isRemote: this.upstreamIsRemote,
+      branchRef: this.upstreamBranchRef,
+      syncBranchRef: this.upstreamSyncBranchRef,
+      repoReference: this.state.upstreamLocation === 'local' ? this.state.upstream.localPath : this.state.upstream.remoteUrl,
       workingDirectory: this.workingDirectory
     };
   }
-  set boilerplate(value: Partial<RepoConfig>) {
-    this.state.boilerplate = { ...this.state.boilerplate, ...value };
+  set upstream(value: Partial<RepoConfig>) {
+    this.state.upstream = { ...this.state.upstream, ...value };
   }
 
   /**
@@ -196,35 +196,35 @@ export class Config {
   }
 
   /**
-   * Getter for the swizzle configuration with computed properties
+   * Getter for the overrides configuration with computed properties
    */
-  get swizzle(): SwizzleConfig {
+  get overrides(): OverridesConfig {
     return {
-      ...this.state.swizzle,
-      localMetadataFilePath: this.swizzleLocalMetadataFilePath,
+      ...this.state.overrides,
+      localMetadataFilePath: this.overridesLocalMetadataFilePath,
     };
   }
 
   /**
    * Getter and setter for syncService with side effects
    */
-  get syncService(): AppConfig['syncService'] {
+  get syncService(): SyncConfig['syncService'] {
     return this.state.syncService;
   }
 
   /**
    * Setter for syncService with side effects
-   * - Adjusts fork and boilerplate locations based on service type
+   * - Adjusts fork and upstream locations based on service type
    * - Updates log configuration for specific services
    */
-  set syncService(value: AppConfig['syncService']) {
+  set syncService(value: SyncConfig['syncService']) {
     if (SERVICES_RUNNING_FROM_LOCAL_FORK.includes(value)) {
       // Ensure fork is local if the service requires it
       this.state.forkLocation = 'local';
-      this.state.boilerplateLocation = 'remote';
+      this.state.upstreamLocation = 'remote';
     }
 
-    if (value === SYNC_SERVICES.BOILERPLATE_FORK) {
+    if (value === SYNC_SERVICES.UPSTREAM_FORK) {
       this.state.log = logDefaultConfig;
     }
 
@@ -247,23 +247,23 @@ export class Config {
   }
 
   /**
-   * Setter for boilerplateLocation
+   * Setter for upstreamLocation
    */
-  set boilerplateLocation(value: 'local' | 'remote') {
-    this.state.boilerplateLocation = value;
+  set upstreamLocation(value: 'local' | 'remote') {
+    this.state.upstreamLocation = value;
   }
 
   /**
    * Computed boolean properties
    * - forkIsRemote
-   * - boilerplateIsRemote
+   * - upstreamIsRemote
    */
   get forkIsRemote(): boolean {
     return this.state.forkLocation === 'remote';
   }
 
-  get boilerplateIsRemote(): boolean {
-    return this.state.boilerplateLocation === 'remote';
+  get upstreamIsRemote(): boolean {
+    return this.state.upstreamLocation === 'remote';
   }
 
   /**
@@ -271,20 +271,20 @@ export class Config {
    * Those differ depending on whether the repo is local or remote
    * 
    * - forkRepoReference
-   * - boilerplateRepoReference
+   * - upstreamRepoReference
    * - forkBranchRef
    * - forkSyncBranchRef
-   * - boilerplateBranchRef
-   * - boilerplateSyncBranchRef
+   * - upstreamBranchRef
+   * - upstreamSyncBranchRef
    */
   get forkRepoReference(): string {
     if (this.forkIsRemote) return this.state.fork.remoteUrl;
     return this.state.fork.localPath;
   }
 
-  get boilerplateRepoReference(): string {
-    if (this.boilerplateIsRemote) return this.state.boilerplate.remoteUrl;
-    return this.state.boilerplate.localPath;
+  get upstreamRepoReference(): string {
+    if (this.upstreamIsRemote) return this.state.upstream.remoteUrl;
+    return this.state.upstream.localPath;
   }
 
   get forkBranchRef(): string {
@@ -297,21 +297,21 @@ export class Config {
     return `${this.state.fork.remoteName}/${this.state.fork.syncBranch}`;
   }
 
-  get boilerplateBranchRef(): string {
-    if (!this.boilerplateIsRemote) return this.state.boilerplate.branch;
-    return `${this.state.boilerplate.remoteName}/${this.state.boilerplate.branch}`;
+  get upstreamBranchRef(): string {
+    if (!this.upstreamIsRemote) return this.state.upstream.branch;
+    return `${this.state.upstream.remoteName}/${this.state.upstream.branch}`;
   }
 
-  get boilerplateSyncBranchRef(): string {
-    if (!this.boilerplateIsRemote) return this.state.boilerplate.syncBranch;
-    return `${this.state.boilerplate.remoteName}/${this.state.boilerplate.syncBranch}`;
+  get upstreamSyncBranchRef(): string {
+    if (!this.upstreamIsRemote) return this.state.upstream.syncBranch;
+    return `${this.state.upstream.remoteName}/${this.state.upstream.syncBranch}`;
   }
 
   /**
-   * Computed swizzle metadata file path
+   * Computed overrides metadata file path
    */
-  get swizzleLocalMetadataFilePath() {
-    return `${this.state.swizzle.localDir}/${this.state.swizzle.metadataFileName}`;
+  get overridesLocalMetadataFilePath() {
+    return `${this.state.overrides.localDir}/${this.state.overrides.metadataFileName}`;
   }
 
   /**
@@ -331,15 +331,15 @@ export class Config {
    * @param value Value to assign to the key
    * @return void
    */
-  set<K extends keyof AppConfig>(key: K, value: AppConfig[K]) {
+  set<K extends keyof SyncConfig>(key: K, value: SyncConfig[K]) {
     this.state[key] = value;
   }
 
   /**
    * Returns a snapshot (copy) of the current config
-   * @return AppConfig
+   * @return SyncConfig
    */
-  toJSON(): AppConfig {
+  toJSON(): SyncConfig {
     return structuredClone(this.state);
   }
 }

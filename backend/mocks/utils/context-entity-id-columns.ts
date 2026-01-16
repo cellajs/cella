@@ -1,18 +1,6 @@
-import { faker } from '@faker-js/faker';
 import { appConfig, type ContextEntityType } from 'config';
 import { relatableContextEntityTables } from '#/relatable-config';
-
-/**
- * Generates an ID matching nanoid config (lowercase alphanumeric, 24 chars).
- * Uses faker's seeded RNG for deterministic output.
- */
-export const mockNanoid = (length = 24) => faker.string.alphanumeric({ length, casing: 'lower' });
-
-/**
- * Generates a random ISO date in the past.
- * @returns An ISO 8601 string representing a past date.
- */
-export const pastIsoDate = () => faker.date.past().toISOString();
+import { mockNanoid } from './mock-nanoid';
 
 /**
  * Type for dynamically generated context entity ID columns in mocks.
@@ -63,34 +51,4 @@ export const generateMockContextEntityIdColumns = (mode: 'all' | 'relatable' = '
     entityIdColumnKeys: appConfig.entityIdColumnKeys,
   };
   return generateMockContextEntityIdColumnsWithConfig(config) as MockContextEntityIdColumns;
-};
-
-/**
- * Converts a string key to a numeric seed for faker.
- * Uses a simple hash function for consistent results.
- */
-const stringToSeed = (key: string): number => {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    const char = key.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-};
-
-/**
- * Runs a generator function with a deterministic faker seed.
- * The same key will always produce the same fake data.
- * Useful for OpenAPI examples and reproducible tests.
- *
- * @param key - A unique string key to seed the random generator.
- * @param generator - Function that generates fake data using faker.
- * @returns The result of the generator function.
- */
-export const withFakerSeed = <T>(key: string, generator: () => T): T => {
-  faker.seed(stringToSeed(key));
-  const result = generator();
-  faker.seed(); // Reset to random seed
-  return result;
 };

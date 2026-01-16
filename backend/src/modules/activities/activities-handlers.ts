@@ -57,6 +57,7 @@ const activityRouteHandlers = app
     // Total count
     const [{ total }] = await db.select({ total: count() }).from(activitiesQuery.as('activities'));
 
+    // Activites with pagination
     const activities = await activitiesQuery.limit(limit).offset(offset);
 
     return ctx.json({ items: activities, total }, 200);

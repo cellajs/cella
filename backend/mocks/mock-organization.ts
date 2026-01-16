@@ -7,7 +7,16 @@ import type { AuthStrategy } from '#/db/schema/sessions';
 import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { mockNanoid, pastIsoDate, withFakerSeed } from './utils';
+import { registerExample } from './example-registry';
+import { mockMembershipBase } from './mock-membership';
+import {
+  type MockEntityCounts,
+  type MockMembershipCounts,
+  generateMockFullCounts,
+  mockNanoid,
+  pastIsoDate,
+  withFakerSeed,
+} from './utils';
 
 // Enforces unique organization names
 const organizationName = new UniqueEnforcer();
@@ -20,17 +29,16 @@ export const resetOrganizationMockEnforcers = () => {
 };
 
 /**
- * Generates a mock organization record with all fields populated.
- * Used for DB seeding, tests, and as base for API response examples.
- * Enforces unique organization names.
+ * Generates base organization fields shared between insert and response mocks.
+ * @param id - Organization ID
+ * @param name - Organization name
+ * @param createdAt - Creation timestamp
  */
-export const mockOrganization = (): InsertOrganizationModel => {
-  const name = organizationName.enforce(() => faker.company.name());
+const generateOrganizationBase = (id: string, name: string, createdAt: string) => {
   const slug = slugify(name, { lower: true, strict: true });
-  const createdAt = pastIsoDate();
 
   return {
-    id: nanoid(),
+    id,
     entityType: 'organization' as const,
     name,
     slug,
@@ -58,6 +66,16 @@ export const mockOrganization = (): InsertOrganizationModel => {
 };
 
 /**
+ * Generates a mock organization record with all fields populated.
+ * Used for DB seeding, tests, and as base for API response examples.
+ * Enforces unique organization names.
+ */
+export const mockOrganization = (): InsertOrganizationModel => {
+  const name = organizationName.enforce(() => faker.company.name());
+  return generateOrganizationBase(nanoid(), name, pastIsoDate());
+};
+
+/**
  * Generates a mock organization API response with deterministic seeding.
  * Adds API-only fields (membership, counts) to the base mock.
  */
@@ -66,62 +84,29 @@ export const mockOrganizationResponse = (
 ): OrganizationModel & {
   membership: MembershipBaseModel;
   counts: {
-    membership: { admin: number; member: number; pending: number; total: number };
-    entities: { attachment: number; page: number };
+    membership: MockMembershipCounts;
+    entities: MockEntityCounts;
   };
 } =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const name = faker.company.name();
-    const slug = slugify(name, { lower: true, strict: true });
     const orgId = mockNanoid();
-    const userId = mockNanoid();
+
+    // Generate base organization fields
+    const base = generateOrganizationBase(orgId, faker.company.name(), createdAt);
+
+    // Generate membership base with the organization ID
+    const membership = mockMembershipBase(`${key}:membership`);
+    membership.organizationId = orgId;
 
     return {
-      id: orgId,
-      entityType: 'organization' as const,
-      name,
-      slug,
-      description: faker.company.catchPhrase(),
-      shortName: name.split(' ')[0],
-      country: faker.location.country(),
-      timezone: faker.location.timeZone(),
-      defaultLanguage: appConfig.defaultLanguage,
-      languages: [appConfig.defaultLanguage] as Language[],
-      notificationEmail: `notifications@${slug}.example`,
-      emailDomains: [] as string[],
+      ...base,
       restrictions: defaultRestrictions(),
-      color: faker.color.rgb(),
-      thumbnailUrl: null,
-      logoUrl: faker.image.url(),
-      bannerUrl: null,
-      websiteUrl: `https://${slug}.example`,
-      welcomeText: `Welcome to ${name}!`,
-      authStrategies: ['password'] as AuthStrategy[],
-      chatSupport: faker.datatype.boolean(),
-      createdAt,
-      createdBy: null,
-      modifiedAt: createdAt,
-      modifiedBy: null,
-      membership: {
-        id: mockNanoid(),
-        contextType: 'organization' as const,
-        userId,
-        organizationId: orgId,
-        role: 'admin' as const,
-        order: 1,
-        muted: false,
-        archived: false,
-      },
-      counts: {
-        membership: {
-          admin: 1,
-          member: faker.number.int({ min: 0, max: 20 }),
-          pending: 0,
-          total: faker.number.int({ min: 1, max: 25 }),
-        },
-        entities: { attachment: faker.number.int({ min: 0, max: 50 }), page: faker.number.int({ min: 0, max: 20 }) },
-      },
+      membership,
+      counts: generateMockFullCounts(),
     };
   });
+
+// Self-register for OpenAPI examples
+registerExample('Organization', mockOrganizationResponse);

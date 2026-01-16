@@ -121,21 +121,21 @@ function getCommitState(analyzedFile: FileAnalysis): string {
  */
 function getCommitSha(analyzedFile: FileAnalysis): string {
   const forkSha = analyzedFile.forkFile?.shortCommitSha;
-  const boilerSha = analyzedFile.boilerplateFile?.shortCommitSha;
+  const upstreamSha = analyzedFile.upstreamFile?.shortCommitSha;
 
   // Both SHAs exist
-  if (forkSha && boilerSha) {
+  if (forkSha && upstreamSha) {
     // Same SHAs → return fork SHA only
-    if (forkSha === boilerSha) {
+    if (forkSha === upstreamSha) {
       return `(${forkSha})`;
     }
 
     // Different SHAs → return both
-    return `(${forkSha} → ${boilerSha})`;
+    return `(${forkSha} → ${upstreamSha})`;
   }
 
   // Only one (or none) exists
-  return `${forkSha || boilerSha}`;
+  return `${forkSha || upstreamSha}`;
 }
 
 /**

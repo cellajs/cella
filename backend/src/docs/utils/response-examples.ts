@@ -1,5 +1,6 @@
 import { getRefId } from '@asteasolutions/zod-to-openapi';
 import type { ZodType } from 'zod';
+import '../../../mocks/init-examples';
 import { getExampleForSchema } from '../../../mocks/example-registry';
 
 type ResponseConfig = { content?: { 'application/json'?: { schema?: unknown; example?: unknown } } };
@@ -10,7 +11,6 @@ type ResponsesConfig = { [statusCode: string]: unknown };
  * Returns the original response if no example can be injected.
  */
 export const tryInjectExample = <T>(response: T): T => {
-  // Use type guard to safely access nested properties
   const resp = response as ResponseConfig;
   const jsonContent = resp.content?.['application/json'];
 

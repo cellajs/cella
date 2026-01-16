@@ -11,15 +11,15 @@ import { logPackageSummaryLines, packageSummaryLines } from "./log/package-summa
 import { checkMark } from "./utils/console";
 
 /**
- * Synchronizes package dependencies between the boilerplate repository and the fork.
+ * Synchronizes package dependencies between the upstream repository and the fork.
  *
  * This process only affects files discovered during `runAnalyze()` that:
  * - are `package.json`
- * - exist in both boilerplate and fork
- * - are *not* removed via swizzle configuration
+ * - exist in both upstream and fork
+ * - are *not* ignored via overrides configuration
  *
  * For each eligible package.json:
- * - dependencies/devDependencies are compared against the boilerplate's
+ * - dependencies/devDependencies are compared against the upstream's
  * - only non-exact (range-based) fork dependencies are updated
  * - updated package.jsons are either written or skipped (in dry-run mode)
  *
@@ -54,33 +54,33 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
   // Iterate all analyzed files and process package.json entries
   for (const analyzedFile of analyzedFiles) {
     const isPackageFile = analyzedFile.filePath.endsWith('package.json');
-    const isRemovedInSwizzle = analyzedFile.swizzle?.flaggedInSettingsAs === 'removed';
-    const boilerplatePath = analyzedFile.boilerplateFile?.path;
+    const isIgnored = analyzedFile.swizzle?.flaggedInSettingsAs === 'ignored';
+    const upstreamPath = analyzedFile.upstreamFile?.path;
     const forkPath = analyzedFile.forkFile?.path;
 
     // Skip irrelevant or non-existent files
-    if (!isPackageFile || isRemovedInSwizzle || !boilerplatePath || !forkPath) {
+    if (!isPackageFile || isIgnored || !upstreamPath || !forkPath) {
       continue;
     }
 
-    // Load package.json files from both boilerplate and fork
+    // Load package.json files from both upstream and fork
     const resolvedForkPath = path.join(config.fork.workingDirectory, forkPath);
     const forkPackageJson = readJsonFile<PackageJson>(resolvedForkPath);
 
-    const boilerplatePackageJson = await getRemoteJsonFile(
-      config.boilerplate.workingDirectory,
-      config.boilerplate.branchRef,
+    const upstreamPackageJson = await getRemoteJsonFile(
+      config.upstream.workingDirectory,
+      config.upstream.branchRef,
       analyzedFile.filePath
     );
 
     // Determine which deps should be updated (dependencies + devDependencies)
     const depsToUpdate = getDepsToUpdate(
-      boilerplatePackageJson?.dependencies || {},
+      upstreamPackageJson?.dependencies || {},
       forkPackageJson?.dependencies || {}
     );
 
     const devDepsToUpdate = getDepsToUpdate(
-      boilerplatePackageJson?.devDependencies || {},
+      upstreamPackageJson?.devDependencies || {},
       forkPackageJson?.devDependencies || {}
     );
 
@@ -133,7 +133,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
     await gitAddAll(config.fork.workingDirectory);
 
     // Commit the updated package.json files
-    await gitCommit(config.fork.workingDirectory, `Sync package.json dependencies from ${config.boilerplate.branchRef}`, { noVerify: true });
+    await gitCommit(config.fork.workingDirectory, `Sync package.json dependencies from ${config.upstream.branchRef}`, { noVerify: true });
 
     // Push changes if configured to do so
     if (!config.behavior.skipAllPushes) {

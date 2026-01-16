@@ -6,6 +6,7 @@ import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
+import { registerExample } from './example-registry';
 import { generateMockContextEntityIdColumns, mockNanoid, pastIsoDate, withFakerSeed } from './utils';
 
 // Tracks the current order offset for memberships per context (e.g., organization)
@@ -119,3 +120,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
 
 /** Alias for API response examples */
 export const mockInactiveMembershipResponse = mockInactiveMembership;
+
+// Self-register for OpenAPI examples
+registerExample('Membership', mockMembershipResponse);
+registerExample('InactiveMembership', mockInactiveMembershipResponse);

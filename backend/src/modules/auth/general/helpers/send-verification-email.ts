@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { userSelect } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
@@ -26,7 +26,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
-  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
@@ -35,7 +35,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
 
   // email verified
   if (emailInUse) {
-    throw new AppError({ status: 422, type: 'email_already_verified', severity: 'warn', entityType: 'user' });
+    throw new AppError(422, 'email_already_verified', 'warn', { entityType: 'user' });
   }
 
   // Delete previous token

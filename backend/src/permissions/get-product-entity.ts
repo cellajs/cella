@@ -1,7 +1,7 @@
 import type { EntityActionType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextUserSystemRole } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { isPermissionAllowed } from '#/permissions';
 
 /**
@@ -31,13 +31,13 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   // Step 1: Resolve target entity by ID or slug
   const entity = await resolveEntity(entityType, idOrSlug);
-  if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+  if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action
   const { allowed } = isPermissionAllowed(memberships, action, entity);
 
   if (!allowed && !isSystemAdmin) {
-    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType, meta: { action } });
+    throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
 
   return entity;

@@ -124,39 +124,39 @@ export interface MinimalBehaviorConfig {
   maxGitPreviewsForSquashCommits?: number;
 }
 
-export interface MinimalSwizzleConfig {
+export interface MinimalOverridesConfig {
   /**
    * Local file system path (directory) to find metadata in
    */
   localDir: string;
   
   /**
-   * Version of the swizzle metadata format (update when schema changes)
+   * Version of the overrides metadata format (update when schema changes)
    */
   metadataVersion: string,
 
   /**
    * Default metadata file name
-   * Stores information about (auto detect) swizzled files
+   * Stores information about auto-detected overridden files
    */
   metadataFileName: string,
 
   /**
-   * Stores user-defined flags of 'edited' files for swizzling 
+   * Files customized in fork; prefer fork version during merge conflicts
    */
-  editedFiles: string[],
+  customized: string[],
 
   /**
-   * Stores user-defined flags of 'removed' files for swizzling
+   * Files and directories to be fully ignored during sync
    */
-  removedFiles: string[],
+  ignored: string[],
 }
 
 /**
- * Application configuration for the Cella Sync Engine.
+ * Sync configuration for the Cella Sync Engine.
  * Defines the synchronization service type and repository configurations.
  */
-export interface AppConfig {
+export interface SyncConfig {
   /**
    * Type of synchronization service being used.
    */
@@ -168,12 +168,11 @@ export interface AppConfig {
   fork: MinimalRepoConfig;
   forkLocation: 'local' | 'remote';
 
-
   /**
-   * Configuration for the boilerplate repository.
+   * Configuration for the upstream repository.
    */
-  boilerplate: MinimalRepoConfig;
-  boilerplateLocation: 'local' | 'remote';
+  upstream: MinimalRepoConfig;
+  upstreamLocation: 'local' | 'remote';
 
   /**
    * Configuration for logging analyzed results.
@@ -186,10 +185,13 @@ export interface AppConfig {
   behavior: MinimalBehaviorConfig,
 
   /**
-   * Configuration related to swizzle metadata and settings files.
+   * Configuration related to overrides metadata and settings files.
    */
-  swizzle: MinimalSwizzleConfig,
+  overrides: MinimalOverridesConfig,
 }
+
+/** Alias for SyncConfig (lowercase convention) */
+export type syncConfig = SyncConfig;
 
 /**
  * A utility type that makes all properties of a given type T optional, including nested properties.

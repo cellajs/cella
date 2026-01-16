@@ -8,7 +8,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { userSelect } from '#/modules/users/helpers/select';
@@ -141,8 +141,7 @@ const usersRouteHandlers = app
 
     // Convert the user ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length)
-      throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'user' });
 
     // Fetch users by IDs
 
@@ -165,8 +164,7 @@ const usersRouteHandlers = app
     }
 
     // Ifuser doesn't have permission to delete, return error
-    if (!allowedIds.length)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
+    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
 
     // Delete allowed users
     await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
@@ -193,10 +191,7 @@ const usersRouteHandlers = app
       .limit(1);
 
     if (!targetUser)
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: 'user',
         meta: { user: idOrSlug },
       });
@@ -218,10 +213,7 @@ const usersRouteHandlers = app
       .limit(1);
 
     if (requstingUserSystemRole !== 'admin' && !sharedMembership) {
-      throw new AppError({
-        status: 403,
-        type: 'forbidden',
-        severity: 'warn',
+      throw new AppError(403, 'forbidden', 'warn', {
         entityType: 'user',
         meta: { user: targetUser.id },
       });
@@ -244,10 +236,7 @@ const usersRouteHandlers = app
       .limit(1);
 
     if (!targetUser)
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: 'user',
         meta: { user: idOrSlug },
       });
@@ -257,8 +246,7 @@ const usersRouteHandlers = app
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable)
-        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db

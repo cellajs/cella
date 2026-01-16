@@ -2,8 +2,8 @@ import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
 import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { EmailContainer } from '../components/container';
+import { EmailLogo } from '../components/email-logo';
+import { EmailContainer } from '../components/email-container';
 import { EmailBody } from '../components/email-body';
 import { EmailButton } from '../components/email-button';
 import { EmailHeader } from '../components/email-header';
@@ -31,7 +31,7 @@ export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: E
 
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
       </EmailBody>
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

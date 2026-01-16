@@ -11,12 +11,12 @@ type CommitLookup = {
 
 /**
  * Compares the commit history of a specific file between
- * a boilerplate repo and a fork repo.
+ * an upstream repo and a fork repo.
  *
  * Returns the ahead/behind counts, shared ancestor, coverage,
  * and sync status.
  *
- * @param boilerplate - Boilerplate repository config (local).
+ * @param upstream - Upstream repository config (local).
  * @param fork - Fork repository config (local).
  * @param filePath - Relative file path to compare.
  * 
@@ -24,21 +24,21 @@ type CommitLookup = {
  * @returns A Promise resolving to a CommitSummary object containing the analysis results.
  */
 export async function analyzeFileCommits(
-  boilerplate: RepoConfig,
+  upstream: RepoConfig,
   fork: RepoConfig,
   filePath: string,
 ): Promise<CommitSummary> {
-  const [boilerplateCommits, forkCommits] = await Promise.all([
-    getFileCommitHistory(boilerplate.workingDirectory, boilerplate.branchRef, filePath),
+  const [upstreamCommits, forkCommits] = await Promise.all([
+    getFileCommitHistory(upstream.workingDirectory, upstream.branchRef, filePath),
     getFileCommitHistory(fork.workingDirectory, fork.branchRef, filePath),
   ]);
 
-  const boilerplateLookup = toCommitLookup(boilerplateCommits);
+  const upstreamLookup = toCommitLookup(upstreamCommits);
   const forkLookup = toCommitLookup(forkCommits);
 
-  const historyCoverage = getHistoryCoverage(boilerplateLookup, forkLookup);
-  const sharedAncestor = getSharedAncestor(boilerplateLookup, forkLookup);
-  const amount = getAmountAheadBehind(boilerplateLookup, forkLookup, sharedAncestor?.sha);
+  const historyCoverage = getHistoryCoverage(upstreamLookup, forkLookup);
+  const sharedAncestor = getSharedAncestor(upstreamLookup, forkLookup);
+  const amount = getAmountAheadBehind(upstreamLookup, forkLookup, sharedAncestor?.sha);
   const status = getStatus(sharedAncestor?.sha, amount.ahead, amount.behind);
 
   return {
@@ -65,42 +65,42 @@ function toCommitLookup(commits: CommitEntry[]): CommitLookup {
 }
 
 /**
- * Finds the first shared commit (common ancestor) between boilerplate and fork histories.
+ * Finds the first shared commit (common ancestor) between upstream and fork histories.
  * 
- * @param boilerplateLookup - Commit lookup for the boilerplate repository
+ * @param upstreamLookup - Commit lookup for the upstream repository
  * @param forkLookup - Commit lookup for the fork repository
  * 
  * @returns The shared CommitEntry if found, otherwise undefined
  */
 function getSharedAncestor(
-  boilerplateLookup: CommitLookup,
+  upstreamLookup: CommitLookup,
   forkLookup: CommitLookup,
 ): CommitEntry | undefined {
-  return forkLookup.commits.find(entry => boilerplateLookup.shasSet.has(entry.sha));
+  return forkLookup.commits.find(entry => upstreamLookup.shasSet.has(entry.sha));
 }
 
 /**
- * Calculates how many commits ahead & behind the fork is compared to the boilerplate
+ * Calculates how many commits ahead & behind the fork is compared to the upstream
  * 
- * @param boilerplateLookup - Commit lookup for the boilerplate repository
+ * @param upstreamLookup - Commit lookup for the upstream repository
  * @param forkLookup - Commit lookup for the fork repository
  * @param ancestorSha - SHA of the shared ancestor commit
  * 
  * @returns An object containing the counts of commits ahead and behind
  */
 function getAmountAheadBehind(
-  boilerplateLookup: CommitLookup,
+  upstreamLookup: CommitLookup,
   forkLookup: CommitLookup,
   ancestorSha?: string
 ): { ahead: number; behind: number } {
   if (!ancestorSha) return { ahead: 0, behind: 0 };
 
   const forkIndex = forkLookup.shas.findIndex(sha => sha === ancestorSha);
-  const boilerplateIndex = boilerplateLookup.shas.findIndex(sha => sha === ancestorSha);
+  const upstreamIndex = upstreamLookup.shas.findIndex(sha => sha === ancestorSha);
 
   // Commits that appear *before* the ancestor are the "ahead/behind" counts
   const ahead = forkIndex === -1 ? forkLookup.shas.length : forkIndex;
-  const behind = boilerplateIndex === -1 ? boilerplateLookup.shas.length : boilerplateIndex;
+  const behind = upstreamIndex === -1 ? upstreamLookup.shas.length : upstreamIndex;
 
   return { ahead, behind };
 }
@@ -127,19 +127,19 @@ function getStatus(
 }
 
 /**
- * Determines the coverage of boilerplate commit history present in the fork.
+ * Determines the coverage of upstream commit history present in the fork.
  * 
- * @param boilerplateLookup - Commit lookup for the boilerplate repository
+ * @param upstreamLookup - Commit lookup for the upstream repository
  * @param forkLookup - Commit lookup for the fork repository
  * 
  * @returns The history coverage as a string ('unknown', 'partial', or 'complete')
  */
 export function getHistoryCoverage(
-  boilerplateLookup: CommitLookup,
+  upstreamLookup: CommitLookup,
   forkLookup: CommitLookup
 ): CommitSummary["historyCoverage"] {
-  const total = boilerplateLookup.shas.length;
-  const found = boilerplateLookup.shas.filter(sha => forkLookup.shasSet.has(sha)).length;
+  const total = upstreamLookup.shas.length;
+  const found = upstreamLookup.shas.filter(sha => forkLookup.shasSet.has(sha)).length;
 
   if (found === 0) return 'unknown'
   if (found === total) return 'complete'

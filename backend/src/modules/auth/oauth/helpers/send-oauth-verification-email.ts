@@ -6,7 +6,7 @@ import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
 import { userSelect } from '#/modules/users/helpers/select';
@@ -30,11 +30,11 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
-  if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
   // OAuthAccountId is provided and doesnt exist
   const [oauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, oauthAccountId));
-  if (!oauthAccount) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+  if (!oauthAccount) throw new AppError(404, 'not_found', 'warn');
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
@@ -43,7 +43,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
 
   // email and oauthAccount verified
   if (emailInUse && oauthAccount.verified) {
-    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
+    throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
   // Delete previous token

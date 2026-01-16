@@ -1,34 +1,12 @@
-import { mockAttachmentResponse } from './mock-attachment';
-import { mockSuccessWithRejectedItems } from './mock-common';
-import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from './mock-me';
-import { mockMembershipResponse } from './mock-membership';
-import { mockOrganizationResponse } from './mock-organization';
-import { mockPageResponse } from './mock-page';
-import { mockUserResponse } from './mock-user';
+/** Registry mapping OpenAPI schema names to their example generators */
+const exampleRegistry = new Map<string, () => unknown>();
 
-/** Supported schema names for example generation */
-export type ExampleSchemaName =
-  | 'Organization'
-  | 'User'
-  | 'Attachment'
-  | 'Page'
-  | 'Membership'
-  | 'SuccessWithRejectedItems'
-  | 'Me'
-  | 'MeAuthData'
-  | 'UploadToken';
-
-/** Type-safe registry mapping OpenAPI schema names to their example generators */
-export const exampleRegistry: Record<ExampleSchemaName, () => unknown> = {
-  Organization: mockOrganizationResponse,
-  User: mockUserResponse,
-  Attachment: mockAttachmentResponse,
-  Page: mockPageResponse,
-  Membership: mockMembershipResponse,
-  SuccessWithRejectedItems: mockSuccessWithRejectedItems,
-  Me: mockMeResponse,
-  MeAuthData: mockMeAuthDataResponse,
-  UploadToken: mockUploadTokenResponse,
+/**
+ * Register an example generator for a schema name.
+ * Call this from mock files to self-register their response examples.
+ */
+export const registerExample = (schemaName: string, generator: () => unknown) => {
+  exampleRegistry.set(schemaName, generator);
 };
 
 /** Cache for generated examples - ensures same schema always returns same example */
@@ -45,7 +23,7 @@ export const getExampleForSchema = (schemaName: string): unknown | undefined => 
     return exampleCache.get(schemaName);
   }
 
-  const generator = exampleRegistry[schemaName as ExampleSchemaName];
+  const generator = exampleRegistry.get(schemaName);
   if (!generator) return undefined;
 
   // Generate and cache the example

@@ -13,7 +13,6 @@ import { startCdcWorker } from './worker';
 // Check if CDC should run (only in full mode or production)
 const devMode = process.env.DEV_MODE || 'core';
 if (devMode !== 'full' && process.env.NODE_ENV !== 'production') {
-  console.info(`CDC worker disabled (DEV_MODE=${devMode})`);
   process.exit(0);
 }
 

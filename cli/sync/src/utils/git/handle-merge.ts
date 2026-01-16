@@ -51,10 +51,10 @@ export async function handleMerge(
 }
 
 /**
- * Starts the merge process between the fork and boilerplate repositories.
+ * Starts the merge process between the fork and upstream repositories.
  * 
  * @param forkConfig - RepoConfig of the forked repo
- * @param boilerplateConfig - RepoConfig of the boilerplate repo
+ * @param upstreamConfig - RepoConfig of the upstream repo
  * 
  * @throws Will throw an error if the merge fails for reasons other than conflicts.
  * @returns A Promise that resolves when the merge process is initiated.

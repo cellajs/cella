@@ -9,7 +9,7 @@ import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import { apiErrorSchema } from '#/utils/schema/api-error';
-import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks';
+import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/mock-user';
 import { pastIsoDate } from '../mocks/utils';
 
 /**

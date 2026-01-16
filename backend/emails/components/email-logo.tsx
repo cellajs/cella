@@ -6,7 +6,7 @@ import type { JSX } from 'react';
  * Images often get blocked or display partially in email clients.
  * This approach uses a colored container with styled text for reliability.
  */
-export const AppLogo = ({ style }: { style?: React.CSSProperties }): JSX.Element => (
+export const EmailLogo = ({ style }: { style?: React.CSSProperties }): JSX.Element => (
   <a
     href={appConfig.aboutUrl}
     target="_blank"
@@ -37,4 +37,4 @@ export const AppLogo = ({ style }: { style?: React.CSSProperties }): JSX.Element
 );
 
 // Template export
-export const Template = AppLogo;
+export const Template = EmailLogo;

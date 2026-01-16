@@ -3,9 +3,9 @@ export interface CLIConfig {
   args: string[];
   packageManager: string;
   syncService: string;
-  boilerplateLocation: string;
-  boilerplateBranch: string;
-  boilerplateRemoteName: string;
+  upstreamLocation: string;
+  upstreamBranch: string;
+  upstreamRemoteName: string;
   forkLocation: string;
   forkBranch: string;
   forkSyncBranch: string;
@@ -18,9 +18,9 @@ export type ConfigurationAction = 'continue' | 'customize';
 
 // Define all possible customization options
 export type CustomizeOption =
-  | 'boilerplateLocation'
-  | 'boilerplateBranch'
-  | 'boilerplateRemoteName'
+  | 'upstreamLocation'
+  | 'upstreamBranch'
+  | 'upstreamRemoteName'
   | 'divergedCommitStatus'
   | 'forkLocation'
   | 'forkBranch'

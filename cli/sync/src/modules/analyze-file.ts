@@ -11,29 +11,29 @@ import { determineFileMergeStrategy } from './git/determine-file-merge-strategy'
 const limit = pLimit(10);
 
 /**
- * Analyzes a file by comparing its state in the boilerplate and fork repositories.
+ * Analyzes a file by comparing its state in the upstream and fork repositories.
  * 
- * @param boilerplate - The boilerplate repository configuration
+ * @param upstream - The upstream repository configuration
  * @param fork - The fork repository configuration
- * @param boilerplateFile - The file entry from the boilerplate repository
+ * @param upstreamFile - The file entry from the upstream repository
  * @param forkFile - The file entry from the fork repository (if it exists)
  * 
  * @returns A promise that resolves to the analyzed file data
  */
 export async function analyzeFile(
-  boilerplate: RepoConfig,
+  upstream: RepoConfig,
   fork: RepoConfig,
-  boilerplateFile: FileEntry,
+  upstreamFile: FileEntry,
   forkFile?: FileEntry
 ): Promise<FileAnalysis> {
-  const filePath = boilerplateFile.path;
-  const commitSummary = await analyzeFileCommits(boilerplate, fork, filePath);
-  const blobStatus = analyzeFileBlob(boilerplateFile, forkFile);
+  const filePath = upstreamFile.path;
+  const commitSummary = await analyzeFileCommits(upstream, fork, filePath);
+  const blobStatus = analyzeFileBlob(upstreamFile, forkFile);
 
   // Create the initial analysis object
   const analyzedFile = {
     filePath,
-    boilerplateFile,
+    upstreamFile,
     forkFile,
     commitSummary,
     blobStatus
@@ -49,26 +49,26 @@ export async function analyzeFile(
 }
 
 /**
- * Analyzes multiple files by comparing their states in the boilerplate and fork repositories.
+ * Analyzes multiple files by comparing their states in the upstream and fork repositories.
  * 
- * @param boilerplate - The boilerplate repository configuration
+ * @param upstream - The upstream repository configuration
  * @param fork - The fork repository configuration
- * @param boilerplateFiles - The list of file entries from the boilerplate repository
+ * @param upstreamFiles - The list of file entries from the upstream repository
  * @param forkFiles - The list of file entries from the fork repository
  * 
  * @returns A promise that resolves to an array of analyzed file data
  */
 export async function analyzeManyFiles(
-  boilerplate: RepoConfig,
+  upstream: RepoConfig,
   fork: RepoConfig,
-  boilerplateFiles: FileEntry[],
+  upstreamFiles: FileEntry[],
   forkFiles: FileEntry[]
 ): Promise<FileAnalysis[]> {
   const forkMap = new Map(forkFiles.map(file => [file.path, file]));
-  const analysisPromises = boilerplateFiles.map(boilerplateFile =>
+  const analysisPromises = upstreamFiles.map(upstreamFile =>
     limit(async () => {
-      const forkFile = forkMap.get(boilerplateFile.path);
-      return analyzeFile(boilerplate, fork, boilerplateFile, forkFile);
+      const forkFile = forkMap.get(upstreamFile.path);
+      return analyzeFile(upstream, fork, upstreamFile, forkFile);
     })
   );
 

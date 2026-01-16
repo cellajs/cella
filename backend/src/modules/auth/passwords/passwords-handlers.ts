@@ -8,7 +8,7 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextToken } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
@@ -42,11 +42,11 @@ const authPasswordsRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
     // Stop if sign up is disabled and no invitation
-    if (!appConfig.has.registrationEnabled) throw new AppError({ status: 403, type: 'sign_up_restricted' });
+    if (!appConfig.has.registrationEnabled) throw new AppError(403, 'sign_up_restricted', 'info');
     const slug = slugFromEmail(email);
 
     // Create user & send verification email
@@ -71,12 +71,12 @@ const authPasswordsRouteHandlers = app
     const { password } = ctx.req.valid('json');
 
     const validToken = getContextToken();
-    if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!validToken) throw new AppError(400, 'invalid_request', 'error');
 
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
     const slug = slugFromEmail(validToken.email);
@@ -110,7 +110,7 @@ const authPasswordsRouteHandlers = app
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
-    if (!user) throw new AppError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError(404, 'invalid_email', 'warn', { entityType: 'user' });
 
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password-reset')));
@@ -156,20 +156,17 @@ const authPasswordsRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
     // If the token is not found or expired
-    if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+    if (!token || !token.userId) throw new AppError(401, 'invalid_token', 'warn');
 
     const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
     if (!user) {
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: 'user',
         meta: { userId: token.userId },
       });
@@ -203,7 +200,7 @@ const authPasswordsRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -217,14 +214,14 @@ const authPasswordsRouteHandlers = app
       .limit(1);
 
     // If user is not found or doesn't have password
-    if (!info) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!info) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
     const { user, hashedPassword, emailVerified } = info;
 
-    if (!hashedPassword) throw new AppError({ status: 403, type: 'no_password_found', severity: 'warn' });
+    if (!hashedPassword) throw new AppError(403, 'no_password_found', 'warn');
     // Verify password
     const validPassword = await verifyPasswordHash(hashedPassword, password);
-    if (!validPassword) throw new AppError({ status: 403, type: 'invalid_password', severity: 'warn' });
+    if (!validPassword) throw new AppError(403, 'invalid_password', 'warn');
 
     // If email is not verified, send verification email
     if (!emailVerified) {

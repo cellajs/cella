@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
+import { registerExample } from './example-registry';
 import { mockNanoid, withFakerSeed } from './utils';
 
 /**
@@ -36,3 +37,6 @@ export const mockPage = (key = 'page:default'): PageModel =>
 
 /** Alias for API response examples (page schema matches DB schema) */
 export const mockPageResponse = mockPage;
+
+// Self-register for OpenAPI examples
+registerExample('Page', mockPageResponse);

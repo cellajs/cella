@@ -2,7 +2,7 @@ import type { EntityType } from 'config';
 import { eq, inArray, or, type TableConfig } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
-import { entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-table-config';
 
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
 

@@ -10,7 +10,10 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks';
+import { getMembershipOrderOffset, mockOrganizationMembership } from '../../../mocks/mock-membership';
+import { mockOrganization } from '../../../mocks/mock-organization';
+import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/mock-user';
+import { mockMany } from '../../../mocks/mock-common';
 import { defaultAdminUser } from '../fixtures';
 
 const isProduction = process.env.NODE_ENV === 'production';

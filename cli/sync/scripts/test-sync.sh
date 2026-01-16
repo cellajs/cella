@@ -46,20 +46,20 @@ git commit -m "chore: customize README for fork"
 
 # Create a minimal cella.config.ts for the test fork
 cat > cella.config.ts << 'EOF'
-import { DeepPartial, AppConfig } from "./cli/sync/src/config/types";
+import { DeepPartial, SyncConfig } from "./cli/sync/src/config/types";
 
-export const cellaConfig: DeepPartial<AppConfig> = {
+export const cellaConfig: DeepPartial<SyncConfig> = {
   fork: {
     branch: "test-fork-branch",
     syncBranch: "test-sync-branch",
     localPath: process.cwd(),
   },
-  boilerplate: {
+  upstream: {
     branch: "development",
-    localPath: process.env.CELLA_BOILERPLATE_PATH || "",
+    localPath: process.env.CELLA_UPSTREAM_PATH || "",
   },
-  swizzle: {
-    editedFiles: ["README.md"],
+  overrides: {
+    customized: ["README.md"],
   }
 }
 EOF
@@ -76,8 +76,8 @@ CELLA_TEST_FORK_PATH="$TEST_DIR" tsx ./cli/sync/src/index.ts \
   --sync-service analyze \
   --fork-branch "$TEST_BRANCH" \
   --fork-sync-branch "$SYNC_BRANCH" \
-  --boilerplate-location local \
-  --boilerplate-branch development
+  --upstream-location local \
+  --upstream-branch development
 
 echo ""
 echo "✔ Sync analysis completed successfully!"

@@ -19,7 +19,7 @@ import {
   getContextUserSystemRole,
 } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 
 import { mailer } from '#/lib/mailer';
 import { sendSSEByUserIds } from '#/lib/sse';
@@ -70,7 +70,7 @@ const membershipRouteHandlers = app
     const { idOrSlug, entityType } = ctx.req.valid('query');
 
     const normalizedEmails = [...new Set(emails.map((e: string) => e.toLowerCase().trim()))];
-    if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!normalizedEmails.length) throw new AppError(400, 'no_recipients', 'warn');
 
     // Step 0: Validate target entity and caller permission (update)
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'update');
@@ -368,7 +368,7 @@ const membershipRouteHandlers = app
 
     const membersRestrictions = organization.restrictions.user;
     if (membersRestrictions !== 0 && currentOrgMemberships + invitesSentCount > membersRestrictions) {
-      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
+      throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
     }
 
     logEvent('info', 'Users invited on entity level', {
@@ -448,10 +448,7 @@ const membershipRouteHandlers = app
       .limit(1);
 
     if (!membershipToUpdate) {
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: 'user',
         meta: { membership: membershipId },
       });
@@ -462,19 +459,13 @@ const membershipRouteHandlers = app
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId)
-      throw new AppError({
-        status: 500,
-        type: 'server_error',
-        severity: 'error',
+      throw new AppError(500, 'server_error', 'error', {
         entityType: updatedType,
       });
 
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
     if (!membershipContext)
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: updatedType,
       });
 
@@ -534,10 +525,7 @@ const membershipRouteHandlers = app
       .limit(1);
 
     if (!inactiveMembership)
-      throw new AppError({
-        status: 404,
-        type: 'inactive_membership_not_found',
-        severity: 'error',
+      throw new AppError(404, 'inactive_membership_not_found', 'error', {
         meta: { id: inactiveMembershipId },
       });
 
@@ -545,19 +533,13 @@ const membershipRouteHandlers = app
       const entityFieldIdName = appConfig.entityIdColumnKeys[inactiveMembership.contextType];
       const entityFieldId = inactiveMembership[entityFieldIdName];
       if (!entityFieldId)
-        throw new AppError({
-          status: 500,
-          type: 'server_error',
-          severity: 'error',
+        throw new AppError(500, 'server_error', 'error', {
           entityType: inactiveMembership.contextType,
         });
 
       const entity = await resolveEntity(inactiveMembership.contextType, entityFieldId);
       if (!entity)
-        throw new AppError({
-          status: 404,
-          type: 'not_found',
-          severity: 'error',
+        throw new AppError(404, 'not_found', 'error', {
           entityType: inactiveMembership.contextType,
         });
 
@@ -580,7 +562,7 @@ const membershipRouteHandlers = app
     }
 
     const entity = await resolveEntity('organization', inactiveMembership.organizationId);
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'error', entityType: 'organization' });
+    if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
 
     return ctx.json(entity, 200);
   })

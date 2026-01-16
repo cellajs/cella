@@ -18,7 +18,7 @@ import { config } from "./config";
  * Responsibilities:
  *
  * 1. **Configuration validation**  
- *    Ensures required properties exist in both boilerplate and fork configurations:
+ *    Ensures required properties exist in both upstream and fork configurations:
  *    - `branchRef`  
  *    - `syncBranchRef` (fork only)  
  *    - `repoReference`
@@ -27,7 +27,7 @@ import { config } from "./config";
  *    Verifies that both repositories can be accessed via the provided paths or remotes.
  *
  * 3. **Remote setup**  
- *    Ensures the boilerplate repository is added as a remote in the fork repository.
+ *    Ensures the upstream repository is added as a remote in the fork repository.
  *
  * 4. **Working directory cleanliness**  
  *    Validates that the fork repository is in a clean state:
@@ -51,7 +51,7 @@ export async function runSetup() {
   console.info(pc.cyan("Running Setup"));
 
   // Basic configuration validation
-  checkConfig(config.boilerplate, [
+  checkConfig(config.upstream, [
     { prop: 'branchRef', required: true },
     { prop: 'repoReference', required: true }
   ]);
@@ -63,13 +63,13 @@ export async function runSetup() {
   ]);
 
   // Verify repository accessibility
-  await checkRepository(config.boilerplate);
+  await checkRepository(config.upstream);
   await checkRepository(config.fork);
   console.info(`${checkMark} ${pc.green("Repository accessibility verified.")}`);
 
-  // Ensure boilerplate is added as a remote in the fork
-  await addAsRemote(config.boilerplate, config.fork);
-  console.info(`${checkMark} ${pc.green("Boilerplate remote setup complete.")}`);
+  // Ensure upstream is added as a remote in the fork
+  await addAsRemote(config.upstream, config.fork);
+  console.info(`${checkMark} ${pc.green("Upstream remote setup complete.")}`);
 
   // Ensure fork working directory and branches are clean
   await checkCleanState(config.fork.workingDirectory);
@@ -82,8 +82,8 @@ export async function runSetup() {
   console.info(`${checkMark} ${pc.green("Fork sync branch clean state verified.")}`);
 
   // Fetch latest changes for both repositories
-  await fetchLatestChanges(config.boilerplate);
-  console.info(`${checkMark} ${pc.green("Boilerplate latest changes fetched.")}`);
+  await fetchLatestChanges(config.upstream);
+  console.info(`${checkMark} ${pc.green("Upstream latest changes fetched.")}`);
 
   await fetchLatestChanges(config.fork);
   console.info(`${checkMark} ${pc.green("Fork latest changes fetched.")}`);

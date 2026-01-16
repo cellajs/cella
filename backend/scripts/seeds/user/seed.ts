@@ -6,7 +6,7 @@ import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import pc from 'picocolors';
 import { appConfig } from 'config';
-import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks';
+import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks/mock-user';
 import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';

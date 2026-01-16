@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { setMiddlewareExtension } from '#/docs/x-middleware';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { isSystemAdmin } from '#/middlewares/guard/is-system-admin';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
@@ -18,7 +18,7 @@ const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
 const combinedMiddleware: MiddlewareHandler = every(
   isSystemAdmin,
   ipRestriction(getIp, { allowList }, async () => {
-    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
+    throw new AppError(403, 'forbidden', 'warn');
   }),
 );
 

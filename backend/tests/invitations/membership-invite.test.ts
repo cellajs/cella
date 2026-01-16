@@ -4,7 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { mockOrganization } from '../../mocks';
+import { mockOrganization } from '../../mocks/mock-organization';
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createPasswordUser, parseResponse } from '../helpers';
 import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';

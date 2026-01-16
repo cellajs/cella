@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { userSelect } from '#/modules/users/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
@@ -61,11 +61,8 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
 export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
   const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenFromCookie)
-    throw new AppError({
-      status: 401,
-      type: 'confirm-mfa_not_found',
-      severity: 'error',
-      shouldRedirect: true,
+    throw new AppError(401, 'confirm-mfa_not_found', 'error', {
+      willRedirect: true,
       meta: { errorPagePath: '/auth/error' },
     });
 
@@ -78,10 +75,10 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   });
 
   // Sanity check
-  if (!tokenRecord.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (!tokenRecord.userId) throw new AppError(400, 'invalid_request', 'error');
 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, tokenRecord.userId)).limit(1);
-  if (!user) throw new AppError({ status: 404, type: 'not_found', entityType: 'user', severity: 'error' });
+  if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   return user;
 };

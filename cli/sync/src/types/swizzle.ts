@@ -1,7 +1,7 @@
 /**
  * Represents a single file's swizzle information.
  * A "swizzle" indicates that the file was modified, removed, renamed,
- * or replaced with a binary in the fork compared to the boilerplate.
+ * or replaced with a binary in the fork compared to upstream.
  */
 export interface SwizzleEntry {
   /** The relative path of the file in the repository */
@@ -28,11 +28,11 @@ export interface SwizzleEntry {
   /** ISO timestamp when the swizzle was last detected */
   lastSwizzledAt: string;
 
-  /** Optional commit SHA of the boilerplate at swizzle time */
-  boilerplateLastCommitSha?: string;
+  /** Optional commit SHA of upstream at swizzle time */
+  upstreamLastCommitSha?: string;
 
-  /** Optional blob SHA of the boilerplate at swizzle time */
-  boilerplateBlobSha?: string;
+  /** Optional blob SHA of upstream at swizzle time */
+  upstreamBlobSha?: string;
 }
 
 /**
@@ -62,6 +62,6 @@ export interface SwizzleAnalysis {
   /** Newly detected swizzle entry for this file, if triggered */
   newMetadata?: SwizzleEntry;
 
-  /** Indicates if the file was flagged in custom settings as 'removed' or 'edited' */
-  flaggedInSettingsAs?: 'removed' | 'edited' | undefined;
+  /** Indicates if the file was flagged in custom settings as 'ignored' or 'customized' */
+  flaggedInSettingsAs?: 'ignored' | 'customized' | undefined;
 }

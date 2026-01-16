@@ -2,8 +2,8 @@ import i18n from 'i18next';
 import { Text } from 'jsx-email';
 
 import { appConfig } from 'config';
-import { AppLogo } from '../components/app-logo';
-import { EmailContainer } from '../components/container';
+import { EmailLogo } from '../components/email-logo';
+import { EmailContainer } from '../components/email-container';
 import { EmailBody } from '../components/email-body';
 import { EmailHeader } from '../components/email-header';
 import { Footer } from '../components/footer';
@@ -27,7 +27,7 @@ export const RequestInfoEmail = ({ lng, type, subject, message }: RequestRespons
         {message && <Text>{message}</Text>}
       </EmailBody>
 
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

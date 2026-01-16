@@ -289,7 +289,7 @@ export async function gitLogFileHistory(repoPath: string, branchName: string, fi
  * @returns The stdout from the git commit command
  *
  * @example
- * await gitCommit('/path/to/repo', 'Update boilerplate', { noVerify: true });
+ * await gitCommit('/path/to/repo', 'Update upstream', { noVerify: true });
  */
 export async function gitCommit(
   repoPath: string,

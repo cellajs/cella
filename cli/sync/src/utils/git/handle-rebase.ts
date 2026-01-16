@@ -30,9 +30,9 @@ export async function handleRebase(
 }
 
 /**
- * Starts the merge process between the fork and boilerplate repositories.
+ * Starts the merge process between the fork and upstream repositories.
  * @param forkConfig - RepoConfig of the forked repo
- * @param boilerplateConfig - RepoConfig of the boilerplate repo
+ * @param upstreamConfig - RepoConfig of the upstream repo
  * 
  * @throws Will throw an error if the rebase fails for reasons other than conflicts.
  * @returns A promise that resolves when the rebase is initiated.

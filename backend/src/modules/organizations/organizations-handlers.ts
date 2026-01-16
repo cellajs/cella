@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser, getContextUserSystemRole } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { sendSSEByUserIds } from '#/lib/sse';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntityCounts } from '#/modules/entities/helpers/counts';
@@ -39,16 +39,12 @@ const organizationRouteHandlers = app
       return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
     }, 0);
 
-    if (createdOrgsCount === 5)
-      throw new AppError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
+    if (createdOrgsCount === 5) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
     if (!slugAvailable)
-      throw new AppError({
-        status: 409,
-        type: 'slug_exists',
-        severity: 'warn',
+      throw new AppError(409, 'slug_exists', 'warn', {
         entityType: 'organization',
         meta: { slug },
       });
@@ -215,10 +211,7 @@ const organizationRouteHandlers = app
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
       if (!slugAvailable)
-        throw new AppError({
-          status: 409,
-          type: 'slug_exists',
-          severity: 'warn',
+        throw new AppError(409, 'slug_exists', 'warn', {
           entityType: 'organization',
           meta: { slug },
         });
@@ -269,8 +262,7 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length)
-      throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'error', { entityType: 'organization' });
 
     // Split ids into allowed and disallowed
     const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
@@ -279,8 +271,7 @@ const organizationRouteHandlers = app
       toDeleteIds,
       memberships,
     );
-    if (!allowedIds.length)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
 
     // Get ids of members for organizations
     const memberIds = await db

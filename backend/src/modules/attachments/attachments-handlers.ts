@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import attachmentRoutes from '#/modules/attachments/attachments-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
@@ -26,10 +26,10 @@ const attachmentsRouteHandlers = app
     const { table, ...query } = ctx.req.valid('query');
 
     // Validate query params
-    if (table !== 'attachments') throw new AppError({ status: 400, type: 'sync_table_mismatch', severity: 'error' });
+    if (table !== 'attachments') throw new AppError(400, 'sync_table_mismatch', 'error');
 
     if (query.where && /organization_id\s*=/.test(query.where)) {
-      throw new AppError({ status: 400, type: 'sync_organization_mismatch', severity: 'error' });
+      throw new AppError(400, 'sync_organization_mismatch', 'error');
     }
     const organization = getContextOrganization();
 
@@ -57,7 +57,7 @@ const attachmentsRouteHandlers = app
 
     // Check restriction limits
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
-      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
+      throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
 
     const [{ currentAttachments }] = await db
@@ -66,7 +66,7 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.organizationId, organization.id));
 
     if (attachmentRestrictions !== 0 && currentAttachments + newAttachments.length > attachmentRestrictions) {
-      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
+      throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
 
     const createdAttachments = await db.insert(attachmentsTable).values(newAttachments).returning();
@@ -110,8 +110,7 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length)
-      throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
+    if (!toDeleteIds.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance(
       'delete',
@@ -120,8 +119,7 @@ const attachmentsRouteHandlers = app
       memberships,
     );
 
-    if (!allowedIds.length)
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
+    if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
 
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
@@ -137,14 +135,13 @@ const attachmentsRouteHandlers = app
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
-    if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
+    if (!attachment) throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
 
     const [organization] = await db
       .select()
       .from(organizationsTable)
       .where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization)
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+    if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
     const url = new URL(`${appConfig.frontendUrl}/organization/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);

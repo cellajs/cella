@@ -3,8 +3,8 @@ import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
 
 import type { BasicTemplateType } from '../../src/lib/mailer';
-import { AppLogo } from '../components/app-logo';
-import { EmailContainer } from '../components/container';
+import { EmailLogo } from '../components/email-logo';
+import { EmailContainer } from '../components/email-container';
 import { EmailBody } from '../components/email-body';
 import { EmailButton } from '../components/email-button';
 import { EmailHeader } from '../components/email-header';
@@ -39,7 +39,7 @@ export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePas
 
         <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>{i18n.t('backend:email.create_password.ignore', { lng })}</Text>
       </EmailBody>
-      <AppLogo />
+      <EmailLogo />
       <Footer />
     </EmailContainer>
   );

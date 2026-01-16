@@ -2,7 +2,7 @@ import type { ContextEntityType } from 'config';
 import { eq, sql } from 'drizzle-orm';
 import type z from 'zod';
 import { db } from '#/db/db';
-import { entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-table-config';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
 import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
 import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';

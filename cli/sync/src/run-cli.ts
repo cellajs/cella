@@ -9,11 +9,11 @@ import { showConfiguration, showStartingSyncMessage, showWelcome } from "./modul
 // Initialize variables to hold CLI options
 const packageManager = 'pnpm';
 let syncService = '';
-let boilerplateBranch = '';
+let upstreamBranch = '';
 let forkBranch = '';
 let forkSyncBranch = '';
-let boilerplateLocation = '';
-let boilerplateRemoteName = '';
+let upstreamLocation = '';
+let upstreamRemoteName = '';
 let forkLocation = '';
 let ciMode = false;
 
@@ -44,19 +44,19 @@ export const command = new Command(NAME)
     (name: string) => { syncService = validateSyncService(name); },
   )
   .option(
-    '--boilerplate-location <location>',
-    'What location of the boilerplate to use (local|remote).',
-    (location: string) => { boilerplateLocation = validateLocation(location); },
+    '--upstream-location <location>',
+    'What location of the upstream to use (local|remote).',
+    (location: string) => { upstreamLocation = validateLocation(location); },
   )
   .option(
-    '--boilerplate-branch <name>',
-    'What branch of the boilerplate to use.',
-    (name: string) => { boilerplateBranch = validateBranchName(name); },
+    '--upstream-branch <name>',
+    'What branch of the upstream to use.',
+    (name: string) => { upstreamBranch = validateBranchName(name); },
   )
   .option(
-    '--boilerplate-remote-name <name>',
-    'What remote name to use for the boilerplate.',
-    (name: string) => { boilerplateRemoteName = validateRemoteName(name); },
+    '--upstream-remote-name <name>',
+    'What remote name to use for the upstream.',
+    (name: string) => { upstreamRemoteName = validateRemoteName(name); },
   )
   .option(
     '--fork-location <location>',
@@ -88,9 +88,9 @@ const cli: CLIConfig = {
   args: command.args,
   packageManager,
   syncService,
-  boilerplateLocation,
-  boilerplateRemoteName,
-  boilerplateBranch,
+  upstreamLocation,
+  upstreamRemoteName,
+  upstreamBranch,
   forkLocation,
   forkBranch,
   forkSyncBranch,

@@ -13,7 +13,7 @@ let cachedMetadata: SwizzleMetadata | null = null;
 export function loadSwizzleMetadata(): SwizzleMetadata | null {
   if (cachedMetadata) return cachedMetadata;
 
-  const filePath = resolvePath(config.swizzle.localMetadataFilePath);
+  const filePath = resolvePath(config.overrides.localMetadataFilePath);
   cachedMetadata = readJsonFile<SwizzleMetadata>(filePath);
 
   return cachedMetadata;
@@ -50,11 +50,11 @@ export function clearSwizzleMetadataCache(): void {
   * @returns void
  */
 export function writeSwizzleMetadata(entries: SwizzleEntry[]): void {
-  const filePath = resolvePath(config.swizzle.localMetadataFilePath);
+  const filePath = resolvePath(config.overrides.localMetadataFilePath);
   const existingMetadata = readJsonFile<SwizzleMetadata>(filePath);
 
   const mergedMetadata: SwizzleMetadata = {
-    version: config.swizzle.metadataVersion,
+    version: config.overrides.metadataVersion,
     lastSyncedAt: new Date().toISOString(),
     entries: {
       ...existingMetadata?.entries || {},

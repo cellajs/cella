@@ -21,6 +21,3 @@ export const successWithRejectedItemsSchema = z
     rejectedItems: z.array(z.string()),
   })
   .openapi('SuccessWithRejectedItems', { example: mockSuccessWithRejectedItems() });
-
-// Re-export type from types.ts for convenience
-export type { SuccessWithRejectedItemsResponse } from './types';

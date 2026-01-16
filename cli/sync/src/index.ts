@@ -9,17 +9,17 @@ import { runPackages } from "./run-packages";
 import { validateConfig } from "./modules/cli/handlers";
 
 // Constants representing which sync modules should trigger which operations
-const SYNC_MODULES = ['boilerplate-fork', 'boilerplate-fork+packages'];
-const PACKAGE_MODULES = ['boilerplate-fork+packages', 'packages'];
+const SYNC_MODULES = ['upstream-fork', 'upstream-fork+packages'];
+const PACKAGE_MODULES = ['upstream-fork+packages', 'packages'];
 
 /**
  * Orchestrates the full execution flow of the Cella Sync Engine.
  *
  * This includes:
  *  - Running the initial CLI (config)
- *  - Validating the swizzle configuration
+ *  - Validating the overrides configuration
  *  - Performing repository and configuration preflight checks
- *  - Analyzing file differences between boilerplate and fork
+ *  - Analyzing file differences between upstream and fork
  *  - Running the repository sync (if enabled)
  *  - Running dependency sync (if enabled)
  *
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   // Prompt configuration
   await runCli();
 
-  // Validate swizzle config (check file patterns exist)
+  // Validate overrides config (check file patterns exist)
   await validateConfig();
   
   // Validate environment and repository state
@@ -56,8 +56,8 @@ async function main(): Promise<void> {
  * based on the current `config.syncService` value.
  *
  * Sync is executed for:
- *  - "boilerplate-fork"
- *  - "boilerplate-fork+packages"
+ *  - "upstream-fork"
+ *  - "upstream-fork+packages"
  *
  * @returns `true` if file sync should run, otherwise `false`.
  */
@@ -70,7 +70,7 @@ function shouldRunSync(): boolean {
  * based on the configured sync module.
  *
  * Package sync is executed for:
- *  - "boilerplate-fork+packages"
+ *  - "upstream-fork+packages"
  *  - "packages"
  *
  * @returns `true` if package syncing is enabled, otherwise `false`.

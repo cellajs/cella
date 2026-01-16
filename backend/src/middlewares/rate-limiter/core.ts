@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import { xMiddleware } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
 import { RateLimitIdentifier, RateLimitMode, RateLimitOptions } from '#/middlewares/rate-limiter/types';
 
@@ -68,7 +68,7 @@ export const rateLimiter = (
 
       // Stop if required identifiers are not available
       if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
-        throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn' });
+        throw new AppError(400, 'invalid_request', 'warn');
       }
 
       // Generate rate limit key with fallback logic

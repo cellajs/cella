@@ -1,18 +1,18 @@
 import pc from "picocolors";
 
-import { handleBoilerplateIntoForkMerge } from "./modules/git/handle-boilerplate-into-fork-merge";
+import { handleUpstreamIntoForkMerge } from "./modules/git/handle-upstream-into-fork-merge";
 import { FileAnalysis } from "./types";
 import { handleSquashMerge } from "./utils/git/handle-squash-merge";
 import { checkMark } from "./utils/console";
 import { config } from "./config"
 
 /**
- * Runs the full synchronization process between the boilerplate and fork repositories.
+ * Runs the full synchronization process between the upstream and fork repositories.
  *
  * This function orchestrates the following steps:
  *
- * 1. **Merge boilerplate into fork**  
- *    Applies all updates from the boilerplate repository into the fork's sync branch.
+ * 1. **Merge upstream into fork**  
+ *    Applies all updates from the upstream repository into the fork's sync branch.
  *    Conflicts are analyzed and resolved according to the swizzle rules.
  *
  * 2. **Squash sync branch into target branch**  
@@ -37,9 +37,9 @@ import { config } from "./config"
 export async function runSync(analyzedFiles: FileAnalysis[]) {
   console.info(pc.cyan("\nStarting sync process"));
 
-  // Merge boilerplate into fork (sync-branch)
-  await handleBoilerplateIntoForkMerge(config.boilerplate, config.fork, analyzedFiles);
-  console.info(`${checkMark} ${pc.green("Boilerplate changes merged into fork sync branch.")}`);
+  // Merge upstream into fork (sync-branch)
+  await handleUpstreamIntoForkMerge(config.upstream, config.fork, analyzedFiles);
+  console.info(`${checkMark} ${pc.green("Upstream changes merged into fork sync branch.")}`);
 
   // Squash merge sync-branch → target branch
   const squashMergeIntoPath = config.fork.localPath;

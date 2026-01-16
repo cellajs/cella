@@ -2,10 +2,10 @@ import { FileAnalysis, FileMergeStrategy } from "../../types";
 
 /**
  * Determines the most appropriate merge strategy for a given file,
- * based on commit history, blob comparisons, and swizzle metadata.
+ * based on commit history, blob comparisons, and override metadata.
  *
  * @param fileAnalysis - Precomputed analysis object for a single file,
- *   containing commit history, blob status, and optional swizzle metadata.
+ *   containing commit history, blob status, and optional override metadata.
  *
  * @returns A {@link FileMergeStrategy} object indicating which merge
  *   action to take (e.g., "keep-fork", "remove-from-fork", "manual").
@@ -14,16 +14,16 @@ export function determineFileMergeStrategy(
   fileAnalysis: FileAnalysis
 ): FileMergeStrategy {
   // Extract flags
-  const flaggedInSettingsAsEdited = fileAnalysis.swizzle?.flaggedInSettingsAs === 'edited';
-  const flaggedInSettingsAsRemoved = fileAnalysis.swizzle?.flaggedInSettingsAs === 'removed';
+  const flaggedAsCustomized = fileAnalysis.swizzle?.flaggedInSettingsAs === 'customized';
+  const flaggedAsIgnored = fileAnalysis.swizzle?.flaggedInSettingsAs === 'ignored';
 
   const swizzleInfo = fileAnalysis.swizzle?.newMetadata || fileAnalysis.swizzle?.existingMetadata;
 
-  // 1. Flagged as removed in settings → remove
-  if (flaggedInSettingsAsRemoved) {
+  // 1. Flagged as ignored in settings → remove
+  if (flaggedAsIgnored) {
     return {
       strategy: "remove-from-fork",
-      reason: "Flagged as removed in settings",
+      reason: "Flagged as ignored in settings",
     };
   }
 
@@ -43,9 +43,9 @@ export function determineFileMergeStrategy(
     }
   }
 
-  const { boilerplateFile, forkFile, blobStatus, commitSummary } = fileAnalysis;
+  const { upstreamFile, forkFile, blobStatus, commitSummary } = fileAnalysis;
   const commitStatus = commitSummary?.status || "unrelated";
-  const isHeadIdentical = boilerplateFile.lastCommitSha === forkFile?.lastCommitSha;
+  const isHeadIdentical = upstreamFile.lastCommitSha === forkFile?.lastCommitSha;
 
   // 3. Commit heads identical → trivial keep
   if (isHeadIdentical) {
@@ -79,29 +79,29 @@ export function determineFileMergeStrategy(
     }
   }
 
-  // 6. When fork is behind boilerplate → usually keep boilerplate
+  // 6. When fork is behind upstream → usually keep upstream
   if (commitStatus === "behind") {
     if (blobStatus === "different") {
-      if (flaggedInSettingsAsEdited) {
+      if (flaggedAsCustomized) {
         return {
           strategy: "keep-fork",
-          reason: `Fork is behind boilerplate and flagged as edited`,
+          reason: `Fork is behind upstream and flagged as customized`,
         };
       }
 
       return {
-        strategy: "keep-boilerplate",
-        reason: `Blob differs and fork is behind boilerplate`,
+        strategy: "keep-upstream",
+        reason: `Blob differs and fork is behind upstream`,
       };
     }
   }
 
   // 7. Diverged histories → unsafe
   if (commitStatus === "diverged") {
-    if (flaggedInSettingsAsEdited) {
+    if (flaggedAsCustomized) {
       return {
         strategy: "keep-fork",
-        reason: `History ${commitStatus} but flagged as edited`,
+        reason: `History ${commitStatus} but flagged as customized`,
       };
     }
     return {
@@ -112,10 +112,10 @@ export function determineFileMergeStrategy(
 
   // 8. Unrelated histories → unsafe
   if (commitStatus === "unrelated") {
-    if (flaggedInSettingsAsEdited) {
+    if (flaggedAsCustomized) {
       return {
         strategy: "remove-from-fork",
-        reason: `History ${commitStatus} but flagged as edited`,
+        reason: `History ${commitStatus} but flagged as customized`,
       };
     }
     return {

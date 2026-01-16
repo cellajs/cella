@@ -1,6 +1,6 @@
 import { xMiddleware } from '#/docs/x-middleware';
 import { getContextUser, getContextUserSystemRole } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 
 /**
  * Middleware to check if user is a system admin based on their role.
@@ -14,8 +14,7 @@ export const isSystemAdmin = xMiddleware('isSystemAdmin', 'x-guard', async (_, n
   const user = getContextUser();
   const userSystemRole = getContextUserSystemRole();
 
-  if (userSystemRole !== 'admin')
-    throw new AppError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
+  if (userSystemRole !== 'admin') throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
 
   await next();
 });

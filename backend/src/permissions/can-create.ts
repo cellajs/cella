@@ -1,7 +1,7 @@
 import type { ContextEntityType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { isPermissionAllowed } from '#/permissions';
 
 /**
@@ -23,14 +23,15 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
   // Step 1: Permission check
   const { allowed } = isPermissionAllowed(memberships, 'create', entity);
 
+  // Deny if not allowed and not system admin
   if (!allowed && !isSystemAdmin) {
-    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+    throw new AppError(403, 'forbidden', 'warn', { entityType });
   }
 
   const org = getContextOrganization();
 
-  // Step 2: Organization ownership check
+  //Defensive check: it must match context organization
   if (org && 'organizationId' in entity && entity.organizationId !== org.id) {
-    throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType });
+    throw new AppError(409, 'organization_mismatch', 'error', { entityType });
   }
 };

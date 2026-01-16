@@ -7,21 +7,21 @@ import { gitMergeFile } from '../../utils/git/command';
 
 /**
  * Checks whether Git can automatically merge a specific file
- * between a fork and a boilerplate repository without conflicts.
+ * between a fork and an upstream repository without conflicts.
  * 
- * @param boilerplateConfig - Repo config for the boilerplate
- * @param forkConfig - Repo config for the fork
+ * @param upstream - Repo config for the upstream
+ * @param fork - Repo config for the fork
  * @param analysis - The file analysis object
  * 
  * @returns `true` if Git can auto-merge the file; `false` if a merge conflict is expected
  */
 export async function checkFileAutomerge(
-  boilerplate: RepoConfig,
+  upstream: RepoConfig,
   fork: RepoConfig,
   fileAnalysis: FileAnalysis
 ): Promise<Boolean> {
   // Destructure necessary properties from the analysis object
-  const { filePath, forkFile, boilerplateFile, commitSummary } = fileAnalysis;
+  const { filePath, forkFile, upstreamFile, commitSummary } = fileAnalysis;
 
   if (!forkFile) {
     return false;
@@ -40,7 +40,7 @@ export async function checkFileAutomerge(
   const tmpDir = await createTempDir('cella-merge-check-');
 
   // Base, ours, and theirs refer to git merge-file's semantics:
-  // base: common ancestor, ours: fork version, theirs: boilerplate version
+  // base: common ancestor, ours: fork version, theirs: upstream version
   const baseFile = path.join(tmpDir, 'base');
   const oursFile = path.join(tmpDir, 'ours');
   const theirsFile = path.join(tmpDir, 'theirs');
@@ -50,7 +50,7 @@ export async function checkFileAutomerge(
     await Promise.all([
       writeGitFileAtCommit(fork.workingDirectory, commitSummary.sharedAncestorSha, filePath, baseFile),
       writeGitFileAtCommit(fork.workingDirectory, forkFile.lastCommitSha, filePath, oursFile),
-      writeGitFileAtCommit(boilerplate.workingDirectory, boilerplateFile.lastCommitSha, filePath, theirsFile),
+      writeGitFileAtCommit(upstream.workingDirectory, upstreamFile.lastCommitSha, filePath, theirsFile),
     ]);
 
     await gitMergeFile(oursFile, baseFile, theirsFile);

@@ -8,7 +8,7 @@ import {
 import { db } from '#/db/db';
 import { env } from '#/env';
 import { Env, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { defaultOptions } from '#/middlewares/rate-limiter/core';
 import { Identifiers, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
 import { getIp } from '#/utils/get-ip';
@@ -36,7 +36,7 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
  */
 export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {
   ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
-  throw new AppError({ status: 429, type: 'too_many_requests', severity: 'warn', meta: { rateLimitKey } });
+  throw new AppError(429, 'too_many_requests', 'warn', { meta: { rateLimitKey } });
 };
 
 /**

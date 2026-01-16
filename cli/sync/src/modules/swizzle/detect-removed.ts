@@ -1,7 +1,7 @@
 import { FileAnalysis, SwizzleEntry } from '../../types/index';
 
 /**
- * Detects if a file has been removed in the fork but exists in the boilerplate,
+ * Detects if a file has been removed in the fork but exists in upstream,
  * indicating a potential "removed" swizzle event.
  * 
  * @param analyzedFile - The analyzed file information.
@@ -9,13 +9,13 @@ import { FileAnalysis, SwizzleEntry } from '../../types/index';
  * @returns A SwizzleEntry if the file is detected as removed, otherwise null.
  */
 export function detectRemovedSwizzle(analyzedFile: FileAnalysis): SwizzleEntry | null {
-  const { filePath, commitSummary, blobStatus, boilerplateFile, forkFile } = analyzedFile;
+  const { filePath, commitSummary, blobStatus, upstreamFile, forkFile } = analyzedFile;
 
   const isRelated = commitSummary?.status && commitSummary.status !== 'unrelated'
   const isMissing = blobStatus === 'missing';
-  const hasBoilerplate = !!boilerplateFile;
+  const hasUpstream = !!upstreamFile;
 
-  if (isRelated && isMissing && hasBoilerplate) {
+  if (isRelated && isMissing && hasUpstream) {
     return {
       filePath,
       event: 'removed',
@@ -24,8 +24,8 @@ export function detectRemovedSwizzle(analyzedFile: FileAnalysis): SwizzleEntry |
       lastCommitSha: forkFile?.lastCommitSha,
       commitAfterSwizzle: commitSummary.sharedAncestorSha, // Assuming this is the commit after the swizzle
       lastSwizzledAt: new Date().toISOString(),
-      boilerplateLastCommitSha: boilerplateFile.lastCommitSha,
-      boilerplateBlobSha: boilerplateFile.blobSha,
+      upstreamLastCommitSha: upstreamFile.lastCommitSha,
+      upstreamBlobSha: upstreamFile.blobSha,
     };
   }
 

@@ -2,7 +2,7 @@ import pc from "picocolors";
 
 import { CLIConfig, ConfigurationAction, CustomizeOption } from "./types";
 import { config } from "../../config";
-import { validateSwizzleConfig, logValidationWarnings } from "../../config/validate";
+import { validateOverridesConfig, logValidationWarnings } from "../../config/validate";
 import { SyncService } from "../../config/sync-services";
 
 import {
@@ -18,7 +18,7 @@ import {
   promptConfigureMaxGitPreviewsForSquashCommits,
 } from "./prompts";
 
-import { AppConfig } from "../../config/types";
+import { SyncConfig } from "../../config/types";
 import { showConfiguration } from "./display";
 import { SYNC_SERVICES } from "../../config/sync-services";
 
@@ -36,7 +36,7 @@ export async function handleSyncService(cli: CLIConfig): Promise<void> {
       console.info(`Using sync service (CI default): ${pc.cyan(`${cli.syncService}\n`)}`);
     } else {
       cli.syncService = await promptSyncService();
-      config.syncService = cli.syncService as AppConfig['syncService'];
+      config.syncService = cli.syncService as SyncConfig['syncService'];
     }
   } else {
     console.info(`Using sync service: ${pc.cyan(`${cli.syncService}\n`)}`);
@@ -77,16 +77,16 @@ export async function handleConfigurationAction(cli: CLIConfig): Promise<void> {
 export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void> {
   const configToCustomize: CustomizeOption = await promptWhichConfigurationToCustomize();
 
-  if (configToCustomize === 'boilerplateLocation') {
-    await handleCustomizeLocation(cli, 'boilerplate');
+  if (configToCustomize === 'upstreamLocation') {
+    await handleCustomizeLocation(cli, 'upstream');
   }
 
   if (configToCustomize === 'forkLocation') {
     await handleCustomizeLocation(cli, 'fork');
   }
 
-  if (configToCustomize === 'boilerplateBranch') {
-    await handleCustomizeBranch(cli, 'boilerplate', 'branch');
+  if (configToCustomize === 'upstreamBranch') {
+    await handleCustomizeBranch(cli, 'upstream', 'branch');
   }
 
   if (configToCustomize === 'forkBranch') {
@@ -97,8 +97,8 @@ export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void
     await handleCustomizeBranch(cli, 'fork', 'syncBranch');
   }
 
-  if (configToCustomize === 'boilerplateRemoteName') {
-    await handleCustomizeRemoteName(cli, 'boilerplate');
+  if (configToCustomize === 'upstreamRemoteName') {
+    await handleCustomizeRemoteName(cli, 'upstream');
   }
 
   if (configToCustomize === 'divergedCommitStatus') {
@@ -127,16 +127,16 @@ export async function handleCustomizeConfiguration(cli: CLIConfig): Promise<void
  * Handle customization of location.
  * 
  * @param cli - The CLI configuration object
- * @param type - The type of location to customize ('boilerplate' or 'fork')
+ * @param type - The type of location to customize ('upstream' or 'fork')
  */
-export async function handleCustomizeLocation(cli: CLIConfig, type: 'boilerplate' | 'fork'): Promise<void> {
+export async function handleCustomizeLocation(cli: CLIConfig, type: 'upstream' | 'fork'): Promise<void> {
   if (type === 'fork') {
     cli.forkLocation = await promptConfigureLocation('fork');
     config.forkLocation = cli.forkLocation as 'local' | 'remote';
   }
-  if (type === 'boilerplate') {
-    cli.boilerplateLocation = await promptConfigureLocation('boilerplate');
-    config.boilerplateLocation = cli.boilerplateLocation as 'local' | 'remote';
+  if (type === 'upstream') {
+    cli.upstreamLocation = await promptConfigureLocation('upstream');
+    config.upstreamLocation = cli.upstreamLocation as 'local' | 'remote';
   }
 }
 
@@ -144,19 +144,19 @@ export async function handleCustomizeLocation(cli: CLIConfig, type: 'boilerplate
  * Handle customization of branch.
  * 
  * @param cli - The CLI configuration object
- * @param type - The repository type of the branch to customize ('boilerplate' or 'fork')
+ * @param type - The repository type of the branch to customize ('upstream' or 'fork')
  * @param branchType - The specific branch type to customize ('branch' or 'syncBranch')
  */
-export async function handleCustomizeBranch(cli: CLIConfig, type: 'boilerplate' | 'fork', branchType: 'branch' | 'syncBranch'): Promise<void> {
+export async function handleCustomizeBranch(cli: CLIConfig, type: 'upstream' | 'fork', branchType: 'branch' | 'syncBranch'): Promise<void> {
   if (type === 'fork') {
     const branch = await promptConfigureBranch('fork', branchType);
     cli.forkBranch = branch;
     config.fork = { [branchType]: branch };
   }
-  if (type === 'boilerplate') {
-    const branch = await promptConfigureBranch('boilerplate', branchType);
-    cli.boilerplateBranch = branch;
-    config.boilerplate = { [branchType]: branch };
+  if (type === 'upstream') {
+    const branch = await promptConfigureBranch('upstream', branchType);
+    cli.upstreamBranch = branch;
+    config.upstream = { [branchType]: branch };
   }
 }
 
@@ -164,13 +164,13 @@ export async function handleCustomizeBranch(cli: CLIConfig, type: 'boilerplate' 
  * Handle customization of remote name.
  * 
  * @param cli - The CLI configuration object
- * @param type - The type of remote name to customize ('boilerplate')
+ * @param type - The type of remote name to customize ('upstream')
  */
-export async function handleCustomizeRemoteName(cli: CLIConfig, type: 'boilerplate'): Promise<void> {
+export async function handleCustomizeRemoteName(cli: CLIConfig, type: 'upstream'): Promise<void> {
   const remoteName = await promptConfigureRemoteName(type);
-  if (type === 'boilerplate') {
-    cli.boilerplateRemoteName = remoteName;
-    config.boilerplate = { remoteName };
+  if (type === 'upstream') {
+    cli.upstreamRemoteName = remoteName;
+    config.upstream = { remoteName };
   }
 }
 
@@ -216,12 +216,12 @@ export function onInitialConfigLoad(cli: CLIConfig) {
     config.syncService = cli.syncService as SyncService;
   }
 
-  if (cli.boilerplateLocation) {
-    config.boilerplateLocation = cli.boilerplateLocation as 'local' | 'remote';
+  if (cli.upstreamLocation) {
+    config.upstreamLocation = cli.upstreamLocation as 'local' | 'remote';
   }
 
-  if (cli.boilerplateBranch) {
-    config.boilerplate = { branch: cli.boilerplateBranch }
+  if (cli.upstreamBranch) {
+    config.upstream = { branch: cli.upstreamBranch }
   }
 
   if (cli.forkLocation) {
@@ -238,12 +238,12 @@ export function onInitialConfigLoad(cli: CLIConfig) {
 }
 
 /**
- * Validates the swizzle configuration and logs any warnings.
+ * Validates the overrides configuration and logs any warnings.
  * Called after config is loaded to catch invalid file patterns early.
  */
 export async function validateConfig(): Promise<void> {
-  const { warnings } = await validateSwizzleConfig(
-    config.swizzle,
+  const { warnings } = await validateOverridesConfig(
+    config.overrides,
     config.fork.workingDirectory
   );
   logValidationWarnings(warnings);

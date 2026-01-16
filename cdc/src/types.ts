@@ -3,7 +3,7 @@
  * Derived from the tracked tables registry.
  */
 
-import { entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-table-config';
 import { resourceTables } from '#/activities-config';
 
 /** Type representing an entity table */

@@ -29,11 +29,11 @@ export function showConfiguration() {
   console.info(`${pc.gray(SYNC_SERVICE_DESCRIPTIONS[config.syncService] || 'No description available.')}`);
   console.info();
 
-  console.info(pc.bold('Boilerplate:'));
-  console.info(`Location: ${pc.bold(config.boilerplate.location === 'local' ? '💻' : '🌐')} ${pc.cyan(config.boilerplate.location)}`);
-  console.info(`Repository: ${pc.cyan(config.boilerplate.repoReference)}`);
-  console.info(`Branch: <${pc.bold(pc.cyan(config.boilerplate.branch))}>`);
-  console.info(`Remote Name: ${pc.bold('🔗')} ${pc.cyan(config.boilerplate.remoteName)}`);
+  console.info(pc.bold('Upstream:'));
+  console.info(`Location: ${pc.bold(config.upstream.location === 'local' ? '💻' : '🌐')} ${pc.cyan(config.upstream.location)}`);
+  console.info(`Repository: ${pc.cyan(config.upstream.repoReference)}`);
+  console.info(`Branch: <${pc.bold(pc.cyan(config.upstream.branch))}>`);
+  console.info(`Remote Name: ${pc.bold('🔗')} ${pc.cyan(config.upstream.remoteName)}`);
   console.info();
 
   console.info(pc.bold('Fork:'));
@@ -62,12 +62,12 @@ export function showServiceConfiguration() {
     console.info(`Include files status: `, pc.cyan(`${(config.log.analyzedFile.commitSummaryState || []).join(', ')}`));
   }
 
-  if (config.syncService === 'boilerplate-fork+packages' || config.syncService === 'packages') {
+  if (config.syncService === 'upstream-fork+packages' || config.syncService === 'packages') {
     console.info(`Run GIT push: `, `${config.behavior.skipAllPushes ? pc.red('✗ No') : pc.green('✓ Yes')}`);
     console.info(`Package.json changes: `, `${pc.cyan(config.behavior.packageJsonMode === 'dryRun' ? 'Dry run (only log)' : 'Apply Changes (write, commit)')}`);
   }
 
-  if (config.syncService === 'boilerplate-fork' || config.syncService === 'boilerplate-fork+packages') {
+  if (config.syncService === 'upstream-fork' || config.syncService === 'upstream-fork+packages') {
     console.info(`Run GIT push: `, `${config.behavior.skipAllPushes ? pc.red('✗ No') : pc.green('✓ Yes')}`);
     console.info(`Squash - max preview commits: `, pc.cyan(config.behavior.maxGitPreviewsForSquashCommits));
   }

@@ -9,11 +9,11 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
-import { entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-table-config';
 import { env } from '#/env';
 import { type Env, getContextUser, getContextUserSystemRole } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { AppError } from '#/lib/errors';
+import { AppError } from '#/lib/error';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -67,10 +67,7 @@ const meRouteHandlers = app
       if (error instanceof AppError) throw error;
 
       // Wrap unexpected errors in AppError for consistent error handling
-      throw new AppError({
-        status: 500,
-        type: 'invalid_credentials',
-        severity: 'error',
+      throw new AppError(500, 'invalid_credentials', 'error', {
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -186,10 +183,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     if (!user)
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: 'user',
         meta: { user: 'self' },
       });
@@ -200,8 +194,7 @@ const meRouteHandlers = app
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable)
-        throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
     }
     // if userFlags is provided, merge it
     const updateData = {
@@ -226,10 +219,7 @@ const meRouteHandlers = app
 
     // Check if user exists
     if (!user)
-      throw new AppError({
-        status: 404,
-        type: 'not_found',
-        severity: 'warn',
+      throw new AppError(404, 'not_found', 'warn', {
         entityType: 'user',
         meta: { user: 'self' },
       });
@@ -251,7 +241,7 @@ const meRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+    if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
@@ -287,10 +277,7 @@ const meRouteHandlers = app
     } catch (error) {
       if (error instanceof AppError) throw error;
 
-      throw new AppError({
-        status: 500,
-        type: 'auth_key_not_found',
-        severity: 'error',
+      throw new AppError(500, 'auth_key_not_found', 'error', {
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
@@ -309,11 +296,11 @@ const meRouteHandlers = app
       .where(eq(unsubscribeTokensTable.token, token))
       .limit(1);
 
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) throw new AppError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
+    if (!isValid) throw new AppError(401, 'unsubscribe_failed', 'warn', { entityType: 'user' });
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));

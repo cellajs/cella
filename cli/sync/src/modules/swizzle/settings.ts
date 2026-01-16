@@ -3,22 +3,22 @@ import { config } from '../../config';
 import { matchPathPattern } from '../../utils/files';
 
 /**
- * Gets the swizzle status for a specific file path.
+ * Gets the override status for a specific file path.
  * 
  * @param filePath - The file path to check.
  * 
- * @returns The swizzle status if found, otherwise undefined.
+ * @returns The override status if found, otherwise undefined.
  */
 export function getFlaggedAs(filePath: string): SwizzleAnalysis["flaggedInSettingsAs"] {
-  if (config.swizzle.removedFiles?.length) {
-    if (config.swizzle.removedFiles.some(pattern => matchPathPattern(filePath, pattern))) {
-      return 'removed';
+  if (config.overrides.ignored?.length) {
+    if (config.overrides.ignored.some(pattern => matchPathPattern(filePath, pattern))) {
+      return 'ignored';
     }
   }
 
-  if (config.swizzle.editedFiles?.length) {
-    if (config.swizzle.editedFiles.some(pattern => matchPathPattern(filePath, pattern))) {
-      return 'edited';
+  if (config.overrides.customized?.length) {
+    if (config.overrides.customized.some(pattern => matchPathPattern(filePath, pattern))) {
+      return 'customized';
     }
   }
 
