@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockUserResponse } from './mock-user';
-import { withFakerSeed } from './utils';
+import { mockNanoid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock Me response (current user with system role).
@@ -29,8 +29,8 @@ export const mockMeAuthDataResponse = (key = 'me-auth:default'): MeAuthDataRespo
       hasPassword: true,
       sessions: [
         {
-          id: faker.string.nanoid(),
-          userId: faker.string.nanoid(),
+          id: mockNanoid(),
+          userId: mockNanoid(),
           type: 'regular' as const,
           createdAt: sessionCreatedAt.toISOString(),
           expiresAt: sessionExpiresAt.toISOString(),
@@ -57,12 +57,12 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
 
     return {
       public: false,
-      sub: faker.string.nanoid(),
+      sub: mockNanoid(),
       s3: true,
       signature: faker.string.alphanumeric(64),
       params: {
         auth: {
-          key: `uploads/${faker.string.nanoid()}`,
+          key: `uploads/${mockNanoid()}`,
           expires: expiresAt.toISOString(),
         },
       },

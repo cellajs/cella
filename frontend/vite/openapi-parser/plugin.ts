@@ -19,10 +19,12 @@ import type { OpenApiSpec } from './types';
 
 /**
  * Configuration options for the openapi-parser plugin.
+ * @property docsOutputPath - Optional absolute path for docs.gen output (used for temp folder generation)
  */
 type Config = {
   name: 'openapi-parser';
   output?: string;
+  docsOutputPath?: string;
 };
 
 type OpenApiParserPlugin = DefinePlugin<Config>;
@@ -36,8 +38,11 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   const spec = plugin.context.spec as OpenApiSpec;
   const parsed = parseOpenApiSpec(spec);
 
-  // Create public/static/docs.gen directory for JSON files (runtime fetching)
-  const publicDocsDir = resolve(plugin.context.config.output.path, '../../public/static/docs.gen');
+  // Use configured docsOutputPath if provided, otherwise default to public/static/docs.gen
+  const publicDocsDir = plugin.config.docsOutputPath
+    ? plugin.config.docsOutputPath
+    : resolve(plugin.context.config.output.path, '../../public/static/docs.gen');
+
   mkdirSync(publicDocsDir, { recursive: true });
 
   // Create details.gen subdirectory in public for per-tag JSON files

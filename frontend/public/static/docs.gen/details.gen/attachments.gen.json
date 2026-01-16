@@ -394,26 +394,26 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "y5HDs5pltSHUGLcWkE34G",
+          "id": "og9ynkm3vp2mdgi3oeicogxv",
           "entityType": "attachment",
-          "name": "fondly.m1v",
+          "name": "yet_rightfully_lest.ogx",
           "description": null,
-          "keywords": "verecundia vilitas temptatio",
+          "keywords": "pectus subvenio depromo",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
-          "filename": "fondly.m1v",
-          "contentType": "application/x-httpd-php",
+          "filename": "yet_rightfully_lest.ogx",
+          "contentType": "video/mp2t",
           "convertedContentType": null,
-          "size": "5568754",
-          "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
+          "size": "6046908",
+          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
-          "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+          "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
-          "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-          "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
+          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
         }
       },
       {

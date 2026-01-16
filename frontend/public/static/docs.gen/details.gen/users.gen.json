@@ -369,7 +369,7 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "id": "w6g7sfzetbhjls7m9dg1xzav",
           "entityType": "user",
           "name": "Franco Corwin",
           "firstName": "Franco",
@@ -380,7 +380,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": false,
+          "newsletter": true,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -527,7 +527,7 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "id": "w6g7sfzetbhjls7m9dg1xzav",
           "entityType": "user",
           "name": "Franco Corwin",
           "firstName": "Franco",
@@ -538,7 +538,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": false,
+          "newsletter": true,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",

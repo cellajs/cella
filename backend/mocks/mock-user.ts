@@ -8,7 +8,7 @@ import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { pastIsoDate, withFakerSeed } from './utils';
+import { mockNanoid, pastIsoDate, withFakerSeed } from './utils';
 
 /** Optional overrides for mock user generation */
 type MockUserOptionalOverrides = Partial<{
@@ -77,7 +77,7 @@ export const mockUserResponse = (key = 'user:default'): UserModel =>
     const slug = slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true });
 
     return {
-      id: faker.string.nanoid(),
+      id: mockNanoid(),
       entityType: 'user' as const,
       name: faker.person.fullName(firstAndLastName),
       firstName: firstAndLastName.firstName,

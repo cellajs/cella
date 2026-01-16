@@ -261,19 +261,19 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "Kyft2jgCOk1uWez4InpSg",
+          "id": "575b0vreys30k2k4z795uufw",
           "contextType": "organization",
-          "userId": "s9bewe1fKAYWRak3UtzV7",
-          "organizationId": "j49ckRo-048_8QTtlJMCI",
+          "userId": "xg7596t8jiy8d0v8irrljzhy",
+          "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
           "role": "member",
-          "order": 90,
+          "order": 49,
           "muted": false,
           "archived": false,
           "createdAt": "2024-10-28T14:52:59.502Z",
-          "createdBy": "s9bewe1fKAYWRak3UtzV7",
+          "createdBy": "xg7596t8jiy8d0v8irrljzhy",
           "modifiedAt": "2024-10-28T14:52:59.502Z",
           "modifiedBy": null,
-          "uniqueKey": "s9bewe1fKAYWRak3UtzV7-j49ckRo-048_8QTtlJMCI"
+          "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5"
         }
       },
       {

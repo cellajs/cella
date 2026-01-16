@@ -155,14 +155,14 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "rK5ziKXKdzSbuY2s_8QCE",
+          "id": "9fwr239kqavr3yur671klvk6",
           "entityType": "organization",
           "name": "Murphy LLC",
           "slug": "murphy-llc",
-          "description": "Extended executive database",
+          "description": "Open-architected eco-centric hub",
           "shortName": "Murphy",
-          "country": "Cocos (Keeling) Islands",
-          "timezone": "Australia/Adelaide",
+          "country": "Palestine",
+          "timezone": "America/Lower_Princes",
           "defaultLanguage": "en",
           "languages": ["en"],
           "notificationEmail": "notifications@murphy-llc.example",
@@ -172,9 +172,9 @@
             "attachment": 100,
             "page": 0
           },
-          "color": "#b9ecfa",
+          "color": "#b9e6c9",
           "thumbnailUrl": null,
-          "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+          "logoUrl": "https://picsum.photos/seed/paPXmMWVg/3779/2808",
           "bannerUrl": null,
           "websiteUrl": "https://murphy-llc.example",
           "welcomeText": "Welcome to Murphy LLC!",
@@ -185,10 +185,10 @@
           "modifiedAt": "2024-12-25T15:29:47.111Z",
           "modifiedBy": null,
           "membership": {
-            "id": "ZFMnYJm5p-nyT4XZM_aPW",
+            "id": "yl1rfdjjkd8t9ca6pifxkpq4",
             "contextType": "organization",
-            "userId": "4RSiGNUzWMaXMVIBMnxnO",
-            "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+            "userId": "xhtzd1lgzbx4nupmon52uvuv",
+            "organizationId": "9fwr239kqavr3yur671klvk6",
             "role": "admin",
             "order": 1,
             "muted": false,
@@ -197,11 +197,11 @@
           "counts": {
             "membership": {
               "admin": 1,
-              "member": 19,
+              "member": 6,
               "pending": 0,
-              "total": 3
+              "total": 5
             },
-            "entities": { "attachment": 24, "page": 7 }
+            "entities": { "attachment": 29, "page": 10 }
           }
         }
       },
@@ -748,14 +748,14 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "rK5ziKXKdzSbuY2s_8QCE",
+          "id": "9fwr239kqavr3yur671klvk6",
           "entityType": "organization",
           "name": "Murphy LLC",
           "slug": "murphy-llc",
-          "description": "Extended executive database",
+          "description": "Open-architected eco-centric hub",
           "shortName": "Murphy",
-          "country": "Cocos (Keeling) Islands",
-          "timezone": "Australia/Adelaide",
+          "country": "Palestine",
+          "timezone": "America/Lower_Princes",
           "defaultLanguage": "en",
           "languages": ["en"],
           "notificationEmail": "notifications@murphy-llc.example",
@@ -765,9 +765,9 @@
             "attachment": 100,
             "page": 0
           },
-          "color": "#b9ecfa",
+          "color": "#b9e6c9",
           "thumbnailUrl": null,
-          "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+          "logoUrl": "https://picsum.photos/seed/paPXmMWVg/3779/2808",
           "bannerUrl": null,
           "websiteUrl": "https://murphy-llc.example",
           "welcomeText": "Welcome to Murphy LLC!",
@@ -778,10 +778,10 @@
           "modifiedAt": "2024-12-25T15:29:47.111Z",
           "modifiedBy": null,
           "membership": {
-            "id": "ZFMnYJm5p-nyT4XZM_aPW",
+            "id": "yl1rfdjjkd8t9ca6pifxkpq4",
             "contextType": "organization",
-            "userId": "4RSiGNUzWMaXMVIBMnxnO",
-            "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+            "userId": "xhtzd1lgzbx4nupmon52uvuv",
+            "organizationId": "9fwr239kqavr3yur671klvk6",
             "role": "admin",
             "order": 1,
             "muted": false,
@@ -790,11 +790,11 @@
           "counts": {
             "membership": {
               "admin": 1,
-              "member": 19,
+              "member": 6,
               "pending": 0,
-              "total": 3
+              "total": 5
             },
-            "entities": { "attachment": 24, "page": 7 }
+            "entities": { "attachment": 29, "page": 10 }
           }
         }
       },
@@ -1010,14 +1010,14 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "rK5ziKXKdzSbuY2s_8QCE",
+          "id": "9fwr239kqavr3yur671klvk6",
           "entityType": "organization",
           "name": "Murphy LLC",
           "slug": "murphy-llc",
-          "description": "Extended executive database",
+          "description": "Open-architected eco-centric hub",
           "shortName": "Murphy",
-          "country": "Cocos (Keeling) Islands",
-          "timezone": "Australia/Adelaide",
+          "country": "Palestine",
+          "timezone": "America/Lower_Princes",
           "defaultLanguage": "en",
           "languages": ["en"],
           "notificationEmail": "notifications@murphy-llc.example",
@@ -1027,9 +1027,9 @@
             "attachment": 100,
             "page": 0
           },
-          "color": "#b9ecfa",
+          "color": "#b9e6c9",
           "thumbnailUrl": null,
-          "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
+          "logoUrl": "https://picsum.photos/seed/paPXmMWVg/3779/2808",
           "bannerUrl": null,
           "websiteUrl": "https://murphy-llc.example",
           "welcomeText": "Welcome to Murphy LLC!",
@@ -1040,10 +1040,10 @@
           "modifiedAt": "2024-12-25T15:29:47.111Z",
           "modifiedBy": null,
           "membership": {
-            "id": "ZFMnYJm5p-nyT4XZM_aPW",
+            "id": "yl1rfdjjkd8t9ca6pifxkpq4",
             "contextType": "organization",
-            "userId": "4RSiGNUzWMaXMVIBMnxnO",
-            "organizationId": "rK5ziKXKdzSbuY2s_8QCE",
+            "userId": "xhtzd1lgzbx4nupmon52uvuv",
+            "organizationId": "9fwr239kqavr3yur671klvk6",
             "role": "admin",
             "order": 1,
             "muted": false,
@@ -1052,11 +1052,11 @@
           "counts": {
             "membership": {
               "admin": 1,
-              "member": 19,
+              "member": 6,
               "pending": 0,
-              "total": 3
+              "total": 5
             },
-            "entities": { "attachment": 24, "page": 7 }
+            "entities": { "attachment": 29, "page": 10 }
           }
         }
       },

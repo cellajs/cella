@@ -24,7 +24,9 @@ const lockFilePath = resolve(frontendDir, 'vite/.generate-client.lock');
 // Use a unique temp folder name with random hash to avoid conflicts between concurrent runs
 const tempFolderSuffix = createHash('sha256').update(`${Date.now()}-${process.pid}`).digest('hex').slice(0, 8);
 const tempOutputPath = resolve(frontendDir, `vite/temp-api-gen-${tempFolderSuffix}`);
+const tempDocsPath = resolve(frontendDir, `vite/temp-docs-gen-${tempFolderSuffix}`);
 const finalOutputPath = resolve(frontendDir, 'src/api.gen');
+const finalDocsPath = resolve(frontendDir, 'public/static/docs.gen');
 const publicStaticPath = resolve(frontendDir, 'public/static');
 
 /** Small delay helper. */
@@ -136,7 +138,10 @@ const run = async () => {
     try {
       const entries = readdirSync(viteDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.isDirectory() && entry.name.startsWith('temp-api-gen-')) {
+        if (
+          entry.isDirectory() &&
+          (entry.name.startsWith('temp-api-gen-') || entry.name.startsWith('temp-docs-gen-'))
+        ) {
           rmSync(resolve(viteDir, entry.name), { recursive: true });
         }
       }
@@ -159,9 +164,28 @@ const run = async () => {
         ? String(sourceConfig.fileName)
         : 'openapi';
 
+    // Configure plugins with temp docs output path
+    // Cast through unknown to handle custom plugin properties not in Hey API's strict types
+    const pluginsWithDocsPath = (openApiConfig.plugins || []).map((plugin) => {
+      // If it's the openapi-parser plugin, add docsOutputPath to its config
+      if (typeof plugin === 'object' && plugin !== null && 'name' in plugin) {
+        const pluginObj = plugin as unknown as Record<string, unknown>;
+        if (pluginObj.name === 'openapi-parser') {
+          // Custom plugins have their config nested in a 'config' property
+          const existingConfig = (pluginObj.config as Record<string, unknown>) || {};
+          return {
+            ...pluginObj,
+            config: { ...existingConfig, docsOutputPath: tempDocsPath },
+          };
+        }
+      }
+      return plugin;
+    }) as typeof openApiConfig.plugins;
+
     // Run Hey API generation to temp folder
     await createClient({
       ...openApiConfig,
+      plugins: pluginsWithDocsPath,
       output: {
         ...outputConfig,
         path: tempOutputPath,
@@ -187,47 +211,73 @@ const run = async () => {
       // Biome may fail if directory is newly created or empty, continue anyway
     }
 
-    // Compare temp output with existing output
-    const tempHash = hashDirectory(tempOutputPath);
-    const existingHash = hashDirectory(finalOutputPath);
+    // Compare temp output with existing output for both api.gen and docs.gen
+    const tempApiHash = hashDirectory(tempOutputPath);
+    const existingApiHash = hashDirectory(finalOutputPath);
+    const apiChanged = tempApiHash !== existingApiHash;
 
-    if (tempHash === existingHash) {
+    const tempDocsHash = hashDirectory(tempDocsPath);
+    const existingDocsHash = hashDirectory(finalDocsPath);
+    const docsChanged = tempDocsHash !== existingDocsHash;
+
+    if (!apiChanged && !docsChanged) {
       const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
       console.info(`${STATUS_PREFIX} ${checkMark} Generated client unchanged — keeping existing output (${elapsed}s)`);
       rmSync(tempOutputPath, { recursive: true });
+      if (existsSync(tempDocsPath)) rmSync(tempDocsPath, { recursive: true });
       return;
     }
 
-    console.info(`${STATUS_PREFIX} ${changeMark} Client changed — updating output...`);
-
-    // Use a safe update pattern:
-    // 1. Ensure target directory exists
-    // 2. Copy new files (overwrites existing)
-    // 3. Remove old files that no longer exist in new version
-
-    if (!existsSync(finalOutputPath)) {
-      mkdirSync(finalOutputPath, { recursive: true });
+    // Log what changed
+    if (apiChanged && docsChanged) {
+      console.info(`${STATUS_PREFIX} ${changeMark} Client and docs changed — updating output...`);
+    } else if (apiChanged) {
+      console.info(`${STATUS_PREFIX} ${changeMark} Client changed — updating output...`);
+    } else {
+      console.info(`${STATUS_PREFIX} ${changeMark} Docs changed — updating output...`);
     }
 
-    // Get list of files in both directories
-    const newFiles = new Set(getFilesRecursively(tempOutputPath).map((f) => f.slice(tempOutputPath.length)));
-    const oldFiles = getFilesRecursively(finalOutputPath).map((f) => f.slice(finalOutputPath.length));
+    // Helper to safely update a directory
+    const updateDirectory = (tempPath: string, finalPath: string) => {
+      if (!existsSync(tempPath)) return;
 
-    // Copy all new files (this overwrites existing files atomically per-file)
-    cpSync(tempOutputPath, finalOutputPath, { recursive: true });
+      if (!existsSync(finalPath)) {
+        mkdirSync(finalPath, { recursive: true });
+      }
 
-    // Remove files that no longer exist in the new version
-    for (const oldFile of oldFiles) {
-      if (!newFiles.has(oldFile)) {
-        const oldFilePath = resolve(finalOutputPath, oldFile.slice(1)); // Remove leading slash
-        if (existsSync(oldFilePath)) {
-          rmSync(oldFilePath);
+      // Get list of files in both directories
+      const newFiles = new Set(getFilesRecursively(tempPath).map((f) => f.slice(tempPath.length)));
+      const oldFiles = existsSync(finalPath)
+        ? getFilesRecursively(finalPath).map((f) => f.slice(finalPath.length))
+        : [];
+
+      // Copy all new files (this overwrites existing files atomically per-file)
+      cpSync(tempPath, finalPath, { recursive: true });
+
+      // Remove files that no longer exist in the new version
+      for (const oldFile of oldFiles) {
+        if (!newFiles.has(oldFile)) {
+          const oldFilePath = resolve(finalPath, oldFile.slice(1)); // Remove leading slash
+          if (existsSync(oldFilePath)) {
+            rmSync(oldFilePath);
+          }
         }
       }
+    };
+
+    // Update api.gen if changed
+    if (apiChanged) {
+      updateDirectory(tempOutputPath, finalOutputPath);
     }
 
-    // Clean up temp folder
+    // Update docs.gen if changed
+    if (docsChanged) {
+      updateDirectory(tempDocsPath, finalDocsPath);
+    }
+
+    // Clean up temp folders
     rmSync(tempOutputPath, { recursive: true });
+    if (existsSync(tempDocsPath)) rmSync(tempDocsPath, { recursive: true });
 
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
     console.info(`${STATUS_PREFIX} ${checkMark} Client generation complete (${elapsed}s)`);
@@ -238,9 +288,12 @@ const run = async () => {
 };
 
 run().catch((err) => {
-  // Clean up temp on error
+  // Clean up temp folders on error
   if (existsSync(tempOutputPath)) {
     rmSync(tempOutputPath, { recursive: true });
+  }
+  if (existsSync(tempDocsPath)) {
+    rmSync(tempDocsPath, { recursive: true });
   }
   releaseLock();
   console.error(`${STATUS_PREFIX} ${crossMark} Client generation failed:`, err);

@@ -101,9 +101,9 @@
         },
         "example": {
           "user": {
-            "id": "KNGgftxF37fbRhY1aJvFC",
+            "id": "7qgsnou9b80h3jlnu1j458h6",
             "entityType": "user",
-            "name": "Odell Gislason DVM",
+            "name": "Mr. Odell Gislason",
             "firstName": "Odell",
             "lastName": "Gislason",
             "email": "odell.gislason@yahoo.com",
@@ -112,7 +112,7 @@
             "thumbnailUrl": null,
             "bannerUrl": null,
             "language": "en",
-            "newsletter": false,
+            "newsletter": true,
             "mfaRequired": false,
             "userFlags": {},
             "createdAt": "2024-07-14T22:49:14.651Z",
@@ -250,7 +250,7 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "id": "w6g7sfzetbhjls7m9dg1xzav",
           "entityType": "user",
           "name": "Franco Corwin",
           "firstName": "Franco",
@@ -261,7 +261,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": false,
+          "newsletter": true,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -486,7 +486,7 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "id": "w6g7sfzetbhjls7m9dg1xzav",
           "entityType": "user",
           "name": "Franco Corwin",
           "firstName": "Franco",
@@ -497,7 +497,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": false,
+          "newsletter": true,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -669,15 +669,15 @@
           "hasPassword": true,
           "sessions": [
             {
-              "id": "XAt10Xd3dBO8leLbQS8OH",
-              "userId": "0VF-w6LQGNtYJc9oOlWUO",
+              "id": "1yyluhj040oyd732g8rl7t64",
+              "userId": "ccb8qru6yupvx5ntxp604xgo",
               "type": "regular",
               "createdAt": "2024-05-29T08:00:36.178Z",
               "expiresAt": "2024-06-28T08:00:36.178Z",
-              "deviceName": "Firefox on Windows",
-              "deviceType": "desktop",
+              "deviceName": "Safari on iPhone",
+              "deviceType": "mobile",
               "deviceOs": "Windows",
-              "browser": "Firefox",
+              "browser": "Safari",
               "authStrategy": "password",
               "isCurrent": true
             }
@@ -1024,11 +1024,11 @@
         },
         "example": {
           "public": false,
-          "sub": "2NpNbC-rtGtYVb1XPh3cb",
+          "sub": "x1lsgegsw6imziogthaolhvy",
           "s3": true,
-          "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+          "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
           "params": {
-            "auth": { "key": "uploads/-WevYEtehwyoG0ux7Q1ox", "expires": "2025-01-01T04:15:50.483Z" }
+            "auth": { "key": "uploads/kx5n7c1cush46z5cnizlmyd8", "expires": "2025-01-01T04:15:50.483Z" }
           }
         }
       },

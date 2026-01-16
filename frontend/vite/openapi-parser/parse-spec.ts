@@ -344,11 +344,15 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       const schemaTag = getSchemaTag(schemaName);
       schemaTagCounts[schemaTag]++;
 
+      // Remove description from nested schema to avoid duplication in UI
+      // (description is shown in the card header, not in the JsonViewer)
+      const { description: _schemaDescription, ...schemaWithoutDescription } = resolvedSchema;
+
       const componentSchema: GenComponentSchema = {
         name: schemaName,
         ref: schemaRef,
         type: resolvedSchema.type,
-        schema: resolvedSchema,
+        schema: schemaWithoutDescription as typeof resolvedSchema,
         schemaTag,
       };
 
