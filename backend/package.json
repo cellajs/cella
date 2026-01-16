@@ -6,7 +6,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
+    "quick": "cross-env DEV_MODE=basic tsx scripts/quick.ts && cross-env DEV_MODE=basic pnpm dev",
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
     "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/index.ts",
@@ -34,8 +34,9 @@
     "emails:build": "email build emails",
     "emails:create": "email create",
     "emails:preview": "email preview emails",
-    "test": "docker compose --profile test up -d db_test --wait && cross-env CDC_DISABLED=true vitest run --exclude 'tests/integration/**' && docker compose --profile test stop db_test || docker compose --profile test stop db_test",
-    "test:integration": "cross-env PINO_LOG_LEVEL=info INTEGRATION_TEST=true vitest run tests/integration"
+    "test": "cross-env TEST_MODE=core vitest run",
+    "test:basic": "cross-env TEST_MODE=basic vitest run",
+    "test:full": "cross-env TEST_MODE=full vitest run"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",

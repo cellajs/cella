@@ -6,23 +6,25 @@ import { startCdcWorker } from './worker';
  * This script starts the Change Data Capture worker that subscribes to
  * PostgreSQL logical replication and creates activities from database changes.
  *
- * Set CDC_DISABLED=true to skip starting the worker (useful for tests).
+ * Only runs when DEV_MODE=full (production always runs CDC).
+ * In basic/core modes, CDC is disabled for simpler local development.
  */
 
-// Check if CDC is disabled
-if (process.env.CDC_DISABLED === 'true') {
-  console.log('CDC worker disabled via CDC_DISABLED=true');
+// Check if CDC should run (only in full mode or production)
+const devMode = process.env.DEV_MODE || 'core';
+if (devMode !== 'full' && process.env.NODE_ENV !== 'production') {
+  console.info(`CDC worker disabled (DEV_MODE=${devMode})`);
   process.exit(0);
 }
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-  console.log('\nReceived SIGINT, shutting down CDC worker...');
+  console.info('\nReceived SIGINT, shutting down CDC worker...');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\nReceived SIGTERM, shutting down CDC worker...');
+  console.info('\nReceived SIGTERM, shutting down CDC worker...');
   process.exit(0);
 });
 

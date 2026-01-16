@@ -55,6 +55,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **Sync/Offline**: Leverage Electric Sync for realtime and offline capabilities using `useLiveQuery`. Look at the `pages` module for a reference implementation.
 - **Entities**: Entities are categorized into `ContextEntityType` (has memberships, like organizations) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md` for details.
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
+- **Debug Mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env` to enable debug features:
 
 ## Coding Style & Naming Conventions
 - Formatter/Linter: Biome (see `biome.json`). Run it with `pnpm lint` or `pnpm lint:fix`.
@@ -68,6 +69,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
 - Icons: We use lucide icons and import them using Icon suffix, such as `PencilIcon`.
 - Code comment: when iterating keep comments intact as they provide valuable history. They should be cleaned only when explicitly requested.
+- Console logging: Use `console.log` only for temporary debugging (remove before commit). Use `console.debug` for persistent debug statements as Vite strips them in production builds. For debug-mode-gated logging, use helpers from `~/lib/debug`.
 
 
 - Links as buttons: For buttons that link to directly targetable online resources, use TanStack Router `<Link>` with `buttonVariants()` instead of `<button>`. Also when the primary action is opening a sheet, if the data targetable by url, allow end-user to open it in a new tab.
@@ -76,18 +78,25 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 
 ## Testing
 - Framework: Vitest. Typical locations: `tests/` or `*.test.ts` adjacent to source.
+- Test modes: `pnpm test:basic` (fast unit tests, no Docker), `pnpm test:core` (PostgreSQL, default), `pnpm test:full` (includes integration tests + CLI).
 - Run all: `pnpm test`; per package: `pnpm test` (from that workspace) or package-specific scripts.
 - Name tests `*.test.ts`; add integration tests where behavior spans modules.
 - Aim for reliable, isolated tests; include minimal setup files when needed.
+- See [info/TESTING.md](./TESTING.md) for detailed test mode documentation.
+
 ## Commits & Pull Requests
 - Use Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`; optional scope (e.g., `feat(web): ...`).
 - PRs must include: concise description, linked issues (`#123`), screenshots for UI, and passing checks (build, typecheck, lint, tests).
 - Keep changes scoped; update docs and `.env.example` when config changes.
 
 ## Commands
-- `pnpm dev`: Start full development environment (Postgres + Electric Sync).
-- `pnpm quick`: Start development with PGlite (fast, no docker needed).
-- `pnpm test`: Run all tests across the monorepo.
+- `pnpm dev`: Start development with PostgreSQL (DEV_MODE=core).
+- `pnpm quick`: Start development with PGlite (DEV_MODE=basic, fast, no Docker).
+- `pnpm dev:full`: Start development with PostgreSQL and optional workers (DEV_MODE=full).
+- `pnpm test`: Run all tests across the monorepo (alias for `pnpm test:core`).
+- `pnpm test:basic`: Fast unit tests only (no Docker required).
+- `pnpm test:core`: Standard tests with PostgreSQL (requires Docker).
+- `pnpm test:full`: Complete test suite including CDC integration tests.
 - `pnpm check`: Comprehensive validation. Runs `generate:openapi`, `ts` (type check), and `lint:fix`.
 - `pnpm generate`: Generate new Drizzle migrations based on schema changes in `backend/src/db/schema/`.
 - `pnpm generate:openapi`: Regenerate backend OpenAPI spec and update the frontend `api.gen` client.

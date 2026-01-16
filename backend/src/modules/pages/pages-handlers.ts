@@ -37,7 +37,6 @@ const pagesRouteHandlers = app
    */
   .openapi(pagesRoutes.createPage, async (ctx) => {
     const pageData = ctx.req.valid('json');
-    console.log(pageData);
 
     const user = getContextUser();
 

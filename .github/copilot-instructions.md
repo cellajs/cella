@@ -47,8 +47,8 @@ Product entities use Electric Sync + TanStack DB for realtime updates. See `fron
 ## Essential Commands
 
 ```bash
-pnpm quick          # Fast dev with PGlite (no Docker)
-pnpm dev            # Full dev with Postgres + Electric Sync (requires Docker)
+pnpm quick          # Fast dev with PGlite (DEV_MODE=basic, no Docker)
+pnpm dev            # Full dev with PostgreSQL (DEV_MODE=core, requires Docker)
 pnpm check          # Run generate:openapi + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data
@@ -84,4 +84,5 @@ pnpm test           # Run all Vitest tests
 - Commit format: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - PRs: Include description, linked issues, screenshots for UI changes
 
-For detailed architecture, see [info/ARCHITECTURE.md](../info/ARCHITECTURE.md) and [info/AGENTS.md](../info/AGENTS.md).
+For detailed architecture, see [info/ARCHITECTURE.md](../info/ARCHITECTURE.md)
+For more rules and guidelinse, see [info/AGENTS.md](../info/AGENTS.md).

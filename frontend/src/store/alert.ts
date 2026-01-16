@@ -2,6 +2,7 @@ import { appConfig } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { isDebugMode } from '~/env';
 import type { AlertKeys } from '~/modules/common/down-alert';
 
 interface AlertStoreState {
@@ -57,5 +58,6 @@ export const useAlertStore = create<AlertStoreState>()(
         },
       ),
     ),
+    { enabled: isDebugMode, name: 'alert store' },
   ),
 );

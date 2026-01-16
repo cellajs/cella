@@ -2,6 +2,7 @@ import { appConfig, type Theme } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { isDebugMode } from '~/env';
 
 export type Mode = 'light' | 'dark';
 
@@ -93,5 +94,6 @@ export const useUIStore = create<UIStoreState>()(
         storage: createJSONStorage(() => localStorage),
       },
     ),
+    { enabled: isDebugMode, name: 'ui store' },
   ),
 );
