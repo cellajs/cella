@@ -3,7 +3,6 @@ import { appConfig, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
-import { mockOrganizationResponse } from '#/mocks/mock-organization';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   languageSchema,
@@ -14,6 +13,7 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
+import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
 // Entity count schema should exclude 'user' and 'organization'
 type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;

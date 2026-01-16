@@ -3,8 +3,8 @@ import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { activityActions, resourceTypes } from '#/activities-config';
 import { activitiesTable } from '#/db/schema/activities';
-import { mockActivityResponse } from '#/mocks/mock-activity';
 import { paginationQuerySchema } from '#/utils/schema/common';
+import { mockActivityResponse } from '../../../mocks/mock-activity';
 
 /** Schema for activity actions enum */
 export const activityActionSchema = z.enum(activityActions);

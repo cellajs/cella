@@ -30,6 +30,52 @@ export type ContextEntityBase = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
+  permissions: {
+    member: {
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      create: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      read: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      update: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      delete: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      search: 0 | 1;
+    };
+    admin: {
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      create: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      read: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      update: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      delete: 0 | 1;
+      /**
+       * 0 = denied, 1 = allowed
+       */
+      search: 0 | 1;
+    };
+  };
 };
 
 export type MembershipBase = {
@@ -225,6 +271,15 @@ export type Organization = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
+  permissions:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
   createdBy: string | null;
   modifiedBy: string | null;
   shortName: string | null;

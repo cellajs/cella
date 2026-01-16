@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { entityPermissionsSchema } from '#/db/utils/entity-permissions-columns';
 import {
   contextEntityTypeSchema,
   idSchema,
@@ -37,6 +38,7 @@ export const contextEntityBaseSchema = z
     slug: slugSchema,
     thumbnailUrl: imageUrlSchema.nullable(),
     bannerUrl: imageUrlSchema.nullable(),
+    permissions: entityPermissionsSchema,
   })
   .openapi('ContextEntityBase');
 
@@ -51,3 +53,6 @@ export const productEntityBaseSchema = z
     keywords: z.string(),
   })
   .openapi('ProductEntityBase');
+
+// Re-export for convenience
+export { entityPermissionsSchema };

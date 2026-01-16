@@ -1,10 +1,3 @@
-/**
- * Generate Runner
- *
- * Runs all configured generation scripts from appConfig.generateScripts.
- * Provides consistent logging and error handling.
- */
-
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import pc from 'picocolors';

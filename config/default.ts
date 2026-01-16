@@ -91,6 +91,8 @@ export const config = {
     page: 'pageId',
   } as const,
 
+  entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
+
   // Define user menu structure of context entities with optionally nested subentities
   // ⚠️ IMPORTANT: If you define a `subentityType`, the corresponding table must include `${entity}Id` foreign key.
   menuStructure: [

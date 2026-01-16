@@ -28,6 +28,22 @@ export const zContextEntityBase = z.object({
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
+  permissions: z.object({
+    member: z.object({
+      create: z.union([z.literal(0), z.literal(1)]),
+      read: z.union([z.literal(0), z.literal(1)]),
+      update: z.union([z.literal(0), z.literal(1)]),
+      delete: z.union([z.literal(0), z.literal(1)]),
+      search: z.union([z.literal(0), z.literal(1)]),
+    }),
+    admin: z.object({
+      create: z.union([z.literal(0), z.literal(1)]),
+      read: z.union([z.literal(0), z.literal(1)]),
+      update: z.union([z.literal(0), z.literal(1)]),
+      delete: z.union([z.literal(0), z.literal(1)]),
+      search: z.union([z.literal(0), z.literal(1)]),
+    }),
+  }),
 });
 
 export const zMembershipBase = z.object({
@@ -227,6 +243,14 @@ export const zOrganization = z.object({
   slug: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
+  permissions: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.record(z.string(), z.unknown()),
+    z.array(z.unknown()),
+  ]),
   createdBy: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
   shortName: z.union([z.string(), z.null()]),

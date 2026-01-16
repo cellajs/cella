@@ -2,7 +2,6 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
-import { mockUserResponse } from '#/mocks/mock-user';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
   contextEntityTypeSchema,
@@ -11,6 +10,7 @@ import {
   validNameSchema,
   validSlugSchema,
 } from '#/utils/schema/common';
+import { mockUserResponse } from '../../../mocks/mock-user';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 

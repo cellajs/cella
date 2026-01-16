@@ -7,10 +7,10 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { mockPassword, mockUnsubscribeToken, mockUser } from '#/mocks';
-import { pastIsoDate } from '#/mocks/utils';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import { apiErrorSchema } from '#/utils/schema/api-error';
+import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks';
+import { pastIsoDate } from '../mocks/utils';
 
 /**
  * Types for test responses

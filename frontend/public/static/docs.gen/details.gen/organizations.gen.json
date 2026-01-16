@@ -60,6 +60,36 @@
               ],
               "required": true
             },
+            "permissions": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "type": "number",
+                  "required": false
+                },
+                {
+                  "type": "boolean",
+                  "required": false
+                },
+                {
+                  "type": "null",
+                  "required": false
+                },
+                {
+                  "type": "object",
+                  "required": false
+                },
+                {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object"
+                }
+              ]
+            },
             "createdBy": {
               "type": [
                 "string",
@@ -285,6 +315,22 @@
             "attachment": 100,
             "page": 0
           },
+          "permissions": {
+            "member": {
+              "create": 0,
+              "read": 0,
+              "update": 0,
+              "delete": 0,
+              "search": 0
+            },
+            "admin": {
+              "create": 0,
+              "read": 0,
+              "update": 0,
+              "delete": 0,
+              "search": 0
+            }
+          },
           "color": "#b9ecfa",
           "thumbnailUrl": null,
           "logoUrl": "https://picsum.photos/seed/zwgDFX/555/1263",
@@ -449,6 +495,36 @@
                       "null"
                     ],
                     "required": true
+                  },
+                  "permissions": {
+                    "required": true,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "required": false
+                      },
+                      {
+                        "type": "number",
+                        "required": false
+                      },
+                      {
+                        "type": "boolean",
+                        "required": false
+                      },
+                      {
+                        "type": "null",
+                        "required": false
+                      },
+                      {
+                        "type": "object",
+                        "required": false
+                      },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
                   },
                   "createdBy": {
                     "type": [
@@ -910,6 +986,36 @@
               ],
               "required": true
             },
+            "permissions": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "type": "number",
+                  "required": false
+                },
+                {
+                  "type": "boolean",
+                  "required": false
+                },
+                {
+                  "type": "null",
+                  "required": false
+                },
+                {
+                  "type": "object",
+                  "required": false
+                },
+                {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object"
+                }
+              ]
+            },
             "createdBy": {
               "type": [
                 "string",
@@ -1143,6 +1249,22 @@
             "user": 1000,
             "attachment": 100,
             "page": 0
+          },
+          "permissions": {
+            "member": {
+              "create": 0,
+              "read": 0,
+              "update": 0,
+              "delete": 0,
+              "search": 0
+            },
+            "admin": {
+              "create": 0,
+              "read": 0,
+              "update": 0,
+              "delete": 0,
+              "search": 0
+            }
           },
           "color": "#b9ecfa",
           "thumbnailUrl": null,
@@ -1293,6 +1415,36 @@
               ],
               "required": true
             },
+            "permissions": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "type": "number",
+                  "required": false
+                },
+                {
+                  "type": "boolean",
+                  "required": false
+                },
+                {
+                  "type": "null",
+                  "required": false
+                },
+                {
+                  "type": "object",
+                  "required": false
+                },
+                {
+                  "type": "array",
+                  "required": false,
+                  "itemType": "object"
+                }
+              ]
+            },
             "createdBy": {
               "type": [
                 "string",
@@ -1526,6 +1678,22 @@
             "user": 1000,
             "attachment": 100,
             "page": 0
+          },
+          "permissions": {
+            "member": {
+              "create": 0,
+              "read": 0,
+              "update": 0,
+              "delete": 0,
+              "search": 0
+            },
+            "admin": {
+              "create": 0,
+              "read": 0,
+              "update": 0,
+              "delete": 0,
+              "search": 0
+            }
           },
           "color": "#b9ecfa",
           "thumbnailUrl": null,

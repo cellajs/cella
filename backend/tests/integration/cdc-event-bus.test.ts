@@ -22,9 +22,9 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import type { ActivityEvent } from '#/lib/event-bus';
 import { eventBus } from '#/lib/event-bus';
-import { mockOrganization } from '#/mocks/mock-organization';
-import { mockUser } from '#/mocks/mock-user';
 import { nanoid } from '#/utils/nanoid';
+import { mockOrganization } from '../../mocks/mock-organization';
+import { mockUser } from '../../mocks/mock-user';
 import { clearDatabase, ensureCdcSetup, startEventBus, stopEventBus, waitForEvent } from './test-utils';
 
 describe('EventBus Integration', () => {

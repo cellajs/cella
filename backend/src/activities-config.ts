@@ -15,8 +15,6 @@ export const resourceTables = {
 
 export const resourceTypes = ['request', 'membership'] as const;
 
-export type ResourceTableNames = (typeof resourceTables)[keyof typeof resourceTables]['_']['name'];
-
 export type ResourceType = (typeof resourceTypes)[number];
 
 /**

@@ -1,98 +1,30 @@
-import {
-  type AccessPolicyConfiguration,
-  Context,
-  type Membership,
-  MembershipAdapter,
-  PermissionManager,
-  Product,
-  type Subject,
-  SubjectAdapter,
-} from '@cellajs/permission-manager';
+import { appConfig } from 'config';
+import { configureAccessPolicies, createContext, createHierarchy, createProduct } from './permission-manager';
 
 /**
- * Define the actions that can be performed on an entity.
+ * Define hierarchical stru cture for context entities with roles, and for product entities without roles.
  */
-export type CrudAction = 'create' | 'read' | 'update' | 'delete';
-
-/**
- * Define hierarchical structure for context entities with roles, and for product entities without roles.
- */
-const organization = new Context('organization', ['admin', 'member']);
-
-new Product('attachment', new Set([organization]));
-new Product('page', new Set([]));
-
-/**
- * Initialize and configure access policies.
- */
-const permissionManager = new PermissionManager('permissionManager');
-
-permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }: AccessPolicyConfiguration) => {
-  // Configure actions based on the subject
-  switch (subject.name) {
-    case 'organization':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
-      break;
-    case 'attachment':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1 });
-      break;
-    case 'page':
-      break;
-  }
+export const hierarchy = createHierarchy({
+  organization: createContext(appConfig.roles.entityRoles),
+  attachment: createProduct(['organization']),
+  page: createProduct([]),
 });
 
 /**
- * Adapter for transforming raw membership data into the expected Membership format.
+ * Configure access policies for each entity type.
  */
-class AdaptedMembershipAdapter extends MembershipAdapter {
-  /**
-   * Adapt raw membership data to the Membership format.
-   * @param memberships - Array of raw membership data.
-   * @returns Array of adapted Membership objects.
-   */
-  // biome-ignore lint/suspicious/noExplicitAny: The format of the membership object may vary.
-  adapt(memberships: any[]): Membership[] {
-    return memberships.map((m) => {
-      const contextName = m.contextType?.toLowerCase() || '';
-      return {
-        contextName,
-        contextKey: m[`${contextName}Id`],
-        roleName: m.role,
-        ancestors: {
-          organization: m.organizationId,
-        },
-      };
-    });
+export const accessPolicies = configureAccessPolicies(hierarchy, appConfig.entityTypes, ({ subject, contexts }) => {
+  switch (subject.name) {
+    case 'organization':
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
+      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0, search: 1 });
+      break;
+    case 'attachment':
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1, search: 1 });
+      contexts.organization.member({ create: 1, read: 1, update: 0, delete: 1, search: 1 });
+      break;
+    case 'page':
+      // No policies configured for pages
+      break;
   }
-}
-
-/**
- * Adapter for transforming raw subject data into expected Subject format.
- */
-class AdaptedSubjectAdapter extends SubjectAdapter {
-  /**
-   * Adapt raw subject data to the Subject format.
-   * @param s - Raw subject data.
-   * @returns Adapted Subject object.
-   */
-
-  // biome-ignore lint/suspicious/noExplicitAny: The format of the subject can vary depending on the subject.
-  adapt(s: any): Subject {
-    return {
-      name: s.entityType,
-      key: s.id,
-      ancestors: {
-        organization: s.organizationId,
-      },
-    };
-  }
-}
-
-// Instantiate adapters to be used in the system
-new AdaptedSubjectAdapter();
-new AdaptedMembershipAdapter();
-
-// Export the configured PermissionManager instance
-export default permissionManager;
+});

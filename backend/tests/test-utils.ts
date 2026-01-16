@@ -15,7 +15,7 @@ import { sql } from 'drizzle-orm';
 import { Context, Next } from 'hono';
 import { vi } from 'vitest';
 import { db } from '#/db/db';
-import { resetOrganizationMockEnforcers, resetUserMockEnforcers } from '#/mocks';
+import { resetOrganizationMockEnforcers, resetUserMockEnforcers } from '../mocks';
 
 /**
  * Types

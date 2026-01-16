@@ -436,6 +436,199 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "name": {
               "type": "string",
             },
+            "permissions": {
+              "properties": {
+                "admin": {
+                  "properties": {
+                    "create": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "delete": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "read": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "search": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "update": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                  },
+                  "required": [
+                    "create",
+                    "read",
+                    "update",
+                    "delete",
+                    "search",
+                  ],
+                  "type": "object",
+                },
+                "member": {
+                  "properties": {
+                    "create": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "delete": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "read": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "search": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                    "update": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "type": "number",
+                        },
+                      ],
+                    },
+                  },
+                  "required": [
+                    "create",
+                    "read",
+                    "update",
+                    "delete",
+                    "search",
+                  ],
+                  "type": "object",
+                },
+              },
+              "required": [
+                "member",
+                "admin",
+              ],
+              "type": "object",
+            },
             "slug": {
               "type": "string",
             },
@@ -456,6 +649,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "slug",
             "thumbnailUrl",
             "bannerUrl",
+            "permissions",
           ],
           "type": "object",
         },
@@ -991,6 +1185,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "modifiedBy": null,
             "name": "Murphy LLC",
             "notificationEmail": "notifications@murphy-llc.example",
+            "permissions": {
+              "admin": {
+                "create": 0,
+                "delete": 0,
+                "read": 0,
+                "search": 0,
+                "update": 0,
+              },
+              "member": {
+                "create": 0,
+                "delete": 0,
+                "read": 0,
+                "search": 0,
+                "update": 0,
+              },
+            },
             "restrictions": {
               "attachment": 100,
               "page": 0,
@@ -1172,6 +1382,30 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "null",
               ],
             },
+            "permissions": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "number",
+                },
+                {
+                  "type": "boolean",
+                },
+                {
+                  "type": "null",
+                },
+                {
+                  "additionalProperties": {},
+                  "type": "object",
+                },
+                {
+                  "items": {},
+                  "type": "array",
+                },
+              ],
+            },
             "shortName": {
               "type": [
                 "string",
@@ -1216,6 +1450,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "slug",
             "thumbnailUrl",
             "bannerUrl",
+            "permissions",
             "createdBy",
             "modifiedBy",
             "shortName",
@@ -5005,6 +5240,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "modifiedBy": null,
                       "name": "Murphy LLC",
                       "notificationEmail": "notifications@murphy-llc.example",
+                      "permissions": {
+                        "admin": {
+                          "create": 0,
+                          "delete": 0,
+                          "read": 0,
+                          "search": 0,
+                          "update": 0,
+                        },
+                        "member": {
+                          "create": 0,
+                          "delete": 0,
+                          "read": 0,
+                          "search": 0,
+                          "update": 0,
+                        },
+                      },
                       "restrictions": {
                         "attachment": 100,
                         "page": 0,
@@ -5118,6 +5369,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedBy": null,
                     "name": "Murphy LLC",
                     "notificationEmail": "notifications@murphy-llc.example",
+                    "permissions": {
+                      "admin": {
+                        "create": 0,
+                        "delete": 0,
+                        "read": 0,
+                        "search": 0,
+                        "update": 0,
+                      },
+                      "member": {
+                        "create": 0,
+                        "delete": 0,
+                        "read": 0,
+                        "search": 0,
+                        "update": 0,
+                      },
+                    },
                     "restrictions": {
                       "attachment": 100,
                       "page": 0,
@@ -5358,6 +5625,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedBy": null,
                     "name": "Murphy LLC",
                     "notificationEmail": "notifications@murphy-llc.example",
+                    "permissions": {
+                      "admin": {
+                        "create": 0,
+                        "delete": 0,
+                        "read": 0,
+                        "search": 0,
+                        "update": 0,
+                      },
+                      "member": {
+                        "create": 0,
+                        "delete": 0,
+                        "read": 0,
+                        "search": 0,
+                        "update": 0,
+                      },
+                    },
                     "restrictions": {
                       "attachment": 100,
                       "page": 0,
@@ -10311,6 +10594,214 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
+            "permissions": {
+              "properties": {
+                "admin": {
+                  "properties": {
+                    "create": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "delete": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "read": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "search": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "update": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+                "member": {
+                  "properties": {
+                    "create": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "delete": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "read": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "search": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                    "update": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            0,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                        {
+                          "enum": [
+                            1,
+                          ],
+                          "required": false,
+                          "type": "number",
+                        },
+                      ],
+                      "required": true,
+                    },
+                  },
+                  "required": true,
+                  "type": "object",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
             "slug": {
               "required": true,
               "type": "string",
@@ -11727,6 +12218,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "modifiedBy": null,
           "name": "Murphy LLC",
           "notificationEmail": "notifications@murphy-llc.example",
+          "permissions": {
+            "admin": {
+              "create": 0,
+              "delete": 0,
+              "read": 0,
+              "search": 0,
+              "update": 0,
+            },
+            "member": {
+              "create": 0,
+              "delete": 0,
+              "read": 0,
+              "search": 0,
+              "update": 0,
+            },
+          },
           "restrictions": {
             "attachment": 100,
             "page": 0,
@@ -11964,6 +12471,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "string",
                 "null",
               ],
+            },
+            "permissions": {
+              "anyOf": [
+                {
+                  "required": false,
+                  "type": "string",
+                },
+                {
+                  "required": false,
+                  "type": "number",
+                },
+                {
+                  "required": false,
+                  "type": "boolean",
+                },
+                {
+                  "required": false,
+                  "type": "null",
+                },
+                {
+                  "required": false,
+                  "type": "object",
+                },
+                {
+                  "itemType": "object",
+                  "required": false,
+                  "type": "array",
+                },
+              ],
+              "required": true,
             },
             "shortName": {
               "required": true,
@@ -16205,6 +16742,214 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                               "required": true,
                               "type": "string",
                             },
+                            "permissions": {
+                              "properties": {
+                                "admin": {
+                                  "properties": {
+                                    "create": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "delete": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "read": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "search": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "update": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                  },
+                                  "required": true,
+                                  "type": "object",
+                                },
+                                "member": {
+                                  "properties": {
+                                    "create": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "delete": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "read": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "search": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                    "update": {
+                                      "anyOf": [
+                                        {
+                                          "enum": [
+                                            0,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                        {
+                                          "enum": [
+                                            1,
+                                          ],
+                                          "required": false,
+                                          "type": "number",
+                                        },
+                                      ],
+                                      "required": true,
+                                    },
+                                  },
+                                  "required": true,
+                                  "type": "object",
+                                },
+                              },
+                              "required": true,
+                              "type": "object",
+                            },
                             "slug": {
                               "required": true,
                               "type": "string",
@@ -17156,6 +17901,214 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
+                  "permissions": {
+                    "properties": {
+                      "admin": {
+                        "properties": {
+                          "create": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "delete": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "read": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "search": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "update": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                      "member": {
+                        "properties": {
+                          "create": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "delete": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "read": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "search": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                          "update": {
+                            "anyOf": [
+                              {
+                                "enum": [
+                                  0,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                              {
+                                "enum": [
+                                  1,
+                                ],
+                                "required": false,
+                                "type": "number",
+                              },
+                            ],
+                            "required": true,
+                          },
+                        },
+                        "required": true,
+                        "type": "object",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
                   "slug": {
                     "required": true,
                     "type": "string",
@@ -17871,6 +18824,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedBy": null,
                 "name": "Murphy LLC",
                 "notificationEmail": "notifications@murphy-llc.example",
+                "permissions": {
+                  "admin": {
+                    "create": 0,
+                    "delete": 0,
+                    "read": 0,
+                    "search": 0,
+                    "update": 0,
+                  },
+                  "member": {
+                    "create": 0,
+                    "delete": 0,
+                    "read": 0,
+                    "search": 0,
+                    "update": 0,
+                  },
+                },
                 "restrictions": {
                   "attachment": 100,
                   "page": 0,
@@ -18099,6 +19068,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "string",
                       "null",
                     ],
+                  },
+                  "permissions": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "number",
+                      },
+                      {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                      {
+                        "required": false,
+                        "type": "object",
+                      },
+                      {
+                        "itemType": "object",
+                        "required": false,
+                        "type": "array",
+                      },
+                    ],
+                    "required": true,
                   },
                   "shortName": {
                     "required": true,
@@ -18471,6 +19470,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "null",
                           ],
                         },
+                        "permissions": {
+                          "anyOf": [
+                            {
+                              "required": false,
+                              "type": "string",
+                            },
+                            {
+                              "required": false,
+                              "type": "number",
+                            },
+                            {
+                              "required": false,
+                              "type": "boolean",
+                            },
+                            {
+                              "required": false,
+                              "type": "null",
+                            },
+                            {
+                              "required": false,
+                              "type": "object",
+                            },
+                            {
+                              "itemType": "object",
+                              "required": false,
+                              "type": "array",
+                            },
+                          ],
+                          "required": true,
+                        },
                         "shortName": {
                           "required": true,
                           "type": [
@@ -18709,6 +19738,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedBy": null,
                 "name": "Murphy LLC",
                 "notificationEmail": "notifications@murphy-llc.example",
+                "permissions": {
+                  "admin": {
+                    "create": 0,
+                    "delete": 0,
+                    "read": 0,
+                    "search": 0,
+                    "update": 0,
+                  },
+                  "member": {
+                    "create": 0,
+                    "delete": 0,
+                    "read": 0,
+                    "search": 0,
+                    "update": 0,
+                  },
+                },
                 "restrictions": {
                   "attachment": 100,
                   "page": 0,
@@ -18947,6 +19992,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "string",
                       "null",
                     ],
+                  },
+                  "permissions": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "number",
+                      },
+                      {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                      {
+                        "required": false,
+                        "type": "object",
+                      },
+                      {
+                        "itemType": "object",
+                        "required": false,
+                        "type": "array",
+                      },
+                    ],
+                    "required": true,
                   },
                   "shortName": {
                     "required": true,
@@ -19226,6 +20301,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedBy": null,
                 "name": "Murphy LLC",
                 "notificationEmail": "notifications@murphy-llc.example",
+                "permissions": {
+                  "admin": {
+                    "create": 0,
+                    "delete": 0,
+                    "read": 0,
+                    "search": 0,
+                    "update": 0,
+                  },
+                  "member": {
+                    "create": 0,
+                    "delete": 0,
+                    "read": 0,
+                    "search": 0,
+                    "update": 0,
+                  },
+                },
                 "restrictions": {
                   "attachment": 100,
                   "page": 0,
@@ -19464,6 +20555,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                       "string",
                       "null",
                     ],
+                  },
+                  "permissions": {
+                    "anyOf": [
+                      {
+                        "required": false,
+                        "type": "string",
+                      },
+                      {
+                        "required": false,
+                        "type": "number",
+                      },
+                      {
+                        "required": false,
+                        "type": "boolean",
+                      },
+                      {
+                        "required": false,
+                        "type": "null",
+                      },
+                      {
+                        "required": false,
+                        "type": "object",
+                      },
+                      {
+                        "itemType": "object",
+                        "required": false,
+                        "type": "array",
+                      },
+                    ],
+                    "required": true,
                   },
                   "shortName": {
                     "required": true,

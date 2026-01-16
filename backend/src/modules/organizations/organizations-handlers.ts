@@ -173,28 +173,16 @@ const organizationRouteHandlers = app
       },
     } as const;
 
-    // Only difference is join type for memberships but due to drizzle TS types we need to repeat the query
-    const organizations = isSystemAdmin
-      ? await db
-          .select(selectShape)
-          .from(organizationsTable)
-          .leftJoin(membershipsTable, membershipOn)
-          .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
-          .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
-          .where(and(...orgWhere))
-          .orderBy(orderColumn)
-          .limit(limit)
-          .offset(offset)
-      : await db
-          .select(selectShape)
-          .from(organizationsTable)
-          .innerJoin(membershipsTable, membershipOn)
-          .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
-          .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
-          .where(and(...orgWhere))
-          .orderBy(orderColumn)
-          .limit(limit)
-          .offset(offset);
+    const organizations = await db
+      .select(selectShape)
+      .from(organizationsTable)
+      .innerJoin(membershipsTable, membershipOn)
+      .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
+      .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
+      .where(and(...orgWhere))
+      .orderBy(orderColumn)
+      .limit(limit)
+      .offset(offset);
 
     return ctx.json({ items: organizations, total }, 200);
   })
