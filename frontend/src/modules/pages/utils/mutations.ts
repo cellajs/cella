@@ -119,7 +119,7 @@ export const useTableMutation = <N extends `${EntityType}s`, M extends MutationT
     // at some point here, does shit get persisted locally?
     onMutate: async (variables, context): Promise<[QueryKey, unknown][]> => {
       const previous: [QueryKey, unknown][] = [];
-      console.log('hi');
+
       const queries = context.client.getQueriesData<unknown>({ queryKey: keyFilter });
       for (const [queryKey, cached] of queries) {
         // Cancel outgoing refetches to avoid overwriting optimistic update

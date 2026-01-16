@@ -103,5 +103,50 @@
     "repoUrl": "https://github.com/inokawa/virtua",
     "changelogUrl": null,
     "fetchedAt": 1768483712616
+  },
+  "react-error-boundary": {
+    "repoUrl": "https://github.com/bvaughn/react-error-boundary",
+    "changelogUrl": "https://github.com/bvaughn/react-error-boundary/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768566820733
+  },
+  "@aws-sdk/s3-request-presigner": {
+    "repoUrl": "https://github.com/aws/aws-sdk-js-v3",
+    "changelogUrl": "https://github.com/aws/aws-sdk-js-v3/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768566820887
+  },
+  "@aws-sdk/lib-storage": {
+    "repoUrl": "https://github.com/aws/aws-sdk-js-v3",
+    "changelogUrl": "https://github.com/aws/aws-sdk-js-v3/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768566820894
+  },
+  "@aws-sdk/client-s3": {
+    "repoUrl": "https://github.com/aws/aws-sdk-js-v3",
+    "changelogUrl": "https://github.com/aws/aws-sdk-js-v3/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768566820970
+  },
+  "@aws-sdk/cloudfront-signer": {
+    "repoUrl": "https://github.com/aws/aws-sdk-js-v3",
+    "changelogUrl": "https://github.com/aws/aws-sdk-js-v3/blob/main/CHANGELOG.md",
+    "fetchedAt": 1768566821130
+  },
+  "react-intersection-observer": {
+    "repoUrl": "https://github.com/thebuilder/react-intersection-observer",
+    "changelogUrl": null,
+    "fetchedAt": 1768566822811
+  },
+  "@tanstack/react-query-persist-client": {
+    "repoUrl": "https://github.com/TanStack/query",
+    "changelogUrl": null,
+    "fetchedAt": 1768566822848
+  },
+  "@tanstack/react-query": {
+    "repoUrl": "https://github.com/TanStack/query",
+    "changelogUrl": null,
+    "fetchedAt": 1768566822849
+  },
+  "@hey-api/openapi-ts": {
+    "repoUrl": "https://github.com/hey-api/openapi-ts",
+    "changelogUrl": null,
+    "fetchedAt": 1768566825936
   }
 }

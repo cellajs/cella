@@ -1,12 +1,4 @@
-/**
- * Generate Runner
- *
- * Runs all configured generation scripts from appConfig.generateScripts.
- * Provides consistent logging and error handling.
- */
-
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
 import pc from 'picocolors';
 import { checkMark } from '#/utils/console';
 
@@ -41,10 +33,11 @@ function runCommand(command: string, cwd: string): Promise<void> {
 }
 
 /**
- * Run all generation scripts.
+ * Run all generation scripts from the backend directory.
+ * Note: Scripts must be invoked from the backend directory (e.g., via pnpm generate).
  */
 export async function runGenerateScripts(scripts: GenerateScript[]): Promise<void> {
-  const backendDir = join(import.meta.dirname, '../..');
+  const backendDir = process.cwd();
 
   console.info('');
   console.info(pc.bold(`Running ${scripts.length} generation scripts...`));

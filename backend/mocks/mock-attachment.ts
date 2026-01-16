@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
-import { generateMockContextEntityIdColumns, withFakerSeed } from './utils';
+import { generateMockContextEntityIdColumns, mockNanoid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock attachment with all fields populated.
@@ -11,11 +11,11 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const userId = faker.string.nanoid();
+    const userId = mockNanoid();
     const filename = faker.system.fileName();
 
     return {
-      id: faker.string.nanoid(),
+      id: mockNanoid(),
       entityType: 'attachment' as const,
       name: filename,
       description: null,
@@ -27,7 +27,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       contentType: faker.system.mimeType(),
       convertedContentType: null,
       size: String(faker.number.int({ min: 1000, max: 10_000_000 })),
-      originalKey: `uploads/${faker.string.nanoid()}/${filename}`,
+      originalKey: `uploads/${mockNanoid()}/${filename}`,
       convertedKey: null,
       thumbnailKey: null,
       createdAt,

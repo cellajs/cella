@@ -23,7 +23,7 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
     tableName: defaultOptions.tableName,
   };
 
-  return env.PGLITE
+  return env.DEV_MODE === 'basic'
     ? new RateLimiterMemory(enforcedOptions)
     : new RateLimiterPostgres({
         ...enforcedOptions,

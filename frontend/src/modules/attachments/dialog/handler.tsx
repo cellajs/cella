@@ -19,7 +19,7 @@ const AttachmentDialogHandler = memo(() => {
 
     const loadAndCreateDialog = async () => {
       const cachedAttachments = await attachmentStorage.getCachedImages(attachmentDialogId, groupId);
-      console.log('cachedAttachments', cachedAttachments);
+
       const validAttachments = cachedAttachments.map((cache) => ({
         id: cache.id,
         url: URL.createObjectURL(cache.file),

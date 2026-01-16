@@ -22,9 +22,9 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import type { ActivityEvent } from '#/lib/event-bus';
 import { eventBus } from '#/lib/event-bus';
-import { mockOrganization } from '#/mocks/mock-organization';
-import { mockUser } from '#/mocks/mock-user';
 import { nanoid } from '#/utils/nanoid';
+import { mockOrganization } from '../../mocks/mock-organization';
+import { mockUser } from '../../mocks/mock-user';
 import { clearDatabase, ensureCdcSetup, startEventBus, stopEventBus, waitForEvent } from './test-utils';
 
 describe('EventBus Integration', () => {
@@ -90,8 +90,8 @@ describe('EventBus Integration', () => {
     });
   });
 
-  // Skip CDC-dependent tests when CDC is disabled
-  describe.skipIf(process.env.CDC_DISABLED === 'true')('Activity trigger → EventBus', () => {
+  // Skip CDC-dependent tests when not in full test mode
+  describe.skipIf(process.env.TEST_MODE !== 'full')('Activity trigger → EventBus', () => {
     it('should receive event when activity is inserted directly', async () => {
       // This tests the PostgreSQL trigger path
       const eventPromise = waitForEvent<ActivityEvent>('membership.created', 5000);
@@ -161,8 +161,8 @@ describe('EventBus Integration', () => {
   });
 });
 
-// Skip CDC setup verification when CDC is disabled
-describe.skipIf(process.env.CDC_DISABLED === 'true')('CDC Setup Verification', () => {
+// Skip CDC setup verification when not in full test mode
+describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () => {
   // Migrations are handled by global-setup.ts
 
   it('should have CDC publication configured', async () => {

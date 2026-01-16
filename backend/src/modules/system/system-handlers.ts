@@ -21,7 +21,7 @@ import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import systemRoutes from '#/modules/system/system-routes';
-import permissionManager from '#/permissions/permissions-config';
+import { isPermissionAllowed } from '#/permissions';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -211,9 +211,9 @@ const systemRouteHandlers = app
           .where(eq(membershipsTable.userId, user.id));
 
         const isSystemAdmin = userSystemRole === 'admin';
-        const isAllowed = permissionManager.isPermissionAllowed(memberships, 'read', attachment);
+        const { allowed } = isPermissionAllowed(memberships, 'read', attachment);
 
-        if (!isSystemAdmin && !isAllowed)
+        if (!isSystemAdmin && !allowed)
           throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: attachment.entityType });
       }
     }

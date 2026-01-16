@@ -2,7 +2,7 @@ import { defineConfig } from 'drizzle-kit';
 import { dbConfig } from './src/db/db';
 import { env } from './src/env';
 
-const extendConfig = env.PGLITE ? { driver: 'pglite' } : {};
+const extendConfig = env.DEV_MODE === 'basic' ? { driver: 'pglite' } : {};
 
 /**
  * Drizzle configuration.
@@ -15,6 +15,6 @@ export default defineConfig({
   casing: dbConfig.casing,
   ...extendConfig,
   dbCredentials: {
-    url: env.PGLITE ? './.db' : env.DATABASE_URL,
+    url: env.DEV_MODE === 'basic' ? './.db' : env.DATABASE_URL,
   },
 });

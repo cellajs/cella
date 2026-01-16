@@ -2,10 +2,7 @@
   {
     "operationId": "syncAttachments",
     "responses": [
-      {
-        "status": 200,
-        "description": "Success"
-      },
+      { "status": 200, "description": "Success" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -54,30 +51,12 @@
       },
       "query": {
         "properties": {
-          "table": {
-            "type": "string",
-            "required": true
-          },
-          "offset": {
-            "type": "string",
-            "required": true
-          },
-          "handle": {
-            "type": "string",
-            "required": false
-          },
-          "cursor": {
-            "type": "string",
-            "required": false
-          },
-          "live": {
-            "type": "string",
-            "required": false
-          },
-          "where": {
-            "type": "string",
-            "required": false
-          }
+          "table": { "type": "string", "required": true },
+          "offset": { "type": "string", "required": true },
+          "handle": { "type": "string", "required": false },
+          "cursor": { "type": "string", "required": false },
+          "live": { "type": "string", "required": false },
+          "where": { "type": "string", "required": false }
         }
       }
     }
@@ -97,113 +76,54 @@
             "type": "object",
             "required": true,
             "properties": {
-              "createdAt": {
-                "type": "string",
-                "required": true
-              },
-              "id": {
-                "type": "string",
-                "required": true
-              },
+              "createdAt": { "type": "string", "required": true },
+              "id": { "type": "string", "required": true },
               "entityType": {
                 "type": "string",
                 "required": true,
-                "enum": [
-                  "attachment"
-                ]
+                "enum": ["attachment"]
               },
-              "name": {
-                "type": "string",
-                "required": true
-              },
+              "name": { "type": "string", "required": true },
               "description": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
               "modifiedAt": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
-              "keywords": {
-                "type": "string",
-                "required": true
-              },
+              "keywords": { "type": "string", "required": true },
               "createdBy": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
               "modifiedBy": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
-              "public": {
-                "type": "boolean",
-                "required": true
-              },
-              "bucketName": {
-                "type": "string",
-                "required": true
-              },
+              "public": { "type": "boolean", "required": true },
+              "bucketName": { "type": "string", "required": true },
               "groupId": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
-              "filename": {
-                "type": "string",
-                "required": true
-              },
-              "contentType": {
-                "type": "string",
-                "required": true
-              },
+              "filename": { "type": "string", "required": true },
+              "contentType": { "type": "string", "required": true },
               "convertedContentType": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
-              "size": {
-                "type": "string",
-                "required": true
-              },
-              "originalKey": {
-                "type": "string",
-                "required": true
-              },
+              "size": { "type": "string", "required": true },
+              "originalKey": { "type": "string", "required": true },
               "convertedKey": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
               "thumbnailKey": {
-                "type": [
-                  "string",
-                  "null"
-                ],
+                "type": ["string", "null"],
                 "required": true
               },
-              "organizationId": {
-                "type": "string",
-                "required": true
-              }
+              "organizationId": { "type": "string", "required": true }
             },
             "ref": "#/components/schemas/Attachment"
           },
@@ -263,113 +183,54 @@
           "type": "object",
           "required": true,
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": false
-            },
-            "id": {
-              "type": "string",
-              "required": false
-            },
+            "createdAt": { "type": "string", "required": false },
+            "id": { "type": "string", "required": false },
             "entityType": {
               "type": "string",
               "required": false,
-              "enum": [
-                "attachment"
-              ]
+              "enum": ["attachment"]
             },
-            "name": {
-              "type": "string",
-              "required": false
-            },
+            "name": { "type": "string", "required": false },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
-            "keywords": {
-              "type": "string",
-              "required": true
-            },
+            "keywords": { "type": "string", "required": true },
             "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
-            "public": {
-              "type": "boolean",
-              "required": false
-            },
-            "bucketName": {
-              "type": "string",
-              "required": true
-            },
+            "public": { "type": "boolean", "required": false },
+            "bucketName": { "type": "string", "required": true },
             "groupId": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
-            "filename": {
-              "type": "string",
-              "required": true
-            },
-            "contentType": {
-              "type": "string",
-              "required": true
-            },
+            "filename": { "type": "string", "required": true },
+            "contentType": { "type": "string", "required": true },
             "convertedContentType": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
-            "size": {
-              "type": "string",
-              "required": true
-            },
-            "originalKey": {
-              "type": "string",
-              "required": true
-            },
+            "size": { "type": "string", "required": true },
+            "originalKey": { "type": "string", "required": true },
             "convertedKey": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
             "thumbnailKey": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": false
             },
-            "organizationId": {
-              "type": "string",
-              "required": true
-            }
+            "organizationId": { "type": "string", "required": true }
           }
         },
         "minItems": 1,
@@ -391,10 +252,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "success": {
-              "type": "boolean",
-              "required": true
-            },
+            "success": { "type": "boolean", "required": true },
             "rejectedItems": {
               "type": "array",
               "required": true,
@@ -483,138 +341,79 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "attachment"
-              ]
+              "enum": ["attachment"]
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "keywords": {
-              "type": "string",
-              "required": true
-            },
+            "keywords": { "type": "string", "required": true },
             "createdBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "public": {
-              "type": "boolean",
-              "required": true
-            },
-            "bucketName": {
-              "type": "string",
-              "required": true
-            },
+            "public": { "type": "boolean", "required": true },
+            "bucketName": { "type": "string", "required": true },
             "groupId": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "filename": {
-              "type": "string",
-              "required": true
-            },
-            "contentType": {
-              "type": "string",
-              "required": true
-            },
+            "filename": { "type": "string", "required": true },
+            "contentType": { "type": "string", "required": true },
             "convertedContentType": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "size": {
-              "type": "string",
-              "required": true
-            },
-            "originalKey": {
-              "type": "string",
-              "required": true
-            },
+            "size": { "type": "string", "required": true },
+            "originalKey": { "type": "string", "required": true },
             "convertedKey": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "thumbnailKey": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "organizationId": {
-              "type": "string",
-              "required": true
-            }
+            "organizationId": { "type": "string", "required": true }
           },
           "ref": "#/components/schemas/Attachment",
           "contentType": "application/json"
         },
         "example": {
-          "id": "y5HDs5pltSHUGLcWkE34G",
+          "id": "og9ynkm3vp2mdgi3oeicogxv",
           "entityType": "attachment",
-          "name": "fondly.m1v",
+          "name": "yet_rightfully_lest.ogx",
           "description": null,
-          "keywords": "verecundia vilitas temptatio",
+          "keywords": "pectus subvenio depromo",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
-          "filename": "fondly.m1v",
-          "contentType": "application/x-httpd-php",
+          "filename": "yet_rightfully_lest.ogx",
+          "contentType": "video/mp2t",
           "convertedContentType": null,
-          "size": "5568754",
-          "originalKey": "uploads/XnACyRDPe9MqxOptQyt9I/fondly.m1v",
+          "size": "6046908",
+          "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
-          "createdBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
+          "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
-          "modifiedBy": "Rwe4IYOfGcTZPZ3ZsGnx4",
-          "organizationId": "qPfBDu0oUdbMbGFUc0pbs"
+          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
         }
       },
       {
@@ -656,10 +455,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          },
+          "id": { "type": "string", "required": true },
           "orgIdOrSlug": {
             "type": "string",
             "required": true,
@@ -670,14 +466,8 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "required": false
-          },
-          "originalKey": {
-            "type": "string",
-            "required": false
-          }
+          "name": { "type": "string", "required": false },
+          "originalKey": { "type": "string", "required": false }
         },
         "required": true,
         "contentType": "application/json"
@@ -687,10 +477,7 @@
   {
     "operationId": "redirectToAttachment",
     "responses": [
-      {
-        "status": 200,
-        "description": "Success"
-      },
+      { "status": 200, "description": "Success" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -730,10 +517,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true
-          }
+          "id": { "type": "string", "required": true }
         }
       }
     }

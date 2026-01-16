@@ -9,8 +9,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { checkMark } from '#/utils/console';
 
-// Go up two levels: lib -> scripts -> backend, then into drizzle
-const drizzleDir = join(import.meta.dirname, '../../drizzle');
+const drizzleDir = join(process.cwd(), 'drizzle');
 const journalPath = join(drizzleDir, 'meta/_journal.json');
 
 interface JournalEntry {

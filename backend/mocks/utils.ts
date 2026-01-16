@@ -3,6 +3,12 @@ import { appConfig, type ContextEntityType } from 'config';
 import { relatableContextEntityTables } from '#/relatable-config';
 
 /**
+ * Generates an ID matching nanoid config (lowercase alphanumeric, 24 chars).
+ * Uses faker's seeded RNG for deterministic output.
+ */
+export const mockNanoid = (length = 24) => faker.string.alphanumeric({ length, casing: 'lower' });
+
+/**
  * Generates a random ISO date in the past.
  * @returns An ISO 8601 string representing a past date.
  */
@@ -34,7 +40,7 @@ export const generateMockContextEntityIdColumnsWithConfig = <T extends ContextEn
   config.contextEntityTypes.reduce(
     (columns, entityType) => {
       const columnName = config.entityIdColumnKeys[entityType];
-      columns[columnName] = faker.string.nanoid();
+      columns[columnName] = mockNanoid();
       return columns;
     },
     {} as Record<string, string>,

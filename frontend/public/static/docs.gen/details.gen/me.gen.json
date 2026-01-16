@@ -15,48 +15,25 @@
               "type": "object",
               "required": true,
               "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "required": true
-                },
-                "id": {
-                  "type": "string",
-                  "required": true
-                },
+                "createdAt": { "type": "string", "required": true },
+                "id": { "type": "string", "required": true },
                 "entityType": {
                   "type": "string",
                   "required": true,
-                  "enum": [
-                    "user"
-                  ]
+                  "enum": ["user"]
                 },
-                "name": {
-                  "type": "string",
-                  "required": true
-                },
+                "name": { "type": "string", "required": true },
                 "description": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
-                "slug": {
-                  "type": "string",
-                  "required": true
-                },
+                "slug": { "type": "string", "required": true },
                 "thumbnailUrl": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "bannerUrl": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "email": {
@@ -64,85 +41,49 @@
                   "required": true,
                   "format": "email"
                 },
-                "mfaRequired": {
-                  "type": "boolean",
-                  "required": true
-                },
+                "mfaRequired": { "type": "boolean", "required": true },
                 "firstName": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "lastName": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "language": {
                   "type": "string",
                   "required": true,
-                  "enum": [
-                    "en",
-                    "nl"
-                  ]
+                  "enum": ["en", "nl"]
                 },
-                "newsletter": {
-                  "type": "boolean",
-                  "required": true
-                },
+                "newsletter": { "type": "boolean", "required": true },
                 "userFlags": {
                   "type": "object",
                   "required": true,
                   "properties": {
-                    "finishedOnboarding": {
-                      "type": "boolean",
-                      "required": true
-                    }
+                    "finishedOnboarding": { "type": "boolean", "required": true }
                   }
                 },
                 "modifiedAt": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "lastStartedAt": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "lastSignInAt": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "modifiedBy": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "required": true
                 },
                 "lastSeenAt": {
                   "required": true,
                   "anyOf": [
-                    {
-                      "type": "string",
-                      "required": false
-                    },
-                    {
-                      "type": "null",
-                      "required": false
-                    }
+                    { "type": "string", "required": false },
+                    { "type": "null", "required": false }
                   ]
                 }
               },
@@ -152,10 +93,7 @@
               "type": "string",
               "required": true,
               "description": "Explain system role here",
-              "enum": [
-                "admin",
-                "user"
-              ]
+              "enum": ["admin", "user"]
             }
           },
           "ref": "#/components/schemas/Me",
@@ -163,9 +101,9 @@
         },
         "example": {
           "user": {
-            "id": "KNGgftxF37fbRhY1aJvFC",
+            "id": "7qgsnou9b80h3jlnu1j458h6",
             "entityType": "user",
-            "name": "Odell Gislason DVM",
+            "name": "Mr. Odell Gislason",
             "firstName": "Odell",
             "lastName": "Gislason",
             "email": "odell.gislason@yahoo.com",
@@ -174,7 +112,7 @@
             "thumbnailUrl": null,
             "bannerUrl": null,
             "language": "en",
-            "newsletter": false,
+            "newsletter": true,
             "mfaRequired": false,
             "userFlags": {},
             "createdAt": "2024-07-14T22:49:14.651Z",
@@ -236,48 +174,25 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "user"
-              ]
+              "enum": ["user"]
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true
-            },
+            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "bannerUrl": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "email": {
@@ -285,85 +200,49 @@
               "required": true,
               "format": "email"
             },
-            "mfaRequired": {
-              "type": "boolean",
-              "required": true
-            },
+            "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastName": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "language": {
               "type": "string",
               "required": true,
-              "enum": [
-                "en",
-                "nl"
-              ]
+              "enum": ["en", "nl"]
             },
-            "newsletter": {
-              "type": "boolean",
-              "required": true
-            },
+            "newsletter": { "type": "boolean", "required": true },
             "userFlags": {
               "type": "object",
               "required": true,
               "properties": {
-                "finishedOnboarding": {
-                  "type": "boolean",
-                  "required": true
-                }
+                "finishedOnboarding": { "type": "boolean", "required": true }
               }
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastStartedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastSignInAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastSeenAt": {
               "required": true,
               "anyOf": [
-                {
-                  "type": "string",
-                  "required": false
-                },
-                {
-                  "type": "null",
-                  "required": false
-                }
+                { "type": "string", "required": false },
+                { "type": "null", "required": false }
               ]
             }
           },
@@ -371,7 +250,7 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "id": "w6g7sfzetbhjls7m9dg1xzav",
           "entityType": "user",
           "name": "Franco Corwin",
           "firstName": "Franco",
@@ -382,7 +261,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": false,
+          "newsletter": true,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -434,26 +313,17 @@
         "type": "object",
         "properties": {
           "bannerUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": false
           },
           "firstName": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": false,
             "minLength": 2,
             "maxLength": 100
           },
           "lastName": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": false,
             "minLength": 2,
             "maxLength": 100
@@ -461,20 +331,11 @@
           "language": {
             "type": "string",
             "required": false,
-            "enum": [
-              "en",
-              "nl"
-            ]
+            "enum": ["en", "nl"]
           },
-          "newsletter": {
-            "type": "boolean",
-            "required": false
-          },
+          "newsletter": { "type": "boolean", "required": false },
           "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "required": false
           },
           "slug": {
@@ -487,10 +348,7 @@
             "type": "object",
             "required": false,
             "properties": {
-              "finishedOnboarding": {
-                "type": "boolean",
-                "required": false
-              }
+              "finishedOnboarding": { "type": "boolean", "required": false }
             }
           }
         },
@@ -502,10 +360,7 @@
   {
     "operationId": "deleteMe",
     "responses": [
-      {
-        "status": 204,
-        "description": "User deleted"
-      },
+      { "status": 204, "description": "User deleted" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -555,48 +410,25 @@
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": {
-              "type": "string",
-              "required": true
-            },
-            "id": {
-              "type": "string",
-              "required": true
-            },
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
             "entityType": {
               "type": "string",
               "required": true,
-              "enum": [
-                "user"
-              ]
+              "enum": ["user"]
             },
-            "name": {
-              "type": "string",
-              "required": true
-            },
+            "name": { "type": "string", "required": true },
             "description": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true
-            },
+            "slug": { "type": "string", "required": true },
             "thumbnailUrl": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "bannerUrl": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "email": {
@@ -604,85 +436,49 @@
               "required": true,
               "format": "email"
             },
-            "mfaRequired": {
-              "type": "boolean",
-              "required": true
-            },
+            "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastName": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "language": {
               "type": "string",
               "required": true,
-              "enum": [
-                "en",
-                "nl"
-              ]
+              "enum": ["en", "nl"]
             },
-            "newsletter": {
-              "type": "boolean",
-              "required": true
-            },
+            "newsletter": { "type": "boolean", "required": true },
             "userFlags": {
               "type": "object",
               "required": true,
               "properties": {
-                "finishedOnboarding": {
-                  "type": "boolean",
-                  "required": true
-                }
+                "finishedOnboarding": { "type": "boolean", "required": true }
               }
             },
             "modifiedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastStartedAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastSignInAt": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "modifiedBy": {
-              "type": [
-                "string",
-                "null"
-              ],
+              "type": ["string", "null"],
               "required": true
             },
             "lastSeenAt": {
               "required": true,
               "anyOf": [
-                {
-                  "type": "string",
-                  "required": false
-                },
-                {
-                  "type": "null",
-                  "required": false
-                }
+                { "type": "string", "required": false },
+                { "type": "null", "required": false }
               ]
             }
           },
@@ -690,7 +486,7 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "adq_jxNCo3ZSdxUwcIyz-",
+          "id": "w6g7sfzetbhjls7m9dg1xzav",
           "entityType": "user",
           "name": "Franco Corwin",
           "firstName": "Franco",
@@ -701,7 +497,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null,
           "language": "en",
-          "newsletter": false,
+          "newsletter": true,
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
@@ -756,32 +552,14 @@
             "type": "object",
             "required": false,
             "properties": {
-              "credentialId": {
-                "type": "string",
-                "required": true
-              },
-              "clientDataJSON": {
-                "type": "string",
-                "required": true
-              },
-              "authenticatorObject": {
-                "type": "string",
-                "required": true
-              },
-              "signature": {
-                "type": "string",
-                "required": true
-              }
+              "credentialId": { "type": "string", "required": true },
+              "clientDataJSON": { "type": "string", "required": true },
+              "authenticatorObject": { "type": "string", "required": true },
+              "signature": { "type": "string", "required": true }
             }
           },
-          "totpCode": {
-            "type": "string",
-            "required": false
-          },
-          "mfaRequired": {
-            "type": "boolean",
-            "required": true
-          }
+          "totpCode": { "type": "string", "required": false },
+          "mfaRequired": { "type": "boolean", "required": true }
         },
         "required": false,
         "contentType": "application/json"
@@ -804,18 +582,10 @@
               "type": "array",
               "required": true,
               "itemType": "string",
-              "enum": [
-                "github"
-              ]
+              "enum": ["github"]
             },
-            "hasTotp": {
-              "type": "boolean",
-              "required": true
-            },
-            "hasPassword": {
-              "type": "boolean",
-              "required": true
-            },
+            "hasTotp": { "type": "boolean", "required": true },
+            "hasPassword": { "type": "boolean", "required": true },
             "sessions": {
               "type": "array",
               "required": true,
@@ -823,77 +593,38 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "id": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
                   "type": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "regular",
-                      "impersonation",
-                      "mfa"
-                    ]
+                    "enum": ["regular", "impersonation", "mfa"]
                   },
-                  "userId": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "userId": { "type": "string", "required": true },
                   "deviceName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "deviceType": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "desktop",
-                      "mobile"
-                    ]
+                    "enum": ["desktop", "mobile"]
                   },
                   "deviceOs": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "browser": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "authStrategy": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "github",
-                      "google",
-                      "microsoft",
-                      "password",
-                      "passkey",
-                      "totp",
-                      "email"
-                    ]
+                    "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
                   },
-                  "expiresAt": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "isCurrent": {
-                    "type": "boolean",
-                    "required": true
-                  }
+                  "expiresAt": { "type": "string", "required": true },
+                  "isCurrent": { "type": "boolean", "required": true }
                 }
               }
             },
@@ -904,51 +635,27 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "userId": {
-                    "type": "string",
-                    "required": true
-                  },
+                  "id": { "type": "string", "required": true },
+                  "userId": { "type": "string", "required": true },
                   "deviceName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "deviceType": {
                     "type": "string",
                     "required": true,
-                    "enum": [
-                      "desktop",
-                      "mobile"
-                    ]
+                    "enum": ["desktop", "mobile"]
                   },
                   "deviceOs": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
                   "browser": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "required": true
                   },
-                  "nameOnDevice": {
-                    "type": "string",
-                    "required": true
-                  },
-                  "createdAt": {
-                    "type": "string",
-                    "required": true
-                  }
+                  "nameOnDevice": { "type": "string", "required": true },
+                  "createdAt": { "type": "string", "required": true }
                 }
               }
             }
@@ -957,22 +664,20 @@
           "contentType": "application/json"
         },
         "example": {
-          "enabledOAuth": [
-            "github"
-          ],
+          "enabledOAuth": ["github"],
           "hasTotp": false,
           "hasPassword": true,
           "sessions": [
             {
-              "id": "XAt10Xd3dBO8leLbQS8OH",
-              "userId": "0VF-w6LQGNtYJc9oOlWUO",
+              "id": "1yyluhj040oyd732g8rl7t64",
+              "userId": "ccb8qru6yupvx5ntxp604xgo",
               "type": "regular",
               "createdAt": "2024-05-29T08:00:36.178Z",
               "expiresAt": "2024-06-28T08:00:36.178Z",
-              "deviceName": "Firefox on Windows",
-              "deviceType": "desktop",
+              "deviceName": "Safari on iPhone",
+              "deviceType": "mobile",
               "deviceOs": "Windows",
-              "browser": "Firefox",
+              "browser": "Safari",
               "authStrategy": "password",
               "isCurrent": true
             }
@@ -1038,55 +743,29 @@
                     "type": "object",
                     "required": true,
                     "properties": {
-                      "id": {
-                        "type": "string",
-                        "required": true
-                      },
-                      "name": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
                       "description": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       },
-                      "createdAt": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "createdAt": { "type": "string", "required": true },
                       "modifiedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       },
                       "entityType": {
                         "type": "string",
                         "required": true,
-                        "enum": [
-                          "organization"
-                        ]
+                        "enum": ["organization"]
                       },
-                      "slug": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "slug": { "type": "string", "required": true },
                       "thumbnailUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       },
                       "bannerUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       }
                     },
@@ -1096,76 +775,41 @@
                     "type": "object",
                     "required": true,
                     "properties": {
-                      "createdAt": {
-                        "type": "string",
-                        "required": true
-                      },
-                      "id": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "createdAt": { "type": "string", "required": true },
+                      "id": { "type": "string", "required": true },
                       "contextType": {
                         "type": "string",
                         "required": true,
-                        "enum": [
-                          "organization"
-                        ]
+                        "enum": ["organization"]
                       },
-                      "email": {
-                        "type": "string",
-                        "required": true
-                      },
+                      "email": { "type": "string", "required": true },
                       "userId": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       },
                       "tokenId": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       },
                       "role": {
                         "type": "string",
                         "required": true,
-                        "enum": [
-                          "member",
-                          "admin"
-                        ]
+                        "enum": ["member", "admin"]
                       },
                       "rejectedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "required": true
                       },
-                      "createdBy": {
-                        "type": "string",
-                        "required": true
-                      },
-                      "organizationId": {
-                        "type": "string",
-                        "required": true
-                      },
-                      "uniqueKey": {
-                        "type": "string",
-                        "required": true
-                      }
+                      "createdBy": { "type": "string", "required": true },
+                      "organizationId": { "type": "string", "required": true },
+                      "uniqueKey": { "type": "string", "required": true }
                     },
                     "ref": "#/components/schemas/InactiveMembership"
                   }
                 }
               }
             },
-            "total": {
-              "type": "number",
-              "required": true
-            }
+            "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }
@@ -1219,10 +863,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "success": {
-              "type": "boolean",
-              "required": true
-            },
+            "success": { "type": "boolean", "required": true },
             "rejectedItems": {
               "type": "array",
               "required": true,
@@ -1293,10 +934,7 @@
   {
     "operationId": "deleteMyMembership",
     "responses": [
-      {
-        "status": 204,
-        "description": "Membership removed"
-      },
+      { "status": 204, "description": "Membership removed" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1344,9 +982,7 @@
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           }
         }
       }
@@ -1364,22 +1000,10 @@
         "schema": {
           "type": "object",
           "properties": {
-            "public": {
-              "type": "boolean",
-              "required": true
-            },
-            "sub": {
-              "type": "string",
-              "required": true
-            },
-            "s3": {
-              "type": "boolean",
-              "required": true
-            },
-            "signature": {
-              "type": "string",
-              "required": true
-            },
+            "public": { "type": "boolean", "required": true },
+            "sub": { "type": "string", "required": true },
+            "s3": { "type": "boolean", "required": true },
+            "signature": { "type": "string", "required": true },
             "params": {
               "type": "object",
               "required": true,
@@ -1388,14 +1012,8 @@
                   "type": "object",
                   "required": true,
                   "properties": {
-                    "key": {
-                      "type": "string",
-                      "required": true
-                    },
-                    "expires": {
-                      "type": "string",
-                      "required": false
-                    }
+                    "key": { "type": "string", "required": true },
+                    "expires": { "type": "string", "required": false }
                   }
                 }
               }
@@ -1406,14 +1024,11 @@
         },
         "example": {
           "public": false,
-          "sub": "2NpNbC-rtGtYVb1XPh3cb",
+          "sub": "x1lsgegsw6imziogthaolhvy",
           "s3": true,
-          "signature": "WcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYgzW9Ecl3lRMu8bZ9lDv",
+          "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
           "params": {
-            "auth": {
-              "key": "uploads/-WevYEtehwyoG0ux7Q1ox",
-              "expires": "2025-01-01T04:15:50.483Z"
-            }
+            "auth": { "key": "uploads/kx5n7c1cush46z5cnizlmyd8", "expires": "2025-01-01T04:15:50.483Z" }
           }
         }
       },
@@ -1459,28 +1074,15 @@
           "public": {
             "required": false,
             "anyOf": [
-              {
-                "type": "string",
-                "required": false
-              },
-              {
-                "type": "boolean",
-                "required": false
-              }
+              { "type": "string", "required": false },
+              { "type": "boolean", "required": false }
             ]
           },
-          "organizationId": {
-            "type": "string",
-            "required": false
-          },
+          "organizationId": { "type": "string", "required": false },
           "templateId": {
             "type": "string",
             "required": true,
-            "enum": [
-              "avatar",
-              "cover",
-              "attachment"
-            ]
+            "enum": ["avatar", "cover", "attachment"]
           }
         }
       }
@@ -1489,10 +1091,7 @@
   {
     "operationId": "unsubscribeMe",
     "responses": [
-      {
-        "status": 302,
-        "description": "Redirect to FE"
-      },
+      { "status": 302, "description": "Redirect to FE" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -1532,10 +1131,7 @@
     "request": {
       "query": {
         "properties": {
-          "token": {
-            "type": "string",
-            "required": true
-          }
+          "token": { "type": "string", "required": true }
         }
       }
     }

@@ -22,6 +22,13 @@
       "when": 1768483549352,
       "tag": "0002_activity_notify_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768511973823,
+      "tag": "0003_steep_shen",
+      "breakpoints": true
     }
   ]
 }

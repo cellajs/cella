@@ -2,10 +2,7 @@
   {
     "operationId": "checkSlug",
     "responses": [
-      {
-        "status": 204,
-        "description": "Slug is available"
-      },
+      { "status": 204, "description": "Slug is available" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -46,17 +43,11 @@
       "body": {
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string",
-            "required": true
-          },
+          "slug": { "type": "string", "required": true },
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": [
-              "user",
-              "organization"
-            ]
+            "enum": ["user", "organization"]
           }
         },
         "required": true,

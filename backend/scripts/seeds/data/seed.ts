@@ -1,8 +1,11 @@
+import { appConfig } from 'config';
 import { checkMark, loadingMark } from '#/utils/console';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
-import { mockMany, mockPage } from '#/mocks';
+import { mockMany, mockPage } from '../../../mocks';
+import { defaultAdminUser } from '../fixtures';
 
+const isProduction = appConfig.mode === 'production';
 const PAGES_COUNT = 10;
 
 /**
@@ -19,11 +22,18 @@ const isPageSeeded = async () => {
 export const dataSeed = async () => {
   console.info(` \n${loadingMark} Seeding pages...`);
 
+  // Case: Production mode → skip seeding
+  if (isProduction) return console.error('Not allowed in production.');
+
   // Case: Records already exist → skip seeding
   if (await isPageSeeded()) return console.warn('Pages table not empty → skip seeding');
 
-  // Make many pages → Insert into the database
-  const pageRecords = mockMany(mockPage, PAGES_COUNT);
+  // Make many pages and assign to the seeded admin user
+  const pageRecords = mockMany(mockPage, PAGES_COUNT).map((page) => ({
+    ...page,
+    createdBy: defaultAdminUser.id,
+    modifiedBy: defaultAdminUser.id,
+  }));
   await db.insert(pagesTable).values(pageRecords).onConflictDoNothing();
 
   console.info(` \n${checkMark} Created ${PAGES_COUNT} pages\n `);

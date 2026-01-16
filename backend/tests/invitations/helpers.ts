@@ -2,8 +2,8 @@ import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
-import { pastIsoDate } from '#/mocks/utils';
 import { nanoid } from '#/utils/nanoid';
+import { pastIsoDate } from '../../mocks/utils';
 
 /**
  * Create a membership invitation token for a user to join an organization

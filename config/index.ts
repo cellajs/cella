@@ -68,7 +68,27 @@ export type TokenType = (typeof appConfig.tokenTypes)[number]
 /**
  * System roles available in the app
  */
-export type SystemRoles = (typeof appConfig.roles.systemRoles)[number];
+export type SystemRole = (typeof appConfig.roles.systemRoles)[number];
+
+/**
+ * Entity roles available in the app (e.g., 'member', 'admin')
+ */
+export type EntityRole = (typeof appConfig.roles.entityRoles)[number];
+
+/**
+ * Entity ID column keys mapping (e.g., { organization: 'organizationId' })
+ */
+export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;
+
+/**
+ * Entity ID column key for a specific entity type
+ */
+export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
+
+/**
+ * Entity actions that can be performed (CRUD + search)
+ */
+export type EntityActionType = (typeof appConfig.entityActions)[number];
 
 const configModes = {
   development,

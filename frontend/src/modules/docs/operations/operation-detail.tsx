@@ -1,7 +1,6 @@
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { DescriptionEditor } from '~/modules/docs/description-editor';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
@@ -37,9 +36,7 @@ export const OperationDetail = ({ operation, className }: OperationDetailProps) 
           </div>
         </div>
         {operation.description && (
-          <CardDescription className="flex items-center gap-3 my-2 text-base max-w-3xl">
-            <DescriptionEditor operationId={operation.id} initialDescription={operation.description} />
-          </CardDescription>
+          <CardDescription className="text-base max-w-3xl whitespace-pre-line">{operation.description}</CardDescription>
         )}
       </CardHeader>
       <CardContent>

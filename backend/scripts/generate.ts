@@ -8,7 +8,7 @@
  */
 
 import { appConfig } from 'config';
-import { runGenerateScripts } from './lib/generate-runner';
+import { runGenerateScripts } from './migrations/helpers/run-generate-scripts';
 
 runGenerateScripts(appConfig.generateScripts).catch((err) => {
   console.error('Generation failed:', err.message);

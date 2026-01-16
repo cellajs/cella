@@ -9,19 +9,13 @@
         "schema": {
           "type": "object",
           "properties": {
-            "success": {
-              "type": "boolean",
-              "required": true
-            },
+            "success": { "type": "boolean", "required": true },
             "rejectedItems": {
               "type": "array",
               "required": true,
               "itemType": "string"
             },
-            "invitesSentCount": {
-              "type": "number",
-              "required": true
-            }
+            "invitesSentCount": { "type": "number", "required": true }
           },
           "extendsRef": "#/components/schemas/SuccessWithRejectedItems",
           "contentType": "application/json"
@@ -92,10 +86,7 @@
         "status": 200,
         "description": "Presigned URL",
         "contentType": "application/json",
-        "schema": {
-          "type": "string",
-          "contentType": "application/json"
-        }
+        "schema": { "type": "string", "contentType": "application/json" }
       },
       {
         "status": 400,
@@ -136,21 +127,12 @@
     "request": {
       "query": {
         "properties": {
-          "key": {
-            "type": "string",
-            "required": true
-          },
+          "key": { "type": "string", "required": true },
           "isPublic": {
             "required": false,
             "anyOf": [
-              {
-                "type": "boolean",
-                "required": false
-              },
-              {
-                "type": "string",
-                "required": false
-              }
+              { "type": "boolean", "required": false },
+              { "type": "string", "required": false }
             ]
           }
         }
@@ -160,10 +142,7 @@
   {
     "operationId": "paddleWebhook",
     "responses": [
-      {
-        "status": 204,
-        "description": "Paddle webhook received"
-      },
+      { "status": 204, "description": "Paddle webhook received" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -211,10 +190,7 @@
   {
     "operationId": "sendNewsletter",
     "responses": [
-      {
-        "status": 204,
-        "description": "Newsletter sent"
-      },
+      { "status": 204, "description": "Newsletter sent" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -257,14 +233,8 @@
           "toSelf": {
             "required": false,
             "anyOf": [
-              {
-                "type": "string",
-                "required": false
-              },
-              {
-                "type": "boolean",
-                "required": false
-              }
+              { "type": "string", "required": false },
+              { "type": "boolean", "required": false }
             ]
           }
         }
@@ -282,19 +252,10 @@
             "required": true,
             "minItems": 1,
             "itemType": "string",
-            "enum": [
-              "member",
-              "admin"
-            ]
+            "enum": ["member", "admin"]
           },
-          "subject": {
-            "type": "string",
-            "required": true
-          },
-          "content": {
-            "type": "string",
-            "required": true
-          }
+          "subject": { "type": "string", "required": true },
+          "content": { "type": "string", "required": true }
         },
         "required": true,
         "contentType": "application/json"

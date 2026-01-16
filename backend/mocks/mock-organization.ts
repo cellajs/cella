@@ -7,7 +7,7 @@ import type { AuthStrategy } from '#/db/schema/sessions';
 import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { pastIsoDate, withFakerSeed } from './utils';
+import { mockNanoid, pastIsoDate, withFakerSeed } from './utils';
 
 // Enforces unique organization names
 const organizationName = new UniqueEnforcer();
@@ -75,8 +75,8 @@ export const mockOrganizationResponse = (
     const createdAt = faker.date.past({ refDate }).toISOString();
     const name = faker.company.name();
     const slug = slugify(name, { lower: true, strict: true });
-    const orgId = faker.string.nanoid();
-    const userId = faker.string.nanoid();
+    const orgId = mockNanoid();
+    const userId = mockNanoid();
 
     return {
       id: orgId,
@@ -105,7 +105,7 @@ export const mockOrganizationResponse = (
       modifiedAt: createdAt,
       modifiedBy: null,
       membership: {
-        id: faker.string.nanoid(),
+        id: mockNanoid(),
         contextType: 'organization' as const,
         userId,
         organizationId: orgId,

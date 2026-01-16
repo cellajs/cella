@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { PageModel } from '#/db/schema/pages';
-import { withFakerSeed } from './utils';
+import { mockNanoid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock page with all fields populated.
@@ -11,10 +11,10 @@ export const mockPage = (key = 'page:default'): PageModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const userId = faker.string.nanoid();
+    const userId = mockNanoid();
 
     return {
-      id: faker.string.nanoid(),
+      id: mockNanoid(),
       entityType: 'page' as const,
       name: faker.lorem.sentence({ min: 2, max: 5 }),
       description: JSON.stringify([

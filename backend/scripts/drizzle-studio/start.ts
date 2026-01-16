@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STUDIO_PORT } from './port';
-import { checkMark } from '#/utils/console';
+import { checkMark } from '../../src/utils/console';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '..');
