@@ -3,7 +3,6 @@ import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
-import { mockInactiveMembershipResponse, mockMembershipResponse } from '#/mocks/mock-membership';
 import { userBaseSchema } from '#/modules/users/users-schema-base';
 import {
   contextEntityTypeSchema,
@@ -11,6 +10,7 @@ import {
   paginationQuerySchema,
   validEmailSchema,
 } from '#/utils/schema/common';
+import { mockInactiveMembershipResponse, mockMembershipResponse } from '../../../mocks/mock-membership';
 
 export const membershipSchema = z
   .object(createSelectSchema(membershipsTable).shape)

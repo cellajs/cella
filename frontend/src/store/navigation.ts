@@ -2,6 +2,7 @@ import { appConfig } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { isDebugMode } from '~/env';
 
 import type { NavItemId } from '~/modules/navigation/types';
 
@@ -128,5 +129,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
         },
       ),
     ),
+    { enabled: isDebugMode, name: 'navigation store' },
   ),
 );

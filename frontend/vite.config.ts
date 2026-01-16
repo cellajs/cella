@@ -15,7 +15,6 @@ import { appConfig } from '../config';
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { openApiWatch } from './vite/openapi-watch';
 import { localesHMR } from './vite/locales-hmr';
-import { openApiEditor } from './vite/openapi-editor';
 
 const ReactCompilerConfig = {
   /* ... */
@@ -25,13 +24,17 @@ const isStorybook = process.env.STORYBOOK === 'true';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
-  logLevel: 'warn',
+  logLevel: process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
     host: '0.0.0.0',
     port: Number(frontendUrl.port),
     strictPort: true,
     watch: {
-      ignored: ['**/backend/**'], // Prevent restarts
+      ignored: [
+        '**/backend/**',
+        '**/vite/temp-*/**', // Ignore temp folders from generate-client
+        '**/.generate-client.lock', // Ignore lock file
+      ],
     },
   },
   build: {
@@ -177,7 +180,6 @@ if (appConfig.mode === 'development' && !isStorybook) {
     }),
     i18nextHMRPlugin({ localesDir: '../locales' }),
     openApiWatch(),
-    openApiEditor(),
     reactScan({
       enable: false,
       scanOptions: {

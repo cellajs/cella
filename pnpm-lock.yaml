@@ -57,9 +57,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.969.0
         version: 3.969.0
-      '@cellajs/permission-manager':
-        specifier: ^0.1.0
-        version: 0.1.0(@swc/core@1.7.26)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(yaml@2.8.2)
       '@dotenv-run/core':
         specifier: ^1.3.8
         version: 1.3.8
@@ -1748,10 +1745,6 @@ packages:
       react: ^18.0 || ^19.0 || >= 19.0.0-rc
       react-dom: ^18.0 || ^19.0 || >= 19.0.0-rc
       tailwindcss: ^4.1.12
-
-  '@cellajs/permission-manager@0.1.0':
-    resolution: {integrity: sha512-+vGHLdGrR5Jez+dp6yHsgij8hIuZbdU88IU4JAV8nO4FzH1RDNkkj++O9RhMf3CKKDslYn7QiwI8D16u379+0A==}
-    engines: {node: '>=20.9.0'}
 
   '@chromatic-com/storybook@4.1.3':
     resolution: {integrity: sha512-hc0HO9GAV9pxqDE6fTVOV5KeLpTiCfV8Jrpk5ogKLiIgeq2C+NPjpt74YnrZTjiK8E19fYcMP+2WY9ZtX7zHmw==}
@@ -13113,19 +13106,6 @@ snapshots:
       - refractor
       - sugar-high
       - supports-color
-
-  '@cellajs/permission-manager@0.1.0(@swc/core@1.7.26)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(yaml@2.8.2)':
-    dependencies:
-      tsup: 8.5.1(@swc/core@1.7.26)(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - '@microsoft/api-extractor'
-      - '@swc/core'
-      - jiti
-      - postcss
-      - supports-color
-      - tsx
-      - yaml
 
   '@chromatic-com/storybook@4.1.3(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
     dependencies:

@@ -78,9 +78,10 @@ export const config = {
                   The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
   /******************************************************************************
-   * ENTITIES & DATA MODEL
+   * ENTITY DATA MODEL
    ******************************************************************************/
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+
   contextEntityTypes: ['organization'] as const, // Entities with memberships
   productEntityTypes: ['attachment', 'page'] as const, // Content entities
 
@@ -90,6 +91,8 @@ export const config = {
     attachment: 'attachmentId',
     page: 'pageId',
   } as const,
+
+  entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
 
   // Define user menu structure of context entities with optionally nested subentities
   // ⚠️ IMPORTANT: If you define a `subentityType`, the corresponding table must include `${entity}Id` foreign key.
@@ -265,8 +268,8 @@ export const config = {
    ******************************************************************************/
   generateScripts: [
     { name: 'Drizzle migrations', command: 'drizzle-kit generate --config drizzle.config.ts' },
-    { name: 'CDC setup migration', command: 'tsx scripts/generate-cdc-migration.ts' },
-    { name: 'Activity notify trigger', command: 'tsx scripts/generate-activity-trigger.ts' },
+    { name: 'CDC setup migration', command: 'tsx scripts/migrations/cdc-migration.ts' },
+    { name: 'Activity notify trigger', command: 'tsx scripts/migrations/activity-trigger-migration.ts' },
   ],
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 };

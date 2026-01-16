@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "paths": {
       "#/*": ["../backend/src/*"],
-      "#json/*": ["../json/*"]
+      "#json/*": ["../json/*"],
     }
   },
   "include": ["src/**/*", "../backend/src/**/*", "../backend/emails/**/*", "../backend/mocks/**/*", "../config/*", "../json/*", "../locales/*"],

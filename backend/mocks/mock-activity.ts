@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { ActivityModel } from '#/db/schema/activities';
-import { withFakerSeed } from './utils';
+import { mockNanoid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock activity with all fields populated.
@@ -17,15 +17,15 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
     const verb = action === 'create' ? 'created' : action === 'update' ? 'updated' : 'deleted';
 
     return {
-      id: faker.string.nanoid(),
-      userId: faker.string.nanoid(),
+      id: mockNanoid(),
+      userId: mockNanoid(),
       entityType: faker.helpers.arrayElement(['user', 'organization', 'attachment', null]),
       resourceType: null,
       action,
       tableName,
       type: `${singularName}.${verb}`,
-      entityId: faker.string.nanoid(),
-      organizationId: faker.string.nanoid(),
+      entityId: mockNanoid(),
+      organizationId: mockNanoid(),
       createdAt,
       changedKeys:
         action === 'update'

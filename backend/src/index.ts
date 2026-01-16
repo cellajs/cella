@@ -18,7 +18,7 @@ import { env } from './env';
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
 
-const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
+const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => env.DEV_MODE === 'basic';
 
 // Init OpenAPI docs
 docs(app);

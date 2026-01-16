@@ -86,7 +86,7 @@ interface EmitOptions {
  *
  * // Subscribe to membership creation events
  * eventBus.on('membership.created', async (event) => {
- *   console.log('New membership:', event.entityId);
+ *   console.info('New membership:', event.entityId);
  * });
  *
  * // Start listening (called once at server startup)
@@ -156,9 +156,9 @@ class EventBus {
       return;
     }
 
-    // Skip if using PGlite (no LISTEN/NOTIFY support)
-    if (env.PGLITE) {
-      logEvent('info', 'Event bus disabled (PGlite mode)');
+    // Skip if using PGlite in basic mode (no LISTEN/NOTIFY support)
+    if (env.DEV_MODE === 'basic') {
+      logEvent('info', 'Event bus disabled (DEV_MODE=basic)');
       return;
     }
 

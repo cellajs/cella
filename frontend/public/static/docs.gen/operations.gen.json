@@ -4,9 +4,7 @@
     "hash": "tag/activities/GET/activities",
     "method": "get",
     "path": "/activities",
-    "tags": [
-      "activities"
-    ],
+    "tags": ["activities"],
     "summary": "Get list of activities",
     "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
     "deprecated": false,
@@ -14,10 +12,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -26,9 +21,7 @@
     "hash": "tag/auth/POST/auth/check-email",
     "method": "post",
     "path": "/auth/check-email",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Check if email exists",
     "description": "Checks if a user with the specified email address exists in the system.",
     "deprecated": false,
@@ -36,12 +29,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "emailEnumLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["emailEnumLimiter"]
     }
   },
   {
@@ -49,9 +38,7 @@
     "hash": "tag/auth/GET/auth/invoke-token/{type}/{token}",
     "method": "get",
     "path": "/auth/invoke-token/{type}/{token}",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Invoke token session",
     "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
     "deprecated": false,
@@ -59,12 +46,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -72,9 +55,7 @@
     "hash": "tag/auth/GET/auth/token/{type}/{id}",
     "method": "get",
     "path": "/auth/token/{type}/{id}",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Get token data",
     "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
     "deprecated": false,
@@ -82,12 +63,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -95,9 +72,7 @@
     "hash": "tag/auth/GET/auth/impersonation/start",
     "method": "get",
     "path": "/auth/impersonation/start",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Start impersonating",
     "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
     "deprecated": false,
@@ -105,10 +80,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -117,9 +89,7 @@
     "hash": "tag/auth/GET/auth/impersonation/stop",
     "method": "get",
     "path": "/auth/impersonation/stop",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Stop impersonating",
     "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
     "deprecated": false,
@@ -127,9 +97,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -138,9 +106,7 @@
     "hash": "tag/auth/POST/auth/resend-invitation",
     "method": "post",
     "path": "/auth/resend-invitation",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Resend invitation",
     "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
     "deprecated": false,
@@ -148,12 +114,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "spamLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["spamLimiter"]
     }
   },
   {
@@ -161,9 +123,7 @@
     "hash": "tag/auth/POST/auth/sign-out",
     "method": "post",
     "path": "/auth/sign-out",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Sign out",
     "description": "Signs out the *current user* and clears the active session.",
     "deprecated": false,
@@ -171,9 +131,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -182,9 +140,7 @@
     "hash": "tag/auth/POST/auth/totp/generate-key",
     "method": "post",
     "path": "/auth/totp/generate-key",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Generate TOTP key",
     "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
     "deprecated": false,
@@ -192,9 +148,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -203,9 +157,7 @@
     "hash": "tag/auth/POST/auth/totp",
     "method": "post",
     "path": "/auth/totp",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Set TOTP",
     "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
     "deprecated": false,
@@ -213,9 +165,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -224,9 +174,7 @@
     "hash": "tag/auth/DELETE/auth/totp",
     "method": "delete",
     "path": "/auth/totp",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Delete TOTP",
     "description": "Delete TOTP credential for current user.",
     "deprecated": false,
@@ -234,9 +182,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -245,9 +191,7 @@
     "hash": "tag/auth/POST/auth/totp-verification",
     "method": "post",
     "path": "/auth/totp-verification",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Verify TOTP",
     "description": "Validates the TOTP code and completes TOTP based authentication.",
     "deprecated": false,
@@ -255,12 +199,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "totpVerificationLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["totpVerificationLimiter"]
     }
   },
   {
@@ -268,9 +208,7 @@
     "hash": "tag/auth/POST/auth/sign-up",
     "method": "post",
     "path": "/auth/sign-up",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Sign up with password",
     "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
     "deprecated": false,
@@ -278,13 +216,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "spamLimiter",
-        "emailEnumLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"]
     }
   },
   {
@@ -292,9 +225,7 @@
     "hash": "tag/auth/POST/auth/sign-up/{tokenId}",
     "method": "post",
     "path": "/auth/sign-up/{tokenId}",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Sign up to accept invite",
     "description": "Registers a user using an email and password in response to a system or organization invitation.",
     "deprecated": false,
@@ -302,13 +233,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter",
-        "emailEnumLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter", "emailEnumLimiter"]
     }
   },
   {
@@ -316,9 +242,7 @@
     "hash": "tag/auth/POST/auth/request-password",
     "method": "post",
     "path": "/auth/request-password",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Request new password",
     "description": "Sends an email with a link to reset the user's password.",
     "deprecated": false,
@@ -326,13 +250,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "spamLimiter",
-        "emailEnumLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"]
     }
   },
   {
@@ -340,9 +259,7 @@
     "hash": "tag/auth/POST/auth/create-password/{tokenId}",
     "method": "post",
     "path": "/auth/create-password/{tokenId}",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Create password",
     "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
     "deprecated": false,
@@ -350,12 +267,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -363,9 +276,7 @@
     "hash": "tag/auth/POST/auth/sign-in",
     "method": "post",
     "path": "/auth/sign-in",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Sign in with password",
     "description": "Authenticates an existing user using their email and password.",
     "deprecated": false,
@@ -373,12 +284,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "passwordLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["passwordLimiter"]
     }
   },
   {
@@ -386,9 +293,7 @@
     "hash": "tag/auth/POST/auth/passkey",
     "method": "post",
     "path": "/auth/passkey",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Create passkey",
     "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
     "deprecated": false,
@@ -396,9 +301,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -407,9 +310,7 @@
     "hash": "tag/auth/DELETE/auth/passkey/{id}",
     "method": "delete",
     "path": "/auth/passkey/{id}",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Delete passkey",
     "description": "Delete a passkey by id from the *current user*.",
     "deprecated": false,
@@ -417,9 +318,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -428,9 +327,7 @@
     "hash": "tag/auth/POST/auth/passkey/generate-challenge",
     "method": "post",
     "path": "/auth/passkey/generate-challenge",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Generate passkey challenge",
     "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
     "deprecated": false,
@@ -438,12 +335,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "passkeyChallengeLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["passkeyChallengeLimiter"]
     }
   },
   {
@@ -451,9 +344,7 @@
     "hash": "tag/auth/POST/auth/passkey-verification",
     "method": "post",
     "path": "/auth/passkey-verification",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Verify passkey",
     "description": "Validates the signed challenge and completes passkey based authentication.",
     "deprecated": false,
@@ -461,12 +352,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -474,9 +361,7 @@
     "hash": "tag/auth/GET/auth/github",
     "method": "get",
     "path": "/auth/github",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Authenticate with GitHub",
     "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
     "deprecated": false,
@@ -484,9 +369,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -495,9 +378,7 @@
     "hash": "tag/auth/GET/auth/google",
     "method": "get",
     "path": "/auth/google",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Authenticate with Google",
     "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
     "deprecated": false,
@@ -505,9 +386,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -516,9 +395,7 @@
     "hash": "tag/auth/GET/auth/microsoft",
     "method": "get",
     "path": "/auth/microsoft",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Authenticate with Microsoft",
     "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
     "deprecated": false,
@@ -526,9 +403,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -537,9 +412,7 @@
     "hash": "tag/auth/GET/auth/github/callback",
     "method": "get",
     "path": "/auth/github/callback",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Callback for GitHub",
     "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
     "deprecated": false,
@@ -547,12 +420,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -560,9 +429,7 @@
     "hash": "tag/auth/GET/auth/google/callback",
     "method": "get",
     "path": "/auth/google/callback",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Callback for Google",
     "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
     "deprecated": false,
@@ -570,12 +437,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -583,9 +446,7 @@
     "hash": "tag/auth/GET/auth/microsoft/callback",
     "method": "get",
     "path": "/auth/microsoft/callback",
-    "tags": [
-      "auth"
-    ],
+    "tags": ["auth"],
     "summary": "Callback for Microsoft",
     "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
     "deprecated": false,
@@ -593,12 +454,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -606,9 +463,7 @@
     "hash": "tag/me/GET/me",
     "method": "get",
     "path": "/me",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Get self",
     "description": "Returns the *current user*.",
     "deprecated": false,
@@ -616,9 +471,7 @@
     "hasRequestBody": false,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -627,9 +480,7 @@
     "hash": "tag/me/PUT/me",
     "method": "put",
     "path": "/me",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Update self",
     "description": "Updates the *current user*.",
     "deprecated": false,
@@ -637,9 +488,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -648,9 +497,7 @@
     "hash": "tag/me/DELETE/me",
     "method": "delete",
     "path": "/me",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Delete self",
     "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     "deprecated": false,
@@ -658,9 +505,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -669,9 +514,7 @@
     "hash": "tag/me/PUT/me/mfa",
     "method": "put",
     "path": "/me/mfa",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Toggle MFA",
     "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
     "deprecated": false,
@@ -679,9 +522,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -690,9 +531,7 @@
     "hash": "tag/me/GET/me/auth",
     "method": "get",
     "path": "/me/auth",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Get auth data",
     "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
     "deprecated": false,
@@ -700,9 +539,7 @@
     "hasRequestBody": false,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -711,9 +548,7 @@
     "hash": "tag/me/GET/me/invitations",
     "method": "get",
     "path": "/me/invitations",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Get list of invitations",
     "description": "Returns a list of pending memberships with entity data.",
     "deprecated": false,
@@ -721,9 +556,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -732,9 +565,7 @@
     "hash": "tag/me/DELETE/me/sessions",
     "method": "delete",
     "path": "/me/sessions",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Terminate sessions",
     "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
     "deprecated": false,
@@ -742,9 +573,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -753,9 +582,7 @@
     "hash": "tag/me/DELETE/me/leave",
     "method": "delete",
     "path": "/me/leave",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Leave entity",
     "description": "Removes the *current user* from an entity they are a member of.",
     "deprecated": false,
@@ -763,9 +590,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -774,9 +599,7 @@
     "hash": "tag/me/GET/me/upload-token",
     "method": "get",
     "path": "/me/upload-token",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Get upload token",
     "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
     "deprecated": false,
@@ -784,9 +607,7 @@
     "hasRequestBody": false,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -795,9 +616,7 @@
     "hash": "tag/me/GET/me/unsubscribe",
     "method": "get",
     "path": "/me/unsubscribe",
-    "tags": [
-      "me"
-    ],
+    "tags": ["me"],
     "summary": "Unsubscribe",
     "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
     "deprecated": false,
@@ -805,12 +624,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -818,9 +633,7 @@
     "hash": "tag/users/GET/users",
     "method": "get",
     "path": "/users",
-    "tags": [
-      "users"
-    ],
+    "tags": ["users"],
     "summary": "Get list of users",
     "description": "Returns a list of *users*.",
     "deprecated": false,
@@ -828,9 +641,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -839,9 +650,7 @@
     "hash": "tag/users/DELETE/users",
     "method": "delete",
     "path": "/users",
-    "tags": [
-      "users"
-    ],
+    "tags": ["users"],
     "summary": "Delete users",
     "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     "deprecated": false,
@@ -849,10 +658,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -861,9 +667,7 @@
     "hash": "tag/users/GET/users/{idOrSlug}",
     "method": "get",
     "path": "/users/{idOrSlug}",
-    "tags": [
-      "users"
-    ],
+    "tags": ["users"],
     "summary": "Get user",
     "description": "Retrieves a *user* by ID or slug.",
     "deprecated": false,
@@ -871,9 +675,7 @@
     "hasRequestBody": false,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -882,9 +684,7 @@
     "hash": "tag/users/PUT/users/{idOrSlug}",
     "method": "put",
     "path": "/users/{idOrSlug}",
-    "tags": [
-      "users"
-    ],
+    "tags": ["users"],
     "summary": "Update user",
     "description": "Updates a *user* identified by ID or slug.",
     "deprecated": false,
@@ -892,10 +692,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -904,9 +701,7 @@
     "hash": "tag/organizations/POST/organizations",
     "method": "post",
     "path": "/organizations",
-    "tags": [
-      "organizations"
-    ],
+    "tags": ["organizations"],
     "summary": "Create organization",
     "description": "Creates a new *organization*.",
     "deprecated": false,
@@ -914,9 +709,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -925,9 +718,7 @@
     "hash": "tag/organizations/GET/organizations",
     "method": "get",
     "path": "/organizations",
-    "tags": [
-      "organizations"
-    ],
+    "tags": ["organizations"],
     "summary": "Get list of organizations",
     "description": "Returns a list of *organizations*.",
     "deprecated": false,
@@ -935,9 +726,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -946,9 +735,7 @@
     "hash": "tag/organizations/DELETE/organizations",
     "method": "delete",
     "path": "/organizations",
-    "tags": [
-      "organizations"
-    ],
+    "tags": ["organizations"],
     "summary": "Delete organizations",
     "description": "Deletes one or more *organizations* by ID.",
     "deprecated": false,
@@ -956,9 +743,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -967,9 +752,7 @@
     "hash": "tag/organizations/GET/organizations/{idOrSlug}",
     "method": "get",
     "path": "/organizations/{idOrSlug}",
-    "tags": [
-      "organizations"
-    ],
+    "tags": ["organizations"],
     "summary": "Get organization",
     "description": "Retrieves an *organization* by ID or slug.",
     "deprecated": false,
@@ -977,9 +760,7 @@
     "hasRequestBody": false,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -988,9 +769,7 @@
     "hash": "tag/organizations/PUT/organizations/{idOrSlug}",
     "method": "put",
     "path": "/organizations/{idOrSlug}",
-    "tags": [
-      "organizations"
-    ],
+    "tags": ["organizations"],
     "summary": "Update organization",
     "description": "Updates an *organization* by ID or slug.",
     "deprecated": false,
@@ -998,9 +777,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -1009,9 +786,7 @@
     "hash": "tag/pages/GET/pages/sync-pages",
     "method": "get",
     "path": "/pages/sync-pages",
-    "tags": [
-      "pages"
-    ],
+    "tags": ["pages"],
     "summary": "Sync pages",
     "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
     "deprecated": false,
@@ -1019,9 +794,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -1030,9 +803,7 @@
     "hash": "tag/pages/POST/pages",
     "method": "post",
     "path": "/pages",
-    "tags": [
-      "pages"
-    ],
+    "tags": ["pages"],
     "summary": "Create pages",
     "description": "Insert one or more new *pages*.",
     "deprecated": false,
@@ -1040,10 +811,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "isSystemAdmin"
-      ],
+      "xGuard": ["isAuthenticated", "isSystemAdmin"],
       "xRateLimiter": []
     }
   },
@@ -1052,9 +820,7 @@
     "hash": "tag/pages/GET/pages",
     "method": "get",
     "path": "/pages",
-    "tags": [
-      "pages"
-    ],
+    "tags": ["pages"],
     "summary": "Get pages",
     "description": "Get all matching *pages*.",
     "deprecated": false,
@@ -1062,9 +828,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -1073,9 +837,7 @@
     "hash": "tag/pages/DELETE/pages",
     "method": "delete",
     "path": "/pages",
-    "tags": [
-      "pages"
-    ],
+    "tags": ["pages"],
     "summary": "Delete pages",
     "description": "Delete one or more *pages* by ID.",
     "deprecated": false,
@@ -1083,10 +845,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "isSystemAdmin"
-      ],
+      "xGuard": ["isAuthenticated", "isSystemAdmin"],
       "xRateLimiter": []
     }
   },
@@ -1095,9 +854,7 @@
     "hash": "tag/pages/GET/pages/{id}",
     "method": "get",
     "path": "/pages/{id}",
-    "tags": [
-      "pages"
-    ],
+    "tags": ["pages"],
     "summary": "Get page",
     "description": "Get a single *page* by ID.",
     "deprecated": false,
@@ -1105,9 +862,7 @@
     "hasRequestBody": false,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -1116,9 +871,7 @@
     "hash": "tag/pages/PUT/pages/{id}",
     "method": "put",
     "path": "/pages/{id}",
-    "tags": [
-      "pages"
-    ],
+    "tags": ["pages"],
     "summary": "Update page",
     "description": "Update a single *page* by ID.",
     "deprecated": false,
@@ -1126,10 +879,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "isSystemAdmin"
-      ],
+      "xGuard": ["isAuthenticated", "isSystemAdmin"],
       "xRateLimiter": []
     }
   },
@@ -1138,9 +888,7 @@
     "hash": "tag/entities/POST/entities/check-slug",
     "method": "post",
     "path": "/entities/check-slug",
-    "tags": [
-      "entities"
-    ],
+    "tags": ["entities"],
     "summary": "Check slug availability",
     "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
     "deprecated": false,
@@ -1148,9 +896,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -1159,9 +905,7 @@
     "hash": "tag/system/POST/system/invite",
     "method": "post",
     "path": "/system/invite",
-    "tags": [
-      "system"
-    ],
+    "tags": ["system"],
     "summary": "Invite to system",
     "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
     "deprecated": false,
@@ -1169,10 +913,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -1181,9 +922,7 @@
     "hash": "tag/system/GET/system/presigned-url",
     "method": "get",
     "path": "/system/presigned-url",
-    "tags": [
-      "system"
-    ],
+    "tags": ["system"],
     "summary": "Get presigned URL",
     "description": "Generates and returns a presigned URL for uploading files to an S3 bucket.",
     "deprecated": false,
@@ -1191,12 +930,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "presignedUrlLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["presignedUrlLimiter"]
     }
   },
   {
@@ -1204,9 +939,7 @@
     "hash": "tag/system/POST/system/paddle-webhook",
     "method": "post",
     "path": "/system/paddle-webhook",
-    "tags": [
-      "system"
-    ],
+    "tags": ["system"],
     "summary": "Paddle webhook (WIP)",
     "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
     "deprecated": false,
@@ -1214,12 +947,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -1227,9 +956,7 @@
     "hash": "tag/system/POST/system/newsletter",
     "method": "post",
     "path": "/system/newsletter",
-    "tags": [
-      "system"
-    ],
+    "tags": ["system"],
     "summary": "Newsletter to members",
     "description": "Sends a newsletter to members of one or more specified organizations.",
     "deprecated": false,
@@ -1237,10 +964,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -1249,9 +973,7 @@
     "hash": "tag/requests/POST/requests",
     "method": "post",
     "path": "/requests",
-    "tags": [
-      "requests"
-    ],
+    "tags": ["requests"],
     "summary": "Create request",
     "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
     "deprecated": false,
@@ -1259,13 +981,8 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "emailEnumLimiter",
-        "spamLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"]
     }
   },
   {
@@ -1273,9 +990,7 @@
     "hash": "tag/requests/GET/requests",
     "method": "get",
     "path": "/requests",
-    "tags": [
-      "requests"
-    ],
+    "tags": ["requests"],
     "summary": "Get list of requests",
     "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
     "deprecated": false,
@@ -1283,10 +998,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -1295,9 +1007,7 @@
     "hash": "tag/requests/DELETE/requests",
     "method": "delete",
     "path": "/requests",
-    "tags": [
-      "requests"
-    ],
+    "tags": ["requests"],
     "summary": "Delete requests",
     "description": "Deletes one or more *requests* from the system by their IDs.",
     "deprecated": false,
@@ -1305,10 +1015,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -1317,9 +1024,7 @@
     "hash": "tag/metrics/GET/metrics",
     "method": "get",
     "path": "/metrics",
-    "tags": [
-      "metrics"
-    ],
+    "tags": ["metrics"],
     "summary": "Get metrics",
     "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).\n      Primarily intended for internal monitoring and diagnostics.",
     "deprecated": false,
@@ -1327,10 +1032,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasSystemAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
       "xRateLimiter": []
     }
   },
@@ -1339,9 +1041,7 @@
     "hash": "tag/metrics/GET/metrics/public",
     "method": "get",
     "path": "/metrics/public",
-    "tags": [
-      "metrics"
-    ],
+    "tags": ["metrics"],
     "summary": "Get public counts",
     "description": "Returns basic count metrics for entity types such as `users` and `organizations`.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
     "deprecated": false,
@@ -1349,9 +1049,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
+      "xGuard": ["isPublicAccess"],
       "xRateLimiter": []
     }
   },
@@ -1360,9 +1058,7 @@
     "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/sync-attachments",
     "method": "get",
     "path": "/{orgIdOrSlug}/attachments/sync-attachments",
-    "tags": [
-      "attachments"
-    ],
+    "tags": ["attachments"],
     "summary": "Sync attachments",
     "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.\n      Organization parameter is required to scope the data.",
     "deprecated": false,
@@ -1370,10 +1066,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1382,9 +1075,7 @@
     "hash": "tag/attachments/POST/{orgIdOrSlug}/attachments",
     "method": "post",
     "path": "/{orgIdOrSlug}/attachments",
-    "tags": [
-      "attachments"
-    ],
+    "tags": ["attachments"],
     "summary": "Create attachments",
     "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
     "deprecated": false,
@@ -1392,10 +1083,7 @@
     "hasRequestBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1404,9 +1092,7 @@
     "hash": "tag/attachments/DELETE/{orgIdOrSlug}/attachments",
     "method": "delete",
     "path": "/{orgIdOrSlug}/attachments",
-    "tags": [
-      "attachments"
-    ],
+    "tags": ["attachments"],
     "summary": "Delete attachments",
     "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
     "deprecated": false,
@@ -1414,10 +1100,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1426,9 +1109,7 @@
     "hash": "tag/attachments/PUT/{orgIdOrSlug}/attachments/{id}",
     "method": "put",
     "path": "/{orgIdOrSlug}/attachments/{id}",
-    "tags": [
-      "attachments"
-    ],
+    "tags": ["attachments"],
     "summary": "Update attachment",
     "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
     "deprecated": false,
@@ -1436,10 +1117,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1448,9 +1126,7 @@
     "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/{id}/link",
     "method": "get",
     "path": "/{orgIdOrSlug}/attachments/{id}/link",
-    "tags": [
-      "attachments"
-    ],
+    "tags": ["attachments"],
     "summary": "Redirect to attachment",
     "description": "Redirects to the file's public or presigned URL, depending on storage visibility.",
     "deprecated": false,
@@ -1458,12 +1134,8 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isPublicAccess"
-      ],
-      "xRateLimiter": [
-        "tokenLimiter"
-      ]
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": ["tokenLimiter"]
     }
   },
   {
@@ -1471,9 +1143,7 @@
     "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships",
     "method": "post",
     "path": "/{orgIdOrSlug}/memberships",
-    "tags": [
-      "memberships"
-    ],
+    "tags": ["memberships"],
     "summary": "Create memberships",
     "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
     "deprecated": false,
@@ -1481,10 +1151,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1493,9 +1160,7 @@
     "hash": "tag/memberships/DELETE/{orgIdOrSlug}/memberships",
     "method": "delete",
     "path": "/{orgIdOrSlug}/memberships",
-    "tags": [
-      "memberships"
-    ],
+    "tags": ["memberships"],
     "summary": "Delete memberships",
     "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
     "deprecated": false,
@@ -1503,10 +1168,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1515,9 +1177,7 @@
     "hash": "tag/memberships/PUT/{orgIdOrSlug}/memberships/{id}",
     "method": "put",
     "path": "/{orgIdOrSlug}/memberships/{id}",
-    "tags": [
-      "memberships"
-    ],
+    "tags": ["memberships"],
     "summary": "Update membership",
     "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
     "deprecated": false,
@@ -1525,10 +1185,7 @@
     "hasRequestBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1537,9 +1194,7 @@
     "hash": "tag/memberships/POST/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}",
     "method": "post",
     "path": "/{orgIdOrSlug}/memberships/{id}/{acceptOrReject}",
-    "tags": [
-      "memberships"
-    ],
+    "tags": ["memberships"],
     "summary": "Respond to membership invitation",
     "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
     "deprecated": false,
@@ -1547,9 +1202,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated"
-      ],
+      "xGuard": ["isAuthenticated"],
       "xRateLimiter": []
     }
   },
@@ -1558,9 +1211,7 @@
     "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/members",
     "method": "get",
     "path": "/{orgIdOrSlug}/memberships/members",
-    "tags": [
-      "memberships"
-    ],
+    "tags": ["memberships"],
     "summary": "Get list of members",
     "description": "Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.",
     "deprecated": false,
@@ -1568,10 +1219,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1580,9 +1228,7 @@
     "hash": "tag/memberships/GET/{orgIdOrSlug}/memberships/pending",
     "method": "get",
     "path": "/{orgIdOrSlug}/memberships/pending",
-    "tags": [
-      "memberships"
-    ],
+    "tags": ["memberships"],
     "summary": "Get list of pending memberships",
     "description": "Returns pending memberships for a context entity, identified by ID or slug. This does not include pending invitations for non-existing users.",
     "deprecated": false,
@@ -1590,10 +1236,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": [
-        "isAuthenticated",
-        "hasOrgAccess"
-      ],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   }

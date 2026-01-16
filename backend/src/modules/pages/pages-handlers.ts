@@ -37,7 +37,6 @@ const pagesRouteHandlers = app
    */
   .openapi(pagesRoutes.createPage, async (ctx) => {
     const pageData = ctx.req.valid('json');
-    console.log(pageData);
 
     const user = getContextUser();
 
@@ -142,7 +141,7 @@ const pagesRouteHandlers = app
   .openapi(pagesRoutes.updatePage, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    await getValidProductEntity(id, 'page', 'organization', 'update');
+    await getValidProductEntity(id, 'page', 'update');
 
     const user = getContextUser();
     const pageData = ctx.req.valid('json');

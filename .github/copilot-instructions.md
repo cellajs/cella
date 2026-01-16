@@ -39,16 +39,17 @@ Routes in `frontend/src/routes/*.tsx` must be manually added to `frontend/src/ro
 - **Client state**: Zustand stores in `frontend/src/store/`
 
 ### Entity Types
-- `ContextEntityType` - Has memberships (e.g., `organizations`)
-- `ProductEntityType` - Content entities with sync/offline support (e.g., `attachments`, `pages`)
+A core concept of cella is the ability to dynamically manage different types of entities for each app built with the template. `user` is a special entity that exists across all apps. `organization` is a required entity. There are two main categories of entityType (singular):
+- `ContextEntityType` - Has memberships (e.g., `organization`, but apps could add `project`)
+- `ProductEntityType` - Content entities with sync/offline support (e.g., `attachment`, `page`)
 
-Product entities use Electric Sync + TanStack DB for realtime updates. See `frontend/src/modules/attachments/` for reference implementation.
+Product entities are typically daily-use content data models that can benefit from Electric Sync + TanStack DB for realtime updates. See `frontend/src/modules/attachments/` for reference implementation.
 
 ## Essential Commands
 
 ```bash
-pnpm quick          # Fast dev with PGlite (no Docker)
-pnpm dev            # Full dev with Postgres + Electric Sync (requires Docker)
+pnpm quick          # Fast dev with PGlite (DEV_MODE=basic, no Docker)
+pnpm dev            # Full dev with PostgreSQL (DEV_MODE=core, requires Docker)
 pnpm check          # Run generate:openapi + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data
@@ -78,10 +79,9 @@ pnpm test           # Run all Vitest tests
 | Common components | `frontend/src/modules/common/` |
 
 ## Conventions
-
-- Use `schema-base.ts` files to prevent circular imports between modules
 - Test files: `*.test.ts` adjacent to source or in `tests/`
 - Commit format: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
 - PRs: Include description, linked issues, screenshots for UI changes
 
-For detailed architecture, see [info/ARCHITECTURE.md](../info/ARCHITECTURE.md) and [info/AGENTS.md](../info/AGENTS.md).
+For detailed architecture, see [info/ARCHITECTURE.md](../info/ARCHITECTURE.md)
+For more rules and guidelinse, see [info/AGENTS.md](../info/AGENTS.md).

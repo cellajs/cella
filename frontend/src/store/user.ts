@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { GetMeResponse, User } from '~/api.gen';
+import { isDebugMode } from '~/env';
 import type { MeAuthData, MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
@@ -108,5 +109,6 @@ export const useUserStore = create<UserStoreState>()(
         storage: createJSONStorage(() => localStorage),
       },
     ),
+    { enabled: isDebugMode, name: 'user store' },
   ),
 );

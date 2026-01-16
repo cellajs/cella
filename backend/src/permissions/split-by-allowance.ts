@@ -1,24 +1,25 @@
-import type { EntityType } from 'config';
+import type { ContextEntityType, EntityActionType, ProductEntityType } from 'config';
 import { getContextUserSystemRole } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import permissionManager, { type CrudAction } from '#/permissions/permissions-config';
+import { isPermissionAllowed } from '#/permissions';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
  *
  * Resolves the entities and checks whether the user can perform the specified action.
  * The result is split into `allowedIds` and `disallowedIds`.
+ * Note: Only context and product entities are supported - user access uses separate logic.
  *
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
- * @param entityType - The type of entity (e.g., 'organization').
+ * @param entityType - The type of entity (context or product, not user).
  * @param ids - The entity IDs to check.
  * @param memberships - The user's memberships.
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
 export const splitByAllowance = async (
-  action: CrudAction,
-  entityType: EntityType,
+  action: EntityActionType,
+  entityType: ContextEntityType | ProductEntityType,
   ids: string[],
   memberships: MembershipBaseModel[],
 ) => {
@@ -32,9 +33,9 @@ export const splitByAllowance = async (
   const disallowedIds: string[] = [];
 
   for (const entity of entities) {
-    const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
+    const { allowed } = isPermissionAllowed(memberships, action, entity);
 
-    if (!isAllowed && userSystemRole !== 'admin') disallowedIds.push(entity.id);
+    if (!allowed && userSystemRole !== 'admin') disallowedIds.push(entity.id);
     else allowedIds.push(entity.id);
   }
 

@@ -5,7 +5,7 @@ import { baseEntityColumns } from '#/db/utils/base-entity-columns';
 
 /**
  * Creates base columns shared by all context entities.
- * Extends baseEntityColumns with slug, thumbnailUrl, bannerUrl, and audit fields.
+ * Extends baseEntityColumns with slug, thumbnailUrl, bannerUrl, permissions, and audit fields.
  */
 export const contextEntityColumns = <T extends ContextEntityType>(entityType: T) => ({
   ...baseEntityColumns(entityType),

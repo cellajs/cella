@@ -10,21 +10,33 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '#/mocks';
+import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks';
 import { defaultAdminUser } from '../fixtures';
-import { isOrganizationSeeded as isAlreadySeeded } from '../utils';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 const ORGANIZATIONS_COUNT = 100;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 export const PLAIN_USER_PASSWORD = '12345678';
 
+const isOrganizationSeeded = async () => {
+  const organizationsInTable = await db
+    .select()
+    .from(organizationsTable)
+    .limit(1);
+
+  return organizationsInTable.length > 0;
+};
+
 // Seed organizations with data
 export const organizationsSeed = async () => {
+  if (isProduction) return console.error('Not allowed in production.');
+
   console.info(` \n${loadingMark} Seeding organizations...`);
 
-  // Case: Records already exist → skip seeding
-  if (await isAlreadySeeded()) return console.warn('Organizations table not empty → skip seeding');
+  // Records already exist → skip seeding
+  if (await isOrganizationSeeded()) return console.warn('Organizations table not empty → skip seeding');
 
   // Make many organizations → Insert into the database
   const organizationRecords = mockMany(mockOrganization, ORGANIZATIONS_COUNT);

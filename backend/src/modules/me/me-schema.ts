@@ -2,13 +2,13 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
-import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from '#/mocks/mock-me';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersEnum, userSchema } from '#/modules/users/users-schema';
 import { booleanTransformSchema } from '#/utils/schema/common';
+import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from '../../../mocks/mock-me';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 

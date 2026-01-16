@@ -5,6 +5,14 @@ import type { Plugin, ViteDevServer } from 'vite';
 import { openApiConfig } from '../openapi-ts.config';
 import { checkMark, crossMark, STATUS_PREFIX } from './console';
 
+const getPath = (config: unknown): string => {
+  if (typeof config === 'string') return config;
+  if (typeof config === 'object' && config !== null && 'path' in config) {
+    return (config as { path: string }).path;
+  }
+  throw new Error('Cannot determine path from openapi config');
+};
+
 /**
  * Vite plugin that watches the backend OpenAPI spec file for changes.
  * When changes are detected, it triggers client regeneration.
@@ -14,17 +22,10 @@ import { checkMark, crossMark, STATUS_PREFIX } from './console';
  * The actual change detection (whether output differs) is handled by
  * the generate-client.ts script, so this plugin just needs to trigger it.
  */
-const getPath = (config: unknown): string => {
-  if (typeof config === 'string') return config;
-  if (typeof config === 'object' && config !== null && 'path' in config) {
-    return (config as { path: string }).path;
-  }
-  throw new Error('Cannot determine path from openapi config');
-};
-
 export const openApiWatch = (): Plugin => {
   const inputFilePath = resolve(import.meta.dirname, '..', getPath(openApiConfig.input));
   const outputPath = resolve(import.meta.dirname, '..', getPath(openApiConfig.output));
+  const docsGenPath = resolve(import.meta.dirname, '..', 'public/static/docs.gen');
   const indexPath = resolve(outputPath, 'index.ts');
 
   if (!existsSync(inputFilePath)) {
@@ -125,15 +126,17 @@ export const openApiWatch = (): Plugin => {
         debounceTimer = setTimeout(() => {
           isRegenerating = true;
 
-          // Temporarily stop Vite from reacting to output folder changes
+          // Temporarily stop Vite from reacting to output folder changes (api.gen and docs.gen)
           const chokidarWatcher = viteServer?.watcher;
           chokidarWatcher?.unwatch(outputPath);
+          chokidarWatcher?.unwatch(docsGenPath);
 
           console.info('[openapi-watch] Backend spec changed, regenerating client...');
 
           exec('pnpm generate-client', { cwd: import.meta.dirname }, (err, stdout, stderr) => {
             isRegenerating = false;
             chokidarWatcher?.add(outputPath);
+            chokidarWatcher?.add(docsGenPath);
 
             if (err) {
               console.error('[openapi-watch] Error:', stderr || err.message);

@@ -3,6 +3,7 @@
  * Compares parsing output against saved snapshots to catch regressions.
  */
 
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -23,6 +24,11 @@ function mapToObject<K extends string, V>(map: Map<K, V>): Record<K, V> {
   return obj;
 }
 
+/** Hash input spec to detect changes without huge diffs */
+function hashSpec(spec: OpenApiSpec): string {
+  return createHash('sha256').update(JSON.stringify(spec)).digest('hex').slice(0, 16);
+}
+
 describe('parseOpenApiSpec', () => {
   it('parses cella backend spec correctly', () => {
     const specJson = readFileSync(BACKEND_SPEC, 'utf-8');
@@ -36,10 +42,10 @@ describe('parseOpenApiSpec', () => {
       tagDetails: mapToObject(result.tagDetails),
     };
 
-    // Snapshot both input and output so we can distinguish:
-    // - Input changed + output changed = spec update (expected)
-    // - Input same + output changed = parser bug!
-    expect({ input: spec, output: snapshotResult }).toMatchSnapshot();
+    // Use hash for input to detect spec changes without huge diffs
+    // - Input hash changed + output changed = spec update (run: pnpm test -u)
+    // - Input hash same + output changed = parser bug!
+    expect({ inputHash: hashSpec(spec), output: snapshotResult }).toMatchSnapshot();
   });
 
   it('handles minimal spec', () => {

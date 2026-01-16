@@ -2,7 +2,7 @@ import type { ContextEntityType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUserSystemRole } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import permissionManager from '#/permissions/permissions-config';
+import { isPermissionAllowed } from '#/permissions';
 
 /**
  * Checks if user has permission to create product or context entity.
@@ -21,10 +21,11 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
   const isSystemAdmin = userSystemRole === 'admin';
 
   // Step 1: Permission check
-  const isAllowed = permissionManager.isPermissionAllowed(memberships, 'create', entity);
+  const { allowed } = isPermissionAllowed(memberships, 'create', entity);
 
-  if (!isAllowed && !isSystemAdmin)
+  if (!allowed && !isSystemAdmin) {
     throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+  }
 
   const org = getContextOrganization();
 

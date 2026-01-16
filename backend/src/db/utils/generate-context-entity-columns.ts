@@ -1,16 +1,11 @@
-import { appConfig, type ContextEntityType } from 'config';
+import { appConfig } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
-import { organizationsTable } from '#/db/schema/organizations';
 import type { ContextEntityTypeColumns } from '#/db/types';
-import { type RelatableContextEntityType, relatableContextEntityTables } from '#/relatable-config';
-
-/**
- * Mapping of all context entity types to their tables.
- * Used when mode='all' to generate FK columns for all context entities.
- */
-const allContextEntityTables = {
-  organization: organizationsTable,
-} as const satisfies Record<ContextEntityType, { id: typeof organizationsTable.id }>;
+import {
+  allContextEntityTables,
+  type RelatableContextEntityType,
+  relatableContextEntityTables,
+} from '#/relatable-config';
 
 /** All relatable context entity types (keys of relatableContextEntityTables). */
 const relatableContextEntityTypes = Object.keys(relatableContextEntityTables) as RelatableContextEntityType[];

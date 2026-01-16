@@ -6,7 +6,7 @@ import type { OrganizationModel } from '#/db/schema/organizations';
 import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { generateMockContextEntityIdColumns, pastIsoDate, withFakerSeed } from './utils';
+import { generateMockContextEntityIdColumns, mockNanoid, pastIsoDate, withFakerSeed } from './utils';
 
 // Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
@@ -47,9 +47,9 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
  */
 export const mockMembershipBase = (key = 'membership-base:default'): MembershipBaseModel =>
   withFakerSeed(key, () => ({
-    id: faker.string.nanoid(),
+    id: mockNanoid(),
     contextType: 'organization' as const,
-    userId: faker.string.nanoid(),
+    userId: mockNanoid(),
     ...generateMockContextEntityIdColumns(),
     role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
     order: faker.number.int({ min: 1, max: 100 }),
@@ -66,11 +66,11 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const userId = faker.string.nanoid();
+    const userId = mockNanoid();
     const contextEntityColumns = generateMockContextEntityIdColumns();
 
     return {
-      id: faker.string.nanoid(),
+      id: mockNanoid(),
       contextType: 'organization' as const,
       userId,
       ...contextEntityColumns,
@@ -98,12 +98,12 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const userId = faker.string.nanoid();
+    const userId = mockNanoid();
     const contextEntityColumns = generateMockContextEntityIdColumns();
-    const tokenId = faker.string.nanoid();
+    const tokenId = mockNanoid();
 
     return {
-      id: faker.string.nanoid(),
+      id: mockNanoid(),
       contextType: 'organization' as const,
       email: faker.internet.email().toLowerCase(),
       userId,
@@ -111,7 +111,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
       role: faker.helpers.arrayElement(appConfig.roles.entityRoles),
       rejectedAt: null,
       createdAt,
-      createdBy: faker.string.nanoid(),
+      createdBy: mockNanoid(),
       ...contextEntityColumns,
       uniqueKey: `${userId}-${contextEntityColumns.organizationId}`,
     };

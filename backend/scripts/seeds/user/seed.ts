@@ -6,20 +6,31 @@ import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import pc from 'picocolors';
 import { appConfig } from 'config';
-import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '#/mocks';
+import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../../mocks';
 import { defaultAdminUser } from '../fixtures';
-import { isUserSeeded as isAlreadySeeded } from '../utils';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';
+
+const isProduction = appConfig.mode === 'production';
+
+const isUserSeeded = async () => {
+  const usersInTable = await db
+    .select()
+    .from(usersTable)
+    .limit(1);
+
+  return usersInTable.length > 0;
+}
+
 /**
  * Seed an admin user to access app first time
  */
 export const userSeed = async () => {
-  // Case: Production mode → skip seeding
-  if (appConfig.mode === 'production') return console.error('Not allowed in production.');
+  // Production mode → skip seeding
+  if (isProduction) return console.error('Not allowed in production.');
 
-  // Case: Records already exist → skip seeding
-  if (await isAlreadySeeded()) return console.warn('Users table is not empty → skip seeding');
+  // Records already exist → skip seeding
+  if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
 
   // Hash default admin password
   const hashed = await hashPassword(defaultAdminUser.password);

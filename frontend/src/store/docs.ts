@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { isDebugMode } from '~/env';
 
 interface DocsStoreState {
   clearDocsStore: () => void; // Resets store to initial state
@@ -15,5 +16,6 @@ export const useDocsStore = create<DocsStoreState>()(
     immer((set) => ({
       clearDocsStore: () => set(() => ({})),
     })),
+    { enabled: isDebugMode, name: 'docs store' },
   ),
 );

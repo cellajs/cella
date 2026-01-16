@@ -15,8 +15,8 @@ import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
 import { resourceTables } from '#/activities-config';
 import { entityTables } from '#/entity-config';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../cdc/src/constants';
-import { logMigrationResult, upsertMigration } from './lib/drizzle-migration';
+import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
+import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 
 // Build table names directly from backend imports
 const trackedTableNames = [

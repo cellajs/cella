@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const env = createEnv({
   client: {
-    VITE_DEBUG_UI: z
+    VITE_DEBUG_MODE: z
       .string()
       .default('false')
       .transform((v) => v === 'true'),
@@ -20,3 +20,5 @@ export const env = createEnv({
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,
 });
+
+export const isDebugMode = env.VITE_DEBUG_MODE;

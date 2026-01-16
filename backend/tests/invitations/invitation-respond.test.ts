@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { mockOrganization } from '#/mocks';
+import { mockOrganization } from '../../mocks';
 import { defaultHeaders } from '../fixtures';
 import { createPasswordUser } from '../helpers';
 import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
