@@ -11,7 +11,7 @@ export const cellaConfig: DeepPartial<SyncConfig> = {
     remoteName: 'cella-upstream',                     // git remote name for upstream
   },
   fork: {
-    branch: 'cli-sync',                            // your fork's working branch
+    branch: 'cli-sync',                            // your fork's main branch
     syncBranch: 'sync-branch',                        // temporary branch for sync operations
   },
   behavior: {

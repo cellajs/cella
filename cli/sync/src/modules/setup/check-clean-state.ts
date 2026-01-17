@@ -32,8 +32,8 @@ export async function checkCleanState(localPath: string, branchRef?: string, opt
     await gitCheckout(localPath, branchRef);
   }
 
-  // Check for uncommitted changes
-  if (!(await isRepoClean(localPath))) {
+  // Check for uncommitted changes (ignore cli/sync for sync tool development)
+  if (!(await isRepoClean(localPath, ['cli/sync']))) {
     throw new Error(`${locationDescription} has uncommitted changes. Please commit or stash them before proceeding.`);
   }
 

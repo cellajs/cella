@@ -50,7 +50,7 @@ export async function getGitFileHashes(repoPath: string, branchName: string = 'H
   const output = await gitLsTreeRecursive(repoPath, branchName);
   const lines = output.split('\n').filter((line) => line.trim());
 
-  // Process in batches of 50 to allow spinner animation updates
+  // Process in batches of 50 to avoid EBADF and allow spinner animation
   const entries = await processBatched(lines, 50, async (line) => {
     const [meta, filePath] = line.split('\t');
     const blobSha = meta.split(' ')[2];

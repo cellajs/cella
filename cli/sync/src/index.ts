@@ -1,3 +1,5 @@
+import pc from 'picocolors';
+
 import { config } from './config';
 import { validateConfig } from './modules/cli/handlers';
 import { runAnalyze } from './run-analyze';
@@ -42,11 +44,23 @@ async function main(): Promise<void> {
 
   // Apply file sync logic (sync service only)
   if (config.syncService === 'sync') {
-    await runSync(analyzedFiles);
+    const commitMessage = await runSync(analyzedFiles);
 
     // Apply package.json dependency synchronization (unless skipped)
     if (!config.skipPackages) {
       await runPackages(analyzedFiles);
+    }
+
+    // Show final instructions for staged changes
+    if (commitMessage) {
+      console.info();
+      console.info(pc.cyan('─'.repeat(60)));
+      console.info(pc.bold('changes are staged but not committed'));
+      console.info(pc.gray("run 'git commit' to finalize, or 'git reset' to abort"));
+      console.info();
+      console.info(pc.dim('suggested commit message:'));
+      console.info(pc.white(commitMessage));
+      console.info(pc.cyan('─'.repeat(60)));
     }
   }
 }

@@ -6,8 +6,8 @@ import { checkCleanState } from './check-clean-state';
 /**
  * Ensures the latest changes are fetched for the repository.
  * - For remote repositories, performs a git fetch.
- * - For local repositories, pulls the latest changes for the main and target branches.
- * Also ensures the working directory is clean after pulling.
+ * - For local repositories, pulls the latest changes for the main branch only.
+ *   The sync branch is local-only and doesn't need to be pulled.
  *
  * @param repoConfig - The repository configuration
  * @returns Promise that resolves when the latest changes are fetched
@@ -21,13 +21,10 @@ export async function fetchLatestChanges(repoConfig: RepoConfig) {
     await gitFetch(repoConfig.workingDirectory, repoConfig.remoteName);
   }
 
-  // For local repositories, pull changes
+  // For local repositories, pull changes for main branch only
+  // (sync branch is local-only and doesn't need to be pulled)
   if (!repoConfig.isRemote) {
     await pullLatestChanges(repoConfig.workingDirectory, repoConfig.branchRef);
-
-    if (repoConfig.syncBranchRef) {
-      await pullLatestChanges(repoConfig.workingDirectory, repoConfig.syncBranchRef);
-    }
   }
 }
 
