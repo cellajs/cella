@@ -81,11 +81,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       const keysToSync = config.behavior.packageJsonSync || ['dependencies', 'devDependencies'];
 
       // Determine which keys need updates
-      const keyUpdates = getPackageUpdates(
-        upstreamPackageJson || {},
-        forkPackageJson || {},
-        keysToSync,
-      );
+      const keyUpdates = getPackageUpdates(upstreamPackageJson || {}, forkPackageJson || {}, keysToSync);
 
       // Prepare summary lines for final logging
       const pkgLines = packageSummaryLines(analyzedFile, forkPackageJson, keyUpdates);

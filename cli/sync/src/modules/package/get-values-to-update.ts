@@ -44,10 +44,7 @@ export function getDepsToUpdate(
  * Get updates for a generic object (key-value pairs, non-semver).
  * Only updates keys that exist in fork.
  */
-export function getObjectToUpdate<T>(
-  upstreamObj: Record<string, T>,
-  forkObj: Record<string, T>,
-): Record<string, T> {
+export function getObjectToUpdate<T>(upstreamObj: Record<string, T>, forkObj: Record<string, T>): Record<string, T> {
   const updates: Record<string, T> = {};
 
   for (const key in upstreamObj) {
@@ -96,7 +93,12 @@ export type PackageKeyType = 'dependencies' | 'object' | 'array' | 'primitive';
  */
 export function detectKeyType(value: unknown, key: string): PackageKeyType {
   // Known dependency keys use semver logic
-  if (key === 'dependencies' || key === 'devDependencies' || key === 'peerDependencies' || key === 'optionalDependencies') {
+  if (
+    key === 'dependencies' ||
+    key === 'devDependencies' ||
+    key === 'peerDependencies' ||
+    key === 'optionalDependencies'
+  ) {
     return 'dependencies';
   }
 
@@ -179,10 +181,7 @@ export function getPackageUpdates(
 /**
  * Apply updates to a package.json object (mutates in place).
  */
-export function applyPackageUpdates(
-  pkg: Record<string, unknown>,
-  updates: KeyUpdateSummary[],
-): void {
+export function applyPackageUpdates(pkg: Record<string, unknown>, updates: KeyUpdateSummary[]): void {
   for (const { key, type, updates: keyUpdates } of updates) {
     if (!keyUpdates) continue;
 

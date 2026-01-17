@@ -7,10 +7,7 @@ import { FileAnalysis, PackageJson } from '../types';
 /**
  * Formats a single key update for display.
  */
-function formatKeyUpdate(
-  keyUpdate: KeyUpdateSummary,
-  forkPackageJson: PackageJson | null,
-): string[] {
+function formatKeyUpdate(keyUpdate: KeyUpdateSummary, forkPackageJson: PackageJson | null): string[] {
   const lines: string[] = [];
   const { key, type, updates } = keyUpdate;
 
