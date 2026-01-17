@@ -5,7 +5,7 @@ import { logPackageSummaryLines, packageSummaryLines } from './log/package-summa
 import { getDepsToUpdate } from './modules/package/get-deps-to-update';
 import { FileAnalysis, PackageJson } from './types';
 import { readJsonFile, writeJsonFile } from './utils/files';
-import { gitAddAll, gitCheckout, gitCommit } from './utils/git/command';
+import { gitAddAll, gitCheckout } from './utils/git/command';
 import { getRemoteJsonFile } from './utils/git/helpers';
 import { createProgress } from './utils/progress';
 
@@ -129,19 +129,10 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
         writeJsonFile(resolvedForkPath, newPackageJson);
       }
 
-      progress.step('committing changes');
-
-      // Stage all changes
+      // Stage all changes (developer commits manually with file sync changes)
       await gitAddAll(config.fork.workingDirectory);
 
-      // Commit the updated package.json files
-      await gitCommit(
-        config.fork.workingDirectory,
-        `Sync package.json dependencies from ${config.upstream.branchRef}`,
-        { noVerify: true },
-      );
-
-      progress.done('packages synced');
+      progress.done('packages staged');
     }
 
     return summaryLines;
