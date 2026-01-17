@@ -6,6 +6,8 @@
       "frontend/src/**",
       "frontend/storybook/**",
       "frontend/vite/**",
+      "cli/sync/src/**",
+      "cli/sync/tests/**",
       "src/**",
       "locales",
       "frontend/openapi-ts.config.ts"

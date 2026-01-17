@@ -1,39 +1,37 @@
-import pc from "picocolors";
-import yoctoSpinner from 'yocto-spinner';
-
-import { getGitFileHashes } from "./utils/git/files";
-import { analyzeManyFiles } from "./modules/analyze-file";
-import { analyzedFileLine, shouldLogAnalyzedFileModule, logAnalyzedFileLine } from "./log/analyzed-file";
-import { analyzedSummaryLines, shouldLogAnalyzedSummaryModule, logAnalyzedSummaryLines } from "./log/analyzed-summary";
-import { analyzedSwizzleLine, shouldLogAnalyzedSwizzleModule, logAnalyzedSwizzleLine } from "./log/analyzed-swizzle";
-import { extractSwizzleEntries } from "./modules/swizzle/analyze";
-import { writeSwizzleMetadata } from "./modules/swizzle/metadata";
-import { FileAnalysis } from "./types";
-import { checkMark } from "./utils/console";
-import { config } from "./config";
+import pc from 'picocolors';
+import { config } from './config';
+import { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log/analyzed-file';
+import { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log/analyzed-summary';
+import { analyzedSwizzleLine, logAnalyzedSwizzleLine, shouldLogAnalyzedSwizzleModule } from './log/analyzed-swizzle';
+import { analyzeManyFiles } from './modules/analyze-file';
+import { extractSwizzleEntries } from './modules/swizzle/analyze';
+import { writeSwizzleMetadata } from './modules/swizzle/metadata';
+import { FileAnalysis } from './types';
+import { getGitFileHashes } from './utils/git/files';
+import { createProgress } from './utils/progress';
 
 /**
  * Executes the complete file analysis workflow for a sync between the upstream and fork.
  *
  * This process includes:
  *
- * **1. Fetching file hashes**  
+ * **1. Fetching file hashes**
  *    Retrieves the full list of tracked files (via blob SHA hashes) for:
  *    - the upstream repository
  *    - the fork's sync branch
  *
- * **2. Running file-by-file analysis**  
+ * **2. Running file-by-file analysis**
  *    Each file is processed to determine:
- *    - commit history differences  
- *    - content differences  
- *    - swizzle status (removed/edited/etc.)  
- *    - recommended merge strategy  
+ *    - commit history differences
+ *    - content differences
+ *    - swizzle status (removed/edited/etc.)
+ *    - recommended merge strategy
  *
- * **3. Updating swizzle metadata**  
+ * **3. Updating swizzle metadata**
  *    Extracts swizzle events from the analysis and writes refreshed metadata
  *    to `.swizzle` state storage.
  *
- * **4. Logging (optional, based on config)**  
+ * **4. Logging (optional, based on config)**
  *    Logs:
  *    - per-file analysis
  *    - swizzle analysis
@@ -47,42 +45,35 @@ import { config } from "./config";
  *          one for each analyzed file.
  */
 export async function runAnalyze(): Promise<FileAnalysis[]> {
-  console.info(pc.cyan("\nRunning file analysis"));
+  const progress = createProgress('analyzing files');
 
-  const spinner = yoctoSpinner({ text: "Fetching repo file list..." });
-  spinner.start();
+  const analyzedFiles = await progress.wrap(async () => {
+    progress.step('fetching file list');
 
-  // Fetch file hashes from both upstream and fork repositories in parallel
-  const [upstreamFiles, forkFiles] = await Promise.all([
-    getGitFileHashes(config.upstream.workingDirectory, config.upstream.branchRef),
-    getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranchRef),
-  ]);
+    // Fetch file hashes from both upstream and fork repositories in parallel
+    const [upstreamFiles, forkFiles] = await Promise.all([
+      getGitFileHashes(config.upstream.workingDirectory, config.upstream.branchRef),
+      getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranchRef),
+    ]);
 
-  spinner.stop();
-  spinner.start("Analyzing file histories...");
+    progress.step('comparing file histories');
 
-  // Analyze files by comparing upstream and fork file hashes
-  const analyzedFiles = await analyzeManyFiles(
-    config.upstream,
-    config.fork,
-    upstreamFiles,
-    forkFiles
-  );
+    // Analyze files by comparing upstream and fork file hashes
+    const files = await analyzeManyFiles(config.upstream, config.fork, upstreamFiles, forkFiles);
 
-  spinner.stop();
-  console.info(`${checkMark} ${pc.green("File analysis complete.")}`);
-  spinner.start("Update swizzle...");
+    progress.step('updating swizzle metadata');
 
-  // Extract swizzle entries from analyzed files and update swizzle metadata
-  const swizzleEntries = extractSwizzleEntries(analyzedFiles);
-  writeSwizzleMetadata(swizzleEntries);
+    // Extract swizzle entries from analyzed files and update swizzle metadata
+    const swizzleEntries = extractSwizzleEntries(files);
+    writeSwizzleMetadata(swizzleEntries);
 
-  spinner.stop();
-  console.info(`${checkMark} ${pc.green("Swizzle update complete.")}`);
+    progress.done(`analyzed ${files.length} files`);
+    return files;
+  });
 
   // Log the analyzed files
   if (shouldLogAnalyzedFileModule()) {
-    console.info(pc.bold("\nFile analysis:"));
+    console.info(pc.bold('\nfile analysis:'));
     for (const file of analyzedFiles) {
       const line = analyzedFileLine(file);
       logAnalyzedFileLine(file, line);
@@ -91,20 +82,19 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
 
   // Log the swizzle analysis
   if (shouldLogAnalyzedSwizzleModule()) {
-    console.info(pc.bold("\nSwizzle analysis:"));
+    console.info(pc.bold('\nswizzle analysis:'));
     for (const file of analyzedFiles) {
       const line = analyzedSwizzleLine(file);
       logAnalyzedSwizzleLine(file, line);
     }
   }
 
-  // Log the summary of analyzed files
+  // Log the summary of analyzed files (compact inline format)
   if (shouldLogAnalyzedSummaryModule()) {
-    console.info(pc.bold(`\nSummary:`));
+    console.info();
     const summaryLines = analyzedSummaryLines(analyzedFiles);
     logAnalyzedSummaryLines(summaryLines);
   }
 
-  // Return the analyzed files data
-  return analyzedFiles
+  return analyzedFiles;
 }

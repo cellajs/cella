@@ -1,4 +1,4 @@
-import { MinimalRepoConfig } from "./types";
+import { MinimalRepoConfig } from './types';
 
 /**
  * Default configuration for the upstream repository.
@@ -8,25 +8,25 @@ export const upstreamDefaultConfig: MinimalRepoConfig = {
   /**
    * Local file system path to the upstream repository (empty because differs per user).
    */
-  localPath: "",
+  localPath: '',
 
   /**
    * The remote URL of the upstream repository
    */
-  remoteUrl: "https://github.com/cellajs/cella.git",
+  remoteUrl: 'https://github.com/cellajs/cella.git',
 
   /**
    * The "branch" to sync from. Make sure this branch exists in the upstream repository.
    */
-  branch: "development",
+  branch: 'development',
 
   /**
    * The sync branch (will differ per user/repo).
    */
-  syncBranch: "",
+  syncBranch: '',
 
   /**
    * The name to use when adding the upstream repository as a remote.
    */
   remoteName: 'cella-upstream',
-}
+};

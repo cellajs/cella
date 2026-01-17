@@ -1,22 +1,21 @@
 // Import all types
-import type {
-  SyncConfig,
-  MinimalRepoConfig,
-  MinimalLogConfig,
-  MinimalBehaviorConfig,
-  MinimalOverridesConfig,
-} from "./types";
-
-// Import default configurations
-import { forkDefaultConfig } from "./fork.default";
-import { upstreamDefaultConfig } from "./upstream.default";
-import { logDefaultConfig, logDivergedConfig } from "./log.default";
-import { behaviorDefaultConfig } from "./behavior.default";
-import { overridesDefaultConfig } from "./overrides.default";
 
 // Import custom config
-import { cellaConfig as customConfig } from "../../../../cella.config"
-import { SYNC_SERVICES, SERVICES_RUNNING_FROM_LOCAL_FORK } from "./sync-services";
+import { cellaConfig as customConfig } from '../../../../cella.config';
+import { behaviorDefaultConfig } from './behavior.default';
+// Import default configurations
+import { forkDefaultConfig } from './fork.default';
+import { logDefaultConfig } from './log.default';
+import { overridesDefaultConfig } from './overrides.default';
+import { SERVICES_RUNNING_FROM_LOCAL_FORK, SYNC_SERVICES } from './sync-services';
+import type {
+  MinimalBehaviorConfig,
+  MinimalLogConfig,
+  MinimalOverridesConfig,
+  MinimalRepoConfig,
+  SyncConfig,
+} from './types';
+import { upstreamDefaultConfig } from './upstream.default';
 
 /**
  * Import all custom configurations from cella.config.ts
@@ -33,7 +32,7 @@ const {
 /**
  * ---------------------------------------------------------------------------
  * SECTION: CONFIG TYPES
- * 
+ *
  * - RepoConfig
  * - LogConfig
  * - BehaviorConfig
@@ -52,37 +51,37 @@ export type RepoConfig = MinimalRepoConfig & {
   /**
    * Location of the repository: 'local' or 'remote'
    */
-  location: 'local' | 'remote',
+  location: 'local' | 'remote';
 
   /**
    * Type of the repository: 'fork' or 'upstream'
    */
-  type: 'fork' | 'upstream',
+  type: 'fork' | 'upstream';
 
   /**
    * Indicates if the repository is remote
    */
-  isRemote: boolean,
+  isRemote: boolean;
 
   /**
    * Full branch reference (e.g., 'refs/heads/development')
    */
-  branchRef: string,
+  branchRef: string;
 
   /**
    * Full sync branch reference (e.g., 'refs/heads/sync-branch')
    */
-  syncBranchRef: string,
+  syncBranchRef: string;
 
   /**
    * Repository reference, either local path or remote URL
    */
-  repoReference: string,
+  repoReference: string;
 
   /**
    * Working directory for the repository
    */
-  workingDirectory: string,
+  workingDirectory: string;
 };
 
 /**
@@ -93,7 +92,7 @@ export type OverridesConfig = MinimalOverridesConfig & {
    * Full local file system path to the overrides metadata file
    */
   localMetadataFilePath: string;
-}
+};
 
 /**
  * Other exported config types (no computed properties needed)
@@ -120,7 +119,9 @@ export class Config {
   constructor(initial: Partial<SyncConfig> = {}) {
     this.state = {
       // Static defaults
-      syncService: SYNC_SERVICES.UPSTREAM_FORK,
+      syncService: SYNC_SERVICES.SYNC,
+      debug: false,
+      skipPackages: false,
       forkLocation: 'local',
       upstreamLocation: 'remote',
 
@@ -132,7 +133,7 @@ export class Config {
       overrides: { ...overridesDefaultConfig, ...customOverridesConfig },
 
       // Global overrides
-      ...initial
+      ...initial,
     };
   }
 
@@ -151,7 +152,7 @@ export class Config {
       branchRef: this.forkBranchRef,
       syncBranchRef: this.forkSyncBranchRef,
       repoReference: this.state.forkLocation === 'local' ? this.state.fork.localPath : this.state.fork.remoteUrl,
-      workingDirectory: this.workingDirectory
+      workingDirectory: this.workingDirectory,
     };
   }
 
@@ -173,8 +174,9 @@ export class Config {
       isRemote: this.upstreamIsRemote,
       branchRef: this.upstreamBranchRef,
       syncBranchRef: this.upstreamSyncBranchRef,
-      repoReference: this.state.upstreamLocation === 'local' ? this.state.upstream.localPath : this.state.upstream.remoteUrl,
-      workingDirectory: this.workingDirectory
+      repoReference:
+        this.state.upstreamLocation === 'local' ? this.state.upstream.localPath : this.state.upstream.remoteUrl,
+      workingDirectory: this.workingDirectory,
     };
   }
   set upstream(value: Partial<RepoConfig>) {
@@ -213,6 +215,17 @@ export class Config {
   }
 
   /**
+   * Getter and setter for debug mode
+   */
+  get debug(): boolean {
+    return this.state.debug;
+  }
+
+  set debug(value: boolean) {
+    this.state.debug = value;
+  }
+
+  /**
    * Setter for syncService with side effects
    * - Adjusts fork and upstream locations based on service type
    * - Updates log configuration for specific services
@@ -224,15 +237,22 @@ export class Config {
       this.state.upstreamLocation = 'remote';
     }
 
-    if (value === SYNC_SERVICES.UPSTREAM_FORK) {
+    if (value === SYNC_SERVICES.SYNC || value === SYNC_SERVICES.ANALYZE) {
       this.state.log = logDefaultConfig;
     }
 
-    if (value === SYNC_SERVICES.DIVERGED) {
-      this.state.log = logDivergedConfig;
-    }
-
     this.state.syncService = value;
+  }
+
+  /**
+   * Getter and setter for skipPackages
+   */
+  get skipPackages(): boolean {
+    return this.state.skipPackages;
+  }
+
+  set skipPackages(value: boolean) {
+    this.state.skipPackages = value;
   }
 
   /**
@@ -269,7 +289,7 @@ export class Config {
   /**
    * Computed reference properties
    * Those differ depending on whether the repo is local or remote
-   * 
+   *
    * - forkRepoReference
    * - upstreamRepoReference
    * - forkBranchRef
@@ -315,7 +335,7 @@ export class Config {
   }
 
   /**
-   * Determines the working directory dynamically 
+   * Determines the working directory dynamically
    */
   get workingDirectory(): string {
     if (SERVICES_RUNNING_FROM_LOCAL_FORK.includes(this.state.syncService)) {
@@ -325,7 +345,7 @@ export class Config {
     }
   }
 
-  /** 
+  /**
    * Sets a configuration value by key
    * @param key Configuration key to set
    * @param value Value to assign to the key

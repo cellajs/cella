@@ -9,14 +9,11 @@ import type { OverridesConfig } from './index';
  */
 export async function validateOverridesConfig(
   overrides: OverridesConfig,
-  workingDirectory: string
+  workingDirectory: string,
 ): Promise<{ valid: boolean; warnings: string[] }> {
   const warnings: string[] = [];
 
-  const allPatterns = [
-    ...overrides.customized,
-    ...overrides.ignored,
-  ];
+  const allPatterns = [...overrides.customized, ...overrides.ignored];
 
   for (const pattern of allPatterns) {
     const fullPattern = `${workingDirectory}/${pattern}`;

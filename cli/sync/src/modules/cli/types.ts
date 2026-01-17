@@ -11,21 +11,8 @@ export interface CLIConfig {
   forkSyncBranch: string;
   /** When true, skip interactive prompts and use defaults/CLI flags */
   ci: boolean;
+  /** When true, show verbose debug output */
+  debug: boolean;
+  /** When true, skip package.json sync during sync service */
+  skipPackages: boolean;
 }
-
-// Define supported configuration actions (continue or customize)
-export type ConfigurationAction = 'continue' | 'customize';
-
-// Define all possible customization options
-export type CustomizeOption =
-  | 'upstreamLocation'
-  | 'upstreamBranch'
-  | 'upstreamRemoteName'
-  | 'divergedCommitStatus'
-  | 'forkLocation'
-  | 'forkBranch'
-  | 'forkSyncBranch'
-  | 'packageJsonMode'
-  | 'skipAllPushes'
-  | 'maxGitPreviewsForSquashCommits'
-  | 'done';

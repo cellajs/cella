@@ -1,4 +1,8 @@
-import { MinimalRepoConfig } from "./types";
+import { resolve } from 'node:path';
+import { MinimalRepoConfig } from './types';
+
+/** Resolve to monorepo root (cli/sync is 2 levels deep) */
+const monorepoRoot = resolve(import.meta.dirname, '../../../..');
 
 /**
  * Default configuration for the fork repository.
@@ -8,25 +12,25 @@ export const forkDefaultConfig: MinimalRepoConfig = {
   /**
    * Local file system path to the fork repository.
    */
-  localPath: process.cwd(),
+  localPath: monorepoRoot,
 
   /**
    * The remote URL of the fork repository
    */
-  remoteUrl: "",
+  remoteUrl: '',
 
   /**
    * The "branch" to sync from. Make sure this branch exists in the fork repository.
    */
-  branch: "development",
+  branch: 'development',
 
   /**
    * The sync branch (will be differ per user/repo).
    */
-  syncBranch: "sync-branch",
+  syncBranch: 'sync-branch',
 
   /**
    * The name to use when adding the fork repository as a remote.
    */
   remoteName: '',
-}
+};

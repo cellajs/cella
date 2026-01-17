@@ -1,4 +1,4 @@
-import { RepoConfig } from "../../config";
+import { RepoConfig } from '../../config';
 
 /**
  * Checklist item type definition.
@@ -18,10 +18,10 @@ type checklistItem = {
  * Checks the repository configuration against a checklist.
  * @param repoConfig - The repository configuration
  * @param checklist - The checklist of properties to validate
- * 
+ *
  * @throws If any required property is missing or has an invalid value
  * @returns void
- * 
+ *
  * @example
  * checkConfig(upstreamConfig, upstreamConfigChecklist);
  */
@@ -38,7 +38,9 @@ export function checkConfig(repoConfig: RepoConfig, checklist: checklistItem[]) 
 
     // Check if property value is allowed
     if (allowedValues && (repoConfig as any)[prop] && !allowedValues.includes((repoConfig as any)[prop])) {
-      throw new Error(`Repository \`${prop}\` has an invalid value: ${(repoConfig as any)[prop]}. Allowed values are: ${allowedValues.join(', ')}.`);
+      throw new Error(
+        `Repository \`${prop}\` has an invalid value: ${(repoConfig as any)[prop]}. Allowed values are: ${allowedValues.join(', ')}.`,
+      );
     }
   }
 }

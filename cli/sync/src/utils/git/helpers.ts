@@ -8,7 +8,7 @@ import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain, runGitCommand
  * @param repoPath - Absolute or relative path to the Git repository
  * @param sourceBranch - The branch to compare (e.g., feature branch)
  * @param baseBranch - The branch to compare against (e.g., main or development)
- * 
+ *
  * @throws If the Git command fails or output cannot be parsed as a number
  * @returns The number of commits (integer)
  *
@@ -16,20 +16,16 @@ import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain, runGitCommand
  * const count = await getCommitCount('/repo', 'sync-branch', 'development');
  * console.info(count); // e.g., 5
  */
-export async function getCommitCount(
-  repoPath: string,
-  sourceBranch: string,
-  baseBranch: string
-): Promise<number> {
+export async function getCommitCount(repoPath: string, sourceBranch: string, baseBranch: string): Promise<number> {
   const countStr = await gitRevListCount(repoPath, sourceBranch, baseBranch);
   return parseInt(countStr, 10);
 }
 
 /**
  * Checks if the repository has no uncommitted changes.
- * 
+ *
  * @param repoPath - The Absolute or relative path to the Git repository
- * 
+ *
  * @returns True if the repository has no uncommitted changes, false otherwise
  */
 export async function isRepoClean(repoPath: string): Promise<boolean> {
@@ -39,9 +35,9 @@ export async function isRepoClean(repoPath: string): Promise<boolean> {
 
 /**
  * Checks if there is anything to commit in the repository.
- * 
+ *
  * @param repoPath - Absolute or relative path to the Git repository
- * 
+ *
  * @returns True if there are staged changes or uncommitted changes to commit, false otherwise
  */
 export async function hasAnythingToCommit(repoPath: string): Promise<boolean> {
@@ -54,18 +50,14 @@ export async function hasAnythingToCommit(repoPath: string): Promise<boolean> {
 
 /**
  * Checks if the branch has commits that need to be pushed.
- * 
+ *
  * @param repoPath - Path to the repository
  * @param branch - Local branch name
  * @param remote - Remote name, default 'origin'
- * 
+ *
  * @returns True if there are commits to push
  */
-export async function hasAnythingToPush(
-  repoPath: string,
-  branch: string,
-  remote = 'origin'
-): Promise<boolean> {
+export async function hasAnythingToPush(repoPath: string, branch: string, remote = 'origin'): Promise<boolean> {
   const countStr = await gitRevListCount(repoPath, branch, `${remote}/${branch}`);
   const count = parseInt(countStr, 10);
   return count > 0;
@@ -73,11 +65,11 @@ export async function hasAnythingToPush(
 
 /**
  * Fetches and parses a JSON file from a specific branch reference in the repository.
- * 
+ *
  * @param repoPath - Path to the repository
  * @param branchRef - Branch reference (e.g., branch name, commit hash)
  * @param jsonPath - Path to the JSON file within the repository
- * 
+ *
  * @returns The parsed JSON object or null if fetching/parsing fails
  */
 export async function getRemoteJsonFile(repoPath: string, branchRef: string, jsonPath: string): Promise<any> {
@@ -93,12 +85,12 @@ export async function getRemoteJsonFile(repoPath: string, branchRef: string, jso
 
 /**
  * Lists the commit messages between two branches.
- * 
+ *
  * @param repoPath - Path to the repository
  * @param fromBranch - Source branch
  * @param toBranch - Target branch
  * @param limit - Maximum number of commit messages to retrieve (default: 5)
- * 
+ *
  * @returns An array of commit message strings
  */
 export async function getLastCommitMessages(
@@ -108,16 +100,10 @@ export async function getLastCommitMessages(
   limit: number = 5,
 ): Promise<string[]> {
   // git log <toBranch>..<fromBranch> -n <limit> --pretty=format:%s
-  const args = [
-    'log',
-    `${toBranch}..${fromBranch}`,
-    '-n',
-    String(limit),
-    '--pretty=format:%s'
-  ];
+  const args = ['log', `${toBranch}..${fromBranch}`, '-n', String(limit), '--pretty=format:%s'];
 
   const output = await runGitCommand(args, repoPath);
 
   if (!output) return [];
-  return output.split('\n').map(line => line.trim());
+  return output.split('\n').map((line) => line.trim());
 }

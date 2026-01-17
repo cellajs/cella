@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-  isMajorVersionChange,
-  getRepoUrl,
-  getReleasesUrl,
-  terminalLink,
-  loadCache,
   CACHE_FILE,
   CHANGELOG_PATHS,
   DEFAULT_BRANCHES,
+  getReleasesUrl,
+  getRepoUrl,
+  isMajorVersionChange,
+  loadCache,
   type NpmRegistryData,
+  terminalLink,
 } from '../src/run-outdated';
 
 describe('run-outdated', () => {
@@ -44,12 +44,15 @@ describe('run-outdated', () => {
     });
 
     it('should normalize various URL formats', () => {
-      expect(getRepoUrl({ repository: { type: 'git', url: 'git+https://github.com/user/repo.git' } }))
-        .toBe('https://github.com/user/repo');
-      expect(getRepoUrl({ repository: { type: 'git', url: 'git://github.com/user/repo.git' } }))
-        .toBe('https://github.com/user/repo');
-      expect(getRepoUrl({ repository: { type: 'git', url: 'https://github.com/user/repo' } }))
-        .toBe('https://github.com/user/repo');
+      expect(getRepoUrl({ repository: { type: 'git', url: 'git+https://github.com/user/repo.git' } })).toBe(
+        'https://github.com/user/repo',
+      );
+      expect(getRepoUrl({ repository: { type: 'git', url: 'git://github.com/user/repo.git' } })).toBe(
+        'https://github.com/user/repo',
+      );
+      expect(getRepoUrl({ repository: { type: 'git', url: 'https://github.com/user/repo' } })).toBe(
+        'https://github.com/user/repo',
+      );
     });
   });
 

@@ -1,10 +1,10 @@
-import { Command } from "commander";
+import { Command } from 'commander';
 
 import { NAME, VERSION } from './constants';
-import { validateBranchName, validateLocation, validateRemoteName, validateSyncService } from "./modules/cli/commands";
-import { CLIConfig } from "./modules/cli/types";
-import { handleConfigurationAction, handleSyncService, onInitialConfigLoad } from "./modules/cli/handlers";
-import { showConfiguration, showStartingSyncMessage, showWelcome } from "./modules/cli/display";
+import { validateBranchName, validateLocation, validateRemoteName, validateSyncService } from './modules/cli/commands';
+import { showConfiguration, showStartedMessage, showWelcome } from './modules/cli/display';
+import { handleSyncService, onInitialConfigLoad } from './modules/cli/handlers';
+import { CLIConfig } from './modules/cli/types';
 
 // Initialize variables to hold CLI options
 const packageManager = 'pnpm';
@@ -16,6 +16,8 @@ let upstreamLocation = '';
 let upstreamRemoteName = '';
 let forkLocation = '';
 let ciMode = false;
+let debugMode = false;
+let skipPackages = false;
 
 /**
  * Defines the root CLI command using Commander.
@@ -30,49 +32,43 @@ let ciMode = false;
  * `CLIConfig` object that flows through the rest of the CLI pipeline.
  */
 export const command = new Command(NAME)
-  .version(VERSION, '-v, --version', `Output the current version of ${NAME}.`)
+  .version(VERSION, '-v, --version', `output the current version of ${NAME}`)
   .usage('[options]')
-  .helpOption('-h, --help', 'Display this help message.')
-  .option(
-    '-y, --yes',
-    'Skip interactive prompts and use defaults/CLI flags (CI mode).',
-    () => { ciMode = true; },
-  )
-  .option(
-    '--sync-service <name>',
-    'Explicitly tell the CLI which sync service to use.',
-    (name: string) => { syncService = validateSyncService(name); },
-  )
+  .helpOption('-h, --help', 'display this help message')
+  .option('-y, --yes', 'skip interactive prompts and use defaults/CLI flags (CI mode)', () => {
+    ciMode = true;
+  })
+  .option('-d, --debug', 'show verbose debug output', () => {
+    debugMode = true;
+  })
+  .option('--skip-packages', 'skip package.json dependency synchronization during sync', () => {
+    skipPackages = true;
+  })
+  .option('--sync-service <name>', 'explicitly tell the CLI which sync service to use', (name: string) => {
+    syncService = validateSyncService(name);
+  })
   .option(
     '--upstream-location <location>',
-    'What location of the upstream to use (local|remote).',
-    (location: string) => { upstreamLocation = validateLocation(location); },
+    'what location of the upstream to use (local|remote)',
+    (location: string) => {
+      upstreamLocation = validateLocation(location);
+    },
   )
-  .option(
-    '--upstream-branch <name>',
-    'What branch of the upstream to use.',
-    (name: string) => { upstreamBranch = validateBranchName(name); },
-  )
-  .option(
-    '--upstream-remote-name <name>',
-    'What remote name to use for the upstream.',
-    (name: string) => { upstreamRemoteName = validateRemoteName(name); },
-  )
-  .option(
-    '--fork-location <location>',
-    'What location of the fork to use (local|remote).',
-    (location: string) => { forkLocation = validateLocation(location); },
-  )
-  .option(
-    '--fork-branch <name>',
-    'What branch of the fork to use.',
-    (name: string) => { forkBranch = validateBranchName(name); },
-  )
-  .option(
-    '--fork-sync-branch <name>',
-    'What sync branch of the fork to use.',
-    (name: string) => { forkSyncBranch = validateBranchName(name); },
-  )
+  .option('--upstream-branch <name>', 'what branch of the upstream to use', (name: string) => {
+    upstreamBranch = validateBranchName(name);
+  })
+  .option('--upstream-remote-name <name>', 'what remote name to use for the upstream', (name: string) => {
+    upstreamRemoteName = validateRemoteName(name);
+  })
+  .option('--fork-location <location>', 'what location of the fork to use (local|remote)', (location: string) => {
+    forkLocation = validateLocation(location);
+  })
+  .option('--fork-branch <name>', 'what branch of the fork to use', (name: string) => {
+    forkBranch = validateBranchName(name);
+  })
+  .option('--fork-sync-branch <name>', 'what sync branch of the fork to use', (name: string) => {
+    forkSyncBranch = validateBranchName(name);
+  })
   .parse();
 
 /**
@@ -95,6 +91,8 @@ const cli: CLIConfig = {
   forkBranch,
   forkSyncBranch,
   ci: ciMode,
+  debug: debugMode,
+  skipPackages,
 };
 
 /**
@@ -109,15 +107,12 @@ export async function runCli(): Promise<void> {
   // Applies CLI flags and loads base config
   onInitialConfigLoad(cli);
 
-  // Prompt sync service
+  // Prompt sync service (if not provided via CLI)
   await handleSyncService(cli);
 
   // Display the current configuration
   showConfiguration();
 
-  // Prompt for additional configuration actions
-  await handleConfigurationAction(cli);
-
   // Display the CLI will now hand off to core sync logic.
-  showStartingSyncMessage();
-};
+  showStartedMessage();
+}

@@ -1,11 +1,45 @@
 import { DeepPartial, SyncConfig } from "./cli/sync/src/config/types";
 
+/**
+ * Cella Sync Configuration
+ * 
+ * This file configures the sync behavior between your fork and the upstream Cella template.
+ * All options below can be customized. Uncomment and modify as needed.
+ * 
+ * Run `pnpm sync` to execute the sync with these settings.
+ */
 export const cellaConfig: DeepPartial<SyncConfig> = {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Upstream Repository Configuration
+  // ─────────────────────────────────────────────────────────────────────────
   upstream: {
     remoteUrl: 'git@github.com:cellajs/cella.git',
+    // branch: 'development',        // upstream branch to sync from
+    // remoteName: 'cella-upstream', // git remote name for upstream
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Fork Repository Configuration  
+  // ─────────────────────────────────────────────────────────────────────────
+  // fork: {
+  //   branch: 'development',        // your fork's main branch
+  //   syncBranch: 'sync-branch',    // temporary branch for sync operations
+  // },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sync Behavior Options
+  // ─────────────────────────────────────────────────────────────────────────
+  // behavior: {
+  //   skipAllPushes: false,                  // skip all git push operations
+  //   maxGitPreviewsForSquashCommits: 10,    // max commits to show in squash preview
+  //   skipWritingSwizzleMetadataFile: false, // skip writing .swizzle metadata
+  // },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // File Overrides
+  // ─────────────────────────────────────────────────────────────────────────
   overrides: {
-    // Files and directories to be fully ignored
+    // Files and directories to be fully ignored during sync
     ignored: [
       "info/*",
     ],
@@ -56,7 +90,8 @@ export const cellaConfig: DeepPartial<SyncConfig> = {
       "backend/drizzle/*",
       "backend/scripts/seeds/data/*",
       "backend/src/custom-env.ts",
-      "backend/src/entity-config.ts",
+      "backend/src/table-config.ts",
+      "backend/src/relatable-config.ts",
       "backend/src/routes.ts",
       "backend/src/permissions/permissions-config.ts",
       "backend/src/docs/tags-config.ts",

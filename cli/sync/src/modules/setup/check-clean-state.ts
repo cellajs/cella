@@ -1,17 +1,17 @@
-import { hasLocalBranch } from "../../utils/git/branches";
-import { gitCheckout, isMergeInProgress, isRebaseInProgress } from "../../utils/git/command";
-import { isRepoClean } from "../../utils/git/helpers";
+import { hasLocalBranch } from '../../utils/git/branches';
+import { gitCheckout, isMergeInProgress, isRebaseInProgress } from '../../utils/git/command';
+import { isRepoClean } from '../../utils/git/helpers';
 
 /**
  * Checks if a Git repository is clean.
  * - Optionally checks out a target branch before validation.
  * - Throws an error if there are uncommitted changes, or if a merge or rebase is in progress.
- * 
+ *
  * @param localPath - The file system path to the repository
  * @param branchRef - The branch to check out before validation (optional)
  * @param options - Additional options
  * @param options.skipCheckout - If true, skips checking out the target branch
- * 
+ *
  * @throws If the repository is not clean
  * @returns void
  *
@@ -20,10 +20,12 @@ import { isRepoClean } from "../../utils/git/helpers";
  */
 export async function checkCleanState(localPath: string, branchRef?: string, options?: { skipCheckout?: boolean }) {
   // Determine the location description for error messages
-  const locationDescription = branchRef ? `Branch '${branchRef}' in repository at ${localPath}` : `repository at ${localPath}`;
+  const locationDescription = branchRef
+    ? `Branch '${branchRef}' in repository at ${localPath}`
+    : `repository at ${localPath}`;
 
   if (branchRef && !options?.skipCheckout) {
-    if (!await hasLocalBranch(localPath, branchRef)) {
+    if (!(await hasLocalBranch(localPath, branchRef))) {
       throw new Error(`${locationDescription} does not exist.`);
     }
 
@@ -31,7 +33,7 @@ export async function checkCleanState(localPath: string, branchRef?: string, opt
   }
 
   // Check for uncommitted changes
-  if (!await isRepoClean(localPath)) {
+  if (!(await isRepoClean(localPath))) {
     throw new Error(`${locationDescription} has uncommitted changes. Please commit or stash them before proceeding.`);
   }
 

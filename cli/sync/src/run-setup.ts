@@ -1,44 +1,40 @@
-import pc from "picocolors";
-
-import { checkConfig } from "./modules/setup/check-config";
-import { checkRepository } from "./modules/setup/check-repository";
-import { checkCleanState } from "./modules/setup/check-clean-state";
-import { fetchLatestChanges } from "./modules/setup/fetch-latest-changes";
-
-import { createBranchIfMissing } from "./utils/git/branches";
-import { handleMerge } from "./utils/git/handle-merge";
-import { addAsRemote } from "./modules/setup/add-as-remote";
-import { checkMark } from "./utils/console";
-
-import { config } from "./config";
+import { config } from './config';
+import { addAsRemote } from './modules/setup/add-as-remote';
+import { checkCleanState } from './modules/setup/check-clean-state';
+import { checkConfig } from './modules/setup/check-config';
+import { checkRepository } from './modules/setup/check-repository';
+import { fetchLatestChanges } from './modules/setup/fetch-latest-changes';
+import { createBranchIfMissing } from './utils/git/branches';
+import { handleMerge } from './utils/git/handle-merge';
+import { createProgress } from './utils/progress';
 
 /**
  * Performs all preflight setup steps required before running any sync operations.
  *
  * Responsibilities:
  *
- * 1. **Configuration validation**  
+ * 1. **Configuration validation**
  *    Ensures required properties exist in both upstream and fork configurations:
- *    - `branchRef`  
- *    - `syncBranchRef` (fork only)  
+ *    - `branchRef`
+ *    - `syncBranchRef` (fork only)
  *    - `repoReference`
  *
- * 2. **Repository accessibility checks**  
+ * 2. **Repository accessibility checks**
  *    Verifies that both repositories can be accessed via the provided paths or remotes.
  *
- * 3. **Remote setup**  
+ * 3. **Remote setup**
  *    Ensures the upstream repository is added as a remote in the fork repository.
  *
- * 4. **Working directory cleanliness**  
+ * 4. **Working directory cleanliness**
  *    Validates that the fork repository is in a clean state:
- *    - working directory clean  
- *    - target branch clean  
+ *    - working directory clean
+ *    - target branch clean
  *    - sync branch exists and is clean
  *
- * 5. **Branch and remote preparation**  
+ * 5. **Branch and remote preparation**
  *    Creates missing branches (sync branch) and fetches latest commits for both repositories.
  *
- * 6. **Sync branch alignment**  
+ * 6. **Sync branch alignment**
  *    Merges the fork branch into the sync branch to ensure it's up-to-date.
  *
  * @throws Will throw an error if any setup step fails (invalid config, inaccessible repository, unclean state, etc.)
@@ -48,53 +44,58 @@ import { config } from "./config";
  * await runSetup();
  */
 export async function runSetup() {
-  console.info(pc.cyan("Running Setup"));
+  const progress = createProgress('setting up');
 
-  // Basic configuration validation
-  checkConfig(config.upstream, [
-    { prop: 'branchRef', required: true },
-    { prop: 'repoReference', required: true }
-  ]);
+  await progress.wrap(async () => {
+    // Basic configuration validation
+    checkConfig(config.upstream, [
+      { prop: 'branchRef', required: true },
+      { prop: 'repoReference', required: true },
+    ]);
 
-  checkConfig(config.fork, [
-    { prop: 'branchRef', required: true },
-    { prop: 'syncBranchRef', required: true },
-    { prop: 'repoReference', required: true }
-  ]);
+    checkConfig(config.fork, [
+      { prop: 'branchRef', required: true },
+      { prop: 'syncBranchRef', required: true },
+      { prop: 'repoReference', required: true },
+    ]);
 
-  // Verify repository accessibility
-  await checkRepository(config.upstream);
-  await checkRepository(config.fork);
-  console.info(`${checkMark} ${pc.green("Repository accessibility verified.")}`);
+    progress.step('verifying repositories');
 
-  // Ensure upstream is added as a remote in the fork
-  await addAsRemote(config.upstream, config.fork);
-  console.info(`${checkMark} ${pc.green("Upstream remote setup complete.")}`);
+    // Verify repository accessibility
+    await checkRepository(config.upstream);
+    await checkRepository(config.fork);
 
-  // Ensure fork working directory and branches are clean
-  await checkCleanState(config.fork.workingDirectory);
-  await checkCleanState(config.fork.workingDirectory, config.fork.branchRef);
-  console.info(`${checkMark} ${pc.green("Fork repository clean state verified.")}`);
+    progress.step('configuring upstream remote');
 
-  // Create sync branch if missing, then check it's clean
-  await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranchRef);
-  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef);
-  console.info(`${checkMark} ${pc.green("Fork sync branch clean state verified.")}`);
+    // Ensure upstream is added as a remote in the fork
+    await addAsRemote(config.upstream, config.fork);
 
-  // Fetch latest changes for both repositories
-  await fetchLatestChanges(config.upstream);
-  console.info(`${checkMark} ${pc.green("Upstream latest changes fetched.")}`);
+    progress.step('checking clean state');
 
-  await fetchLatestChanges(config.fork);
-  console.info(`${checkMark} ${pc.green("Fork latest changes fetched.")}`);
+    // Ensure fork working directory and branches are clean
+    await checkCleanState(config.fork.workingDirectory);
+    await checkCleanState(config.fork.workingDirectory, config.fork.branchRef);
 
-  // Merge fork branch into sync branch to ensure sync branch is up-to-date
-  await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
-  console.info(`${checkMark} ${pc.green("Fork sync branch updated with latest fork changes.")}`);
+    progress.step('preparing sync branch');
 
-  // Ensure sync branch is clean post-merge
-  await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
-  console.info(`${checkMark} ${pc.green("Fork sync branch clean state verified post-merge.")}`);
-  
-  console.info(`${checkMark} ${pc.green("Setup complete.")}`);
+    // Create sync branch if missing, then check it's clean
+    await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranchRef);
+    await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef);
+
+    progress.step('fetching latest changes');
+
+    // Fetch latest changes for both repositories
+    await fetchLatestChanges(config.upstream);
+    await fetchLatestChanges(config.fork);
+
+    progress.step('updating sync branch');
+
+    // Merge fork branch into sync branch to ensure sync branch is up-to-date
+    await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
+
+    // Ensure sync branch is clean post-merge
+    await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
+
+    progress.done('setup complete');
+  });
 }

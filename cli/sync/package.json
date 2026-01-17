@@ -21,6 +21,7 @@
   },
   "scripts": {
     "sync": "tsx index.ts",
+    "validate": "tsx index.ts --sync-service validate",
     "ts": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
