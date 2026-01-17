@@ -1,6 +1,7 @@
 import { confirm } from '@inquirer/prompts';
 
 import { config } from '../../config';
+import { pauseSpinner, resumeSpinner } from '../progress';
 import { hasRemoteBranch } from './branches';
 import { gitCheckout, gitCommit, gitMerge, gitPush, isMergeInProgress } from './command';
 import { getUnmergedFiles } from './files';
@@ -83,6 +84,9 @@ async function waitForManualConflictResolution(mergeIntoPath: string) {
 
   if (conflicts.length === 0) return;
 
+  // Pause spinner to show prompt
+  pauseSpinner();
+
   // When there are still conflicts, notify user to resolve them
   if (conflicts.length > 0) {
     const continueResolving = await confirm({
@@ -94,6 +98,8 @@ async function waitForManualConflictResolution(mergeIntoPath: string) {
       throw new Error('merge process aborted by user');
     }
 
+    // Resume spinner and check again
+    resumeSpinner();
     return waitForManualConflictResolution(mergeIntoPath);
   }
 }
