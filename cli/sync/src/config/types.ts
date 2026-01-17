@@ -203,6 +203,23 @@ export interface SyncConfig {
 export type syncConfig = SyncConfig;
 
 /**
+ * User-configurable sync options for cella.config.ts.
+ * Excludes runtime properties like syncService, debug, skipPackages.
+ */
+export interface UserSyncConfig {
+  /** Configuration for the upstream repository */
+  upstream: Pick<MinimalRepoConfig, 'remoteUrl' | 'branch' | 'remoteName'>;
+  /** Configuration for the forked repository */
+  fork: Pick<MinimalRepoConfig, 'branch' | 'syncBranch'>;
+  /** Configuration for logging analyzed results */
+  log: MinimalLogConfig;
+  /** Configuration for specifying behavior during sync operations */
+  behavior: MinimalBehaviorConfig;
+  /** Configuration related to overrides metadata and settings files */
+  overrides: Pick<MinimalOverridesConfig, 'customized' | 'ignored'>;
+}
+
+/**
  * A utility type that makes all properties of a given type T optional, including nested properties.
  */
 export type DeepPartial<T> = T extends (infer U)[] // If T is an array

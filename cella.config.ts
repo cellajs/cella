@@ -1,9 +1,9 @@
-import { DeepPartial, SyncConfig } from "./cli/sync/src/config/types";
+import { DeepPartial, UserSyncConfig } from "./cli/sync/src/config/types";
 
 /**
  * Run `pnpm sync` to execute the sync with these settings.
  */
-export const cellaConfig: DeepPartial<SyncConfig> = {
+export const cellaConfig: DeepPartial<UserSyncConfig> = {
   // Upstream Repository Configuration
   upstream: {
     remoteUrl: 'git@github.com:cellajs/cella.git',    // upstream repository URL
