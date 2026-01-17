@@ -6,19 +6,19 @@ import { DeepPartial, SyncConfig } from "./cli/sync/src/config/types";
 export const cellaConfig: DeepPartial<SyncConfig> = {
   // Upstream Repository Configuration
   upstream: {
-    remoteUrl: 'git@github.com:cellajs/cella.git',
-    // branch: 'development',        // upstream branch to sync from
-    // remoteName: 'cella-upstream', // git remote name for upstream
+    remoteUrl: 'git@github.com:cellajs/cella.git',    // upstream repository URL
+    branch: 'cli-sync',                               // upstream branch to sync from
+    remoteName: 'cella-upstream',                     // git remote name for upstream
   },
-  // fork: {
-  //   branch: 'development',        // your fork's main branch
-  //   syncBranch: 'sync-branch',    // temporary branch for sync operations
-  // },
-  // behavior: {
-  //   skipAllPushes: false,                  // skip all git push operations
-  //   maxGitPreviewsForSquashCommits: 10,    // max commits to show in squash preview
-  //   skipWritingSwizzleMetadataFile: false, // skip writing .swizzle metadata
-  // },
+  fork: {
+    branch: 'development',                            // your fork's main branch
+    syncBranch: 'sync-branch',                        // temporary branch for sync operations
+  },
+  behavior: {
+    skipAllPushes: false,                             // skip all git push operations
+    maxGitPreviewsForSquashCommits: 10,               // max commits to show in squash preview
+    skipWritingSwizzleMetadataFile: false,            // skip writing .swizzle metadata
+   },
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
