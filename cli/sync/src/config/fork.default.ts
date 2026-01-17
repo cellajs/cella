@@ -20,12 +20,14 @@ export const forkDefaultConfig: MinimalRepoConfig = {
   remoteUrl: '',
 
   /**
-   * The "branch" to sync from. Make sure this branch exists in the fork repository.
+   * Your fork's main branch where final changes land.
    */
   branch: 'development',
 
   /**
-   * The sync branch (will be differ per user/repo).
+   * Intermediate branch for sync operations (local-only, not pushed to remote).
+   * Upstream changes are first merged here, conflicts resolved, then squash-merged
+   * into your main branch. This keeps your main branch history clean.
    */
   syncBranch: 'sync-branch',
 

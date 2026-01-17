@@ -25,12 +25,24 @@ export async function getCommitCount(repoPath: string, sourceBranch: string, bas
  * Checks if the repository has no uncommitted changes.
  *
  * @param repoPath - The Absolute or relative path to the Git repository
+ * @param ignorePaths - Optional paths to ignore when checking for changes
  *
- * @returns True if the repository has no uncommitted changes, false otherwise
+ * @returns True if the repository has no uncommitted changes (outside ignored paths), false otherwise
  */
-export async function isRepoClean(repoPath: string): Promise<boolean> {
+export async function isRepoClean(repoPath: string, ignorePaths?: string[]): Promise<boolean> {
   const status = await gitStatusPorcelain(repoPath);
-  return status.trim().length === 0;
+  if (status.trim().length === 0) return true;
+  if (!ignorePaths?.length) return false;
+
+  // Filter out ignored paths from status output
+  const lines = status.trim().split('\n');
+  const relevantChanges = lines.filter((line) => {
+    // Porcelain format: XY filename (or XY orig -> new for renames)
+    const filePath = line.slice(3).split(' -> ')[0];
+    return !ignorePaths.some((ignored) => filePath.startsWith(ignored));
+  });
+
+  return relevantChanges.length === 0;
 }
 
 /**

@@ -528,6 +528,16 @@ export async function gitRevParseIsInsideWorkTree(repoPath: string): Promise<str
 }
 
 /**
+ * Gets the current branch name.
+ * @param repoPath - Absolute or relative path to the Git repository
+ *
+ * @returns The current branch name
+ */
+export async function gitCurrentBranch(repoPath: string): Promise<string> {
+  return runGitCommand(['rev-parse', '--abbrev-ref', 'HEAD'], repoPath);
+}
+
+/**
  * Connects to a remote repository and lists references using `git ls-remote`.
  * @param repoPath - Absolute or relative path to the Git repository
  * @param remotePath - The path or URL of the remote to query (e.g., 'origin' or a URL)

@@ -1,24 +1,24 @@
 import { config } from '../../config';
 
-import { gitAddAll, gitCheckout, gitCommit, gitMerge, gitPush } from '../../utils/git/command';
+import { gitAddAll, gitCheckout, gitMerge } from '../../utils/git/command';
 import { getCommitCount, getLastCommitMessages } from '../../utils/git/helpers';
-import { hasRemoteBranch } from './branches';
 
 /**
- * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch
+ * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch.
+ * Changes are staged but NOT committed, allowing the developer to review before committing.
  *
  * @param mergeIntoPath - The file path of the repository where the merge is taking place.
  * @param mergeIntoBranch - The target branch to merge into.
  * @param mergeFromBranch - The source branch to merge from.
  *
  * @throws Will throw an error if mergeIntoBranch is not defined or if any git operation fails.
- * @returns A Promise that resolves when the squash merge operation is complete.
+ * @returns A Promise that resolves to the suggested commit message, or null if no changes.
  */
 export async function handleSquashMerge(
   mergeIntoPath: string,
   mergeIntoBranch: string,
   mergeFromBranch: string,
-): Promise<void> {
+): Promise<string | null> {
   if (!mergeIntoBranch) {
     throw new Error('mergeIntoBranch is not defined');
   }
@@ -29,43 +29,39 @@ export async function handleSquashMerge(
   // Get the number of commits to squash
   const commitCount = await getCommitCount(mergeIntoPath, mergeFromBranch, mergeIntoBranch);
 
-  if (commitCount) {
-    // Squash-merge sync-branch into target branch
-    await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true });
+  if (!commitCount) {
+    return null;
+  }
 
-    // Add all changes to staging
-    await gitAddAll(mergeIntoPath);
+  // Squash-merge sync-branch into target branch (stages changes, does not commit)
+  await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true });
 
-    // Get recent commit messages for preview
-    const recentMessages = config.behavior.maxGitPreviewsForSquashCommits
-      ? await getLastCommitMessages(
-          mergeIntoPath,
-          mergeFromBranch,
-          mergeIntoBranch,
-          config.behavior.maxGitPreviewsForSquashCommits,
-        )
-      : [];
+  // Add all changes to staging
+  await gitAddAll(mergeIntoPath);
 
-    // Commit the squashed changes
-    let commitMessage = `Squash ${commitCount} commits from '${mergeFromBranch}' into '${mergeIntoBranch}'`;
+  // Get recent commit messages for preview
+  const recentMessages = config.behavior.maxGitPreviewsForSquashCommits
+    ? await getLastCommitMessages(
+        mergeIntoPath,
+        mergeFromBranch,
+        mergeIntoBranch,
+        config.behavior.maxGitPreviewsForSquashCommits,
+      )
+    : [];
 
-    // Append recent commit messages to the commit message
-    if (recentMessages.length) {
-      const bullets = recentMessages.map((msg) => `- ${msg}`).join('\n');
-      const remaining = commitCount - recentMessages.length;
+  // Build suggested commit message
+  let commitMessage = `Sync upstream: ${commitCount} commit${commitCount > 1 ? 's' : ''} from '${mergeFromBranch}'`;
 
-      commitMessage += `\n\n${bullets}`;
-      if (remaining > 0) {
-        commitMessage += `\n+${remaining} more commit${remaining > 1 ? 's' : ''}`;
-      }
-    }
+  // Append recent commit messages
+  if (recentMessages.length) {
+    const bullets = recentMessages.map((msg) => `- ${msg}`).join('\n');
+    const remaining = commitCount - recentMessages.length;
 
-    // Create the commit
-    await gitCommit(mergeIntoPath, commitMessage, { noVerify: true });
-
-    // Push merge result
-    if (!config.behavior.skipAllPushes && (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch))) {
-      await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
+    commitMessage += `\n\n${bullets}`;
+    if (remaining > 0) {
+      commitMessage += `\n+${remaining} more commit${remaining > 1 ? 's' : ''}`;
     }
   }
+
+  return commitMessage;
 }

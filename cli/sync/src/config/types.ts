@@ -16,7 +16,8 @@ export interface MinimalRepoConfig {
   remoteUrl: string;
 
   /**
-   * Branch name to work with (e.g., 'development').
+   * Main branch name to work with (e.g., 'development').
+   * This is your fork's primary branch where final changes land.
    */
   branch: string;
 
@@ -26,7 +27,10 @@ export interface MinimalRepoConfig {
   remoteName: string;
 
   /**
-   * Branch used for synchronization operations.
+   * Intermediate branch used for sync operations.
+   * Upstream changes are first merged into this branch, conflicts resolved,
+   * then squash-merged into the main branch. This keeps your main branch
+   * history clean while preserving full merge history in the sync branch.
    */
   syncBranch: string;
 }

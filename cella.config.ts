@@ -23,14 +23,14 @@ export const cellaConfig: DeepPartial<SyncConfig> = {
   // ─────────────────────────────────────────────────────────────────────────
   // fork: {
   //   branch: 'development',        // your fork's main branch
-  //   syncBranch: 'sync-branch',    // temporary branch for sync operations
+  //   syncBranch: 'sync-branch',    // intermediate branch for sync (local-only)
+  //                                 // upstream merges here first, then squashes to main
   // },
 
   // ─────────────────────────────────────────────────────────────────────────
   // Sync Behavior Options
   // ─────────────────────────────────────────────────────────────────────────
   // behavior: {
-  //   skipAllPushes: false,                  // skip all git push operations
   //   maxGitPreviewsForSquashCommits: 10,    // max commits to show in squash preview
   //   skipWritingSwizzleMetadataFile: false, // skip writing .swizzle metadata
   // },
