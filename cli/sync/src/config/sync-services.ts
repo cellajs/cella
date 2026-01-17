@@ -27,10 +27,27 @@ export const SERVICES_RUNNING_FROM_LOCAL_FORK: SyncService[] = [
 ];
 
 /**
- * Short descriptions for each sync service.
+ * Get dynamic description for a sync service using config values.
+ */
+export function getSyncServiceDescription(
+  service: SyncService,
+  cfg?: { upstream: { remoteName: string }; fork: { branch: string; syncBranch: string } },
+): string {
+  const descriptions: Record<SyncService, string> = {
+    [SYNC_SERVICES.SYNC]: cfg
+      ? `sync from '${cfg.upstream.remoteName}' → '${cfg.fork.syncBranch}' → '${cfg.fork.branch}'`
+      : 'sync files and packages from upstream to your fork',
+    [SYNC_SERVICES.ANALYZE]: 'read-only analysis for file differences and diverging/conflicting files',
+    [SYNC_SERVICES.VALIDATE]: 'validate your cella.config.ts by checking whether file references exist',
+  };
+  return descriptions[service] || 'no description available';
+}
+
+/**
+ * Static descriptions for menu (before config is loaded).
  */
 export const SYNC_SERVICE_DESCRIPTIONS: Record<SyncService, string> = {
-  [SYNC_SERVICES.SYNC]: 'sync files and packages from upstream to your fork (use --skip-packages to skip package sync)',
+  [SYNC_SERVICES.SYNC]: 'sync files and packages from upstream to your fork',
   [SYNC_SERVICES.ANALYZE]: 'read-only analysis for file differences and diverging/conflicting files',
   [SYNC_SERVICES.VALIDATE]: 'validate your cella.config.ts by checking whether file references exist',
 };

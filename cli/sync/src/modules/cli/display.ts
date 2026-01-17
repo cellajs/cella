@@ -1,6 +1,6 @@
 import pc from 'picocolors';
 import { config } from '../../config';
-import { SYNC_SERVICE_DESCRIPTIONS } from '../../config/sync-services';
+import { getSyncServiceDescription } from '../../config/sync-services';
 import { DIVIDER, getHeaderLine } from '../../constants';
 
 /**
@@ -17,8 +17,8 @@ export function showWelcome() {
  * Shows description; service name is already visible from prompt selection.
  */
 export function showConfiguration() {
-  // Service description
-  const description = SYNC_SERVICE_DESCRIPTIONS[config.syncService] || 'no description available';
+  // Service description (dynamic, using config values)
+  const description = getSyncServiceDescription(config.syncService, config);
   console.info(pc.gray(`↳ ${description}`));
 
   // Debug mode: show extended configuration
