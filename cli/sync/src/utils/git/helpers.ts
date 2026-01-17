@@ -31,11 +31,11 @@ export async function getCommitCount(repoPath: string, sourceBranch: string, bas
  */
 export async function isRepoClean(repoPath: string, ignorePaths?: string[]): Promise<boolean> {
   const status = await gitStatusPorcelain(repoPath);
-  if (status.trim().length === 0) return true;
+  const lines = status.split('\n').filter((line) => line.trim().length > 0);
+  if (lines.length === 0) return true;
   if (!ignorePaths?.length) return false;
 
   // Filter out ignored paths from status output
-  const lines = status.trim().split('\n');
   const relevantChanges = lines.filter((line) => {
     // Porcelain format: XY filename (or XY orig -> new for renames)
     const filePath = line.slice(3).split(' -> ')[0];

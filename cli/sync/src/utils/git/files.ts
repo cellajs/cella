@@ -13,6 +13,21 @@ import {
   gitShowFileAtCommit,
 } from './command';
 
+/** Yield to event loop to allow spinner animation */
+const yieldToEventLoop = () => new Promise((resolve) => setImmediate(resolve));
+
+/** Process items in batches, yielding between batches for UI updates */
+async function processBatched<T, R>(items: T[], batchSize: number, processor: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+    await yieldToEventLoop();
+  }
+  return results;
+}
+
 /**
  * Retrieves all tracked files in a repository (for the specified branch)
  * along with their blob and last commit SHAs.
@@ -33,26 +48,25 @@ import {
  */
 export async function getGitFileHashes(repoPath: string, branchName: string = 'HEAD'): Promise<FileEntry[]> {
   const output = await gitLsTreeRecursive(repoPath, branchName);
-  const lines = output.split('\n');
+  const lines = output.split('\n').filter((line) => line.trim());
 
-  const entries: FileEntry[] = await Promise.all(
-    lines.map(async (line) => {
-      const [meta, filePath] = line.split('\t');
-      const blobSha = meta.split(' ')[2];
-      const shortBlobSha = blobSha.slice(0, 7);
+  // Process in batches of 50 to avoid EBADF and allow spinner animation
+  const entries = await processBatched(lines, 50, async (line) => {
+    const [meta, filePath] = line.split('\t');
+    const blobSha = meta.split(' ')[2];
+    const shortBlobSha = blobSha.slice(0, 7);
 
-      const commitShaOutput = await gitLastCommitShaForFile(repoPath, branchName, filePath);
-      const shortCommitSha = commitShaOutput.slice(0, 7);
+    const commitShaOutput = await gitLastCommitShaForFile(repoPath, branchName, filePath);
+    const shortCommitSha = commitShaOutput.slice(0, 7);
 
-      return {
-        path: filePath,
-        blobSha,
-        shortBlobSha,
-        lastCommitSha: commitShaOutput,
-        shortCommitSha,
-      };
-    }),
-  );
+    return {
+      path: filePath,
+      blobSha,
+      shortBlobSha,
+      lastCommitSha: commitShaOutput,
+      shortCommitSha,
+    };
+  });
 
   return entries;
 }
