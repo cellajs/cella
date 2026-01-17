@@ -1,86 +1,63 @@
-import pc from "picocolors";
-
-import { DESCRIPTION, NAME, VERSION, AUTHOR, GITHUB, WEBSITE, DIVIDER } from "../../constants";
-import { config } from "../../config";
-import { SYNC_SERVICE_DESCRIPTIONS } from "../../config/sync-services";
+import pc from 'picocolors';
+import { config } from '../../config';
+import { SYNC_SERVICE_DESCRIPTIONS } from '../../config/sync-services';
+import { DIVIDER, getHeaderLine } from '../../constants';
 
 /**
- * Display the welcome message for the CLI.
+ * Display the welcome message for the CLI (compact: 2 lines).
  */
 export function showWelcome() {
   console.info();
+  console.info(pc.cyan(getHeaderLine()));
   console.info(DIVIDER);
-  console.info(pc.cyan(NAME));
-  console.info();
-  console.info(pc.gray(DESCRIPTION));
-  console.info(`Cli version ${pc.green(VERSION)}`);
-  console.info(`Created by ${AUTHOR}`);
-  console.info(`${GITHUB} | ${WEBSITE}`);
-  console.info(DIVIDER);
-  console.info();
 }
 
 /**
- * Display the current configuration
+ * Display the current configuration (compact format).
+ * Shows description; service name is already visible from prompt selection.
  */
 export function showConfiguration() {
-  console.info(DIVIDER);
-  console.info(pc.bold('About the script:'));
-  console.info(`${pc.gray(SYNC_SERVICE_DESCRIPTIONS[config.syncService] || 'No description available.')}`);
-  console.info();
+  // Service description
+  const description = SYNC_SERVICE_DESCRIPTIONS[config.syncService] || 'no description available';
+  console.info(pc.gray(`↳ ${description}`));
 
-  console.info(pc.bold('Upstream:'));
-  console.info(`Location: ${pc.bold(config.upstream.location === 'local' ? '💻' : '🌐')} ${pc.cyan(config.upstream.location)}`);
-  console.info(`Repository: ${pc.cyan(config.upstream.repoReference)}`);
-  console.info(`Branch: <${pc.bold(pc.cyan(config.upstream.branch))}>`);
-  console.info(`Remote Name: ${pc.bold('🔗')} ${pc.cyan(config.upstream.remoteName)}`);
-  console.info();
-
-  console.info(pc.bold('Fork:'));
-  console.info(`Location: ${pc.bold(config.fork.location === 'local' ? '💻' : '🌐')} ${pc.cyan(config.fork.location)}`);
-  console.info(`Repository: ${pc.cyan(config.fork.repoReference)}`);
-  console.info(`Branch: <${pc.bold(pc.cyan(config.fork.branch))}>`);
-  console.info(`Sync Branch: <${pc.bold(pc.cyan(config.fork.syncBranch))}>`);
-
-  console.info();
-  console.info(pc.bold('Script configuration:'));
-  showServiceConfiguration();
+  // Debug mode: show extended configuration
+  if (config.debug) {
+    console.info();
+    showServiceConfiguration();
+  }
 
   console.info(DIVIDER);
-  console.info();
-
 }
 
 /**
  * Display the (most important) service-specific configuration.
+ * Only shown in debug mode.
  */
 export function showServiceConfiguration() {
-  console.info(`Working directory: `, pc.cyan(config.workingDirectory));
-  console.info(`Writing Swizzle metadata file: `, `${config.behavior.skipWritingSwizzleMetadataFile ? pc.red('✗ No') :  pc.green('✓ Yes')}`);
+  const parts: string[] = [];
 
-  if (config.syncService === 'diverged') {
-    console.info(`Include files status: `, pc.cyan(`${(config.log.analyzedFile.commitSummaryState || []).join(', ')}`));
+  // Working directory
+  const cwd = config.workingDirectory === process.cwd() ? '.' : config.workingDirectory;
+  parts.push(`cwd=${pc.cyan(cwd)}`);
+
+  // Swizzle metadata
+  parts.push(`swizzle=${config.behavior.skipWritingSwizzleMetadataFile ? pc.red('✗') : pc.green('✓')}`);
+
+  // Service-specific options
+  if (config.syncService === 'sync') {
+    parts.push(`push=${config.behavior.skipAllPushes ? pc.red('✗') : pc.green('✓')}`);
+    parts.push(`pkg=${config.skipPackages ? pc.yellow('skip') : pc.green('✓')}`);
+    parts.push(`squash-max=${pc.cyan(String(config.behavior.maxGitPreviewsForSquashCommits))}`);
   }
 
-  if (config.syncService === 'upstream-fork+packages' || config.syncService === 'packages') {
-    console.info(`Run GIT push: `, `${config.behavior.skipAllPushes ? pc.red('✗ No') : pc.green('✓ Yes')}`);
-    console.info(`Package.json changes: `, `${pc.cyan(config.behavior.packageJsonMode === 'dryRun' ? 'Dry run (only log)' : 'Apply Changes (write, commit)')}`);
-  }
-
-  if (config.syncService === 'upstream-fork' || config.syncService === 'upstream-fork+packages') {
-    console.info(`Run GIT push: `, `${config.behavior.skipAllPushes ? pc.red('✗ No') : pc.green('✓ Yes')}`);
-    console.info(`Squash - max preview commits: `, pc.cyan(config.behavior.maxGitPreviewsForSquashCommits));
-  }
+  console.info(`options: ${parts.join(' │ ')}`);
 }
 
 /**
- * Display the starting sync message.
+ * Display the started message (compact).
  */
-export function showStartingSyncMessage() {
+export function showStartedMessage() {
   console.info();
-  console.info(DIVIDER);
-  console.info(pc.bold(pc.green('✓ Done configuring the sync engine!')));
-  console.info(`Starting <${config.syncService}>`);
-  console.info(DIVIDER);
-  console.info();
+  console.info(`${pc.green('✓')} started ${pc.bold(config.syncService)}`);
 }

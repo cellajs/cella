@@ -1,7 +1,7 @@
-import pc from 'picocolors';
 import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import pc from 'picocolors';
 
 export interface OutdatedPackage {
   current: string;
@@ -77,12 +77,12 @@ export function clearCache(): void {
   try {
     if (fs.existsSync(CACHE_FILE)) {
       fs.unlinkSync(CACHE_FILE);
-      console.info(pc.green('✓ Cache cleared successfully'));
+      console.info(pc.green('✓ cache cleared successfully'));
     } else {
-      console.info(pc.yellow('No cache file found'));
+      console.info(pc.yellow('no cache file found'));
     }
   } catch (err) {
-    console.error(pc.red('Failed to clear cache:'), err);
+    console.error(pc.red('failed to clear cache:'), err);
   }
 }
 
@@ -129,14 +129,7 @@ export function getRepoUrl(data: NpmRegistryData | null): string | null {
 /**
  * Common changelog file paths to check in GitHub repos.
  */
-export const CHANGELOG_PATHS = [
-  'CHANGELOG.md',
-  'CHANGELOG',
-  'changelog.md',
-  'HISTORY.md',
-  'CHANGES.md',
-  'NEWS.md',
-];
+export const CHANGELOG_PATHS = ['CHANGELOG.md', 'CHANGELOG', 'changelog.md', 'HISTORY.md', 'CHANGES.md', 'NEWS.md'];
 
 /** Default branches to check for changelog files. */
 export const DEFAULT_BRANCHES = ['main', 'master'] as const;
@@ -162,9 +155,7 @@ export async function findGitHubFile(repoUrl: string, filePath: string): Promise
   if (!isGitHubRepoUrl(repoUrl)) return null;
 
   for (const branch of DEFAULT_BRANCHES) {
-    const rawUrl = repoUrl
-      .replace('github.com', 'raw.githubusercontent.com')
-      .concat(`/${branch}/${filePath}`);
+    const rawUrl = repoUrl.replace('github.com', 'raw.githubusercontent.com').concat(`/${branch}/${filePath}`);
 
     try {
       const response = await fetch(rawUrl, { method: 'HEAD' });
@@ -183,7 +174,7 @@ export async function findGitHubFile(repoUrl: string, filePath: string): Promise
 export async function findChangelogUrl(
   repoUrl: string | null,
   packageName: string,
-  cache: ChangelogCache
+  cache: ChangelogCache,
 ): Promise<string | null> {
   if (!isGitHubRepoUrl(repoUrl)) return null;
 
@@ -249,11 +240,11 @@ export function getOutdatedPackages(): Record<string, OutdatedPackage> {
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
     });
-    
+
     if (!result || result.trim() === '') {
       return {};
     }
-    
+
     return JSON.parse(result);
   } catch (error) {
     // pnpm outdated exits with code 1 when there are outdated packages
@@ -292,13 +283,13 @@ export async function runOutdated(clearCacheFlag = false) {
     return;
   }
 
-  console.info(pc.cyan('\n📦 Checking for outdated packages...\n'));
+  console.info(pc.cyan('\n📦 checking for outdated packages...\n'));
 
   const outdatedPackages = getOutdatedPackages();
   const packageNames = Object.keys(outdatedPackages);
 
   if (packageNames.length === 0) {
-    console.info(pc.green('✓ All packages are up to date!'));
+    console.info(pc.green('✓ all packages are up to date'));
     return;
   }
 
@@ -310,7 +301,7 @@ export async function runOutdated(clearCacheFlag = false) {
   }).length;
 
   const cacheInfo = uncachedCount > 0 ? ` (${uncachedCount} uncached)` : ' (all cached)';
-  console.info(pc.yellow(`Found ${packageNames.length} outdated package(s).${cacheInfo} Fetching metadata...\n`));
+  console.info(pc.yellow(`found ${packageNames.length} outdated package(s)${cacheInfo} - fetching metadata...\n`));
 
   // Pre-cache package.json reads for dependent names
   const dependentNameCache = new Map<string, string>();
@@ -353,7 +344,7 @@ export async function runOutdated(clearCacheFlag = false) {
           changelogUrl,
           releasesUrl: getReleasesUrl(repoUrl),
         };
-      })
+      }),
     );
     enhancedPackages.push(...results);
   }
@@ -369,25 +360,22 @@ export async function runOutdated(clearCacheFlag = false) {
   });
 
   // Print enhanced table
-  console.info(pc.bold('Outdated Packages:\n'));
+  console.info(pc.bold('outdated packages:\n'));
 
   // Calculate column widths (include dev tag in name width calculation)
   const DEV_TAG = ' (dev)';
-  const maxNameLen = Math.max(
-    ...enhancedPackages.map((p) => p.name.length + (p.isDev ? DEV_TAG.length : 0)),
-    7
-  );
+  const maxNameLen = Math.max(...enhancedPackages.map((p) => p.name.length + (p.isDev ? DEV_TAG.length : 0)), 7);
   const maxCurrentLen = Math.max(...enhancedPackages.map((p) => p.current.length), 7);
   const maxLatestLen = Math.max(...enhancedPackages.map((p) => p.latest.length), 6);
   const maxDependentsLen = Math.max(...enhancedPackages.map((p) => p.dependents.length), 10);
 
   // Header
   const header = [
-    pc.bold('Package'.padEnd(maxNameLen)),
-    pc.bold('Current'.padEnd(maxCurrentLen)),
-    pc.bold('Latest'.padEnd(maxLatestLen)),
-    pc.bold('Dependents'.padEnd(maxDependentsLen)),
-    pc.bold('Links'),
+    pc.bold('package'.padEnd(maxNameLen)),
+    pc.bold('current'.padEnd(maxCurrentLen)),
+    pc.bold('latest'.padEnd(maxLatestLen)),
+    pc.bold('dependents'.padEnd(maxDependentsLen)),
+    pc.bold('links'),
   ].join('  │  ');
 
   console.info(header);
@@ -427,16 +415,16 @@ export async function runOutdated(clearCacheFlag = false) {
 
   console.info('\n' + '─'.repeat(60));
   console.info(
-    pc.bold('Summary: ') +
-    `${prodCount} production` +
-    pc.dim(' + ') +
-    `${devCount} dev` +
-    pc.dim(' dependencies need updates') +
-    (majorCount > 0 ? pc.dim(' (') + pc.bold(pc.green(`${majorCount} major`)) + pc.dim(')') : '')
+    pc.bold('summary: ') +
+      `${prodCount} production` +
+      pc.dim(' + ') +
+      `${devCount} dev` +
+      pc.dim(' dependencies need updates') +
+      (majorCount > 0 ? pc.dim(' (') + pc.bold(pc.green(`${majorCount} major`)) + pc.dim(')') : ''),
   );
 
   // Package.json links with counts by dependent name
-  console.info(pc.bold('\nPackages by dependent:'));
+  console.info(pc.bold('\npackages by dependent:'));
   // Build map of dependent name -> { location, count } using pre-cached names
   const dependentMap = new Map<string, { location: string; count: number }>();
   for (const pkg of enhancedPackages) {
@@ -457,10 +445,12 @@ export async function runOutdated(clearCacheFlag = false) {
     const packageJsonPath = path.join(location, 'package.json');
     const relativePath = path.relative(process.cwd(), packageJsonPath);
     const paddedName = dependentName.padEnd(maxDependentNameLen);
-    console.info(`  ${pc.dim('•')} ${paddedName}  ${terminalLink(pc.cyan(relativePath), `file://${packageJsonPath}`)} ${pc.dim(`(${count})`)}`);
+    console.info(
+      `  ${pc.dim('•')} ${paddedName}  ${terminalLink(pc.cyan(relativePath), `file://${packageJsonPath}`)} ${pc.dim(`(${count})`)}`,
+    );
   }
 
-  console.info(pc.dim(`\nTip: Use --refresh to re-fetch changelog locations\n`));
+  console.info(pc.dim(`\ntip: use --refresh to re-fetch changelog locations\n`));
 }
 
 // Allow direct execution

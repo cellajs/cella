@@ -1,6 +1,6 @@
+import { confirm } from '@inquirer/prompts';
 import { gitCheckout, gitRebase, isRebaseInProgress } from '../../utils/git/command';
 import { getUnmergedFiles } from '../../utils/git/files';
-import { confirm } from '@inquirer/prompts';
 
 /**
  * Rebases the target branch (e.g., squash commit) back into the fork's sync branch.
@@ -8,7 +8,7 @@ import { confirm } from '@inquirer/prompts';
  * Any conflicts that arise will prompt the user to resolve them manually.
  *
  * @param forkConfig - Configuration of the fork repository.
- * 
+ *
  * @returns A promise that resolves when the rebase process is complete.
  *
  * @example
@@ -33,7 +33,7 @@ export async function handleRebase(
  * Starts the merge process between the fork and upstream repositories.
  * @param forkConfig - RepoConfig of the forked repo
  * @param upstreamConfig - RepoConfig of the upstream repo
- * 
+ *
  * @throws Will throw an error if the rebase fails for reasons other than conflicts.
  * @returns A promise that resolves when the rebase is initiated.
  */
@@ -55,7 +55,7 @@ async function startRebase(rebaseIntoPath: string, rebaseFromBranch: string) {
  *
  * @param rebaseIntoPath - Configuration of the fork repository.
  * @param rebaseFromBranch - The branch being rebased from.
- * 
+ *
  * @throws Will throw an error if the user decides to abort the rebase process.
  * @returns A promise that resolves when all conflicts are resolved.
  */
@@ -73,12 +73,12 @@ async function waitForManualConflictResolution(rebaseIntoPath: string, rebaseFro
   }
 
   const proceed = await confirm({
-    message: `Please resolve ${conflicts.length} Rebase conflicts manually (In another terminal). Once resolved, press "y" to continue.`,
+    message: `please resolve ${conflicts.length} rebase conflicts manually (in another terminal). once resolved, press "y" to continue`,
     default: true,
   });
 
   if (!proceed) {
-    throw new Error('Rebase process aborted by user.');
+    throw new Error('rebase process aborted by user');
   }
 
   // Recursively check until no conflicts remain

@@ -4,7 +4,7 @@ import { detectRemovedSwizzle } from './detect-removed';
 
 /**
  * Detects if a file has been swizzled (edited or removed).
- * 
+ *
  * @param analyzedFile - The analyzed file to check for swizzling.
  * @returns A SwizzleEntry if the file is swizzled, otherwise null.
  */

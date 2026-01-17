@@ -57,7 +57,6 @@
     "test:full": "pnpm docker:test && pnpm --filter backend test:full && pnpm --filter frontend test && pnpm --filter @cellajs/sync test",
     "test:update": "pnpm --filter backend exec vitest run -u && pnpm --filter frontend exec vitest run -u",
     "sync": "tsx ./cli/sync/src/index.ts",
-    "diverged": "tsx ./cli/sync/src/index.ts --sync-service diverged",
     "deps:update": "pnpm -r update",
     "deps:outdated": "tsx ./cli/sync/src/run-outdated.ts"
   },

@@ -64,7 +64,7 @@ export interface MinimalLogConfig {
      * Filters to filter analyzed files by merge strategy strategy
      */
     mergeStrategyStrategy?: NonNullable<FileAnalysis['mergeStrategy']>['strategy'][];
-  },
+  };
   /**
    * Filters to filter analyzed swizzle entries
    */
@@ -79,7 +79,7 @@ export interface MinimalLogConfig {
      * Dont include to log all files
      */
     swizzled?: boolean;
-  }
+  };
 }
 
 /**
@@ -129,27 +129,27 @@ export interface MinimalOverridesConfig {
    * Local file system path (directory) to find metadata in
    */
   localDir: string;
-  
+
   /**
    * Version of the overrides metadata format (update when schema changes)
    */
-  metadataVersion: string,
+  metadataVersion: string;
 
   /**
    * Default metadata file name
    * Stores information about auto-detected overridden files
    */
-  metadataFileName: string,
+  metadataFileName: string;
 
   /**
    * Files customized in fork; prefer fork version during merge conflicts
    */
-  customized: string[],
+  customized: string[];
 
   /**
    * Files and directories to be fully ignored during sync
    */
-  ignored: string[],
+  ignored: string[];
 }
 
 /**
@@ -161,6 +161,16 @@ export interface SyncConfig {
    * Type of synchronization service being used.
    */
   syncService: SyncService;
+
+  /**
+   * Whether debug mode is enabled (verbose output).
+   */
+  debug: boolean;
+
+  /**
+   * Whether to skip package.json sync during sync service.
+   */
+  skipPackages: boolean;
 
   /**
    * Configuration for the forked repository.
@@ -177,17 +187,17 @@ export interface SyncConfig {
   /**
    * Configuration for logging analyzed results.
    */
-  log: MinimalLogConfig,
+  log: MinimalLogConfig;
 
   /**
    * Configuration for specifying behavior during sync operations.
    */
-  behavior: MinimalBehaviorConfig,
+  behavior: MinimalBehaviorConfig;
 
   /**
    * Configuration related to overrides metadata and settings files.
    */
-  overrides: MinimalOverridesConfig,
+  overrides: MinimalOverridesConfig;
 }
 
 /** Alias for SyncConfig (lowercase convention) */
@@ -196,9 +206,8 @@ export type syncConfig = SyncConfig;
 /**
  * A utility type that makes all properties of a given type T optional, including nested properties.
  */
-export type DeepPartial<T> =
-  T extends (infer U)[]       // If T is an array
-    ? DeepPartial<U>[]        // Make its elements DeepPartial, but keep array shape
-    : T extends object        // If T is an object
-      ? { [P in keyof T]?: DeepPartial<T[P]> }
-      : T;                    // Otherwise primitive — leave as-is
+export type DeepPartial<T> = T extends (infer U)[] // If T is an array
+  ? DeepPartial<U>[] // Make its elements DeepPartial, but keep array shape
+  : T extends object // If T is an object
+    ? { [P in keyof T]?: DeepPartial<T[P]> }
+    : T; // Otherwise primitive — leave as-is

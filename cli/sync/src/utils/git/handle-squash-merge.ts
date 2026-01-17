@@ -1,16 +1,16 @@
 import { config } from '../../config';
 
-import { gitCheckout, gitMerge, gitCommit, gitAddAll, gitPush } from '../../utils/git/command';
+import { gitAddAll, gitCheckout, gitCommit, gitMerge, gitPush } from '../../utils/git/command';
 import { getCommitCount, getLastCommitMessages } from '../../utils/git/helpers';
 import { hasRemoteBranch } from './branches';
 
 /**
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch
- * 
+ *
  * @param mergeIntoPath - The file path of the repository where the merge is taking place.
  * @param mergeIntoBranch - The target branch to merge into.
  * @param mergeFromBranch - The source branch to merge from.
- * 
+ *
  * @throws Will throw an error if mergeIntoBranch is not defined or if any git operation fails.
  * @returns A Promise that resolves when the squash merge operation is complete.
  */
@@ -37,19 +37,21 @@ export async function handleSquashMerge(
     await gitAddAll(mergeIntoPath);
 
     // Get recent commit messages for preview
-    const recentMessages = config.behavior.maxGitPreviewsForSquashCommits ? await getLastCommitMessages(
-      mergeIntoPath,
-      mergeFromBranch,
-      mergeIntoBranch,
-      config.behavior.maxGitPreviewsForSquashCommits,
-    ) : [];
+    const recentMessages = config.behavior.maxGitPreviewsForSquashCommits
+      ? await getLastCommitMessages(
+          mergeIntoPath,
+          mergeFromBranch,
+          mergeIntoBranch,
+          config.behavior.maxGitPreviewsForSquashCommits,
+        )
+      : [];
 
     // Commit the squashed changes
     let commitMessage = `Squash ${commitCount} commits from '${mergeFromBranch}' into '${mergeIntoBranch}'`;
 
     // Append recent commit messages to the commit message
     if (recentMessages.length) {
-      const bullets = recentMessages.map(msg => `- ${msg}`).join('\n');
+      const bullets = recentMessages.map((msg) => `- ${msg}`).join('\n');
       const remaining = commitCount - recentMessages.length;
 
       commitMessage += `\n\n${bullets}`;
@@ -62,7 +64,7 @@ export async function handleSquashMerge(
     await gitCommit(mergeIntoPath, commitMessage, { noVerify: true });
 
     // Push merge result
-    if (!config.behavior.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+    if (!config.behavior.skipAllPushes && (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch))) {
       await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
     }
   }

@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises';
-
+import { CommitEntry, FileEntry } from '../../types';
 import {
   gitAdd,
   gitCheckoutOursFilePath,
@@ -13,8 +13,6 @@ import {
   gitShowFileAtCommit,
 } from './command';
 
-import { FileEntry, CommitEntry } from '../../types';
-
 /**
  * Retrieves all tracked files in a repository (for the specified branch)
  * along with their blob and last commit SHAs.
@@ -25,7 +23,7 @@ import { FileEntry, CommitEntry } from '../../types';
  *
  * @param repoPath - The file system path to the Git repository
  * @param branchName - The name of the branch to inspect (defaults to `'HEAD'`)
- * 
+ *
  * @returns An array of {@link FileEntry} objects containing file paths and SHA info
  *
  * @example
@@ -53,7 +51,7 @@ export async function getGitFileHashes(repoPath: string, branchName: string = 'H
         lastCommitSha: commitShaOutput,
         shortCommitSha,
       };
-    })
+    }),
   );
 
   return entries;
@@ -67,14 +65,18 @@ export async function getGitFileHashes(repoPath: string, branchName: string = 'H
  * @param repoPath - The file system path to the Git repository
  * @param branchName - The branch name to inspect
  * @param filePath - The file path to retrieve commit history for
- * 
+ *
  * @returns An array of {@link CommitEntry} objects containing commit SHAs and dates
  *
  * @example
  * const history = await getFileCommitHistory('/repo', 'main', 'src/app.ts');
  * console.info(history[0]); // { sha: 'abc123...', date: '2024-12-01T10:20:30Z' }
  */
-export async function getFileCommitHistory(repoPath: string, branchName: string, filePath: string): Promise<CommitEntry[]> {
+export async function getFileCommitHistory(
+  repoPath: string,
+  branchName: string,
+  filePath: string,
+): Promise<CommitEntry[]> {
   const output = await gitLogFileHistory(repoPath, branchName, filePath);
   return output
     .trim()
@@ -94,7 +96,7 @@ export async function getFileCommitHistory(repoPath: string, branchName: string,
  * @param commitSha - The commit SHA to extract the file from
  * @param filePath - The file path inside the repository
  * @param outputPath - The output path where the file content will be written
- * 
+ *
  * @returns A promise that resolves when the file has been written
  *
  * @example
@@ -104,7 +106,7 @@ export async function writeGitFileAtCommit(
   repoPath: string,
   commitSha: string,
   filePath: string,
-  outputPath: string
+  outputPath: string,
 ): Promise<void> {
   // Use git show to get the file content at the specific commit
   const output = await gitShowFileAtCommit(repoPath, commitSha, filePath);
@@ -118,7 +120,7 @@ export async function writeGitFileAtCommit(
  * Internally runs `git diff --name-only --diff-filter=U`.
  *
  * @param repoPath - The file system path to the Git repository
- * 
+ *
  * @returns An array of file paths that are currently unmerged
  *
  * @example
@@ -130,13 +132,12 @@ export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
   return output ? output.split('\n').filter(Boolean) : [];
 }
 
-
 /**
  * Lists all files that are currently staged for commit.
  * Internally runs `git diff --name-only --cached`.
  *
  * @param repoPath - The file system path to the Git repository
- * 
+ *
  * @returns An array of staged file paths
  *
  * @example
@@ -154,7 +155,7 @@ export async function getCachedFiles(repoPath: string): Promise<string[]> {
  * @param repoPath - The file system path to the Git repository
  * @param commitSha - The commit SHA to inspect
  * @param filePath - The path to the file to check
- * 
+ *
  * @returns The blob SHA of the file at that commit, or `null` if it doesn’t exist
  *
  * @example
@@ -164,7 +165,7 @@ export async function getCachedFiles(repoPath: string): Promise<string[]> {
 export async function getFileBlobShaAtCommit(
   repoPath: string,
   commitSha: string,
-  filePath: string
+  filePath: string,
 ): Promise<string | null> {
   const output = await gitLsTreeRecursiveAtCommit(repoPath, commitSha);
   const lines = output.split('\n').filter(Boolean);
@@ -179,7 +180,7 @@ export async function getFileBlobShaAtCommit(
   }
 
   // file does not exist in this commit
-  return null; 
+  return null;
 }
 
 /**
@@ -192,7 +193,7 @@ export async function getFileBlobShaAtCommit(
  *
  * @param repoPath - The file system path to the Git repository
  * @param filePath - The path to the conflicted file
- * 
+ *
  * @returns A promise that resolves when the conflict has been resolved
  *
  * @example
@@ -213,7 +214,7 @@ export async function resolveConflictAsOurs(repoPath: string, filePath: string):
  *
  * @param repoPath - The file system path to the Git repository
  * @param filePath - The path to the conflicted file
- * 
+ *
  * @returns A promise that resolves when the conflict has been resolved
  *
  * @example

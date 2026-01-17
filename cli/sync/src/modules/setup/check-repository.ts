@@ -1,17 +1,17 @@
-import path from "node:path";
+import path from 'node:path';
 
-import { config, RepoConfig } from "../../config";
-import { isDirectory } from "../../utils/files";
-import { gitLsRemote, gitRevParseIsInsideWorkTree } from "../../utils/git/command";
+import { config, RepoConfig } from '../../config';
+import { isDirectory } from '../../utils/files';
+import { gitLsRemote, gitRevParseIsInsideWorkTree } from '../../utils/git/command';
 
 /**
  * Checks the repository connectivity and accessibility.
- * 
+ *
  * @param repoConfig - The repository configuration
- * 
+ *
  * @throws If connectivity validation fails
  * @returns void
- * 
+ *
  * @example
  * await checkRepository(upstreamConfig);
  */
@@ -22,7 +22,7 @@ export async function checkRepository(repoConfig: RepoConfig) {
   }
 
   // Directory must contain a .git folder
-  if (!(await isDirectory(path.join(repoConfig.workingDirectory, ".git")))) {
+  if (!(await isDirectory(path.join(repoConfig.workingDirectory, '.git')))) {
     throw new Error(`.git directory missing in: ${repoConfig.workingDirectory}`);
   }
 
@@ -35,7 +35,10 @@ export async function checkRepository(repoConfig: RepoConfig) {
   }
 
   // When remote repository OR we need to push remote, check if we can access it (e.g., via GitHub API)
-  if (repoConfig.location === 'remote' || (!config.behavior.skipAllPushes && config.workingDirectory === repoConfig.workingDirectory)) {
+  if (
+    repoConfig.location === 'remote' ||
+    (!config.behavior.skipAllPushes && config.workingDirectory === repoConfig.workingDirectory)
+  ) {
     if (!repoConfig.remoteUrl) {
       throw new Error(`Remote URL is not defined for repository at "${repoConfig.workingDirectory}"`);
     }
@@ -43,7 +46,9 @@ export async function checkRepository(repoConfig: RepoConfig) {
     try {
       await gitLsRemote(repoConfig.workingDirectory, repoConfig.remoteUrl);
     } catch (e) {
-      throw new Error(`Failed to access remote repository at "${repoConfig.remoteUrl}" in "${repoConfig.workingDirectory}"`);
+      throw new Error(
+        `Failed to access remote repository at "${repoConfig.remoteUrl}" in "${repoConfig.workingDirectory}"`,
+      );
     }
   }
 }

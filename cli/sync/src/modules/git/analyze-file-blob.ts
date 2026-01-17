@@ -1,4 +1,4 @@
-import { FileEntry, FileAnalysis } from "../../types";
+import { FileAnalysis, FileEntry } from '../../types';
 
 /**
  * Determines the blob status of a file in the fork repository compared to the upstream.
@@ -14,11 +14,7 @@ import { FileEntry, FileAnalysis } from "../../types";
  * - `'identical'` — the file exists and its contents match the upstream.
  * - `'different'` — the file exists but its contents differ from the upstream.
  */
-export function analyzeFileBlob(
-  upstreamFile: FileEntry,
-  forkFile?: FileEntry
-): FileAnalysis["blobStatus"] {
-
+export function analyzeFileBlob(upstreamFile: FileEntry, forkFile?: FileEntry): FileAnalysis['blobStatus'] {
   if (!forkFile) {
     return 'missing';
   }

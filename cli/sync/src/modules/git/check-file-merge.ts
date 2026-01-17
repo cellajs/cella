@@ -1,24 +1,24 @@
 import * as path from 'path';
-import { FileAnalysis } from "../../types";
 import { RepoConfig } from '../../config';
+import { FileAnalysis } from '../../types';
 import { createTempDir, isBinaryFile, removeDir } from '../../utils/files';
-import { writeGitFileAtCommit } from '../../utils/git/files';
 import { gitMergeFile } from '../../utils/git/command';
+import { writeGitFileAtCommit } from '../../utils/git/files';
 
 /**
  * Checks whether Git can automatically merge a specific file
  * between a fork and an upstream repository without conflicts.
- * 
+ *
  * @param upstream - Repo config for the upstream
  * @param fork - Repo config for the fork
  * @param analysis - The file analysis object
- * 
+ *
  * @returns `true` if Git can auto-merge the file; `false` if a merge conflict is expected
  */
 export async function checkFileAutomerge(
   upstream: RepoConfig,
   fork: RepoConfig,
-  fileAnalysis: FileAnalysis
+  fileAnalysis: FileAnalysis,
 ): Promise<Boolean> {
   // Destructure necessary properties from the analysis object
   const { filePath, forkFile, upstreamFile, commitSummary } = fileAnalysis;
@@ -60,7 +60,7 @@ export async function checkFileAutomerge(
     if (error.code === 1) {
       return false;
     }
-    return false
+    return false;
   } finally {
     await removeDir(tmpDir);
   }

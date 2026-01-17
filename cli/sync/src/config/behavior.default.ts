@@ -1,4 +1,4 @@
-import { MinimalBehaviorConfig } from "./types";
+import { MinimalBehaviorConfig } from './types';
 
 /**
  * Configuration for specifying behavior during sync operations
@@ -34,4 +34,4 @@ export const behaviorDefaultConfig: MinimalBehaviorConfig = {
    * Description: Maximum number of git previews for Squash commits.
    */
   maxGitPreviewsForSquashCommits: 30,
-}
+};

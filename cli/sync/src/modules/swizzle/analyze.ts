@@ -1,15 +1,15 @@
-import { FileAnalysis, SwizzleAnalysis, SwizzleEntry } from "../../types";
-import { detectSwizzles } from "./detect";
-import { getSwizzleMetadata } from "./metadata";
-import { getFlaggedAs } from "./settings";
+import { FileAnalysis, SwizzleAnalysis, SwizzleEntry } from '../../types';
+import { detectSwizzles } from './detect';
+import { getSwizzleMetadata } from './metadata';
+import { getFlaggedAs } from './settings';
 
 /**
  * Run swizzle analysis on an analyzed file
- * 
+ *
  * @todo: Check what to do if existing metadata is invalid
- * 
+ *
  * @param analyzedFile The analyzed file data
- * 
+ *
  * @returns The swizzle analysis result
  */
 export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
@@ -44,10 +44,10 @@ export function analyzeSwizzle(analyzedFile: FileAnalysis): SwizzleAnalysis {
 
 /**
  * Check if existing swizzle metadata is still valid
- * 
+ *
  * @param entry - The existing swizzle entry
  * @param analyzedFile - The analyzed file data
- * 
+ *
  * @returns A boolean indicating if the existing metadata is valid
  */
 function isSwizzleMetadataValid(entry: SwizzleEntry, analyzedFile: FileAnalysis): boolean {
@@ -66,9 +66,9 @@ function isSwizzleMetadataValid(entry: SwizzleEntry, analyzedFile: FileAnalysis)
 
 /**
  * Retrieve all swizzle entries from an array of analyzed files
- * 
+ *
  * @param analyzedFiles - The array of analyzed file data
- * 
+ *
  * @returns An array of swizzle entries extracted from the analyzed files
  */
 export function extractSwizzleEntries(analyzedFiles: FileAnalysis[]): SwizzleEntry[] {

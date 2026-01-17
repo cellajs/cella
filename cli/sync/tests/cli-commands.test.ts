@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { InvalidArgumentError } from 'commander';
+import { describe, expect, it } from 'vitest';
 import {
   validateBranchName,
-  validateSyncService,
   validateLocation,
-  validateRemoteName
+  validateRemoteName,
+  validateSyncService,
 } from '../src/modules/cli/commands';
-import { InvalidArgumentError } from 'commander';
 
 describe('validateBranchName', () => {
   it('should accept valid branch names', () => {

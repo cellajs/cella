@@ -1,19 +1,17 @@
-import { config } from "../../config";
-
-import { gitCheckout, gitFetch, gitPull } from "../../utils/git/command";
-import { hasRemoteBranch } from "../../utils/git/branches";
-import { RepoConfig } from "../../config";
-import { checkCleanState } from "./check-clean-state";
+import { config, RepoConfig } from '../../config';
+import { hasRemoteBranch } from '../../utils/git/branches';
+import { gitCheckout, gitFetch, gitPull } from '../../utils/git/command';
+import { checkCleanState } from './check-clean-state';
 
 /**
  * Ensures the latest changes are fetched for the repository.
  * - For remote repositories, performs a git fetch.
  * - For local repositories, pulls the latest changes for the main and target branches.
  * Also ensures the working directory is clean after pulling.
- * 
+ *
  * @param repoConfig - The repository configuration
  * @returns Promise that resolves when the latest changes are fetched
- * 
+ *
  * @example
  * await fetchLatestChanges(upstreamConfig);
  */
@@ -37,10 +35,10 @@ export async function fetchLatestChanges(repoConfig: RepoConfig) {
  * Handles pulling the latest changes for a local repository.
  * Also ensures the upstream remote exists before pulling.
  * And ensures the working directory is clean after pulling.
- * 
+ *
  * @param localPath - The file system path to the repository
  * @param branchName - The name of the branch to pull changes for
- * 
+ *
  * @throws If the upstream remote is missing and the configuration dictates to error
  * @returns Promise that resolves when the pull operation is complete
  */

@@ -1,20 +1,19 @@
 import { confirm } from '@inquirer/prompts';
 
 import { config } from '../../config';
-
-import { gitMerge, isMergeInProgress, gitCommit, gitCheckout, gitPush } from './command';
+import { hasRemoteBranch } from './branches';
+import { gitCheckout, gitCommit, gitMerge, gitPush, isMergeInProgress } from './command';
 import { getUnmergedFiles } from './files';
 import { hasAnythingToCommit } from './helpers';
-import { hasRemoteBranch } from './branches';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
- * 
+ *
  * @param mergeIntoPath - The file path of the repository where the merge is taking place.
  * @param mergeIntoBranch - The target branch to merge into.
  * @param mergeFromBranch - The source branch to merge from.
  * @param resolveConflicts - Optional function to automatically resolve conflicts.
- * 
+ *
  * @throws Will throw an error if any git operation fails.
  * @returns A Promise that resolves when the merge process is complete.
  */
@@ -45,17 +44,17 @@ export async function handleMerge(
   }
 
   // Push merge result
-  if (!config.behavior.skipAllPushes && await hasRemoteBranch(mergeIntoPath, mergeIntoBranch)) {
+  if (!config.behavior.skipAllPushes && (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch))) {
     await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
   }
 }
 
 /**
  * Starts the merge process between the fork and upstream repositories.
- * 
+ *
  * @param forkConfig - RepoConfig of the forked repo
  * @param upstreamConfig - RepoConfig of the upstream repo
- * 
+ *
  * @throws Will throw an error if the merge fails for reasons other than conflicts.
  * @returns A Promise that resolves when the merge process is initiated.
  */
@@ -73,9 +72,9 @@ async function startMerge(mergeIntoPath: string, mergeFromBranch: string, { allo
 /**
  * Resolves merge conflicts based on the provided analyzed files and their strategies.
  * If conflicts remain after automatic resolution, prompts the user to resolve them manually.
- * 
+ *
  * @param mergeIntoPath - The file path of the repository where the merge is taking place.
- * 
+ *
  * @throws Will throw an error if the user chooses to abort the merge process.
  * @returns A Promise that resolves when all conflicts are resolved.
  */
@@ -87,12 +86,12 @@ async function waitForManualConflictResolution(mergeIntoPath: string) {
   // When there are still conflicts, notify user to resolve them
   if (conflicts.length > 0) {
     const continueResolving = await confirm({
-      message: `Please resolve ${conflicts.length} merge conflicts manually (In another terminal). Once resolved, press "y" to continue.`,
+      message: `please resolve ${conflicts.length} merge conflicts manually (in another terminal). once resolved, press "y" to continue`,
       default: true,
     });
 
     if (!continueResolving) {
-      throw new Error('Merge process aborted by user.');
+      throw new Error('merge process aborted by user');
     }
 
     return waitForManualConflictResolution(mergeIntoPath);

@@ -1,11 +1,11 @@
 // Import package.json dynamically for version and website information
-import packageJson from '../package.json' assert { type: 'json' };
+import packageJson from '../package.json' with { type: 'json' };
 
 // Name of this CLI tool
 export const NAME = 'cella sync';
 
-// Divider string for console output
-export const DIVIDER = '-------------------------------';
+// Thin line divider for console output (68 chars wide)
+export const DIVIDER = '─'.repeat(60);
 
 // package.json Description, Version, Author, Website, and GitHub Repository URL
 export const DESCRIPTION: string = packageJson.description;
@@ -13,3 +13,11 @@ export const VERSION: string = packageJson.version;
 export const AUTHOR: string = packageJson.author;
 export const WEBSITE: string = packageJson.homepage;
 export const GITHUB: string = packageJson.repository.url;
+
+/** Compact header line: "⚡ cella sync v0.0.1" right-aligned with website */
+export function getHeaderLine(): string {
+  const left = `⚡${NAME} v${VERSION}`;
+  const right = packageJson.homepage.replace('https://', '');
+  const padding = Math.max(1, 60 - left.length - right.length);
+  return `${left}${' '.repeat(padding)}${right}`;
+}

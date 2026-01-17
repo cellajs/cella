@@ -1,19 +1,18 @@
 import pc from 'picocolors';
-
-import { FileAnalysis } from '../types';
 import { config } from '../config';
+import { FileAnalysis } from '../types';
 
 /**
  * Generates summary lines from the analyzed files.
- * 
+ * Returns a compact single-line summary with inline badges.
+ *
  * @param analyzedFiles - Array of FileAnalysis objects.
- * 
- * @returns An array of summary lines.
+ *
+ * @returns An array of summary lines (single line in compact format).
  */
 export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
-
   // Initialize summary counts
-  const Summary: Record<string, number> = {
+  const summary = {
     totalFiles: 0,
     upToDate: 0,
     ahead: 0,
@@ -23,50 +22,62 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     unknown: 0,
     swizzled: 0,
     swizzledNew: 0,
-  }
+  };
 
   for (const file of analyzedFiles) {
     // Increment total files count
-    Summary.totalFiles++;
+    summary.totalFiles++;
 
     // Increment count based on git status
     const gitStatus = file.commitSummary?.status || 'unknown';
 
-    if (gitStatus in Summary) {
-      Summary[gitStatus]++;
+    if (gitStatus in summary) {
+      (summary as Record<string, number>)[gitStatus]++;
     } else {
-      Summary.unknown++;
+      summary.unknown++;
     }
 
     // Increment swizzle counts
     const swizzle = file.swizzle;
     if (swizzle) {
       if (swizzle?.existingMetadata?.swizzled || swizzle?.newMetadata?.swizzled) {
-        Summary.swizzled++;
+        summary.swizzled++;
 
         if (swizzle.newMetadata?.swizzled) {
-          Summary.swizzledNew++;
+          summary.swizzledNew++;
         }
       }
     }
   }
 
-  // Construct and return summary lines
-  return [
-    `  Total Files: ${pc.bold(Summary.totalFiles)}`,
-    `  Up to Date: ${pc.bold(pc.green(Summary.upToDate))}`,
-    `  Ahead: ${pc.bold(pc.green(Summary.ahead))}`,
-    `  Behind: ${pc.bold(pc.yellow(Summary.behind))}`,
-    `  Diverged: ${pc.bold(pc.red(Summary.diverged))}`,
-    `  Unrelated: ${pc.bold(pc.red(Summary.unrelated))}`,
-    `  Unknown: ${pc.bold(pc.red(Summary.unknown))}`,
-    `  Swizzled: ${pc.bold(pc.cyan(Summary.swizzled))} (${pc.bold(pc.cyan(Summary.swizzledNew))} new swizzles)`,
+  // Build compact inline badge summary
+  // Format: 247 files │ ✓180 synced  ↑5 ahead  ↓42 behind  ⚡15 diverged  ⚠5 unrelated │ 🔧23 swizzled
+  const badges = [
+    pc.green(`✓${summary.upToDate} synced`),
+    pc.green(`↑${summary.ahead} ahead`),
+    pc.yellow(`↓${summary.behind} behind`),
+    pc.red(`⚡${summary.diverged} diverged`),
+    pc.red(`⚠${summary.unrelated} unrelated`),
   ];
+
+  // Only show unknown if > 0
+  if (summary.unknown > 0) {
+    badges.push(pc.red(`?${summary.unknown} unknown`));
+  }
+
+  const swizzleInfo =
+    summary.swizzledNew > 0
+      ? pc.cyan(`🔧${summary.swizzled} swizzled (${summary.swizzledNew} new)`)
+      : pc.cyan(`🔧${summary.swizzled} swizzled`);
+
+  const line = `${pc.bold(summary.totalFiles)} files │ ${badges.join('  ')} │ ${swizzleInfo}`;
+
+  return [line];
 }
 
 /**
  * Determines if the analyzed summary module should be logged based on the configuration.
- * 
+ *
  * @returns Whether the analyzed summary module should be logged.
  */
 export function shouldLogAnalyzedSummaryModule(): boolean {
@@ -75,15 +86,15 @@ export function shouldLogAnalyzedSummaryModule(): boolean {
   if (!logModulesConfigured) {
     return true;
   }
-  
+
   return config.log.modules?.includes('analyzedSummary') || false;
 }
 
-/** 
+/**
  * Logs the analyzed summary lines to the console based on the configuration.
- * 
+ *
  * @param lines - Array of summary lines to log.
- * 
+ *
  * @returns void
  */
 export function logAnalyzedSummaryLines(lines: string[]): void {

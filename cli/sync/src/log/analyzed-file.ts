@@ -1,13 +1,12 @@
-import pc from "picocolors";
-
-import { FileAnalysis } from "../types";
-import { config } from "../config";
+import pc from 'picocolors';
+import { config } from '../config';
+import { FileAnalysis } from '../types';
 
 /**
  * Creates a log line for an analyzed file.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The log line string.
  */
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
@@ -41,9 +40,9 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the file path of the analyzed file, styled for console output.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled file path string.
  */
 function getFilePath(analyzedFile: FileAnalysis): string {
@@ -54,40 +53,40 @@ function getFilePath(analyzedFile: FileAnalysis): string {
 /**
  * Returns the git status of the analyzed file, styled for console output.
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled git status string.
  */
 function getGitStatus(analyzedFile: FileAnalysis): string {
   const gitStatus = analyzedFile.commitSummary?.status || 'unknown';
 
   if (gitStatus === 'upToDate') {
-    return `fork: ${pc.bold(pc.green('Up to date'))}`
+    return `fork: ${pc.bold(pc.green('up to date'))}`;
   }
 
   if (gitStatus === 'ahead') {
-    return `fork: ${pc.bold(pc.green('Ahead'))}`;
+    return `fork: ${pc.bold(pc.green('ahead'))}`;
   }
 
   if (gitStatus === 'behind') {
-    return `fork: ${pc.bold(pc.yellow('Behind'))}`;
+    return `fork: ${pc.bold(pc.yellow('behind'))}`;
   }
 
   if (gitStatus === 'diverged') {
-    return `fork: ${pc.bold(pc.red('Diverged'))}`;
+    return `fork: ${pc.bold(pc.red('diverged'))}`;
   }
 
   if (gitStatus === 'unrelated') {
-    return `fork: ${pc.bold(pc.red('Unrelated'))}`;
+    return `fork: ${pc.bold(pc.red('unrelated'))}`;
   }
 
-  return `fork: ${pc.bold(pc.red('Unknown state'))}`;
+  return `fork: ${pc.bold(pc.red('unknown state'))}`;
 }
 
 /**
  * Returns the commit state of the analyzed file, styled for console output.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled commit state string.
  */
 function getCommitState(analyzedFile: FileAnalysis): string {
@@ -114,9 +113,9 @@ function getCommitState(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the commit SHA information of the analyzed file, styled for console output.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled commit SHA string.
  */
 function getCommitSha(analyzedFile: FileAnalysis): string {
@@ -140,9 +139,9 @@ function getCommitSha(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the last synced date of the analyzed file, styled for console output.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled last synced date string.
  */
 function getLastSyncedAt(analyzedFile: FileAnalysis): string {
@@ -165,9 +164,9 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the merge strategy flag of the analyzed file, styled for console output.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled merge strategy flag string.
  */
 function getStrategyFlag(analyzedFile: FileAnalysis): string {
@@ -190,9 +189,9 @@ function getStrategyFlag(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the reason for the merge strategy of the analyzed file, styled for console output.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
- * 
+ *
  * @returns The styled merge strategy reason string.
  */
 function getStrategyReason(analyzedFile: FileAnalysis): string {
@@ -215,7 +214,7 @@ function getStrategyReason(analyzedFile: FileAnalysis): string {
 
 /**
  * Checks if the analyzed file module should be logged based on the configuration.
- * 
+ *
  * @returns Whether the analyzed file module should be logged.
  */
 export function shouldLogAnalyzedFileModule(): boolean {
@@ -231,16 +230,18 @@ export function shouldLogAnalyzedFileModule(): boolean {
 
 /**
  * Will log the analyzed file line based on the configuration.
- * 
+ *
  * @param analyzedFile - The analyzed file object.
  * @param line The line to be logged.
- * 
+ *
  * @returns void
  */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
   // If commit summary state (filter) is configured, check if it matches the analyzed file's state
   const commitSummaryStateConfigured = 'commitSummaryState' in config.log.analyzedFile;
-  const commitSummaryStateEqual = config.log.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
+  const commitSummaryStateEqual = config.log.analyzedFile.commitSummaryState?.includes(
+    analyzedFile.commitSummary?.status || 'unknown',
+  );
 
   // If file path (filter) is configured, check if it matches the analyzed file's path
   const filePathConfigured = 'filePath' in config.log.analyzedFile;
@@ -248,7 +249,9 @@ export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): v
 
   // If merge strategy (filter) is configured, check if it matches the analyzed file's strategy
   const mergeStrategyConfigured = 'mergeStrategyStrategy' in config.log.analyzedFile;
-  const mergeStrategyEqual = config.log.analyzedFile.mergeStrategyStrategy?.includes(analyzedFile.mergeStrategy?.strategy || 'unknown');
+  const mergeStrategyEqual = config.log.analyzedFile.mergeStrategyStrategy?.includes(
+    analyzedFile.mergeStrategy?.strategy || 'unknown',
+  );
 
   // Determine if the line should be logged based on all conditions
   const shouldLog = [

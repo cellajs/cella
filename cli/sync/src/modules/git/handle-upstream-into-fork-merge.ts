@@ -1,18 +1,23 @@
 import { confirm } from '@inquirer/prompts';
 
 import { RepoConfig } from '../../config';
-import { gitCleanUntrackedFile, gitRemoveFilePathFromCache, gitCleanAllUntrackedFiles, gitRestoreStagedFile } from '../../utils/git/command';
 import { FileAnalysis } from '../../types';
+import {
+  gitCleanAllUntrackedFiles,
+  gitCleanUntrackedFile,
+  gitRemoveFilePathFromCache,
+  gitRestoreStagedFile,
+} from '../../utils/git/command';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
 import { handleMerge } from '../../utils/git/handle-merge';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
- * 
+ *
  * @param upstreamConfig - Configuration for the upstream repository
  * @param forkConfig - Configuration for the forked repository
  * @param analyzedFiles - List of pre-analyzed files with merge strategies
- * 
+ *
  * @returns A Promise that resolves when the merge process is complete.
  */
 export async function handleUpstreamIntoForkMerge(
@@ -46,25 +51,25 @@ export async function handleUpstreamIntoForkMerge(
  * Checks if this is the first sync by analyzing commit summaries.
  * If so, prompts the user for confirmation to continue.
  * We need to allow unrelated histories in this case.
- * 
- * @param analyzedFiles - List of analyzed files 
+ *
+ * @param analyzedFiles - List of analyzed files
  * @throws Error if the user chooses to abort the merge process.
- * 
+ *
  * @returns boolean indicating if this is the first sync
  */
 async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promise<boolean> {
   // Check if there are only unrelated history files (if so, ask user if this is the first sync, then we need to run it with: --allow-unrelated-histories)
-  const isFirstSync = analyzedFiles.every(file => file.commitSummary?.status === 'unrelated');
+  const isFirstSync = analyzedFiles.every((file) => file.commitSummary?.status === 'unrelated');
 
   // If it's possibly the first sync, confirm with the user
   if (isFirstSync) {
     const continueSync = await confirm({
-      message: `It looks like this might be the first sync (all ${analyzedFiles.length} files have unrelated histories).\n This requires allowing unrelated histories in the merge. Do you want to continue?`,
+      message: `it looks like this might be the first sync (all ${analyzedFiles.length} files have unrelated histories). this requires allowing unrelated histories in the merge. do you want to continue?`,
       default: true,
     });
 
     if (!continueSync) {
-      throw new Error('Merge process aborted by user.');
+      throw new Error('merge process aborted by user');
     }
 
     return isFirstSync;
@@ -73,12 +78,12 @@ async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promis
   return false;
 }
 
-/** 
+/**
  * Cleans up non-conflicted files based on their merge strategies.
- * 
+ *
  * @param repoPath - Path to the forked repo
  * @param analyzedFiles - List of analyzed files
- * 
+ *
  * @returns void
  */
 async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAnalysis[]) {
@@ -88,9 +93,7 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
     return;
   }
 
-  const analysisMap = new Map(
-    analyzedFiles.map((a) => [a.filePath, a])
-  );
+  const analysisMap = new Map(analyzedFiles.map((a) => [a.filePath, a]));
 
   for (const filePath of cached) {
     const file = analysisMap.get(filePath);
@@ -109,10 +112,10 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
 /**
  * Resolves merge conflicts based on the provided analyzed files and their strategies.
  * If conflicts remain after automatic resolution, prompts the user to resolve them manually.
- * 
+ *
  * @param forkConfig - RepoConfig of the forked repo
  * @param analyzedFiles - List of analyzed files
- * 
+ *
  * @throws Error if the user chooses to abort the merge process.
  * @returns void
  */
@@ -122,9 +125,7 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
   if (conflicts.length === 0) return;
 
   // Map analyses by file path for quick access
-  const analysisMap = new Map(
-    analyzedFiles.map((a) => [a.filePath, a])
-  );
+  const analysisMap = new Map(analyzedFiles.map((a) => [a.filePath, a]));
 
   for (const filePath of conflicts) {
     const file = analysisMap.get(filePath);
@@ -147,12 +148,12 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
   // When there are still conflicts, notify user to resolve them
   if (conflicts.length > 0) {
     const continueResolving = await confirm({
-      message: `Please resolve ${conflicts.length} merge conflicts manually (In another terminal). Once resolved, press "y" to continue.`,
+      message: `please resolve ${conflicts.length} merge conflicts manually (in another terminal). once resolved, press "y" to continue`,
       default: true,
     });
 
     if (!continueResolving) {
-      throw new Error('Merge process aborted by user.');
+      throw new Error('merge process aborted by user');
     }
 
     return resolveMergeConflicts(repoPath, analyzedFiles);

@@ -28,7 +28,7 @@ export type FileAnalysis = {
 
   /** Recommended merge strategy for this file, if available */
   mergeStrategy?: FileMergeStrategy;
-}
+};
 
 /**
  * Represents a simplified structure of a package.json file.

@@ -1,16 +1,10 @@
-import pc from "picocolors";
-
-import { runCli } from "./run-cli";
-import { runSetup } from "./run-setup";
-import { runSync } from "./run-sync";
-import { runAnalyze } from "./run-analyze";
-import { config } from "./config";
-import { runPackages } from "./run-packages";
-import { validateConfig } from "./modules/cli/handlers";
-
-// Constants representing which sync modules should trigger which operations
-const SYNC_MODULES = ['upstream-fork', 'upstream-fork+packages'];
-const PACKAGE_MODULES = ['upstream-fork+packages', 'packages'];
+import { config } from './config';
+import { validateConfig } from './modules/cli/handlers';
+import { runAnalyze } from './run-analyze';
+import { runCli } from './run-cli';
+import { runPackages } from './run-packages';
+import { runSetup } from './run-setup';
+import { runSync } from './run-sync';
 
 /**
  * Orchestrates the full execution flow of the Cella Sync Engine.
@@ -31,55 +25,33 @@ async function main(): Promise<void> {
   // Prompt configuration
   await runCli();
 
+  // If only validating config, run strict validation and exit
+  if (config.syncService === 'validate') {
+    await validateConfig(true);
+    return;
+  }
+
   // Validate overrides config (check file patterns exist)
   await validateConfig();
-  
+
   // Validate environment and repository state
   await runSetup();
 
   // Perform analysis (file diffs, metadata, merge strategies, etc.)
   const analyzedFiles = await runAnalyze();
-  
-  // Apply file sync logic (if enabled)
-  if (shouldRunSync()) {
+
+  // Apply file sync logic (sync service only)
+  if (config.syncService === 'sync') {
     await runSync(analyzedFiles);
+
+    // Apply package.json dependency synchronization (unless skipped)
+    if (!config.skipPackages) {
+      await runPackages(analyzedFiles);
+    }
   }
-
-  // Apply package.json dependency synchronization (if enabled)
-  if (shouldRunPackages()) {
-    await runPackages(analyzedFiles);
-  }
-}
-
-/**
- * Checks whether the file sync process should be executed
- * based on the current `config.syncService` value.
- *
- * Sync is executed for:
- *  - "upstream-fork"
- *  - "upstream-fork+packages"
- *
- * @returns `true` if file sync should run, otherwise `false`.
- */
-function shouldRunSync(): boolean {
-  return SYNC_MODULES.includes(config.syncService);
-}
-
-/**
- * Checks whether package.json dependency synchronization should run
- * based on the configured sync module.
- *
- * Package sync is executed for:
- *  - "upstream-fork+packages"
- *  - "packages"
- *
- * @returns `true` if package syncing is enabled, otherwise `false`.
- */
-function shouldRunPackages(): boolean {
-  return PACKAGE_MODULES.includes(config.syncService);
 }
 
 // Bootstrap execution and report any unhandled errors
-main().catch((err) => {
-  console.error(pc.red("x Error:"), err.message);
+main().catch(() => {
+  process.exit(1);
 });

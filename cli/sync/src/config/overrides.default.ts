@@ -1,4 +1,4 @@
-import { MinimalOverridesConfig } from "./types";
+import { MinimalOverridesConfig } from './types';
 
 /**
  * Configuration related to overrides metadata and settings files.

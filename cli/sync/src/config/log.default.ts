@@ -1,7 +1,8 @@
-import { MinimalLogConfig } from "./types";
+import { MinimalLogConfig } from './types';
 
 /**
  * Configuration for logging within the Cella Sync Engine.
+ * Shows files that need attention: diverged, behind, or unknown merge strategy.
  */
 export const logDefaultConfig: MinimalLogConfig = {
   /**
@@ -11,9 +12,11 @@ export const logDefaultConfig: MinimalLogConfig = {
 
   /**
    * Filters for logging analyzed files.
+   * Show diverged files and files with unknown merge strategy.
    */
   analyzedFile: {
-    mergeStrategyStrategy: ["unknown"]
+    commitSummaryState: ['diverged', 'behind'],
+    mergeStrategyStrategy: ['unknown'],
   },
 
   /**
@@ -21,28 +24,5 @@ export const logDefaultConfig: MinimalLogConfig = {
    */
   analyzedSwizzle: {
     swizzled: true,
-  }
-};
-
-/**
- * Configuration for logging diverged sync service within the Cella Sync Engine.
- */
-export const logDivergedConfig: MinimalLogConfig = {
-  /**
-   * Modules to be logged.
-   */
-  modules: ['analyzedFile', 'analyzedSummary'],
-
-  /**
-   * Filters for logging analyzed files.
-   */
-  analyzedFile: {
-    commitSummaryState: ["diverged"]
   },
-
-  /**
-   * Filters for logging analyzed swizzles.
-   */
-  analyzedSwizzle: {
-  }
-}; 
+};
