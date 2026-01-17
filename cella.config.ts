@@ -1,8 +1,8 @@
 import { defineConfig } from './cli/sync/src/config/types';
 
 /**
- * Cella Sync Configuration
- * Run `pnpm sync` to execute the sync with these settings.
+ * cella sync config
+ * Run with `pnpm sync`.
  */
 export default defineConfig({
   // Upstream Repository Configuration
@@ -17,7 +17,6 @@ export default defineConfig({
   },
   behavior: {
     maxGitPreviewsForSquashCommits: 10,               // max commits to show in squash preview
-    skipWritingSwizzleMetadataFile: false,            // skip writing .swizzle metadata
     packageJsonSync: ["dependencies", "devDependencies", "scripts"],
    },
    log: {

@@ -6,9 +6,11 @@
     "target": "ESNext",
     "module": "ESNext",
     "strict": true,
-    "incremental": false,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "declaration": true,
-    "composite": false
+    "composite": false,
+    "skipLibCheck": true
   },
   "include": ["src", "tests", "index.ts"]
 }

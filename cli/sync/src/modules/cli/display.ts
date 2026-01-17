@@ -41,9 +41,6 @@ function showServiceConfiguration() {
   const cwd = config.workingDirectory === process.cwd() ? '.' : config.workingDirectory;
   parts.push(`cwd=${pc.cyan(cwd)}`);
 
-  // Swizzle metadata
-  parts.push(`swizzle=${config.behavior.skipWritingSwizzleMetadataFile ? pc.red('✗') : pc.green('✓')}`);
-
   // Service-specific options
   if (config.syncService === 'sync') {
     parts.push(`pkg=${config.skipPackages ? pc.yellow('skip') : pc.green('✓')}`);

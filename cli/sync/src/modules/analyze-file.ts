@@ -5,7 +5,7 @@ import { FileAnalysis, FileEntry } from '../types';
 import { analyzeFileBlob } from './git/analyze-file-blob';
 import { analyzeFileCommits } from './git/analyze-file-commits';
 import { determineFileMergeStrategy } from './git/determine-file-merge-strategy';
-import { analyzeSwizzle } from './swizzle/analyze';
+import { getOverrideStatus } from './overrides';
 
 // Run 10 analyses at a time
 const limit = pLimit(10);
@@ -30,19 +30,17 @@ async function analyzeFile(
   const commitSummary = await analyzeFileCommits(upstream, fork, filePath);
   const blobStatus = analyzeFileBlob(upstreamFile, forkFile);
 
-  // Create the initial analysis object
-  const analyzedFile = {
+  // Create the analysis object with override status from config
+  const analyzedFile: FileAnalysis = {
     filePath,
     upstreamFile,
     forkFile,
     commitSummary,
     blobStatus,
-  } as FileAnalysis;
+    overrideStatus: getOverrideStatus(filePath),
+  };
 
-  // Extend the analysis with swizzle data
-  analyzedFile.swizzle = analyzeSwizzle(analyzedFile);
-
-  // Extend the analysis with a merge strategy
+  // Determine merge strategy
   analyzedFile.mergeStrategy = determineFileMergeStrategy(analyzedFile);
 
   return analyzedFile;

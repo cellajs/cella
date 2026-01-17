@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { MinimalBehaviorConfig, MinimalLogConfig, MinimalOverridesConfig, MinimalRepoConfig } from './types';
+import type { BaseRepoConfig, BehaviorConfig, LogConfig, OverridesConfig } from './types';
 
 /** Resolve to monorepo root (cli/sync is 2 levels deep) */
 const monorepoRoot = resolve(import.meta.dirname, '../../../..');
@@ -12,7 +12,7 @@ const monorepoRoot = resolve(import.meta.dirname, '../../../..');
  * Default configuration for the fork repository.
  * The fork repository contains the user's fork of the upstream repository.
  */
-export const forkDefaultConfig: MinimalRepoConfig = {
+export const forkDefaultConfig: BaseRepoConfig = {
   /** Local file system path to the fork repository */
   localPath: monorepoRoot,
   /** The remote URL of the fork repository */
@@ -37,7 +37,7 @@ export const forkDefaultConfig: MinimalRepoConfig = {
  * Default configuration for the upstream repository.
  * The upstream repository contains the base files and structure.
  */
-export const upstreamDefaultConfig: MinimalRepoConfig = {
+export const upstreamDefaultConfig: BaseRepoConfig = {
   /** Local file system path to the upstream repository (empty because differs per user) */
   localPath: '',
   /** The remote URL of the upstream repository */
@@ -57,23 +57,11 @@ export const upstreamDefaultConfig: MinimalRepoConfig = {
 /**
  * Configuration for specifying behavior during sync operations.
  */
-export const behaviorDefaultConfig: MinimalBehaviorConfig = {
+export const behaviorDefaultConfig: BehaviorConfig = {
   /** Root keys in package.json to sync from upstream */
   packageJsonSync: ['dependencies', 'devDependencies'],
-  /** Do not write any swizzle metadata file */
-  skipWritingSwizzleMetadataFile: true,
   /** Maximum number of git previews for squash commits */
   maxGitPreviewsForSquashCommits: 30,
-};
-
-/**
- * Internal behavior constants (not user-configurable).
- */
-export const internalBehavior = {
-  /** Behavior when remote URL doesn't match: overwrite it */
-  onRemoteWrongUrl: 'overwrite' as const,
-  /** Behavior when remote is missing: skip operations that need it */
-  onMissingRemote: 'skip' as const,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,7 +72,7 @@ export const internalBehavior = {
  * Configuration for logging within the Cella sync CLI.
  * Shows files that need attention: diverged, behind, or unknown merge strategy.
  */
-export const logDefaultConfig: MinimalLogConfig = {
+export const logDefaultConfig: LogConfig = {
   /** Modules to be logged */
   modules: ['analyzedFile', 'analyzedSummary', 'packageSummary'],
   /**
@@ -95,10 +83,6 @@ export const logDefaultConfig: MinimalLogConfig = {
     commitSummaryState: ['diverged', 'behind'],
     mergeStrategyStrategy: ['unknown'],
   },
-  /** Filters for logging analyzed swizzles */
-  analyzedSwizzle: {
-    swizzled: true,
-  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,18 +90,9 @@ export const logDefaultConfig: MinimalLogConfig = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Configuration related to overrides metadata and settings files.
+ * Configuration for file overrides (customized and ignored files).
  */
-export const overridesDefaultConfig: MinimalOverridesConfig = {
-  /** Local file system path (directory) to find metadata in */
-  localDir: process.cwd(),
-  /** Version of the overrides metadata format (update when schema changes) */
-  metadataVersion: '1.0.0',
-  /**
-   * Default metadata file name.
-   * Stores information about auto-detected overridden files.
-   */
-  metadataFileName: 'cella.swizzled.json',
+export const overridesDefaultConfig: OverridesConfig = {
   /** Files customized in fork; prefer fork version during merge conflicts */
   customized: [],
   /** Files and directories to be fully ignored during sync */

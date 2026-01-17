@@ -2,10 +2,7 @@ import pc from 'picocolors';
 import { config } from './config';
 import { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log/analyzed-file';
 import { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log/analyzed-summary';
-import { analyzedSwizzleLine, logAnalyzedSwizzleLine, shouldLogAnalyzedSwizzleModule } from './log/analyzed-swizzle';
 import { analyzeManyFiles } from './modules/analyze-file';
-import { extractSwizzleEntries } from './modules/swizzle/analyze';
-import { writeSwizzleMetadata } from './modules/swizzle/metadata';
 import { FileAnalysis } from './types';
 import { getGitFileHashes } from './utils/git/files';
 import { createProgress } from './utils/progress';
@@ -24,17 +21,12 @@ import { createProgress } from './utils/progress';
  *    Each file is processed to determine:
  *    - commit history differences
  *    - content differences
- *    - swizzle status (removed/edited/etc.)
+ *    - override status (from config.overrides.customized/ignored)
  *    - recommended merge strategy
  *
- * **3. Updating swizzle metadata**
- *    Extracts swizzle events from the analysis and writes refreshed metadata
- *    to `.swizzle` state storage.
- *
- * **4. Logging (optional, based on config)**
+ * **3. Logging (optional, based on config)**
  *    Logs:
  *    - per-file analysis
- *    - swizzle analysis
  *    - final summary
  *
  * This function forms the core engine of the sync process,
@@ -61,12 +53,6 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     // Analyze files by comparing upstream and fork file hashes
     const files = await analyzeManyFiles(config.upstream, config.fork, upstreamFiles, forkFiles);
 
-    progress.step('updating swizzle metadata');
-
-    // Extract swizzle entries from analyzed files and update swizzle metadata
-    const swizzleEntries = extractSwizzleEntries(files);
-    writeSwizzleMetadata(swizzleEntries);
-
     progress.done(`analyzed ${files.length} files`);
     return files;
   });
@@ -77,15 +63,6 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     for (const file of analyzedFiles) {
       const line = analyzedFileLine(file);
       logAnalyzedFileLine(file, line);
-    }
-  }
-
-  // Log the swizzle analysis
-  if (shouldLogAnalyzedSwizzleModule()) {
-    console.info(pc.bold('\nswizzle analysis:'));
-    for (const file of analyzedFiles) {
-      const line = analyzedSwizzleLine(file);
-      logAnalyzedSwizzleLine(file, line);
     }
   }
 

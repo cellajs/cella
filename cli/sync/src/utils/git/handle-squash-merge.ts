@@ -51,7 +51,7 @@ export async function handleSquashMerge(
 
   // Build suggested commit message
   const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;
-  let commitMessage = `chore(sync): pull ${commitCountText} from upstream`;
+  let commitMessage = `chore(sync): ${commitCountText} from ${config.upstream.remoteName}`;
 
   // Append recent commit messages as details
   if (recentMessages.length) {

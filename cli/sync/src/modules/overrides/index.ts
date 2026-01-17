@@ -1,15 +1,15 @@
 import { config } from '../../config';
-import { SwizzleAnalysis } from '../../types';
+import { OverrideStatus } from '../../types';
 import { matchPathPattern } from '../../utils/files';
 
 /**
- * Gets the override status for a specific file path.
+ * Gets the override status for a specific file path from config arrays.
+ * Checks config.overrides.ignored and config.overrides.customized.
  *
  * @param filePath - The file path to check.
- *
- * @returns The override status if found, otherwise undefined.
+ * @returns 'ignored', 'customized', or undefined.
  */
-export function getFlaggedAs(filePath: string): SwizzleAnalysis['flaggedInSettingsAs'] {
+export function getOverrideStatus(filePath: string): OverrideStatus {
   if (config.overrides.ignored?.length) {
     if (config.overrides.ignored.some((pattern) => matchPathPattern(filePath, pattern))) {
       return 'ignored';

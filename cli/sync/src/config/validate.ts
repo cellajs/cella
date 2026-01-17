@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { glob } from 'node:fs/promises';
 import pc from 'picocolors';
-import type { OverridesConfig } from './index';
+import type { OverridesConfig } from './types';
 
 /**
  * Validates that files/patterns in overrides config actually exist in the filesystem.

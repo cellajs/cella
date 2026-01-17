@@ -63,7 +63,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
     // Iterate all analyzed files and process package.json entries
     for (const analyzedFile of analyzedFiles) {
       const isPackageFile = analyzedFile.filePath.endsWith('package.json');
-      const isIgnored = analyzedFile.swizzle?.flaggedInSettingsAs === 'ignored';
+      const isIgnored = analyzedFile.overrideStatus === 'ignored';
       const upstreamPath = analyzedFile.upstreamFile?.path;
       const forkPath = analyzedFile.forkFile?.path;
 

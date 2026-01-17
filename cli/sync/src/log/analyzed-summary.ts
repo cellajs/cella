@@ -20,8 +20,8 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     diverged: 0,
     unrelated: 0,
     unknown: 0,
-    swizzled: 0,
-    swizzledNew: 0,
+    customized: 0,
+    ignored: 0,
   };
 
   for (const file of analyzedFiles) {
@@ -37,16 +37,11 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
       summary.unknown++;
     }
 
-    // Increment swizzle counts
-    const swizzle = file.swizzle;
-    if (swizzle) {
-      if (swizzle?.existingMetadata?.swizzled || swizzle?.newMetadata?.swizzled) {
-        summary.swizzled++;
-
-        if (swizzle.newMetadata?.swizzled) {
-          summary.swizzledNew++;
-        }
-      }
+    // Increment override counts
+    if (file.overrideStatus === 'customized') {
+      summary.customized++;
+    } else if (file.overrideStatus === 'ignored') {
+      summary.ignored++;
     }
   }
 
@@ -62,15 +57,16 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
   // Only show unknown if > 0
   if (summary.unknown > 0) badges.push(pc.red(`?${summary.unknown} unknown`));
 
-  const swizzleInfo =
-    summary.swizzledNew > 0
-      ? pc.cyan(`🔧${summary.swizzled} swizzled (${summary.swizzledNew} new)`)
-      : pc.cyan(`🔧${summary.swizzled} swizzled`);
+  // Show override counts if any
+  const overrideInfo: string[] = [];
+  if (summary.customized > 0) overrideInfo.push(`${summary.customized} customized`);
+  if (summary.ignored > 0) overrideInfo.push(`${summary.ignored} ignored`);
+  const overrideBadge = overrideInfo.length > 0 ? pc.cyan(`🔧 ${overrideInfo.join(', ')}`) : '';
 
-  // Build line: ✓ count files synced │ badges │ swizzle
+  // Build line: ✓ count files synced │ badges │ overrides
   const parts = [`${pc.green('✓')} ${summary.totalFiles} files synced`];
   parts.push(badges.join('  '));
-  parts.push(swizzleInfo);
+  if (overrideBadge) parts.push(overrideBadge);
 
   return [parts.join(' │ ')];
 }

@@ -8,8 +8,9 @@ import {
   overridesDefaultConfig,
   upstreamDefaultConfig,
 } from './defaults';
+import type { SyncService } from './sync-services';
 import { SERVICES_RUNNING_FROM_LOCAL_FORK, SYNC_SERVICES } from './sync-services';
-import type { MinimalOverridesConfig, MinimalRepoConfig, SyncConfig } from './types';
+import type { RepoConfig, SyncState } from './types';
 
 /**
  * Import all custom configurations from cella.config.ts
@@ -27,61 +28,9 @@ const {
  * ---------------------------------------------------------------------------
  * SECTION: CONFIG TYPES
  *
- * Defines enhanced configuration types with computed properties.
- * We extend the minimal config types to include dynamic properties
- * that are derived from other config values at runtime.
+ * Uses shared types from config/types.
  * ---------------------------------------------------------------------------
  */
-
-/**
- * Repository configuration with computed properties
- */
-export type RepoConfig = MinimalRepoConfig & {
-  /**
-   * Location of the repository: 'local' or 'remote'
-   */
-  location: 'local' | 'remote';
-
-  /**
-   * Type of the repository: 'fork' or 'upstream'
-   */
-  type: 'fork' | 'upstream';
-
-  /**
-   * Indicates if the repository is remote
-   */
-  isRemote: boolean;
-
-  /**
-   * Full branch reference (e.g., 'refs/heads/development')
-   */
-  branchRef: string;
-
-  /**
-   * Full sync branch reference (e.g., 'refs/heads/sync-branch')
-   */
-  syncBranchRef: string;
-
-  /**
-   * Repository reference, either local path or remote URL
-   */
-  repoReference: string;
-
-  /**
-   * Working directory for the repository
-   */
-  workingDirectory: string;
-};
-
-/**
- * Overrides configuration with computed properties
- */
-export type OverridesConfig = MinimalOverridesConfig & {
-  /**
-   * Full local file system path to the overrides metadata file
-   */
-  localMetadataFilePath: string;
-};
 
 /**
  * ---------------------------------------------------------------------------
@@ -96,9 +45,9 @@ class Config {
   /**
    * Internal state holding the configuration values
    */
-  private state: SyncConfig;
+  private state: SyncState;
 
-  constructor(initial: Partial<SyncConfig> = {}) {
+  constructor(initial: Partial<SyncState> = {}) {
     this.state = {
       // Static defaults
       syncService: SYNC_SERVICES.SYNC,
@@ -180,19 +129,16 @@ class Config {
   }
 
   /**
-   * Getter for the overrides configuration with computed properties
+   * Getter for the overrides configuration
    */
-  get overrides(): OverridesConfig {
-    return {
-      ...this.state.overrides,
-      localMetadataFilePath: this.overridesLocalMetadataFilePath,
-    };
+  get overrides() {
+    return this.state.overrides;
   }
 
   /**
    * Getter and setter for syncService with side effects
    */
-  get syncService(): SyncConfig['syncService'] {
+  get syncService(): SyncService {
     return this.state.syncService;
   }
 
@@ -212,7 +158,7 @@ class Config {
    * - Adjusts fork and upstream locations based on service type
    * - Updates log configuration for specific services
    */
-  set syncService(value: SyncConfig['syncService']) {
+  set syncService(value: SyncService) {
     if (SERVICES_RUNNING_FROM_LOCAL_FORK.includes(value)) {
       // Ensure fork is local if the service requires it
       this.state.forkLocation = 'local';
@@ -310,13 +256,6 @@ class Config {
   }
 
   /**
-   * Computed overrides metadata file path
-   */
-  get overridesLocalMetadataFilePath() {
-    return `${this.state.overrides.localDir}/${this.state.overrides.metadataFileName}`;
-  }
-
-  /**
    * Determines the working directory dynamically
    */
   get workingDirectory(): string {
@@ -333,17 +272,20 @@ class Config {
    * @param value Value to assign to the key
    * @return void
    */
-  set<K extends keyof SyncConfig>(key: K, value: SyncConfig[K]) {
+  set<K extends keyof SyncState>(key: K, value: SyncState[K]) {
     this.state[key] = value;
   }
 
   /**
    * Returns a snapshot (copy) of the current config
-   * @return SyncConfig
+   * @return SyncState
    */
-  toJSON(): SyncConfig {
+  toJSON(): SyncState {
     return structuredClone(this.state);
   }
 }
 
 export const config = new Config();
+
+// Re-export commonly used types for consumers of config
+export type { RepoConfig } from './types';

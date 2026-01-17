@@ -2,50 +2,32 @@ import { FileAnalysis, FileMergeStrategy } from '../../types';
 
 /**
  * Determines the most appropriate merge strategy for a given file,
- * based on commit history, blob comparisons, and override metadata.
+ * based on commit history, blob comparisons, and override settings.
  *
  * @param fileAnalysis - Precomputed analysis object for a single file,
- *   containing commit history, blob status, and optional override metadata.
+ *   containing commit history, blob status, and optional override status.
  *
  * @returns A {@link FileMergeStrategy} object indicating which merge
  *   action to take (e.g., "keep-fork", "remove-from-fork", "manual").
  */
 export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMergeStrategy {
-  // Extract flags
-  const flaggedAsCustomized = fileAnalysis.swizzle?.flaggedInSettingsAs === 'customized';
-  const flaggedAsIgnored = fileAnalysis.swizzle?.flaggedInSettingsAs === 'ignored';
-
-  const swizzleInfo = fileAnalysis.swizzle?.newMetadata || fileAnalysis.swizzle?.existingMetadata;
+  // Extract override flags from config
+  const isCustomized = fileAnalysis.overrideStatus === 'customized';
+  const isIgnored = fileAnalysis.overrideStatus === 'ignored';
 
   // 1. Flagged as ignored in settings → remove
-  if (flaggedAsIgnored) {
+  if (isIgnored) {
     return {
       strategy: 'remove-from-fork',
       reason: 'Flagged as ignored in settings',
     };
   }
 
-  // 2. Swizzle overrides everything
-  if (swizzleInfo?.swizzled) {
-    if (swizzleInfo.event === 'removed') {
-      return {
-        strategy: 'remove-from-fork',
-        reason: 'Swizzled (removed in fork)',
-      };
-    }
-    if (swizzleInfo.event === 'edited') {
-      return {
-        strategy: 'keep-fork',
-        reason: 'Swizzled (edited in fork)',
-      };
-    }
-  }
-
   const { upstreamFile, forkFile, blobStatus, commitSummary } = fileAnalysis;
   const commitStatus = commitSummary?.status || 'unrelated';
   const isHeadIdentical = upstreamFile.lastCommitSha === forkFile?.lastCommitSha;
 
-  // 3. Commit heads identical → trivial keep
+  // 2. Commit heads identical → trivial keep
   if (isHeadIdentical) {
     return {
       strategy: 'keep-fork',
@@ -53,7 +35,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  // 4. Blobs identical → trivial keep
+  // 3. Blobs identical → trivial keep
   if (blobStatus === 'identical') {
     return {
       strategy: 'keep-fork',
@@ -61,7 +43,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  // 5. When fork is up-to-date or ahead → assume resolved in fork
+  // 4. When fork is up-to-date or ahead → assume resolved in fork
   if (commitStatus === 'upToDate' || commitStatus === 'ahead') {
     if (blobStatus === 'different') {
       return {
@@ -77,10 +59,10 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     }
   }
 
-  // 6. When fork is behind upstream → usually keep upstream
+  // 5. When fork is behind upstream → usually keep upstream
   if (commitStatus === 'behind') {
     if (blobStatus === 'different') {
-      if (flaggedAsCustomized) {
+      if (isCustomized) {
         return {
           strategy: 'keep-fork',
           reason: `Fork is behind upstream and flagged as customized`,
@@ -94,9 +76,9 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     }
   }
 
-  // 7. Diverged histories → unsafe
+  // 6. Diverged histories → unsafe
   if (commitStatus === 'diverged') {
-    if (flaggedAsCustomized) {
+    if (isCustomized) {
       return {
         strategy: 'keep-fork',
         reason: `History ${commitStatus} but flagged as customized`,
@@ -108,9 +90,9 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  // 8. Unrelated histories → unsafe
+  // 7. Unrelated histories → unsafe
   if (commitStatus === 'unrelated') {
-    if (flaggedAsCustomized) {
+    if (isCustomized) {
       return {
         strategy: 'remove-from-fork',
         reason: `History ${commitStatus} but flagged as customized`,
@@ -122,7 +104,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  // 9. Fallback
+  // 8. Fallback
   return {
     strategy: 'unknown',
     reason: 'Could not determine merge strategy',
