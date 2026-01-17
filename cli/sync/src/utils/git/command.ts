@@ -539,6 +539,21 @@ export async function gitLsRemote(repoPath: string, remotePath: string): Promise
 }
 
 /**
+ * Gets the URL of a remote.
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @param remoteName - The name of the remote (defaults to 'origin')
+ *
+ * @returns The URL of the remote, or empty string if not found
+ */
+export async function gitRemoteGetUrl(repoPath: string, remoteName: string = 'origin'): Promise<string> {
+  try {
+    return await runGitCommand(['remote', 'get-url', remoteName], repoPath);
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Executes `git status --porcelain` to get the status of the working tree.
  * @param repoPath - Absolute or relative path to the Git repository
  *

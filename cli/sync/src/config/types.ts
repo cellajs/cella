@@ -102,11 +102,6 @@ export interface MinimalBehaviorConfig {
   onMissingRemote?: 'skip' | 'error';
 
   /**
-   * Whether to skip all git push operations.
-   */
-  skipAllPushes?: boolean;
-
-  /**
    * Whether to perform a dry run for package.json changes.
    * If true, changes to package.json will not be written, only displayed.
    */
@@ -119,7 +114,7 @@ export interface MinimalBehaviorConfig {
   skipWritingSwizzleMetadataFile?: boolean;
 
   /**
-   * Maximum number of git previews for Squash commits.
+   * Maximum number of git previews for squash commits.
    */
   maxGitPreviewsForSquashCommits?: number;
 }

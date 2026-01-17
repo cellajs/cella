@@ -15,7 +15,6 @@ export const cellaConfig: DeepPartial<SyncConfig> = {
     syncBranch: 'sync-branch',                        // temporary branch for sync operations
   },
   behavior: {
-    skipAllPushes: false,                             // skip all git push operations
     maxGitPreviewsForSquashCommits: 10,               // max commits to show in squash preview
     skipWritingSwizzleMetadataFile: false,            // skip writing .swizzle metadata
    },

@@ -5,7 +5,7 @@ import { logPackageSummaryLines, packageSummaryLines } from './log/package-summa
 import { getDepsToUpdate } from './modules/package/get-deps-to-update';
 import { FileAnalysis, PackageJson } from './types';
 import { readJsonFile, writeJsonFile } from './utils/files';
-import { gitAddAll, gitCheckout, gitCommit, gitPush } from './utils/git/command';
+import { gitAddAll, gitCheckout, gitCommit } from './utils/git/command';
 import { getRemoteJsonFile } from './utils/git/helpers';
 import { createProgress } from './utils/progress';
 
@@ -140,12 +140,6 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
         `Sync package.json dependencies from ${config.upstream.branchRef}`,
         { noVerify: true },
       );
-
-      // Push changes if configured to do so
-      if (!config.behavior.skipAllPushes) {
-        progress.step('pushing changes');
-        await gitPush(config.fork.workingDirectory, 'origin', config.fork.branchRef);
-      }
 
       progress.done('packages synced');
     }

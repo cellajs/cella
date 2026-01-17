@@ -1,8 +1,7 @@
 import { config } from '../../config';
 
-import { gitAddAll, gitCheckout, gitCommit, gitMerge, gitPush } from '../../utils/git/command';
+import { gitAddAll, gitCheckout, gitCommit, gitMerge } from '../../utils/git/command';
 import { getCommitCount, getLastCommitMessages } from '../../utils/git/helpers';
-import { hasRemoteBranch } from './branches';
 
 /**
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch
@@ -62,10 +61,5 @@ export async function handleSquashMerge(
 
     // Create the commit
     await gitCommit(mergeIntoPath, commitMessage, { noVerify: true });
-
-    // Push merge result
-    if (!config.behavior.skipAllPushes && (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch))) {
-      await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
-    }
   }
 }

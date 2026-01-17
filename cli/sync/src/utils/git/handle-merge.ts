@@ -1,9 +1,7 @@
 import { confirm } from '@inquirer/prompts';
 
-import { config } from '../../config';
 import { pauseSpinner, resumeSpinner } from '../progress';
-import { hasRemoteBranch } from './branches';
-import { gitCheckout, gitCommit, gitMerge, gitPush, isMergeInProgress } from './command';
+import { gitCheckout, gitCommit, gitMerge, isMergeInProgress } from './command';
 import { getUnmergedFiles } from './files';
 import { hasAnythingToCommit } from './helpers';
 
@@ -42,11 +40,6 @@ export async function handleMerge(
   // Finalize merge
   if (await hasAnythingToCommit(mergeIntoPath)) {
     await gitCommit(mergeIntoPath, `Merge ${mergeFromBranch} into ${mergeIntoBranch}`, { noVerify: true });
-  }
-
-  // Push merge result
-  if (!config.behavior.skipAllPushes && (await hasRemoteBranch(mergeIntoPath, mergeIntoBranch))) {
-    await gitPush(mergeIntoPath, 'origin', mergeIntoBranch, { setUpstream: true });
   }
 }
 

@@ -46,7 +46,6 @@ export function showServiceConfiguration() {
 
   // Service-specific options
   if (config.syncService === 'sync') {
-    parts.push(`push=${config.behavior.skipAllPushes ? pc.red('✗') : pc.green('✓')}`);
     parts.push(`pkg=${config.skipPackages ? pc.yellow('skip') : pc.green('✓')}`);
     parts.push(`squash-max=${pc.cyan(String(config.behavior.maxGitPreviewsForSquashCommits))}`);
   }
