@@ -1,16 +1,15 @@
-import { config, RepoConfig } from '../../config';
+import { RepoConfig } from '../../config';
+import { internalBehavior } from '../../config/defaults';
 import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from '../../utils/git/remotes';
 
 /**
  * Adds the upstream repository as a remote to the fork repository if not already added.
  * - If the remote already exists, checks if the URL matches the configuration.
- * - If the URL does not match and config.behavior.onRemoteWrongUrl is 'overwrite', updates the URL.
- * - If the URL does not match and config.behavior.onRemoteWrongUrl is not 'overwrite', throws an error.
+ * - If the URL does not match, updates the URL (default behavior).
  *
  * @param addAsRemote - The repository configuration to add as a remote (e.g., upstream).
  * @param addTo - The repository configuration to which the remote should be added (e.g., fork).
  *
- * @throws Error if the remote URL does not match and the behavior is not set to 'overwrite'.
  * @returns void
  */
 export async function addAsRemote(addAsRemote: RepoConfig, addTo: RepoConfig) {
@@ -27,7 +26,7 @@ export async function addAsRemote(addAsRemote: RepoConfig, addTo: RepoConfig) {
   }
 
   // Update remote URL to match configuration
-  if (config.behavior.onRemoteWrongUrl === 'overwrite') {
+  if (internalBehavior.onRemoteWrongUrl === 'overwrite') {
     await setRemoteUrl(addTo.workingDirectory, addAsRemote.remoteName, addAsRemote.repoReference!);
     return;
   }

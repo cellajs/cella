@@ -44,7 +44,7 @@ import { createProgress } from './utils/progress';
  * await runSetup();
  */
 export async function runSetup() {
-  const progress = createProgress('setting up');
+  const progress = createProgress('preflight');
 
   await progress.wrap(async () => {
     // Basic configuration validation

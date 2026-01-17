@@ -10,7 +10,7 @@ let cachedMetadata: SwizzleMetadata | null = null;
  *
  * @returns SwizzleMetadata or null if file doesn't exist.
  */
-export function loadSwizzleMetadata(): SwizzleMetadata | null {
+function loadSwizzleMetadata(): SwizzleMetadata | null {
   if (cachedMetadata) return cachedMetadata;
 
   const filePath = resolvePath(config.overrides.localMetadataFilePath);
@@ -29,16 +29,6 @@ export function loadSwizzleMetadata(): SwizzleMetadata | null {
 export function getSwizzleMetadata(filePath: string): SwizzleEntry | null {
   const metadata = loadSwizzleMetadata();
   return metadata?.entries[filePath] || null;
-}
-
-/**
- * Clears the swizzle metadata cache.
- * Useful for tests or reloading after changes.
- *
- * @returns void
- */
-export function clearSwizzleMetadataCache(): void {
-  cachedMetadata = null;
 }
 
 /**

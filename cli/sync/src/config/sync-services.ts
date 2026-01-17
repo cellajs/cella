@@ -42,33 +42,3 @@ export function getSyncServiceDescription(
   };
   return descriptions[service] || 'no description available';
 }
-
-/**
- * Static descriptions for menu (before config is loaded).
- */
-export const SYNC_SERVICE_DESCRIPTIONS: Record<SyncService, string> = {
-  [SYNC_SERVICES.SYNC]: 'sync files and packages from upstream to your fork',
-  [SYNC_SERVICES.ANALYZE]: 'read-only analysis for file differences and diverging/conflicting files',
-  [SYNC_SERVICES.VALIDATE]: 'validate your cella.config.ts by checking whether file references exist',
-};
-
-/**
- * Nicely formatted options for UI or CLI selection with descriptions.
- */
-export const SYNC_SERVICE_OPTIONS = [
-  {
-    name: 'sync',
-    value: SYNC_SERVICES.SYNC,
-    description: SYNC_SERVICE_DESCRIPTIONS[SYNC_SERVICES.SYNC],
-  },
-  {
-    name: 'analyze',
-    value: SYNC_SERVICES.ANALYZE,
-    description: SYNC_SERVICE_DESCRIPTIONS[SYNC_SERVICES.ANALYZE],
-  },
-  {
-    name: 'validate',
-    value: SYNC_SERVICES.VALIDATE,
-    description: SYNC_SERVICE_DESCRIPTIONS[SYNC_SERVICES.VALIDATE],
-  },
-] as const;

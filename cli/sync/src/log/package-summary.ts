@@ -68,10 +68,8 @@ export function packageSummaryLine(stats: PackageSyncStats): string {
 
 /**
  * Checks if the package summary module should be logged based on configuration.
- *
- * @returns Whether the package summary module should be logged.
  */
-export function shouldLogPackageSummaryModule(): boolean {
+function shouldLogPackageSummaryModule(): boolean {
   const logModulesConfigured = 'modules' in config.log;
 
   if (!logModulesConfigured) {

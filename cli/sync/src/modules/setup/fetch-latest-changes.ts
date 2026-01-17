@@ -1,4 +1,4 @@
-import { config, RepoConfig } from '../../config';
+import { RepoConfig } from '../../config';
 import { hasRemoteBranch } from '../../utils/git/branches';
 import { gitCheckout, gitFetch, gitPull } from '../../utils/git/command';
 import { checkCleanState } from './check-clean-state';
@@ -49,7 +49,5 @@ async function pullLatestChanges(localPath: string, branchName: string) {
     return;
   }
 
-  if (config.behavior.onMissingRemote === 'error') {
-    throw new Error(`Upstream remote for branch '${branchName}' is missing in repository at ${localPath}.`);
-  }
+  // Skip if remote branch doesn't exist (default behavior)
 }

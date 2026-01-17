@@ -1,16 +1,12 @@
-import { writeFile } from 'fs/promises';
 import { CommitEntry, FileEntry } from '../../types';
 import {
   gitAdd,
   gitCheckoutOursFilePath,
-  gitCheckoutTheirsFilePath,
   gitDiffCached,
   gitDiffUnmerged,
   gitLastCommitShaForFile,
   gitLogFileHistory,
   gitLsTreeRecursive,
-  gitLsTreeRecursiveAtCommit,
-  gitShowFileAtCommit,
 } from './command';
 
 /** Yield to event loop to allow spinner animation */
@@ -103,33 +99,6 @@ export async function getFileCommitHistory(
 }
 
 /**
- * Writes the content of a file (from a specific commit) to a specified output path.
- * Internally uses `git show <commit>:<file>` to retrieve file contents.
- *
- * @param repoPath - The file system path to the Git repository
- * @param commitSha - The commit SHA to extract the file from
- * @param filePath - The file path inside the repository
- * @param outputPath - The output path where the file content will be written
- *
- * @returns A promise that resolves when the file has been written
- *
- * @example
- * await writeGitFileAtCommit('/repo', 'abc123', 'src/index.ts', '/tmp/index.ts');
- */
-export async function writeGitFileAtCommit(
-  repoPath: string,
-  commitSha: string,
-  filePath: string,
-  outputPath: string,
-): Promise<void> {
-  // Use git show to get the file content at the specific commit
-  const output = await gitShowFileAtCommit(repoPath, commitSha, filePath);
-
-  // Write the content to the output file
-  await writeFile(outputPath, output, 'utf8');
-}
-
-/**
  * Lists all files currently in conflict (unmerged) in the given repository.
  * Internally runs `git diff --name-only --diff-filter=U`.
  *
@@ -164,40 +133,6 @@ export async function getCachedFiles(repoPath: string): Promise<string[]> {
 }
 
 /**
- * Retrieves the blob SHA for a specific file at a given commit.
- *
- * @param repoPath - The file system path to the Git repository
- * @param commitSha - The commit SHA to inspect
- * @param filePath - The path to the file to check
- *
- * @returns The blob SHA of the file at that commit, or `null` if it doesn’t exist
- *
- * @example
- * const sha = await getFileBlobShaAtCommit('/repo', 'abc123', 'src/utils.ts');
- * console.info(sha); // 'de9c0a1...'
- */
-export async function getFileBlobShaAtCommit(
-  repoPath: string,
-  commitSha: string,
-  filePath: string,
-): Promise<string | null> {
-  const output = await gitLsTreeRecursiveAtCommit(repoPath, commitSha);
-  const lines = output.split('\n').filter(Boolean);
-
-  for (const line of lines) {
-    // format: <mode> <type> <sha>\t<path>
-    const [meta, path] = line.split('\t');
-    if (path === filePath) {
-      const sha = meta.split(' ')[2];
-      return sha;
-    }
-  }
-
-  // file does not exist in this commit
-  return null;
-}
-
-/**
  * Resolves a merge conflict by choosing **our** version of the file
  * (i.e., the version from the current branch) and staging it.
  *
@@ -215,26 +150,5 @@ export async function getFileBlobShaAtCommit(
  */
 export async function resolveConflictAsOurs(repoPath: string, filePath: string): Promise<void> {
   await gitCheckoutOursFilePath(repoPath, filePath);
-  await gitAdd(repoPath, filePath);
-}
-
-/**
- * Resolves a merge conflict by choosing **their** version of the file
- * (i.e., the version from the merged branch) and staging it.
- *
- * Internally runs:
- * - `git checkout --theirs <file>`
- * - `git add <file>`
- *
- * @param repoPath - The file system path to the Git repository
- * @param filePath - The path to the conflicted file
- *
- * @returns A promise that resolves when the conflict has been resolved
- *
- * @example
- * await resolveConflictAsTheirs('/repo', 'src/config.ts');
- */
-export async function resolveConflictAsTheirs(repoPath: string, filePath: string): Promise<void> {
-  await gitCheckoutTheirsFilePath(repoPath, filePath);
   await gitAdd(repoPath, filePath);
 }

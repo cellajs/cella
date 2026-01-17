@@ -72,21 +72,6 @@ export async function hasAnythingToCommit(repoPath: string): Promise<boolean> {
 }
 
 /**
- * Checks if the branch has commits that need to be pushed.
- *
- * @param repoPath - Path to the repository
- * @param branch - Local branch name
- * @param remote - Remote name, default 'origin'
- *
- * @returns True if there are commits to push
- */
-export async function hasAnythingToPush(repoPath: string, branch: string, remote = 'origin'): Promise<boolean> {
-  const countStr = await gitRevListCount(repoPath, branch, `${remote}/${branch}`);
-  const count = parseInt(countStr, 10);
-  return count > 0;
-}
-
-/**
  * Fetches and parses a JSON file from a specific branch reference in the repository.
  *
  * @param repoPath - Path to the repository

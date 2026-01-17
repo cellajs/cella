@@ -1,21 +1,15 @@
-// Import all types
-
-// Import custom config
+// Import custom config from user's cella.config.ts
 import customConfig from '../../../../cella.config';
-import { behaviorDefaultConfig } from './behavior.default';
 // Import default configurations
-import { forkDefaultConfig } from './fork.default';
-import { logDefaultConfig } from './log.default';
-import { overridesDefaultConfig } from './overrides.default';
+import {
+  behaviorDefaultConfig,
+  forkDefaultConfig,
+  logDefaultConfig,
+  overridesDefaultConfig,
+  upstreamDefaultConfig,
+} from './defaults';
 import { SERVICES_RUNNING_FROM_LOCAL_FORK, SYNC_SERVICES } from './sync-services';
-import type {
-  MinimalBehaviorConfig,
-  MinimalLogConfig,
-  MinimalOverridesConfig,
-  MinimalRepoConfig,
-  SyncConfig,
-} from './types';
-import { upstreamDefaultConfig } from './upstream.default';
+import type { MinimalOverridesConfig, MinimalRepoConfig, SyncConfig } from './types';
 
 /**
  * Import all custom configurations from cella.config.ts
@@ -33,12 +27,7 @@ const {
  * ---------------------------------------------------------------------------
  * SECTION: CONFIG TYPES
  *
- * - RepoConfig
- * - LogConfig
- * - BehaviorConfig
- * - OverridesConfig
- *
- * Defines enhanced configuration types with computed properties
+ * Defines enhanced configuration types with computed properties.
  * We extend the minimal config types to include dynamic properties
  * that are derived from other config values at runtime.
  * ---------------------------------------------------------------------------
@@ -95,22 +84,15 @@ export type OverridesConfig = MinimalOverridesConfig & {
 };
 
 /**
- * Other exported config types (no computed properties needed)
- * In future, we can extend these as needed.
- */
-export type LogConfig = MinimalLogConfig;
-export type BehaviorConfig = MinimalBehaviorConfig;
-
-/**
  * ---------------------------------------------------------------------------
  * SECTION: CONFIG CLASS
  *
- * Configuration management class for the Cella Sync Engine.
+ * Configuration management class for the Cella sync CLI.
  * Provides methods to get and set configuration values,
  * including computed properties based on current state.
  * ---------------------------------------------------------------------------
  */
-export class Config {
+class Config {
   /**
    * Internal state holding the configuration values
    */
@@ -186,14 +168,14 @@ export class Config {
   /**
    * Getter for the log configuration
    */
-  get log(): LogConfig {
+  get log() {
     return this.state.log;
   }
 
   /**
    * Getter for the behavior configuration
    */
-  get behavior(): BehaviorConfig {
+  get behavior() {
     return this.state.behavior;
   }
 

@@ -91,27 +91,6 @@ export interface MinimalLogConfig {
  */
 export interface MinimalBehaviorConfig {
   /**
-   * Behavior when the remote repository already exists but has a different URL than expected.
-   * - 'overwrite': Update the remote URL to the expected one.
-   * - 'error': Throw an error and halt the operation.
-   */
-  onRemoteWrongUrl?: 'overwrite' | 'error';
-
-  /**
-   * Behavior when the remote is missing and some commands require it (for example a `git pull`)
-   * Options:
-   * - 'skip': Skip operations that require the upstream remote.
-   * - 'error': Throw an error and halt the operation.
-   */
-  onMissingRemote?: 'skip' | 'error';
-
-  /**
-   * Whether to perform a dry run for package.json changes.
-   * If true, changes to package.json will not be written, only displayed.
-   */
-  packageJsonMode?: 'dryRun' | 'applyChanges';
-
-  /**
    * Root keys in package.json to sync from upstream.
    * Only updates values where the key already exists in fork.
    * Supports objects (dependencies, scripts), arrays (browserslist), and primitives (version).
@@ -160,7 +139,7 @@ export interface MinimalOverridesConfig {
 }
 
 /**
- * Sync configuration for the Cella Sync Engine.
+ * Sync configuration for the Cella sync CLI.
  * Defines the synchronization service type and repository configurations.
  */
 export interface SyncConfig {
@@ -207,30 +186,41 @@ export interface SyncConfig {
   overrides: MinimalOverridesConfig;
 }
 
-/** Alias for SyncConfig (lowercase convention) */
-export type syncConfig = SyncConfig;
-
 /**
  * User-configurable sync options for cella.config.ts.
  * Excludes runtime properties like syncService, debug, skipPackages.
+ *
+ * upstream and fork are required, behavior/log/overrides are optional with defaults.
  */
 export interface UserSyncConfig {
-  /** Configuration for the upstream repository */
-  upstream: Pick<MinimalRepoConfig, 'remoteUrl' | 'branch' | 'remoteName'>;
-  /** Configuration for the forked repository */
-  fork: Pick<MinimalRepoConfig, 'branch' | 'syncBranch'>;
-  /** Configuration for logging analyzed results */
-  log: MinimalLogConfig;
-  /** Configuration for specifying behavior during sync operations */
-  behavior: MinimalBehaviorConfig;
-  /** Configuration related to overrides metadata and settings files */
-  overrides: Pick<MinimalOverridesConfig, 'customized' | 'ignored'>;
+  /** Configuration for the upstream repository (required) */
+  upstream: {
+    /** Remote URL of the upstream repository (e.g., 'git@github.com:cellajs/cella.git') */
+    remoteUrl: string;
+    /** Branch to sync from in the upstream repository */
+    branch: string;
+    /** Git remote name for the upstream (e.g., 'cella-upstream') */
+    remoteName: string;
+  };
+  /** Configuration for the forked repository (required) */
+  fork: {
+    /** Your fork's working branch where final changes land */
+    branch: string;
+    /** Temporary branch for sync operations (local-only, keeps main branch history clean) */
+    syncBranch: string;
+  };
+  /** Configuration for logging analyzed results (optional) */
+  log?: DeepPartial<MinimalLogConfig>;
+  /** Configuration for specifying behavior during sync operations (optional) */
+  behavior?: DeepPartial<MinimalBehaviorConfig>;
+  /** Configuration related to overrides metadata and settings files (optional) */
+  overrides?: DeepPartial<Pick<MinimalOverridesConfig, 'customized' | 'ignored'>>;
 }
 
 /**
  * A utility type that makes all properties of a given type T optional, including nested properties.
  */
-export type DeepPartial<T> = T extends (infer U)[] // If T is an array
+type DeepPartial<T> = T extends (infer U)[] // If T is an array
   ? DeepPartial<U>[] // Make its elements DeepPartial, but keep array shape
   : T extends object // If T is an object
     ? { [P in keyof T]?: DeepPartial<T[P]> }
@@ -242,10 +232,10 @@ export type DeepPartial<T> = T extends (infer U)[] // If T is an array
  *
  * @example
  * export default defineConfig({
- *   upstream: { branch: 'development' },
- *   fork: { branch: 'main' },
+ *   upstream: { remoteUrl: '...', branch: 'main', remoteName: 'upstream' },
+ *   fork: { branch: 'main', syncBranch: 'sync-branch' },
  * })
  */
-export function defineConfig(config: DeepPartial<UserSyncConfig>): DeepPartial<UserSyncConfig> {
+export function defineConfig(config: UserSyncConfig): UserSyncConfig {
   return config;
 }

@@ -20,7 +20,7 @@ const limit = pLimit(10);
  *
  * @returns A promise that resolves to the analyzed file data
  */
-export async function analyzeFile(
+async function analyzeFile(
   upstream: RepoConfig,
   fork: RepoConfig,
   upstreamFile: FileEntry,

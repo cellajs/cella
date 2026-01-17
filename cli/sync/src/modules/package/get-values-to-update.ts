@@ -11,7 +11,7 @@ function isLockedVersion(version: string): boolean {
  * Get updates for a dependency-like object (key-value pairs with semver versions).
  * Only updates keys that exist in fork, respects locked versions.
  */
-export function getDepsToUpdate(
+function getDepsToUpdate(
   upstreamDeps: Record<string, string>,
   forkDeps: Record<string, string>,
 ): Record<string, string> {
@@ -44,7 +44,7 @@ export function getDepsToUpdate(
  * Get updates for a generic object (key-value pairs, non-semver).
  * Only updates keys that exist in fork.
  */
-export function getObjectToUpdate<T>(upstreamObj: Record<string, T>, forkObj: Record<string, T>): Record<string, T> {
+function getObjectToUpdate<T>(upstreamObj: Record<string, T>, forkObj: Record<string, T>): Record<string, T> {
   const updates: Record<string, T> = {};
 
   for (const key in upstreamObj) {
@@ -67,7 +67,7 @@ export function getObjectToUpdate<T>(upstreamObj: Record<string, T>, forkObj: Re
  * Get update for an array value.
  * Returns upstream array if fork has the key and arrays differ.
  */
-export function getArrayToUpdate<T>(upstreamArr: T[], forkArr: T[]): T[] | null {
+function getArrayToUpdate<T>(upstreamArr: T[], forkArr: T[]): T[] | null {
   if (JSON.stringify(upstreamArr) !== JSON.stringify(forkArr)) {
     return upstreamArr;
   }
@@ -78,7 +78,7 @@ export function getArrayToUpdate<T>(upstreamArr: T[], forkArr: T[]): T[] | null 
  * Get update for a primitive value.
  * Returns upstream value if fork has the key and values differ.
  */
-export function getPrimitiveToUpdate<T>(upstreamVal: T, forkVal: T): T | null {
+function getPrimitiveToUpdate<T>(upstreamVal: T, forkVal: T): T | null {
   if (upstreamVal !== forkVal) {
     return upstreamVal;
   }
@@ -86,12 +86,12 @@ export function getPrimitiveToUpdate<T>(upstreamVal: T, forkVal: T): T | null {
 }
 
 /** Type of package.json root key for sync purposes */
-export type PackageKeyType = 'dependencies' | 'object' | 'array' | 'primitive';
+type PackageKeyType = 'dependencies' | 'object' | 'array' | 'primitive';
 
 /**
  * Detect the type of a package.json root key based on its value.
  */
-export function detectKeyType(value: unknown, key: string): PackageKeyType {
+function detectKeyType(value: unknown, key: string): PackageKeyType {
   // Known dependency keys use semver logic
   if (
     key === 'dependencies' ||

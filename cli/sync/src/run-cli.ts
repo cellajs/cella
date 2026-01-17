@@ -31,7 +31,7 @@ let skipPackages = false;
  * immediately during parsing). These values are later combined into a final
  * `CLIConfig` object that flows through the rest of the CLI pipeline.
  */
-export const command = new Command(NAME)
+const command = new Command(NAME)
   .version(VERSION, '-v, --version', `output the current version of ${NAME}`)
   .usage('[options]')
   .helpOption('-h, --help', 'display this help message')

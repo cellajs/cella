@@ -11,7 +11,7 @@ import { gitCheckout } from './utils/git/command';
 import { getCurrentBranch } from './utils/git/helpers';
 
 /**
- * Orchestrates the full execution flow of the Cella Sync Engine.
+ * Orchestrates the full execution flow of the Cella sync CLI.
  *
  * This includes:
  *  - Running the initial CLI (config)

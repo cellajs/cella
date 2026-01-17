@@ -18,7 +18,12 @@ export default defineConfig({
   behavior: {
     maxGitPreviewsForSquashCommits: 10,               // max commits to show in squash preview
     skipWritingSwizzleMetadataFile: false,            // skip writing .swizzle metadata
+    packageJsonSync: ["dependencies", "devDependencies", "scripts"],
    },
+   log: {
+    modules: ['analyzedFile', 'analyzedSummary'],    // specific modules to log; omit for all
+  },
+  // File
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
@@ -32,8 +37,6 @@ export default defineConfig({
       "render.yaml",
       "compose.yaml",
       "cella.config.ts",
-      "info/*",
-      "cli/create-cella/*",
       "config/default.ts",
       "config/staging.ts",
       "config/development.ts",

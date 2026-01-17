@@ -103,23 +103,18 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       }
     }
 
-    // Persist new package.json files, unless in dry-run mode
-    if (config.behavior.packageJsonMode === 'dryRun') {
-      progress.done('dry run - no changes written');
-    } else {
-      progress.step('writing package.json updates');
+    progress.step('writing package.json updates');
 
-      // Write all updated package.json files
-      for (const resolvedForkPath in newPackageJsons) {
-        const newPackageJson = newPackageJsons[resolvedForkPath];
-        writeJsonFile(resolvedForkPath, newPackageJson);
-      }
-
-      // Stage all changes (developer commits manually with file sync changes)
-      await gitAddAll(config.fork.workingDirectory);
-
-      progress.done('packages staged');
+    // Write all updated package.json files
+    for (const resolvedForkPath in newPackageJsons) {
+      const newPackageJson = newPackageJsons[resolvedForkPath];
+      writeJsonFile(resolvedForkPath, newPackageJson);
     }
+
+    // Stage all changes (developer commits manually with file sync changes)
+    await gitAddAll(config.fork.workingDirectory);
+
+    progress.done('packages staged');
 
     return packageSummaryLine(stats);
   });

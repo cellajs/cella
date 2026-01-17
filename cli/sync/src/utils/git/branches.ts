@@ -2,12 +2,8 @@ import { runGitCommand } from './command';
 
 /**
  * List all local branches in the repository.
- *
- * @param repoPath - The file system path to the git repository
- *
- * @returns An array of local branch names
  */
-export async function getLocalBranches(repoPath: string): Promise<string[]> {
+async function getLocalBranches(repoPath: string): Promise<string[]> {
   const output = await runGitCommand(['branch', '--format=%(refname:short)'], repoPath);
   return output
     .split('\n')
@@ -17,12 +13,8 @@ export async function getLocalBranches(repoPath: string): Promise<string[]> {
 
 /**
  * List all remote branches in the repository.
- *
- * @param repoPath - The file system path to the git repository
- *
- * @returns An array of remote branch names
  */
-export async function getRemoteBranches(repoPath: string): Promise<string[]> {
+async function getRemoteBranches(repoPath: string): Promise<string[]> {
   const output = await runGitCommand(['branch', '-r', '--format=%(refname:short)'], repoPath);
   return output
     .split('\n')
@@ -73,26 +65,5 @@ export async function createBranchIfMissing(
   const exists = await hasLocalBranch(repoPath, branchName);
   if (!exists) {
     await runGitCommand(['checkout', '-b', branchName, baseBranch], repoPath);
-  }
-}
-
-/**
- * Pushes a branch to the specified remote if it does not already exist there.
- *
- * @param repoPath - The file system path to the git repository
- * @param branchName - The name of the branch to push
- * @param remoteName - The name of the remote to push to (default: origin)
- *
- * @returns A Promise that resolves when the branch is pushed or already exists on the remote
- */
-export async function pushBranchIfMissing(
-  repoPath: string,
-  branchName: string,
-  remoteName: string = 'origin',
-): Promise<void> {
-  const remoteBranch = `${remoteName}/${branchName}`;
-  const exists = await hasRemoteBranch(repoPath, remoteBranch);
-  if (!exists) {
-    await runGitCommand(['push', remoteName, branchName], repoPath);
   }
 }

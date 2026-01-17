@@ -214,10 +214,16 @@ function getStrategyReason(analyzedFile: FileAnalysis): string {
 
 /**
  * Checks if the analyzed file module should be logged based on the configuration.
+ * In debug mode, always returns true.
  *
  * @returns Whether the analyzed file module should be logged.
  */
 export function shouldLogAnalyzedFileModule(): boolean {
+  // In debug mode, always show file analysis
+  if (config.debug) {
+    return true;
+  }
+
   const logModulesConfigured = 'modules' in config.log;
 
   // If no specific modules are configured, log by default
@@ -230,6 +236,7 @@ export function shouldLogAnalyzedFileModule(): boolean {
 
 /**
  * Will log the analyzed file line based on the configuration.
+ * In debug mode, logs all files without filtering.
  *
  * @param analyzedFile - The analyzed file object.
  * @param line The line to be logged.
@@ -237,6 +244,12 @@ export function shouldLogAnalyzedFileModule(): boolean {
  * @returns void
  */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
+  // In debug mode, log all files without filtering
+  if (config.debug) {
+    console.info(line);
+    return;
+  }
+
   // If commit summary state (filter) is configured, check if it matches the analyzed file's state
   const commitSummaryStateConfigured = 'commitSummaryState' in config.log.analyzedFile;
   const commitSummaryStateEqual = config.log.analyzedFile.commitSummaryState?.includes(

@@ -34,7 +34,7 @@ export function showConfiguration() {
  * Display the (most important) service-specific configuration.
  * Only shown in debug mode.
  */
-export function showServiceConfiguration() {
+function showServiceConfiguration() {
   const parts: string[] = [];
 
   // Working directory
