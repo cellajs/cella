@@ -1,77 +1,73 @@
 import pc from 'picocolors';
 import { config } from '../config';
-import { DIVIDER } from '../constants';
 import { KeyUpdateSummary } from '../modules/package/get-values-to-update';
-import { FileAnalysis, PackageJson } from '../types';
 
 /**
- * Formats a single key update for display.
+ * Aggregate stats for package sync summary.
  */
-function formatKeyUpdate(keyUpdate: KeyUpdateSummary, forkPackageJson: PackageJson | null): string[] {
-  const lines: string[] = [];
-  const { key, type, updates } = keyUpdate;
-
-  lines.push(`${key}:`);
-
-  switch (type) {
-    case 'dependencies':
-      // Show each dependency update with version change
-      for (const dep in updates as Record<string, string>) {
-        const oldVersion = (forkPackageJson?.[key] as Record<string, string>)?.[dep];
-        const newVersion = (updates as Record<string, string>)[dep];
-        lines.push(`  - ${dep}: ${oldVersion} → ${pc.bold(pc.cyan(newVersion))}`);
-      }
-      break;
-
-    case 'object':
-      // Show which keys in the object are updated
-      for (const objKey in updates as Record<string, unknown>) {
-        lines.push(`  - ${objKey}: ${pc.bold(pc.cyan('updated'))}`);
-      }
-      break;
-
-    case 'array':
-      lines.push(`  - ${pc.bold(pc.cyan('replaced'))}`);
-      break;
-
-    case 'primitive':
-      const oldVal = forkPackageJson?.[key];
-      lines.push(`  - ${oldVal} → ${pc.bold(pc.cyan(String(updates)))}`);
-      break;
-  }
-
-  return lines;
+export interface PackageSyncStats {
+  totalPackages: number;
+  syncedPackages: number;
+  updatedPackages: number;
+  updatesByKey: Record<string, number>;
 }
 
 /**
- * Generates summary lines for a package.json file analysis.
- *
- * @param analyzedFile - The analyzed file information.
- * @param forkPackageJson - The package.json content of the forked repository.
- * @param keyUpdates - Array of key updates to apply.
- *
- * @returns An array of formatted summary lines.
+ * Creates an empty stats object.
  */
-export function packageSummaryLines(
-  analyzedFile: FileAnalysis,
-  forkPackageJson: PackageJson | null,
-  keyUpdates: KeyUpdateSummary[],
-): string[] {
-  // Initialize the summary lines array
-  const lines: string[] = [DIVIDER, pc.bold(`${analyzedFile.filePath}:`)];
+export function createPackageSyncStats(): PackageSyncStats {
+  return {
+    totalPackages: 0,
+    syncedPackages: 0,
+    updatedPackages: 0,
+    updatesByKey: {},
+  };
+}
 
-  // Notify if no keys need updating
+/**
+ * Accumulates stats from a single package's key updates.
+ */
+export function accumulatePackageStats(stats: PackageSyncStats, keyUpdates: KeyUpdateSummary[]): void {
+  stats.totalPackages++;
+
   if (keyUpdates.length === 0) {
-    lines.push(pc.gray('  - no updates needed'));
+    stats.syncedPackages++;
   } else {
-    // Format each key update
-    for (const keyUpdate of keyUpdates) {
-      lines.push(...formatKeyUpdate(keyUpdate, forkPackageJson));
+    stats.updatedPackages++;
+
+    // Count updates by key
+    for (const update of keyUpdates) {
+      stats.updatesByKey[update.key] = (stats.updatesByKey[update.key] || 0) + update.updateCount;
     }
   }
+}
 
-  lines.push(DIVIDER);
-  return lines;
+/**
+ * Generates a compact one-line summary for package sync.
+ * Format: ✓ 9 package.json synced │ ↑3 updated │ deps: 5  devDeps: 2
+ */
+export function packageSummaryLine(stats: PackageSyncStats): string {
+  const badges: string[] = [];
+
+  // Only show updated badge if > 0
+  if (stats.updatedPackages > 0) {
+    badges.push(pc.cyan(`↑${stats.updatedPackages} updated`));
+  }
+
+  // Build key update badges (only if there are updates)
+  const keyBadges: string[] = [];
+  for (const [key, count] of Object.entries(stats.updatesByKey)) {
+    // Shorten common key names
+    const shortKey = key.replace('dependencies', 'deps').replace('devDeps', 'devDeps');
+    keyBadges.push(pc.cyan(`${shortKey}: ${count}`));
+  }
+
+  // Build line: ✓ count package.json synced │ badges │ key details
+  const parts = [`${pc.green('✓')} ${stats.totalPackages} package.json synced`];
+  if (badges.length > 0) parts.push(badges.join('  '));
+  if (keyBadges.length > 0) parts.push(keyBadges.join('  '));
+
+  return parts.join(' │ ');
 }
 
 /**

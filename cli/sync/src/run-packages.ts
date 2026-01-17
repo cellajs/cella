@@ -1,7 +1,12 @@
 import * as path from 'path';
 
 import { config } from './config';
-import { logPackageSummaryLines, packageSummaryLines } from './log/package-summary';
+import {
+  accumulatePackageStats,
+  createPackageSyncStats,
+  logPackageSummaryLines,
+  packageSummaryLine,
+} from './log/package-summary';
 import { applyPackageUpdates, getPackageUpdates } from './modules/package/get-values-to-update';
 import { FileAnalysis, PackageJson } from './types';
 import { readJsonFile, writeJsonFile } from './utils/files';
@@ -35,7 +40,7 @@ import { createProgress } from './utils/progress';
 export async function runPackages(analyzedFiles: FileAnalysis[]) {
   const progress = createProgress('syncing packages');
 
-  const allSummaryLines = await progress.wrap(async () => {
+  const summaryLine = await progress.wrap(async () => {
     progress.step('checking out target branch');
 
     // Ensure we operate on the correct target branch in the fork
@@ -50,8 +55,8 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
      */
     const newPackageJsons: { [filePath: string]: PackageJson } = {};
 
-    // Accumulates all log lines to output after processing
-    const summaryLines: string[] = [];
+    // Aggregate stats for summary
+    const stats = createPackageSyncStats();
 
     progress.step('analyzing package.json files');
 
@@ -83,10 +88,8 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       // Determine which keys need updates
       const keyUpdates = getPackageUpdates(upstreamPackageJson || {}, forkPackageJson || {}, keysToSync);
 
-      // Prepare summary lines for final logging
-      const pkgLines = packageSummaryLines(analyzedFile, forkPackageJson, keyUpdates);
-
-      summaryLines.push(...pkgLines);
+      // Accumulate stats for summary
+      accumulatePackageStats(stats, keyUpdates);
 
       // If there are any updates, prepare updated package.json content
       if (keyUpdates.length > 0) {
@@ -118,9 +121,9 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       progress.done('packages staged');
     }
 
-    return summaryLines;
+    return packageSummaryLine(stats);
   });
 
-  // Log all package summaries
-  logPackageSummaryLines(allSummaryLines);
+  // Log compact summary
+  logPackageSummaryLines([summaryLine]);
 }

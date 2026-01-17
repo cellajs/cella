@@ -51,28 +51,27 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
   }
 
   // Build compact inline badge summary
-  // Format: 247 files │ ✓180 synced  ↑5 ahead  ↓42 behind  ⚡15 diverged  ⚠5 unrelated │ 🔧23 swizzled
-  const badges = [
-    pc.green(`✓${summary.upToDate} synced`),
-    pc.green(`↑${summary.ahead} ahead`),
-    pc.yellow(`↓${summary.behind} behind`),
-    pc.red(`⚡${summary.diverged} diverged`),
-    pc.red(`⚠${summary.unrelated} unrelated`),
-  ];
+  // Format: ✓ 1729 files synced │ ↓42 behind  ⚡15 diverged │ 🔧23 swizzled
+  const badges: string[] = [];
 
-  // Only show unknown if > 0
-  if (summary.unknown > 0) {
-    badges.push(pc.red(`?${summary.unknown} unknown`));
-  }
+  // Only show non-zero status badges (except synced which is in the main count)
+  if (summary.ahead > 0) badges.push(pc.green(`↑${summary.ahead} ahead`));
+  if (summary.behind > 0) badges.push(pc.yellow(`↓${summary.behind} behind`));
+  if (summary.diverged > 0) badges.push(pc.red(`⚡${summary.diverged} diverged`));
+  if (summary.unrelated > 0) badges.push(pc.red(`⚠${summary.unrelated} unrelated`));
+  if (summary.unknown > 0) badges.push(pc.red(`?${summary.unknown} unknown`));
 
   const swizzleInfo =
     summary.swizzledNew > 0
       ? pc.cyan(`🔧${summary.swizzled} swizzled (${summary.swizzledNew} new)`)
       : pc.cyan(`🔧${summary.swizzled} swizzled`);
 
-  const line = `${pc.bold(summary.totalFiles)} files │ ${badges.join('  ')} │ ${swizzleInfo}`;
+  // Build line: ✓ count files synced │ badges │ swizzle
+  const parts = [`${pc.green('✓')} ${summary.totalFiles} files synced`];
+  if (badges.length > 0) parts.push(badges.join('  '));
+  parts.push(swizzleInfo);
 
-  return [line];
+  return [parts.join(' │ ')];
 }
 
 /**
