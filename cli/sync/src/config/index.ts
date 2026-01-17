@@ -1,7 +1,7 @@
 // Import all types
 
 // Import custom config
-import { cellaConfig as customConfig } from '../../../../cella.config';
+import customConfig from '../../../../cella.config';
 import { behaviorDefaultConfig } from './behavior.default';
 // Import default configurations
 import { forkDefaultConfig } from './fork.default';

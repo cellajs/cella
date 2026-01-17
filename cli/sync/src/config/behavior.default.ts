@@ -20,6 +20,11 @@ export const behaviorDefaultConfig: MinimalBehaviorConfig = {
   packageJsonMode: 'applyChanges',
 
   /**
+   * Root keys in package.json to sync from upstream.
+   */
+  packageJsonSync: ['dependencies', 'devDependencies'],
+
+  /**
    * Do not write any swizzle metadata file
    */
   skipWritingSwizzleMetadataFile: true,

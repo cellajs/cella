@@ -112,6 +112,14 @@ export interface MinimalBehaviorConfig {
   packageJsonMode?: 'dryRun' | 'applyChanges';
 
   /**
+   * Root keys in package.json to sync from upstream.
+   * Only updates values where the key already exists in fork.
+   * Supports objects (dependencies, scripts), arrays (browserslist), and primitives (version).
+   * @default ['dependencies', 'devDependencies']
+   */
+  packageJsonSync?: string[];
+
+  /**
    * Whether to skip writing the swizzle metadata file.
    * If true, the swizzle metadata file will not be written.
    */
@@ -227,3 +235,17 @@ export type DeepPartial<T> = T extends (infer U)[] // If T is an array
   : T extends object // If T is an object
     ? { [P in keyof T]?: DeepPartial<T[P]> }
     : T; // Otherwise primitive — leave as-is
+
+/**
+ * Define sync configuration with full type inference (Vite-style helper).
+ * Provides intellisense for all user-configurable options.
+ *
+ * @example
+ * export default defineConfig({
+ *   upstream: { branch: 'development' },
+ *   fork: { branch: 'main' },
+ * })
+ */
+export function defineConfig(config: DeepPartial<UserSyncConfig>): DeepPartial<UserSyncConfig> {
+  return config;
+}

@@ -2,7 +2,7 @@ import * as path from 'path';
 
 import { config } from './config';
 import { logPackageSummaryLines, packageSummaryLines } from './log/package-summary';
-import { getDepsToUpdate } from './modules/package/get-deps-to-update';
+import { applyPackageUpdates, getPackageUpdates } from './modules/package/get-values-to-update';
 import { FileAnalysis, PackageJson } from './types';
 import { readJsonFile, writeJsonFile } from './utils/files';
 import { gitAddAll, gitCheckout } from './utils/git/command';
@@ -77,43 +77,30 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
         analyzedFile.filePath,
       );
 
-      // Determine which deps should be updated (dependencies + devDependencies)
-      const depsToUpdate = getDepsToUpdate(
-        upstreamPackageJson?.dependencies || {},
-        forkPackageJson?.dependencies || {},
-      );
+      // Get configured keys to sync (defaults to dependencies, devDependencies)
+      const keysToSync = config.behavior.packageJsonSync || ['dependencies', 'devDependencies'];
 
-      const devDepsToUpdate = getDepsToUpdate(
-        upstreamPackageJson?.devDependencies || {},
-        forkPackageJson?.devDependencies || {},
+      // Determine which keys need updates
+      const keyUpdates = getPackageUpdates(
+        upstreamPackageJson || {},
+        forkPackageJson || {},
+        keysToSync,
       );
 
       // Prepare summary lines for final logging
-      const pkgLines = packageSummaryLines(analyzedFile, forkPackageJson, depsToUpdate, devDepsToUpdate);
+      const pkgLines = packageSummaryLines(analyzedFile, forkPackageJson, keyUpdates);
 
       summaryLines.push(...pkgLines);
 
       // If there are any updates, prepare updated package.json content
-      const amountOfDepsToUpdate = Object.keys(depsToUpdate).length;
-      const amountOfDevDepsToUpdate = Object.keys(devDepsToUpdate).length;
-
-      if (amountOfDepsToUpdate || amountOfDevDepsToUpdate) {
+      if (keyUpdates.length > 0) {
         // Initialize entry if this file hasn't been added yet
         if (!newPackageJsons[resolvedForkPath]) {
           newPackageJsons[resolvedForkPath] = { ...forkPackageJson };
         }
 
-        // Apply dependency updates
-        for (const dep in depsToUpdate) {
-          newPackageJsons[resolvedForkPath].dependencies = newPackageJsons[resolvedForkPath].dependencies || {};
-          newPackageJsons[resolvedForkPath].dependencies![dep] = depsToUpdate[dep];
-        }
-
-        // Apply devDependency updates
-        for (const dep in devDepsToUpdate) {
-          newPackageJsons[resolvedForkPath].devDependencies = newPackageJsons[resolvedForkPath].devDependencies || {};
-          newPackageJsons[resolvedForkPath].devDependencies![dep] = devDepsToUpdate[dep];
-        }
+        // Apply all key updates
+        applyPackageUpdates(newPackageJsons[resolvedForkPath], keyUpdates);
       }
     }
 
