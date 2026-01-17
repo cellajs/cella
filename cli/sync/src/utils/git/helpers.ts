@@ -1,6 +1,17 @@
 import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain, runGitCommand } from './command';
 
 /**
+ * Get the current branch name.
+ *
+ * @param repoPath - Absolute or relative path to the Git repository
+ *
+ * @returns The current branch name
+ */
+export async function getCurrentBranch(repoPath: string): Promise<string> {
+  return runGitCommand(['rev-parse', '--abbrev-ref', 'HEAD'], repoPath);
+}
+
+/**
  * Get the number of commits that are in `sourceBranch` but not in `baseBranch`.
  *
  * This function parses the raw string output from `gitRevListCount` into a number.

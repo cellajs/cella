@@ -7,6 +7,8 @@ import { runCli } from './run-cli';
 import { runPackages } from './run-packages';
 import { runSetup } from './run-setup';
 import { runSync } from './run-sync';
+import { gitCheckout } from './utils/git/command';
+import { getCurrentBranch } from './utils/git/helpers';
 
 /**
  * Orchestrates the full execution flow of the Cella Sync Engine.
@@ -24,40 +26,53 @@ import { runSync } from './run-sync';
  * @returns A Promise that resolves when the entire pipeline has executed.
  */
 async function main(): Promise<void> {
-  // Prompt configuration
-  await runCli();
+  // Store original branch to restore at end
+  const originalBranch = await getCurrentBranch(process.cwd());
 
-  // If only validating config, run strict validation and exit
-  if (config.syncService === 'validate') {
-    await validateConfig(true);
-    return;
-  }
+  try {
+    // Prompt configuration
+    await runCli();
 
-  // Validate overrides config (check file patterns exist)
-  await validateConfig();
-
-  // Validate environment and repository state
-  await runSetup();
-
-  // Perform analysis (file diffs, metadata, merge strategies, etc.)
-  const analyzedFiles = await runAnalyze();
-
-  // Apply file sync logic (sync service only)
-  if (config.syncService === 'sync') {
-    const commitMessage = await runSync(analyzedFiles);
-
-    // Apply package.json dependency synchronization (unless skipped)
-    if (!config.skipPackages) {
-      await runPackages(analyzedFiles);
+    // If only validating config, run strict validation and exit
+    if (config.syncService === 'validate') {
+      await validateConfig(true);
+      return;
     }
 
-    // Show final instructions for staged changes
-    if (commitMessage) {
+    // Validate overrides config (check file patterns exist)
+    await validateConfig();
+
+    // Validate environment and repository state
+    await runSetup();
+
+    // Perform analysis (file diffs, metadata, merge strategies, etc.)
+    const analyzedFiles = await runAnalyze();
+
+    // Apply file sync logic (sync service only)
+    if (config.syncService === 'sync') {
+      const commitMessage = await runSync(analyzedFiles);
+
+      // Apply package.json dependency synchronization (unless skipped)
+      if (!config.skipPackages) {
+        await runPackages(analyzedFiles);
+      }
+
+      // Show final instructions for staged changes
+      if (commitMessage) {
+        console.info();
+        console.info(`${pc.green('✓')} changes staged, not committed`);
+        console.info();
+        console.info(pc.dim('suggested commit message:'));
+        console.info(pc.white(commitMessage));
+      }
+    }
+  } finally {
+    // Restore original branch (if different from current)
+    const currentBranch = await getCurrentBranch(process.cwd());
+    if (currentBranch !== originalBranch) {
+      await gitCheckout(process.cwd(), originalBranch);
       console.info();
-      console.info(`${pc.green('✓')} changes staged, not committed`);
-      console.info();
-      console.info(pc.dim('suggested commit message:'));
-      console.info(pc.white(commitMessage));
+      console.info(`${pc.green('✓')} restored to '${originalBranch}' branch`);
     }
   }
 }
