@@ -47,12 +47,9 @@ export function accumulatePackageStats(stats: PackageSyncStats, keyUpdates: KeyU
  * Format: ✓ 9 package.json synced │ ↑3 updated │ deps: 5  devDeps: 2
  */
 export function packageSummaryLine(stats: PackageSyncStats): string {
-  const badges: string[] = [];
-
-  // Only show updated badge if > 0
-  if (stats.updatedPackages > 0) {
-    badges.push(pc.cyan(`↑${stats.updatedPackages} updated`));
-  }
+  // Show updated badge (colored if > 0, plain if 0)
+  const updatedBadge =
+    stats.updatedPackages > 0 ? pc.cyan(`↑${stats.updatedPackages} updated`) : `↑${stats.updatedPackages} updated`;
 
   // Build key update badges (only if there are updates)
   const keyBadges: string[] = [];
@@ -62,9 +59,9 @@ export function packageSummaryLine(stats: PackageSyncStats): string {
     keyBadges.push(pc.cyan(`${shortKey}: ${count}`));
   }
 
-  // Build line: ✓ count package.json synced │ badges │ key details
+  // Build line: ✓ count package.json synced │ updated │ key details
   const parts = [`${pc.green('✓')} ${stats.totalPackages} package.json synced`];
-  if (badges.length > 0) parts.push(badges.join('  '));
+  parts.push(updatedBadge);
   if (keyBadges.length > 0) parts.push(keyBadges.join('  '));
 
   return parts.join(' │ ');

@@ -52,13 +52,14 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 
   // Build compact inline badge summary
   // Format: ✓ 1729 files synced │ ↓42 behind  ⚡15 diverged │ 🔧23 swizzled
-  const badges: string[] = [];
+  const badges: string[] = [
+    summary.ahead > 0 ? pc.green(`↑${summary.ahead} ahead`) : `↑${summary.ahead} ahead`,
+    summary.behind > 0 ? pc.yellow(`↓${summary.behind} behind`) : `↓${summary.behind} behind`,
+    summary.diverged > 0 ? pc.red(`⚡${summary.diverged} diverged`) : `⚡${summary.diverged} diverged`,
+    summary.unrelated > 0 ? pc.red(`⚠${summary.unrelated} unrelated`) : `⚠${summary.unrelated} unrelated`,
+  ];
 
-  // Only show non-zero status badges (except synced which is in the main count)
-  if (summary.ahead > 0) badges.push(pc.green(`↑${summary.ahead} ahead`));
-  if (summary.behind > 0) badges.push(pc.yellow(`↓${summary.behind} behind`));
-  if (summary.diverged > 0) badges.push(pc.red(`⚡${summary.diverged} diverged`));
-  if (summary.unrelated > 0) badges.push(pc.red(`⚠${summary.unrelated} unrelated`));
+  // Only show unknown if > 0
   if (summary.unknown > 0) badges.push(pc.red(`?${summary.unknown} unknown`));
 
   const swizzleInfo =
@@ -68,7 +69,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 
   // Build line: ✓ count files synced │ badges │ swizzle
   const parts = [`${pc.green('✓')} ${summary.totalFiles} files synced`];
-  if (badges.length > 0) parts.push(badges.join('  '));
+  parts.push(badges.join('  '));
   parts.push(swizzleInfo);
 
   return [parts.join(' │ ')];
