@@ -614,12 +614,13 @@
           "entityType": "user",
           "resourceType": null,
           "action": "update",
-          "tableName": "memberships",
-          "type": "membership.updated",
+          "tableName": "pages",
+          "type": "page.updated",
           "entityId": "21rs6psa9stclacdgtonoqr1",
           "organizationId": "t2j8omleaz2pg8iwtnhw3666",
           "createdAt": "2024-10-11T19:21:02.239Z",
           "changedKeys": [
+            "email",
             "description",
             "name"
           ]
@@ -1455,14 +1456,14 @@
           },
           "counts": {
             "membership": {
-              "admin": 3,
-              "member": 0,
-              "pending": 4,
-              "total": 3
+              "member": 30,
+              "admin": 63,
+              "pending": 13,
+              "total": 93
             },
             "entities": {
-              "attachment": 4,
-              "page": 0
+              "attachment": 178,
+              "page": 257
             }
           }
         }
@@ -3799,31 +3800,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Me"
-                },
-                "example": {
-                  "user": {
-                    "id": "7qgsnou9b80h3jlnu1j458h6",
-                    "entityType": "user",
-                    "name": "Mr. Odell Gislason",
-                    "firstName": "Odell",
-                    "lastName": "Gislason",
-                    "email": "odell.gislason@yahoo.com",
-                    "slug": "odellgislason57",
-                    "description": null,
-                    "thumbnailUrl": null,
-                    "bannerUrl": null,
-                    "language": "en",
-                    "newsletter": true,
-                    "mfaRequired": false,
-                    "userFlags": {},
-                    "createdAt": "2024-07-14T22:49:14.651Z",
-                    "modifiedAt": "2024-07-14T22:49:14.651Z",
-                    "modifiedBy": null,
-                    "lastStartedAt": "2024-07-14T22:49:14.651Z",
-                    "lastSignInAt": "2024-07-14T22:49:14.651Z",
-                    "lastSeenAt": "2024-07-14T22:49:14.651Z"
-                  },
-                  "systemRole": "user"
                 }
               }
             }
@@ -3931,28 +3907,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
-                },
-                "example": {
-                  "id": "w6g7sfzetbhjls7m9dg1xzav",
-                  "entityType": "user",
-                  "name": "Franco Corwin",
-                  "firstName": "Franco",
-                  "lastName": "Corwin",
-                  "email": "franco_corwin@gmail.com",
-                  "slug": "francocorwin",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": true,
-                  "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedBy": null,
-                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4080,28 +4034,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
-                },
-                "example": {
-                  "id": "w6g7sfzetbhjls7m9dg1xzav",
-                  "entityType": "user",
-                  "name": "Franco Corwin",
-                  "firstName": "Franco",
-                  "lastName": "Corwin",
-                  "email": "franco_corwin@gmail.com",
-                  "slug": "francocorwin",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": true,
-                  "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedBy": null,
-                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4148,29 +4080,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MeAuthData"
-                },
-                "example": {
-                  "enabledOAuth": [
-                    "github"
-                  ],
-                  "hasTotp": false,
-                  "hasPassword": true,
-                  "sessions": [
-                    {
-                      "id": "1yyluhj040oyd732g8rl7t64",
-                      "userId": "ccb8qru6yupvx5ntxp604xgo",
-                      "type": "regular",
-                      "createdAt": "2024-05-29T08:00:36.178Z",
-                      "expiresAt": "2024-06-28T08:00:36.178Z",
-                      "deviceName": "Safari on iPhone",
-                      "deviceType": "mobile",
-                      "deviceOs": "Windows",
-                      "browser": "Safari",
-                      "authStrategy": "password",
-                      "isCurrent": true
-                    }
-                  ],
-                  "passkeys": []
                 }
               }
             }
@@ -4312,10 +4221,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessWithRejectedItems"
-                },
-                "example": {
-                  "success": true,
-                  "rejectedItems": []
                 }
               }
             }
@@ -4463,18 +4368,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UploadToken"
-                },
-                "example": {
-                  "public": false,
-                  "sub": "x1lsgegsw6imziogthaolhvy",
-                  "s3": true,
-                  "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
-                  "params": {
-                    "auth": {
-                      "key": "uploads/kx5n7c1cush46z5cnizlmyd8",
-                      "expires": "2025-01-01T04:15:50.483Z"
-                    }
-                  }
                 }
               }
             }
@@ -4791,10 +4684,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessWithRejectedItems"
-                },
-                "example": {
-                  "success": true,
-                  "rejectedItems": []
                 }
               }
             }
@@ -4853,28 +4742,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
-                },
-                "example": {
-                  "id": "w6g7sfzetbhjls7m9dg1xzav",
-                  "entityType": "user",
-                  "name": "Franco Corwin",
-                  "firstName": "Franco",
-                  "lastName": "Corwin",
-                  "email": "franco_corwin@gmail.com",
-                  "slug": "francocorwin",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": true,
-                  "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedBy": null,
-                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -4986,28 +4853,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
-                },
-                "example": {
-                  "id": "w6g7sfzetbhjls7m9dg1xzav",
-                  "entityType": "user",
-                  "name": "Franco Corwin",
-                  "firstName": "Franco",
-                  "lastName": "Corwin",
-                  "email": "franco_corwin@gmail.com",
-                  "slug": "francocorwin",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": true,
-                  "mfaRequired": false,
-                  "userFlags": {},
-                  "createdAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedAt": "2024-12-13T11:17:23.643Z",
-                  "modifiedBy": null,
-                  "lastStartedAt": "2024-12-13T11:17:23.643Z",
-                  "lastSignInAt": "2024-12-13T11:17:23.643Z",
-                  "lastSeenAt": "2024-12-13T11:17:23.643Z"
                 }
               }
             }
@@ -5138,14 +4983,14 @@
                     },
                     "counts": {
                       "membership": {
-                        "admin": 3,
-                        "member": 0,
-                        "pending": 4,
-                        "total": 3
+                        "member": 30,
+                        "admin": 63,
+                        "pending": 13,
+                        "total": 93
                       },
                       "entities": {
-                        "attachment": 4,
-                        "page": 0
+                        "attachment": 178,
+                        "page": 257
                       }
                     }
                   }
@@ -5360,10 +5205,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessWithRejectedItems"
-                },
-                "example": {
-                  "success": true,
-                  "rejectedItems": []
                 }
               }
             }
@@ -5422,63 +5263,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
-                },
-                "example": {
-                  "id": "hmo9fwr239kqavr3yur671kl",
-                  "entityType": "organization",
-                  "name": "McClure, Dicki and Waters",
-                  "slug": "mcclure-dicki-and-waters",
-                  "description": "Open-source static website",
-                  "shortName": "McClure,",
-                  "country": "Guatemala",
-                  "timezone": "Africa/Dar_es_Salaam",
-                  "defaultLanguage": "en",
-                  "languages": [
-                    "en"
-                  ],
-                  "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
-                  "emailDomains": [],
-                  "color": "#daf7e3",
-                  "thumbnailUrl": null,
-                  "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
-                  "bannerUrl": null,
-                  "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                  "welcomeText": "Welcome to McClure, Dicki and Waters!",
-                  "authStrategies": [
-                    "password"
-                  ],
-                  "chatSupport": true,
-                  "createdAt": "2024-12-25T15:29:47.111Z",
-                  "createdBy": null,
-                  "modifiedAt": "2024-12-25T15:29:47.111Z",
-                  "modifiedBy": null,
-                  "restrictions": {
-                    "user": 1000,
-                    "attachment": 100,
-                    "page": 0
-                  },
-                  "membership": {
-                    "id": "kaba9fpc90mgtzmtjipw2v8s",
-                    "contextType": "organization",
-                    "userId": "w4hg4036vxzq0rzt4pucveps",
-                    "organizationId": "hmo9fwr239kqavr3yur671kl",
-                    "role": "admin",
-                    "order": 38,
-                    "muted": false,
-                    "archived": false
-                  },
-                  "counts": {
-                    "membership": {
-                      "admin": 5,
-                      "member": 9,
-                      "pending": 0,
-                      "total": 14
-                    },
-                    "entities": {
-                      "attachment": 21,
-                      "page": 24
-                    }
-                  }
                 }
               }
             }
@@ -5662,63 +5446,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
-                },
-                "example": {
-                  "id": "hmo9fwr239kqavr3yur671kl",
-                  "entityType": "organization",
-                  "name": "McClure, Dicki and Waters",
-                  "slug": "mcclure-dicki-and-waters",
-                  "description": "Open-source static website",
-                  "shortName": "McClure,",
-                  "country": "Guatemala",
-                  "timezone": "Africa/Dar_es_Salaam",
-                  "defaultLanguage": "en",
-                  "languages": [
-                    "en"
-                  ],
-                  "notificationEmail": "notifications@mcclure-dicki-and-waters.example",
-                  "emailDomains": [],
-                  "color": "#daf7e3",
-                  "thumbnailUrl": null,
-                  "logoUrl": "https://picsum.photos/seed/CGEa4RRQS/2665/3362",
-                  "bannerUrl": null,
-                  "websiteUrl": "https://mcclure-dicki-and-waters.example",
-                  "welcomeText": "Welcome to McClure, Dicki and Waters!",
-                  "authStrategies": [
-                    "password"
-                  ],
-                  "chatSupport": true,
-                  "createdAt": "2024-12-25T15:29:47.111Z",
-                  "createdBy": null,
-                  "modifiedAt": "2024-12-25T15:29:47.111Z",
-                  "modifiedBy": null,
-                  "restrictions": {
-                    "user": 1000,
-                    "attachment": 100,
-                    "page": 0
-                  },
-                  "membership": {
-                    "id": "kaba9fpc90mgtzmtjipw2v8s",
-                    "contextType": "organization",
-                    "userId": "w4hg4036vxzq0rzt4pucveps",
-                    "organizationId": "hmo9fwr239kqavr3yur671kl",
-                    "role": "admin",
-                    "order": 38,
-                    "muted": false,
-                    "archived": false
-                  },
-                  "counts": {
-                    "membership": {
-                      "admin": 5,
-                      "member": 9,
-                      "pending": 0,
-                      "total": 14
-                    },
-                    "entities": {
-                      "attachment": 21,
-                      "page": 24
-                    }
-                  }
                 }
               }
             }
@@ -5866,20 +5593,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
-                },
-                "example": {
-                  "id": "co96vrmic3wbowmxzbqa1e9f",
-                  "entityType": "page",
-                  "name": "Infit pauci optio demo.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-                  "keywords": "solvo atrox tendo",
-                  "status": "unpublished",
-                  "parentId": null,
-                  "displayOrder": 32.69,
-                  "createdAt": "2024-08-06T10:28:33.226Z",
-                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "modifiedAt": "2024-08-06T10:28:33.226Z",
-                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
                 }
               }
             }
@@ -6101,20 +5814,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
-                },
-                "example": {
-                  "id": "co96vrmic3wbowmxzbqa1e9f",
-                  "entityType": "page",
-                  "name": "Infit pauci optio demo.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-                  "keywords": "solvo atrox tendo",
-                  "status": "unpublished",
-                  "parentId": null,
-                  "displayOrder": 32.69,
-                  "createdAt": "2024-08-06T10:28:33.226Z",
-                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "modifiedAt": "2024-08-06T10:28:33.226Z",
-                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
                 }
               }
             }
@@ -6213,20 +5912,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page"
-                },
-                "example": {
-                  "id": "co96vrmic3wbowmxzbqa1e9f",
-                  "entityType": "page",
-                  "name": "Infit pauci optio demo.",
-                  "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-                  "keywords": "solvo atrox tendo",
-                  "status": "unpublished",
-                  "parentId": null,
-                  "displayOrder": 32.69,
-                  "createdAt": "2024-08-06T10:28:33.226Z",
-                  "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                  "modifiedAt": "2024-08-06T10:28:33.226Z",
-                  "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
                 }
               }
             }
@@ -7401,10 +7086,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessWithRejectedItems"
-                },
-                "example": {
-                  "success": true,
-                  "rejectedItems": []
                 }
               }
             }
@@ -7490,28 +7171,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
-                },
-                "example": {
-                  "id": "og9ynkm3vp2mdgi3oeicogxv",
-                  "entityType": "attachment",
-                  "name": "yet_rightfully_lest.ogx",
-                  "description": null,
-                  "keywords": "pectus subvenio depromo",
-                  "public": false,
-                  "bucketName": "attachments",
-                  "groupId": null,
-                  "filename": "yet_rightfully_lest.ogx",
-                  "contentType": "video/mp2t",
-                  "convertedContentType": null,
-                  "size": "6046908",
-                  "originalKey": "uploads/ofr579y6bqnt152wowxrfkyy/yet_rightfully_lest.ogx",
-                  "convertedKey": null,
-                  "thumbnailKey": null,
-                  "createdAt": "2024-10-12T17:43:05.360Z",
-                  "createdBy": "0uwim8y2tppz7th9tol75wjz",
-                  "modifiedAt": "2024-10-12T17:43:05.360Z",
-                  "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-                  "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
                 }
               }
             }
@@ -7793,10 +7452,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessWithRejectedItems"
-                },
-                "example": {
-                  "success": true,
-                  "rejectedItems": []
                 }
               }
             }
@@ -7891,21 +7546,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Membership"
-                },
-                "example": {
-                  "id": "575b0vreys30k2k4z795uufw",
-                  "contextType": "organization",
-                  "userId": "xg7596t8jiy8d0v8irrljzhy",
-                  "organizationId": "7ul53b62aw5h7k6x44nbu2r5",
-                  "role": "member",
-                  "order": 49,
-                  "muted": false,
-                  "archived": false,
-                  "createdAt": "2024-10-28T14:52:59.502Z",
-                  "createdBy": "xg7596t8jiy8d0v8irrljzhy",
-                  "modifiedAt": "2024-10-28T14:52:59.502Z",
-                  "modifiedBy": null,
-                  "uniqueKey": "xg7596t8jiy8d0v8irrljzhy-7ul53b62aw5h7k6x44nbu2r5"
                 }
               }
             }

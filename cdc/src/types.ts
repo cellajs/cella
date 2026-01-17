@@ -3,8 +3,8 @@
  * Derived from the tracked tables registry.
  */
 
-import { entityTables } from '#/entity-table-config';
-import { resourceTables } from '#/activities-config';
+import { entityTables } from '#/table-config';
+import { resourceTables } from '#/table-config';
 
 /** Type representing an entity table */
 export type EntityTable = (typeof entityTables)[keyof typeof entityTables];

@@ -1,5 +1,5 @@
-import { entityTables } from '#/entity-table-config';
-import { resourceTables } from '#/activities-config';
+import { entityTables } from '#/table-config';
+import { resourceTables } from '#/table-config';
 import { getTableName } from 'drizzle-orm';
 import type { EntityTableEntry, ResourceTableEntry, TableRegistryEntry } from './types';
 

@@ -397,12 +397,12 @@
       "entityType": "user",
       "resourceType": null,
       "action": "update",
-      "tableName": "memberships",
-      "type": "membership.updated",
+      "tableName": "pages",
+      "type": "page.updated",
       "entityId": "21rs6psa9stclacdgtonoqr1",
       "organizationId": "t2j8omleaz2pg8iwtnhw3666",
       "createdAt": "2024-10-11T19:21:02.239Z",
-      "changedKeys": ["description", "name"]
+      "changedKeys": ["email", "description", "name"]
     }
   },
   {
@@ -1052,12 +1052,12 @@
       },
       "counts": {
         "membership": {
-          "admin": 3,
-          "member": 0,
-          "pending": 4,
-          "total": 3
+          "member": 30,
+          "admin": 63,
+          "pending": 13,
+          "total": 93
         },
-        "entities": { "attachment": 4, "page": 0 }
+        "entities": { "attachment": 178, "page": 257 }
       }
     }
   },

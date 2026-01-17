@@ -3,11 +3,11 @@ import { and, count, eq, type SelectedFields, type SQL, type SQLWrapper, sql } f
 import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
-import { entityTables } from '#/entity-table-config';
 import {
   getEntityTypesScopedByContextEntityType,
   type ValidEntities,
 } from '#/modules/entities/helpers/get-related-entities';
+import { entityTables } from '#/table-config';
 
 /**
  * Counts related entities (Context + Product) for the given entity instance

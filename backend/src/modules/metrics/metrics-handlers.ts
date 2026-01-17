@@ -4,13 +4,13 @@ import { count } from 'drizzle-orm';
 import { register } from 'prom-client';
 import type { z } from 'zod';
 import { db } from '#/db/db';
-import { entityTables } from '#/entity-table-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
 import metricRoutes from '#/modules/metrics/metrics-routes';
 import type { publicCountsSchema } from '#/modules/metrics/metrics-schema';
+import { entityTables } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 

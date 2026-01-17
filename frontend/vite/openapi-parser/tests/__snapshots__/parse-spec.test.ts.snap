@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "e527e50db343dbf5",
+  "inputHash": "9c7e7368a4760c2e",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -3180,14 +3180,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "country": "Guatemala",
           "counts": {
             "entities": {
-              "attachment": 2,
-              "page": 17,
+              "attachment": 178,
+              "page": 257,
             },
             "membership": {
-              "admin": 5,
-              "member": 12,
-              "pending": 5,
-              "total": 17,
+              "admin": 63,
+              "member": 30,
+              "pending": 13,
+              "total": 93,
             },
           },
           "createdAt": "2024-12-25T15:29:47.111Z",
@@ -9324,14 +9324,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "country": "Guatemala",
                 "counts": {
                   "entities": {
-                    "attachment": 2,
-                    "page": 17,
+                    "attachment": 178,
+                    "page": 257,
                   },
                   "membership": {
-                    "admin": 5,
-                    "member": 12,
-                    "pending": 5,
-                    "total": 17,
+                    "admin": 63,
+                    "member": 30,
+                    "pending": 13,
+                    "total": 93,
                   },
                 },
                 "createdAt": "2024-12-25T15:29:47.111Z",
@@ -10162,14 +10162,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "country": "Guatemala",
                 "counts": {
                   "entities": {
-                    "attachment": 2,
-                    "page": 17,
+                    "attachment": 178,
+                    "page": 257,
                   },
                   "membership": {
-                    "admin": 5,
-                    "member": 12,
-                    "pending": 5,
-                    "total": 17,
+                    "admin": 63,
+                    "member": 30,
+                    "pending": 13,
+                    "total": 93,
                   },
                 },
                 "createdAt": "2024-12-25T15:29:47.111Z",
@@ -10679,14 +10679,14 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "country": "Guatemala",
                 "counts": {
                   "entities": {
-                    "attachment": 2,
-                    "page": 17,
+                    "attachment": 178,
+                    "page": 257,
                   },
                   "membership": {
-                    "admin": 5,
-                    "member": 12,
-                    "pending": 5,
-                    "total": 17,
+                    "admin": 63,
+                    "member": 30,
+                    "pending": 13,
+                    "total": 93,
                   },
                 },
                 "createdAt": "2024-12-25T15:29:47.111Z",

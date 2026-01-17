@@ -1,8 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
-import { activityActions, resourceTypes } from '#/activities-config';
 import { activitiesTable } from '#/db/schema/activities';
+import { activityActions } from '#/lib/event-bus';
+import { resourceTypes } from '#/table-config';
 import { paginationQuerySchema } from '#/utils/schema/common';
 import { mockActivityResponse } from '../../../mocks/mock-activity';
 

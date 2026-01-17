@@ -13,8 +13,8 @@
 
 import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
-import { resourceTables } from '#/activities-config';
-import { entityTables } from '#/entity-table-config';
+import { resourceTables } from '#/table-config';
+import { entityTables } from '#/table-config';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 

@@ -1,9 +1,13 @@
 import { faker } from '@faker-js/faker';
 import type { ActivityModel } from '#/db/schema/activities';
+import { activityActions } from '#/lib/event-bus';
 import { mockNanoid, withFakerSeed } from './utils';
+import { entityTableNames } from '#/table-config';
 
 /**
- * Generates a mock activity with all fields populated.
+ * Generates a mock activity with all fields populated. Currently hardcoded 
+ * with entityType values but true schema also includes resourceType values.
+ * It should always be oneOf: entityType or resourceType populated with their respective values.
  * Uses deterministic seeding - same key produces same data.
  * Used for DB seeding, tests, and API response examples.
  */
@@ -11,8 +15,8 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const tableName = faker.helpers.arrayElement(['users', 'organizations', 'attachments', 'memberships']);
-    const action = faker.helpers.arrayElement(['create', 'update', 'delete']);
+    const tableName = faker.helpers.arrayElement(entityTableNames);
+    const action = faker.helpers.arrayElement([...activityActions]);
     const singularName = tableName.replace(/s$/, '');
     const verb = action === 'create' ? 'created' : action === 'update' ? 'updated' : 'deleted';
 
@@ -29,7 +33,7 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
       createdAt,
       changedKeys:
         action === 'update'
-          ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 1, max: 3 })
+          ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
     };
   });

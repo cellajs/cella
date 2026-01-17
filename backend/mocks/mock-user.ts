@@ -8,7 +8,6 @@ import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { registerExample } from './example-registry';
 import { mockNanoid, pastIsoDate, withFakerSeed } from './utils';
 
 /** Optional overrides for mock user generation */
@@ -153,6 +152,3 @@ export const mockEmail = (user: UserModel): InsertEmailModel => {
     verifiedAt: pastIsoDate(),
   };
 };
-
-// Self-register for OpenAPI examples
-registerExample('User', mockUserResponse);

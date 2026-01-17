@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
-import { registerExample } from './example-registry';
 import { generateMockContextEntityIdColumns, mockNanoid, withFakerSeed } from './utils';
 
 /**
@@ -41,6 +40,3 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
 
 /** Alias for API response examples (attachment schema matches DB schema) */
 export const mockAttachmentResponse = mockAttachment;
-
-// Self-register for OpenAPI examples
-registerExample('Attachment', mockAttachmentResponse);

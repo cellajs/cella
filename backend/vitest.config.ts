@@ -25,8 +25,8 @@ const isCore = testMode === 'core';
 const isFull = testMode === 'full';
 
 // Include patterns based on mode
-const includePatterns = ['src/**/*.test.ts']
-if (isCore || isFull) includePatterns.concat(['tests/**/*.test.ts', 'mocks/**/*.test.ts']);
+const includePatterns = ['src/**/*.test.ts'];
+if (isCore || isFull) includePatterns.push('tests/**/*.test.ts', 'mocks/**/*.test.ts');
 
 // Exclude patterns if not in full mode
 const excludePatterns = ['**/node_modules/**'];

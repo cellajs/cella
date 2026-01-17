@@ -7,7 +7,6 @@ import type { AuthStrategy } from '#/db/schema/sessions';
 import { defaultRestrictions } from '#/db/utils/organization-restrictions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { nanoid } from '#/utils/nanoid';
-import { registerExample } from './example-registry';
 import { mockMembershipBase } from './mock-membership';
 import {
   type MockEntityCounts,
@@ -104,9 +103,6 @@ export const mockOrganizationResponse = (
       ...base,
       restrictions: defaultRestrictions(),
       membership,
-      counts: generateMockFullCounts(),
+      counts: generateMockFullCounts(`${key}:counts`),
     };
   });
-
-// Self-register for OpenAPI examples
-registerExample('Organization', mockOrganizationResponse);

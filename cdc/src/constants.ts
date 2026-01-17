@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import type { ActivityAction } from '#/activities-config';
+import type { ActivityAction } from '#/lib/event-bus';
 
 /**
  * Convert a CDC operation to an activity action.

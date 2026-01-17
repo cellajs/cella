@@ -3,7 +3,7 @@ import { checkMark, loadingMark } from '#/utils/console';
 import { db } from '#/db/db';
 import { pagesTable } from '#/db/schema/pages';
 import { mockPage } from '../../../mocks/mock-page';
-import { mockMany } from '../../../mocks/mock-common';
+import { mockMany } from '../../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
 
 const isProduction = appConfig.mode === 'production';

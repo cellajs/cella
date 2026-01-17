@@ -6,7 +6,7 @@ import {
   type XMiddlewareOptions,
 } from '#/docs/extensions-config';
 import { getSpecificationExtensions } from '#/docs/openapi-describer';
-import { injectResponseExamples, toMiddlewareArray } from '#/docs/utils';
+import { toMiddlewareArray } from '#/docs/utils';
 import { isPublicAccess } from '#/middlewares/guard/is-public-access';
 
 type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
@@ -18,7 +18,6 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
 /**
  * Custom wrapper around hono/zod-openapi createRoute to extend it with extension middleware.
  * Extension middleware (xGuard, xRateLimiter) are documented in OpenAPI via x-* properties.
- * Also auto-injects response examples from the example registry based on schema names.
  *
  * @param config - Route configuration with extension middleware
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
@@ -36,9 +35,6 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   // Public routes have no security, authenticated routes require cookie auth
   const security = extensionMiddleware.includes(isPublicAccess) ? [] : [{ cookieAuth: [] }];
 
-  // Inject examples into responses based on schema names
-  const responsesWithExamples = injectResponseExamples(config.responses);
-
   // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();
   const cleanConfig = Object.fromEntries(
@@ -48,7 +44,6 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   return createRoute({
     security,
     ...cleanConfig,
-    responses: responsesWithExamples,
     middleware,
     ...specificationExtensions,
   });

@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
-import { registerExample } from './example-registry';
 import { mockUserResponse } from './mock-user';
 import { mockNanoid, withFakerSeed } from './utils';
 
@@ -69,8 +68,3 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
       },
     };
   });
-
-// Self-register for OpenAPI examples
-registerExample('Me', mockMeResponse);
-registerExample('MeAuthData', mockMeAuthDataResponse);
-registerExample('UploadToken', mockUploadTokenResponse);

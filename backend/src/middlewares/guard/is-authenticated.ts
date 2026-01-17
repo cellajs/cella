@@ -1,13 +1,13 @@
 import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { updateLastSeenAt } from '#/db/helpers/user-activity';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { updateLastSeenAt } from '../update-last-seen';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.

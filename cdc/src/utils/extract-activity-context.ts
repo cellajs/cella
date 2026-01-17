@@ -1,5 +1,5 @@
 import type { EntityType } from 'config';
-import type { ResourceType } from '#/activities-config';
+import type { ResourceType } from '#/table-config';
 import type { TableRegistryEntry } from '../types';
 import { getRowValue } from './get-row-value';
 

@@ -13,7 +13,7 @@ import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
 import { getMembershipOrderOffset, mockOrganizationMembership } from '../../../mocks/mock-membership';
 import { mockOrganization } from '../../../mocks/mock-organization';
 import { mockEmail, mockPassword, mockUnsubscribeToken, mockUser } from '../../../mocks/mock-user';
-import { mockMany } from '../../../mocks/mock-common';
+import { mockMany } from '../../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
 
 const isProduction = process.env.NODE_ENV === 'production';

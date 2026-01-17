@@ -1,7 +1,8 @@
 import { appConfig } from 'config';
 import { foreignKey, index, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { activityActions, resourceTypes } from '#/activities-config';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { activityActions } from '#/lib/event-bus';
+import { resourceTypes } from '#/table-config';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 import { usersTable } from './users';

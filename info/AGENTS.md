@@ -97,6 +97,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - `pnpm test:basic`: Fast unit tests only (no Docker required).
 - `pnpm test:core`: Standard tests with PostgreSQL (requires Docker).
 - `pnpm test:full`: Complete test suite including CDC integration tests.
+- `pnpm test:update`: Update Vitest snapshots in backend and frontend.
 - `pnpm check`: Comprehensive validation. Runs `generate:openapi`, `ts` (type check), and `lint:fix`.
 - `pnpm generate`: Generate new Drizzle migrations based on schema changes in `backend/src/db/schema/`.
 - `pnpm generate:openapi`: Regenerate backend OpenAPI spec and update the frontend `api.gen` client.

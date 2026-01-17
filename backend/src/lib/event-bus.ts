@@ -1,13 +1,22 @@
 import { EventEmitter } from 'node:events';
 import { appConfig } from 'config';
 import pg from 'pg';
-import type { ActivityAction } from '#/activities-config';
-import { activityActions, resourceTypes } from '#/activities-config';
 import type { ActivityModel } from '#/db/schema/activities';
 import { env } from '#/env';
+import { resourceTypes } from '#/table-config';
 import { logEvent } from '#/utils/logger';
 
+/**
+ * PostgreSQL channel name for activity events.
+ */
 const CHANNEL = 'cella_activities';
+
+/**
+ * Activity actions aligned with HTTP methods (excluding 'read').
+ */
+export const activityActions = ['create', 'update', 'delete'] as const;
+
+export type ActivityAction = (typeof activityActions)[number];
 
 /**
  * All possible tracked types (entities + resources).

@@ -1,8 +1,8 @@
 import { ContextEntityType } from 'config';
 import { getTableColumns } from 'drizzle-orm';
 import { pickColumns } from '#/db/utils/pick-columns';
-import { entityTables } from '#/entity-table-config';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
+import { entityTables } from '#/table-config';
 
 /**
  * Context entity select for base data only.
