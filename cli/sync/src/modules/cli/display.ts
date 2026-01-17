@@ -58,5 +58,5 @@ export function showServiceConfiguration() {
  */
 export function showStartedMessage() {
   console.info();
-  console.info(`${pc.green('✓')} started ${pc.bold(config.syncService)}`);
+  console.info(`${pc.green('✓')} started ${config.syncService}`);
 }

@@ -82,12 +82,12 @@ export function createProgress(title: string): ProgressTracker {
     done: (message: string) => {
       if (config.debug) {
         // Debug mode: show final step with tree end
-        console.info(pc.green(`  └─ ✓ ${message}`));
+        console.info(`  └─ ${pc.green('✓')} ${message}`);
       } else {
         // Normal mode: stop spinner and show success
         spinner.stop();
         activeSpinner = null;
-        console.info(`${pc.green('✓')} ${pc.green(message)}`);
+        console.info(`${pc.green('✓')} ${message}`);
       }
     },
 
