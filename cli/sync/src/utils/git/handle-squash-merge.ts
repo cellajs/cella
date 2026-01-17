@@ -50,16 +50,17 @@ export async function handleSquashMerge(
     : [];
 
   // Build suggested commit message
-  let commitMessage = `Sync upstream: ${commitCount} commit${commitCount > 1 ? 's' : ''} from '${mergeFromBranch}'`;
+  const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;
+  let commitMessage = `chore(sync): pull ${commitCountText} from upstream`;
 
-  // Append recent commit messages
+  // Append recent commit messages as details
   if (recentMessages.length) {
     const bullets = recentMessages.map((msg) => `- ${msg}`).join('\n');
     const remaining = commitCount - recentMessages.length;
 
     commitMessage += `\n\n${bullets}`;
     if (remaining > 0) {
-      commitMessage += `\n+${remaining} more commit${remaining > 1 ? 's' : ''}`;
+      commitMessage += `\n- ... and ${remaining} more`;
     }
   }
 

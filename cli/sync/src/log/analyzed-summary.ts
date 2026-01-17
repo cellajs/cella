@@ -53,10 +53,10 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
   // Build compact inline badge summary
   // Format: ✓ 1729 files synced │ ↓42 behind  ⚡15 diverged │ 🔧23 swizzled
   const badges: string[] = [
-    summary.ahead > 0 ? pc.green(`↑${summary.ahead} ahead`) : `↑${summary.ahead} ahead`,
-    summary.behind > 0 ? pc.yellow(`↓${summary.behind} behind`) : `↓${summary.behind} behind`,
-    summary.diverged > 0 ? pc.red(`⚡${summary.diverged} diverged`) : `⚡${summary.diverged} diverged`,
-    summary.unrelated > 0 ? pc.red(`⚠${summary.unrelated} unrelated`) : `⚠${summary.unrelated} unrelated`,
+    pc.green(`↑${summary.ahead} ahead`),
+    pc.yellow(`↓${summary.behind} behind`),
+    pc.red(`⚡${summary.diverged} diverged`),
+    pc.red(`⚠${summary.unrelated} unrelated`),
   ];
 
   // Only show unknown if > 0

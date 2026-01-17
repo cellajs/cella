@@ -54,13 +54,10 @@ async function main(): Promise<void> {
     // Show final instructions for staged changes
     if (commitMessage) {
       console.info();
-      console.info(pc.cyan('─'.repeat(60)));
-      console.info(pc.bold('changes are staged but not committed'));
-      console.info(pc.gray("run 'git commit' to finalize, or 'git reset' to abort"));
+      console.info(`${pc.green('✓')} changes staged, not committed`);
       console.info();
       console.info(pc.dim('suggested commit message:'));
       console.info(pc.white(commitMessage));
-      console.info(pc.cyan('─'.repeat(60)));
     }
   }
 }

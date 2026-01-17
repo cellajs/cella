@@ -47,9 +47,8 @@ export function accumulatePackageStats(stats: PackageSyncStats, keyUpdates: KeyU
  * Format: ✓ 9 package.json synced │ ↑3 updated │ deps: 5  devDeps: 2
  */
 export function packageSummaryLine(stats: PackageSyncStats): string {
-  // Show updated badge (colored if > 0, plain if 0)
-  const updatedBadge =
-    stats.updatedPackages > 0 ? pc.cyan(`↑${stats.updatedPackages} updated`) : `↑${stats.updatedPackages} updated`;
+  // Show updated badge (always colored)
+  const updatedBadge = pc.cyan(`↑${stats.updatedPackages} updated`);
 
   // Build key update badges (only if there are updates)
   const keyBadges: string[] = [];
