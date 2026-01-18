@@ -75,7 +75,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     `${pc.yellow('↓')} ${pc.yellow(padNum(summary.behind))} behind${pc.dim('                       will take upstream changes')}`,
   );
   lines.push(
-    `${pc.red('⚡')}${pc.red(padNum(summary.diverged))} diverged${pc.dim('                    both sides changed, needs merge')}`,
+    `${pc.red('⚡')}${pc.red(padNum(summary.diverged))} diverged${pc.dim('                     both sides changed, needs merge')}`,
   );
   lines.push(
     `${pc.magenta('⚠')} ${pc.magenta(padNum(summary.unrelated))} unrelated${pc.dim('                    no shared history')}`,

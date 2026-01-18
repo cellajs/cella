@@ -1,17 +1,22 @@
 /**
  * Logging utilities for analyzed file output.
+ *
+ * Displays per-file sync status during the analyze phase, showing:
+ * - File path and sync state (up-to-date, ahead, behind, diverged)
+ * - Commit counts (how many commits ahead/behind upstream)
+ * - Merge strategy (keep-fork, take-upstream, manual, skip)
+ * - Override status (pinned or ignored via cella.config.ts)
  */
 import pc from 'picocolors';
 import { config } from '#/config';
 import type { FileAnalysis } from '#/types';
 
 /**
- * Creates a log line for an analyzed file.
+ * Creates a formatted log line for an analyzed file.
+ * Combines all file analysis information into a single readable line.
  */
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
-  const status = '🗎';
   const parts: string[] = [
-    status,
     getFilePath(analyzedFile),
     getGitStatus(analyzedFile),
     getCommitState(analyzedFile),
@@ -24,12 +29,19 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   return parts.join(' ').trim();
 }
 
-/** Returns the styled file path. */
+/** Returns the styled file path (relative to repo root). */
 function getFilePath(analyzedFile: FileAnalysis): string {
   return pc.white(analyzedFile.filePath);
 }
 
-/** Returns the git status styled for console output. */
+/**
+ * Returns the sync state between fork and upstream.
+ * - up-to-date: Fork matches upstream (nothing to sync)
+ * - ahead: Fork has newer commits than upstream
+ * - behind: Upstream has newer commits than fork
+ * - diverged: Both sides have changes (potential conflict)
+ * - unrelated: No shared commit history
+ */
 function getGitStatus(analyzedFile: FileAnalysis): string {
   const gitStatus = analyzedFile.commitSummary?.status || 'unknown';
 
@@ -44,7 +56,10 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
   return statusMap[gitStatus] || `fork: ${pc.bold(pc.red('unknown state'))}`;
 }
 
-/** Returns the commit state (ahead/behind counts). */
+/**
+ * Returns the commit count difference between fork and upstream.
+ * Shows arrows: ↑ = commits ahead, ↓ = commits behind.
+ */
 function getCommitState(analyzedFile: FileAnalysis): string {
   const commitsAhead = analyzedFile.commitSummary?.commitsAhead || 0;
   const commitsBehind = analyzedFile.commitSummary?.commitsBehind || 0;
@@ -57,7 +72,10 @@ function getCommitState(analyzedFile: FileAnalysis): string {
   return '';
 }
 
-/** Returns the commit SHA information. */
+/**
+ * Returns short commit SHAs showing the transition.
+ * Format: (forkSha → upstreamSha) when different, or just (sha) when same.
+ */
 function getCommitSha(analyzedFile: FileAnalysis): string {
   const forkSha = analyzedFile.forkFile?.shortCommitSha;
   const upstreamSha = analyzedFile.upstreamFile?.shortCommitSha;
@@ -68,7 +86,11 @@ function getCommitSha(analyzedFile: FileAnalysis): string {
   return `${forkSha || upstreamSha}`;
 }
 
-/** Returns the last synced date. */
+/**
+ * Returns when the file was last in sync (merge-base date).
+ * Shows ✔ if currently up-to-date, or the date of last sync if behind/diverged.
+ * Helps understand how stale the file is relative to upstream.
+ */
 function getLastSyncedAt(analyzedFile: FileAnalysis): string {
   const lastSync = analyzedFile.commitSummary?.lastSyncedAt;
   if (!lastSync) return '';
@@ -78,7 +100,10 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
   return pc.dim(`Last in sync: ${date.toLocaleDateString()}`);
 }
 
-/** Returns the merge strategy flag. */
+/**
+ * Returns the merge strategy badge.
+ * Strategies: keep-fork, take-upstream, skip (ignored), manual (needs resolution).
+ */
 function getStrategyFlag(analyzedFile: FileAnalysis): string {
   const mergeStrategy = analyzedFile.mergeStrategy;
   if (!mergeStrategy) return pc.bgRed(pc.black(' No Strategy '));
@@ -87,7 +112,10 @@ function getStrategyFlag(analyzedFile: FileAnalysis): string {
   return pc.green(pc.black(` ${mergeStrategy.strategy} `));
 }
 
-/** Returns the merge strategy reason. */
+/**
+ * Returns the reason for the chosen merge strategy.
+ * Examples: "pinned in config", "content identical", "fork ahead", "both sides changed".
+ */
 function getStrategyReason(analyzedFile: FileAnalysis): string {
   const mergeStrategy = analyzedFile.mergeStrategy;
   if (!mergeStrategy) return '';
@@ -96,18 +124,28 @@ function getStrategyReason(analyzedFile: FileAnalysis): string {
   return pc.green(`→ ${mergeStrategy.reason}`);
 }
 
-/** Checks if the analyzed file module should be logged based on configuration. */
+/**
+ * Determines if the file analysis module should display output.
+ * Only shown in verbose or debug mode (controlled via --verbose or --debug flags).
+ */
 export function shouldLogAnalyzedFileModule(): boolean {
   return config.debug || config.verbose;
 }
 
-/** Logs the analyzed file line based on configuration filters. */
+/**
+ * Logs the analyzed file line with smart filtering.
+ *
+ * Filtering logic:
+ * - Always skip files with identical content (nothing to sync)
+ * - In verbose/debug mode: show all non-identical files
+ * - Default mode: only show files needing attention (diverged, behind, manual, unknown)
+ */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
   const status = analyzedFile.commitSummary?.status;
   const strategy = analyzedFile.mergeStrategy?.strategy;
   const reason = analyzedFile.mergeStrategy?.reason || '';
 
-  // Skip files that are identical (trivial keep-fork cases) - not useful to show
+  // Skip files with identical content - trivial keep-fork cases, not useful to show
   const isIdentical = reason.includes('identical');
   if (isIdentical) return;
 

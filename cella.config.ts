@@ -1,4 +1,4 @@
-import { defineConfig } from './cli/sync/src/config/types';
+import { defineConfig } from './cli/sync/config';
 
 /**
  * Cella sync config: run with `pnpm sync`.
@@ -6,11 +6,11 @@ import { defineConfig } from './cli/sync/src/config/types';
 export default defineConfig({
   // Upstream settings
   upstreamUrl: 'git@github.com:cellajs/cella.git',
-  upstreamBranch: 'cli-sync',
+  upstreamBranch: 'development',
   upstreamRemoteName: 'cella-upstream',  
   
   // Fork settings
-  forkBranch: 'cli-sync',
+  forkBranch: 'development',
   forkSyncBranch: 'sync-branch',        
 
   // Options

@@ -6,6 +6,7 @@
 import pLimit from 'p-limit';
 import pc from 'picocolors';
 import { config } from '#/config';
+import { DIVIDER } from '#/constants';
 import { FileAnalysis, FileEntry } from '#/types';
 import { gitLatestCommit, gitMergeBase } from '#/utils/git/command';
 import { getGitFileHashes } from '#/utils/git/files';
@@ -38,25 +39,27 @@ async function logBranchSyncState(): Promise<void> {
     gitMergeBase(workDir, upstreamRef, syncRef),
   ]);
 
-  console.info(pc.bold('\nbranch sync state:'));
+  console.info();
+  console.info(pc.cyan('git status'));
+  console.info(DIVIDER);
 
   if (upstreamCommit) {
-    console.info(`  ${pc.cyan('upstream')} ${pc.dim(`(${upstreamRef})`)}`);
-    console.info(`    ${pc.yellow(upstreamCommit.shortSha)} ${pc.dim(upstreamCommit.date)} ${upstreamCommit.message}`);
+    console.info(`⊙  ${pc.cyan('upstream')} ${pc.dim(`(${upstreamRef})`)}`);
+    console.info(`     ${pc.yellow(upstreamCommit.shortSha)} ${pc.dim(upstreamCommit.date)} ${upstreamCommit.message}`);
   }
 
   if (syncCommit) {
-    console.info(`  ${pc.cyan('sync-branch')} ${pc.dim(`(${syncRef})`)}`);
-    console.info(`    ${pc.yellow(syncCommit.shortSha)} ${pc.dim(syncCommit.date)} ${syncCommit.message}`);
+    console.info(`⊙  ${pc.cyan('sync-branch')} ${pc.dim(`(${syncRef})`)}`);
+    console.info(`     ${pc.yellow(syncCommit.shortSha)} ${pc.dim(syncCommit.date)} ${syncCommit.message}`);
   }
 
   if (mergeBase) {
     const shortBase = mergeBase.slice(0, 7);
     const isUpToDate = upstreamCommit?.sha === mergeBase;
     const status = isUpToDate ? pc.green('✓ up to date') : pc.yellow('⟳ commits to sync');
-    console.info(`  ${pc.cyan('merge-base')} ${pc.yellow(shortBase)} ${status}`);
+    console.info(`⊙  ${pc.cyan('merge-base')} ${pc.yellow(shortBase)} ${status}`);
   } else {
-    console.info(`  ${pc.cyan('merge-base')} ${pc.red('none (unrelated histories)')}`);
+    console.info(`⊙  ${pc.cyan('merge-base')} ${pc.red('none (unrelated histories)')}`);
   }
 }
 
@@ -106,7 +109,10 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
 
   // Log the analyzed files
   if (shouldLogAnalyzedFileModule()) {
-    console.info(pc.bold('\nfile analysis:'));
+    console.info();
+    console.info(pc.cyan('File Analysis'));
+    console.info(DIVIDER);
+
     for (const file of analyzedFiles) {
       const line = analyzedFileLine(file);
       logAnalyzedFileLine(file, line);
