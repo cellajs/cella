@@ -35,7 +35,7 @@ export function getSyncServiceDescription(
 ): string {
   const descriptions: Record<SyncService, string> = {
     [SYNC_SERVICES.SYNC]: cfg
-      ? `sync from '${cfg.upstream.remoteName}' → '${cfg.fork.syncBranch}' → '${cfg.fork.branch}'`
+      ? `sync from ${cfg.upstream.remoteName} → ${cfg.fork.syncBranch} → ${cfg.fork.branch}`
       : 'sync files and packages from upstream to your fork',
     [SYNC_SERVICES.ANALYZE]: 'read-only analysis of file differences and diverging/conflicting files',
     [SYNC_SERVICES.VALIDATE]: 'validate file references existence in cella.config.ts overrides',
