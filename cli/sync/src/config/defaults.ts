@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import type { BaseRepoConfig, BehaviorConfig, LogConfig, OverridesConfig } from './types';
+import type { BaseRepoConfig, OverridesConfig, PackageJsonSyncKey } from './types';
 
 /** Resolve to monorepo root (cli/sync is 2 levels deep) */
 const monorepoRoot = resolve(import.meta.dirname, '../../../..');
@@ -51,39 +51,17 @@ export const upstreamDefaultConfig: BaseRepoConfig = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Behavior Defaults
+// Sync Options Defaults
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Configuration for specifying behavior during sync operations.
- */
-export const behaviorDefaultConfig: BehaviorConfig = {
-  /** Root keys in package.json to sync from upstream */
-  packageJsonSync: ['dependencies', 'devDependencies'],
-  /** Maximum number of git previews for squash commits */
-  maxGitPreviewsForSquashCommits: 30,
-};
+/** Default: show only files needing attention */
+export const verboseDefault = false;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Log Defaults
-// ─────────────────────────────────────────────────────────────────────────────
+/** Default: max commits to show in squash preview */
+export const maxSquashPreviewsDefault = 30;
 
-/**
- * Configuration for logging within the Cella sync CLI.
- * Shows files that need attention: diverged, behind, or unknown merge strategy.
- */
-export const logDefaultConfig: LogConfig = {
-  /** Modules to be logged */
-  modules: ['analyzedFile', 'analyzedSummary', 'packageSummary'],
-  /**
-   * Filters for logging analyzed files.
-   * Show diverged files and files with unknown merge strategy.
-   */
-  analyzedFile: {
-    commitSummaryState: ['diverged', 'behind'],
-    mergeStrategyStrategy: ['unknown'],
-  },
-};
+/** Default: which package.json keys to sync */
+export const packageJsonSyncDefault: PackageJsonSyncKey[] = ['dependencies', 'devDependencies'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Overrides Defaults

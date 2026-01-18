@@ -12,7 +12,7 @@
  *
  * Run with: pnpm test:integration
  */
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type TestEnv,
   clearFixtureCache,

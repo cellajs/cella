@@ -1,9 +1,19 @@
-import type { FileAnalysis } from '#/types';
 import type { SyncService } from './sync-services';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC API - for cella.config.ts
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Valid package.json keys that can be synced */
+export type PackageJsonSyncKey =
+  | 'dependencies'
+  | 'devDependencies'
+  | 'peerDependencies'
+  | 'optionalDependencies'
+  | 'scripts'
+  | 'engines'
+  | 'packageManager'
+  | 'overrides';
 
 /**
  * User-configurable sync options for cella.config.ts.
@@ -27,21 +37,14 @@ export interface UserSyncConfig {
     syncBranch: string;
   };
 
-  /** Logging options */
-  log?: {
-    modules?: LogModule[];
-    analyzedFile?: {
-      filePath?: string[];
-      commitSummaryState?: NonNullable<FileAnalysis['commitSummary']>['status'][];
-      mergeStrategyStrategy?: NonNullable<FileAnalysis['mergeStrategy']>['strategy'][];
-    };
-  };
+  /** Show all file details (default: false, shows only files needing attention) */
+  verbose?: boolean;
 
-  /** Behavior options */
-  behavior?: {
-    packageJsonSync?: string[];
-    maxGitPreviewsForSquashCommits?: number;
-  };
+  /** Max commits to show in squash commit preview (default: 30) */
+  maxSquashPreviews?: number;
+
+  /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
+  packageJsonSync?: PackageJsonSyncKey[];
 
   /** File overrides */
   overrides?: {
@@ -58,9 +61,6 @@ export function defineConfig(config: UserSyncConfig): UserSyncConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 // INTERNAL TYPES - for sync modules
 // ─────────────────────────────────────────────────────────────────────────────
-
-/** Log module names */
-export type LogModule = 'analyzedFile' | 'analyzedSummary' | 'packageSummary';
 
 /** Repository config with computed runtime properties */
 export interface RepoConfig {
@@ -87,22 +87,6 @@ export interface BaseRepoConfig {
   syncBranch: string;
 }
 
-/** Log config with defaults applied */
-export interface LogConfig {
-  modules: LogModule[];
-  analyzedFile: {
-    filePath?: string[];
-    commitSummaryState?: NonNullable<FileAnalysis['commitSummary']>['status'][];
-    mergeStrategyStrategy?: NonNullable<FileAnalysis['mergeStrategy']>['strategy'][];
-  };
-}
-
-/** Behavior config with defaults applied */
-export interface BehaviorConfig {
-  packageJsonSync: string[];
-  maxGitPreviewsForSquashCommits: number;
-}
-
 /** Overrides config with defaults applied */
 export interface OverridesConfig {
   customized: string[];
@@ -113,12 +97,13 @@ export interface OverridesConfig {
 export interface SyncState {
   syncService: SyncService;
   debug: boolean;
+  verbose: boolean;
   skipPackages: boolean;
+  maxSquashPreviews: number;
+  packageJsonSync: PackageJsonSyncKey[];
   fork: BaseRepoConfig;
   forkLocation: 'local' | 'remote';
   upstream: BaseRepoConfig;
   upstreamLocation: 'local' | 'remote';
-  log: LogConfig;
-  behavior: BehaviorConfig;
   overrides: OverridesConfig;
 }

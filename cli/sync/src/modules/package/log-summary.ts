@@ -2,7 +2,6 @@
  * Package sync logging utilities.
  */
 import pc from 'picocolors';
-import { config } from '#/config';
 import type { KeyUpdateSummary } from './get-values-to-update';
 
 /** Aggregate stats for package sync summary. */
@@ -58,18 +57,9 @@ export function packageSummaryLine(stats: PackageSyncStats): string {
   return parts.join(' │ ');
 }
 
-/** Checks if the package summary module should be logged. */
-function shouldLogPackageSummaryModule(): boolean {
-  const logModulesConfigured = 'modules' in config.log;
-  if (!logModulesConfigured) return true;
-  return config.log.modules?.includes('packageSummary') || false;
-}
-
 /** Logs the package summary lines to the console. */
 export function logPackageSummaryLines(lines: string[]): void {
-  if (lines.length === 0) return;
-  if (!shouldLogPackageSummaryModule()) return;
-
+  // Summary is always shown (it's compact and useful)
   for (const line of lines) {
     console.info(line);
   }

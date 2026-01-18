@@ -4,35 +4,38 @@
  */
 import customConfig from '../../../../cella.config';
 import {
-  behaviorDefaultConfig,
   forkDefaultConfig,
-  logDefaultConfig,
+  maxSquashPreviewsDefault,
   overridesDefaultConfig,
+  packageJsonSyncDefault,
   upstreamDefaultConfig,
+  verboseDefault,
 } from './defaults';
 import { SERVICES_RUNNING_FROM_LOCAL_FORK, type SyncService, SYNC_SERVICES } from './sync-services';
-import type { BaseRepoConfig, BehaviorConfig, LogConfig, OverridesConfig, RepoConfig, SyncState } from './types';
+import type { BaseRepoConfig, OverridesConfig, PackageJsonSyncKey, RepoConfig, SyncState } from './types';
 
-// Deconstruct custom configs with empty object defaults
+// Deconstruct custom configs with defaults
 const {
   fork: customForkConfig = {},
   upstream: customUpstreamConfig = {},
-  log: customLogConfig = {},
-  behavior: customBehaviorConfig = {},
   overrides: customOverridesConfig = {},
+  verbose: customVerbose,
+  maxSquashPreviews: customMaxSquashPreviews,
+  packageJsonSync: customPackageJsonSync,
 } = customConfig;
 
 /** Internal state holding the configuration values */
 const state: SyncState = {
   syncService: SYNC_SERVICES.SYNC,
   debug: false,
+  verbose: customVerbose ?? verboseDefault,
   skipPackages: false,
+  maxSquashPreviews: customMaxSquashPreviews ?? maxSquashPreviewsDefault,
+  packageJsonSync: customPackageJsonSync ?? packageJsonSyncDefault,
   forkLocation: 'local',
   upstreamLocation: 'remote',
   fork: { ...forkDefaultConfig, ...customForkConfig },
   upstream: { ...upstreamDefaultConfig, ...customUpstreamConfig },
-  log: { ...logDefaultConfig, ...customLogConfig },
-  behavior: { ...behaviorDefaultConfig, ...customBehaviorConfig },
   overrides: { ...overridesDefaultConfig, ...customOverridesConfig },
 };
 
@@ -93,9 +96,6 @@ export const config = {
       state.forkLocation = 'local';
       state.upstreamLocation = 'remote';
     }
-    if (value === SYNC_SERVICES.SYNC || value === SYNC_SERVICES.ANALYZE) {
-      state.log = logDefaultConfig;
-    }
     state.syncService = value;
   },
 
@@ -106,11 +106,26 @@ export const config = {
     state.debug = value;
   },
 
+  get verbose(): boolean {
+    return state.verbose;
+  },
+  set verbose(value: boolean) {
+    state.verbose = value;
+  },
+
   get skipPackages(): boolean {
     return state.skipPackages;
   },
   set skipPackages(value: boolean) {
     state.skipPackages = value;
+  },
+
+  get maxSquashPreviews(): number {
+    return state.maxSquashPreviews;
+  },
+
+  get packageJsonSync(): PackageJsonSyncKey[] {
+    return state.packageJsonSync;
   },
 
   // Computed RepoConfig objects
@@ -126,15 +141,6 @@ export const config = {
   },
   set upstream(value: Partial<BaseRepoConfig>) {
     Object.assign(state.upstream, value);
-  },
-
-  // Config sections (read-only access, modify via state)
-  get log(): LogConfig {
-    return state.log;
-  },
-
-  get behavior(): BehaviorConfig {
-    return state.behavior;
   },
 
   get overrides(): OverridesConfig {

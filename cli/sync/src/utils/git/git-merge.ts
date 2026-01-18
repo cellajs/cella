@@ -106,13 +106,8 @@ export async function handleSquashMerge(
   await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true });
   await gitAddAll(mergeIntoPath);
 
-  const recentMessages = config.behavior.maxGitPreviewsForSquashCommits
-    ? await getLastCommitMessages(
-        mergeIntoPath,
-        mergeFromBranch,
-        mergeIntoBranch,
-        config.behavior.maxGitPreviewsForSquashCommits,
-      )
+  const recentMessages = config.maxSquashPreviews
+    ? await getLastCommitMessages(mergeIntoPath, mergeFromBranch, mergeIntoBranch, config.maxSquashPreviews)
     : [];
 
   const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;

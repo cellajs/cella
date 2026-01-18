@@ -11,17 +11,13 @@ export default defineConfig({
     remoteName: 'cella-upstream',                     // git remote name for upstream
   },
   fork: {
-    branch: 'cli-sync',                            // your fork's working branch
+    branch: 'cli-sync',                               // your fork's working branch
     syncBranch: 'sync-branch',                        // temporary branch for sync operations
   },
-  behavior: {
-    maxGitPreviewsForSquashCommits: 10,               // max commits to show in squash preview
-    packageJsonSync: ["dependencies", "devDependencies", "scripts"],
-   },
-   log: {
-    modules: ['analyzedFile', 'analyzedSummary'],    // specific modules to log; omit for all
-  },
-  // File
+  maxSquashPreviews: 10,                              // max commits to show in squash preview
+  packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
+  verbose: false,                                   // uncomment to show all file details
+  // File overrides
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [

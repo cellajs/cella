@@ -2,7 +2,6 @@
  * Logging utilities for analyzed summary output.
  */
 import pc from 'picocolors';
-import { config } from '#/config';
 import type { FileAnalysis } from '#/types';
 
 /**
@@ -62,18 +61,13 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 
 /** Checks if the analyzed summary module should be logged based on configuration. */
 export function shouldLogAnalyzedSummaryModule(): boolean {
-  const logModulesConfigured = 'modules' in config.log;
-  if (!logModulesConfigured) return true;
-  return config.log.modules?.includes('analyzedSummary') || false;
+  // Summary is always shown (it's compact and useful)
+  return true;
 }
 
 /** Logs the analyzed summary lines to the console. */
 export function logAnalyzedSummaryLines(lines: string[]): void {
-  if (lines.length === 0) return;
-
-  if (shouldLogAnalyzedSummaryModule()) {
-    for (const line of lines) {
-      console.info(line);
-    }
+  for (const line of lines) {
+    console.info(line);
   }
 }

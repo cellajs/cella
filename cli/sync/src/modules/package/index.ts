@@ -66,7 +66,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
         analyzedFile.filePath,
       );
 
-      const keysToSync = config.behavior.packageJsonSync || ['dependencies', 'devDependencies'];
+      const keysToSync = config.packageJsonSync;
       const keyUpdates = getPackageUpdates(upstreamPackageJson || {}, forkPackageJson || {}, keysToSync);
 
       accumulatePackageStats(stats, keyUpdates);

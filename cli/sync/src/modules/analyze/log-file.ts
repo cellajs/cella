@@ -98,40 +98,25 @@ function getStrategyReason(analyzedFile: FileAnalysis): string {
 
 /** Checks if the analyzed file module should be logged based on configuration. */
 export function shouldLogAnalyzedFileModule(): boolean {
-  if (config.debug) return true;
-  const logModulesConfigured = 'modules' in config.log;
-  if (!logModulesConfigured) return true;
-  return config.log.modules?.includes('analyzedFile') || false;
+  return config.debug || config.verbose;
 }
 
 /** Logs the analyzed file line based on configuration filters. */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
-  if (config.debug) {
+  // In verbose/debug mode, log everything
+  if (config.debug || config.verbose) {
     console.info(line);
     return;
   }
 
-  const commitSummaryStateConfigured = 'commitSummaryState' in config.log.analyzedFile;
-  const commitSummaryStateEqual = config.log.analyzedFile.commitSummaryState?.includes(
-    analyzedFile.commitSummary?.status || 'unknown',
-  );
+  // Default: only log files needing attention (diverged, behind, manual, unknown)
+  const status = analyzedFile.commitSummary?.status;
+  const strategy = analyzedFile.mergeStrategy?.strategy;
 
-  const filePathConfigured = 'filePath' in config.log.analyzedFile;
-  const filePathEqual = config.log.analyzedFile.filePath?.includes(analyzedFile.filePath);
+  const needsAttention =
+    status === 'diverged' || status === 'behind' || strategy === 'manual' || strategy === 'unknown';
 
-  const mergeStrategyConfigured = 'mergeStrategyStrategy' in config.log.analyzedFile;
-  const mergeStrategyEqual = config.log.analyzedFile.mergeStrategyStrategy?.includes(
-    analyzedFile.mergeStrategy?.strategy || 'unknown',
-  );
-
-  const shouldLog = [
-    shouldLogAnalyzedFileModule(),
-    !commitSummaryStateConfigured || commitSummaryStateEqual,
-    !filePathConfigured || filePathEqual,
-    !mergeStrategyConfigured || mergeStrategyEqual,
-  ].every(Boolean);
-
-  if (shouldLog) {
+  if (needsAttention) {
     console.info(line);
   }
 }
