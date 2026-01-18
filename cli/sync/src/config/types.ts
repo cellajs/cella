@@ -1,4 +1,4 @@
-import type { FileAnalysis } from '../types';
+import type { FileAnalysis } from '#/types';
 import type { SyncService } from './sync-services';
 
 // ─────────────────────────────────────────────────────────────────────────────

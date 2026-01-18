@@ -1,4 +1,4 @@
-import { FileAnalysis, FileMergeStrategy } from '../../types';
+import { FileAnalysis, FileMergeStrategy } from '#/types';
 
 /**
  * Determines the most appropriate merge strategy for a given file,

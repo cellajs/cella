@@ -1,6 +1,6 @@
-import { RepoConfig } from '../../config';
-import { hasRemoteBranch } from '../../utils/git/branches';
-import { gitCheckout, gitFetch, gitPull } from '../../utils/git/command';
+import { RepoConfig } from '#/config';
+import { hasRemoteBranch } from '#/utils/git/git-refs';
+import { gitCheckout, gitFetch, gitPull } from '#/utils/git/command';
 import { checkCleanState } from './check-clean-state';
 
 /**

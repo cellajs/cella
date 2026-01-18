@@ -19,6 +19,9 @@
   "bin": {
     "sync": "index.ts"
   },
+  "imports": {
+    "#/*": "./src/*"
+  },
   "scripts": {
     "sync": "tsx index.ts",
     "validate": "tsx index.ts --sync-service validate",

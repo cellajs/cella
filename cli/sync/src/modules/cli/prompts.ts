@@ -1,7 +1,7 @@
 import { Separator, select } from '@inquirer/prompts';
 import pc from 'picocolors';
-import { config } from '../../config';
-import { getSyncServiceDescription, SYNC_SERVICES, SyncService } from '../../config/sync-services';
+import { config } from '#/config';
+import { getSyncServiceDescription, SYNC_SERVICES, SyncService } from '#/config/sync-services';
 
 /**
  * Prompt the user to select a sync service.

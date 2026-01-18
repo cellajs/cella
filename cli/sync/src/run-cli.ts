@@ -1,10 +1,10 @@
 import { Command } from 'commander';
 
-import { NAME, VERSION } from './constants';
-import { validateBranchName, validateLocation, validateRemoteName, validateSyncService } from './modules/cli/commands';
-import { showConfiguration, showStartedMessage, showWelcome } from './modules/cli/display';
-import { handleSyncService, onInitialConfigLoad } from './modules/cli/handlers';
-import { CLIConfig } from './modules/cli/types';
+import { NAME, VERSION } from '#/constants';
+import { validateBranchName, validateLocation, validateRemoteName, validateSyncService } from '#/modules/cli/commands';
+import { showConfiguration, showStartedMessage, showWelcome } from '#/modules/cli/display';
+import { handleSyncService, onInitialConfigLoad } from '#/modules/cli/handlers';
+import { CLIConfig } from '#/modules/cli/types';
 
 // Initialize variables to hold CLI options
 const packageManager = 'pnpm';

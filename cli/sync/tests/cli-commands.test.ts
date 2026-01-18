@@ -28,10 +28,9 @@ describe('validateBranchName', () => {
 
 describe('validateSyncService', () => {
   it('should accept valid sync services', () => {
-    expect(validateSyncService('boilerplate-fork')).toBe('boilerplate-fork');
-    expect(validateSyncService('packages')).toBe('packages');
-    expect(validateSyncService('diverged')).toBe('diverged');
+    expect(validateSyncService('sync')).toBe('sync');
     expect(validateSyncService('analyze')).toBe('analyze');
+    expect(validateSyncService('validate')).toBe('validate');
   });
 
   it('should trim whitespace', () => {

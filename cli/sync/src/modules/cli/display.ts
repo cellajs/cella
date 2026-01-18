@@ -1,7 +1,7 @@
 import pc from 'picocolors';
-import { config } from '../../config';
-import { getSyncServiceDescription } from '../../config/sync-services';
-import { DIVIDER, getHeaderLine } from '../../constants';
+import { config } from '#/config';
+import { getSyncServiceDescription } from '#/config/sync-services';
+import { DIVIDER, getHeaderLine } from '#/constants';
 
 /**
  * Display the welcome message for the CLI (compact: 2 lines).

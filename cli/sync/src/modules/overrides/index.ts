@@ -1,6 +1,6 @@
-import { config } from '../../config';
-import { OverrideStatus } from '../../types';
-import { matchPathPattern } from '../../utils/files';
+import { config } from '#/config';
+import { OverrideStatus } from '#/types';
+import { matchPathPattern } from '#/utils/files';
 
 /**
  * Gets the override status for a specific file path from config arrays.

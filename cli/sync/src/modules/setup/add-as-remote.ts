@@ -1,5 +1,5 @@
-import { RepoConfig } from '../../config';
-import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from '../../utils/git/remotes';
+import { RepoConfig } from '#/config';
+import { addRemote, getRemoteUrl, hasRemote, setRemoteUrl } from '#/utils/git/git-refs';
 
 /**
  * Adds the upstream repository as a remote to the fork repository if not already added.

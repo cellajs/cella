@@ -1,6 +1,6 @@
-import type { RepoConfig } from '../../config';
-import { CommitEntry, CommitSummary } from '../../types';
-import { getFileCommitHistory } from '../../utils/git/files';
+import type { RepoConfig } from '#/config';
+import { CommitEntry, CommitSummary } from '#/types';
+import { getFileCommitHistory } from '#/utils/git/files';
 
 // Structure to hold commit lookup data
 type CommitLookup = {

@@ -1,7 +1,7 @@
 import pc from 'picocolors';
-import { config } from '../../config';
-import { SYNC_SERVICES, SyncService } from '../../config/sync-services';
-import { logValidationWarnings, validateOverridesConfig } from '../../config/validate';
+import { config } from '#/config';
+import { SYNC_SERVICES, SyncService } from '#/config/sync-services';
+import { logValidationWarnings, validateOverridesConfig } from '#/config/validate';
 import { promptSyncService } from './prompts';
 import { CLIConfig } from './types';
 

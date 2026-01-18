@@ -1,7 +1,7 @@
 import { config } from './config';
 import { handleUpstreamIntoForkMerge } from './modules/git/handle-upstream-into-fork-merge';
 import { FileAnalysis } from './types';
-import { handleSquashMerge } from './utils/git/handle-squash-merge';
+import { handleSquashMerge } from './utils/git/git-merge';
 import { createProgress } from './utils/progress';
 
 /**

@@ -1,6 +1,6 @@
-import { hasLocalBranch } from '../../utils/git/branches';
-import { gitCheckout, isMergeInProgress, isRebaseInProgress } from '../../utils/git/command';
-import { isRepoClean } from '../../utils/git/helpers';
+import { hasLocalBranch } from '#/utils/git/git-refs';
+import { gitCheckout, isMergeInProgress, isRebaseInProgress } from '#/utils/git/command';
+import { isRepoClean } from '#/utils/git/helpers';
 
 /**
  * Checks if a Git repository is clean.

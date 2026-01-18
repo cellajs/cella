@@ -1,14 +1,14 @@
 import pc from 'picocolors';
 
-import { config } from './config';
-import { validateConfig } from './modules/cli/handlers';
-import { runAnalyze } from './run-analyze';
-import { runCli } from './run-cli';
-import { runPackages } from './run-packages';
-import { runSetup } from './run-setup';
-import { runSync } from './run-sync';
-import { gitCheckout } from './utils/git/command';
-import { getCurrentBranch } from './utils/git/helpers';
+import { config } from '#/config';
+import { runAnalyze } from '#/modules/analyze';
+import { validateConfig } from '#/modules/cli/handlers';
+import { runPackages } from '#/modules/package';
+import { runSync } from '#/modules/sync';
+import { runCli } from '#/run-cli';
+import { runSetup } from '#/run-setup';
+import { gitCheckout } from '#/utils/git/command';
+import { getCurrentBranch } from '#/utils/git/helpers';
 
 /**
  * Orchestrates the full execution flow of the Cella sync CLI.

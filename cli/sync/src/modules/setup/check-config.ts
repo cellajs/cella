@@ -1,4 +1,4 @@
-import { RepoConfig } from '../../config';
+import { RepoConfig } from '#/config';
 
 /**
  * Checklist item type definition.

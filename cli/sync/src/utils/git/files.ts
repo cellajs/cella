@@ -1,4 +1,4 @@
-import { CommitEntry, FileEntry } from '../../types';
+import { CommitEntry, FileEntry } from '#/types';
 import {
   gitAdd,
   gitCheckoutOursFilePath,

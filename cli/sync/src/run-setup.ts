@@ -1,12 +1,12 @@
-import { config } from './config';
-import { addAsRemote } from './modules/setup/add-as-remote';
-import { checkCleanState } from './modules/setup/check-clean-state';
-import { checkConfig } from './modules/setup/check-config';
-import { checkRepository } from './modules/setup/check-repository';
-import { fetchLatestChanges } from './modules/setup/fetch-latest-changes';
-import { createBranchIfMissing } from './utils/git/branches';
-import { handleMerge } from './utils/git/handle-merge';
-import { createProgress } from './utils/progress';
+import { config } from '#/config';
+import { addAsRemote } from '#/modules/setup/add-as-remote';
+import { checkCleanState } from '#/modules/setup/check-clean-state';
+import { checkConfig } from '#/modules/setup/check-config';
+import { checkRepository } from '#/modules/setup/check-repository';
+import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
+import { createBranchIfMissing } from '#/utils/git/git-refs';
+import { handleMerge } from '#/utils/git/git-merge';
+import { createProgress } from '#/utils/progress';
 
 /**
  * Performs all preflight setup steps required before running any sync operations.

@@ -1,6 +1,6 @@
 import { InvalidArgumentError } from 'commander';
 
-import { SUPPORTED_SYNC_SERVICES } from '../../config/sync-services';
+import { SUPPORTED_SYNC_SERVICES } from '#/config/sync-services';
 
 /**
  * Validate a Git branch name.

@@ -1,8 +1,8 @@
 import path from 'node:path';
 
-import { RepoConfig } from '../../config';
-import { isDirectory } from '../../utils/files';
-import { gitLsRemote, gitRevParseIsInsideWorkTree } from '../../utils/git/command';
+import { RepoConfig } from '#/config';
+import { isDirectory } from '#/utils/files';
+import { gitLsRemote, gitRevParseIsInsideWorkTree } from '#/utils/git/command';
 
 /**
  * Checks the repository connectivity and accessibility.

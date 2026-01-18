@@ -10,7 +10,11 @@
     "tsBuildInfoFile": ".tsbuildinfo",
     "declaration": true,
     "composite": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "#/*": ["./src/*"]
+    }
   },
   "include": ["src", "tests", "index.ts"]
 }
