@@ -5,14 +5,7 @@ Scaffold a new Cella project from the template.
 ## Usage
 
 ```bash
-# npm
-npm create cella@latest my-app
-
-# pnpm
-pnpm create cella my-app
-
-# yarn
-yarn create cella my-app
+pnpm create @cellajs/cella my-app
 ```
 
 ## Options
@@ -23,7 +16,8 @@ yarn create cella my-app
 | `--skip-git` | Skip git initialization |
 | `--skip-generate` | Skip database migration generation |
 | `--skip-clean` | Keep template files (README, etc.) |
-| `-b, --branch <name>` | Create additional branch (e.g., `development`) |
+| `--skip-new-branch` | Skip creating a new branch |
+| `--new-branch-name <name>` | Create additional branch (e.g., `development`) |
 
 ## Interactive Mode
 
@@ -31,16 +25,17 @@ Running without arguments prompts for:
 
 1. **Project name** – Directory name and package name
 2. **New branch** – Optionally create a dev branch alongside `main`
+3. **Directory conflict** – If target exists, choose to cancel or continue
 
 ## What It Does
 
 1. Downloads latest Cella template via [giget](https://github.com/unjs/giget)
 2. Cleans template files (removes cella-specific docs, configs)
-3. Updates `package.json` with your project name
-4. Initializes git repository
-5. Creates optional development branch
-6. Runs `pnpm install`
-7. Generates initial database migrations
+3. Installs dependencies with `pnpm install`
+4. Generates initial database migrations (Drizzle SQL files)
+5. Initializes git repository with initial commit
+6. Creates optional development branch
+7. Adds Cella as upstream remote (`cella-upstream`)
 
 ## Development
 
@@ -48,6 +43,7 @@ Running without arguments prompts for:
 pnpm ts           # Type check
 pnpm start        # Run locally (tsx)
 pnpm build        # Build for npm publish
+pnpm clean        # Remove dist folder
 pnpm test-build   # Build and test
 ```
 
@@ -57,3 +53,4 @@ pnpm test-build   # Build and test
 pnpm prepublishOnly  # Builds automatically
 npm publish
 ```
+
