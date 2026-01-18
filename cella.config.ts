@@ -1,8 +1,7 @@
 import { defineConfig } from './cli/sync/src/config/types';
 
 /**
- * cella sync config
- * Run with `pnpm sync`.
+ * Cella sync config: run with `pnpm sync`.
  */
 export default defineConfig({
   // Upstream Repository Configuration
