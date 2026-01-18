@@ -88,7 +88,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
 
     await gitAddAll(config.workingDirectory);
 
-    progress.done('packages staged');
+    progress.done('');
 
     return packageSummaryLine(stats);
   });

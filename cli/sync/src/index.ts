@@ -55,6 +55,7 @@ async function main(): Promise<void> {
       // Apply package.json dependency synchronization (unless skipped)
       if (!config.skipPackages) {
         await runPackages(analyzedFiles);
+        console.info();
       }
 
       // Show final instructions for staged changes

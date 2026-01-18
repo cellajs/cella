@@ -49,11 +49,3 @@ function showServiceConfiguration() {
 
   console.info(`options: ${parts.join(' │ ')}`);
 }
-
-/**
- * Display the started message (compact).
- */
-export function showStartedMessage() {
-  console.info();
-  console.info(`${pc.green('✓')} started ${config.syncService}`);
-}

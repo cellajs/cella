@@ -39,6 +39,7 @@ export async function runSync(analyzedFiles: FileAnalysis[]): Promise<string | n
       progress.done(`changes staged on '${config.forkBranchRef}'`);
     } else {
       progress.done('no changes to sync');
+      console.info();
     }
 
     return commitMessage;

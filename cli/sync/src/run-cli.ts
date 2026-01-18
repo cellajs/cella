@@ -2,7 +2,7 @@ import { Command } from 'commander';
 
 import { NAME, VERSION } from '#/constants';
 import { validateBranchName, validateSyncService } from '#/modules/cli/commands';
-import { showConfiguration, showStartedMessage, showWelcome } from '#/modules/cli/display';
+import { showConfiguration, showWelcome } from '#/modules/cli/display';
 import { handleSyncService, onInitialConfigLoad } from '#/modules/cli/handlers';
 import { CLIConfig } from '#/modules/cli/types';
 
@@ -94,6 +94,6 @@ export async function runCli(): Promise<void> {
   // Display the current configuration
   showConfiguration();
 
-  // Display the CLI will now hand off to core sync logic.
-  showStartedMessage();
+  // Space
+  console.info('');
 }

@@ -73,11 +73,13 @@ export async function validateConfig(strict = false): Promise<void> {
   logValidationWarnings(warnings);
 
   if (strict && !valid) {
-    console.error('❌ cella.config.ts contains invalid file paths');
+    console.error(`${pc.red('✗')} cella.config.ts contains invalid file paths`);
     process.exit(1);
   }
 
   if (strict && valid) {
-    console.log('✓ cella.config.ts overrides validated');
+    console.log(`${pc.green('✓')} cella.config.ts overrides validated`);
   }
+
+  console.info();
 }
