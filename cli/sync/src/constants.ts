@@ -7,12 +7,8 @@ export const NAME = 'cella sync';
 // Thin line divider for console output (68 chars wide)
 export const DIVIDER = '─'.repeat(60);
 
-// package.json Description, Version, Author, Website, and GitHub Repository URL
-export const DESCRIPTION: string = packageJson.description;
+// package.json version
 export const VERSION: string = packageJson.version;
-export const AUTHOR: string = packageJson.author;
-export const WEBSITE: string = packageJson.homepage;
-export const GITHUB: string = packageJson.repository.url;
 
 /** Compact header line: "⚡ cella sync v0.0.1" right-aligned with website */
 export function getHeaderLine(): string {

@@ -1,7 +1,7 @@
 import { config } from './config';
 import { handleUpstreamIntoForkMerge } from './modules/git/handle-upstream-into-fork-merge';
 import { FileAnalysis } from './types';
-import { handleSquashMerge } from './utils/git/handle-squash-merge';
+import { handleSquashMerge } from './utils/git/git-merge';
 import { createProgress } from './utils/progress';
 
 /**
@@ -9,33 +9,22 @@ import { createProgress } from './utils/progress';
  *
  * This function orchestrates the following steps:
  *
- * 1. **Merge upstream into fork**
+ * 1. **Merge upstream into sync branch**
  *    Applies all updates from the upstream repository into the fork's sync branch.
  *    Conflicts are analyzed and resolved according to the swizzle rules.
  *
- * 2. **Squash sync branch into target branch**
- *    Collapses all sync-related commits into a single commit on the fork's target branch.
- *    Optionally, includes the last N commit messages from the sync branch (currently 5)
- *    in the squash commit message for traceability.
- *
- * 3. **Merge target branch back into sync branch**
- *    Ensures that the sync branch is updated with the latest squash commit,
- *    keeping history clean and consistent.
- *
- * Logging is printed at each stage to provide feedback in the CLI.
+ * 2. **Squash sync branch into target branch (staged, not committed)**
+ *    Collapses all sync-related commits and stages them on the fork's target branch.
+ *    Changes are NOT committed - developer reviews and commits manually.
  *
  * @param analyzedFiles - Array of `FileAnalysis` objects returned from `runAnalyze()`.
- *                      This contains information about files to sync and swizzle metadata.
  *
- * @example
- * await runSync(analyzedFiles);
- *
- * @returns A promise that resolves when the sync process is complete.
+ * @returns A promise resolving to the suggested commit message, or null if no changes.
  */
-export async function runSync(analyzedFiles: FileAnalysis[]) {
+export async function runSync(analyzedFiles: FileAnalysis[]): Promise<string | null> {
   const progress = createProgress('syncing');
 
-  await progress.wrap(async () => {
+  return await progress.wrap(async () => {
     progress.step('merging upstream → sync branch');
 
     // Merge upstream into fork (sync-branch)
@@ -43,14 +32,19 @@ export async function runSync(analyzedFiles: FileAnalysis[]) {
 
     progress.step('squashing → target branch');
 
-    // Squash merge sync-branch → target branch
-    const squashMergeIntoPath = config.fork.localPath;
-    const squashMergeIntoBranch = config.fork.branchRef;
-    const squashMergeFromBranch = config.fork.syncBranchRef;
+    // Squash merge sync-branch → target branch (staged, not committed)
+    const commitMessage = await handleSquashMerge(
+      config.fork.localPath,
+      config.fork.branchRef,
+      config.fork.syncBranchRef,
+    );
 
-    // The last parameter (5) indicates we include the last 5 commit messages in the squash commit
-    await handleSquashMerge(squashMergeIntoPath, squashMergeIntoBranch, squashMergeFromBranch);
+    if (commitMessage) {
+      progress.done(`changes staged on '${config.fork.branchRef}'`);
+    } else {
+      progress.done('no changes to sync');
+    }
 
-    progress.done('sync complete');
+    return commitMessage;
   });
 }

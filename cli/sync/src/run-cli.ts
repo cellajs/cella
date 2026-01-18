@@ -1,10 +1,10 @@
 import { Command } from 'commander';
 
-import { NAME, VERSION } from './constants';
-import { validateBranchName, validateLocation, validateRemoteName, validateSyncService } from './modules/cli/commands';
-import { showConfiguration, showStartedMessage, showWelcome } from './modules/cli/display';
-import { handleSyncService, onInitialConfigLoad } from './modules/cli/handlers';
-import { CLIConfig } from './modules/cli/types';
+import { NAME, VERSION } from '#/constants';
+import { validateBranchName, validateSyncService } from '#/modules/cli/commands';
+import { showConfiguration, showStartedMessage, showWelcome } from '#/modules/cli/display';
+import { handleSyncService, onInitialConfigLoad } from '#/modules/cli/handlers';
+import { CLIConfig } from '#/modules/cli/types';
 
 // Initialize variables to hold CLI options
 const packageManager = 'pnpm';
@@ -12,9 +12,6 @@ let syncService = '';
 let upstreamBranch = '';
 let forkBranch = '';
 let forkSyncBranch = '';
-let upstreamLocation = '';
-let upstreamRemoteName = '';
-let forkLocation = '';
 let ciMode = false;
 let debugMode = false;
 let skipPackages = false;
@@ -31,7 +28,7 @@ let skipPackages = false;
  * immediately during parsing). These values are later combined into a final
  * `CLIConfig` object that flows through the rest of the CLI pipeline.
  */
-export const command = new Command(NAME)
+const command = new Command(NAME)
   .version(VERSION, '-v, --version', `output the current version of ${NAME}`)
   .usage('[options]')
   .helpOption('-h, --help', 'display this help message')
@@ -47,21 +44,8 @@ export const command = new Command(NAME)
   .option('--sync-service <name>', 'explicitly tell the CLI which sync service to use', (name: string) => {
     syncService = validateSyncService(name);
   })
-  .option(
-    '--upstream-location <location>',
-    'what location of the upstream to use (local|remote)',
-    (location: string) => {
-      upstreamLocation = validateLocation(location);
-    },
-  )
   .option('--upstream-branch <name>', 'what branch of the upstream to use', (name: string) => {
     upstreamBranch = validateBranchName(name);
-  })
-  .option('--upstream-remote-name <name>', 'what remote name to use for the upstream', (name: string) => {
-    upstreamRemoteName = validateRemoteName(name);
-  })
-  .option('--fork-location <location>', 'what location of the fork to use (local|remote)', (location: string) => {
-    forkLocation = validateLocation(location);
   })
   .option('--fork-branch <name>', 'what branch of the fork to use', (name: string) => {
     forkBranch = validateBranchName(name);
@@ -84,10 +68,7 @@ const cli: CLIConfig = {
   args: command.args,
   packageManager,
   syncService,
-  upstreamLocation,
-  upstreamRemoteName,
   upstreamBranch,
-  forkLocation,
   forkBranch,
   forkSyncBranch,
   ci: ciMode,

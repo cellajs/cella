@@ -1,25 +1,23 @@
-import { writeFile } from 'fs/promises';
-import { CommitEntry, FileEntry } from '../../types';
+import { CommitEntry, FileEntry } from '#/types';
+import { getCachedCommitHistory, getCachedFileHashes, setCachedCommitHistory, setCachedFileHashes } from '../cache';
 import {
   gitAdd,
   gitCheckoutOursFilePath,
-  gitCheckoutTheirsFilePath,
   gitDiffCached,
   gitDiffUnmerged,
-  gitLastCommitShaForFile,
+  gitLogAllFilesLastCommit,
   gitLogFileHistory,
   gitLsTreeRecursive,
-  gitLsTreeRecursiveAtCommit,
-  gitShowFileAtCommit,
 } from './command';
 
 /**
  * Retrieves all tracked files in a repository (for the specified branch)
  * along with their blob and last commit SHAs.
  *
- * Internally runs:
+ * Uses in-memory session cache to avoid redundant git calls within the same CLI run.
+ * Optimized to use only 2 git commands total:
  * - `git ls-tree -r <branch>` to list tracked files and blob SHAs
- * - `git log -n 1 --format=%H <branch> -- <file>` for each file
+ * - `git log --format=%H --name-only <branch>` to get all file→commit mappings at once
  *
  * @param repoPath - The file system path to the Git repository
  * @param branchName - The name of the branch to inspect (defaults to `'HEAD'`)
@@ -32,33 +30,44 @@ import {
  * // { path: 'src/index.ts', blobSha: 'abc123...', shortBlobSha: 'abc1234', lastCommitSha: 'def456...', shortCommitSha: 'def4567' }
  */
 export async function getGitFileHashes(repoPath: string, branchName: string = 'HEAD'): Promise<FileEntry[]> {
-  const output = await gitLsTreeRecursive(repoPath, branchName);
-  const lines = output.split('\n');
+  // Check session cache first
+  const cached = getCachedFileHashes(repoPath, branchName);
+  if (cached) return cached;
 
-  const entries: FileEntry[] = await Promise.all(
-    lines.map(async (line) => {
-      const [meta, filePath] = line.split('\t');
-      const blobSha = meta.split(' ')[2];
-      const shortBlobSha = blobSha.slice(0, 7);
+  // Fetch file tree and last commits in parallel (2 git commands total)
+  const [treeOutput, fileToCommit] = await Promise.all([
+    gitLsTreeRecursive(repoPath, branchName),
+    gitLogAllFilesLastCommit(repoPath, branchName),
+  ]);
 
-      const commitShaOutput = await gitLastCommitShaForFile(repoPath, branchName, filePath);
-      const shortCommitSha = commitShaOutput.slice(0, 7);
+  const lines = treeOutput.split('\n').filter((line) => line.trim());
 
-      return {
-        path: filePath,
-        blobSha,
-        shortBlobSha,
-        lastCommitSha: commitShaOutput,
-        shortCommitSha,
-      };
-    }),
-  );
+  const entries = lines.map((line) => {
+    const [meta, filePath] = line.split('\t');
+    const blobSha = meta.split(' ')[2];
+    const shortBlobSha = blobSha.slice(0, 7);
+
+    const lastCommitSha = fileToCommit.get(filePath) || '';
+    const shortCommitSha = lastCommitSha.slice(0, 7);
+
+    return {
+      path: filePath,
+      blobSha,
+      shortBlobSha,
+      lastCommitSha,
+      shortCommitSha,
+    };
+  });
+
+  // Store in session cache
+  setCachedFileHashes(repoPath, branchName, entries);
 
   return entries;
 }
 
 /**
  * Retrieves the full commit history for a specific file on a given branch.
+ * Uses in-memory session cache to avoid redundant git calls within the same CLI run.
  * Internally runs:
  * - `git log --format="%H|%aI" --follow <branch> -- <file>`
  *
@@ -77,8 +86,12 @@ export async function getFileCommitHistory(
   branchName: string,
   filePath: string,
 ): Promise<CommitEntry[]> {
+  // Check session cache first
+  const cached = getCachedCommitHistory(repoPath, branchName, filePath);
+  if (cached) return cached;
+
   const output = await gitLogFileHistory(repoPath, branchName, filePath);
-  return output
+  const commits = output
     .trim()
     .split('\n')
     .filter(Boolean)
@@ -86,33 +99,11 @@ export async function getFileCommitHistory(
       const [sha, date] = line.split('|');
       return { sha, date };
     });
-}
 
-/**
- * Writes the content of a file (from a specific commit) to a specified output path.
- * Internally uses `git show <commit>:<file>` to retrieve file contents.
- *
- * @param repoPath - The file system path to the Git repository
- * @param commitSha - The commit SHA to extract the file from
- * @param filePath - The file path inside the repository
- * @param outputPath - The output path where the file content will be written
- *
- * @returns A promise that resolves when the file has been written
- *
- * @example
- * await writeGitFileAtCommit('/repo', 'abc123', 'src/index.ts', '/tmp/index.ts');
- */
-export async function writeGitFileAtCommit(
-  repoPath: string,
-  commitSha: string,
-  filePath: string,
-  outputPath: string,
-): Promise<void> {
-  // Use git show to get the file content at the specific commit
-  const output = await gitShowFileAtCommit(repoPath, commitSha, filePath);
+  // Store in session cache
+  setCachedCommitHistory(repoPath, branchName, filePath, commits);
 
-  // Write the content to the output file
-  await writeFile(outputPath, output, 'utf8');
+  return commits;
 }
 
 /**
@@ -150,40 +141,6 @@ export async function getCachedFiles(repoPath: string): Promise<string[]> {
 }
 
 /**
- * Retrieves the blob SHA for a specific file at a given commit.
- *
- * @param repoPath - The file system path to the Git repository
- * @param commitSha - The commit SHA to inspect
- * @param filePath - The path to the file to check
- *
- * @returns The blob SHA of the file at that commit, or `null` if it doesn’t exist
- *
- * @example
- * const sha = await getFileBlobShaAtCommit('/repo', 'abc123', 'src/utils.ts');
- * console.info(sha); // 'de9c0a1...'
- */
-export async function getFileBlobShaAtCommit(
-  repoPath: string,
-  commitSha: string,
-  filePath: string,
-): Promise<string | null> {
-  const output = await gitLsTreeRecursiveAtCommit(repoPath, commitSha);
-  const lines = output.split('\n').filter(Boolean);
-
-  for (const line of lines) {
-    // format: <mode> <type> <sha>\t<path>
-    const [meta, path] = line.split('\t');
-    if (path === filePath) {
-      const sha = meta.split(' ')[2];
-      return sha;
-    }
-  }
-
-  // file does not exist in this commit
-  return null;
-}
-
-/**
  * Resolves a merge conflict by choosing **our** version of the file
  * (i.e., the version from the current branch) and staging it.
  *
@@ -201,26 +158,5 @@ export async function getFileBlobShaAtCommit(
  */
 export async function resolveConflictAsOurs(repoPath: string, filePath: string): Promise<void> {
   await gitCheckoutOursFilePath(repoPath, filePath);
-  await gitAdd(repoPath, filePath);
-}
-
-/**
- * Resolves a merge conflict by choosing **their** version of the file
- * (i.e., the version from the merged branch) and staging it.
- *
- * Internally runs:
- * - `git checkout --theirs <file>`
- * - `git add <file>`
- *
- * @param repoPath - The file system path to the Git repository
- * @param filePath - The path to the conflicted file
- *
- * @returns A promise that resolves when the conflict has been resolved
- *
- * @example
- * await resolveConflictAsTheirs('/repo', 'src/config.ts');
- */
-export async function resolveConflictAsTheirs(repoPath: string, filePath: string): Promise<void> {
-  await gitCheckoutTheirsFilePath(repoPath, filePath);
   await gitAdd(repoPath, filePath);
 }

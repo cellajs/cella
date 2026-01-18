@@ -1,12 +1,9 @@
-// Define CLI configuration
+/** CLI configuration parsed from command-line arguments */
 export interface CLIConfig {
   args: string[];
   packageManager: string;
   syncService: string;
-  upstreamLocation: string;
   upstreamBranch: string;
-  upstreamRemoteName: string;
-  forkLocation: string;
   forkBranch: string;
   forkSyncBranch: string;
   /** When true, skip interactive prompts and use defaults/CLI flags */

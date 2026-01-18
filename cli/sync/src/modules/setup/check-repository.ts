@@ -1,8 +1,8 @@
 import path from 'node:path';
 
-import { config, RepoConfig } from '../../config';
-import { isDirectory } from '../../utils/files';
-import { gitLsRemote, gitRevParseIsInsideWorkTree } from '../../utils/git/command';
+import { RepoConfig } from '#/config';
+import { isDirectory } from '#/utils/files';
+import { gitLsRemote, gitRevParseIsInsideWorkTree } from '#/utils/git/command';
 
 /**
  * Checks the repository connectivity and accessibility.
@@ -34,11 +34,8 @@ export async function checkRepository(repoConfig: RepoConfig) {
     throw new Error(`Git repo looks corrupted in ${repoConfig.workingDirectory}`);
   }
 
-  // When remote repository OR we need to push remote, check if we can access it (e.g., via GitHub API)
-  if (
-    repoConfig.location === 'remote' ||
-    (!config.behavior.skipAllPushes && config.workingDirectory === repoConfig.workingDirectory)
-  ) {
+  // When remote repository, check if we can access it
+  if (repoConfig.location === 'remote') {
     if (!repoConfig.remoteUrl) {
       throw new Error(`Remote URL is not defined for repository at "${repoConfig.workingDirectory}"`);
     }

@@ -1,15 +1,15 @@
 import { confirm } from '@inquirer/prompts';
 
-import { RepoConfig } from '../../config';
-import { FileAnalysis } from '../../types';
+import { RepoConfig } from '#/config';
+import { FileAnalysis } from '#/types';
 import {
   gitCleanAllUntrackedFiles,
   gitCleanUntrackedFile,
   gitRemoveFilePathFromCache,
   gitRestoreStagedFile,
-} from '../../utils/git/command';
-import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '../../utils/git/files';
-import { handleMerge } from '../../utils/git/handle-merge';
+} from '#/utils/git/command';
+import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '#/utils/git/files';
+import { handleMerge } from '#/utils/git/git-merge';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
@@ -102,7 +102,7 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
       await gitRestoreStagedFile(repoPath, filePath);
     }
 
-    if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
+    if (file?.mergeStrategy?.strategy === 'skip-upstream') {
       await gitRemoveFilePathFromCache(repoPath, filePath);
       await gitCleanUntrackedFile(repoPath, filePath);
     }
@@ -135,7 +135,7 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
       continue;
     }
 
-    if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
+    if (file?.mergeStrategy?.strategy === 'skip-upstream') {
       await gitRemoveFilePathFromCache(repoPath, filePath);
       await gitCleanUntrackedFile(repoPath, filePath);
       continue;

@@ -1,8 +1,7 @@
 import pc from 'picocolors';
-import { config } from '../../config';
-import { SYNC_SERVICES, SyncService } from '../../config/sync-services';
-import { SyncConfig } from '../../config/types';
-import { logValidationWarnings, validateOverridesConfig } from '../../config/validate';
+import { config } from '#/config';
+import { SYNC_SERVICES, SyncService } from '#/config/sync-services';
+import { logValidationWarnings, validateOverridesConfig } from '#/config/validate';
 import { promptSyncService } from './prompts';
 import { CLIConfig } from './types';
 
@@ -20,7 +19,7 @@ export async function handleSyncService(cli: CLIConfig): Promise<void> {
       console.info(`using sync service (CI default): ${pc.cyan(`${cli.syncService}\n`)}`);
     } else {
       cli.syncService = await promptSyncService();
-      config.syncService = cli.syncService as SyncConfig['syncService'];
+      config.syncService = cli.syncService as SyncService;
     }
   } else {
     console.info(`using sync service: ${pc.cyan(`${cli.syncService}\n`)}`);
@@ -45,16 +44,8 @@ export function onInitialConfigLoad(cli: CLIConfig) {
     config.skipPackages = cli.skipPackages;
   }
 
-  if (cli.upstreamLocation) {
-    config.upstreamLocation = cli.upstreamLocation as 'local' | 'remote';
-  }
-
   if (cli.upstreamBranch) {
     config.upstream = { branch: cli.upstreamBranch };
-  }
-
-  if (cli.forkLocation) {
-    config.forkLocation = cli.forkLocation as 'local' | 'remote';
   }
 
   if (cli.forkBranch) {

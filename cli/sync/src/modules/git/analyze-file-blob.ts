@@ -1,4 +1,4 @@
-import { FileAnalysis, FileEntry } from '../../types';
+import { FileAnalysis, FileEntry } from '#/types';
 
 /**
  * Determines the blob status of a file in the fork repository compared to the upstream.

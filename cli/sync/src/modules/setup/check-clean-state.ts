@@ -1,6 +1,6 @@
-import { hasLocalBranch } from '../../utils/git/branches';
-import { gitCheckout, isMergeInProgress, isRebaseInProgress } from '../../utils/git/command';
-import { isRepoClean } from '../../utils/git/helpers';
+import { hasLocalBranch } from '#/utils/git/git-refs';
+import { gitCheckout, isMergeInProgress, isRebaseInProgress } from '#/utils/git/command';
+import { isRepoClean } from '#/utils/git/helpers';
 
 /**
  * Checks if a Git repository is clean.
@@ -32,8 +32,8 @@ export async function checkCleanState(localPath: string, branchRef?: string, opt
     await gitCheckout(localPath, branchRef);
   }
 
-  // Check for uncommitted changes
-  if (!(await isRepoClean(localPath))) {
+  // Check for uncommitted changes (ignore cli/sync for sync tool development)
+  if (!(await isRepoClean(localPath, ['cli/sync']))) {
     throw new Error(`${locationDescription} has uncommitted changes. Please commit or stash them before proceeding.`);
   }
 

@@ -1,8 +1,9 @@
 import { CommitSummary, FileEntry, FileMergeStrategy } from './git';
-import { SwizzleAnalysis } from './swizzle';
 
 export * from './git';
-export * from './swizzle';
+
+/** Override status for a file, from config.overrides.customized or ignored arrays */
+export type OverrideStatus = 'ignored' | 'customized' | undefined;
 
 /**
  * Represents the analysis of a single file when comparing a fork with its upstream.
@@ -23,8 +24,8 @@ export type FileAnalysis = {
   /** Status of the file's blob comparison */
   blobStatus?: 'identical' | 'different' | 'missing';
 
-  /** Optional analysis result from swizzle operations */
-  swizzle?: SwizzleAnalysis;
+  /** Override status from config (ignored or customized) */
+  overrideStatus?: OverrideStatus;
 
   /** Recommended merge strategy for this file, if available */
   mergeStrategy?: FileMergeStrategy;

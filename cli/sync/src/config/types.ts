@@ -1,213 +1,109 @@
-import type { FileAnalysis } from '../types';
-import { SyncService } from './sync-services';
+import type { SyncService } from './sync-services';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC API - for cella.config.ts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Valid package.json keys that can be synced */
+export type PackageJsonSyncKey =
+  | 'dependencies'
+  | 'devDependencies'
+  | 'peerDependencies'
+  | 'optionalDependencies'
+  | 'scripts'
+  | 'engines'
+  | 'packageManager'
+  | 'overrides';
 
 /**
- * Minimal configuration required to identify and work with a Git repository.
+ * User-configurable sync options for cella.config.ts.
  */
-export interface MinimalRepoConfig {
-  /**
-   * Local file system path to the Git repository.
-   */
+export interface UserSyncConfig {
+  /** Upstream repository settings */
+  upstream: {
+    /** Remote URL (e.g., 'git@github.com:cellajs/cella.git') */
+    remoteUrl: string;
+    /** Branch to sync from */
+    branch: string;
+    /** Git remote name (e.g., 'cella-upstream') */
+    remoteName: string;
+  };
+
+  /** Fork repository settings */
+  fork: {
+    /** Your fork's working branch */
+    branch: string;
+    /** Temporary branch for sync operations */
+    syncBranch: string;
+  };
+
+  /** Show all file details (default: false, shows only files needing attention) */
+  verbose?: boolean;
+
+  /** Max commits to show in squash commit preview (default: 30) */
+  maxSquashPreviews?: number;
+
+  /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
+  packageJsonSync?: PackageJsonSyncKey[];
+
+  /** File overrides */
+  overrides?: {
+    customized?: string[];
+    ignored?: string[];
+  };
+}
+
+/** Vite-style helper for cella.config.ts with full intellisense. */
+export function defineConfig(config: UserSyncConfig): UserSyncConfig {
+  return config;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INTERNAL TYPES - for sync modules
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Repository config with computed runtime properties */
+export interface RepoConfig {
   localPath: string;
-
-  /**
-   * Remote URL of the Git repository.
-   */
   remoteUrl: string;
-
-  /**
-   * Branch name to work with (e.g., 'development').
-   */
   branch: string;
-
-  /**
-   * Name of the remote (e.g., 'origin').
-   */
   remoteName: string;
+  syncBranch: string;
+  location: 'local' | 'remote';
+  type: 'fork' | 'upstream';
+  isRemote: boolean;
+  branchRef: string;
+  syncBranchRef: string;
+  repoReference: string;
+  workingDirectory: string;
+}
 
-  /**
-   * Branch used for synchronization operations.
-   */
+/** Base repo config (stored in state, before computed props) */
+export interface BaseRepoConfig {
+  localPath: string;
+  remoteUrl: string;
+  branch: string;
+  remoteName: string;
   syncBranch: string;
 }
 
-/**
- * Types of log modules available for logging analyzed results.
- */
-type LogModule = 'analyzedFile' | 'analyzedSummary' | 'analyzedSwizzle' | 'packageSummary';
-
-/**
- * Configuration for logging analyzed results
- */
-export interface MinimalLogConfig {
-  /**
-   * Modules to log analyzed results for:
-   * Options: 'analyzedFile' | 'analyzedSummary' | 'analyzedSwizzle'
-   */
-  modules?: LogModule[];
-
-  /**
-   * Filters to filter analyzed files
-   */
-  analyzedFile: {
-    /**
-     * Filters to filter analyzed files by file path
-     */
-    filePath?: string[];
-
-    /**
-     * Filters to filter analyzed files by commit summary state
-     */
-    commitSummaryState?: NonNullable<FileAnalysis['commitSummary']>['status'][];
-
-    /**
-     * Filters to filter analyzed files by merge strategy strategy
-     */
-    mergeStrategyStrategy?: NonNullable<FileAnalysis['mergeStrategy']>['strategy'][];
-  };
-  /**
-   * Filters to filter analyzed swizzle entries
-   */
-  analyzedSwizzle: {
-    /**
-     * Filters to filter analyzed swizzle entries by file path
-     */
-    filePath?: string[];
-
-    /**
-     * Indicates whether to log only swizzled or non-swizzled files
-     * Dont include to log all files
-     */
-    swizzled?: boolean;
-  };
-}
-
-/**
- * Configuration for specifying behavior during sync operations.
- */
-export interface MinimalBehaviorConfig {
-  /**
-   * Behavior when the remote repository already exists but has a different URL than expected.
-   * - 'overwrite': Update the remote URL to the expected one.
-   * - 'error': Throw an error and halt the operation.
-   */
-  onRemoteWrongUrl?: 'overwrite' | 'error';
-
-  /**
-   * Behavior when the remote is missing and some commands require it (for example a `git pull`)
-   * Options:
-   * - 'skip': Skip operations that require the upstream remote.
-   * - 'error': Throw an error and halt the operation.
-   */
-  onMissingRemote?: 'skip' | 'error';
-
-  /**
-   * Whether to skip all git push operations.
-   */
-  skipAllPushes?: boolean;
-
-  /**
-   * Whether to perform a dry run for package.json changes.
-   * If true, changes to package.json will not be written, only displayed.
-   */
-  packageJsonMode?: 'dryRun' | 'applyChanges';
-
-  /**
-   * Whether to skip writing the swizzle metadata file.
-   * If true, the swizzle metadata file will not be written.
-   */
-  skipWritingSwizzleMetadataFile?: boolean;
-
-  /**
-   * Maximum number of git previews for Squash commits.
-   */
-  maxGitPreviewsForSquashCommits?: number;
-}
-
-export interface MinimalOverridesConfig {
-  /**
-   * Local file system path (directory) to find metadata in
-   */
-  localDir: string;
-
-  /**
-   * Version of the overrides metadata format (update when schema changes)
-   */
-  metadataVersion: string;
-
-  /**
-   * Default metadata file name
-   * Stores information about auto-detected overridden files
-   */
-  metadataFileName: string;
-
-  /**
-   * Files customized in fork; prefer fork version during merge conflicts
-   */
+/** Overrides config with defaults applied */
+export interface OverridesConfig {
   customized: string[];
-
-  /**
-   * Files and directories to be fully ignored during sync
-   */
   ignored: string[];
 }
 
-/**
- * Sync configuration for the Cella Sync Engine.
- * Defines the synchronization service type and repository configurations.
- */
-export interface SyncConfig {
-  /**
-   * Type of synchronization service being used.
-   */
+/** Full internal sync state */
+export interface SyncState {
   syncService: SyncService;
-
-  /**
-   * Whether debug mode is enabled (verbose output).
-   */
   debug: boolean;
-
-  /**
-   * Whether to skip package.json sync during sync service.
-   */
+  verbose: boolean;
   skipPackages: boolean;
-
-  /**
-   * Configuration for the forked repository.
-   */
-  fork: MinimalRepoConfig;
+  maxSquashPreviews: number;
+  packageJsonSync: PackageJsonSyncKey[];
+  fork: BaseRepoConfig;
   forkLocation: 'local' | 'remote';
-
-  /**
-   * Configuration for the upstream repository.
-   */
-  upstream: MinimalRepoConfig;
+  upstream: BaseRepoConfig;
   upstreamLocation: 'local' | 'remote';
-
-  /**
-   * Configuration for logging analyzed results.
-   */
-  log: MinimalLogConfig;
-
-  /**
-   * Configuration for specifying behavior during sync operations.
-   */
-  behavior: MinimalBehaviorConfig;
-
-  /**
-   * Configuration related to overrides metadata and settings files.
-   */
-  overrides: MinimalOverridesConfig;
+  overrides: OverridesConfig;
 }
-
-/** Alias for SyncConfig (lowercase convention) */
-export type syncConfig = SyncConfig;
-
-/**
- * A utility type that makes all properties of a given type T optional, including nested properties.
- */
-export type DeepPartial<T> = T extends (infer U)[] // If T is an array
-  ? DeepPartial<U>[] // Make its elements DeepPartial, but keep array shape
-  : T extends object // If T is an object
-    ? { [P in keyof T]?: DeepPartial<T[P]> }
-    : T; // Otherwise primitive — leave as-is

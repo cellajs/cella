@@ -1,43 +1,23 @@
-import { DeepPartial, SyncConfig } from "./cli/sync/src/config/types";
+import { defineConfig } from './cli/sync/src/config/types';
 
 /**
- * Cella Sync Configuration
- * 
- * This file configures the sync behavior between your fork and the upstream Cella template.
- * All options below can be customized. Uncomment and modify as needed.
- * 
- * Run `pnpm sync` to execute the sync with these settings.
+ * Cella sync config: run with `pnpm sync`.
  */
-export const cellaConfig: DeepPartial<SyncConfig> = {
-  // ─────────────────────────────────────────────────────────────────────────
+export default defineConfig({
   // Upstream Repository Configuration
-  // ─────────────────────────────────────────────────────────────────────────
   upstream: {
-    remoteUrl: 'git@github.com:cellajs/cella.git',
-    // branch: 'development',        // upstream branch to sync from
-    // remoteName: 'cella-upstream', // git remote name for upstream
+    remoteUrl: 'git@github.com:cellajs/cella.git',    // upstream repository URL
+    branch: 'cli-sync',                               // upstream branch to sync from
+    remoteName: 'cella-upstream',                     // git remote name for upstream
   },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Fork Repository Configuration  
-  // ─────────────────────────────────────────────────────────────────────────
-  // fork: {
-  //   branch: 'development',        // your fork's main branch
-  //   syncBranch: 'sync-branch',    // temporary branch for sync operations
-  // },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Sync Behavior Options
-  // ─────────────────────────────────────────────────────────────────────────
-  // behavior: {
-  //   skipAllPushes: false,                  // skip all git push operations
-  //   maxGitPreviewsForSquashCommits: 10,    // max commits to show in squash preview
-  //   skipWritingSwizzleMetadataFile: false, // skip writing .swizzle metadata
-  // },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // File Overrides
-  // ─────────────────────────────────────────────────────────────────────────
+  fork: {
+    branch: 'cli-sync',                               // your fork's working branch
+    syncBranch: 'sync-branch',                        // temporary branch for sync operations
+  },
+  maxSquashPreviews: 10,                              // max commits to show in squash preview
+  packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
+  verbose: false,                                   // uncomment to show all file details
+  // File overrides
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
@@ -51,8 +31,6 @@ export const cellaConfig: DeepPartial<SyncConfig> = {
       "render.yaml",
       "compose.yaml",
       "cella.config.ts",
-      "info/*",
-      "cli/create-cella/*",
       "config/default.ts",
       "config/staging.ts",
       "config/development.ts",
@@ -100,4 +78,4 @@ export const cellaConfig: DeepPartial<SyncConfig> = {
       "locales/en/app.json"
     ]
   }
-}
+});

@@ -1,6 +1,6 @@
-import type { RepoConfig } from '../../config';
-import { CommitEntry, CommitSummary } from '../../types';
-import { getFileCommitHistory } from '../../utils/git/files';
+import type { RepoConfig } from '#/config';
+import { CommitEntry, CommitSummary } from '#/types';
+import { getFileCommitHistory } from '#/utils/git/files';
 
 // Structure to hold commit lookup data
 type CommitLookup = {
@@ -125,16 +125,8 @@ function getStatus(
 
 /**
  * Determines the coverage of upstream commit history present in the fork.
- *
- * @param upstreamLookup - Commit lookup for the upstream repository
- * @param forkLookup - Commit lookup for the fork repository
- *
- * @returns The history coverage as a string ('unknown', 'partial', or 'complete')
  */
-export function getHistoryCoverage(
-  upstreamLookup: CommitLookup,
-  forkLookup: CommitLookup,
-): CommitSummary['historyCoverage'] {
+function getHistoryCoverage(upstreamLookup: CommitLookup, forkLookup: CommitLookup): CommitSummary['historyCoverage'] {
   const total = upstreamLookup.shas.length;
   const found = upstreamLookup.shas.filter((sha) => forkLookup.shasSet.has(sha)).length;
 

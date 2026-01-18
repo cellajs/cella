@@ -137,7 +137,7 @@ export const DEFAULT_BRANCHES = ['main', 'master'] as const;
 /**
  * Checks whether the provided URL points to a GitHub repository.
  */
-function isGitHubRepoUrl(repoUrl: string | null): boolean {
+function isGitHubRepoUrl(repoUrl: string | null): repoUrl is string {
   if (!repoUrl) return false;
   try {
     const parsed = new URL(repoUrl);

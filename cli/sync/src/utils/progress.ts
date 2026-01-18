@@ -7,8 +7,30 @@
  */
 
 import pc from 'picocolors';
-import yoctoSpinner from 'yocto-spinner';
+import yoctoSpinner, { type Spinner } from 'yocto-spinner';
 import { config } from '../config';
+
+/** Global reference to the currently active spinner for pausing during prompts */
+let activeSpinner: Spinner | null = null;
+
+/**
+ * Pause the active spinner to allow interactive prompts.
+ * Call resume() when the prompt is complete.
+ */
+export function pauseSpinner(): void {
+  if (activeSpinner && !config.debug) {
+    activeSpinner.stop();
+  }
+}
+
+/**
+ * Resume the active spinner after an interactive prompt.
+ */
+export function resumeSpinner(): void {
+  if (activeSpinner && !config.debug) {
+    activeSpinner.start();
+  }
+}
 
 export interface ProgressTracker {
   /** Update the current step (shown as spinner text or logged in debug) */
@@ -41,6 +63,7 @@ export function createProgress(title: string): ProgressTracker {
   if (config.debug) {
     console.info(pc.cyan(`\n${title}`));
   } else {
+    activeSpinner = spinner;
     spinner.start();
   }
 
@@ -59,11 +82,12 @@ export function createProgress(title: string): ProgressTracker {
     done: (message: string) => {
       if (config.debug) {
         // Debug mode: show final step with tree end
-        console.info(pc.green(`  └─ ✓ ${message}`));
+        console.info(`  └─ ${pc.green('✓')} ${message}`);
       } else {
         // Normal mode: stop spinner and show success
         spinner.stop();
-        console.info(`${pc.green('✓')} ${pc.green(message)}`);
+        activeSpinner = null;
+        console.info(`${pc.green('✓')} ${message}`);
       }
     },
 
@@ -72,6 +96,7 @@ export function createProgress(title: string): ProgressTracker {
         console.info(pc.red(`  └─ ✗ ${message}`));
       } else {
         spinner.stop();
+        activeSpinner = null;
         console.info(`${pc.red('✗')} ${pc.red(message)}`);
       }
     },
@@ -86,6 +111,7 @@ export function createProgress(title: string): ProgressTracker {
         } else {
           // Stop spinner and show tree-style breakdown on failure
           spinner.stop();
+          activeSpinner = null;
           console.info(pc.cyan(`\n${title}`));
           for (const step of completedSteps) {
             console.info(pc.gray(`  ├─ ${step}`));

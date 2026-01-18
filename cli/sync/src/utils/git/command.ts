@@ -110,44 +110,6 @@ export async function gitMerge(
 }
 
 /**
- * Rebases the current branch onto the specified upstream branch.
- *
- * @param repoPath - The file system path to the git repository
- * @param upstreamBranch - The branch to rebase onto
- * @param options - Optional flags for the rebase command
- *   - interactive: If true, starts an interactive rebase
- *   - continue: If true, continues a paused rebase
- *   - skip: If true, skips the current patch in a paused rebase
- *   - abort: If true, aborts the current rebase
- *  - skipEditor: If true, sets GIT_EDITOR to true to skip editor prompts during rebase
- *
- * @returns The stdout from the git rebase command
- *
- * @example
- * await gitRebase('/path/to/repo', 'main', { interactive: true });
- */
-export async function gitRebase(
-  repoPath: string,
-  upstreamBranch: string,
-  options: { interactive?: boolean; continue?: boolean; skip?: boolean; abort?: boolean; skipEditor?: boolean } = {},
-): Promise<string> {
-  const args: string[] = ['rebase'];
-
-  if (options.interactive) args.push('-i');
-  if (options.continue) args.push('--continue');
-  if (options.skip) args.push('--skip');
-  if (options.abort) args.push('--abort');
-
-  // Only add upstream branch if it's a normal rebase (not continue/skip/abort)
-  const normalRebase = !options.continue && !options.skip && !options.abort;
-  if (normalRebase) {
-    args.push(upstreamBranch);
-  }
-
-  return runGitCommand(args, repoPath, { skipEditor: !normalRebase && options.skipEditor });
-}
-
-/**
  * Stages a file for commit in the given repository.
  * Throws an error if the file does not exist or cannot be added.
  *
@@ -223,20 +185,37 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
 }
 
 /**
- * Gets the output of `git ls-tree -r <commit>` for a given commit in the repository.
- * Lists all files present at the specified commit.
+ * Gets the last commit SHA for all files in a single git log command.
+ * Outputs format: commit SHA followed by list of files changed in that commit.
+ * We parse this to build a map of filePath → lastCommitSha.
  *
  * @param repoPath - The file system path to the git repository
- * @param commitSha - The SHA of the commit to list files from
+ * @param branchName - The name of the branch to check
  *
- * @returns The stdout from the git ls-tree command, showing all files in the commit
- *
- * @example
- * const files = await gitLsTreeRecursiveAtCommit('/path/to/repo', 'abc123def456');
- * console.info(files);
+ * @returns A Map of file paths to their last commit SHA
  */
-export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: string): Promise<string> {
-  return runGitCommand(['ls-tree', '-r', commitSha], repoPath);
+export async function gitLogAllFilesLastCommit(repoPath: string, branchName: string): Promise<Map<string, string>> {
+  // Get all commits with their changed files in one command
+  // Format: <commit-sha>\n<file1>\n<file2>\n\n<next-commit-sha>\n...
+  const output = await runGitCommand(['log', '--format=%H', '--name-only', branchName], repoPath);
+
+  const fileToCommit = new Map<string, string>();
+  let currentCommit = '';
+
+  for (const line of output.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // SHA-1 hashes are 40 hex characters
+    if (/^[0-9a-f]{40}$/i.test(trimmed)) {
+      currentCommit = trimmed;
+    } else if (currentCommit && !fileToCommit.has(trimmed)) {
+      // First occurrence of this file = its most recent commit
+      fileToCommit.set(trimmed, currentCommit);
+    }
+  }
+
+  return fileToCommit;
 }
 
 /**
@@ -322,28 +301,6 @@ export async function gitShowFileAtCommit(repoPath: string, commitSha: string, f
 }
 
 /**
- * Attempts to automatically merge three file versions using `git merge-file`.
- *
- * Runs `git merge-file --quiet ours base theirs` to determine whether a file can be auto-merged.
- * Throws an error if merge conflicts occur (exit code 1).
- *
- * @param oursPath - Path to the "ours" version of the file
- * @param basePath - Path to the common ancestor ("base") version of the file
- * @param theirsPath - Path to the "theirs" version of the file
- *
- * @throws If merge conflicts occur (Git exits with code 1)
- * @returns A promise that resolves when the merge is successful
- *
- * @example
- * await gitMergeFile('ours.txt', 'base.txt', 'theirs.txt');
- * // If no conflicts occur, the merged content is written to ours.txt
- */
-export async function gitMergeFile(oursPath: string, basePath: string, theirsPath: string): Promise<void> {
-  // Throws if merge conflicts occur (exit code 1)
-  await execFileAsync('git', ['merge-file', '--quiet', oursPath, basePath, theirsPath]);
-}
-
-/**
  * Checks if a merge is currently in progress within the given repository.
  *
  * @param repoPath - The file system path to the git repository
@@ -391,22 +348,6 @@ export function isRebaseInProgress(repoPath: string): boolean {
  */
 export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(['checkout', '--ours', filePath], repoPath);
-}
-
-/**
- * Checks out the "theirs" version of a conflicted file during a merge.
- * This takes the incoming branch’s version of the file.
- *
- * @param repoPath - The file system path to the git repository
- * @param filePath - The path to the conflicted file
- *
- * @returns The stdout from the git checkout command
- *
- * @example
- * await gitCheckoutTheirsFilePath('/repo', 'src/config.ts');
- */
-export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): Promise<string> {
-  return runGitCommand(['checkout', '--theirs', filePath], repoPath);
 }
 
 /**
@@ -471,30 +412,6 @@ export async function gitCleanAllUntrackedFiles(repoPath: string): Promise<strin
  */
 export async function gitRestoreStagedFile(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(['restore', '--staged', '--source=HEAD', '--worktree', '--', filePath], repoPath);
-}
-
-/**
- * Pushes commits to a remote branch.
- *
- * @param repoPath - The file system path of the git repository.
- * @param remote - The remote name to push to (e.g. "origin")
- * @param branch - The branch to push.
- * @param options
- *    - force       If true -> --force-with-lease
- *    - setUpstream If true -> --set-upstream
- *
- * @returns The stdout from the git push command
- */
-export async function gitPush(
-  repoPath: string,
-  remote: string,
-  branch: string,
-  options?: { force?: boolean; setUpstream?: boolean },
-): Promise<string> {
-  const forceFlag = options?.force ? '--force-with-lease' : '';
-  const upstreamFlag = options?.setUpstream ? '--set-upstream' : '';
-
-  return runGitCommand(['push', forceFlag, upstreamFlag, remote, branch].filter(Boolean), repoPath);
 }
 
 /**

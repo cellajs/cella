@@ -1,6 +1,17 @@
 import { gitRevListCount, gitShowFileAtCommit, gitStatusPorcelain, runGitCommand } from './command';
 
 /**
+ * Get the current branch name.
+ *
+ * @param repoPath - Absolute or relative path to the Git repository
+ *
+ * @returns The current branch name
+ */
+export async function getCurrentBranch(repoPath: string): Promise<string> {
+  return runGitCommand(['rev-parse', '--abbrev-ref', 'HEAD'], repoPath);
+}
+
+/**
  * Get the number of commits that are in `sourceBranch` but not in `baseBranch`.
  *
  * This function parses the raw string output from `gitRevListCount` into a number.
@@ -25,12 +36,24 @@ export async function getCommitCount(repoPath: string, sourceBranch: string, bas
  * Checks if the repository has no uncommitted changes.
  *
  * @param repoPath - The Absolute or relative path to the Git repository
+ * @param ignorePaths - Optional paths to ignore when checking for changes
  *
- * @returns True if the repository has no uncommitted changes, false otherwise
+ * @returns True if the repository has no uncommitted changes (outside ignored paths), false otherwise
  */
-export async function isRepoClean(repoPath: string): Promise<boolean> {
+export async function isRepoClean(repoPath: string, ignorePaths?: string[]): Promise<boolean> {
   const status = await gitStatusPorcelain(repoPath);
-  return status.trim().length === 0;
+  const lines = status.split('\n').filter((line) => line.trim().length > 0);
+  if (lines.length === 0) return true;
+  if (!ignorePaths?.length) return false;
+
+  // Filter out ignored paths from status output
+  const relevantChanges = lines.filter((line) => {
+    // Porcelain format: XY filename (or XY orig -> new for renames)
+    const filePath = line.slice(3).split(' -> ')[0];
+    return !ignorePaths.some((ignored) => filePath.startsWith(ignored));
+  });
+
+  return relevantChanges.length === 0;
 }
 
 /**
@@ -46,21 +69,6 @@ export async function hasAnythingToCommit(repoPath: string): Promise<boolean> {
   //   empty string -> nothing to commit
   //   non-empty -> something staged/unstaged
   return status.trim().length > 0;
-}
-
-/**
- * Checks if the branch has commits that need to be pushed.
- *
- * @param repoPath - Path to the repository
- * @param branch - Local branch name
- * @param remote - Remote name, default 'origin'
- *
- * @returns True if there are commits to push
- */
-export async function hasAnythingToPush(repoPath: string, branch: string, remote = 'origin'): Promise<boolean> {
-  const countStr = await gitRevListCount(repoPath, branch, `${remote}/${branch}`);
-  const count = parseInt(countStr, 10);
-  return count > 0;
 }
 
 /**

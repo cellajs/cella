@@ -1,130 +1,8 @@
 // Dependencies
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { mkdtemp, rm, stat } from 'fs/promises';
-import * as os from 'os';
+import { stat } from 'fs/promises';
 import * as path from 'path';
-
-// A simple list of common binary file extensions
-const binaryExtensions = new Set([
-  // Images
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.bmp',
-  '.tiff',
-  '.tif',
-  '.ico',
-  '.webp',
-  '.heic',
-
-  // Documents
-  '.pdf',
-  '.doc',
-  '.docx',
-  '.xls',
-  '.xlsx',
-  '.ppt',
-  '.pptx',
-
-  // Archives & compressed files
-  '.zip',
-  '.rar',
-  '.7z',
-  '.tar',
-  '.gz',
-  '.bz2',
-  '.xz',
-
-  // Audio & video
-  '.mp3',
-  '.wav',
-  '.flac',
-  '.aac',
-  '.ogg',
-  '.m4a',
-  '.mp4',
-  '.mkv',
-  '.avi',
-  '.mov',
-  '.wmv',
-  '.flv',
-  '.webm',
-
-  // Executables & binaries
-  '.exe',
-  '.dll',
-  '.so',
-  '.bin',
-  '.apk',
-  '.app',
-  '.deb',
-  '.rpm',
-
-  // Fonts
-  '.ttf',
-  '.otf',
-  '.woff',
-  '.woff2',
-
-  // Others
-  '.class',
-  '.pyc',
-  '.jar',
-  '.iso',
-  '.dmg',
-]);
-
-/**
- * Determines if a file is likely binary based on its extension.
- *
- * ⚠️ This function uses a simple heuristic (by file extension),
- * so it may not correctly detect all binary or text files.
- *
- * @param filePath - The file path to inspect
- *
- * @returns `true` if the file appears to be binary, otherwise `false`
- *
- * @example
- * isBinaryFile('image.png'); // true
- * isBinaryFile('src/index.ts'); // false
- */
-export function isBinaryFile(filePath: string): boolean {
-  const ext = path.extname(filePath).toLowerCase();
-  return binaryExtensions.has(ext);
-}
-
-/**
- * Creates a temporary directory in the system’s temp folder with a given prefix.
- * Internally uses `fs.mkdtemp()` and returns the full path of the new directory.
- *
- * @param prefix - A short prefix for the directory name (e.g., `'myapp-'`)
- *
- * @returns The absolute path to the created temporary directory
- *
- * @example
- * const tempDir = await createTempDir('myapp-');
- * console.info(tempDir); // /tmp/myapp-abc123
- */
-export async function createTempDir(prefix: string): Promise<string> {
-  return mkdtemp(path.join(os.tmpdir(), prefix));
-}
-
-/**
- * Removes a directory recursively and forcefully.
- * Internally calls `fs.rm()` with `{ recursive: true, force: true }`.
- *
- * @param dirPath - The directory path to remove
- *
- * @returns A promise that resolves when the directory has been removed
- *
- * @example
- * await removeDir('/tmp/myapp-abc123');
- */
-export async function removeDir(dirPath: string): Promise<void> {
-  await rm(dirPath, { recursive: true, force: true });
-}
 
 /**
  * Reads and parses a JSON file from disk.
@@ -207,24 +85,6 @@ export function matchPathPattern(filePath: string, pattern: string): boolean {
   const regex = new RegExp(regexPattern);
 
   return regex.test(filePath);
-}
-
-/**
- * Removes a file if it exists.
- * Internally checks with `fs.existsSync()` and uses `fs.rm()` with `{ force: true }`.
- *
- * @param filePath - The path to the file to remove
- *
- * @returns A promise that resolves when the file has been removed (if it existed)
- *
- * @example
- * await removeFileIfExists('./dist/output.log');
- */
-export async function removeFileIfExists(filePath: string): Promise<void> {
-  if (existsSync(filePath)) {
-    console.info('removing file:', filePath);
-    await rm(filePath, { force: true });
-  }
 }
 
 /**
