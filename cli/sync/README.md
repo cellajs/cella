@@ -6,6 +6,38 @@ CLI tool to keep your app in sync with Cella upstream template.
 
 When you create a web app with Cella, you start from the template. We recommend `pnpm create @cellajs/cella`. Over time, Cella receives updates - bug fixes, new features, dependency updates. This CLI helps you pull those changes into your app while preserving your customizations.
 
+## Branch Model
+
+The sync CLI uses a **two-branch model** to keep your app in sync with upstream:
+
+### sync-branch (e.g., `sync-branch`)
+
+The sync-branch maintains **full git ancestry** with upstream Cella. It:
+
+- Contains actual upstream merge commits (not squashed)
+- Enables accurate detection of "commits behind upstream"
+- Allows proper three-way merges with conflict detection
+- Is **local-only** — never pushed to your remote
+
+This branch is essential because git determines merge relationships via commit SHAs. Without it, there's no way to know which upstream commits you've already synced.
+
+### development branch (e.g., `development`)
+
+Your working branch with **clean, squashed history**. After sync:
+
+1. Upstream changes are first merged into `sync-branch` (with full history)
+2. Then squash-merged into `development` (one clean commit)
+
+This gives you the best of both worlds: proper upstream ancestry for merges, and clean history for your app's commits.
+
+```
+upstream/development ──────●────●────●────●  (Cella template)
+                            \         \
+sync-branch ─────────────────●─────────●───  (full merge history)
+                              \         \
+development ──────────────────■──────────■─  (squashed, clean)
+```
+
 ## Usage
 
 From your monorepo root:

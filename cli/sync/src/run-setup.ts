@@ -4,8 +4,8 @@ import { checkCleanState } from '#/modules/setup/check-clean-state';
 import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
-import { createBranchIfMissing } from '#/utils/git/git-refs';
 import { handleMerge } from '#/utils/git/git-merge';
+import { createBranchIfMissing } from '#/utils/git/git-refs';
 import { createProgress } from '#/utils/progress';
 
 /**
@@ -78,7 +78,17 @@ export async function runSetup() {
 
     progress.step('preparing sync branch');
 
-    // Create sync branch if missing, then check it's clean
+    /**
+     * sync-branch maintains full git ancestry with upstream.
+     *
+     * It contains actual upstream merge commits (not squashed), which allows:
+     * - Accurate "commits behind" detection via shared commit SHAs
+     * - Proper three-way merges with conflict detection
+     * - Git merge-base calculations to work correctly
+     *
+     * Without sync-branch, we can't determine which upstream commits were
+     * already synced (development has squashed commits with different SHAs).
+     */
     await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranchRef);
     await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef);
 
@@ -90,7 +100,11 @@ export async function runSetup() {
 
     progress.step('updating sync branch');
 
-    // Merge fork branch into sync branch to ensure sync branch is up-to-date
+    /**
+     * Merge development → sync-branch to incorporate any fork changes.
+     * This keeps sync-branch aligned with development's content while
+     * preserving its upstream commit ancestry for future syncs.
+     */
     await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
 
     // Ensure sync branch is clean post-merge

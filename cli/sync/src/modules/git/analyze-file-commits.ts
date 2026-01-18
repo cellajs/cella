@@ -2,6 +2,16 @@ import type { RepoConfig } from '#/config';
 import { CommitEntry, CommitSummary } from '#/types';
 import { getFileCommitHistory } from '#/utils/git/files';
 
+/**
+ * NOTE: Commit history comparison MUST use sync-branch (syncBranchRef), NOT development (branchRef).
+ *
+ * sync-branch maintains full upstream commit history (actual merge commits from upstream).
+ * development has squashed commits, so upstream SHAs won't exist there.
+ *
+ * Using development would cause getSharedAncestor() to return undefined, marking
+ * all files as 'unrelated' and triggering repeated unnecessary syncs.
+ */
+
 // Structure to hold commit lookup data
 type CommitLookup = {
   commits: CommitEntry[];
@@ -28,9 +38,11 @@ export async function analyzeFileCommits(
   fork: RepoConfig,
   filePath: string,
 ): Promise<CommitSummary> {
+  // Use syncBranchRef for fork - it contains actual upstream commits (not squashed)
+  // This allows proper ancestor detection via shared commit SHAs
   const [upstreamCommits, forkCommits] = await Promise.all([
     getFileCommitHistory(upstream.workingDirectory, upstream.branchRef, filePath),
-    getFileCommitHistory(fork.workingDirectory, fork.branchRef, filePath),
+    getFileCommitHistory(fork.workingDirectory, fork.syncBranchRef, filePath),
   ]);
 
   const upstreamLookup = toCommitLookup(upstreamCommits);

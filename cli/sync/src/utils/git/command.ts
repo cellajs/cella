@@ -478,3 +478,44 @@ export async function gitStatusPorcelain(repoPath: string): Promise<string> {
 export async function gitPull(repoPath: string, branchName: string): Promise<string> {
   return runGitCommand(['pull', 'origin', branchName], repoPath);
 }
+
+/**
+ * Gets the merge-base (common ancestor) between two branches.
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param branch1 - First branch reference
+ * @param branch2 - Second branch reference
+ *
+ * @returns The commit SHA of the merge-base, or null if none exists
+ *
+ * @example
+ * const base = await gitMergeBase('/path/to/repo', 'upstream/development', 'sync-branch');
+ */
+export async function gitMergeBase(repoPath: string, branch1: string, branch2: string): Promise<string | null> {
+  try {
+    return await runGitCommand(['merge-base', branch1, branch2], repoPath);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Gets the latest commit SHA and message for a branch.
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param branchName - The branch to get the latest commit from
+ *
+ * @returns Object with sha and message, or null if branch doesn't exist
+ */
+export async function gitLatestCommit(
+  repoPath: string,
+  branchName: string,
+): Promise<{ sha: string; shortSha: string; message: string } | null> {
+  try {
+    const output = await runGitCommand(['log', '-1', '--format=%H|%s', branchName], repoPath);
+    const [sha, message] = output.split('|');
+    return { sha, shortSha: sha.slice(0, 7), message };
+  } catch {
+    return null;
+  }
+}

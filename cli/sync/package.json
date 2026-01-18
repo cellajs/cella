@@ -26,7 +26,10 @@
     "sync": "tsx index.ts",
     "deps:outdated": "tsx src/run-outdated.ts",
     "validate": "tsx index.ts --sync-service validate",
+    "check": "pnpm ts && pnpm biome check --write .",
     "ts": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest"
   },

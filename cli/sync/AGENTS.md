@@ -10,6 +10,46 @@ The sync CLI keeps Cella forks up-to-date with the upstream template. It handles
 - Conflict resolution based on override rules
 - Package.json dependency synchronization
 
+## Branch Model
+
+**Critical**: Understanding the two-branch model is essential for working on this CLI.
+
+### sync-branch (`fork.syncBranchRef`)
+
+The sync-branch maintains **full git ancestry** with upstream:
+
+- Contains actual upstream merge commits (not squashed)
+- Commit SHAs from upstream exist in this branch's history
+- Enables `git merge-base` and ancestor detection to work correctly
+- Is **local-only** — never pushed to remote
+
+**Why it exists**: Git determines merge relationships via commit SHAs. When we squash commits into development, the original upstream SHAs are lost. Without sync-branch, there's no way to determine which upstream commits have already been synced.
+
+### development branch (`fork.branchRef`)
+
+The user's working branch with clean, squashed commit history.
+
+### The sync flow
+
+```
+1. Fetch upstream                           (get latest upstream/development)
+2. Merge upstream → sync-branch             (preserves full commit history)
+3. Resolve conflicts on sync-branch         (using override rules)
+4. Squash-merge sync-branch → development   (clean single commit)
+```
+
+### Code implications
+
+When comparing commit histories, **always use syncBranchRef for fork**:
+
+```typescript
+// ✅ CORRECT - sync-branch has upstream commit SHAs
+getFileCommitHistory(fork.workingDirectory, fork.syncBranchRef, filePath)
+
+// ❌ WRONG - development has squashed SHAs, ancestor detection fails
+getFileCommitHistory(fork.workingDirectory, fork.branchRef, filePath)
+```
+
 ## Tech Stack
 
 - **Runtime**: Node.js (v24), tsx

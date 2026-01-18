@@ -17,12 +17,17 @@ export const forkDefaultConfig: BaseRepoConfig = {
   localPath: monorepoRoot,
   /** The remote URL of the fork repository */
   remoteUrl: '',
-  /** Your fork's main branch where final changes land */
+  /** Your fork's main branch where final changes land (squashed commits) */
   branch: 'development',
   /**
-   * Intermediate branch for sync operations (local-only, not pushed to remote).
-   * Upstream changes are first merged here, conflicts resolved, then squash-merged
-   * into your main branch. This keeps your main branch history clean.
+   * sync-branch maintains full git ancestry with upstream (local-only, never pushed).
+   *
+   * It contains actual upstream merge commits (not squashed), enabling:
+   * - Accurate "commits behind" detection via shared commit SHAs
+   * - Proper three-way merges with conflict detection
+   * - Git merge-base calculations to work correctly
+   *
+   * Flow: upstream → sync-branch (full history) → development (squashed)
    */
   syncBranch: 'sync-branch',
   /** The name to use when adding the fork repository as a remote */

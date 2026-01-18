@@ -2,15 +2,17 @@
  * Analyze module - File analysis for sync between upstream and fork.
  * Exports the main runAnalyze function and supporting utilities.
  */
+
+import pLimit from 'p-limit';
 import pc from 'picocolors';
 import { config } from '#/config';
 import { FileAnalysis, FileEntry } from '#/types';
+import { gitLatestCommit, gitMergeBase } from '#/utils/git/command';
 import { getGitFileHashes } from '#/utils/git/files';
 import { createProgress } from '#/utils/progress';
 import { analyzeFile } from './analyze-file';
 import { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log-file';
 import { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log-summary';
-import pLimit from 'p-limit';
 
 // Re-export log utilities for external use
 export { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log-file';
@@ -18,6 +20,45 @@ export { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummary
 
 // Run 10 analyses at a time
 const limit = pLimit(10);
+
+/**
+ * Logs branch-level sync state showing upstream HEAD, sync-branch HEAD, and their merge-base.
+ * Only shown in verbose/debug mode.
+ */
+async function logBranchSyncState(): Promise<void> {
+  if (!config.verbose && !config.debug) return;
+
+  const workDir = config.fork.workingDirectory;
+  const upstreamRef = config.upstream.branchRef;
+  const syncRef = config.fork.syncBranchRef;
+
+  const [upstreamCommit, syncCommit, mergeBase] = await Promise.all([
+    gitLatestCommit(workDir, upstreamRef),
+    gitLatestCommit(workDir, syncRef),
+    gitMergeBase(workDir, upstreamRef, syncRef),
+  ]);
+
+  console.info(pc.bold('\nbranch sync state:'));
+
+  if (upstreamCommit) {
+    console.info(`  ${pc.cyan('upstream')} ${pc.dim(`(${upstreamRef})`)}`);
+    console.info(`    ${pc.yellow(upstreamCommit.shortSha)} ${upstreamCommit.message}`);
+  }
+
+  if (syncCommit) {
+    console.info(`  ${pc.cyan('sync-branch')} ${pc.dim(`(${syncRef})`)}`);
+    console.info(`    ${pc.yellow(syncCommit.shortSha)} ${syncCommit.message}`);
+  }
+
+  if (mergeBase) {
+    const shortBase = mergeBase.slice(0, 7);
+    const isUpToDate = upstreamCommit?.sha === mergeBase;
+    const status = isUpToDate ? pc.green('✓ up to date') : pc.yellow('⟳ commits to sync');
+    console.info(`  ${pc.cyan('merge-base')} ${pc.yellow(shortBase)} ${status}`);
+  } else {
+    console.info(`  ${pc.cyan('merge-base')} ${pc.red('none (unrelated histories)')}`);
+  }
+}
 
 /**
  * Analyzes multiple files by comparing their states in the upstream and fork repositories.
@@ -78,6 +119,9 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     const summaryLines = analyzedSummaryLines(analyzedFiles);
     logAnalyzedSummaryLines(summaryLines);
   }
+
+  // Log branch sync state in verbose mode
+  await logBranchSyncState();
 
   return analyzedFiles;
 }

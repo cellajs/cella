@@ -2,11 +2,11 @@
  * Analyzes a file by comparing its state in the upstream and fork repositories.
  */
 import type { RepoConfig } from '#/config';
-import type { CommitSummary, FileAnalysis, FileEntry } from '#/types';
 import { analyzeFileBlob } from '#/modules/git/analyze-file-blob';
 import { analyzeFileCommits } from '#/modules/git/analyze-file-commits';
 import { determineFileMergeStrategy } from '#/modules/git/determine-file-merge-strategy';
 import { getOverrideStatus } from '#/modules/overrides';
+import type { CommitSummary, FileAnalysis, FileEntry } from '#/types';
 
 /**
  * Analyzes a file by comparing its state in the upstream and fork repositories.
