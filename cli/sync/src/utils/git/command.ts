@@ -425,6 +425,8 @@ export async function gitRestoreStagedFile(repoPath: string, filePath: string): 
  * @param repoPath - Absolute or relative path to the Git repository
  * @param sourceBranch - The branch to compare (e.g., feature branch)
  * @param baseBranch - The branch to compare against (e.g., main or development)
+ * @param options - Optional configuration
+ * @param options.noMerges - If true, excludes merge commits from the count
  *
  * @throws If the Git command fails
  * @returns The raw string output of `git rev-list --count`
@@ -433,8 +435,16 @@ export async function gitRestoreStagedFile(repoPath: string, filePath: string): 
  * const countStr = await gitRevListCount('/repo', 'feature', 'main');
  * console.info(countStr); // e.g., "5"
  */
-export async function gitRevListCount(repoPath: string, sourceBranch: string, baseBranch: string): Promise<string> {
-  return runGitCommand(['rev-list', '--count', `${baseBranch}..${sourceBranch}`], repoPath);
+export async function gitRevListCount(
+  repoPath: string,
+  sourceBranch: string,
+  baseBranch: string,
+  { noMerges = false }: { noMerges?: boolean } = {},
+): Promise<string> {
+  const args = ['rev-list', '--count'];
+  if (noMerges) args.push('--no-merges');
+  args.push(`${baseBranch}..${sourceBranch}`);
+  return runGitCommand(args, repoPath);
 }
 
 /**

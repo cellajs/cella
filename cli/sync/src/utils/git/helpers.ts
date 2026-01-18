@@ -21,14 +21,14 @@ export async function getCurrentBranch(repoPath: string): Promise<string> {
  * @param baseBranch - The branch to compare against (e.g., main or development)
  *
  * @throws If the Git command fails or output cannot be parsed as a number
- * @returns The number of commits (integer)
+ * @returns The number of commits (integer), excluding merge commits
  *
  * @example
  * const count = await getCommitCount('/repo', 'sync-branch', 'development');
  * console.info(count); // e.g., 5
  */
 export async function getCommitCount(repoPath: string, sourceBranch: string, baseBranch: string): Promise<number> {
-  const countStr = await gitRevListCount(repoPath, sourceBranch, baseBranch);
+  const countStr = await gitRevListCount(repoPath, sourceBranch, baseBranch, { noMerges: true });
   return parseInt(countStr, 10);
 }
 
@@ -107,8 +107,8 @@ export async function getLastCommitMessages(
   toBranch: string,
   limit: number = 5,
 ): Promise<string[]> {
-  // git log <toBranch>..<fromBranch> -n <limit> --pretty=format:%s
-  const args = ['log', `${toBranch}..${fromBranch}`, '-n', String(limit), '--pretty=format:%s'];
+  // git log <toBranch>..<fromBranch> -n <limit> --no-merges --pretty=format:%s
+  const args = ['log', `${toBranch}..${fromBranch}`, '-n', String(limit), '--no-merges', '--pretty=format:%s'];
 
   const output = await runGitCommand(args, repoPath);
 

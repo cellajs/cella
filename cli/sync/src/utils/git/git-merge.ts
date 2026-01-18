@@ -106,6 +106,10 @@ export async function handleSquashMerge(
   await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true });
   await gitAddAll(mergeIntoPath);
 
+  // Check if there are actual staged changes after the squash merge
+  const hasStagedChanges = await hasAnythingToCommit(mergeIntoPath);
+  if (!hasStagedChanges) return null;
+
   const recentMessages = config.maxSquashPreviews
     ? await getLastCommitMessages(mergeIntoPath, mergeFromBranch, mergeIntoBranch, config.maxSquashPreviews)
     : [];
