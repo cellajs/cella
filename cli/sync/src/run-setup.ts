@@ -73,8 +73,8 @@ export async function runSetup() {
     progress.step('checking clean state');
 
     // Ensure fork working directory and branches are clean
-    await checkCleanState(config.fork.workingDirectory);
-    await checkCleanState(config.fork.workingDirectory, config.fork.branchRef);
+    await checkCleanState(config.workingDirectory);
+    await checkCleanState(config.workingDirectory, config.forkBranchRef);
 
     progress.step('preparing sync branch');
 
@@ -89,8 +89,8 @@ export async function runSetup() {
      * Without sync-branch, we can't determine which upstream commits were
      * already synced (development has squashed commits with different SHAs).
      */
-    await createBranchIfMissing(config.fork.workingDirectory, config.fork.syncBranchRef);
-    await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef);
+    await createBranchIfMissing(config.workingDirectory, config.forkSyncBranchRef);
+    await checkCleanState(config.workingDirectory, config.forkSyncBranchRef);
 
     progress.step('fetching latest changes');
 
@@ -105,10 +105,10 @@ export async function runSetup() {
      * This keeps sync-branch aligned with development's content while
      * preserving its upstream commit ancestry for future syncs.
      */
-    await handleMerge(config.fork.workingDirectory, config.fork.syncBranchRef, config.fork.branchRef, null);
+    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.forkBranchRef, null);
 
     // Ensure sync branch is clean post-merge
-    await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
+    await checkCleanState(config.workingDirectory, config.forkSyncBranchRef, { skipCheckout: true });
 
     progress.done('preflight complete');
   });

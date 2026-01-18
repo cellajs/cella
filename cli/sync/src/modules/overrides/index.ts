@@ -4,10 +4,10 @@ import { matchPathPattern } from '#/utils/files';
 
 /**
  * Gets the override status for a specific file path from config arrays.
- * Checks config.overrides.ignored and config.overrides.customized.
+ * Checks config.overrides.ignored and config.overrides.pinned.
  *
  * @param filePath - The file path to check.
- * @returns 'ignored', 'customized', or undefined.
+ * @returns 'ignored', 'pinned', or undefined.
  */
 export function getOverrideStatus(filePath: string): OverrideStatus {
   if (config.overrides.ignored?.length) {
@@ -16,9 +16,9 @@ export function getOverrideStatus(filePath: string): OverrideStatus {
     }
   }
 
-  if (config.overrides.customized?.length) {
-    if (config.overrides.customized.some((pattern) => matchPathPattern(filePath, pattern))) {
-      return 'customized';
+  if (config.overrides.pinned?.length) {
+    if (config.overrides.pinned.some((pattern) => matchPathPattern(filePath, pattern))) {
+      return 'pinned';
     }
   }
 

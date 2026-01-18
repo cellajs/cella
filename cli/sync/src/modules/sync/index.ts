@@ -27,14 +27,10 @@ export async function runSync(analyzedFiles: FileAnalysis[]): Promise<string | n
 
     progress.step('squashing → target branch');
 
-    const commitMessage = await handleSquashMerge(
-      config.fork.localPath,
-      config.fork.branchRef,
-      config.fork.syncBranchRef,
-    );
+    const commitMessage = await handleSquashMerge(config.forkLocalPath, config.forkBranchRef, config.forkSyncBranchRef);
 
     if (commitMessage) {
-      progress.done(`changes staged on '${config.fork.branchRef}'`);
+      progress.done(`changes staged on '${config.forkBranchRef}'`);
     } else {
       progress.done('no changes to sync');
     }

@@ -45,15 +45,15 @@ export function onInitialConfigLoad(cli: CLIConfig) {
   }
 
   if (cli.upstreamBranch) {
-    config.upstream = { branch: cli.upstreamBranch };
+    config.upstreamBranch = cli.upstreamBranch;
   }
 
   if (cli.forkBranch) {
-    config.fork = { branch: cli.forkBranch };
+    config.forkBranch = cli.forkBranch;
   }
 
   if (cli.forkSyncBranch) {
-    config.fork = { syncBranch: cli.forkSyncBranch };
+    config.forkSyncBranch = cli.forkSyncBranch;
   }
 }
 
@@ -63,7 +63,7 @@ export function onInitialConfigLoad(cli: CLIConfig) {
  * @param strict - If true, exits with error code 1 when validation fails
  */
 export async function validateConfig(strict = false): Promise<void> {
-  const { valid, warnings } = await validateOverridesConfig(config.overrides, config.fork.workingDirectory);
+  const { valid, warnings } = await validateOverridesConfig(config.overrides, config.workingDirectory);
   logValidationWarnings(warnings);
 
   if (strict && !valid) {

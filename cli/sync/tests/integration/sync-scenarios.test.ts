@@ -64,7 +64,7 @@ describe('sync integration', () => {
         forkStartRef: 'v1.0.0',
       });
 
-      // Make fork-specific changes to a "customized" file
+      // Make fork-specific changes to a "pinned" file
       makeCommit(env.forkPath, {
         files: {
           'custom-file.ts': '// Fork customization\nexport const version = "fork";\n',

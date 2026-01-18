@@ -145,16 +145,16 @@ describe('determineFileMergeStrategy', () => {
       expect(result.reason).toContain('behind');
     });
 
-    it('should keep-fork when behind with different blob but customized', () => {
+    it('should keep-fork when behind with different blob but pinned', () => {
       const analysis = createFileAnalysis({
         commitSummary: createCommitSummary('behind'),
         blobStatus: 'different',
-        overrideStatus: 'customized',
+        overrideStatus: 'pinned',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('customized');
+      expect(result.reason).toContain('pinned');
     });
 
     it('should keep-upstream for new files in upstream (behind + missing)', () => {
@@ -171,7 +171,7 @@ describe('determineFileMergeStrategy', () => {
   });
 
   describe('diverged histories', () => {
-    it('should require manual resolution for diverged without customized', () => {
+    it('should require manual resolution for diverged without pinned', () => {
       const analysis = createFileAnalysis({
         commitSummary: createCommitSummary('diverged'),
         blobStatus: 'different',
@@ -182,21 +182,21 @@ describe('determineFileMergeStrategy', () => {
       expect(result.reason).toContain('diverged');
     });
 
-    it('should keep-fork for diverged when customized', () => {
+    it('should keep-fork for diverged when pinned', () => {
       const analysis = createFileAnalysis({
         commitSummary: createCommitSummary('diverged'),
         blobStatus: 'different',
-        overrideStatus: 'customized',
+        overrideStatus: 'pinned',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('customized');
+      expect(result.reason).toContain('pinned');
     });
   });
 
   describe('unrelated histories (first sync)', () => {
-    it('should require manual resolution for unrelated without customized', () => {
+    it('should require manual resolution for unrelated without pinned', () => {
       const analysis = createFileAnalysis({
         commitSummary: createCommitSummary('unrelated'),
         blobStatus: 'different',
@@ -207,16 +207,16 @@ describe('determineFileMergeStrategy', () => {
       expect(result.reason).toContain('unrelated');
     });
 
-    it('should keep-fork for unrelated when customized', () => {
+    it('should keep-fork for unrelated when pinned', () => {
       const analysis = createFileAnalysis({
         commitSummary: createCommitSummary('unrelated'),
         blobStatus: 'different',
-        overrideStatus: 'customized',
+        overrideStatus: 'pinned',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('customized');
+      expect(result.reason).toContain('pinned');
     });
   });
 
@@ -256,7 +256,7 @@ describe('determineFileMergeStrategy', () => {
       expect(result.strategy).toBe('keep-upstream');
     });
 
-    it('should prioritize ignored over customized', () => {
+    it('should prioritize ignored over pinned', () => {
       // This shouldn't happen in practice, but test the precedence
       const analysis = createFileAnalysis({
         overrideStatus: 'ignored', // ignored takes priority

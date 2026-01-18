@@ -2,8 +2,8 @@ import { CommitSummary, FileEntry, FileMergeStrategy } from './git';
 
 export * from './git';
 
-/** Override status for a file, from config.overrides.customized or ignored arrays */
-export type OverrideStatus = 'ignored' | 'customized' | undefined;
+/** Override status for a file, from config.overrides.pinned or ignored arrays */
+export type OverrideStatus = 'ignored' | 'pinned' | undefined;
 
 /**
  * Represents the analysis of a single file when comparing a fork with its upstream.
@@ -24,7 +24,7 @@ export type FileAnalysis = {
   /** Status of the file's blob comparison */
   blobStatus?: 'identical' | 'different' | 'missing';
 
-  /** Override status from config (ignored or customized) */
+  /** Override status from config (ignored or pinned) */
   overrideStatus?: OverrideStatus;
 
   /** Recommended merge strategy for this file, if available */

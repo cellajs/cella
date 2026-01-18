@@ -46,6 +46,11 @@ export interface ProgressTracker {
 /**
  * Creates a progress tracker for a multi-step operation.
  *
+ * Behavior by mode:
+ * - Normal: Single spinner that updates in place
+ * - Verbose: Spinner + prints each step on new line (easier to follow)
+ * - Debug: Tree-style log showing header and all steps
+ *
  * @param title - The title/header for this operation
  * @returns A ProgressTracker instance
  *
@@ -72,6 +77,12 @@ export function createProgress(title: string): ProgressTracker {
       if (config.debug) {
         // Debug mode: log each step as it happens
         console.info(pc.gray(`  ├─ ${message}`));
+      } else if (config.verbose) {
+        // Verbose mode: stop spinner, print step, restart spinner
+        spinner.stop();
+        console.info(pc.gray(`  · ${message}`));
+        spinner.text = message;
+        spinner.start();
       } else {
         // Normal mode: update spinner text
         spinner.text = message;

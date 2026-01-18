@@ -13,7 +13,7 @@ export async function validateOverridesConfig(
 ): Promise<{ valid: boolean; warnings: string[] }> {
   const warnings: string[] = [];
 
-  const allPatterns = [...overrides.customized, ...overrides.ignored];
+  const allPatterns = [...overrides.pinned, ...overrides.ignored];
 
   for (const pattern of allPatterns) {
     const fullPattern = `${workingDirectory}/${pattern}`;

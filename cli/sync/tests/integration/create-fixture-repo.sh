@@ -63,7 +63,7 @@ export default {
     branch: 'main',
   },
   overrides: {
-    customized: ['custom-file.ts', 'cella.config.ts'],
+    pinned: ['custom-file.ts', 'cella.config.ts'],
     ignored: ['docs/*'],
   },
 };
@@ -102,9 +102,9 @@ git commit -m "chore: remove deprecated file"
 git tag v1.3.0
 echo "✅ Created v1.3.0 - Removed deprecated.ts"
 
-# v1.4.0 - Modify customized file (tests customized override)
+# v1.4.0 - Modify pinned file (tests pinned override)
 echo '// Custom file - updated in upstream v1.4.0
-// Fork should keep their version if marked as customized
+// Fork should keep their version if marked as pinned
 export const custom = "upstream-v1.4.0";' > custom-file.ts
 
 git add -A

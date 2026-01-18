@@ -42,7 +42,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
   const summaryLine = await progress.wrap(async () => {
     progress.step('checking out target branch');
 
-    await gitCheckout(config.fork.workingDirectory, config.fork.branchRef);
+    await gitCheckout(config.workingDirectory, config.forkBranchRef);
 
     const newPackageJsons: { [filePath: string]: PackageJson } = {};
     const stats = createPackageSyncStats();
@@ -57,12 +57,12 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
 
       if (!isPackageFile || isIgnored || !upstreamPath || !forkPath) continue;
 
-      const resolvedForkPath = path.join(config.fork.workingDirectory, forkPath);
+      const resolvedForkPath = path.join(config.workingDirectory, forkPath);
       const forkPackageJson = readJsonFile<PackageJson>(resolvedForkPath);
 
       const upstreamPackageJson = await getRemoteJsonFile(
-        config.upstream.workingDirectory,
-        config.upstream.branchRef,
+        config.workingDirectory,
+        config.upstreamBranchRef,
         analyzedFile.filePath,
       );
 
@@ -86,7 +86,7 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       writeJsonFile(resolvedForkPath, newPackageJson);
     }
 
-    await gitAddAll(config.fork.workingDirectory);
+    await gitAddAll(config.workingDirectory);
 
     progress.done('packages staged');
 

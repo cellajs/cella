@@ -17,25 +17,23 @@ export type PackageJsonSyncKey =
 
 /**
  * User-configurable sync options for cella.config.ts.
+ * Flat structure for simplicity and clarity.
  */
-export interface UserSyncConfig {
-  /** Upstream repository settings */
-  upstream: {
-    /** Remote URL (e.g., 'git@github.com:cellajs/cella.git') */
-    remoteUrl: string;
-    /** Branch to sync from */
-    branch: string;
-    /** Git remote name (e.g., 'cella-upstream') */
-    remoteName: string;
-  };
+export interface CellaSyncConfig {
+  /** Upstream repository URL (e.g., 'git@github.com:cellajs/cella.git') */
+  upstreamUrl: string;
 
-  /** Fork repository settings */
-  fork: {
-    /** Your fork's working branch */
-    branch: string;
-    /** Temporary branch for sync operations */
-    syncBranch: string;
-  };
+  /** Upstream branch to sync from (e.g., 'development') */
+  upstreamBranch: string;
+
+  /** Git remote name for upstream (default: 'cella-upstream') */
+  upstreamRemoteName?: string;
+
+  /** Your fork's working branch (e.g., 'development') */
+  forkBranch: string;
+
+  /** Branch for sync operations, maintains full upstream history (default: 'sync-branch') */
+  forkSyncBranch?: string;
 
   /** Show all file details (default: false, shows only files needing attention) */
   verbose?: boolean;
@@ -46,15 +44,28 @@ export interface UserSyncConfig {
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
 
-  /** File overrides */
+  /**
+   * File overrides for controlling sync behavior per file/pattern.
+   * Supports glob patterns (e.g., 'frontend/public/static/*').
+   */
   overrides?: {
-    customized?: string[];
+    /**
+     * Files pinned to fork — your version is preferred during merge conflicts.
+     * Use for files you've customized but still want to receive non-conflicting updates.
+     * Example: config files, routes, branding assets.
+     */
+    pinned?: string[];
+
+    /**
+     * Files ignored entirely during sync — upstream changes are never applied.
+     * Use for app-specific files that should never sync with upstream.
+     * Example: your app's docs, custom modules, local configs.
+     */
     ignored?: string[];
   };
 }
 
-/** Vite-style helper for cella.config.ts with full intellisense. */
-export function defineConfig(config: UserSyncConfig): UserSyncConfig {
+export function defineConfig(config: CellaSyncConfig): CellaSyncConfig {
   return config;
 }
 
@@ -62,7 +73,7 @@ export function defineConfig(config: UserSyncConfig): UserSyncConfig {
 // INTERNAL TYPES - for sync modules
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Repository config with computed runtime properties */
+/** Repository config object passed to generic functions */
 export interface RepoConfig {
   localPath: string;
   remoteUrl: string;
@@ -78,22 +89,13 @@ export interface RepoConfig {
   workingDirectory: string;
 }
 
-/** Base repo config (stored in state, before computed props) */
-export interface BaseRepoConfig {
-  localPath: string;
-  remoteUrl: string;
-  branch: string;
-  remoteName: string;
-  syncBranch: string;
-}
-
 /** Overrides config with defaults applied */
 export interface OverridesConfig {
-  customized: string[];
+  pinned: string[];
   ignored: string[];
 }
 
-/** Full internal sync state */
+/** Full internal sync state with flat structure */
 export interface SyncState {
   syncService: SyncService;
   debug: boolean;
@@ -101,9 +103,18 @@ export interface SyncState {
   skipPackages: boolean;
   maxSquashPreviews: number;
   packageJsonSync: PackageJsonSyncKey[];
-  fork: BaseRepoConfig;
+
+  // Fork settings
+  forkLocalPath: string;
+  forkBranch: string;
+  forkSyncBranch: string;
   forkLocation: 'local' | 'remote';
-  upstream: BaseRepoConfig;
+
+  // Upstream settings
+  upstreamUrl: string;
+  upstreamBranch: string;
+  upstreamRemoteName: string;
   upstreamLocation: 'local' | 'remote';
+
   overrides: OverridesConfig;
 }

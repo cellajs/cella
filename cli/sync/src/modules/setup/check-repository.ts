@@ -34,17 +34,29 @@ export async function checkRepository(repoConfig: RepoConfig) {
     throw new Error(`Git repo looks corrupted in ${repoConfig.workingDirectory}`);
   }
 
-  // When remote repository, check if we can access it
+  // When remote repository, check if we can access it and branch exists
   if (repoConfig.location === 'remote') {
     if (!repoConfig.remoteUrl) {
       throw new Error(`Remote URL is not defined for repository at "${repoConfig.workingDirectory}"`);
     }
 
+    let lsRemoteOutput: string;
     try {
-      await gitLsRemote(repoConfig.workingDirectory, repoConfig.remoteUrl);
+      lsRemoteOutput = await gitLsRemote(repoConfig.workingDirectory, repoConfig.remoteUrl);
     } catch (e) {
       throw new Error(
         `Failed to access remote repository at "${repoConfig.remoteUrl}" in "${repoConfig.workingDirectory}"`,
+      );
+    }
+
+    // Verify the configured branch exists on the remote
+    const branchRef = `refs/heads/${repoConfig.branch}`;
+    const branchExists = lsRemoteOutput.split('\n').some((line) => line.includes(branchRef));
+
+    if (!branchExists) {
+      throw new Error(
+        `Branch "${repoConfig.branch}" does not exist on remote "${repoConfig.remoteUrl}". ` +
+          `Check your ${repoConfig.type} configuration or verify the branch hasn't been deleted.`,
       );
     }
   }

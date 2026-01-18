@@ -28,9 +28,9 @@ const limit = pLimit(10);
 async function logBranchSyncState(): Promise<void> {
   if (!config.verbose && !config.debug) return;
 
-  const workDir = config.fork.workingDirectory;
-  const upstreamRef = config.upstream.branchRef;
-  const syncRef = config.fork.syncBranchRef;
+  const workDir = config.workingDirectory;
+  const upstreamRef = config.upstreamBranchRef;
+  const syncRef = config.forkSyncBranchRef;
 
   const [upstreamCommit, syncCommit, mergeBase] = await Promise.all([
     gitLatestCommit(workDir, upstreamRef),
@@ -42,12 +42,12 @@ async function logBranchSyncState(): Promise<void> {
 
   if (upstreamCommit) {
     console.info(`  ${pc.cyan('upstream')} ${pc.dim(`(${upstreamRef})`)}`);
-    console.info(`    ${pc.yellow(upstreamCommit.shortSha)} ${upstreamCommit.message}`);
+    console.info(`    ${pc.yellow(upstreamCommit.shortSha)} ${pc.dim(upstreamCommit.date)} ${upstreamCommit.message}`);
   }
 
   if (syncCommit) {
     console.info(`  ${pc.cyan('sync-branch')} ${pc.dim(`(${syncRef})`)}`);
-    console.info(`    ${pc.yellow(syncCommit.shortSha)} ${syncCommit.message}`);
+    console.info(`    ${pc.yellow(syncCommit.shortSha)} ${pc.dim(syncCommit.date)} ${syncCommit.message}`);
   }
 
   if (mergeBase) {
@@ -92,8 +92,8 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     progress.step('fetching file list');
 
     const [upstreamFiles, forkFiles] = await Promise.all([
-      getGitFileHashes(config.upstream.workingDirectory, config.upstream.branchRef),
-      getGitFileHashes(config.fork.workingDirectory, config.fork.syncBranchRef),
+      getGitFileHashes(config.workingDirectory, config.upstreamBranchRef),
+      getGitFileHashes(config.workingDirectory, config.forkSyncBranchRef),
     ]);
 
     progress.step('comparing file histories');

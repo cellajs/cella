@@ -509,16 +509,16 @@ export async function gitMergeBase(repoPath: string, branch1: string, branch2: s
  * @param repoPath - The file system path to the git repository
  * @param branchName - The branch to get the latest commit from
  *
- * @returns Object with sha and message, or null if branch doesn't exist
+ * @returns Object with sha, message, and date, or null if branch doesn't exist
  */
 export async function gitLatestCommit(
   repoPath: string,
   branchName: string,
-): Promise<{ sha: string; shortSha: string; message: string } | null> {
+): Promise<{ sha: string; shortSha: string; message: string; date: string } | null> {
   try {
-    const output = await runGitCommand(['log', '-1', '--format=%H|%s', branchName], repoPath);
-    const [sha, message] = output.split('|');
-    return { sha, shortSha: sha.slice(0, 7), message };
+    const output = await runGitCommand(['log', '-1', '--format=%H|%s|%ci', branchName], repoPath);
+    const [sha, message, date] = output.split('|');
+    return { sha, shortSha: sha.slice(0, 7), message, date };
   } catch {
     return null;
   }

@@ -10,7 +10,7 @@ This repo provides a controlled git history for testing merge scenarios in the s
 
 ```
 sync-test-fixture/
-├── cella.config.ts          # Config with customized/ignored entries
+├── cella.config.ts          # Config with pinned/ignored entries
 ├── package.json
 ├── README.md
 ├── backend/
@@ -21,7 +21,7 @@ sync-test-fixture/
 │       └── index.ts         # Sample frontend file
 ├── docs/
 │   └── setup.md             # Ignored file (in cella.config.ts)
-└── custom-file.ts           # Customized file (in cella.config.ts)
+└── custom-file.ts           # Pinned file (in cella.config.ts)
 ```
 
 ## Tags (Versions)
@@ -48,7 +48,7 @@ export default defineConfig({
     branch: 'main',
   },
   overrides: {
-    customized: ['custom-file.ts', 'cella.config.ts'],
+    pinned: ['custom-file.ts', 'cella.config.ts'],
     ignored: ['docs/*'],
   },
 });
@@ -79,7 +79,7 @@ export default {
   fork: { branch: 'main', syncBranch: 'cella-sync' },
   upstream: { branch: 'main' },
   overrides: {
-    customized: ['custom-file.ts', 'cella.config.ts'],
+    pinned: ['custom-file.ts', 'cella.config.ts'],
     ignored: ['docs/*'],
   },
 };
@@ -103,7 +103,7 @@ rm deprecated.ts
 git add -A && git commit -m "chore: remove deprecated file"
 git tag v1.3.0
 
-# v1.4.0 - Modify customized file
+# v1.4.0 - Modify pinned file
 echo '// Custom file v2\nexport const custom = "updated";' > custom-file.ts
 git add -A && git commit -m "chore: update custom file"
 git tag v1.4.0

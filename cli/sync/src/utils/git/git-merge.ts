@@ -111,7 +111,7 @@ export async function handleSquashMerge(
     : [];
 
   const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;
-  let commitMessage = `chore(sync): ${commitCountText} from ${config.upstream.remoteName}`;
+  let commitMessage = `chore(sync): ${commitCountText} from ${config.upstreamRemoteName}`;
 
   if (recentMessages.length) {
     const bullets = recentMessages.map((msg) => `- ${msg}`).join('\n');

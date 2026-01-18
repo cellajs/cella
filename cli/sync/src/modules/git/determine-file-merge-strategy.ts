@@ -18,7 +18,7 @@ import { FileAnalysis, FileMergeStrategy } from '#/types';
  */
 export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMergeStrategy {
   // Extract override flags from config
-  const isCustomized = fileAnalysis.overrideStatus === 'customized';
+  const isPinned = fileAnalysis.overrideStatus === 'pinned';
   const isIgnored = fileAnalysis.overrideStatus === 'ignored';
 
   // 1. Flagged as ignored in settings → skip upstream changes
@@ -70,10 +70,10 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
   if (commitStatus === 'behind') {
     // 5a. File content differs
     if (blobStatus === 'different') {
-      if (isCustomized) {
+      if (isPinned) {
         return {
           strategy: 'keep-fork',
-          reason: 'Fork is behind upstream but flagged as customized',
+          reason: 'Fork is behind upstream but flagged as pinned',
         };
       }
       return {
@@ -82,6 +82,10 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
       };
     }
     // 5b. New file in upstream (doesn't exist in fork)
+    // TODO: This path is unreachable for truly new files. When a file doesn't exist in fork,
+    // there's no commit history to compare, so analyzeFileCommits returns 'unrelated' not 'behind'.
+    // New upstream files currently fall through to the 'unrelated' case and require manual resolution.
+    // Consider detecting new files earlier (via blobStatus === 'missing' && !forkFile) and auto-accepting.
     if (blobStatus === 'missing') {
       return {
         strategy: 'keep-upstream',
@@ -90,12 +94,12 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     }
   }
 
-  // 6. Diverged histories → unsafe without customized flag
+  // 6. Diverged histories → unsafe without pinned flag
   if (commitStatus === 'diverged') {
-    if (isCustomized) {
+    if (isPinned) {
       return {
         strategy: 'keep-fork',
-        reason: 'History diverged but flagged as customized',
+        reason: 'History diverged but flagged as pinned',
       };
     }
     return {
@@ -106,10 +110,10 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
 
   // 7. Unrelated histories (first sync scenario)
   if (commitStatus === 'unrelated') {
-    if (isCustomized) {
+    if (isPinned) {
       return {
         strategy: 'keep-fork',
-        reason: 'History unrelated but flagged as customized',
+        reason: 'History unrelated but flagged as pinned',
       };
     }
     return {

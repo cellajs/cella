@@ -103,16 +103,21 @@ export function shouldLogAnalyzedFileModule(): boolean {
 
 /** Logs the analyzed file line based on configuration filters. */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
-  // In verbose/debug mode, log everything
+  const status = analyzedFile.commitSummary?.status;
+  const strategy = analyzedFile.mergeStrategy?.strategy;
+  const reason = analyzedFile.mergeStrategy?.reason || '';
+
+  // Skip files that are identical (trivial keep-fork cases) - not useful to show
+  const isIdentical = reason.includes('identical');
+  if (isIdentical) return;
+
+  // In verbose/debug mode, log everything except identical files
   if (config.debug || config.verbose) {
     console.info(line);
     return;
   }
 
   // Default: only log files needing attention (diverged, behind, manual, unknown)
-  const status = analyzedFile.commitSummary?.status;
-  const strategy = analyzedFile.mergeStrategy?.strategy;
-
   const needsAttention =
     status === 'diverged' || status === 'behind' || strategy === 'manual' || strategy === 'unknown';
 

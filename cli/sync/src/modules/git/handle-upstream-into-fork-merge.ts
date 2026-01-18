@@ -10,6 +10,7 @@ import {
 } from '#/utils/git/command';
 import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '#/utils/git/files';
 import { handleMerge } from '#/utils/git/git-merge';
+import { pauseSpinner, resumeSpinner } from '#/utils/progress';
 
 /**
  * High-level function: handles merge attempt, conflict resolution, and finalization.
@@ -63,6 +64,8 @@ async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promis
 
   // If it's possibly the first sync, confirm with the user
   if (isFirstSync) {
+    pauseSpinner();
+
     const continueSync = await confirm({
       message: `it looks like this might be the first sync (all ${analyzedFiles.length} files have unrelated histories). this requires allowing unrelated histories in the merge. do you want to continue?`,
       default: true,
@@ -71,6 +74,8 @@ async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promis
     if (!continueSync) {
       throw new Error('merge process aborted by user');
     }
+
+    resumeSpinner();
 
     return isFirstSync;
   }
@@ -147,6 +152,8 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
 
   // When there are still conflicts, notify user to resolve them
   if (conflicts.length > 0) {
+    pauseSpinner();
+
     const continueResolving = await confirm({
       message: `please resolve ${conflicts.length} merge conflicts manually (in another terminal). once resolved, press "y" to continue`,
       default: true,
@@ -155,6 +162,8 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
     if (!continueResolving) {
       throw new Error('merge process aborted by user');
     }
+
+    resumeSpinner();
 
     return resolveMergeConflicts(repoPath, analyzedFiles);
   }

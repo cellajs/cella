@@ -4,27 +4,28 @@ import { defineConfig } from './cli/sync/src/config/types';
  * Cella sync config: run with `pnpm sync`.
  */
 export default defineConfig({
-  // Upstream Repository Configuration
-  upstream: {
-    remoteUrl: 'git@github.com:cellajs/cella.git',    // upstream repository URL
-    branch: 'cli-sync',                               // upstream branch to sync from
-    remoteName: 'cella-upstream',                     // git remote name for upstream
-  },
-  fork: {
-    branch: 'cli-sync',                               // your fork's working branch
-    syncBranch: 'sync-branch',                        // temporary branch for sync operations
-  },
-  maxSquashPreviews: 10,                              // max commits to show in squash preview
+  // Upstream settings
+  upstreamUrl: 'git@github.com:cellajs/cella.git',
+  upstreamBranch: 'cli-sync',
+  upstreamRemoteName: 'cella-upstream',  
+  
+  // Fork settings
+  forkBranch: 'cli-sync',
+  forkSyncBranch: 'sync-branch',        
+
+  // Options
+  maxSquashPreviews: 10,
   packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
-  verbose: false,                                   // uncomment to show all file details
+  verbose: false,
+
   // File overrides
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
       "info/*",
     ],
-    // Files customized in fork; prefer fork version during merge conflicts
-    customized: [
+    // Files pinned to fork; prefer fork version during merge conflicts
+    pinned: [
       "README.md",
       "package.json",
       "pnpm-lock.yaml",
