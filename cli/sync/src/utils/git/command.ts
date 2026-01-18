@@ -194,16 +194,10 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
  *
  * @returns A Map of file paths to their last commit SHA
  */
-export async function gitLogAllFilesLastCommit(
-  repoPath: string,
-  branchName: string,
-): Promise<Map<string, string>> {
+export async function gitLogAllFilesLastCommit(repoPath: string, branchName: string): Promise<Map<string, string>> {
   // Get all commits with their changed files in one command
   // Format: <commit-sha>\n<file1>\n<file2>\n\n<next-commit-sha>\n...
-  const output = await runGitCommand(
-    ['log', '--format=%H', '--name-only', branchName],
-    repoPath,
-  );
+  const output = await runGitCommand(['log', '--format=%H', '--name-only', branchName], repoPath);
 
   const fileToCommit = new Map<string, string>();
   let currentCommit = '';

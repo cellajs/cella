@@ -1,10 +1,5 @@
 import { CommitEntry, FileEntry } from '#/types';
-import {
-  getCachedCommitHistory,
-  getCachedFileHashes,
-  setCachedCommitHistory,
-  setCachedFileHashes,
-} from '../cache';
+import { getCachedCommitHistory, getCachedFileHashes, setCachedCommitHistory, setCachedFileHashes } from '../cache';
 import {
   gitAdd,
   gitCheckoutOursFilePath,
