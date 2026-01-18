@@ -35,7 +35,7 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
 
   const statusMap: Record<string, string> = {
     upToDate: `fork: ${pc.bold(pc.green('up to date'))}`,
-    ahead: `fork: ${pc.bold(pc.green('ahead'))}`,
+    ahead: `fork: ${pc.bold(pc.blue('ahead'))}`,
     behind: `fork: ${pc.bold(pc.yellow('behind'))}`,
     diverged: `fork: ${pc.bold(pc.red('diverged'))}`,
     unrelated: `fork: ${pc.bold(pc.red('unrelated'))}`,
@@ -50,9 +50,9 @@ function getCommitState(analyzedFile: FileAnalysis): string {
   const commitsBehind = analyzedFile.commitSummary?.commitsBehind || 0;
 
   if (commitsAhead > 0 && commitsBehind > 0) {
-    return pc.bold(`(↑ ${pc.green(commitsAhead)} ↓ ${pc.yellow(commitsBehind)})`);
+    return pc.bold(`(↑ ${pc.blue(commitsAhead)} ↓ ${pc.yellow(commitsBehind)})`);
   }
-  if (commitsAhead > 0) return pc.bold(`↑ ${pc.green(commitsAhead)}`);
+  if (commitsAhead > 0) return pc.bold(`↑ ${pc.blue(commitsAhead)}`);
   if (commitsBehind > 0) return pc.bold(`↓ ${pc.yellow(commitsBehind)}`);
   return '';
 }

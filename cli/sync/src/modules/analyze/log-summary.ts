@@ -51,39 +51,39 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
 
   // Identical
   lines.push(
-    `${pc.green('✓')} ${padNum(summary.identical)} ${pc.green('identical')}${pc.dim('                    no action needed')}`,
+    `${pc.green('✓')} ${pc.green(padNum(summary.identical))} identical${pc.dim('                    no action needed')}`,
   );
   lines.push('');
 
   // Ahead with breakdown
   lines.push(
-    `${pc.green('↑')} ${padNum(summary.ahead)} ${pc.green('ahead')}${pc.dim('                        fork has newer commits')}`,
+    `${pc.blue('↑')} ${pc.blue(padNum(summary.ahead))} ahead${pc.dim('                        fork has newer commits')}`,
   );
   if (summary.ahead > 0) {
     lines.push(
-      `    ${pc.dim('├─')} ${padNum(summary.aheadPinned)} ${pc.dim('pinned')}${pc.dim("                  protected, won't require merge")}`,
+      `    ${pc.dim('├─')} ${pc.blueBright(padNum(summary.aheadPinned))} pinned${pc.dim("                  protected, won't require merge")}`,
     );
     lines.push(
-      `    ${pc.dim('└─')} ${padNum(aheadUnpinned)} ${pc.dim('unpinned')}${pc.dim('                may want to add to config')}`,
+      `    ${pc.dim('└─')} ${pc.blueBright(padNum(aheadUnpinned))} unpinned${pc.dim('                may want to add to config')}`,
     );
   }
   lines.push('');
 
   // Behind, diverged, unrelated
   lines.push(
-    `${pc.yellow('↓')} ${padNum(summary.behind)} ${pc.yellow('behind')}${pc.dim('                       will take upstream changes')}`,
+    `${pc.yellow('↓')} ${pc.yellow(padNum(summary.behind))} behind${pc.dim('                       will take upstream changes')}`,
   );
   lines.push(
-    `${pc.red('⚡')}${padNum(summary.diverged)} ${pc.red('diverged')}${pc.dim('                    both sides changed, needs merge')}`,
+    `${pc.red('⚡')}${pc.red(padNum(summary.diverged))} diverged${pc.dim('                   both sides changed, needs merge')}`,
   );
   lines.push(
-    `${pc.red('⚠')} ${padNum(summary.unrelated)} ${pc.red('unrelated')}${pc.dim('                    no shared history')}`,
+    `${pc.red('⚠')} ${pc.red(padNum(summary.unrelated))} unrelated${pc.dim('                    no shared history')}`,
   );
   lines.push('');
 
   if (summary.unknown > 0) {
     lines.push(
-      `${pc.red('?')} ${padNum(summary.unknown)} ${pc.red('unknown')}${pc.dim('                      could not determine status')}`,
+      `${pc.red('?')} ${pc.red(padNum(summary.unknown))} unknown${pc.dim('                      could not determine status')}`,
     );
   }
 
