@@ -102,7 +102,7 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
       await gitRestoreStagedFile(repoPath, filePath);
     }
 
-    if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
+    if (file?.mergeStrategy?.strategy === 'skip-upstream') {
       await gitRemoveFilePathFromCache(repoPath, filePath);
       await gitCleanUntrackedFile(repoPath, filePath);
     }
@@ -135,7 +135,7 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
       continue;
     }
 
-    if (file?.mergeStrategy?.strategy === 'remove-from-fork') {
+    if (file?.mergeStrategy?.strategy === 'skip-upstream') {
       await gitRemoveFilePathFromCache(repoPath, filePath);
       await gitCleanUntrackedFile(repoPath, filePath);
       continue;

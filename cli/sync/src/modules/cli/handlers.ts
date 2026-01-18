@@ -44,16 +44,8 @@ export function onInitialConfigLoad(cli: CLIConfig) {
     config.skipPackages = cli.skipPackages;
   }
 
-  if (cli.upstreamLocation) {
-    config.upstreamLocation = cli.upstreamLocation as 'local' | 'remote';
-  }
-
   if (cli.upstreamBranch) {
     config.upstream = { branch: cli.upstreamBranch };
-  }
-
-  if (cli.forkLocation) {
-    config.forkLocation = cli.forkLocation as 'local' | 'remote';
   }
 
   if (cli.forkBranch) {

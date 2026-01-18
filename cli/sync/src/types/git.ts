@@ -75,15 +75,15 @@ export type CommitSummary = {
  */
 export type FileMergeStrategy = {
   /**
-   * The recommended strategy for handling this file.
-   * - `'keep-fork'` - Keep the version from the fork
-   * - `'keep-upstream'` - Use the version from upstream
-   * - `'remove-from-fork'` - Remove the file from the fork
-   * - `'remove-from-upstream'` - Remove the file from upstream
-   * - `'manual'` - Requires manual resolution
-   * - `'unknown'` - Strategy could not be determined
+   * The recommended strategy for handling this file during sync.
+   *
+   * - `'keep-fork'` - Keep your app's version, discard upstream changes
+   * - `'keep-upstream'` - Take the upstream version, overwrite your app's version
+   * - `'skip-upstream'` - Skip/revert upstream changes (used for ignored files or intentional deletions)
+   * - `'manual'` - Requires manual conflict resolution (diverged histories)
+   * - `'unknown'` - Strategy could not be determined, will rely on git merge default
    */
-  strategy: 'keep-fork' | 'keep-upstream' | 'remove-from-fork' | 'remove-from-upstream' | 'manual' | 'unknown';
+  strategy: 'keep-fork' | 'keep-upstream' | 'skip-upstream' | 'manual' | 'unknown';
 
   /** Reason or explanation why this strategy was chosen */
   reason: string;

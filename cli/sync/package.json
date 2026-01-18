@@ -24,6 +24,7 @@
   },
   "scripts": {
     "sync": "tsx index.ts",
+    "deps:outdated": "tsx src/run-outdated.ts",
     "validate": "tsx index.ts --sync-service validate",
     "ts": "tsc --noEmit",
     "test": "vitest run",

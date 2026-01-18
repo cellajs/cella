@@ -56,9 +56,9 @@
     "test:core": "pnpm docker:test && pnpm --filter backend test && pnpm --filter frontend test",
     "test:full": "pnpm docker:test && pnpm --filter backend test:full && pnpm --filter frontend test && pnpm --filter @cellajs/sync test",
     "test:update": "pnpm --filter backend exec vitest run -u && pnpm --filter frontend exec vitest run -u",
-    "sync": "tsx ./cli/sync/src/index.ts",
+    "sync": "pnpm --filter @cellajs/sync sync",
     "deps:update": "pnpm -r update",
-    "deps:outdated": "tsx ./cli/sync/src/run-outdated.ts"
+    "deps:outdated": "pnpm --filter @cellajs/sync deps:outdated"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",

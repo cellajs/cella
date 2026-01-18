@@ -113,18 +113,6 @@ export const config = {
     state.skipPackages = value;
   },
 
-  // Location setters with validation
-  set forkLocation(value: 'local' | 'remote') {
-    if (SERVICES_RUNNING_FROM_LOCAL_FORK.includes(state.syncService) && value === 'remote') {
-      throw new Error(`The sync service "${state.syncService}" requires a local fork repository.`);
-    }
-    state.forkLocation = value;
-  },
-
-  set upstreamLocation(value: 'local' | 'remote') {
-    state.upstreamLocation = value;
-  },
-
   // Computed RepoConfig objects
   get fork(): RepoConfig {
     return getFork();

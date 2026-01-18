@@ -37,38 +37,6 @@ export function validateSyncService(name: string): string {
 }
 
 /**
- * Validate a location value (local|remote).
- *
- * @param location - Location value to validate
- *
- * @throws {InvalidArgumentError} If the location value is invalid.
- * @returns The validated location value.
- */
-export function validateLocation(location: string): string {
-  location = location.trim().toLowerCase();
-  if (location !== 'local' && location !== 'remote') {
-    throw new InvalidArgumentError(`Invalid location: ${location}. Supported locations are "local" and "remote".`);
-  }
-  return location;
-}
-
-/**
- * Validate a remote name.
- *
- * @param name - Name of the remote to validate
- *
- * @throws {InvalidArgumentError} If the remote name is invalid.
- * @returns The validated remote name.
- */
-export function validateRemoteName(name: string): string {
-  name = name.trim();
-  if (name === '') {
-    throw new InvalidArgumentError(`Remote name cannot be empty.`);
-  }
-  return name;
-}
-
-/**
  * Check if a branch name is valid according to Git naming conventions.
  *
  * @param name - Name of the branch to check

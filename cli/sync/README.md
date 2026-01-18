@@ -1,79 +1,92 @@
 # @cellajs/sync
 
-CLI tool to keep your Cella fork synchronized with the upstream boilerplate.
+CLI tool to keep your app in sync with Cella upstream template.
 
-## Install
+## Overview
 
-```bash
-pnpm add -D @cellajs/sync
-```
+When you create a web app with Cella, you start from the template. We recommend `pnpm create @cellajs/cella`. Over time, Cella receives updates - bug fixes, new features, dependency updates. This CLI helps you pull those changes into your app while preserving your customizations.
 
 ## Usage
 
-```bash
-# From monorepo root
-pnpm sync
+From your monorepo root:
 
-# Or directly
-npx @cellajs/sync
+```bash
+pnpm sync
 ```
 
-## Commands
-
-| Flag | Description |
-|------|-------------|
-| `--sync-service <type>` | `boilerplate-fork`, `boilerplate-fork+packages`, `packages`, or `diverged` |
-| `--boilerplate-branch <branch>` | Boilerplate branch to sync from (default: `main`) |
-| `--fork-branch <branch>` | Fork branch to sync into (default: `main`) |
-| `--dry-run` | Preview changes without applying |
+The CLI will guide you through the sync process interactively.
 
 ## Sync Services
 
-- **boilerplate-fork** – Sync files from upstream, respecting swizzle rules
-- **packages** – Sync `package.json` dependencies only
-- **boilerplate-fork+packages** – Both file and dependency sync
-- **diverged** – List files that have diverged from upstream
+| Service | Description |
+|---------|-------------|
+| `sync` | Full sync: merge Cella upstream changes into your app + update dependencies |
+| `analyze` | Read-only analysis of file differences (no changes made) |
+| `validate` | Validate that file paths in `cella.config.ts` overrides exist |
 
-## Swizzle Configuration
+## CLI Options
 
-Configure in `cella.config.ts`:
-
-```ts
-export default {
-  swizzle: {
-    removed: ['path/to/removed-file.ts'],    // Skip these files entirely
-    ignored: ['path/to/custom-file.ts'],     // Keep fork version, ignore upstream
-  }
-}
+```bash
+pnpm sync [options]
 ```
 
-## How It Works
+| Flag | Description |
+|------|-------------|
+| `-y, --yes` | Skip prompts, use defaults (CI mode) |
+| `-d, --debug` | Show verbose debug output |
+| `--skip-packages` | Skip package.json dependency sync |
+| `--sync-service <name>` | Choose service: `sync`, `analyze`, `validate` |
+| `--upstream-branch <name>` | Override Cella upstream branch |
+| `--fork-branch <name>` | Override your app's branch |
+| `--fork-sync-branch <name>` | Override sync branch |
 
-1. **CLI** – Prompts for sync options (or uses flags)
-2. **Setup** – Validates git state and branches
-3. **Analyze** – Compares boilerplate vs fork files
-4. **Sync** – Merges upstream changes, respects swizzle rules
-5. **Packages** – Updates dependency versions from boilerplate
+## Configuration
+
+Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible default is already included after you created your app.
+
+### Override Categories
+
+- **`ignored`** - Files skipped entirely during sync (e.g., your app-specific docs)
+- **`customized`** - Files you've modified; your version is preferred during merge conflicts
+
+## Merge Strategy
+
+The sync CLI uses git merge with special handling based on file status and overrides:
+
+| Scenario | In `ignored` | In `customized` | Default |
+|----------|--------------|-----------------|---------|
+| **Changed in upstream only** | Skip | Take upstream | Take upstream |
+| **Changed in your app only** | Skip | Keep yours | Keep yours |
+| **Changed in both (diverged)** | Skip | **Keep yours** | Manual resolve |
+| **New file in upstream** | Skip | Add file | Add file (git merge) |
+| **Deleted in upstream** | Skip | Delete | Delete (git merge) |
+| **Only in your app** | Keep | Keep | Keep |
+
+### Key Behaviors
+
+- **`ignored` files** are skipped - sync reverts any upstream changes to these files
+- **`customized` files** prefer your version when both sides have changes (diverged)
+- **Default behavior** uses standard git merge - deletions propagate, conflicts require manual resolution
+- **New upstream files** are added via git merge (unless in `ignored`)
+- **Your app-only files** are never touched - they don't exist in upstream analysis
+
+### Tips
+
+- Add frequently-modified files to `customized` to reduce merge conflicts
+- Use `ignored` for files that should never sync (app-specific docs, assets)
+- Run `pnpm sync --sync-service analyze` first to preview changes without applying
 
 ## Development
 
 ```bash
-pnpm ts          # Type check
-pnpm sync        # Run locally
-```
+cd cli/sync
 
-## File Structure
+# Type check
+pnpm ts
 
-```
-src/
-├── run-cli.ts       # CLI prompts and argument parsing
-├── run-setup.ts     # Git validation and preflight checks
-├── run-analyze.ts   # File diff analysis
-├── run-sync.ts      # File synchronization logic
-├── run-packages.ts  # package.json dependency sync
-├── run-outdated.ts  # Enhanced pnpm outdated with links
-├── config/          # Runtime configuration
-├── modules/         # Core sync modules
-├── utils/           # Git helpers, file operations
-└── types/           # TypeScript interfaces
+# Run tests
+pnpm test
+
+# Run sync locally
+pnpm sync
 ```
