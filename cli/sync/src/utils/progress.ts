@@ -98,7 +98,8 @@ export function createProgress(title: string): ProgressTracker {
         // Normal mode: stop spinner and show success
         spinner.stop();
         activeSpinner = null;
-        console.info(`${pc.green('✓')} ${message}`);
+        if (message) console.info(`${pc.green('✓')} ${message}`);
+        else console.info();
       }
     },
 

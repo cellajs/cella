@@ -38,7 +38,7 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
     ahead: `fork: ${pc.bold(pc.blue('ahead'))}`,
     behind: `fork: ${pc.bold(pc.yellow('behind'))}`,
     diverged: `fork: ${pc.bold(pc.red('diverged'))}`,
-    unrelated: `fork: ${pc.bold(pc.red('unrelated'))}`,
+    unrelated: `fork: ${pc.bold(pc.magenta('unrelated'))}`,
   };
 
   return statusMap[gitStatus] || `fork: ${pc.bold(pc.red('unknown state'))}`;

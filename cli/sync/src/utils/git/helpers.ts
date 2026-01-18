@@ -12,6 +12,26 @@ export async function getCurrentBranch(repoPath: string): Promise<string> {
 }
 
 /**
+ * [EXPERIMENTAL] Check if work-branch is ahead of sync-branch.
+ * This indicates the user has committed a squash merge, and sync-branch
+ * should be reset to work-branch to avoid counting old commits.
+ *
+ * @param repoPath - Absolute or relative path to the Git repository
+ * @param workBranch - The work branch (e.g., development)
+ * @param syncBranch - The sync branch (e.g., sync-branch)
+ *
+ * @returns True if work-branch has commits not in sync-branch
+ */
+export async function isWorkBranchAheadOfSync(
+  repoPath: string,
+  workBranch: string,
+  syncBranch: string,
+): Promise<boolean> {
+  const countStr = await gitRevListCount(repoPath, workBranch, syncBranch, { noMerges: true });
+  return parseInt(countStr, 10) > 0;
+}
+
+/**
  * Get the number of commits that are in `sourceBranch` but not in `baseBranch`.
  *
  * This function parses the raw string output from `gitRevListCount` into a number.

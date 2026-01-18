@@ -40,6 +40,10 @@ export function onInitialConfigLoad(cli: CLIConfig) {
     config.debug = cli.debug;
   }
 
+  if (cli.verbose) {
+    config.verbose = cli.verbose;
+  }
+
   if (cli.skipPackages) {
     config.skipPackages = cli.skipPackages;
   }

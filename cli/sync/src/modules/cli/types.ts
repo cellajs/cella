@@ -10,6 +10,8 @@ export interface CLIConfig {
   ci: boolean;
   /** When true, show verbose debug output */
   debug: boolean;
+  /** When true, show verbose output (less than debug) */
+  verbose: boolean;
   /** When true, skip package.json sync during sync service */
   skipPackages: boolean;
 }

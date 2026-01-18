@@ -39,19 +39,21 @@ export function accumulatePackageStats(stats: PackageSyncStats, keyUpdates: KeyU
 
 /**
  * Generates a compact one-line summary for package sync.
- * Format: ✓ 9 package.json synced │ ↑3 updated │ deps: 5  devDeps: 2
+ * Format: ✓ 9 package.json synced │ ↑3 updated │ 5 deps  2 devDeps
  */
 export function packageSummaryLine(stats: PackageSyncStats): string {
   const updatedBadge = pc.cyan(`↑${stats.updatedPackages} updated`);
 
   const keyBadges: string[] = [];
   for (const [key, count] of Object.entries(stats.updatesByKey)) {
-    const shortKey = key.replace('dependencies', 'deps').replace('devDeps', 'devDeps');
-    keyBadges.push(pc.cyan(`${shortKey}: ${count}`));
+    if (count > 0) {
+      const shortKey = key.replace('dependencies', 'deps').replace('devDeps', 'devDeps');
+      keyBadges.push(pc.cyan(count) + ' ' + shortKey);
+    }
   }
 
   const parts = [`${pc.green('✓')} ${stats.totalPackages} package.json synced`];
-  parts.push(updatedBadge);
+  if (stats.updatedPackages > 0) parts.push(updatedBadge);
   if (keyBadges.length > 0) parts.push(keyBadges.join('  '));
 
   return parts.join(' │ ');

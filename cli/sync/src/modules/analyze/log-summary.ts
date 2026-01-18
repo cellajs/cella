@@ -2,6 +2,7 @@
  * Logging utilities for analyzed summary output.
  */
 import pc from 'picocolors';
+import { DIVIDER } from '#/constants';
 import type { FileAnalysis } from '#/types';
 
 /**
@@ -46,8 +47,8 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
   const lines: string[] = [];
 
   // Header
-  lines.push(pc.bold('Sync Summary'));
-  lines.push('');
+  lines.push(pc.cyan('sync summary'));
+  lines.push(DIVIDER);
 
   // Identical
   lines.push(
@@ -74,10 +75,10 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     `${pc.yellow('↓')} ${pc.yellow(padNum(summary.behind))} behind${pc.dim('                       will take upstream changes')}`,
   );
   lines.push(
-    `${pc.red('⚡')}${pc.red(padNum(summary.diverged))} diverged${pc.dim('                   both sides changed, needs merge')}`,
+    `${pc.red('⚡')}${pc.red(padNum(summary.diverged))} diverged${pc.dim('                    both sides changed, needs merge')}`,
   );
   lines.push(
-    `${pc.red('⚠')} ${pc.red(padNum(summary.unrelated))} unrelated${pc.dim('                    no shared history')}`,
+    `${pc.magenta('⚠')} ${pc.magenta(padNum(summary.unrelated))} unrelated${pc.dim('                    no shared history')}`,
   );
   lines.push('');
 

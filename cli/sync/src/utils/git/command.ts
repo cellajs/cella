@@ -288,6 +288,32 @@ export async function gitCommit(repoPath: string, message: string, options?: { n
 }
 
 /**
+ * Resets the current branch to a specified target (branch, commit, or ref).
+ * [EXPERIMENTAL] Used to reset sync-branch after squash merge is committed.
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param target - The branch, commit, or ref to reset to
+ * @param options - Optional flags for the reset
+ *  - hard: If true, performs a hard reset (discards all changes)
+ *
+ * @returns The stdout from the git reset command
+ *
+ * @example
+ * await gitReset('/path/to/repo', 'main', { hard: true });
+ */
+export async function gitReset(repoPath: string, target: string, options?: { hard?: boolean }): Promise<string> {
+  const args = ['reset'];
+
+  if (options?.hard) {
+    args.push('--hard');
+  }
+
+  args.push(target);
+
+  return runGitCommand(args, repoPath);
+}
+
+/**
  * Gets the content of a file at a specific commit.
  *
  * @param repoPath - The file system path to the git repository

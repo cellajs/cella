@@ -4,8 +4,10 @@ import { checkCleanState } from '#/modules/setup/check-clean-state';
 import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
+import { gitCheckout, gitReset } from '#/utils/git/command';
 import { handleMerge } from '#/utils/git/git-merge';
 import { createBranchIfMissing } from '#/utils/git/git-refs';
+import { isWorkBranchAheadOfSync } from '#/utils/git/helpers';
 import { createProgress } from '#/utils/progress';
 
 /**
@@ -99,6 +101,22 @@ export async function runSetup() {
     await fetchLatestChanges(config.fork);
 
     progress.step('updating sync branch');
+
+    /**
+     * [EXPERIMENTAL] Reset sync-branch to work-branch if work-branch is ahead.
+     * This happens when the user has committed a squash merge on the work-branch.
+     * Resetting ensures the commit count starts fresh for the next sync.
+     */
+    const workBranchAhead = await isWorkBranchAheadOfSync(
+      config.workingDirectory,
+      config.forkBranchRef,
+      config.forkSyncBranchRef,
+    );
+
+    if (workBranchAhead) {
+      await gitCheckout(config.workingDirectory, config.forkSyncBranchRef);
+      await gitReset(config.workingDirectory, config.forkBranchRef, { hard: true });
+    }
 
     /**
      * Merge development → sync-branch to incorporate any fork changes.

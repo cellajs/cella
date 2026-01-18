@@ -14,6 +14,7 @@ let forkBranch = '';
 let forkSyncBranch = '';
 let ciMode = false;
 let debugMode = false;
+let verboseMode = false;
 let skipPackages = false;
 
 /**
@@ -37,6 +38,9 @@ const command = new Command(NAME)
   })
   .option('-d, --debug', 'show verbose debug output', () => {
     debugMode = true;
+  })
+  .option('-V, --verbose', 'show verbose output', () => {
+    verboseMode = true;
   })
   .option('--skip-packages', 'skip package.json dependency synchronization during sync', () => {
     skipPackages = true;
@@ -73,6 +77,7 @@ const cli: CLIConfig = {
   forkSyncBranch,
   ci: ciMode,
   debug: debugMode,
+  verbose: verboseMode,
   skipPackages,
 };
 
