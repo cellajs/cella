@@ -12,22 +12,36 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1768483549157,
-      "tag": "0001_cdc_setup",
+      "when": 1768511973823,
+      "tag": "0003_steep_shen",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1768483549352,
-      "tag": "0002_activity_notify_trigger",
+      "when": 1768749951975,
+      "tag": "0004_dazzling_jack_flag",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1768511973823,
-      "tag": "0003_steep_shen",
+      "when": 1768759118641,
+      "tag": "0005_crazy_kingpin",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1768759200000,
+      "tag": "0006_cdc_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768759200100,
+      "tag": "0007_activity_notify_trigger",
       "breakpoints": true
     }
   ]

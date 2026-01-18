@@ -395,7 +395,10 @@
               "user",
               "organization",
               "attachment",
-              "page"
+              "page",
+              "repository",
+              "deployment",
+              "domain"
             ]
           },
           "logId": {
@@ -523,6 +526,9 @@
               "organization",
               "attachment",
               "page",
+              "repository",
+              "deployment",
+              "domain",
               null
             ]
           },
@@ -614,8 +620,8 @@
           "entityType": "user",
           "resourceType": null,
           "action": "update",
-          "tableName": "pages",
-          "type": "page.updated",
+          "tableName": "domains",
+          "type": "domain.updated",
           "entityId": "21rs6psa9stclacdgtonoqr1",
           "organizationId": "t2j8omleaz2pg8iwtnhw3666",
           "createdAt": "2024-10-11T19:21:02.239Z",
@@ -1368,11 +1374,23 @@
                   },
                   "page": {
                     "type": "number"
+                  },
+                  "repository": {
+                    "type": "number"
+                  },
+                  "deployment": {
+                    "type": "number"
+                  },
+                  "domain": {
+                    "type": "number"
                   }
                 },
                 "required": [
                   "attachment",
-                  "page"
+                  "page",
+                  "repository",
+                  "deployment",
+                  "domain"
                 ]
               }
             },
@@ -1442,7 +1460,10 @@
           "restrictions": {
             "user": 1000,
             "attachment": 100,
-            "page": 0
+            "page": 0,
+            "repository": 0,
+            "deployment": 0,
+            "domain": 0
           },
           "membership": {
             "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -1463,7 +1484,10 @@
             },
             "entities": {
               "attachment": 178,
-              "page": 257
+              "page": 257,
+              "repository": 47,
+              "deployment": 21,
+              "domain": 451
             }
           }
         }
@@ -1560,6 +1584,186 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
+        }
+      },
+      "Repository": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "repository"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modifiedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "githubRepoId": {
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
+          },
+          "githubRepoName": {
+            "type": "string"
+          },
+          "githubOwner": {
+            "type": "string"
+          },
+          "githubFullName": {
+            "type": "string"
+          },
+          "githubDefaultBranch": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "buildArtifactPath": {
+            "type": "string"
+          },
+          "s3BucketName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scalewayPipelineId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scalewayBackendStageId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scalewayDnsStageId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultDomain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "webhookId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": -2147483648,
+            "maximum": 2147483647
+          },
+          "webhookSecret": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "lastDeployedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organizationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "entityType",
+          "name",
+          "description",
+          "modifiedAt",
+          "keywords",
+          "createdBy",
+          "modifiedBy",
+          "githubRepoId",
+          "githubRepoName",
+          "githubOwner",
+          "githubFullName",
+          "githubDefaultBranch",
+          "branch",
+          "buildArtifactPath",
+          "s3BucketName",
+          "scalewayPipelineId",
+          "scalewayBackendStageId",
+          "scalewayDnsStageId",
+          "defaultDomain",
+          "webhookId",
+          "webhookSecret",
+          "isActive",
+          "lastDeployedAt",
+          "organizationId"
+        ],
+        "example": {
+          "id": "repo_abc123",
+          "entityType": "repository",
+          "name": "my-website",
+          "description": "My personal website",
+          "keywords": "website, portfolio",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "modifiedAt": "2024-01-01T00:00:00Z",
+          "createdBy": "user_xyz",
+          "modifiedBy": "user_xyz",
+          "githubRepoId": 123456789,
+          "githubRepoName": "my-website",
+          "githubOwner": "username",
+          "githubFullName": "username/my-website",
+          "githubDefaultBranch": "main",
+          "branch": "main",
+          "buildArtifactPath": "dist",
+          "s3BucketName": "hosting-repo_abc123",
+          "scalewayPipelineId": "pipeline_123",
+          "defaultDomain": "abc12345.edge.scw.cloud",
+          "webhookId": 987654321,
+          "webhookSecret": null,
+          "isActive": true,
+          "lastDeployedAt": "2024-01-15T12:00:00Z",
+          "organizationId": "org_123"
         }
       },
       "Attachment": {
@@ -1876,7 +2080,10 @@
                 "user",
                 "organization",
                 "attachment",
-                "page"
+                "page",
+                "repository",
+                "deployment",
+                "domain"
               ]
             },
             "required": false,
@@ -4969,7 +5176,10 @@
                     "restrictions": {
                       "user": 1000,
                       "attachment": 100,
-                      "page": 0
+                      "page": 0,
+                      "repository": 0,
+                      "deployment": 0,
+                      "domain": 0
                     },
                     "membership": {
                       "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -4990,7 +5200,10 @@
                       },
                       "entities": {
                         "attachment": 178,
-                        "page": 257
+                        "page": 257,
+                        "repository": 47,
+                        "deployment": 21,
+                        "domain": 451
                       }
                     }
                   }
@@ -6723,13 +6936,2595 @@
                     },
                     "page": {
                       "type": "number"
+                    },
+                    "repository": {
+                      "type": "number"
+                    },
+                    "deployment": {
+                      "type": "number"
+                    },
+                    "domain": {
+                      "type": "number"
                     }
                   },
                   "required": [
                     "user",
                     "organization",
                     "attachment",
-                    "page"
+                    "page",
+                    "repository",
+                    "deployment",
+                    "domain"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/repositories/github-repos": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listGithubRepos",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "List GitHub repositories",
+        "description": "Lists the authenticated user's GitHub repositories available for connecting to the hosting platform.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "perPage",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of GitHub repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "owner": {
+                        "type": "string"
+                      },
+                      "defaultBranch": {
+                        "type": "string"
+                      },
+                      "private": {
+                        "type": "boolean"
+                      },
+                      "description": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "htmlUrl": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "fullName",
+                      "owner",
+                      "defaultBranch",
+                      "private",
+                      "description",
+                      "htmlUrl"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/repositories": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "connectRepository",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "Connect repository",
+        "description": "Connects a GitHub repository to the organization for static site hosting. Creates a webhook for automatic deployments.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "githubRepoId": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "githubRepoName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "githubOwner": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "githubFullName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 201
+                  },
+                  "githubDefaultBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "default": "main"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "default": "main"
+                  },
+                  "buildArtifactPath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "default": "dist"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "githubRepoId",
+                  "githubRepoName",
+                  "githubOwner",
+                  "githubFullName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Repository connected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listRepositories",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "List repositories",
+        "description": "Lists all connected repositories for an organization with deployment stats.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/Repository"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "deploymentCount": {
+                            "type": "number"
+                          },
+                          "lastDeployment": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "commitSha": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "status",
+                              "commitSha",
+                              "createdAt"
+                            ]
+                          }
+                        }
+                      }
+                    ],
+                    "example": {
+                      "id": "repo_abc123",
+                      "entityType": "repository",
+                      "name": "my-website",
+                      "description": "My personal website",
+                      "keywords": "website, portfolio",
+                      "createdAt": "2024-01-01T00:00:00Z",
+                      "modifiedAt": "2024-01-01T00:00:00Z",
+                      "createdBy": "user_xyz",
+                      "modifiedBy": "user_xyz",
+                      "githubRepoId": 123456789,
+                      "githubRepoName": "my-website",
+                      "githubOwner": "username",
+                      "githubFullName": "username/my-website",
+                      "githubDefaultBranch": "main",
+                      "branch": "main",
+                      "buildArtifactPath": "dist",
+                      "s3BucketName": "hosting-repo_abc123",
+                      "scalewayPipelineId": "pipeline_123",
+                      "defaultDomain": "abc12345.edge.scw.cloud",
+                      "webhookId": 987654321,
+                      "webhookSecret": null,
+                      "isActive": true,
+                      "lastDeployedAt": "2024-01-15T12:00:00Z",
+                      "organizationId": "org_123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/repositories/{id}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getRepository",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "Get repository",
+        "description": "Gets details of a connected repository including deployment history.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateRepository",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "Update repository",
+        "description": "Updates repository settings like branch, build path, or active status.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "branch": {
+                    "type": "string"
+                  },
+                  "buildArtifactPath": {
+                    "type": "string"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repository updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "disconnectRepository",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "Disconnect repository",
+        "description": "Disconnects a repository from hosting. Removes the GitHub webhook and cleans up hosting resources.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository disconnected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/repositories/{id}/deploy": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "triggerDeployment",
+        "tags": [
+          "repositories"
+        ],
+        "summary": "Trigger deployment",
+        "description": "Manually triggers a new deployment from the latest release or workflow artifact.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Entity ID or slug. ID is always preferred."
+            },
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred.",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "release",
+                      "workflow"
+                    ],
+                    "default": "release"
+                  },
+                  "commitSha": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Deployment triggered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deploymentId": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "deploymentId",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/deployments": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listDeployments",
+        "tags": [
+          "deployments"
+        ],
+        "summary": "List deployments",
+        "description": "Returns a paginated list of deployments, optionally filtered by repository or status.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "downloading",
+                "uploading",
+                "deploying",
+                "deployed",
+                "failed",
+                "rolled_back"
+              ],
+              "description": "Filter by deployment status"
+            },
+            "required": false,
+            "description": "Filter by deployment status",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by repository"
+            },
+            "required": false,
+            "description": "Filter by repository",
+            "name": "repositoryId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of deployments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "commitSha": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "branch": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "downloading",
+                              "uploading",
+                              "deploying",
+                              "deployed",
+                              "failed",
+                              "rolled_back"
+                            ]
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "artifactSource": {
+                            "type": "string",
+                            "enum": [
+                              "release",
+                              "workflow",
+                              "manual"
+                            ]
+                          },
+                          "artifactId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "s3Path": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "deployedUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "logs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "timestamp": {
+                                  "type": "string"
+                                },
+                                "level": {
+                                  "type": "string",
+                                  "enum": [
+                                    "info",
+                                    "warn",
+                                    "error",
+                                    "debug"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "metadata": {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                }
+                              },
+                              "required": [
+                                "timestamp",
+                                "level",
+                                "message"
+                              ]
+                            }
+                          },
+                          "triggeredBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "repositoryId": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "modifiedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "commitSha",
+                          "branch",
+                          "status",
+                          "isActive",
+                          "artifactSource",
+                          "artifactId",
+                          "s3Path",
+                          "deployedUrl",
+                          "logs",
+                          "triggeredBy",
+                          "repositoryId",
+                          "createdAt",
+                          "modifiedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/deployments/{deploymentId}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDeployment",
+        "tags": [
+          "deployments"
+        ],
+        "summary": "Get deployment",
+        "description": "Returns detailed information about a specific deployment including logs.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "deploymentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployment details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "commitSha": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "branch": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "downloading",
+                        "uploading",
+                        "deploying",
+                        "deployed",
+                        "failed",
+                        "rolled_back"
+                      ]
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "artifactSource": {
+                      "type": "string",
+                      "enum": [
+                        "release",
+                        "workflow",
+                        "manual"
+                      ]
+                    },
+                    "artifactId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "s3Path": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deployedUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "logs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "info",
+                              "warn",
+                              "error",
+                              "debug"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "timestamp",
+                          "level",
+                          "message"
+                        ]
+                      }
+                    },
+                    "triggeredBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "repositoryId": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "modifiedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "repository": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "githubFullName": {
+                          "type": "string"
+                        },
+                        "defaultDomain": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "githubFullName",
+                        "defaultDomain"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "commitSha",
+                    "branch",
+                    "status",
+                    "isActive",
+                    "artifactSource",
+                    "artifactId",
+                    "s3Path",
+                    "deployedUrl",
+                    "logs",
+                    "triggeredBy",
+                    "repositoryId",
+                    "createdAt",
+                    "modifiedAt",
+                    "repository"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/deployments/repositories/{repositoryId}/trigger": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "triggerDeployment",
+        "tags": [
+          "deployments"
+        ],
+        "summary": "Trigger deployment",
+        "description": "Manually triggers a new deployment for a repository.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "repositoryId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "artifactSource": {
+                    "type": "string",
+                    "enum": [
+                      "release",
+                      "workflow",
+                      "manual"
+                    ],
+                    "default": "release"
+                  },
+                  "artifactId": {
+                    "type": "string",
+                    "description": "Release ID or workflow run ID"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "description": "Branch to deploy from (defaults to repo default branch)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deployment triggered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "commitSha": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "branch": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "downloading",
+                        "uploading",
+                        "deploying",
+                        "deployed",
+                        "failed",
+                        "rolled_back"
+                      ]
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "artifactSource": {
+                      "type": "string",
+                      "enum": [
+                        "release",
+                        "workflow",
+                        "manual"
+                      ]
+                    },
+                    "artifactId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "s3Path": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deployedUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "logs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "info",
+                              "warn",
+                              "error",
+                              "debug"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "timestamp",
+                          "level",
+                          "message"
+                        ]
+                      }
+                    },
+                    "triggeredBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "repositoryId": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "modifiedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "commitSha",
+                    "branch",
+                    "status",
+                    "isActive",
+                    "artifactSource",
+                    "artifactId",
+                    "s3Path",
+                    "deployedUrl",
+                    "logs",
+                    "triggeredBy",
+                    "repositoryId",
+                    "createdAt",
+                    "modifiedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/deployments/repositories/{repositoryId}/rollback": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "rollbackDeployment",
+        "tags": [
+          "deployments"
+        ],
+        "summary": "Rollback deployment",
+        "description": "Rolls back to a previous deployment by making it the active deployment.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "repositoryId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deploymentId": {
+                    "type": "string",
+                    "description": "ID of the deployment to rollback to"
+                  }
+                },
+                "required": [
+                  "deploymentId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rollback successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "commitSha": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "branch": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "downloading",
+                        "uploading",
+                        "deploying",
+                        "deployed",
+                        "failed",
+                        "rolled_back"
+                      ]
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "artifactSource": {
+                      "type": "string",
+                      "enum": [
+                        "release",
+                        "workflow",
+                        "manual"
+                      ]
+                    },
+                    "artifactId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "s3Path": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deployedUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "logs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "info",
+                              "warn",
+                              "error",
+                              "debug"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "timestamp",
+                          "level",
+                          "message"
+                        ]
+                      }
+                    },
+                    "triggeredBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "repositoryId": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "modifiedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "commitSha",
+                    "branch",
+                    "status",
+                    "isActive",
+                    "artifactSource",
+                    "artifactId",
+                    "s3Path",
+                    "deployedUrl",
+                    "logs",
+                    "triggeredBy",
+                    "repositoryId",
+                    "createdAt",
+                    "modifiedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/deployments/{deploymentId}/cancel": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "cancelDeployment",
+        "tags": [
+          "deployments"
+        ],
+        "summary": "Cancel deployment",
+        "description": "Cancels a pending or in-progress deployment.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "deploymentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployment cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/deployments/{deploymentId}/logs": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDeploymentLogs",
+        "tags": [
+          "deployments"
+        ],
+        "summary": "Get deployment logs",
+        "description": "Returns the logs for a specific deployment.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "deploymentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "info",
+                "warn",
+                "error",
+                "debug"
+              ]
+            },
+            "required": false,
+            "name": "level",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Return logs after this timestamp"
+            },
+            "required": false,
+            "description": "Return logs after this timestamp",
+            "name": "after",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployment logs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deploymentId": {
+                      "type": "string"
+                    },
+                    "logs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "info",
+                              "warn",
+                              "error",
+                              "debug"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "timestamp",
+                          "level",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "deploymentId",
+                    "logs"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/domains": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listDomains",
+        "tags": [
+          "domains"
+        ],
+        "summary": "List domains",
+        "description": "Returns a paginated list of custom domains, optionally filtered by repository.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt"
+              ],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by repository"
+            },
+            "required": false,
+            "description": "Filter by repository",
+            "name": "repositoryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "verified",
+                "failed"
+              ]
+            },
+            "required": false,
+            "name": "verificationStatus",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "fqdn": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "subdomain",
+                              "apex"
+                            ]
+                          },
+                          "verificationStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "verified",
+                              "failed"
+                            ]
+                          },
+                          "verificationToken": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "verificationMethod": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "cname",
+                              "txt",
+                              null
+                            ]
+                          },
+                          "sslStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "provisioning",
+                              "active",
+                              "error"
+                            ]
+                          },
+                          "scalewayPipelineId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "scalewayDnsStageId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "repositoryId": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "modifiedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fqdn",
+                          "type",
+                          "verificationStatus",
+                          "verificationToken",
+                          "verificationMethod",
+                          "sslStatus",
+                          "scalewayPipelineId",
+                          "scalewayDnsStageId",
+                          "repositoryId",
+                          "createdAt",
+                          "modifiedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "addDomain",
+        "tags": [
+          "domains"
+        ],
+        "summary": "Add domain",
+        "description": "Adds a custom domain to a repository and returns DNS verification instructions.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fqdn": {
+                    "type": "string",
+                    "minLength": 3,
+                    "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i",
+                    "example": "app.example.com"
+                  },
+                  "repositoryId": {
+                    "type": "string",
+                    "description": "Repository to associate the domain with"
+                  }
+                },
+                "required": [
+                  "fqdn",
+                  "repositoryId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain added with DNS instructions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "domainId": {
+                      "type": "string"
+                    },
+                    "fqdn": {
+                      "type": "string"
+                    },
+                    "recordType": {
+                      "type": "string",
+                      "enum": [
+                        "CNAME",
+                        "TXT"
+                      ]
+                    },
+                    "recordName": {
+                      "type": "string",
+                      "description": "DNS record name to create"
+                    },
+                    "recordValue": {
+                      "type": "string",
+                      "description": "Value to set for the DNS record"
+                    },
+                    "instructions": {
+                      "type": "string",
+                      "description": "Human-readable setup instructions"
+                    }
+                  },
+                  "required": [
+                    "domainId",
+                    "fqdn",
+                    "recordType",
+                    "recordName",
+                    "recordValue",
+                    "instructions"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/domains/{domainId}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDomain",
+        "tags": [
+          "domains"
+        ],
+        "summary": "Get domain",
+        "description": "Returns detailed information about a specific domain.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "fqdn": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "subdomain",
+                        "apex"
+                      ]
+                    },
+                    "verificationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "verified",
+                        "failed"
+                      ]
+                    },
+                    "verificationToken": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "verificationMethod": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "cname",
+                        "txt",
+                        null
+                      ]
+                    },
+                    "sslStatus": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "provisioning",
+                        "active",
+                        "error"
+                      ]
+                    },
+                    "scalewayPipelineId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "scalewayDnsStageId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "repositoryId": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "modifiedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "fqdn",
+                    "type",
+                    "verificationStatus",
+                    "verificationToken",
+                    "verificationMethod",
+                    "sslStatus",
+                    "scalewayPipelineId",
+                    "scalewayDnsStageId",
+                    "repositoryId",
+                    "createdAt",
+                    "modifiedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "removeDomain",
+        "tags": [
+          "domains"
+        ],
+        "summary": "Remove domain",
+        "description": "Removes a custom domain from a repository.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/domains/{domainId}/dns-instructions": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDnsInstructions",
+        "tags": [
+          "domains"
+        ],
+        "summary": "Get DNS instructions",
+        "description": "Returns the DNS records that need to be configured for domain verification.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DNS setup instructions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "domainId": {
+                      "type": "string"
+                    },
+                    "fqdn": {
+                      "type": "string"
+                    },
+                    "recordType": {
+                      "type": "string",
+                      "enum": [
+                        "CNAME",
+                        "TXT"
+                      ]
+                    },
+                    "recordName": {
+                      "type": "string",
+                      "description": "DNS record name to create"
+                    },
+                    "recordValue": {
+                      "type": "string",
+                      "description": "Value to set for the DNS record"
+                    },
+                    "instructions": {
+                      "type": "string",
+                      "description": "Human-readable setup instructions"
+                    }
+                  },
+                  "required": [
+                    "domainId",
+                    "fqdn",
+                    "recordType",
+                    "recordName",
+                    "recordValue",
+                    "instructions"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/domains/{domainId}/verify": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "verifyDomain",
+        "tags": [
+          "domains"
+        ],
+        "summary": "Verify domain",
+        "description": "Triggers a DNS verification check for the domain.",
+        "x-guard": [
+          "isAuthenticated"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "domainId": {
+                      "type": "string"
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "verified",
+                        "failed"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "domainId",
+                    "verified",
+                    "status",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/webhooks/github/{repositoryId}": {
+      "post": {
+        "security": [],
+        "operationId": "receiveGithubWebhook",
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Receive GitHub webhook",
+        "description": "Receives webhook events from GitHub for automated deployments. Verifies signature using the repository webhook secret.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "repositoryId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook received and processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "received": {
+                      "type": "boolean"
+                    },
+                    "eventType": {
+                      "type": "string"
+                    },
+                    "deploymentId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "received",
+                    "eventType"
                   ]
                 }
               }

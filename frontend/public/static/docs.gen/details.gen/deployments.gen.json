@@ -1,0 +1,692 @@
+[
+  {
+    "operationId": "listDeployments",
+    "responses": [
+      {
+        "status": 200,
+        "description": "List of deployments",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true },
+                  "commitSha": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "branch": { "type": "string", "required": true },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["pending", "downloading", "uploading", "deploying", "deployed", "failed", "rolled_back"]
+                  },
+                  "isActive": { "type": "boolean", "required": true },
+                  "artifactSource": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["release", "workflow", "manual"]
+                  },
+                  "artifactId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "s3Path": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deployedUrl": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "logs": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp": { "type": "string", "required": true },
+                        "level": {
+                          "type": "string",
+                          "required": true,
+                          "enum": ["info", "warn", "error", "debug"]
+                        },
+                        "message": { "type": "string", "required": true },
+                        "metadata": { "type": "object", "required": false }
+                      }
+                    }
+                  },
+                  "triggeredBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "repositoryId": { "type": "string", "required": true },
+                  "createdAt": { "type": "string", "required": true },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
+                }
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["createdAt"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "status": {
+            "type": "string",
+            "required": false,
+            "description": "Filter by deployment status",
+            "enum": ["pending", "downloading", "uploading", "deploying", "deployed", "failed", "rolled_back"]
+          },
+          "repositoryId": {
+            "type": "string",
+            "required": false,
+            "description": "Filter by repository"
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getDeployment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Deployment details",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "commitSha": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "branch": { "type": "string", "required": true },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "downloading", "uploading", "deploying", "deployed", "failed", "rolled_back"]
+            },
+            "isActive": { "type": "boolean", "required": true },
+            "artifactSource": {
+              "type": "string",
+              "required": true,
+              "enum": ["release", "workflow", "manual"]
+            },
+            "artifactId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "s3Path": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deployedUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "logs": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": { "type": "string", "required": true },
+                  "level": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["info", "warn", "error", "debug"]
+                  },
+                  "message": { "type": "string", "required": true },
+                  "metadata": { "type": "object", "required": false }
+                }
+              }
+            },
+            "triggeredBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "repositoryId": { "type": "string", "required": true },
+            "createdAt": { "type": "string", "required": true },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "repository": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "githubFullName": { "type": "string", "required": true },
+                "defaultDomain": {
+                  "type": ["string", "null"],
+                  "required": true
+                }
+              }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "deploymentId": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "triggerDeployment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Deployment triggered",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "commitSha": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "branch": { "type": "string", "required": true },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "downloading", "uploading", "deploying", "deployed", "failed", "rolled_back"]
+            },
+            "isActive": { "type": "boolean", "required": true },
+            "artifactSource": {
+              "type": "string",
+              "required": true,
+              "enum": ["release", "workflow", "manual"]
+            },
+            "artifactId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "s3Path": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deployedUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "logs": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": { "type": "string", "required": true },
+                  "level": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["info", "warn", "error", "debug"]
+                  },
+                  "message": { "type": "string", "required": true },
+                  "metadata": { "type": "object", "required": false }
+                }
+              }
+            },
+            "triggeredBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "repositoryId": { "type": "string", "required": true },
+            "createdAt": { "type": "string", "required": true },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "repositoryId": { "type": "string", "required": true }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "artifactSource": {
+            "type": "string",
+            "required": false,
+            "enum": ["release", "workflow", "manual"]
+          },
+          "artifactId": {
+            "type": "string",
+            "required": false,
+            "description": "Release ID or workflow run ID"
+          },
+          "branch": {
+            "type": "string",
+            "required": false,
+            "description": "Branch to deploy from (defaults to repo default branch)"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "rollbackDeployment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Rollback successful",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "commitSha": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "branch": { "type": "string", "required": true },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "downloading", "uploading", "deploying", "deployed", "failed", "rolled_back"]
+            },
+            "isActive": { "type": "boolean", "required": true },
+            "artifactSource": {
+              "type": "string",
+              "required": true,
+              "enum": ["release", "workflow", "manual"]
+            },
+            "artifactId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "s3Path": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deployedUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "logs": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": { "type": "string", "required": true },
+                  "level": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["info", "warn", "error", "debug"]
+                  },
+                  "message": { "type": "string", "required": true },
+                  "metadata": { "type": "object", "required": false }
+                }
+              }
+            },
+            "triggeredBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "repositoryId": { "type": "string", "required": true },
+            "createdAt": { "type": "string", "required": true },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "repositoryId": { "type": "string", "required": true }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "deploymentId": {
+            "type": "string",
+            "required": true,
+            "description": "ID of the deployment to rollback to"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "cancelDeployment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Deployment cancelled",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "deploymentId": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getDeploymentLogs",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Deployment logs",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "deploymentId": { "type": "string", "required": true },
+            "logs": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": { "type": "string", "required": true },
+                  "level": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["info", "warn", "error", "debug"]
+                  },
+                  "message": { "type": "string", "required": true },
+                  "metadata": { "type": "object", "required": false }
+                }
+              }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "deploymentId": { "type": "string", "required": true }
+        }
+      },
+      "query": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "required": false,
+            "enum": ["info", "warn", "error", "debug"]
+          },
+          "after": {
+            "type": "string",
+            "required": false,
+            "description": "Return logs after this timestamp"
+          }
+        }
+      }
+    }
+  }
+]

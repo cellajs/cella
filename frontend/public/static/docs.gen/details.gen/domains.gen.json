@@ -1,0 +1,528 @@
+[
+  {
+    "operationId": "listDomains",
+    "responses": [
+      {
+        "status": 200,
+        "description": "List of domains",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true },
+                  "fqdn": { "type": "string", "required": true },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["subdomain", "apex"]
+                  },
+                  "verificationStatus": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["pending", "verified", "failed"]
+                  },
+                  "verificationToken": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "verificationMethod": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["cname", "txt", null]
+                  },
+                  "sslStatus": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["pending", "provisioning", "active", "error"]
+                  },
+                  "scalewayPipelineId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "scalewayDnsStageId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "repositoryId": { "type": "string", "required": true },
+                  "createdAt": { "type": "string", "required": true },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
+                }
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["createdAt"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "repositoryId": {
+            "type": "string",
+            "required": false,
+            "description": "Filter by repository"
+          },
+          "verificationStatus": {
+            "type": "string",
+            "required": false,
+            "enum": ["pending", "verified", "failed"]
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "addDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain added with DNS instructions",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "domainId": { "type": "string", "required": true },
+            "fqdn": { "type": "string", "required": true },
+            "recordType": {
+              "type": "string",
+              "required": true,
+              "enum": ["CNAME", "TXT"]
+            },
+            "recordName": {
+              "type": "string",
+              "required": true,
+              "description": "DNS record name to create"
+            },
+            "recordValue": {
+              "type": "string",
+              "required": true,
+              "description": "Value to set for the DNS record"
+            },
+            "instructions": {
+              "type": "string",
+              "required": true,
+              "description": "Human-readable setup instructions"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "fqdn": {
+            "type": "string",
+            "required": true,
+            "minLength": 3
+          },
+          "repositoryId": {
+            "type": "string",
+            "required": true,
+            "description": "Repository to associate the domain with"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain details",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "fqdn": { "type": "string", "required": true },
+            "type": {
+              "type": "string",
+              "required": true,
+              "enum": ["subdomain", "apex"]
+            },
+            "verificationStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "verified", "failed"]
+            },
+            "verificationToken": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "verificationMethod": {
+              "type": ["string", "null"],
+              "required": true,
+              "enum": ["cname", "txt", null]
+            },
+            "sslStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "provisioning", "active", "error"]
+            },
+            "scalewayPipelineId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayDnsStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "repositoryId": { "type": "string", "required": true },
+            "createdAt": { "type": "string", "required": true },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "domainId": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "removeDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain removed",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "domainId": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getDnsInstructions",
+    "responses": [
+      {
+        "status": 200,
+        "description": "DNS setup instructions",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "domainId": { "type": "string", "required": true },
+            "fqdn": { "type": "string", "required": true },
+            "recordType": {
+              "type": "string",
+              "required": true,
+              "enum": ["CNAME", "TXT"]
+            },
+            "recordName": {
+              "type": "string",
+              "required": true,
+              "description": "DNS record name to create"
+            },
+            "recordValue": {
+              "type": "string",
+              "required": true,
+              "description": "Value to set for the DNS record"
+            },
+            "instructions": {
+              "type": "string",
+              "required": true,
+              "description": "Human-readable setup instructions"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "domainId": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "verifyDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Verification result",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "domainId": { "type": "string", "required": true },
+            "verified": { "type": "boolean", "required": true },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "verified", "failed"]
+            },
+            "message": { "type": "string", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "domainId": { "type": "string", "required": true }
+        }
+      }
+    }
+  }
+]

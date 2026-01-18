@@ -13,6 +13,7 @@ const execFileAsync = promisify(execFile);
  * @param repoPath - The absolute or relative path to the Git repository.
  * @param options - Optional settings for command execution.
  *    - skipEditor: If true, sets the GIT_EDITOR environment variable to true to skip any editor prompts.
+ *    - maxBuffer: Maximum buffer size for stdout in bytes. Defaults to 50MB for handling large outputs from commands like `git log --name-only`.
  * @throws Will throw an error if the Git command fails.
  * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
  *
@@ -26,7 +27,7 @@ const execFileAsync = promisify(execFile);
 export async function runGitCommand(
   args: string[],
   repoPath: string,
-  options: { skipEditor?: boolean } = {},
+  options: { skipEditor?: boolean; maxBuffer?: number } = {},
 ): Promise<string> {
   const gitArgs = repoPath ? ['-C', repoPath, ...args] : args;
 
@@ -35,7 +36,10 @@ export async function runGitCommand(
     ...(options.skipEditor ? { GIT_EDITOR: 'true' } : {}),
   };
 
-  const { stdout } = await execFileAsync('git', gitArgs, { env });
+  // Default to 50MB buffer for large outputs (e.g., git log --name-only across many commits)
+  const maxBuffer = options.maxBuffer ?? 50 * 1024 * 1024;
+
+  const { stdout } = await execFileAsync('git', gitArgs, { env, maxBuffer });
 
   return stdout.trim();
 }

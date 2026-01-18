@@ -22,6 +22,12 @@ export const oauthAccountsTable = pgTable(
     userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
+    // Access token for API calls (encrypted in production)
+    accessToken: varchar(),
+    // Refresh token for token renewal (if provider supports it)
+    refreshToken: varchar(),
+    // Token expiration timestamp
+    tokenExpiresAt: timestamp({ mode: 'string' }),
   },
   (table) => [unique().on(table.provider, table.providerUserId, table.email)],
 );

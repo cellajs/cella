@@ -70,7 +70,10 @@
             "user": { "type": "number", "required": true },
             "organization": { "type": "number", "required": true },
             "attachment": { "type": "number", "required": true },
-            "page": { "type": "number", "required": true }
+            "page": { "type": "number", "required": true },
+            "repository": { "type": "number", "required": true },
+            "deployment": { "type": "number", "required": true },
+            "domain": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         }

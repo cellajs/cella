@@ -114,6 +114,9 @@ importers:
       '@scalar/hono-api-reference':
         specifier: ^0.9.33
         version: 0.9.33(hono@4.11.4)
+      '@scaleway/sdk':
+        specifier: ^3.1.5
+        version: 3.1.5(@scaleway/sdk-client@2.1.0)
       '@sendgrid/mail':
         specifier: ^8.1.6
         version: 8.1.6
@@ -129,6 +132,9 @@ importers:
       '@t3-oss/env-core':
         specifier: ^0.13.10
         version: 0.13.10(arktype@2.1.20)(typescript@5.9.3)(valibot@1.2.0(typescript@5.9.3))(zod@4.3.5)
+      adm-zip:
+        specifier: ^0.5.16
+        version: 0.5.16
       arctic:
         specifier: ^3.7.0
         version: 3.7.0
@@ -174,6 +180,9 @@ importers:
       node-html-parser:
         specifier: ^7.0.2
         version: 7.0.2
+      octokit:
+        specifier: ^5.0.5
+        version: 5.0.5
       pg:
         specifier: ^8.17.1
         version: 8.17.1
@@ -204,6 +213,9 @@ importers:
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
+      tar-stream:
+        specifier: ^3.1.7
+        version: 3.1.7
       ua-parser-js:
         specifier: ^2.0.8
         version: 2.0.8
@@ -220,6 +232,9 @@ importers:
       '@ngrok/ngrok':
         specifier: ^1.7.0
         version: 1.7.0
+      '@types/adm-zip':
+        specifier: ^0.5.7
+        version: 0.5.7
       '@types/jsdom':
         specifier: ^27.0.0
         version: 27.0.0
@@ -238,6 +253,9 @@ importers:
       '@types/react':
         specifier: ^19.2.8
         version: 19.2.8
+      '@types/tar-stream':
+        specifier: ^3.1.4
+        version: 3.1.4
       '@types/ua-parser-js':
         specifier: ^0.7.39
         version: 0.7.39
@@ -3026,6 +3044,113 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@octokit/app@16.1.2':
+    resolution: {integrity: sha512-8j7sEpUYVj18dxvh0KWj6W/l6uAiVRBl1JBDVRqH1VHKAO/G5eRVl4yEoYACjakWers1DjUkcCHyJNQK47JqyQ==}
+    engines: {node: '>= 20'}
+
+  '@octokit/auth-app@8.1.2':
+    resolution: {integrity: sha512-db8VO0PqXxfzI6GdjtgEFHY9tzqUql5xMFXYA12juq8TeTgPAuiiP3zid4h50lwlIP457p5+56PnJOgd2GGBuw==}
+    engines: {node: '>= 20'}
+
+  '@octokit/auth-oauth-app@9.0.3':
+    resolution: {integrity: sha512-+yoFQquaF8OxJSxTb7rnytBIC2ZLbLqA/yb71I4ZXT9+Slw4TziV9j/kyGhUFRRTF2+7WlnIWsePZCWHs+OGjg==}
+    engines: {node: '>= 20'}
+
+  '@octokit/auth-oauth-device@8.0.3':
+    resolution: {integrity: sha512-zh2W0mKKMh/VWZhSqlaCzY7qFyrgd9oTWmTmHaXnHNeQRCZr/CXy2jCgHo4e4dJVTiuxP5dLa0YM5p5QVhJHbw==}
+    engines: {node: '>= 20'}
+
+  '@octokit/auth-oauth-user@6.0.2':
+    resolution: {integrity: sha512-qLoPPc6E6GJoz3XeDG/pnDhJpTkODTGG4kY0/Py154i/I003O9NazkrwJwRuzgCalhzyIeWQ+6MDvkUmKXjg/A==}
+    engines: {node: '>= 20'}
+
+  '@octokit/auth-token@6.0.0':
+    resolution: {integrity: sha512-P4YJBPdPSpWTQ1NU4XYdvHvXJJDxM6YwpS0FZHRgP7YFkdVxsWcpWGy/NVqlAA7PcPCnMacXlRm1y2PFZRWL/w==}
+    engines: {node: '>= 20'}
+
+  '@octokit/auth-unauthenticated@7.0.3':
+    resolution: {integrity: sha512-8Jb1mtUdmBHL7lGmop9mU9ArMRUTRhg8vp0T1VtZ4yd9vEm3zcLwmjQkhNEduKawOOORie61xhtYIhTDN+ZQ3g==}
+    engines: {node: '>= 20'}
+
+  '@octokit/core@7.0.6':
+    resolution: {integrity: sha512-DhGl4xMVFGVIyMwswXeyzdL4uXD5OGILGX5N8Y+f6W7LhC1Ze2poSNrkF/fedpVDHEEZ+PHFW0vL14I+mm8K3Q==}
+    engines: {node: '>= 20'}
+
+  '@octokit/endpoint@11.0.2':
+    resolution: {integrity: sha512-4zCpzP1fWc7QlqunZ5bSEjxc6yLAlRTnDwKtgXfcI/FxxGoqedDG8V2+xJ60bV2kODqcGB+nATdtap/XYq2NZQ==}
+    engines: {node: '>= 20'}
+
+  '@octokit/graphql@9.0.3':
+    resolution: {integrity: sha512-grAEuupr/C1rALFnXTv6ZQhFuL1D8G5y8CN04RgrO4FIPMrtm+mcZzFG7dcBm+nq+1ppNixu+Jd78aeJOYxlGA==}
+    engines: {node: '>= 20'}
+
+  '@octokit/oauth-app@8.0.3':
+    resolution: {integrity: sha512-jnAjvTsPepyUaMu9e69hYBuozEPgYqP4Z3UnpmvoIzHDpf8EXDGvTY1l1jK0RsZ194oRd+k6Hm13oRU8EoDFwg==}
+    engines: {node: '>= 20'}
+
+  '@octokit/oauth-authorization-url@8.0.0':
+    resolution: {integrity: sha512-7QoLPRh/ssEA/HuHBHdVdSgF8xNLz/Bc5m9fZkArJE5bb6NmVkDm3anKxXPmN1zh6b5WKZPRr3697xKT/yM3qQ==}
+    engines: {node: '>= 20'}
+
+  '@octokit/oauth-methods@6.0.2':
+    resolution: {integrity: sha512-HiNOO3MqLxlt5Da5bZbLV8Zarnphi4y9XehrbaFMkcoJ+FL7sMxH/UlUsCVxpddVu4qvNDrBdaTVE2o4ITK8ng==}
+    engines: {node: '>= 20'}
+
+  '@octokit/openapi-types@27.0.0':
+    resolution: {integrity: sha512-whrdktVs1h6gtR+09+QsNk2+FO+49j6ga1c55YZudfEG+oKJVvJLQi3zkOm5JjiUXAagWK2tI2kTGKJ2Ys7MGA==}
+
+  '@octokit/openapi-webhooks-types@12.1.0':
+    resolution: {integrity: sha512-WiuzhOsiOvb7W3Pvmhf8d2C6qaLHXrWiLBP4nJ/4kydu+wpagV5Fkz9RfQwV2afYzv3PB+3xYgp4mAdNGjDprA==}
+
+  '@octokit/plugin-paginate-graphql@6.0.0':
+    resolution: {integrity: sha512-crfpnIoFiBtRkvPqOyLOsw12XsveYuY2ieP6uYDosoUegBJpSVxGwut9sxUgFFcll3VTOTqpUf8yGd8x1OmAkQ==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@octokit/core': '>=6'
+
+  '@octokit/plugin-paginate-rest@14.0.0':
+    resolution: {integrity: sha512-fNVRE7ufJiAA3XUrha2omTA39M6IXIc6GIZLvlbsm8QOQCYvpq/LkMNGyFlB1d8hTDzsAXa3OKtybdMAYsV/fw==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@octokit/core': '>=6'
+
+  '@octokit/plugin-rest-endpoint-methods@17.0.0':
+    resolution: {integrity: sha512-B5yCyIlOJFPqUUeiD0cnBJwWJO8lkJs5d8+ze9QDP6SvfiXSz1BF+91+0MeI1d2yxgOhU/O+CvtiZ9jSkHhFAw==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@octokit/core': '>=6'
+
+  '@octokit/plugin-retry@8.0.3':
+    resolution: {integrity: sha512-vKGx1i3MC0za53IzYBSBXcrhmd+daQDzuZfYDd52X5S0M2otf3kVZTVP8bLA3EkU0lTvd1WEC2OlNNa4G+dohA==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@octokit/core': '>=7'
+
+  '@octokit/plugin-throttling@11.0.3':
+    resolution: {integrity: sha512-34eE0RkFCKycLl2D2kq7W+LovheM/ex3AwZCYN8udpi6bxsyjZidb2McXs69hZhLmJlDqTSP8cH+jSRpiaijBg==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@octokit/core': ^7.0.0
+
+  '@octokit/request-error@7.1.0':
+    resolution: {integrity: sha512-KMQIfq5sOPpkQYajXHwnhjCC0slzCNScLHs9JafXc4RAJI+9f+jNDlBNaIMTvazOPLgb4BnlhGJOTbnN0wIjPw==}
+    engines: {node: '>= 20'}
+
+  '@octokit/request@10.0.7':
+    resolution: {integrity: sha512-v93h0i1yu4idj8qFPZwjehoJx4j3Ntn+JhXsdJrG9pYaX6j/XRz2RmasMUHtNgQD39nrv/VwTWSqK0RNXR8upA==}
+    engines: {node: '>= 20'}
+
+  '@octokit/types@16.0.0':
+    resolution: {integrity: sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==}
+
+  '@octokit/webhooks-methods@6.0.0':
+    resolution: {integrity: sha512-MFlzzoDJVw/GcbfzVC1RLR36QqkTLUf79vLVO3D+xn7r0QgxnFoLZgtrzxiQErAjFUOdH6fas2KeQJ1yr/qaXQ==}
+    engines: {node: '>= 20'}
+
+  '@octokit/webhooks@14.2.0':
+    resolution: {integrity: sha512-da6KbdNCV5sr1/txD896V+6W0iamFWrvVl8cHkBSPT+YlvmT3DwXa4jxZnQc+gnuTEqSWbBeoSZYTayXH9wXcw==}
+    engines: {node: '>= 20'}
+
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
 
@@ -4805,6 +4930,290 @@ packages:
     resolution: {integrity: sha512-WhoqhDxDmij9tiMqZ7Vl7+8/0602ZSyqU0tXcma55vL1tsfJlTXCNVFAYV83MKq9oon2dt0wcFzwL+WYs8+KTA==}
     engines: {node: '>=20'}
 
+  '@scaleway/random-name@5.1.2':
+    resolution: {integrity: sha512-WBiqKPnJdncl2mcA7t89rZrxaSIRF/eiyo69sbIiVsOj413+zg3Royzv4ddkRdNTnNg0l21GZpA6O8pfZyPAQQ==}
+    engines: {node: '>=20.x'}
+
+  '@scaleway/sdk-account@2.2.0':
+    resolution: {integrity: sha512-hdvVd3OC7mGV6Sny83sKOxRSprOx0BjkYKzN1dARwSQDrHgq6JIRfG/Pa/klAr5NpRzFHOy8xZdok2IxftVHXg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-applesilicon@2.3.0':
+    resolution: {integrity: sha512-m3mxghw7YqTreOANnJVmQtXJHQiLXRGYpYTPE2aiGCe72Ad2r9YG2qH69b0JgqxL8rq57Hxwu0nLdQVnVhJ5hw==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-audit-trail@2.3.0':
+    resolution: {integrity: sha512-06CZmEVTApIky9NSFVZrn7UAv8yxwi9bGmaF0bsVg6CRe53svNfDXMAyZU4GZFzvmsDOCLIOJe+3mPfcx4ch0w==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-autoscaling@2.2.0':
+    resolution: {integrity: sha512-CjiA/vpcCchdRhENJbzInmthAJfN8izftP2ONld9Kd9htza+2LcF8+Yl+8Ai/hzL4Y5exEC5TMgyqsYsjsYXhg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-baremetal@2.2.0':
+    resolution: {integrity: sha512-jhA6zqQEuDPU5a9h3/yLbLc3RDDGSDEaZLafphJ1yysgXUnag1SVVePwYEKiIevPNHgBU8R7JdNxVaznjsgZ1A==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-billing@2.2.0':
+    resolution: {integrity: sha512-ivTYhJgnvfJOh5QJE082aBqPxU0P5hYVpQrPBO13O7iIZhJKbHRB4ew5F9pLUwFvN1NXm3HIGl9VtDJ5Nk7e4Q==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-block@2.2.1':
+    resolution: {integrity: sha512-qb5q09Rl49Fjgmy0saDzKwxh1R7UxN/2OrnfZzjeJtmL1UZWnkywjg2sqiQJ/Ynqe1Pi/0NZWwKTiFbxWXPqwA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-client@2.1.0':
+    resolution: {integrity: sha512-/2Sw30paGDWyY+UMZeynOIoJlwCtlnEf8H91+HtwAffZ+coT5SNqP/S2Mu7eFPT+nsRVTDrnaHF2VCt/FqExTg==}
+    engines: {node: '>=20.19.6'}
+
+  '@scaleway/sdk-cockpit@2.2.0':
+    resolution: {integrity: sha512-nltcaS2M+X9hLpH+wfMvAo7MQOgWJHWPHobKP7gcd9DLWY7gj8Wb/G2fX4y5BoZJnyY5FX3+/ouUKA4Wg6nPvA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-container@2.3.0':
+    resolution: {integrity: sha512-UHVcCyfv1aKQnTSJajJuqM7coOgcOksZ8ippQY6JCD6HuI50Vx3PPP8NZe/M3VHbbeOfb9W0PPc2QgajtLo38w==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-datawarehouse@2.2.0':
+    resolution: {integrity: sha512-7xTygGMqJ4/PvMHacSZHovKrcfPO9LiHeygYozjFDwoAz7vl0wQF/9EN6FC//L17YhgUDtAJVbU1GWuoD6KlZA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-dedibox@2.2.0':
+    resolution: {integrity: sha512-JnGRmeTduAfNn9ps0JRy5amxlvURuOs/NwAPLH0aP3CeivEoTdN/zoUabMXFKZbtqyasvVP2sIRmfv+vP2PDUg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-domain@2.2.1':
+    resolution: {integrity: sha512-I9FYgiWvzJoTXA5b0F6YlknocX6o2+w3e3eDi8ryxPAuNZ8w6C0aGFXyLs81KWG/coXAfJDZ+r+ytHEA+mfZNA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-edge-services@2.3.0':
+    resolution: {integrity: sha512-yptH8Bj3IGAXglZBtNNWwcoeSgjYZSpgTeg9mL8gmc2Yh33EFjqbMbzLIbsSiOv1NYy0akbUNd8mdlKO58Qzlw==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-environmental-footprint@2.4.0':
+    resolution: {integrity: sha512-bg6NZ9WqwkVl5K9GAnAqkDnce6f6Jp/UGA6nxueM7x1pxqO6QnaZ4uPBNo7jUvCS/x5E0exZyVz+qq5y8BMaUg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-file@2.2.0':
+    resolution: {integrity: sha512-it2FIijwIZOg2r1YLUu+4ekzeaXxjylZ6xwBJ4nYWEiyntxPeI3XjdaPczcLWTaKWG9ehMfReYQNL5k/kfy35w==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-flexibleip@2.2.0':
+    resolution: {integrity: sha512-XA0LH7EuphPjIrjhHYwrnUislwC725tGx28b6Y1In/FPBXRQ9wL1uoQGtwWzbvuoJ7psJ8/wHh5gjFwXa5CDCA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-function@2.2.0':
+    resolution: {integrity: sha512-n58b1h7zhzNJinlmFqTG5xpY0TqKNoG0nTcK87e516yA7Wc+mumuMXmQ/CGGeL4EeU3Rk5UF8QRI7EL50vac6A==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-iam@2.2.0':
+    resolution: {integrity: sha512-FjdVCIvWoI6h9mgP5xhnKUGwlTpE1tUTop4sthoGhoQrO5tngv+8FLTdpFMItefhB71A0LUY4kfdRWoRQ8VuYA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-inference@2.2.0':
+    resolution: {integrity: sha512-VRZUm5p5LDecXb6yxnXvo4hvztm5czPBniZTde7o5tv3vfBQZfYIXpNHGufK40+cLewJeroRcNNftaN2aE7b+g==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-instance@2.2.0':
+    resolution: {integrity: sha512-2SAd9415SpNvRDQxAT/1M5LlyKr3VeuNYQWKee10/UOgm1S882fLDMSAGkN3bX1vp1Xt7F3DAu1usxuG+1/IzA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-interlink@2.2.0':
+    resolution: {integrity: sha512-J8lP+/XGiHwagmyBdAwxaxk1uq0G+O6artx2bBpXs/uf4dZf/S7h3htNLwC0FDPWJtaqHr+ObE48KReQlN5uxQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-iot@2.2.0':
+    resolution: {integrity: sha512-CC5+LKN4Yud3C4KP8O0aYMaQ1qLD01I2MXDn/VwixIiVa1M8sD/zQJjQqG1QsRbDiwwAUA+7oZdJxuiGTJe/ig==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-ipam@2.2.0':
+    resolution: {integrity: sha512-bXSjCCXQMaqpnxPRBfE/Jjm+d75MK4utyOsrl4hmsL0T9KUzQOmb7K8MxzLMaadvm+Mg8QMrusHpAexGkQlzcg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-jobs@2.2.0':
+    resolution: {integrity: sha512-7t/BtdIS4p9A+m0mNCWme2R6PfeHtI3rGZpJTWsWD8/Jkvvxqp7TNp6oLmFYMRLzQkXSjgYO2qXwlgnSCeIa3w==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-k8s@2.3.0':
+    resolution: {integrity: sha512-5mFnQJei8uAcd6Ky94QSq/RuyUnFUl+lH5iSAmV56uJUavf2XshVxCLpW1HHn8Hm4fCLDkbxr9EZ0mvaqRZ8Jw==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-kafka@2.2.0':
+    resolution: {integrity: sha512-aSIvS1K5IkCfN/LRBLE9w1dQqEjkkIg9TOOmc2MWu6zOsjkjvdInnGqxh9EROq2IZhtlFVCabjRsYPUTAInwfw==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-key-manager@2.2.0':
+    resolution: {integrity: sha512-5s2FcHj3O48hhLXCR4+NonACbHKhI4bsof/ont03r07IkJgM0HOaWwLplfNFlGpGV/LOCWMmsJ0kpSKHNHGRjQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-lb@2.2.0':
+    resolution: {integrity: sha512-t18MnkCscYs9JeJHd2t6xRQBltFD3GJYU4HSCE7LiVDzghpGGm3a86cXv637+e4OoV60pQwowqpjnUZOihbqAA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-marketplace@2.2.0':
+    resolution: {integrity: sha512-887xfDDCuRa2lyfbCazbQpDtdYbwHZJc2nOhiz787hbkfYXfBb/mayYfpX8Rwi/lWUd9BlsnZGJDSLzOGqfuNA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-mnq@2.2.0':
+    resolution: {integrity: sha512-sSO+TjRyoPFSq2nImR6Q9MIybMISJ4PMEoQv7gux8Uh/4nRQeM2z6MF/ybqH673Cd7yKvQ+W+nT0eOr2PfYBoA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-mongodb@2.2.0':
+    resolution: {integrity: sha512-hHq7MAuUzLw3N7QwbVKEyEW6WSWGgb0dz+eLHammAr9gIgYTNANbxZFGNqRvtjXLhGbQ1g72YjicRG1QGJXIXg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-product-catalog@2.3.0':
+    resolution: {integrity: sha512-PvYkeqoo1B60TvKw210IWl+WtMUsCA4JTNeia35jh1m/H5u3kz7NymmcQnA5LjipFGgnHlSP68DX8HFS/4aAdQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-qaas@2.2.0':
+    resolution: {integrity: sha512-IomGWOjIM7TE2WVMDQu2q2c1UZUujC7f6d+HvMVV6Nvc6nmOVchpz0E+9fMW3Iwc/UTaxEJswZDhvMUpyGr54A==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-rdb@2.2.0':
+    resolution: {integrity: sha512-PfVTGDNgOtUx9WxEhUypLijDGLYr8b6NSHp3Sbb+cFmEa2lEIGIcn4uhh+gAg4VA7UoGmJkt/s5+Ahgdm5BOeQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-redis@2.2.0':
+    resolution: {integrity: sha512-8ZoQzz3xwBFsxj/q+MVguQCpnngqb1zR0nuTtQ2RrEVFz6Hy9o0q6OiUP6vk7gGHtb3DAyrrsJH52/U1O7WXzg==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-registry@2.2.0':
+    resolution: {integrity: sha512-aiRqqHHW5Y28FFhcWsfN9EoFAuu82d3REg5oQOXgSOgs7zPg1JQRXWHKu80d9CCPpuHdTv5gX3tKSkCIHLtSDA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-s2s-vpn@2.3.0':
+    resolution: {integrity: sha512-65VY/Bq5/REG3GvNSe1kBMD+NJwTzQeu3qnFLPHRR6FIppeYosBPhyczxx//hfKIFlceZWk2YBongezZVt2log==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-secret@2.2.0':
+    resolution: {integrity: sha512-Xf0mcVcxqhMl1+GuXj6NsJnXjMcNTEQAeqaAJUjNgqtWzZ9Y/zLe7kY/a8Ayt2FGlrTQLWVC5D/FQqQ9cj3DLA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-serverless-sqldb@2.2.0':
+    resolution: {integrity: sha512-x22iClIavEgF5qgqTsJjt5upjm2x3C+hS99vuk0mV3aMsd7R6wrjhdhVSOX915o4caWgWGfnbaVNrjSj4QjNqA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-std@2.1.0':
+    resolution: {integrity: sha512-HFgYPp9NMtCLq7cXelEdGEqRNRzanCHeCa3P8X9R0hLph7ew2Jk3SD+tSCoQWrREgtCppElh8upnKF6/SbHfXA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-tem@2.2.0':
+    resolution: {integrity: sha512-pUXzjn+z5h5FKRY+Ytr8VmnQZDD96KGd6ilJyPwq4s0s5UjB8YMGQSx+2SEEFJQw7TtA5BkAmpD+W8aglwHJLQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-test@2.2.0':
+    resolution: {integrity: sha512-ectVcmqwFJrNUuQxXpp8eeYaW6FrwPrQa1j+zvWXJk0wDo6BDoH8tnsfJQcqNNFwlqSSSTQbEbQRsIUqgS5rvw==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-vpc@2.2.0':
+    resolution: {integrity: sha512-EiRnrYaUy3D/g9YQ1SuuYJDdQ+2j1ERcGsbK+jcisVLLOa8LNWHZhSyGmHESL2YOs1RV/UWpHRIZ5l9wxkpT7w==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-vpcgw@2.2.0':
+    resolution: {integrity: sha512-Y+uzKqLy3HqLqIJX5HR76I1IkD+SfsSwxy/78lMmR/fvYRkv7FIm/fipXxa/g3pRQBkNmpeTh3FY6v2yND46SQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk-webhosting@2.2.0':
+    resolution: {integrity: sha512-y18P1JXGHEe569wMrTCjXmd78zS7bYFXpniYTBlAqfpfV/35LOrn1QAglPwiT5+JcJmaD/gjmiDE8ohu7x6SlQ==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
+  '@scaleway/sdk@3.1.5':
+    resolution: {integrity: sha512-tE67YFv5g+Zcsp546idJk/3BcNvYjbE+DwD3ykMRqyMAWfIfrH9FlVqSDy7dPj9J5+42Kk3RFfC62iG2vWxFpA==}
+    engines: {node: '>=20.19.6'}
+    peerDependencies:
+      '@scaleway/sdk-client': ^2.1.0
+
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
@@ -5819,8 +6228,14 @@ packages:
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
+  '@types/adm-zip@0.5.7':
+    resolution: {integrity: sha512-DNEs/QvmyRLurdQPChqq0Md4zGvPwHerAJYWk9l2jCbD1VPpnzRJorOdiq4zsw09NFbYnhfsoEhWtxIzXpn2yw==}
+
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
+
+  '@types/aws-lambda@8.10.159':
+    resolution: {integrity: sha512-SAP22WSGNN12OQ8PlCzGzRCZ7QDCwI85dQZbmpz7+mAk+L7j+wI7qnvmdKh+o7A5LaOp6QnOZ2NJphAZQTTHQg==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -5990,6 +6405,9 @@ packages:
 
   '@types/stack-trace@0.0.33':
     resolution: {integrity: sha512-O7in6531Bbvlb2KEsJ0dq0CHZvc3iWSR5ZYMtvGgnHA56VgriAN/AU2LorfmcvAl2xc9N5fbCTRyMRRl8nd74g==}
+
+  '@types/tar-stream@3.1.4':
+    resolution: {integrity: sha512-921gW0+g29mCJX0fRvqeHzBlE/XclDaAG0Ousy1LCghsOhvaKacDeRGEVzQP9IPfKn8Vysy7FEXAIxycpc/CMg==}
 
   '@types/tedious@4.0.14':
     resolution: {integrity: sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==}
@@ -6406,6 +6824,10 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  adm-zip@0.5.16:
+    resolution: {integrity: sha512-TGw5yVi4saajsSEgz25grObGHEUaDrniwvA2qwSC060KfqGPdglhvPMA2lPIoxs3PQIItj2iag35fONcQqgUaQ==}
+    engines: {node: '>=12.0'}
+
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
@@ -6553,6 +6975,14 @@ packages:
   axios@1.13.2:
     resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
 
+  b4a@1.7.3:
+    resolution: {integrity: sha512-5Q2mfq2WfGuFp3uS//0s6baOJLMoVduPYVeNmDYxu5OUA1/cBfvr2RIS7vi62LdNj/urk1hfmj867I3qt6uZ7Q==}
+    peerDependencies:
+      react-native-b4a: '*'
+    peerDependenciesMeta:
+      react-native-b4a:
+        optional: true
+
   babel-dead-code-elimination@1.0.12:
     resolution: {integrity: sha512-GERT7L2TiYcYDtYk1IpD+ASAYXjKbLTDPhBtYj7X1NuRMDTMtAx9kyBenub1Ev41lo91OHCKdmP+egTDmfQ7Ig==}
 
@@ -6586,6 +7016,14 @@ packages:
   balanced-match@2.0.0:
     resolution: {integrity: sha512-1ugUSr8BHXRnK23KfuYS+gVMC3LB8QGH9W1iGtDPsNWoQbgtXSExkBu2aDR4epiGWZOjZsj6lDl/N/AqqTC3UA==}
 
+  bare-events@2.8.2:
+    resolution: {integrity: sha512-riJjyv1/mHLIPX4RwiK+oW9/4c3TEUeORHKefKAKnZ5kyslbN+HXowtbaVEqt4IMUB7OXlfixcs6gsFeo/jhiQ==}
+    peerDependencies:
+      bare-abort-controller: '*'
+    peerDependenciesMeta:
+      bare-abort-controller:
+        optional: true
+
   base64-arraybuffer@1.0.2:
     resolution: {integrity: sha512-I3yl4r9QB5ZRY3XuJVEPfc2XhZO6YweFPI+UovAzn+8/hb3oJ6lnysaFcjVpkCPfVWFUDvoZ8kmVDP7WyRtYtQ==}
     engines: {node: '>= 0.6.0'}
@@ -6602,6 +7040,9 @@ packages:
 
   bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
+
+  before-after-hook@4.0.0:
+    resolution: {integrity: sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ==}
 
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
@@ -6629,6 +7070,9 @@ packages:
 
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
+
+  bottleneck@2.19.5:
+    resolution: {integrity: sha512-VHiNCbI1lKdl44tGrhNfU3lup0Tj/ZBMJB5/2ZbNXRCPuRCO7ed2mgcK4r17y+KB2EfuYuRaVlwNbAeaWGSpbw==}
 
   bowser@2.13.1:
     resolution: {integrity: sha512-OHawaAbjwx6rqICCKgSG0SAnT05bzd7ppyKLVUITZpANBaaMFBAsaNkto3LoQ31tyFP5kNujE8Cdx85G9VzOkw==}
@@ -7603,6 +8047,9 @@ packages:
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
 
+  events-universal@1.0.1:
+    resolution: {integrity: sha512-LUd5euvbMLpwOF8m6ivPCbhQeSiYVNb8Vs0fQ8QjXo0JTkEHpz8pxdQf0gStltaPpw0Cca8b39KxvK9cfKRiAw==}
+
   events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
@@ -7636,6 +8083,9 @@ packages:
     resolution: {integrity: sha512-11Ndz7Nv+mvAC1j0ktTa7fAb0vLyGGX+rMHNBYQviQDGU0Hw7lhctJANqbPhu9nV9/izT/IntTgZ7Im/9LJs9g==}
     engines: {'0': node >=0.6.0}
 
+  fast-content-type-parse@3.0.0:
+    resolution: {integrity: sha512-ZvLdcY8P+N8mGQJahJV5G4U88CSvT1rP8ApL6uETe88MBXrBHAkZlSEySdUlyztF7ccb+Znos3TFqaepHxdhBg==}
+
   fast-copy@4.0.2:
     resolution: {integrity: sha512-ybA6PDXIXOXivLJK/z9e+Otk7ve13I4ckBvGO5I2RRmBU1gMHLVDJYEuJYhGwez7YNlYji2M2DvVU+a9mSFDlw==}
 
@@ -7645,6 +8095,9 @@ packages:
   fast-equals@5.4.0:
     resolution: {integrity: sha512-jt2DW/aNFNwke7AUd+Z+e6pz39KO5rzdbbFCg2sGafS4mk13MI7Z8O5z9cADNn5lhGODIgLwug6TZO2ctf7kcw==}
     engines: {node: '>=6.0.0'}
+
+  fast-fifo@1.3.2:
+    resolution: {integrity: sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==}
 
   fast-glob@3.3.3:
     resolution: {integrity: sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg==}
@@ -9254,6 +9707,10 @@ packages:
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
+  octokit@5.0.5:
+    resolution: {integrity: sha512-4+/OFSqOjoyULo7eN7EA97DE0Xydj/PW5aIckxqQIoFjFwqXKuFCvXUJObyJfBF9Khu4RL/jlDRI9FPaMGfPnw==}
+    engines: {node: '>= 20'}
+
   ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
 
@@ -10617,6 +11074,9 @@ packages:
   stream-browserify@3.0.0:
     resolution: {integrity: sha512-H73RAHsVBapbim0tU2JwwOiXUj+fikfiaoYAKHF3VJfA0pe2BCzkhAHBlLG6REzE+2WNZcxOXjK7lkso+9euLA==}
 
+  streamx@2.23.0:
+    resolution: {integrity: sha512-kn+e44esVfn2Fa/O0CPFcex27fjIL6MkVae0Mm6q+E6f0hWv578YCERbv+4m02cjxvDsPKLnmxral/rR6lBMAg==}
+
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -10754,6 +11214,9 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
+  tar-stream@3.1.7:
+    resolution: {integrity: sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ==}
+
   tar@6.2.1:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
@@ -10773,6 +11236,9 @@ packages:
     resolution: {integrity: sha512-t/R3R/n0MSwnnazuPpPNVO60LX0SKL45pyl9YlvxIdkH0Of7D5qM2EVe+yASRIlY5pZ73nclYJfNANGWPwFDZw==}
     engines: {node: '>=10'}
     hasBin: true
+
+  text-decoder@1.2.3:
+    resolution: {integrity: sha512-3/o9z3X0X0fTupwsYvR03pJ/DjWuqqrfwBgTQzdWDiQSm9KitAyz/9WqsT2JQW7KV2m+bC2ol/zqpW37NHxLaA==}
 
   text-segmentation@1.0.3:
     resolution: {integrity: sha512-iOiPUo/BGnZ6+54OsWxZidGCsdU8YbE4PSpdPinp7DeMtUJNJBoJ/ouUSTJjHkh1KntHaltHl/gDs2FC4i5+Nw==}
@@ -10841,6 +11307,10 @@ packages:
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
+
+  toad-cache@3.7.0:
+    resolution: {integrity: sha512-/m8M+2BJUpoJdgAHoG+baCwBT+tf2VraSfkBgl0Y00qIWt41DJ8R5B8nsEw0I58YwF5IZH6z24/2TobDKnqSWw==}
+    engines: {node: '>=12'}
 
   totalist@3.0.1:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
@@ -11090,6 +11560,12 @@ packages:
 
   unist-util-visit@5.0.0:
     resolution: {integrity: sha512-MR04uvD+07cwl/yhVuVWAtw+3GOR/knlL55Nd/wAdblk27GCVt3lqpTivy/tkJcZoNPzTwS1Y+KMojlLDhoTzg==}
+
+  universal-github-app-jwt@2.2.2:
+    resolution: {integrity: sha512-dcmbeSrOdTnsjGjUfAlqNDJrhxXizjAz94ija9Qw8YkZ1uu0d+GoZzyH+Jb9tIIqvGsadUfwg+22k5aDqqwzbw==}
+
+  universal-user-agent@7.0.3:
+    resolution: {integrity: sha512-TmnEAEAsBJVZM/AADELsK76llnwcf9vMKuPz8JflO1frO8Lchitr0fNaN9d+Ap0BjKtqWqd/J17qeDnXh8CL2A==}
 
   universalify@2.0.1:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
@@ -14136,6 +14612,153 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
+  '@octokit/app@16.1.2':
+    dependencies:
+      '@octokit/auth-app': 8.1.2
+      '@octokit/auth-unauthenticated': 7.0.3
+      '@octokit/core': 7.0.6
+      '@octokit/oauth-app': 8.0.3
+      '@octokit/plugin-paginate-rest': 14.0.0(@octokit/core@7.0.6)
+      '@octokit/types': 16.0.0
+      '@octokit/webhooks': 14.2.0
+
+  '@octokit/auth-app@8.1.2':
+    dependencies:
+      '@octokit/auth-oauth-app': 9.0.3
+      '@octokit/auth-oauth-user': 6.0.2
+      '@octokit/request': 10.0.7
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+      toad-cache: 3.7.0
+      universal-github-app-jwt: 2.2.2
+      universal-user-agent: 7.0.3
+
+  '@octokit/auth-oauth-app@9.0.3':
+    dependencies:
+      '@octokit/auth-oauth-device': 8.0.3
+      '@octokit/auth-oauth-user': 6.0.2
+      '@octokit/request': 10.0.7
+      '@octokit/types': 16.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/auth-oauth-device@8.0.3':
+    dependencies:
+      '@octokit/oauth-methods': 6.0.2
+      '@octokit/request': 10.0.7
+      '@octokit/types': 16.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/auth-oauth-user@6.0.2':
+    dependencies:
+      '@octokit/auth-oauth-device': 8.0.3
+      '@octokit/oauth-methods': 6.0.2
+      '@octokit/request': 10.0.7
+      '@octokit/types': 16.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/auth-token@6.0.0': {}
+
+  '@octokit/auth-unauthenticated@7.0.3':
+    dependencies:
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+
+  '@octokit/core@7.0.6':
+    dependencies:
+      '@octokit/auth-token': 6.0.0
+      '@octokit/graphql': 9.0.3
+      '@octokit/request': 10.0.7
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+      before-after-hook: 4.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/endpoint@11.0.2':
+    dependencies:
+      '@octokit/types': 16.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/graphql@9.0.3':
+    dependencies:
+      '@octokit/request': 10.0.7
+      '@octokit/types': 16.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/oauth-app@8.0.3':
+    dependencies:
+      '@octokit/auth-oauth-app': 9.0.3
+      '@octokit/auth-oauth-user': 6.0.2
+      '@octokit/auth-unauthenticated': 7.0.3
+      '@octokit/core': 7.0.6
+      '@octokit/oauth-authorization-url': 8.0.0
+      '@octokit/oauth-methods': 6.0.2
+      '@types/aws-lambda': 8.10.159
+      universal-user-agent: 7.0.3
+
+  '@octokit/oauth-authorization-url@8.0.0': {}
+
+  '@octokit/oauth-methods@6.0.2':
+    dependencies:
+      '@octokit/oauth-authorization-url': 8.0.0
+      '@octokit/request': 10.0.7
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+
+  '@octokit/openapi-types@27.0.0': {}
+
+  '@octokit/openapi-webhooks-types@12.1.0': {}
+
+  '@octokit/plugin-paginate-graphql@6.0.0(@octokit/core@7.0.6)':
+    dependencies:
+      '@octokit/core': 7.0.6
+
+  '@octokit/plugin-paginate-rest@14.0.0(@octokit/core@7.0.6)':
+    dependencies:
+      '@octokit/core': 7.0.6
+      '@octokit/types': 16.0.0
+
+  '@octokit/plugin-rest-endpoint-methods@17.0.0(@octokit/core@7.0.6)':
+    dependencies:
+      '@octokit/core': 7.0.6
+      '@octokit/types': 16.0.0
+
+  '@octokit/plugin-retry@8.0.3(@octokit/core@7.0.6)':
+    dependencies:
+      '@octokit/core': 7.0.6
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+      bottleneck: 2.19.5
+
+  '@octokit/plugin-throttling@11.0.3(@octokit/core@7.0.6)':
+    dependencies:
+      '@octokit/core': 7.0.6
+      '@octokit/types': 16.0.0
+      bottleneck: 2.19.5
+
+  '@octokit/request-error@7.1.0':
+    dependencies:
+      '@octokit/types': 16.0.0
+
+  '@octokit/request@10.0.7':
+    dependencies:
+      '@octokit/endpoint': 11.0.2
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+      fast-content-type-parse: 3.0.0
+      universal-user-agent: 7.0.3
+
+  '@octokit/types@16.0.0':
+    dependencies:
+      '@octokit/openapi-types': 27.0.0
+
+  '@octokit/webhooks-methods@6.0.0': {}
+
+  '@octokit/webhooks@14.2.0':
+    dependencies:
+      '@octokit/openapi-webhooks-types': 12.1.0
+      '@octokit/request-error': 7.1.0
+      '@octokit/webhooks-methods': 6.0.0
+
   '@one-ini/wasm@0.1.1': {}
 
   '@opentelemetry/api-logs@0.208.0':
@@ -15916,6 +16539,327 @@ snapshots:
       type-fest: 5.0.0
       zod: 4.3.5
 
+  '@scaleway/random-name@5.1.2': {}
+
+  '@scaleway/sdk-account@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-applesilicon@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-audit-trail@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-autoscaling@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-baremetal@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-billing@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-block@2.2.1(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-client@2.1.0': {}
+
+  '@scaleway/sdk-cockpit@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-container@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-datawarehouse@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-dedibox@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-domain@2.2.1(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-edge-services@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-environmental-footprint@2.4.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-file@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-flexibleip@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-function@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-iam@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-inference@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-instance@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-interlink@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-iot@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-ipam@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-jobs@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-k8s@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-kafka@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-key-manager@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-lb@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-marketplace@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-mnq@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-mongodb@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-product-catalog@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-qaas@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-rdb@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-redis@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-registry@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-s2s-vpn@2.3.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-secret@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-serverless-sqldb@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-std@2.1.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/sdk-client': 2.1.0
+
+  '@scaleway/sdk-tem@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-test@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-vpc@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-vpcgw@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk-webhosting@2.2.0(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/random-name': 5.1.2
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+
+  '@scaleway/sdk@3.1.5(@scaleway/sdk-client@2.1.0)':
+    dependencies:
+      '@scaleway/sdk-account': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-applesilicon': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-audit-trail': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-autoscaling': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-baremetal': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-billing': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-block': 2.2.1(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-client': 2.1.0
+      '@scaleway/sdk-cockpit': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-container': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-datawarehouse': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-dedibox': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-domain': 2.2.1(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-edge-services': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-environmental-footprint': 2.4.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-file': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-flexibleip': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-function': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-iam': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-inference': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-instance': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-interlink': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-iot': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-ipam': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-jobs': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-k8s': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-kafka': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-key-manager': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-lb': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-marketplace': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-mnq': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-mongodb': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-product-catalog': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-qaas': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-rdb': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-redis': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-registry': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-s2s-vpn': 2.3.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-secret': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-serverless-sqldb': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-std': 2.1.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-tem': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-test': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-vpc': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-vpcgw': 2.2.0(@scaleway/sdk-client@2.1.0)
+      '@scaleway/sdk-webhosting': 2.2.0(@scaleway/sdk-client@2.1.0)
+
   '@sec-ant/readable-stream@0.4.1': {}
 
   '@selderee/plugin-htmlparser2@0.11.0':
@@ -17158,7 +18102,13 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@types/adm-zip@0.5.7':
+    dependencies:
+      '@types/node': 24.10.8
+
   '@types/aria-query@5.0.4': {}
+
+  '@types/aws-lambda@8.10.159': {}
 
   '@types/babel__core@7.20.5':
     dependencies:
@@ -17274,7 +18224,7 @@ snapshots:
 
   '@types/mute-stream@0.0.4':
     dependencies:
-      '@types/node': 22.19.6
+      '@types/node': 24.10.8
 
   '@types/mysql@2.15.27':
     dependencies:
@@ -17342,6 +18292,10 @@ snapshots:
   '@types/semver@7.7.1': {}
 
   '@types/stack-trace@0.0.33': {}
+
+  '@types/tar-stream@3.1.4':
+    dependencies:
+      '@types/node': 24.10.8
 
   '@types/tedious@4.0.14':
     dependencies:
@@ -17949,6 +18903,8 @@ snapshots:
 
   acorn@8.15.0: {}
 
+  adm-zip@0.5.16: {}
+
   agent-base@6.0.2:
     dependencies:
       debug: 4.4.3
@@ -18097,6 +19053,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  b4a@1.7.3: {}
+
   babel-dead-code-elimination@1.0.12:
     dependencies:
       '@babel/core': 7.28.6
@@ -18142,6 +19100,8 @@ snapshots:
 
   balanced-match@2.0.0: {}
 
+  bare-events@2.8.2: {}
+
   base64-arraybuffer@1.0.2: {}
 
   base64-js@1.5.1: {}
@@ -18153,6 +19113,8 @@ snapshots:
   bcrypt-pbkdf@1.0.2:
     dependencies:
       tweetnacl: 0.14.5
+
+  before-after-hook@4.0.0: {}
 
   bidi-js@1.0.3:
     dependencies:
@@ -18181,6 +19143,8 @@ snapshots:
   bluebird@3.7.2: {}
 
   boolbase@1.0.0: {}
+
+  bottleneck@2.19.5: {}
 
   bowser@2.13.1: {}
 
@@ -19226,6 +20190,12 @@ snapshots:
 
   eventemitter3@5.0.1: {}
 
+  events-universal@1.0.1:
+    dependencies:
+      bare-events: 2.8.2
+    transitivePeerDependencies:
+      - bare-abort-controller
+
   events@3.3.0: {}
 
   exifr@7.1.3: {}
@@ -19251,11 +20221,15 @@ snapshots:
 
   extsprintf@1.3.0: {}
 
+  fast-content-type-parse@3.0.0: {}
+
   fast-copy@4.0.2: {}
 
   fast-deep-equal@3.1.3: {}
 
   fast-equals@5.4.0: {}
+
+  fast-fifo@1.3.2: {}
 
   fast-glob@3.3.3:
     dependencies:
@@ -21183,6 +22157,20 @@ snapshots:
 
   obug@2.1.1: {}
 
+  octokit@5.0.5:
+    dependencies:
+      '@octokit/app': 16.1.2
+      '@octokit/core': 7.0.6
+      '@octokit/oauth-app': 8.0.3
+      '@octokit/plugin-paginate-graphql': 6.0.0(@octokit/core@7.0.6)
+      '@octokit/plugin-paginate-rest': 14.0.0(@octokit/core@7.0.6)
+      '@octokit/plugin-rest-endpoint-methods': 17.0.0(@octokit/core@7.0.6)
+      '@octokit/plugin-retry': 8.0.3(@octokit/core@7.0.6)
+      '@octokit/plugin-throttling': 11.0.3(@octokit/core@7.0.6)
+      '@octokit/request-error': 7.1.0
+      '@octokit/types': 16.0.0
+      '@octokit/webhooks': 14.2.0
+
   ohash@2.0.11: {}
 
   on-exit-leak-free@2.1.2: {}
@@ -22794,6 +23782,15 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
+  streamx@2.23.0:
+    dependencies:
+      events-universal: 1.0.1
+      fast-fifo: 1.3.2
+      text-decoder: 1.2.3
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - react-native-b4a
+
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
@@ -22976,6 +23973,15 @@ snapshots:
       readable-stream: 3.6.2
     optional: true
 
+  tar-stream@3.1.7:
+    dependencies:
+      b4a: 1.7.3
+      fast-fifo: 1.3.2
+      streamx: 2.23.0
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - react-native-b4a
+
   tar@6.2.1:
     dependencies:
       chownr: 2.0.0
@@ -23004,6 +24010,12 @@ snapshots:
       acorn: 8.15.0
       commander: 2.20.3
       source-map-support: 0.5.21
+
+  text-decoder@1.2.3:
+    dependencies:
+      b4a: 1.7.3
+    transitivePeerDependencies:
+      - react-native-b4a
 
   text-segmentation@1.0.3:
     dependencies:
@@ -23060,6 +24072,8 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
+
+  toad-cache@3.7.0: {}
 
   totalist@3.0.1: {}
 
@@ -23352,6 +24366,10 @@ snapshots:
       '@types/unist': 3.0.3
       unist-util-is: 6.0.1
       unist-util-visit-parents: 6.0.2
+
+  universal-github-app-jwt@2.2.2: {}
+
+  universal-user-agent@7.0.3: {}
 
   universalify@2.0.1: {}
 

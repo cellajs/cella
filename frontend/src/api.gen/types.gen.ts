@@ -56,7 +56,7 @@ export type ApiError = {
   type: string;
   status: number;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  entityType?: 'user' | 'organization' | 'attachment' | 'page';
+  entityType?: 'user' | 'organization' | 'attachment' | 'page' | 'repository' | 'deployment' | 'domain';
   logId?: string;
   path?: string;
   method?: string;
@@ -96,7 +96,7 @@ export type TooManyRequestsError = ApiError & {
 export type Activity = {
   id: string;
   userId: string | null;
-  entityType: 'user' | 'organization' | 'attachment' | 'page' | null;
+  entityType: 'user' | 'organization' | 'attachment' | 'page' | 'repository' | 'deployment' | 'domain' | null;
   resourceType: 'request' | 'membership' | null;
   action: 'create' | 'update' | 'delete' | null;
   tableName: string;
@@ -251,6 +251,9 @@ export type Organization = {
     entities: {
       attachment: number;
       page: number;
+      repository: number;
+      deployment: number;
+      domain: number;
     };
   };
 };
@@ -268,6 +271,35 @@ export type Page = {
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
+};
+
+export type Repository = {
+  createdAt: string;
+  id: string;
+  entityType: 'repository';
+  name: string;
+  description: string | null;
+  modifiedAt: string | null;
+  keywords: string;
+  createdBy: string | null;
+  modifiedBy: string | null;
+  githubRepoId: number;
+  githubRepoName: string;
+  githubOwner: string;
+  githubFullName: string;
+  githubDefaultBranch: string;
+  branch: string;
+  buildArtifactPath: string;
+  s3BucketName: string | null;
+  scalewayPipelineId: string | null;
+  scalewayBackendStageId: string | null;
+  scalewayDnsStageId: string | null;
+  defaultDomain: string | null;
+  webhookId: number | null;
+  webhookSecret: string | null;
+  isActive: boolean;
+  lastDeployedAt: string | null;
+  organizationId: string;
 };
 
 export type Attachment = {
@@ -319,7 +351,7 @@ export type GetActivitiesData = {
     offset?: string;
     limit?: string;
     userId?: string;
-    entityType?: 'user' | 'organization' | 'attachment' | 'page';
+    entityType?: 'user' | 'organization' | 'attachment' | 'page' | 'repository' | 'deployment' | 'domain';
     resourceType?: 'request' | 'membership';
     action?: 'create' | 'update' | 'delete';
     tableName?: string;
@@ -3097,10 +3129,1173 @@ export type GetPublicCountsResponses = {
     organization: number;
     attachment: number;
     page: number;
+    repository: number;
+    deployment: number;
+    domain: number;
   };
 };
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
+
+export type ListGithubReposData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: string;
+    perPage?: string;
+  };
+  url: '/repositories/github-repos';
+};
+
+export type ListGithubReposErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListGithubReposError = ListGithubReposErrors[keyof ListGithubReposErrors];
+
+export type ListGithubReposResponses = {
+  /**
+   * List of GitHub repositories
+   */
+  200: Array<{
+    id: number;
+    name: string;
+    fullName: string;
+    owner: string;
+    defaultBranch: string;
+    private: boolean;
+    description: string | null;
+    htmlUrl: string;
+  }>;
+};
+
+export type ListGithubReposResponse = ListGithubReposResponses[keyof ListGithubReposResponses];
+
+export type ListRepositoriesData = {
+  body?: never;
+  path: {
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: {
+    q?: string;
+    sort?: 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+  };
+  url: '/repositories';
+};
+
+export type ListRepositoriesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListRepositoriesError = ListRepositoriesErrors[keyof ListRepositoriesErrors];
+
+export type ListRepositoriesResponses = {
+  /**
+   * List of repositories
+   */
+  200: Array<
+    Repository & {
+      deploymentCount?: number;
+      lastDeployment?: {
+        id: string;
+        status: string;
+        commitSha: string;
+        createdAt: string;
+      } | null;
+    }
+  >;
+};
+
+export type ListRepositoriesResponse = ListRepositoriesResponses[keyof ListRepositoriesResponses];
+
+export type ConnectRepositoryData = {
+  body: {
+    githubRepoId: number;
+    githubRepoName: string;
+    githubOwner: string;
+    githubFullName: string;
+    githubDefaultBranch?: string;
+    branch?: string;
+    buildArtifactPath?: string;
+    name?: string;
+    description?: string;
+  };
+  path: {
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: never;
+  url: '/repositories';
+};
+
+export type ConnectRepositoryErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ConnectRepositoryError = ConnectRepositoryErrors[keyof ConnectRepositoryErrors];
+
+export type ConnectRepositoryResponses = {
+  /**
+   * Repository connected successfully
+   */
+  201: Repository;
+};
+
+export type ConnectRepositoryResponse = ConnectRepositoryResponses[keyof ConnectRepositoryResponses];
+
+export type DisconnectRepositoryData = {
+  body?: never;
+  path: {
+    id: string;
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: never;
+  url: '/repositories/{id}';
+};
+
+export type DisconnectRepositoryErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DisconnectRepositoryError = DisconnectRepositoryErrors[keyof DisconnectRepositoryErrors];
+
+export type DisconnectRepositoryResponses = {
+  /**
+   * Repository disconnected
+   */
+  200: {
+    success: boolean;
+  };
+};
+
+export type DisconnectRepositoryResponse = DisconnectRepositoryResponses[keyof DisconnectRepositoryResponses];
+
+export type GetRepositoryData = {
+  body?: never;
+  path: {
+    id: string;
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: never;
+  url: '/repositories/{id}';
+};
+
+export type GetRepositoryErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetRepositoryError = GetRepositoryErrors[keyof GetRepositoryErrors];
+
+export type GetRepositoryResponses = {
+  /**
+   * Repository details
+   */
+  200: Repository;
+};
+
+export type GetRepositoryResponse = GetRepositoryResponses[keyof GetRepositoryResponses];
+
+export type UpdateRepositoryData = {
+  body: {
+    name?: string;
+    description?: string | null;
+    branch?: string;
+    buildArtifactPath?: string;
+    isActive?: boolean;
+  };
+  path: {
+    id: string;
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: never;
+  url: '/repositories/{id}';
+};
+
+export type UpdateRepositoryErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateRepositoryError = UpdateRepositoryErrors[keyof UpdateRepositoryErrors];
+
+export type UpdateRepositoryResponses = {
+  /**
+   * Repository updated
+   */
+  200: Repository;
+};
+
+export type UpdateRepositoryResponse = UpdateRepositoryResponses[keyof UpdateRepositoryResponses];
+
+export type TriggerDeploymentData = {
+  body?: {
+    source?: 'release' | 'workflow';
+    commitSha?: string;
+  };
+  path: {
+    id: string;
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: never;
+  url: '/repositories/{id}/deploy';
+};
+
+export type TriggerDeploymentErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type TriggerDeploymentError = TriggerDeploymentErrors[keyof TriggerDeploymentErrors];
+
+export type TriggerDeploymentResponses = {
+  /**
+   * Deployment triggered
+   */
+  201: {
+    deploymentId: string;
+    status: string;
+  };
+};
+
+export type TriggerDeploymentResponse = TriggerDeploymentResponses[keyof TriggerDeploymentResponses];
+
+export type ListDeploymentsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    /**
+     * Filter by deployment status
+     */
+    status?: 'pending' | 'downloading' | 'uploading' | 'deploying' | 'deployed' | 'failed' | 'rolled_back';
+    /**
+     * Filter by repository
+     */
+    repositoryId?: string;
+  };
+  url: '/deployments';
+};
+
+export type ListDeploymentsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListDeploymentsError = ListDeploymentsErrors[keyof ListDeploymentsErrors];
+
+export type ListDeploymentsResponses = {
+  /**
+   * List of deployments
+   */
+  200: {
+    items: Array<{
+      id: string;
+      commitSha: string | null;
+      branch: string;
+      status: 'pending' | 'downloading' | 'uploading' | 'deploying' | 'deployed' | 'failed' | 'rolled_back';
+      isActive: boolean;
+      artifactSource: 'release' | 'workflow' | 'manual';
+      artifactId: string | null;
+      s3Path: string | null;
+      deployedUrl: string | null;
+      logs: Array<{
+        timestamp: string;
+        level: 'info' | 'warn' | 'error' | 'debug';
+        message: string;
+        metadata?: {
+          [key: string]: unknown;
+        };
+      }>;
+      triggeredBy: string | null;
+      repositoryId: string;
+      createdAt: string;
+      modifiedAt: string | null;
+    }>;
+    total: number;
+  };
+};
+
+export type ListDeploymentsResponse = ListDeploymentsResponses[keyof ListDeploymentsResponses];
+
+export type GetDeploymentData = {
+  body?: never;
+  path: {
+    deploymentId: string;
+  };
+  query?: never;
+  url: '/deployments/{deploymentId}';
+};
+
+export type GetDeploymentErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDeploymentError = GetDeploymentErrors[keyof GetDeploymentErrors];
+
+export type GetDeploymentResponses = {
+  /**
+   * Deployment details
+   */
+  200: {
+    id: string;
+    commitSha: string | null;
+    branch: string;
+    status: 'pending' | 'downloading' | 'uploading' | 'deploying' | 'deployed' | 'failed' | 'rolled_back';
+    isActive: boolean;
+    artifactSource: 'release' | 'workflow' | 'manual';
+    artifactId: string | null;
+    s3Path: string | null;
+    deployedUrl: string | null;
+    logs: Array<{
+      timestamp: string;
+      level: 'info' | 'warn' | 'error' | 'debug';
+      message: string;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    }>;
+    triggeredBy: string | null;
+    repositoryId: string;
+    createdAt: string;
+    modifiedAt: string | null;
+    repository: {
+      id: string;
+      githubFullName: string;
+      defaultDomain: string | null;
+    };
+  };
+};
+
+export type GetDeploymentResponse = GetDeploymentResponses[keyof GetDeploymentResponses];
+
+export type TriggerDeployment2Data = {
+  body: {
+    artifactSource?: 'release' | 'workflow' | 'manual';
+    /**
+     * Release ID or workflow run ID
+     */
+    artifactId?: string;
+    /**
+     * Branch to deploy from (defaults to repo default branch)
+     */
+    branch?: string;
+  };
+  path: {
+    repositoryId: string;
+  };
+  query?: never;
+  url: '/deployments/repositories/{repositoryId}/trigger';
+};
+
+export type TriggerDeployment2Errors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type TriggerDeployment2Error = TriggerDeployment2Errors[keyof TriggerDeployment2Errors];
+
+export type TriggerDeployment2Responses = {
+  /**
+   * Deployment triggered
+   */
+  200: {
+    id: string;
+    commitSha: string | null;
+    branch: string;
+    status: 'pending' | 'downloading' | 'uploading' | 'deploying' | 'deployed' | 'failed' | 'rolled_back';
+    isActive: boolean;
+    artifactSource: 'release' | 'workflow' | 'manual';
+    artifactId: string | null;
+    s3Path: string | null;
+    deployedUrl: string | null;
+    logs: Array<{
+      timestamp: string;
+      level: 'info' | 'warn' | 'error' | 'debug';
+      message: string;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    }>;
+    triggeredBy: string | null;
+    repositoryId: string;
+    createdAt: string;
+    modifiedAt: string | null;
+  };
+};
+
+export type TriggerDeployment2Response = TriggerDeployment2Responses[keyof TriggerDeployment2Responses];
+
+export type RollbackDeploymentData = {
+  body: {
+    /**
+     * ID of the deployment to rollback to
+     */
+    deploymentId: string;
+  };
+  path: {
+    repositoryId: string;
+  };
+  query?: never;
+  url: '/deployments/repositories/{repositoryId}/rollback';
+};
+
+export type RollbackDeploymentErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type RollbackDeploymentError = RollbackDeploymentErrors[keyof RollbackDeploymentErrors];
+
+export type RollbackDeploymentResponses = {
+  /**
+   * Rollback successful
+   */
+  200: {
+    id: string;
+    commitSha: string | null;
+    branch: string;
+    status: 'pending' | 'downloading' | 'uploading' | 'deploying' | 'deployed' | 'failed' | 'rolled_back';
+    isActive: boolean;
+    artifactSource: 'release' | 'workflow' | 'manual';
+    artifactId: string | null;
+    s3Path: string | null;
+    deployedUrl: string | null;
+    logs: Array<{
+      timestamp: string;
+      level: 'info' | 'warn' | 'error' | 'debug';
+      message: string;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    }>;
+    triggeredBy: string | null;
+    repositoryId: string;
+    createdAt: string;
+    modifiedAt: string | null;
+  };
+};
+
+export type RollbackDeploymentResponse = RollbackDeploymentResponses[keyof RollbackDeploymentResponses];
+
+export type CancelDeploymentData = {
+  body?: never;
+  path: {
+    deploymentId: string;
+  };
+  query?: never;
+  url: '/deployments/{deploymentId}/cancel';
+};
+
+export type CancelDeploymentErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CancelDeploymentError = CancelDeploymentErrors[keyof CancelDeploymentErrors];
+
+export type CancelDeploymentResponses = {
+  /**
+   * Deployment cancelled
+   */
+  200: {
+    success: boolean;
+  };
+};
+
+export type CancelDeploymentResponse = CancelDeploymentResponses[keyof CancelDeploymentResponses];
+
+export type GetDeploymentLogsData = {
+  body?: never;
+  path: {
+    deploymentId: string;
+  };
+  query?: {
+    level?: 'info' | 'warn' | 'error' | 'debug';
+    /**
+     * Return logs after this timestamp
+     */
+    after?: string;
+  };
+  url: '/deployments/{deploymentId}/logs';
+};
+
+export type GetDeploymentLogsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDeploymentLogsError = GetDeploymentLogsErrors[keyof GetDeploymentLogsErrors];
+
+export type GetDeploymentLogsResponses = {
+  /**
+   * Deployment logs
+   */
+  200: {
+    deploymentId: string;
+    logs: Array<{
+      timestamp: string;
+      level: 'info' | 'warn' | 'error' | 'debug';
+      message: string;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    }>;
+  };
+};
+
+export type GetDeploymentLogsResponse = GetDeploymentLogsResponses[keyof GetDeploymentLogsResponses];
+
+export type ListDomainsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    /**
+     * Filter by repository
+     */
+    repositoryId?: string;
+    verificationStatus?: 'pending' | 'verified' | 'failed';
+  };
+  url: '/domains';
+};
+
+export type ListDomainsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListDomainsError = ListDomainsErrors[keyof ListDomainsErrors];
+
+export type ListDomainsResponses = {
+  /**
+   * List of domains
+   */
+  200: {
+    items: Array<{
+      id: string;
+      fqdn: string;
+      type: 'subdomain' | 'apex';
+      verificationStatus: 'pending' | 'verified' | 'failed';
+      verificationToken: string | null;
+      verificationMethod: 'cname' | 'txt' | null;
+      sslStatus: 'pending' | 'provisioning' | 'active' | 'error';
+      scalewayPipelineId: string | null;
+      scalewayDnsStageId: string | null;
+      repositoryId: string;
+      createdAt: string;
+      modifiedAt: string | null;
+    }>;
+    total: number;
+  };
+};
+
+export type ListDomainsResponse = ListDomainsResponses[keyof ListDomainsResponses];
+
+export type AddDomainData = {
+  body: {
+    fqdn: string;
+    /**
+     * Repository to associate the domain with
+     */
+    repositoryId: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/domains';
+};
+
+export type AddDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type AddDomainError = AddDomainErrors[keyof AddDomainErrors];
+
+export type AddDomainResponses = {
+  /**
+   * Domain added with DNS instructions
+   */
+  200: {
+    domainId: string;
+    fqdn: string;
+    recordType: 'CNAME' | 'TXT';
+    /**
+     * DNS record name to create
+     */
+    recordName: string;
+    /**
+     * Value to set for the DNS record
+     */
+    recordValue: string;
+    /**
+     * Human-readable setup instructions
+     */
+    instructions: string;
+  };
+};
+
+export type AddDomainResponse = AddDomainResponses[keyof AddDomainResponses];
+
+export type RemoveDomainData = {
+  body?: never;
+  path: {
+    domainId: string;
+  };
+  query?: never;
+  url: '/domains/{domainId}';
+};
+
+export type RemoveDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type RemoveDomainError = RemoveDomainErrors[keyof RemoveDomainErrors];
+
+export type RemoveDomainResponses = {
+  /**
+   * Domain removed
+   */
+  200: {
+    success: boolean;
+  };
+};
+
+export type RemoveDomainResponse = RemoveDomainResponses[keyof RemoveDomainResponses];
+
+export type GetDomainData = {
+  body?: never;
+  path: {
+    domainId: string;
+  };
+  query?: never;
+  url: '/domains/{domainId}';
+};
+
+export type GetDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDomainError = GetDomainErrors[keyof GetDomainErrors];
+
+export type GetDomainResponses = {
+  /**
+   * Domain details
+   */
+  200: {
+    id: string;
+    fqdn: string;
+    type: 'subdomain' | 'apex';
+    verificationStatus: 'pending' | 'verified' | 'failed';
+    verificationToken: string | null;
+    verificationMethod: 'cname' | 'txt' | null;
+    sslStatus: 'pending' | 'provisioning' | 'active' | 'error';
+    scalewayPipelineId: string | null;
+    scalewayDnsStageId: string | null;
+    repositoryId: string;
+    createdAt: string;
+    modifiedAt: string | null;
+  };
+};
+
+export type GetDomainResponse = GetDomainResponses[keyof GetDomainResponses];
+
+export type GetDnsInstructionsData = {
+  body?: never;
+  path: {
+    domainId: string;
+  };
+  query?: never;
+  url: '/domains/{domainId}/dns-instructions';
+};
+
+export type GetDnsInstructionsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDnsInstructionsError = GetDnsInstructionsErrors[keyof GetDnsInstructionsErrors];
+
+export type GetDnsInstructionsResponses = {
+  /**
+   * DNS setup instructions
+   */
+  200: {
+    domainId: string;
+    fqdn: string;
+    recordType: 'CNAME' | 'TXT';
+    /**
+     * DNS record name to create
+     */
+    recordName: string;
+    /**
+     * Value to set for the DNS record
+     */
+    recordValue: string;
+    /**
+     * Human-readable setup instructions
+     */
+    instructions: string;
+  };
+};
+
+export type GetDnsInstructionsResponse = GetDnsInstructionsResponses[keyof GetDnsInstructionsResponses];
+
+export type VerifyDomainData = {
+  body?: never;
+  path: {
+    domainId: string;
+  };
+  query?: never;
+  url: '/domains/{domainId}/verify';
+};
+
+export type VerifyDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type VerifyDomainError = VerifyDomainErrors[keyof VerifyDomainErrors];
+
+export type VerifyDomainResponses = {
+  /**
+   * Verification result
+   */
+  200: {
+    domainId: string;
+    verified: boolean;
+    status: 'pending' | 'verified' | 'failed';
+    message: string;
+  };
+};
+
+export type VerifyDomainResponse = VerifyDomainResponses[keyof VerifyDomainResponses];
+
+export type ReceiveGithubWebhookData = {
+  body: {
+    [key: string]: unknown;
+  };
+  path: {
+    repositoryId: string;
+  };
+  query?: never;
+  url: '/webhooks/github/{repositoryId}';
+};
+
+export type ReceiveGithubWebhookErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ReceiveGithubWebhookError = ReceiveGithubWebhookErrors[keyof ReceiveGithubWebhookErrors];
+
+export type ReceiveGithubWebhookResponses = {
+  /**
+   * Webhook received and processed
+   */
+  200: {
+    received: boolean;
+    eventType: string;
+    deploymentId?: string;
+  };
+};
+
+export type ReceiveGithubWebhookResponse = ReceiveGithubWebhookResponses[keyof ReceiveGithubWebhookResponses];
 
 export type SyncAttachmentsData = {
   body?: never;

@@ -4,8 +4,8 @@ import { checkCleanState } from '#/modules/setup/check-clean-state';
 import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
-import { createBranchIfMissing } from '#/utils/git/git-refs';
 import { handleMerge } from '#/utils/git/git-merge';
+import { createBranchIfMissing } from '#/utils/git/git-refs';
 import { createProgress } from '#/utils/progress';
 
 /**

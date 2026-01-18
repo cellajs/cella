@@ -21,7 +21,8 @@ import authOAuthRoutes from '#/modules/auth/oauth/oauth-routes';
 import { defaultHook } from '#/utils/default-hook';
 
 // Scopes for OAuth providers
-const githubScopes = ['user:email'];
+// GitHub: repo scope for repository access (hosting features), user:email for email
+const githubScopes = ['user:email', 'repo'];
 const googleScopes = ['profile', 'email'];
 const microsoftScopes = ['profile', 'email'];
 
@@ -151,7 +152,8 @@ const authOAuthRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
+      // Pass access token to store for later API calls (e.g., hosting features)
+      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy, accessToken);
     } catch (error) {
       if (error instanceof AppError) throw error;
 

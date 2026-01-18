@@ -14,13 +14,13 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  type TestEnv,
   clearFixtureCache,
   createTestEnv,
   ensureFixtureCache,
   fileExists,
   makeCommit,
   readRepoFile,
+  type TestEnv,
 } from './helpers/test-repos';
 
 describe('sync integration', () => {

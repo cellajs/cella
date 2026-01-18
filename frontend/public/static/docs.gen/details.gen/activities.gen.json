@@ -25,7 +25,7 @@
                   "entityType": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["user", "organization", "attachment", "page", null]
+                    "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain", null]
                   },
                   "resourceType": {
                     "type": ["string", "null"],
@@ -128,7 +128,7 @@
           "entityType": {
             "type": "string",
             "required": false,
-            "enum": ["user", "organization", "attachment", "page"]
+            "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
           },
           "resourceType": {
             "type": "string",

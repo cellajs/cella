@@ -2,6 +2,8 @@
  * Analyze module - File analysis for sync between upstream and fork.
  * Exports the main runAnalyze function and supporting utilities.
  */
+
+import pLimit from 'p-limit';
 import pc from 'picocolors';
 import { config } from '#/config';
 import { FileAnalysis, FileEntry } from '#/types';
@@ -10,7 +12,6 @@ import { createProgress } from '#/utils/progress';
 import { analyzeFile } from './analyze-file';
 import { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log-file';
 import { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log-summary';
-import pLimit from 'p-limit';
 
 // Re-export log utilities for external use
 export { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log-file';

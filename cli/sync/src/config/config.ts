@@ -11,7 +11,7 @@ import {
   upstreamDefaultConfig,
   verboseDefault,
 } from './defaults';
-import { SERVICES_RUNNING_FROM_LOCAL_FORK, type SyncService, SYNC_SERVICES } from './sync-services';
+import { SERVICES_RUNNING_FROM_LOCAL_FORK, SYNC_SERVICES, type SyncService } from './sync-services';
 import type { BaseRepoConfig, OverridesConfig, PackageJsonSyncKey, RepoConfig, SyncState } from './types';
 
 // Deconstruct custom configs with defaults

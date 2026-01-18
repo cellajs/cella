@@ -132,7 +132,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -171,7 +171,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -206,7 +206,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -244,7 +244,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -282,7 +282,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -320,7 +320,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -350,7 +350,7 @@
         "entityType": {
           "type": ["string", "null"],
           "required": true,
-          "enum": ["user", "organization", "attachment", "page", null]
+          "enum": ["user", "organization", "attachment", "page", "repository", "deployment", "domain", null]
         },
         "resourceType": {
           "type": ["string", "null"],
@@ -397,8 +397,8 @@
       "entityType": "user",
       "resourceType": null,
       "action": "update",
-      "tableName": "pages",
-      "type": "page.updated",
+      "tableName": "domains",
+      "type": "domain.updated",
       "entityId": "21rs6psa9stclacdgtonoqr1",
       "organizationId": "t2j8omleaz2pg8iwtnhw3666",
       "createdAt": "2024-10-11T19:21:02.239Z",
@@ -1002,7 +1002,10 @@
               "required": true,
               "properties": {
                 "attachment": { "type": "number", "required": true },
-                "page": { "type": "number", "required": true }
+                "page": { "type": "number", "required": true },
+                "repository": { "type": "number", "required": true },
+                "deployment": { "type": "number", "required": true },
+                "domain": { "type": "number", "required": true }
               }
             }
           }
@@ -1038,7 +1041,10 @@
       "restrictions": {
         "user": 1000,
         "attachment": 100,
-        "page": 0
+        "page": 0,
+        "repository": 0,
+        "deployment": 0,
+        "domain": 0
       },
       "membership": {
         "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -1057,7 +1063,13 @@
           "pending": 13,
           "total": 93
         },
-        "entities": { "attachment": 178, "page": 257 }
+        "entities": {
+          "attachment": 178,
+          "page": 257,
+          "repository": 47,
+          "deployment": 21,
+          "domain": 451
+        }
       }
     }
   },
@@ -1124,6 +1136,116 @@
       "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
       "modifiedAt": "2024-08-06T10:28:33.226Z",
       "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
+    }
+  },
+  {
+    "name": "Repository",
+    "ref": "#/components/schemas/Repository",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["repository"]
+        },
+        "name": { "type": "string", "required": true },
+        "description": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "modifiedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "keywords": { "type": "string", "required": true },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "modifiedBy": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "githubRepoId": {
+          "type": "integer",
+          "required": true,
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "githubRepoName": { "type": "string", "required": true },
+        "githubOwner": { "type": "string", "required": true },
+        "githubFullName": { "type": "string", "required": true },
+        "githubDefaultBranch": { "type": "string", "required": true },
+        "branch": { "type": "string", "required": true },
+        "buildArtifactPath": { "type": "string", "required": true },
+        "s3BucketName": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "scalewayPipelineId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "scalewayBackendStageId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "scalewayDnsStageId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "defaultDomain": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "webhookId": {
+          "type": ["integer", "null"],
+          "required": true,
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "webhookSecret": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "isActive": { "type": "boolean", "required": true },
+        "lastDeployedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "organizationId": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "example": {
+      "id": "repo_abc123",
+      "entityType": "repository",
+      "name": "my-website",
+      "description": "My personal website",
+      "keywords": "website, portfolio",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "modifiedAt": "2024-01-01T00:00:00Z",
+      "createdBy": "user_xyz",
+      "modifiedBy": "user_xyz",
+      "githubRepoId": 123456789,
+      "githubRepoName": "my-website",
+      "githubOwner": "username",
+      "githubFullName": "username/my-website",
+      "githubDefaultBranch": "main",
+      "branch": "main",
+      "buildArtifactPath": "dist",
+      "s3BucketName": "hosting-repo_abc123",
+      "scalewayPipelineId": "pipeline_123",
+      "defaultDomain": "abc12345.edge.scw.cloud",
+      "webhookId": 987654321,
+      "webhookSecret": null,
+      "isActive": true,
+      "lastDeployedAt": "2024-01-15T12:00:00Z",
+      "organizationId": "org_123"
     }
   },
   {

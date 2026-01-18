@@ -1,5 +1,5 @@
-import { hasLocalBranch } from '#/utils/git/git-refs';
 import { gitCheckout, isMergeInProgress, isRebaseInProgress } from '#/utils/git/command';
+import { hasLocalBranch } from '#/utils/git/git-refs';
 import { isRepoClean } from '#/utils/git/helpers';
 
 /**

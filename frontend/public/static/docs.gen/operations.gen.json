@@ -1054,6 +1054,346 @@
     }
   },
   {
+    "id": "listGithubRepos",
+    "hash": "tag/repositories/GET/repositories/github-repos",
+    "method": "get",
+    "path": "/repositories/github-repos",
+    "tags": ["repositories"],
+    "summary": "List GitHub repositories",
+    "description": "Lists the authenticated user's GitHub repositories available for connecting to the hosting platform.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "connectRepository",
+    "hash": "tag/repositories/POST/repositories",
+    "method": "post",
+    "path": "/repositories",
+    "tags": ["repositories"],
+    "summary": "Connect repository",
+    "description": "Connects a GitHub repository to the organization for static site hosting. Creates a webhook for automatic deployments.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "listRepositories",
+    "hash": "tag/repositories/GET/repositories",
+    "method": "get",
+    "path": "/repositories",
+    "tags": ["repositories"],
+    "summary": "List repositories",
+    "description": "Lists all connected repositories for an organization with deployment stats.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "getRepository",
+    "hash": "tag/repositories/GET/repositories/{id}",
+    "method": "get",
+    "path": "/repositories/{id}",
+    "tags": ["repositories"],
+    "summary": "Get repository",
+    "description": "Gets details of a connected repository including deployment history.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "updateRepository",
+    "hash": "tag/repositories/PUT/repositories/{id}",
+    "method": "put",
+    "path": "/repositories/{id}",
+    "tags": ["repositories"],
+    "summary": "Update repository",
+    "description": "Updates repository settings like branch, build path, or active status.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "disconnectRepository",
+    "hash": "tag/repositories/DELETE/repositories/{id}",
+    "method": "delete",
+    "path": "/repositories/{id}",
+    "tags": ["repositories"],
+    "summary": "Disconnect repository",
+    "description": "Disconnects a repository from hosting. Removes the GitHub webhook and cleans up hosting resources.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "triggerDeployment",
+    "hash": "tag/repositories/POST/repositories/{id}/deploy",
+    "method": "post",
+    "path": "/repositories/{id}/deploy",
+    "tags": ["repositories"],
+    "summary": "Trigger deployment",
+    "description": "Manually triggers a new deployment from the latest release or workflow artifact.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "listDeployments",
+    "hash": "tag/deployments/GET/deployments",
+    "method": "get",
+    "path": "/deployments",
+    "tags": ["deployments"],
+    "summary": "List deployments",
+    "description": "Returns a paginated list of deployments, optionally filtered by repository or status.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "getDeployment",
+    "hash": "tag/deployments/GET/deployments/{deploymentId}",
+    "method": "get",
+    "path": "/deployments/{deploymentId}",
+    "tags": ["deployments"],
+    "summary": "Get deployment",
+    "description": "Returns detailed information about a specific deployment including logs.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "triggerDeployment",
+    "hash": "tag/deployments/POST/deployments/repositories/{repositoryId}/trigger",
+    "method": "post",
+    "path": "/deployments/repositories/{repositoryId}/trigger",
+    "tags": ["deployments"],
+    "summary": "Trigger deployment",
+    "description": "Manually triggers a new deployment for a repository.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "rollbackDeployment",
+    "hash": "tag/deployments/POST/deployments/repositories/{repositoryId}/rollback",
+    "method": "post",
+    "path": "/deployments/repositories/{repositoryId}/rollback",
+    "tags": ["deployments"],
+    "summary": "Rollback deployment",
+    "description": "Rolls back to a previous deployment by making it the active deployment.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "cancelDeployment",
+    "hash": "tag/deployments/POST/deployments/{deploymentId}/cancel",
+    "method": "post",
+    "path": "/deployments/{deploymentId}/cancel",
+    "tags": ["deployments"],
+    "summary": "Cancel deployment",
+    "description": "Cancels a pending or in-progress deployment.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "getDeploymentLogs",
+    "hash": "tag/deployments/GET/deployments/{deploymentId}/logs",
+    "method": "get",
+    "path": "/deployments/{deploymentId}/logs",
+    "tags": ["deployments"],
+    "summary": "Get deployment logs",
+    "description": "Returns the logs for a specific deployment.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "listDomains",
+    "hash": "tag/domains/GET/domains",
+    "method": "get",
+    "path": "/domains",
+    "tags": ["domains"],
+    "summary": "List domains",
+    "description": "Returns a paginated list of custom domains, optionally filtered by repository.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "addDomain",
+    "hash": "tag/domains/POST/domains",
+    "method": "post",
+    "path": "/domains",
+    "tags": ["domains"],
+    "summary": "Add domain",
+    "description": "Adds a custom domain to a repository and returns DNS verification instructions.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "getDomain",
+    "hash": "tag/domains/GET/domains/{domainId}",
+    "method": "get",
+    "path": "/domains/{domainId}",
+    "tags": ["domains"],
+    "summary": "Get domain",
+    "description": "Returns detailed information about a specific domain.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "removeDomain",
+    "hash": "tag/domains/DELETE/domains/{domainId}",
+    "method": "delete",
+    "path": "/domains/{domainId}",
+    "tags": ["domains"],
+    "summary": "Remove domain",
+    "description": "Removes a custom domain from a repository.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "getDnsInstructions",
+    "hash": "tag/domains/GET/domains/{domainId}/dns-instructions",
+    "method": "get",
+    "path": "/domains/{domainId}/dns-instructions",
+    "tags": ["domains"],
+    "summary": "Get DNS instructions",
+    "description": "Returns the DNS records that need to be configured for domain verification.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "verifyDomain",
+    "hash": "tag/domains/POST/domains/{domainId}/verify",
+    "method": "post",
+    "path": "/domains/{domainId}/verify",
+    "tags": ["domains"],
+    "summary": "Verify domain",
+    "description": "Triggers a DNS verification check for the domain.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "receiveGithubWebhook",
+    "hash": "tag/webhooks/POST/webhooks/github/{repositoryId}",
+    "method": "post",
+    "path": "/webhooks/github/{repositoryId}",
+    "tags": ["webhooks"],
+    "summary": "Receive GitHub webhook",
+    "description": "Receives webhook events from GitHub for automated deployments. Verifies signature using the repository webhook secret.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "syncAttachments",
     "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/sync-attachments",
     "method": "get",

@@ -36,6 +36,7 @@ interface BaseCallbackProps {
   providerUser: TransformedUser;
   provider: EnabledOAuthProvider;
   oauthAccount?: OAuthAccountModel | null;
+  accessToken?: string;
 }
 
 /**
@@ -55,6 +56,7 @@ interface BaseCallbackProps {
  * @param oauthPayload - Payload from OAuth flow, including type and optional redirect.
  * @param providerUser - Transformed user data returned by OAuth provider.
  * @param provider - OAuth provider identifier (e.g., 'google', 'github').
+ * @param accessToken - OAuth access token for API calls (optional, stored for providers like GitHub).
  * @returns A redirect response to appropriate client page.
  */
 export const handleOAuthCallback = async (
@@ -62,6 +64,7 @@ export const handleOAuthCallback = async (
   oauthPayload: OAuthCookiePayload,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
+  accessToken?: string,
 ): Promise<Response> => {
   const { type, redirectAfter } = oauthPayload;
 
@@ -77,7 +80,12 @@ export const handleOAuthCallback = async (
       ),
     );
 
-  const baseCallbackProps = { providerUser, provider, oauthAccount };
+  // Update access token if provided and account exists
+  if (accessToken && oauthAccount) {
+    await db.update(oauthAccountsTable).set({ accessToken }).where(eq(oauthAccountsTable.id, oauthAccount.id));
+  }
+
+  const baseCallbackProps = { providerUser, provider, oauthAccount, accessToken };
 
   let result: OAuthFlowResult;
 
@@ -120,6 +128,7 @@ const authCallbackFlow = async ({
   providerUser,
   provider,
   oauthAccount = null,
+  accessToken,
 }: BaseCallbackProps): Promise<OAuthFlowResult> => {
   // User already has a verified OAuth account → sign in
   if (oauthAccount?.verified) {
@@ -155,7 +164,7 @@ const authCallbackFlow = async ({
 
   // No user match → create a new user and OAuth account
   const user = await handleCreateUser({ newUser: providerUser, emailVerified: false });
-  const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email);
+  const newOAuthAccount = await createOAuthAccount(user.id, providerUser.id, provider, providerUser.email, accessToken);
 
   return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'signup' };
 };
@@ -326,6 +335,7 @@ const verifyCallbackFlow = async ({
  * @param providerUserId - Unique user ID from the OAuth provider.
  * @param provider - Identifier for the OAuth provider.
  * @param email - Email address associated with the OAuth account.
+ * @param accessToken - Optional access token for API calls.
  * @returns The created OAuth account.
  */
 const createOAuthAccount = async (
@@ -333,6 +343,7 @@ const createOAuthAccount = async (
   providerUserId: Provider['userId'],
   provider: Provider['id'],
   email: UserModel['email'],
+  accessToken?: string,
 ): Promise<OAuthAccountModel> => {
   const [oauthAccount] = await db
     .insert(oauthAccountsTable)
@@ -342,6 +353,7 @@ const createOAuthAccount = async (
       provider,
       email,
       verified: false,
+      accessToken,
     })
     .returning();
 

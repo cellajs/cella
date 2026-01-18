@@ -21,6 +21,7 @@ import {
   DocsSchemasRoute,
 } from '~/routes/docs-routes';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
+import { ConnectRepositoryRoute, HostingRoute, RepositoryRoute } from '~/routes/hosting-routes';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalIndexRoute, LegalRoute } from '~/routes/marketing-routes';
 import {
   OrganizationAttachmentsRoute,
@@ -78,7 +79,14 @@ export const routeTree = RootRoute.addChildren([
     UserProfileRoute,
     UserInOrganizationProfileRoute,
     UserAccountRoute,
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
+    OrganizationRoute.addChildren([
+      OrganizationMembersRoute,
+      OrganizationAttachmentsRoute,
+      OrganizationSettingsRoute,
+      HostingRoute,
+      ConnectRepositoryRoute,
+      RepositoryRoute,
+    ]),
 
     // App-specific routes here
     // ...

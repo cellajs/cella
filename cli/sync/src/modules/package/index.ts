@@ -16,16 +16,16 @@ import {
   packageSummaryLine,
 } from './log-summary';
 
-// Re-export utilities
-export { getPackageUpdates, applyPackageUpdates } from './get-values-to-update';
 export type { KeyUpdateSummary } from './get-values-to-update';
+// Re-export utilities
+export { applyPackageUpdates, getPackageUpdates } from './get-values-to-update';
+export type { PackageSyncStats } from './log-summary';
 export {
   accumulatePackageStats,
   createPackageSyncStats,
   logPackageSummaryLines,
   packageSummaryLine,
 } from './log-summary';
-export type { PackageSyncStats } from './log-summary';
 
 /**
  * Synchronizes package dependencies between the upstream repository and the fork.

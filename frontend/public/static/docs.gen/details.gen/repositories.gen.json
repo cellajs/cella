@@ -1,0 +1,952 @@
+[
+  {
+    "operationId": "listGithubRepos",
+    "responses": [
+      {
+        "status": 200,
+        "description": "List of GitHub repositories",
+        "contentType": "application/json",
+        "schema": {
+          "type": "array",
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "id": { "type": "number", "required": true },
+              "name": { "type": "string", "required": true },
+              "fullName": { "type": "string", "required": true },
+              "owner": { "type": "string", "required": true },
+              "defaultBranch": { "type": "string", "required": true },
+              "private": { "type": "boolean", "required": true },
+              "description": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "htmlUrl": { "type": "string", "required": true }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "page": { "type": "string", "required": false },
+          "perPage": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "connectRepository",
+    "responses": [
+      {
+        "status": 201,
+        "description": "Repository connected successfully",
+        "name": "Repository",
+        "ref": "#/components/schemas/Repository",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["repository"]
+            },
+            "name": { "type": "string", "required": true },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "githubRepoId": {
+              "type": "integer",
+              "required": true,
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "githubRepoName": { "type": "string", "required": true },
+            "githubOwner": { "type": "string", "required": true },
+            "githubFullName": { "type": "string", "required": true },
+            "githubDefaultBranch": { "type": "string", "required": true },
+            "branch": { "type": "string", "required": true },
+            "buildArtifactPath": { "type": "string", "required": true },
+            "s3BucketName": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayPipelineId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayBackendStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayDnsStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "defaultDomain": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "webhookId": {
+              "type": ["integer", "null"],
+              "required": true,
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "webhookSecret": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "isActive": { "type": "boolean", "required": true },
+            "lastDeployedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "organizationId": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/Repository",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "repo_abc123",
+          "entityType": "repository",
+          "name": "my-website",
+          "description": "My personal website",
+          "keywords": "website, portfolio",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "modifiedAt": "2024-01-01T00:00:00Z",
+          "createdBy": "user_xyz",
+          "modifiedBy": "user_xyz",
+          "githubRepoId": 123456789,
+          "githubRepoName": "my-website",
+          "githubOwner": "username",
+          "githubFullName": "username/my-website",
+          "githubDefaultBranch": "main",
+          "branch": "main",
+          "buildArtifactPath": "dist",
+          "s3BucketName": "hosting-repo_abc123",
+          "scalewayPipelineId": "pipeline_123",
+          "defaultDomain": "abc12345.edge.scw.cloud",
+          "webhookId": 987654321,
+          "webhookSecret": null,
+          "isActive": true,
+          "lastDeployedAt": "2024-01-15T12:00:00Z",
+          "organizationId": "org_123"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "githubRepoId": { "type": "integer", "required": true },
+          "githubRepoName": {
+            "type": "string",
+            "required": true,
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "githubOwner": {
+            "type": "string",
+            "required": true,
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "githubFullName": {
+            "type": "string",
+            "required": true,
+            "minLength": 1,
+            "maxLength": 201
+          },
+          "githubDefaultBranch": {
+            "type": "string",
+            "required": false,
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "branch": {
+            "type": "string",
+            "required": false,
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "buildArtifactPath": {
+            "type": "string",
+            "required": false,
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "name": {
+            "type": "string",
+            "required": false,
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "required": false,
+            "maxLength": 500
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "listRepositories",
+    "responses": [
+      {
+        "status": 200,
+        "description": "List of repositories",
+        "contentType": "application/json",
+        "schema": {
+          "type": "array",
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "createdAt": { "type": "string", "required": true },
+              "id": { "type": "string", "required": true },
+              "entityType": {
+                "type": "string",
+                "required": true,
+                "enum": ["repository"]
+              },
+              "name": { "type": "string", "required": true },
+              "description": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "modifiedAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "keywords": { "type": "string", "required": true },
+              "createdBy": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "modifiedBy": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "githubRepoId": {
+                "type": "integer",
+                "required": true,
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "githubRepoName": { "type": "string", "required": true },
+              "githubOwner": { "type": "string", "required": true },
+              "githubFullName": { "type": "string", "required": true },
+              "githubDefaultBranch": { "type": "string", "required": true },
+              "branch": { "type": "string", "required": true },
+              "buildArtifactPath": { "type": "string", "required": true },
+              "s3BucketName": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "scalewayPipelineId": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "scalewayBackendStageId": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "scalewayDnsStageId": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "defaultDomain": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "webhookId": {
+                "type": ["integer", "null"],
+                "required": true,
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "webhookSecret": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "isActive": { "type": "boolean", "required": true },
+              "lastDeployedAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "organizationId": { "type": "string", "required": true },
+              "deploymentCount": { "type": "number", "required": false },
+              "lastDeployment": {
+                "type": ["object", "null"],
+                "required": false,
+                "properties": {
+                  "id": { "type": "string", "required": true },
+                  "status": { "type": "string", "required": true },
+                  "commitSha": { "type": "string", "required": true },
+                  "createdAt": { "type": "string", "required": true }
+                }
+              }
+            },
+            "extendsRef": "#/components/schemas/Repository"
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      },
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["createdAt"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getRepository",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Repository details",
+        "name": "Repository",
+        "ref": "#/components/schemas/Repository",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["repository"]
+            },
+            "name": { "type": "string", "required": true },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "githubRepoId": {
+              "type": "integer",
+              "required": true,
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "githubRepoName": { "type": "string", "required": true },
+            "githubOwner": { "type": "string", "required": true },
+            "githubFullName": { "type": "string", "required": true },
+            "githubDefaultBranch": { "type": "string", "required": true },
+            "branch": { "type": "string", "required": true },
+            "buildArtifactPath": { "type": "string", "required": true },
+            "s3BucketName": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayPipelineId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayBackendStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayDnsStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "defaultDomain": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "webhookId": {
+              "type": ["integer", "null"],
+              "required": true,
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "webhookSecret": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "isActive": { "type": "boolean", "required": true },
+            "lastDeployedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "organizationId": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/Repository",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "repo_abc123",
+          "entityType": "repository",
+          "name": "my-website",
+          "description": "My personal website",
+          "keywords": "website, portfolio",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "modifiedAt": "2024-01-01T00:00:00Z",
+          "createdBy": "user_xyz",
+          "modifiedBy": "user_xyz",
+          "githubRepoId": 123456789,
+          "githubRepoName": "my-website",
+          "githubOwner": "username",
+          "githubFullName": "username/my-website",
+          "githubDefaultBranch": "main",
+          "branch": "main",
+          "buildArtifactPath": "dist",
+          "s3BucketName": "hosting-repo_abc123",
+          "scalewayPipelineId": "pipeline_123",
+          "defaultDomain": "abc12345.edge.scw.cloud",
+          "webhookId": 987654321,
+          "webhookSecret": null,
+          "isActive": true,
+          "lastDeployedAt": "2024-01-15T12:00:00Z",
+          "organizationId": "org_123"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true },
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "updateRepository",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Repository updated",
+        "name": "Repository",
+        "ref": "#/components/schemas/Repository",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["repository"]
+            },
+            "name": { "type": "string", "required": true },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "keywords": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "modifiedBy": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "githubRepoId": {
+              "type": "integer",
+              "required": true,
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "githubRepoName": { "type": "string", "required": true },
+            "githubOwner": { "type": "string", "required": true },
+            "githubFullName": { "type": "string", "required": true },
+            "githubDefaultBranch": { "type": "string", "required": true },
+            "branch": { "type": "string", "required": true },
+            "buildArtifactPath": { "type": "string", "required": true },
+            "s3BucketName": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayPipelineId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayBackendStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "scalewayDnsStageId": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "defaultDomain": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "webhookId": {
+              "type": ["integer", "null"],
+              "required": true,
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "webhookSecret": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "isActive": { "type": "boolean", "required": true },
+            "lastDeployedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "organizationId": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/Repository",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "repo_abc123",
+          "entityType": "repository",
+          "name": "my-website",
+          "description": "My personal website",
+          "keywords": "website, portfolio",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "modifiedAt": "2024-01-01T00:00:00Z",
+          "createdBy": "user_xyz",
+          "modifiedBy": "user_xyz",
+          "githubRepoId": 123456789,
+          "githubRepoName": "my-website",
+          "githubOwner": "username",
+          "githubFullName": "username/my-website",
+          "githubDefaultBranch": "main",
+          "branch": "main",
+          "buildArtifactPath": "dist",
+          "s3BucketName": "hosting-repo_abc123",
+          "scalewayPipelineId": "pipeline_123",
+          "defaultDomain": "abc12345.edge.scw.cloud",
+          "webhookId": 987654321,
+          "webhookSecret": null,
+          "isActive": true,
+          "lastDeployedAt": "2024-01-15T12:00:00Z",
+          "organizationId": "org_123"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true },
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "required": false },
+          "description": {
+            "type": ["string", "null"],
+            "required": false
+          },
+          "branch": { "type": "string", "required": false },
+          "buildArtifactPath": { "type": "string", "required": false },
+          "isActive": { "type": "boolean", "required": false }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "disconnectRepository",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Repository disconnected",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true },
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "triggerDeployment",
+    "responses": [
+      {
+        "status": 201,
+        "description": "Deployment triggered",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "deploymentId": { "type": "string", "required": true },
+            "status": { "type": "string", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true },
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "required": false,
+            "enum": ["release", "workflow"]
+          },
+          "commitSha": { "type": "string", "required": false }
+        },
+        "required": false,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

@@ -80,16 +80,19 @@ export const config = {
   /******************************************************************************
    * ENTITY DATA MODEL
    ******************************************************************************/
-  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+  entityTypes: ['user', 'organization', 'attachment', 'page', 'repository', 'deployment', 'domain'] as const,
 
   contextEntityTypes: ['organization'] as const, // Entities with memberships
-  productEntityTypes: ['attachment', 'page'] as const, // Content entities
+  productEntityTypes: ['attachment', 'page', 'repository', 'deployment', 'domain'] as const, // Content entities
 
   entityIdColumnKeys: {
     user: 'userId',
     organization: 'organizationId',
     attachment: 'attachmentId',
     page: 'pageId',
+    repository: 'repositoryId',
+    deployment: 'deploymentId',
+    domain: 'domainId',
   } as const,
 
   entityActions: ['create', 'read', 'update', 'delete', 'search'] as const,
@@ -119,6 +122,9 @@ export const config = {
     requests: 40,
     attachments: 40,
     pages: 40,
+    repositories: 40,
+    deployments: 100,
+    domains: 20,
     pendingMemberships: 20,
   },
   jsonBodyLimit: 1 * 1024 * 1024, // 1mb

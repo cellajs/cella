@@ -10,6 +10,7 @@ import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
 import { eventBus } from '#/lib/event-bus';
+import { startDeploymentWorker } from '#/modules/deployments/deployment-worker';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
@@ -48,6 +49,9 @@ const main = async () => {
 
   // Start event bus (listens to CDC activities via pg NOTIFY)
   await eventBus.start();
+
+  // Start deployment worker (polls for pending deployments)
+  startDeploymentWorker();
 
   // Start server
   serve(

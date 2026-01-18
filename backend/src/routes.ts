@@ -5,15 +5,19 @@ import authOAuthRouteHandlers from '#/modules/auth/oauth/oauth-handlers';
 import authPasskeysRouteHandlers from '#/modules/auth/passkeys/passkeys-handlers';
 import authPasswordsRouteHandlers from '#/modules/auth/passwords/passwords-handlers';
 import authTotpRouteHandlers from '#/modules/auth/totps/totps-handlers';
+import deploymentsRouteHandlers from '#/modules/deployments/deployments-handlers';
+import domainsRouteHandlers from '#/modules/domains/domains-handlers';
 import entityRouteHandlers from '#/modules/entities/entities-handlers';
 import meRouteHandlers from '#/modules/me/me-handlers';
 import membershipRouteHandlers from '#/modules/memberships/memberships-handlers';
 import metricRouteHandlers from '#/modules/metrics/metrics-handlers';
 import organizationRouteHandlers from '#/modules/organizations/organizations-handlers';
 import pagesRouteHandlers from '#/modules/pages/pages-handlers';
+import repositoriesRouteHandlers from '#/modules/repositories/repositories-handlers';
 import requestRouteHandlers from '#/modules/requests/requests-handlers';
 import systemRouteHandlers from '#/modules/system/system-handlers';
 import userRouteHandlers from '#/modules/users/users-handlers';
+import webhooksRouteHandlers from '#/modules/webhooks/webhooks-handlers';
 import baseApp from '#/server';
 
 // Define backend routes of your app
@@ -32,6 +36,10 @@ const app = baseApp
   .route('/system', systemRouteHandlers)
   .route('/requests', requestRouteHandlers)
   .route('/metrics', metricRouteHandlers)
+  .route('/repositories', repositoriesRouteHandlers)
+  .route('/deployments', deploymentsRouteHandlers)
+  .route('/domains', domainsRouteHandlers)
+  .route('/webhooks', webhooksRouteHandlers)
   .route('/:orgIdOrSlug/attachments', attachmentRouteHandlers)
   .route('/:orgIdOrSlug/memberships', membershipRouteHandlers);
 

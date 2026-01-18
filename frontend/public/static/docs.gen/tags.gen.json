@@ -58,5 +58,25 @@
     "name": "activities",
     "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery.",
     "count": 1
+  },
+  {
+    "name": "repositories",
+    "description": undefined,
+    "count": 7
+  },
+  {
+    "name": "deployments",
+    "description": undefined,
+    "count": 6
+  },
+  {
+    "name": "domains",
+    "description": undefined,
+    "count": 6
+  },
+  {
+    "name": "webhooks",
+    "description": undefined,
+    "count": 1
   }
 ]

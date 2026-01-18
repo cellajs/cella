@@ -1,6 +1,9 @@
 import { getTableName } from 'drizzle-orm';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { deploymentsTable } from '#/db/schema/deployments';
+import { domainsTable } from '#/db/schema/domains';
 import { organizationsTable } from '#/db/schema/organizations';
+import { repositoriesTable } from '#/db/schema/repositories';
 import { usersTable } from '#/db/schema/users';
 import { membershipsTable } from './db/schema/memberships';
 import { pagesTable } from './db/schema/pages';
@@ -20,6 +23,9 @@ export const entityTables = {
   organization: organizationsTable,
   attachment: attachmentsTable,
   page: pagesTable,
+  repository: repositoriesTable,
+  deployment: deploymentsTable,
+  domain: domainsTable,
 } as const;
 
 /**

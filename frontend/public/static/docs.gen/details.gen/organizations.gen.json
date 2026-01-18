@@ -145,7 +145,10 @@
                   "required": true,
                   "properties": {
                     "attachment": { "type": "number", "required": true },
-                    "page": { "type": "number", "required": true }
+                    "page": { "type": "number", "required": true },
+                    "repository": { "type": "number", "required": true },
+                    "deployment": { "type": "number", "required": true },
+                    "domain": { "type": "number", "required": true }
                   }
                 }
               }
@@ -182,7 +185,10 @@
           "restrictions": {
             "user": 1000,
             "attachment": 100,
-            "page": 0
+            "page": 0,
+            "repository": 0,
+            "deployment": 0,
+            "domain": 0
           },
           "membership": {
             "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -201,7 +207,13 @@
               "pending": 13,
               "total": 93
             },
-            "entities": { "attachment": 178, "page": 257 }
+            "entities": {
+              "attachment": 178,
+              "page": 257,
+              "repository": 47,
+              "deployment": 21,
+              "domain": 451
+            }
           }
         }
       },
@@ -423,7 +435,10 @@
                         "required": true,
                         "properties": {
                           "attachment": { "type": "number", "required": true },
-                          "page": { "type": "number", "required": true }
+                          "page": { "type": "number", "required": true },
+                          "repository": { "type": "number", "required": true },
+                          "deployment": { "type": "number", "required": true },
+                          "domain": { "type": "number", "required": true }
                         }
                       }
                     }
@@ -738,7 +753,10 @@
                   "required": true,
                   "properties": {
                     "attachment": { "type": "number", "required": true },
-                    "page": { "type": "number", "required": true }
+                    "page": { "type": "number", "required": true },
+                    "repository": { "type": "number", "required": true },
+                    "deployment": { "type": "number", "required": true },
+                    "domain": { "type": "number", "required": true }
                   }
                 }
               }
@@ -775,7 +793,10 @@
           "restrictions": {
             "user": 1000,
             "attachment": 100,
-            "page": 0
+            "page": 0,
+            "repository": 0,
+            "deployment": 0,
+            "domain": 0
           },
           "membership": {
             "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -794,7 +815,13 @@
               "pending": 13,
               "total": 93
             },
-            "entities": { "attachment": 178, "page": 257 }
+            "entities": {
+              "attachment": 178,
+              "page": 257,
+              "repository": 47,
+              "deployment": 21,
+              "domain": 451
+            }
           }
         }
       },
@@ -1000,7 +1027,10 @@
                   "required": true,
                   "properties": {
                     "attachment": { "type": "number", "required": true },
-                    "page": { "type": "number", "required": true }
+                    "page": { "type": "number", "required": true },
+                    "repository": { "type": "number", "required": true },
+                    "deployment": { "type": "number", "required": true },
+                    "domain": { "type": "number", "required": true }
                   }
                 }
               }
@@ -1037,7 +1067,10 @@
           "restrictions": {
             "user": 1000,
             "attachment": 100,
-            "page": 0
+            "page": 0,
+            "repository": 0,
+            "deployment": 0,
+            "domain": 0
           },
           "membership": {
             "id": "kaba9fpc90mgtzmtjipw2v8s",
@@ -1056,7 +1089,13 @@
               "pending": 13,
               "total": 93
             },
-            "entities": { "attachment": 178, "page": 257 }
+            "entities": {
+              "attachment": 178,
+              "page": 257,
+              "repository": 47,
+              "deployment": 21,
+              "domain": 451
+            }
           }
         }
       },

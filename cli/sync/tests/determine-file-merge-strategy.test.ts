@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { determineFileMergeStrategy } from '../src/modules/git/determine-file-merge-strategy';
-import type { FileAnalysis, FileEntry, CommitSummary } from '../src/types';
+import type { CommitSummary, FileAnalysis, FileEntry } from '../src/types';
 
 /**
  * Helper to create a minimal FileEntry for testing

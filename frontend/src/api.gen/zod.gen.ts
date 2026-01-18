@@ -47,7 +47,7 @@ export const zApiError = z.object({
   type: z.string(),
   status: z.int().gte(400).lte(599),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
+  entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page', 'repository', 'deployment', 'domain'])),
   logId: z.optional(z.string()),
   path: z.optional(z.string()),
   method: z.optional(z.string()),
@@ -104,7 +104,7 @@ export const zTooManyRequestsError = zApiError.and(
 export const zActivity = z.object({
   id: z.string(),
   userId: z.union([z.string(), z.null()]),
-  entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page'])),
+  entityType: z.nullable(z.enum(['user', 'organization', 'attachment', 'page', 'repository', 'deployment', 'domain'])),
   resourceType: z.nullable(z.enum(['request', 'membership'])),
   action: z.nullable(z.enum(['create', 'update', 'delete'])),
   tableName: z.string(),
@@ -253,6 +253,9 @@ export const zOrganization = z.object({
     entities: z.object({
       attachment: z.number(),
       page: z.number(),
+      repository: z.number(),
+      deployment: z.number(),
+      domain: z.number(),
     }),
   }),
 });
@@ -270,6 +273,35 @@ export const zPage = z.object({
   status: z.enum(['unpublished', 'published', 'archived']),
   parentId: z.union([z.string(), z.null()]),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
+});
+
+export const zRepository = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  entityType: z.enum(['repository']),
+  name: z.string(),
+  description: z.union([z.string(), z.null()]),
+  modifiedAt: z.union([z.string(), z.null()]),
+  keywords: z.string(),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  githubRepoId: z.int().gte(-2147483648).lte(2147483647),
+  githubRepoName: z.string(),
+  githubOwner: z.string(),
+  githubFullName: z.string(),
+  githubDefaultBranch: z.string(),
+  branch: z.string(),
+  buildArtifactPath: z.string(),
+  s3BucketName: z.union([z.string(), z.null()]),
+  scalewayPipelineId: z.union([z.string(), z.null()]),
+  scalewayBackendStageId: z.union([z.string(), z.null()]),
+  scalewayDnsStageId: z.union([z.string(), z.null()]),
+  defaultDomain: z.union([z.string(), z.null()]),
+  webhookId: z.union([z.int().gte(-2147483648).lte(2147483647), z.null()]),
+  webhookSecret: z.union([z.string(), z.null()]),
+  isActive: z.boolean(),
+  lastDeployedAt: z.union([z.string(), z.null()]),
+  organizationId: z.string(),
 });
 
 export const zAttachment = z.object({
@@ -322,7 +354,9 @@ export const zGetActivitiesData = z.object({
       offset: z.optional(z.string()),
       limit: z.optional(z.string()),
       userId: z.optional(z.string()),
-      entityType: z.optional(z.enum(['user', 'organization', 'attachment', 'page'])),
+      entityType: z.optional(
+        z.enum(['user', 'organization', 'attachment', 'page', 'repository', 'deployment', 'domain']),
+      ),
       resourceType: z.optional(z.enum(['request', 'membership'])),
       action: z.optional(z.enum(['create', 'update', 'delete'])),
       tableName: z.optional(z.string()),
@@ -1295,6 +1329,537 @@ export const zGetPublicCountsResponse = z.object({
   organization: z.number(),
   attachment: z.number(),
   page: z.number(),
+  repository: z.number(),
+  deployment: z.number(),
+  domain: z.number(),
+});
+
+export const zListGithubReposData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      page: z.optional(z.string()),
+      perPage: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * List of GitHub repositories
+ */
+export const zListGithubReposResponse = z.array(
+  z.object({
+    id: z.number(),
+    name: z.string(),
+    fullName: z.string(),
+    owner: z.string(),
+    defaultBranch: z.string(),
+    private: z.boolean(),
+    description: z.union([z.string(), z.null()]),
+    htmlUrl: z.string(),
+  }),
+);
+
+export const zListRepositoriesData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * List of repositories
+ */
+export const zListRepositoriesResponse = z.array(
+  zRepository.and(
+    z.object({
+      deploymentCount: z.optional(z.number()),
+      lastDeployment: z.optional(
+        z.union([
+          z.object({
+            id: z.string(),
+            status: z.string(),
+            commitSha: z.string(),
+            createdAt: z.string(),
+          }),
+          z.null(),
+        ]),
+      ),
+    }),
+  ),
+);
+
+export const zConnectRepositoryData = z.object({
+  body: z.object({
+    githubRepoId: z.int().gt(0),
+    githubRepoName: z.string().min(1).max(100),
+    githubOwner: z.string().min(1).max(100),
+    githubFullName: z.string().min(1).max(201),
+    githubDefaultBranch: z.optional(z.string().min(1).max(100)).default('main'),
+    branch: z.optional(z.string().min(1).max(100)).default('main'),
+    buildArtifactPath: z.optional(z.string().min(1).max(200)).default('dist'),
+    name: z.optional(z.string().min(1).max(100)),
+    description: z.optional(z.string().max(500)),
+  }),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Repository connected successfully
+ */
+export const zConnectRepositoryResponse = zRepository;
+
+export const zDisconnectRepositoryData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Repository disconnected
+ */
+export const zDisconnectRepositoryResponse = z.object({
+  success: z.boolean(),
+});
+
+export const zGetRepositoryData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Repository details
+ */
+export const zGetRepositoryResponse = zRepository;
+
+export const zUpdateRepositoryData = z.object({
+  body: z.object({
+    name: z.optional(z.string()),
+    description: z.optional(z.union([z.string(), z.null()])),
+    branch: z.optional(z.string()),
+    buildArtifactPath: z.optional(z.string()),
+    isActive: z.optional(z.boolean()),
+  }),
+  path: z.object({
+    id: z.string(),
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Repository updated
+ */
+export const zUpdateRepositoryResponse = zRepository;
+
+export const zTriggerDeploymentData = z.object({
+  body: z.optional(
+    z.object({
+      source: z.optional(z.enum(['release', 'workflow'])),
+      commitSha: z.optional(z.string()),
+    }),
+  ),
+  path: z.object({
+    id: z.string(),
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Deployment triggered
+ */
+export const zTriggerDeploymentResponse = z.object({
+  deploymentId: z.string(),
+  status: z.string(),
+});
+
+export const zListDeploymentsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      status: z.optional(
+        z.enum(['pending', 'downloading', 'uploading', 'deploying', 'deployed', 'failed', 'rolled_back']),
+      ),
+      repositoryId: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * List of deployments
+ */
+export const zListDeploymentsResponse = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      commitSha: z.union([z.string(), z.null()]),
+      branch: z.string(),
+      status: z.enum(['pending', 'downloading', 'uploading', 'deploying', 'deployed', 'failed', 'rolled_back']),
+      isActive: z.boolean(),
+      artifactSource: z.enum(['release', 'workflow', 'manual']),
+      artifactId: z.union([z.string(), z.null()]),
+      s3Path: z.union([z.string(), z.null()]),
+      deployedUrl: z.union([z.string(), z.null()]),
+      logs: z.array(
+        z.object({
+          timestamp: z.string(),
+          level: z.enum(['info', 'warn', 'error', 'debug']),
+          message: z.string(),
+          metadata: z.optional(z.record(z.string(), z.unknown())),
+        }),
+      ),
+      triggeredBy: z.union([z.string(), z.null()]),
+      repositoryId: z.string(),
+      createdAt: z.string(),
+      modifiedAt: z.union([z.string(), z.null()]),
+    }),
+  ),
+  total: z.number(),
+});
+
+export const zGetDeploymentData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    deploymentId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Deployment details
+ */
+export const zGetDeploymentResponse = z.object({
+  id: z.string(),
+  commitSha: z.union([z.string(), z.null()]),
+  branch: z.string(),
+  status: z.enum(['pending', 'downloading', 'uploading', 'deploying', 'deployed', 'failed', 'rolled_back']),
+  isActive: z.boolean(),
+  artifactSource: z.enum(['release', 'workflow', 'manual']),
+  artifactId: z.union([z.string(), z.null()]),
+  s3Path: z.union([z.string(), z.null()]),
+  deployedUrl: z.union([z.string(), z.null()]),
+  logs: z.array(
+    z.object({
+      timestamp: z.string(),
+      level: z.enum(['info', 'warn', 'error', 'debug']),
+      message: z.string(),
+      metadata: z.optional(z.record(z.string(), z.unknown())),
+    }),
+  ),
+  triggeredBy: z.union([z.string(), z.null()]),
+  repositoryId: z.string(),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+  repository: z.object({
+    id: z.string(),
+    githubFullName: z.string(),
+    defaultDomain: z.union([z.string(), z.null()]),
+  }),
+});
+
+export const zTriggerDeployment2Data = z.object({
+  body: z.object({
+    artifactSource: z.optional(z.enum(['release', 'workflow', 'manual'])),
+    artifactId: z.optional(z.string()),
+    branch: z.optional(z.string()),
+  }),
+  path: z.object({
+    repositoryId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Deployment triggered
+ */
+export const zTriggerDeployment2Response = z.object({
+  id: z.string(),
+  commitSha: z.union([z.string(), z.null()]),
+  branch: z.string(),
+  status: z.enum(['pending', 'downloading', 'uploading', 'deploying', 'deployed', 'failed', 'rolled_back']),
+  isActive: z.boolean(),
+  artifactSource: z.enum(['release', 'workflow', 'manual']),
+  artifactId: z.union([z.string(), z.null()]),
+  s3Path: z.union([z.string(), z.null()]),
+  deployedUrl: z.union([z.string(), z.null()]),
+  logs: z.array(
+    z.object({
+      timestamp: z.string(),
+      level: z.enum(['info', 'warn', 'error', 'debug']),
+      message: z.string(),
+      metadata: z.optional(z.record(z.string(), z.unknown())),
+    }),
+  ),
+  triggeredBy: z.union([z.string(), z.null()]),
+  repositoryId: z.string(),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+});
+
+export const zRollbackDeploymentData = z.object({
+  body: z.object({
+    deploymentId: z.string(),
+  }),
+  path: z.object({
+    repositoryId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Rollback successful
+ */
+export const zRollbackDeploymentResponse = z.object({
+  id: z.string(),
+  commitSha: z.union([z.string(), z.null()]),
+  branch: z.string(),
+  status: z.enum(['pending', 'downloading', 'uploading', 'deploying', 'deployed', 'failed', 'rolled_back']),
+  isActive: z.boolean(),
+  artifactSource: z.enum(['release', 'workflow', 'manual']),
+  artifactId: z.union([z.string(), z.null()]),
+  s3Path: z.union([z.string(), z.null()]),
+  deployedUrl: z.union([z.string(), z.null()]),
+  logs: z.array(
+    z.object({
+      timestamp: z.string(),
+      level: z.enum(['info', 'warn', 'error', 'debug']),
+      message: z.string(),
+      metadata: z.optional(z.record(z.string(), z.unknown())),
+    }),
+  ),
+  triggeredBy: z.union([z.string(), z.null()]),
+  repositoryId: z.string(),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+});
+
+export const zCancelDeploymentData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    deploymentId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Deployment cancelled
+ */
+export const zCancelDeploymentResponse = z.object({
+  success: z.boolean(),
+});
+
+export const zGetDeploymentLogsData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    deploymentId: z.string(),
+  }),
+  query: z.optional(
+    z.object({
+      level: z.optional(z.enum(['info', 'warn', 'error', 'debug'])),
+      after: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Deployment logs
+ */
+export const zGetDeploymentLogsResponse = z.object({
+  deploymentId: z.string(),
+  logs: z.array(
+    z.object({
+      timestamp: z.string(),
+      level: z.enum(['info', 'warn', 'error', 'debug']),
+      message: z.string(),
+      metadata: z.optional(z.record(z.string(), z.unknown())),
+    }),
+  ),
+});
+
+export const zListDomainsData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+      repositoryId: z.optional(z.string()),
+      verificationStatus: z.optional(z.enum(['pending', 'verified', 'failed'])),
+    }),
+  ),
+});
+
+/**
+ * List of domains
+ */
+export const zListDomainsResponse = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      fqdn: z.string(),
+      type: z.enum(['subdomain', 'apex']),
+      verificationStatus: z.enum(['pending', 'verified', 'failed']),
+      verificationToken: z.union([z.string(), z.null()]),
+      verificationMethod: z.nullable(z.enum(['cname', 'txt'])),
+      sslStatus: z.enum(['pending', 'provisioning', 'active', 'error']),
+      scalewayPipelineId: z.union([z.string(), z.null()]),
+      scalewayDnsStageId: z.union([z.string(), z.null()]),
+      repositoryId: z.string(),
+      createdAt: z.string(),
+      modifiedAt: z.union([z.string(), z.null()]),
+    }),
+  ),
+  total: z.number(),
+});
+
+export const zAddDomainData = z.object({
+  body: z.object({
+    fqdn: z
+      .string()
+      .min(3)
+      .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$\/i/),
+    repositoryId: z.string(),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Domain added with DNS instructions
+ */
+export const zAddDomainResponse = z.object({
+  domainId: z.string(),
+  fqdn: z.string(),
+  recordType: z.enum(['CNAME', 'TXT']),
+  recordName: z.string(),
+  recordValue: z.string(),
+  instructions: z.string(),
+});
+
+export const zRemoveDomainData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    domainId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Domain removed
+ */
+export const zRemoveDomainResponse = z.object({
+  success: z.boolean(),
+});
+
+export const zGetDomainData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    domainId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Domain details
+ */
+export const zGetDomainResponse = z.object({
+  id: z.string(),
+  fqdn: z.string(),
+  type: z.enum(['subdomain', 'apex']),
+  verificationStatus: z.enum(['pending', 'verified', 'failed']),
+  verificationToken: z.union([z.string(), z.null()]),
+  verificationMethod: z.nullable(z.enum(['cname', 'txt'])),
+  sslStatus: z.enum(['pending', 'provisioning', 'active', 'error']),
+  scalewayPipelineId: z.union([z.string(), z.null()]),
+  scalewayDnsStageId: z.union([z.string(), z.null()]),
+  repositoryId: z.string(),
+  createdAt: z.string(),
+  modifiedAt: z.union([z.string(), z.null()]),
+});
+
+export const zGetDnsInstructionsData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    domainId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * DNS setup instructions
+ */
+export const zGetDnsInstructionsResponse = z.object({
+  domainId: z.string(),
+  fqdn: z.string(),
+  recordType: z.enum(['CNAME', 'TXT']),
+  recordName: z.string(),
+  recordValue: z.string(),
+  instructions: z.string(),
+});
+
+export const zVerifyDomainData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    domainId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Verification result
+ */
+export const zVerifyDomainResponse = z.object({
+  domainId: z.string(),
+  verified: z.boolean(),
+  status: z.enum(['pending', 'verified', 'failed']),
+  message: z.string(),
+});
+
+export const zReceiveGithubWebhookData = z.object({
+  body: z.record(z.string(), z.unknown()),
+  path: z.object({
+    repositoryId: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Webhook received and processed
+ */
+export const zReceiveGithubWebhookResponse = z.object({
+  received: z.boolean(),
+  eventType: z.string(),
+  deploymentId: z.optional(z.string()),
 });
 
 export const zSyncAttachmentsData = z.object({

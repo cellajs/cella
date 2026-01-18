@@ -3,12 +3,21 @@
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
+  AddDomainData,
+  AddDomainErrors,
+  AddDomainResponses,
+  CancelDeploymentData,
+  CancelDeploymentErrors,
+  CancelDeploymentResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
+  ConnectRepositoryData,
+  ConnectRepositoryErrors,
+  ConnectRepositoryResponses,
   CreateAttachmentData,
   CreateAttachmentErrors,
   CreateAttachmentResponses,
@@ -63,6 +72,9 @@ import type {
   DeleteUsersData,
   DeleteUsersErrors,
   DeleteUsersResponses,
+  DisconnectRepositoryData,
+  DisconnectRepositoryErrors,
+  DisconnectRepositoryResponses,
   GeneratePasskeyChallengeData,
   GeneratePasskeyChallengeErrors,
   GeneratePasskeyChallengeResponses,
@@ -72,6 +84,18 @@ import type {
   GetActivitiesData,
   GetActivitiesErrors,
   GetActivitiesResponses,
+  GetDeploymentData,
+  GetDeploymentErrors,
+  GetDeploymentLogsData,
+  GetDeploymentLogsErrors,
+  GetDeploymentLogsResponses,
+  GetDeploymentResponses,
+  GetDnsInstructionsData,
+  GetDnsInstructionsErrors,
+  GetDnsInstructionsResponses,
+  GetDomainData,
+  GetDomainErrors,
+  GetDomainResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -108,6 +132,9 @@ import type {
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
+  GetRepositoryData,
+  GetRepositoryErrors,
+  GetRepositoryResponses,
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
@@ -136,6 +163,18 @@ import type {
   HandleMembershipInvitationResponses,
   InvokeTokenData,
   InvokeTokenErrors,
+  ListDeploymentsData,
+  ListDeploymentsErrors,
+  ListDeploymentsResponses,
+  ListDomainsData,
+  ListDomainsErrors,
+  ListDomainsResponses,
+  ListGithubReposData,
+  ListGithubReposErrors,
+  ListGithubReposResponses,
+  ListRepositoriesData,
+  ListRepositoriesErrors,
+  ListRepositoriesResponses,
   MembershipInviteData,
   MembershipInviteErrors,
   MembershipInviteResponses,
@@ -146,15 +185,24 @@ import type {
   PaddleWebhookData,
   PaddleWebhookErrors,
   PaddleWebhookResponses,
+  ReceiveGithubWebhookData,
+  ReceiveGithubWebhookErrors,
+  ReceiveGithubWebhookResponses,
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
+  RemoveDomainData,
+  RemoveDomainErrors,
+  RemoveDomainResponses,
   RequestPasswordData,
   RequestPasswordErrors,
   RequestPasswordResponses,
   ResendInvitationWithTokenData,
   ResendInvitationWithTokenErrors,
   ResendInvitationWithTokenResponses,
+  RollbackDeploymentData,
+  RollbackDeploymentErrors,
+  RollbackDeploymentResponses,
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
@@ -194,6 +242,12 @@ import type {
   ToggleMfaData,
   ToggleMfaErrors,
   ToggleMfaResponses,
+  TriggerDeployment2Data,
+  TriggerDeployment2Errors,
+  TriggerDeployment2Responses,
+  TriggerDeploymentData,
+  TriggerDeploymentErrors,
+  TriggerDeploymentResponses,
   UnsubscribeMeData,
   UnsubscribeMeErrors,
   UpdateAttachmentData,
@@ -211,9 +265,15 @@ import type {
   UpdatePageData,
   UpdatePageErrors,
   UpdatePageResponses,
+  UpdateRepositoryData,
+  UpdateRepositoryErrors,
+  UpdateRepositoryResponses,
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
+  VerifyDomainData,
+  VerifyDomainErrors,
+  VerifyDomainResponses,
 } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<
@@ -1878,6 +1938,598 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
     responseStyle: 'data',
     url: '/metrics/public',
     ...options,
+  });
+
+/**
+ * List GitHub repositories
+ *
+ * Lists the authenticated user's GitHub repositories available for connecting to the hosting platform.
+ *
+ * **GET /repositories/github-repos** ·· [listGithubRepos](https://api.cellajs.com/docs#tag/repositories/get/repositories/github-repos) ·· _repositories_
+ *
+ * @param {listGithubReposData} options
+ * @param {string=} options.query.page - `string` (optional)
+ * @param {string=} options.query.perpage - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listGithubRepos = <ThrowOnError extends boolean = true>(
+  options?: Options<ListGithubReposData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<ListGithubReposResponses, ListGithubReposErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories/github-repos',
+    ...options,
+  });
+
+/**
+ * List repositories
+ *
+ * Lists all connected repositories for an organization with deployment stats.
+ *
+ * **GET /repositories** ·· [listRepositories](https://api.cellajs.com/docs#tag/repositories/get/repositories) ·· _repositories_
+ *
+ * @param {listRepositoriesData} options
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listRepositories = <ThrowOnError extends boolean = true>(
+  options: Options<ListRepositoriesData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<ListRepositoriesResponses, ListRepositoriesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories',
+    ...options,
+  });
+
+/**
+ * Connect repository
+ *
+ * Connects a GitHub repository to the organization for static site hosting. Creates a webhook for automatic deployments.
+ *
+ * **POST /repositories** ·· [connectRepository](https://api.cellajs.com/docs#tag/repositories/post/repositories) ·· _repositories_
+ *
+ * @param {connectRepositoryData} options
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {integer=} options.body.githubRepoId - `integer` (optional)
+ * @param {string=} options.body.githubRepoName - `string` (optional)
+ * @param {string=} options.body.githubOwner - `string` (optional)
+ * @param {string=} options.body.githubFullName - `string` (optional)
+ * @param {string=} options.body.githubDefaultBranch - `string` (optional)
+ * @param {string=} options.body.branch - `string` (optional)
+ * @param {string=} options.body.buildArtifactPath - `string` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.description - `string` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ */
+export const connectRepository = <ThrowOnError extends boolean = true>(
+  options: Options<ConnectRepositoryData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<ConnectRepositoryResponses, ConnectRepositoryErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Disconnect repository
+ *
+ * Disconnects a repository from hosting. Removes the GitHub webhook and cleans up hosting resources.
+ *
+ * **DELETE /repositories/{id}** ·· [disconnectRepository](https://api.cellajs.com/docs#tag/repositories/delete/repositories/{id}) ·· _repositories_
+ *
+ * @param {disconnectRepositoryData} options
+ * @param {string} options.path.id - `string`
+ * @param {string} options.path.orgidorslug - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const disconnectRepository = <ThrowOnError extends boolean = true>(
+  options: Options<DisconnectRepositoryData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<DisconnectRepositoryResponses, DisconnectRepositoryErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories/{id}',
+    ...options,
+  });
+
+/**
+ * Get repository
+ *
+ * Gets details of a connected repository including deployment history.
+ *
+ * **GET /repositories/{id}** ·· [getRepository](https://api.cellajs.com/docs#tag/repositories/get/repositories/{id}) ·· _repositories_
+ *
+ * @param {getRepositoryData} options
+ * @param {string} options.path.id - `string`
+ * @param {string} options.path.orgidorslug - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getRepository = <ThrowOnError extends boolean = true>(options: Options<GetRepositoryData, ThrowOnError>) =>
+  (options.client ?? client).get<GetRepositoryResponses, GetRepositoryErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories/{id}',
+    ...options,
+  });
+
+/**
+ * Update repository
+ *
+ * Updates repository settings like branch, build path, or active status.
+ *
+ * **PUT /repositories/{id}** ·· [updateRepository](https://api.cellajs.com/docs#tag/repositories/put/repositories/{id}) ·· _repositories_
+ *
+ * @param {updateRepositoryData} options
+ * @param {string} options.path.id - `string`
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
+ * @param {string=} options.body.branch - `string` (optional)
+ * @param {string=} options.body.buildArtifactPath - `string` (optional)
+ * @param {boolean=} options.body.isActive - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const updateRepository = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateRepositoryData, ThrowOnError>,
+) =>
+  (options.client ?? client).put<UpdateRepositoryResponses, UpdateRepositoryErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Trigger deployment
+ *
+ * Manually triggers a new deployment from the latest release or workflow artifact.
+ *
+ * **POST /repositories/{id}/deploy** ·· [triggerDeployment](https://api.cellajs.com/docs#tag/repositories/post/repositories/{id}/deploy) ·· _repositories_
+ *
+ * @param {triggerDeploymentData} options
+ * @param {string} options.path.id - `string`
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {enum=} options.body.source - `enum` (optional)
+ * @param {string=} options.body.commitSha - `string` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ */
+export const triggerDeployment = <ThrowOnError extends boolean = true>(
+  options: Options<TriggerDeploymentData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<TriggerDeploymentResponses, TriggerDeploymentErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/repositories/{id}/deploy',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * List deployments
+ *
+ * Returns a paginated list of deployments, optionally filtered by repository or status.
+ *
+ * **GET /deployments** ·· [listDeployments](https://api.cellajs.com/docs#tag/deployments/get/deployments) ·· _deployments_
+ *
+ * @param {listDeploymentsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {enum=} options.query.status - `enum` (optional)
+ * @param {string=} options.query.repositoryid - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listDeployments = <ThrowOnError extends boolean = true>(
+  options?: Options<ListDeploymentsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<ListDeploymentsResponses, ListDeploymentsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/deployments',
+    ...options,
+  });
+
+/**
+ * Get deployment
+ *
+ * Returns detailed information about a specific deployment including logs.
+ *
+ * **GET /deployments/{deploymentId}** ·· [getDeployment](https://api.cellajs.com/docs#tag/deployments/get/deployments/{deploymentId}) ·· _deployments_
+ *
+ * @param {getDeploymentData} options
+ * @param {string} options.path.deploymentid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getDeployment = <ThrowOnError extends boolean = true>(options: Options<GetDeploymentData, ThrowOnError>) =>
+  (options.client ?? client).get<GetDeploymentResponses, GetDeploymentErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/deployments/{deploymentId}',
+    ...options,
+  });
+
+/**
+ * Trigger deployment
+ *
+ * Manually triggers a new deployment for a repository.
+ *
+ * **POST /deployments/repositories/{repositoryId}/trigger** ·· [triggerDeployment2](https://api.cellajs.com/docs#tag/deployments/post/deployments/repositories/{repositoryId}/trigger) ·· _deployments_
+ *
+ * @param {triggerDeployment2Data} options
+ * @param {string} options.path.repositoryid - `string`
+ * @param {enum=} options.body.artifactSource - `enum` (optional)
+ * @param {string=} options.body.artifactId - `string` (optional)
+ * @param {string=} options.body.branch - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const triggerDeployment2 = <ThrowOnError extends boolean = true>(
+  options: Options<TriggerDeployment2Data, ThrowOnError>,
+) =>
+  (options.client ?? client).post<TriggerDeployment2Responses, TriggerDeployment2Errors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/deployments/repositories/{repositoryId}/trigger',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Rollback deployment
+ *
+ * Rolls back to a previous deployment by making it the active deployment.
+ *
+ * **POST /deployments/repositories/{repositoryId}/rollback** ·· [rollbackDeployment](https://api.cellajs.com/docs#tag/deployments/post/deployments/repositories/{repositoryId}/rollback) ·· _deployments_
+ *
+ * @param {rollbackDeploymentData} options
+ * @param {string} options.path.repositoryid - `string`
+ * @param {string=} options.body.deploymentId - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const rollbackDeployment = <ThrowOnError extends boolean = true>(
+  options: Options<RollbackDeploymentData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<RollbackDeploymentResponses, RollbackDeploymentErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/deployments/repositories/{repositoryId}/rollback',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Cancel deployment
+ *
+ * Cancels a pending or in-progress deployment.
+ *
+ * **POST /deployments/{deploymentId}/cancel** ·· [cancelDeployment](https://api.cellajs.com/docs#tag/deployments/post/deployments/{deploymentId}/cancel) ·· _deployments_
+ *
+ * @param {cancelDeploymentData} options
+ * @param {string} options.path.deploymentid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const cancelDeployment = <ThrowOnError extends boolean = true>(
+  options: Options<CancelDeploymentData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<CancelDeploymentResponses, CancelDeploymentErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/deployments/{deploymentId}/cancel',
+    ...options,
+  });
+
+/**
+ * Get deployment logs
+ *
+ * Returns the logs for a specific deployment.
+ *
+ * **GET /deployments/{deploymentId}/logs** ·· [getDeploymentLogs](https://api.cellajs.com/docs#tag/deployments/get/deployments/{deploymentId}/logs) ·· _deployments_
+ *
+ * @param {getDeploymentLogsData} options
+ * @param {string} options.path.deploymentid - `string`
+ * @param {enum=} options.query.level - `enum` (optional)
+ * @param {string=} options.query.after - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getDeploymentLogs = <ThrowOnError extends boolean = true>(
+  options: Options<GetDeploymentLogsData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetDeploymentLogsResponses, GetDeploymentLogsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/deployments/{deploymentId}/logs',
+    ...options,
+  });
+
+/**
+ * List domains
+ *
+ * Returns a paginated list of custom domains, optionally filtered by repository.
+ *
+ * **GET /domains** ·· [listDomains](https://api.cellajs.com/docs#tag/domains/get/domains) ·· _domains_
+ *
+ * @param {listDomainsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.repositoryid - `string` (optional)
+ * @param {enum=} options.query.verificationstatus - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listDomains = <ThrowOnError extends boolean = true>(options?: Options<ListDomainsData, ThrowOnError>) =>
+  (options?.client ?? client).get<ListDomainsResponses, ListDomainsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/domains',
+    ...options,
+  });
+
+/**
+ * Add domain
+ *
+ * Adds a custom domain to a repository and returns DNS verification instructions.
+ *
+ * **POST /domains** ·· [addDomain](https://api.cellajs.com/docs#tag/domains/post/domains) ·· _domains_
+ *
+ * @param {addDomainData} options
+ * @param {string=} options.body.fqdn - `string` (optional)
+ * @param {string=} options.body.repositoryId - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const addDomain = <ThrowOnError extends boolean = true>(options: Options<AddDomainData, ThrowOnError>) =>
+  (options.client ?? client).post<AddDomainResponses, AddDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/domains',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove domain
+ *
+ * Removes a custom domain from a repository.
+ *
+ * **DELETE /domains/{domainId}** ·· [removeDomain](https://api.cellajs.com/docs#tag/domains/delete/domains/{domainId}) ·· _domains_
+ *
+ * @param {removeDomainData} options
+ * @param {string} options.path.domainid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const removeDomain = <ThrowOnError extends boolean = true>(options: Options<RemoveDomainData, ThrowOnError>) =>
+  (options.client ?? client).delete<RemoveDomainResponses, RemoveDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/domains/{domainId}',
+    ...options,
+  });
+
+/**
+ * Get domain
+ *
+ * Returns detailed information about a specific domain.
+ *
+ * **GET /domains/{domainId}** ·· [getDomain](https://api.cellajs.com/docs#tag/domains/get/domains/{domainId}) ·· _domains_
+ *
+ * @param {getDomainData} options
+ * @param {string} options.path.domainid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getDomain = <ThrowOnError extends boolean = true>(options: Options<GetDomainData, ThrowOnError>) =>
+  (options.client ?? client).get<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/domains/{domainId}',
+    ...options,
+  });
+
+/**
+ * Get DNS instructions
+ *
+ * Returns the DNS records that need to be configured for domain verification.
+ *
+ * **GET /domains/{domainId}/dns-instructions** ·· [getDnsInstructions](https://api.cellajs.com/docs#tag/domains/get/domains/{domainId}/dns-instructions) ·· _domains_
+ *
+ * @param {getDnsInstructionsData} options
+ * @param {string} options.path.domainid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getDnsInstructions = <ThrowOnError extends boolean = true>(
+  options: Options<GetDnsInstructionsData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetDnsInstructionsResponses, GetDnsInstructionsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/domains/{domainId}/dns-instructions',
+    ...options,
+  });
+
+/**
+ * Verify domain
+ *
+ * Triggers a DNS verification check for the domain.
+ *
+ * **POST /domains/{domainId}/verify** ·· [verifyDomain](https://api.cellajs.com/docs#tag/domains/post/domains/{domainId}/verify) ·· _domains_
+ *
+ * @param {verifyDomainData} options
+ * @param {string} options.path.domainid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const verifyDomain = <ThrowOnError extends boolean = true>(options: Options<VerifyDomainData, ThrowOnError>) =>
+  (options.client ?? client).post<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/domains/{domainId}/verify',
+    ...options,
+  });
+
+/**
+ * Receive GitHub webhook
+ *
+ * Receives webhook events from GitHub for automated deployments. Verifies signature using the repository webhook secret.
+ *
+ * **POST /webhooks/github/{repositoryId}** ·· [receiveGithubWebhook](https://api.cellajs.com/docs#tag/webhooks/post/webhooks/github/{repositoryId}) ·· _webhooks_
+ *
+ * @param {receiveGithubWebhookData} options
+ * @param {string} options.path.repositoryid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const receiveGithubWebhook = <ThrowOnError extends boolean = true>(
+  options: Options<ReceiveGithubWebhookData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<ReceiveGithubWebhookResponses, ReceiveGithubWebhookErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/webhooks/github/{repositoryId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
