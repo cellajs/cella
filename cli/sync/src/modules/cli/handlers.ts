@@ -60,10 +60,16 @@ export function onInitialConfigLoad(cli: CLIConfig) {
 /**
  * Validates the overrides configuration and logs any warnings.
  * Called after config is loaded to catch invalid file patterns early.
+ * - `pinned` patterns are validated against local files
+ * - `ignored` patterns are validated against upstream (if fetched)
  * @param strict - If true, exits with error code 1 when validation fails
  */
 export async function validateConfig(strict = false): Promise<void> {
-  const { valid, warnings } = await validateOverridesConfig(config.overrides, config.workingDirectory);
+  const { valid, warnings } = await validateOverridesConfig(
+    config.overrides,
+    config.workingDirectory,
+    config.upstreamBranchRef,
+  );
   logValidationWarnings(warnings);
 
   if (strict && !valid) {

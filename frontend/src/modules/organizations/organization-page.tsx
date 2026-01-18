@@ -14,7 +14,6 @@ const LeaveOrgButton = lazy(() => import('~/modules/organizations/leave-organiza
 const organizationTabs: PageTab[] = [
   { id: 'members', label: 'common:members', path: '/organization/$idOrSlug/members' },
   { id: 'attachments', label: 'common:attachments', path: '/organization/$idOrSlug/attachments' },
-  { id: 'hosting', label: 'common:hosting', path: '/organization/$idOrSlug/hosting' },
   { id: 'settings', label: 'common:settings', path: '/organization/$idOrSlug/settings' },
 ];
 
@@ -26,8 +25,6 @@ const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
   const isAdmin = organization.membership?.role === 'admin' || systemRole === 'admin';
-  // Non-admins only see members & attachments (first 2 tabs)
-  // Admins see all tabs including hosting & settings
   const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 2);
 
   const { mutate } = useOrganizationUpdateMutation();
