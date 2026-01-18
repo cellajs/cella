@@ -185,6 +185,46 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
 }
 
 /**
+ * Gets the last commit SHA for all files in a single git log command.
+ * Outputs format: commit SHA followed by list of files changed in that commit.
+ * We parse this to build a map of filePath → lastCommitSha.
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param branchName - The name of the branch to check
+ *
+ * @returns A Map of file paths to their last commit SHA
+ */
+export async function gitLogAllFilesLastCommit(
+  repoPath: string,
+  branchName: string,
+): Promise<Map<string, string>> {
+  // Get all commits with their changed files in one command
+  // Format: <commit-sha>\n<file1>\n<file2>\n\n<next-commit-sha>\n...
+  const output = await runGitCommand(
+    ['log', '--format=%H', '--name-only', branchName],
+    repoPath,
+  );
+
+  const fileToCommit = new Map<string, string>();
+  let currentCommit = '';
+
+  for (const line of output.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // SHA-1 hashes are 40 hex characters
+    if (/^[0-9a-f]{40}$/i.test(trimmed)) {
+      currentCommit = trimmed;
+    } else if (currentCommit && !fileToCommit.has(trimmed)) {
+      // First occurrence of this file = its most recent commit
+      fileToCommit.set(trimmed, currentCommit);
+    }
+  }
+
+  return fileToCommit;
+}
+
+/**
  * Gets the full commit SHA of the last commit that modified a specific file on a given branch.
  *
  * @param repoPath - The file system path to the git repository

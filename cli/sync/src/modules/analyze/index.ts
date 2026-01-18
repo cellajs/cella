@@ -59,7 +59,7 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
 
     const files = await analyzeManyFiles(upstreamFiles, forkFiles);
 
-    progress.done(`analyzed ${files.length} files`);
+    progress.done(`analysis finished`);
     return files;
   });
 

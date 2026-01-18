@@ -96,6 +96,6 @@ export async function runSetup() {
     // Ensure sync branch is clean post-merge
     await checkCleanState(config.fork.workingDirectory, config.fork.syncBranchRef, { skipCheckout: true });
 
-    progress.done('setup complete');
+    progress.done('preflight complete');
   });
 }

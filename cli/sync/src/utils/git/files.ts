@@ -1,36 +1,28 @@
 import { CommitEntry, FileEntry } from '#/types';
 import {
+  getCachedCommitHistory,
+  getCachedFileHashes,
+  setCachedCommitHistory,
+  setCachedFileHashes,
+} from '../cache';
+import {
   gitAdd,
   gitCheckoutOursFilePath,
   gitDiffCached,
   gitDiffUnmerged,
-  gitLastCommitShaForFile,
+  gitLogAllFilesLastCommit,
   gitLogFileHistory,
   gitLsTreeRecursive,
 } from './command';
-
-/** Yield to event loop to allow spinner animation */
-const yieldToEventLoop = () => new Promise((resolve) => setImmediate(resolve));
-
-/** Process items in batches, yielding between batches for UI updates */
-async function processBatched<T, R>(items: T[], batchSize: number, processor: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = [];
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    const batchResults = await Promise.all(batch.map(processor));
-    results.push(...batchResults);
-    await yieldToEventLoop();
-  }
-  return results;
-}
 
 /**
  * Retrieves all tracked files in a repository (for the specified branch)
  * along with their blob and last commit SHAs.
  *
- * Internally runs:
+ * Uses in-memory session cache to avoid redundant git calls within the same CLI run.
+ * Optimized to use only 2 git commands total:
  * - `git ls-tree -r <branch>` to list tracked files and blob SHAs
- * - `git log -n 1 --format=%H <branch> -- <file>` for each file
+ * - `git log --format=%H --name-only <branch>` to get all file→commit mappings at once
  *
  * @param repoPath - The file system path to the Git repository
  * @param branchName - The name of the branch to inspect (defaults to `'HEAD'`)
@@ -43,32 +35,44 @@ async function processBatched<T, R>(items: T[], batchSize: number, processor: (i
  * // { path: 'src/index.ts', blobSha: 'abc123...', shortBlobSha: 'abc1234', lastCommitSha: 'def456...', shortCommitSha: 'def4567' }
  */
 export async function getGitFileHashes(repoPath: string, branchName: string = 'HEAD'): Promise<FileEntry[]> {
-  const output = await gitLsTreeRecursive(repoPath, branchName);
-  const lines = output.split('\n').filter((line) => line.trim());
+  // Check session cache first
+  const cached = getCachedFileHashes(repoPath, branchName);
+  if (cached) return cached;
 
-  // Process in batches of 50 to avoid EBADF and allow spinner animation
-  const entries = await processBatched(lines, 50, async (line) => {
+  // Fetch file tree and last commits in parallel (2 git commands total)
+  const [treeOutput, fileToCommit] = await Promise.all([
+    gitLsTreeRecursive(repoPath, branchName),
+    gitLogAllFilesLastCommit(repoPath, branchName),
+  ]);
+
+  const lines = treeOutput.split('\n').filter((line) => line.trim());
+
+  const entries = lines.map((line) => {
     const [meta, filePath] = line.split('\t');
     const blobSha = meta.split(' ')[2];
     const shortBlobSha = blobSha.slice(0, 7);
 
-    const commitShaOutput = await gitLastCommitShaForFile(repoPath, branchName, filePath);
-    const shortCommitSha = commitShaOutput.slice(0, 7);
+    const lastCommitSha = fileToCommit.get(filePath) || '';
+    const shortCommitSha = lastCommitSha.slice(0, 7);
 
     return {
       path: filePath,
       blobSha,
       shortBlobSha,
-      lastCommitSha: commitShaOutput,
+      lastCommitSha,
       shortCommitSha,
     };
   });
+
+  // Store in session cache
+  setCachedFileHashes(repoPath, branchName, entries);
 
   return entries;
 }
 
 /**
  * Retrieves the full commit history for a specific file on a given branch.
+ * Uses in-memory session cache to avoid redundant git calls within the same CLI run.
  * Internally runs:
  * - `git log --format="%H|%aI" --follow <branch> -- <file>`
  *
@@ -87,8 +91,12 @@ export async function getFileCommitHistory(
   branchName: string,
   filePath: string,
 ): Promise<CommitEntry[]> {
+  // Check session cache first
+  const cached = getCachedCommitHistory(repoPath, branchName, filePath);
+  if (cached) return cached;
+
   const output = await gitLogFileHistory(repoPath, branchName, filePath);
-  return output
+  const commits = output
     .trim()
     .split('\n')
     .filter(Boolean)
@@ -96,6 +104,11 @@ export async function getFileCommitHistory(
       const [sha, date] = line.split('|');
       return { sha, date };
     });
+
+  // Store in session cache
+  setCachedCommitHistory(repoPath, branchName, filePath, commits);
+
+  return commits;
 }
 
 /**
