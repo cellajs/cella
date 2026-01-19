@@ -7,6 +7,7 @@ import {
   gitCleanAllUntrackedFiles,
   gitCleanUntrackedFile,
   gitRemoveFilePathFromCache,
+  gitRestoreFileFromRef,
   gitRestoreStagedFile,
 } from '#/utils/git/command';
 import { getCachedFiles, getStagedDeletions, getUnmergedFiles, resolveConflictAsOurs } from '#/utils/git/files';
@@ -36,8 +37,8 @@ export async function handleUpstreamIntoForkMerge(
     forkConfig.syncBranchRef,
     upstreamConfig.branchRef,
     async function resolveConflicts() {
-      // Protect ignored/pinned files from deletion
-      await restoreProtectedDeletions(forkConfig.workingDirectory);
+      // Protect ignored/pinned files from deletion (restore from fork's development branch)
+      await restoreProtectedDeletions(forkConfig.workingDirectory, forkConfig.branchRef);
 
       // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
       await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);
@@ -92,10 +93,11 @@ async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promis
  * This protects fork-specific files from being deleted when upstream removes them.
  *
  * @param repoPath - Path to the repository
+ * @param sourceRef - The branch/ref to restore files from (typically fork's development branch)
  *
  * @returns void
  */
-async function restoreProtectedDeletions(repoPath: string): Promise<void> {
+async function restoreProtectedDeletions(repoPath: string, sourceRef: string): Promise<void> {
   const deletions = await getStagedDeletions(repoPath);
 
   if (deletions.length === 0) {
@@ -105,9 +107,9 @@ async function restoreProtectedDeletions(repoPath: string): Promise<void> {
   for (const filePath of deletions) {
     const overrideStatus = getOverrideStatus(filePath);
 
-    // Restore files that are ignored or pinned
+    // Restore files that are ignored or pinned from the fork's branch
     if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
-      await gitRestoreStagedFile(repoPath, filePath);
+      await gitRestoreFileFromRef(repoPath, filePath, sourceRef);
     }
   }
 }

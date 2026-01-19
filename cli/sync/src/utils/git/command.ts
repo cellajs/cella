@@ -461,6 +461,23 @@ export async function gitRestoreStagedFile(repoPath: string, filePath: string): 
 }
 
 /**
+ * Restores a file from a specific branch/ref, both unstaging it and restoring the working tree.
+ * Equivalent to: `git restore --staged --source=<ref> --worktree -- <file>`
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param filePath - The path to the file to restore
+ * @param sourceRef - The branch, tag, or commit to restore from
+ *
+ * @returns The stdout from the git restore command
+ *
+ * @example
+ * await gitRestoreFileFromRef('/repo', 'src/index.ts', 'development');
+ */
+export async function gitRestoreFileFromRef(repoPath: string, filePath: string, sourceRef: string): Promise<string> {
+  return runGitCommand(['restore', '--staged', `--source=${sourceRef}`, '--worktree', '--', filePath], repoPath);
+}
+
+/**
  * Executes `git rev-list --count` to get the number of commits
  * that are in `sourceBranch` but not in `baseBranch`.
  *
