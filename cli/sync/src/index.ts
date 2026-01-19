@@ -33,6 +33,12 @@ async function main(): Promise<void> {
     // Prompt configuration
     await runCli();
 
+    // Determine target branch to restore to:
+    // - If started on sync-branch: restore to forkBranchRef (working branch)
+    // - Otherwise: restore to original branch
+    // This ensures we never leave the user on sync-branch
+    const targetBranch = originalBranch === config.forkSyncBranchRef ? config.forkBranchRef : originalBranch;
+
     // If only validating config, run strict validation and exit
     if (config.syncService === 'validate') {
       await validateConfig(true);
@@ -68,12 +74,14 @@ async function main(): Promise<void> {
       }
     }
   } finally {
-    // Restore original branch (if different from current)
+    // Restore to target branch (if different from current)
+    // For sync service: always end on forkBranchRef so user can commit staged changes
+    // For other services: restore to original branch
     const currentBranch = await getCurrentBranch(process.cwd());
-    if (currentBranch !== originalBranch) {
-      await gitCheckout(process.cwd(), originalBranch);
+    if (currentBranch !== targetBranch) {
+      await gitCheckout(process.cwd(), targetBranch);
       console.info();
-      console.info(`${pc.green('✓')} restored to '${originalBranch}' branch`);
+      console.info(`${pc.green('✓')} restored to '${targetBranch}' branch`);
     }
   }
 }
