@@ -47,7 +47,6 @@ frontend/stats.html
 .junie
 
 # Cella
-cella.diverged.txt
 *storybook.log
 storybook-static
 .locales-cache

@@ -14,6 +14,7 @@ import { appendFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pc from 'picocolors';
 import { config } from '#/config';
+import { type GitStatus, getDisplayLabel, STATUS_CONFIG } from '#/constants/status';
 import type { FileAnalysis } from '#/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,7 +77,6 @@ export function finalizeLogFile(): void {
  */
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const parts: string[] = [
-    getOverrideFlag(analyzedFile),
     getFilePath(analyzedFile),
     getGitStatus(analyzedFile),
     getCommitState(analyzedFile),
@@ -89,19 +89,6 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   return parts.join(' ').trim();
 }
 
-/**
- * Returns the override status indicator.
- * - 📌 for pinned files (protected, prefer fork version)
- * - (empty) for unpinned files (normal sync behavior)
- * Ignored files are not shown in console output.
- */
-function getOverrideFlag(analyzedFile: FileAnalysis): string {
-  if (analyzedFile.overrideStatus === 'pinned') {
-    return pc.cyan('◆');
-  }
-  return '◇';
-}
-
 /** Returns the styled file path (relative to repo root). */
 function getFilePath(analyzedFile: FileAnalysis): string {
   return pc.white(analyzedFile.filePath);
@@ -109,51 +96,32 @@ function getFilePath(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the sync state between fork and upstream.
- * Display labels are derived from git status + override status:
- * - up-to-date: Fork matches upstream (nothing to sync)
- * - ahead: Fork has newer commits, file is pinned/ignored (protected)
- * - drifted: Fork has newer commits, file is NOT pinned/ignored (at risk)
- * - behind: Upstream has newer commits than fork
- * - locked: Both sides have changes, file is pinned (protected conflict)
- * - unrelated: No shared commit history
+ * Uses shared status config for consistent labeling across file and summary output.
  */
 function getGitStatus(analyzedFile: FileAnalysis): string {
-  const gitStatus = analyzedFile.commitSummary?.status || 'unknown';
+  const gitStatus = (analyzedFile.commitSummary?.status || 'unknown') as GitStatus;
   const isPinned = analyzedFile.overrideStatus === 'pinned';
   const isIgnored = analyzedFile.overrideStatus === 'ignored';
-  const isProtected = isPinned || isIgnored;
+  const overrideStatus = isPinned ? 'pinned' : isIgnored ? 'ignored' : 'none';
 
-  // Special case: git "ahead" but unpinned/unignored → display as "drifted" (at risk)
-  if (gitStatus === 'ahead' && !isProtected) {
-    return `fork: ${pc.bold(pc.red('drifted'))}`;
-  }
+  const displayLabel = getDisplayLabel(gitStatus, overrideStatus);
+  const { symbol, colorFn } = STATUS_CONFIG[displayLabel];
+  const labelText = displayLabel === 'locked' ? `${symbol} ${displayLabel}` : displayLabel;
 
-  // Special case: git "diverged" + pinned → display as "locked" (protected conflict)
-  if (gitStatus === 'diverged' && isPinned) {
-    return `fork: ${pc.bold(pc.yellow('🔒 locked'))}`;
-  }
-
-  const statusMap: Record<string, string> = {
-    upToDate: `fork: ${pc.bold(pc.green('up to date'))}`,
-    ahead: `fork: ${pc.bold(pc.blue('ahead'))}`,
-    behind: `fork: ${pc.bold(pc.cyan('behind'))}`,
-    diverged: `fork: ${pc.bold(pc.red('diverged'))}`,
-    unrelated: `fork: ${pc.bold(pc.magenta('unrelated'))}`,
-  };
-
-  return statusMap[gitStatus] || `fork: ${pc.bold(pc.red('unknown state'))}`;
+  return `fork: ${pc.bold(colorFn(labelText))}`;
 }
 
 /**
  * Returns the commit count difference between fork and upstream.
- * Shows arrows: ↑ = commits ahead, ↓ = commits behind.
+ * Shows arrows: ↑ = commits ahead, ⇅ = diverged, ↓ = commits behind.
  */
 function getCommitState(analyzedFile: FileAnalysis): string {
   const commitsAhead = analyzedFile.commitSummary?.commitsAhead || 0;
   const commitsBehind = analyzedFile.commitSummary?.commitsBehind || 0;
 
   if (commitsAhead > 0 && commitsBehind > 0) {
-    return pc.bold(`(↑ ${pc.blue(commitsAhead)} ↓ ${pc.yellow(commitsBehind)})`);
+    const total = commitsAhead + commitsBehind;
+    return pc.bold(`↑ ${pc.blue(commitsAhead)}  ${pc.cyan(`⇅ ${total}`)}  ↓ ${pc.yellow(commitsBehind)}`);
   }
   if (commitsAhead > 0) return pc.bold(`↑ ${pc.blue(commitsAhead)}`);
   if (commitsBehind > 0) return pc.bold(`↓ ${pc.yellow(commitsBehind)}`);

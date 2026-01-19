@@ -1,3 +1,4 @@
+import { STRATEGY_REASONS } from '#/constants/status';
 import { FileAnalysis, FileMergeStrategy } from '#/types';
 
 /**
@@ -24,14 +25,14 @@ import { FileAnalysis, FileMergeStrategy } from '#/types';
 export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMergeStrategy {
   const isPinned = fileAnalysis.overrideStatus === 'pinned';
   const isIgnored = fileAnalysis.overrideStatus === 'ignored';
-  const { upstreamFile, forkFile, blobStatus, commitSummary } = fileAnalysis;
+  const { forkFile, blobStatus } = fileAnalysis;
   const isNewFile = !forkFile || blobStatus === 'missing';
 
   // 1. Ignored files → skip all upstream changes (existing and new)
   if (isIgnored) {
     return {
       strategy: 'skip-upstream',
-      reason: 'Flagged as ignored in settings',
+      reason: STRATEGY_REASONS.ignored,
     };
   }
 
@@ -39,7 +40,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
   if (blobStatus === 'identical') {
     return {
       strategy: 'keep-fork',
-      reason: 'Blobs identical',
+      reason: STRATEGY_REASONS.identical,
     };
   }
 
@@ -48,7 +49,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
   if (isNewFile) {
     return {
       strategy: 'keep-upstream',
-      reason: 'New file in upstream',
+      reason: STRATEGY_REASONS.newFile,
     };
   }
 
@@ -57,7 +58,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
   if (isPinned) {
     return {
       strategy: 'keep-fork',
-      reason: 'File is pinned to fork version',
+      reason: STRATEGY_REASONS.pinned,
     };
   }
 
@@ -66,13 +67,13 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
   if (blobStatus === 'different') {
     return {
       strategy: 'keep-upstream',
-      reason: 'Syncing to match upstream',
+      reason: STRATEGY_REASONS.syncing,
     };
   }
 
   // 6. Fallback (should rarely hit this)
   return {
     strategy: 'unknown',
-    reason: 'Could not determine merge strategy',
+    reason: STRATEGY_REASONS.unknown,
   };
 }
