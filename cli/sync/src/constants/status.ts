@@ -16,6 +16,7 @@ export type OverrideStatus = 'pinned' | 'ignored' | 'none';
 export type DisplayLabel =
   | 'identical'
   | 'ahead'
+  | 'deleted'
   | 'drifted'
   | 'behind'
   | 'diverged'
@@ -35,6 +36,7 @@ export type StatusEntry = {
 export const STATUS_CONFIG: Record<DisplayLabel, StatusEntry> = {
   identical: { symbol: '✓', colorFn: pc.green, reason: 'Fork matches upstream', action: 'no action needed' },
   ahead: { symbol: '↑', colorFn: pc.blue, reason: 'Fork has newer commits', action: 'no action needed' },
+  deleted: { symbol: '␡', colorFn: pc.dim, reason: 'Fork deleted file (pinned)', action: 'kept deleted' },
   drifted: { symbol: '⚡', colorFn: pc.red, reason: 'Fork ahead, not protected', action: 'at risk, consider pinning' },
   behind: { symbol: '↓', colorFn: pc.cyan, reason: 'Upstream has newer commits', action: 'will sync from upstream' },
   diverged: { symbol: '⇅', colorFn: pc.cyan, reason: 'Both sides have changes', action: 'will merge from upstream' },
@@ -48,10 +50,18 @@ export const STATUS_CONFIG: Record<DisplayLabel, StatusEntry> = {
   unknown: { symbol: '?', colorFn: pc.red, reason: 'Could not determine status', action: 'manual check needed' },
 };
 
-/** Derives the display label from git status and override status. */
-export function getDisplayLabel(gitStatus: GitStatus, overrideStatus: OverrideStatus): DisplayLabel {
+/** Derives the display label from git status, override status, and blob status. */
+export function getDisplayLabel(
+  gitStatus: GitStatus,
+  overrideStatus: OverrideStatus,
+  blobStatus?: 'missing' | 'identical' | 'different',
+): DisplayLabel {
   if (gitStatus === 'upToDate') return 'identical';
-  if (gitStatus === 'ahead') return overrideStatus === 'pinned' || overrideStatus === 'ignored' ? 'ahead' : 'drifted';
+  if (gitStatus === 'ahead') {
+    // Pinned + missing = fork intentionally deleted the file
+    if (overrideStatus === 'pinned' && blobStatus === 'missing') return 'deleted';
+    return overrideStatus === 'pinned' || overrideStatus === 'ignored' ? 'ahead' : 'drifted';
+  }
   if (gitStatus === 'behind') return 'behind';
   if (gitStatus === 'diverged') return overrideStatus === 'pinned' ? 'locked' : 'diverged';
   if (gitStatus === 'unrelated') return 'unrelated';

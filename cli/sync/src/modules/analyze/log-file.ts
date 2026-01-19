@@ -104,7 +104,7 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
   const isIgnored = analyzedFile.overrideStatus === 'ignored';
   const overrideStatus = isPinned ? 'pinned' : isIgnored ? 'ignored' : 'none';
 
-  const displayLabel = getDisplayLabel(gitStatus, overrideStatus);
+  const displayLabel = getDisplayLabel(gitStatus, overrideStatus, analyzedFile.blobStatus);
   const { colorFn } = STATUS_CONFIG[displayLabel];
 
   return ` ${pc.bold(colorFn(displayLabel))}`;
@@ -198,6 +198,7 @@ export function shouldLogAnalyzedFileModule(): boolean {
  * - Skip: up-to-date files (nothing to sync)
  * - Skip: files with identical content
  * - Skip: ahead + pinned files (protected, no action needed)
+ * - Skip: deleted files (pinned + missing, fork intentionally deleted)
  * - Show: ahead + unpinned files (at risk - may want to pin)
  * - Show: behind, diverged, manual, unknown (require attention)
  */
@@ -206,6 +207,7 @@ export function shouldShowInConsole(analyzedFile: FileAnalysis): boolean {
   const reason = analyzedFile.mergeStrategy?.reason || '';
   const isPinned = analyzedFile.overrideStatus === 'pinned';
   const isIgnored = analyzedFile.overrideStatus === 'ignored';
+  const isDeleted = isPinned && analyzedFile.blobStatus === 'missing';
 
   // Never show ignored files in console
   if (isIgnored) return false;
@@ -218,6 +220,9 @@ export function shouldShowInConsole(analyzedFile: FileAnalysis): boolean {
 
   // Ahead + pinned = protected, no action needed
   if (status === 'ahead' && isPinned) return false;
+
+  // Deleted files (pinned + missing) = fork intentionally deleted
+  if (isDeleted) return false;
 
   // Show ahead + unpinned (at risk), behind, diverged, manual, unknown
   return true;

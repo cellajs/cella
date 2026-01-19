@@ -23,6 +23,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
   const counts: Record<DisplayLabel, number> = {
     identical: 0,
     ahead: 0,
+    deleted: 0,
     drifted: 0,
     behind: 0,
     diverged: 0,
@@ -37,11 +38,12 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     const isIgnored = file.overrideStatus === 'ignored';
     const override = isPinned ? 'pinned' : isIgnored ? 'ignored' : 'none';
 
-    const label = getDisplayLabel(gitStatus as Parameters<typeof getDisplayLabel>[0], override);
+    const label = getDisplayLabel(gitStatus as Parameters<typeof getDisplayLabel>[0], override, file.blobStatus);
     counts[label]++;
 
     // Also count parent categories for tree display
     if (label === 'drifted') counts.ahead++;
+    if (label === 'deleted') counts.ahead++;
     if (label === 'locked') counts.diverged++;
   }
 
@@ -52,6 +54,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     '',
     summaryLine('ahead', counts.ahead),
     summaryLine('drifted', counts.drifted, '└ '),
+    ...(counts.deleted > 0 ? [summaryLine('deleted', counts.deleted, '└ ')] : []),
     '',
     summaryLine('diverged', counts.diverged),
     summaryLine('locked', counts.locked, '└ '),

@@ -112,7 +112,7 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 ### Tips
 
 - Run `pnpm sync --sync-service analyze` first to preview changes without applying
-- Use `pinned` for config files you customize but want to see new upstream additions
+- Use `pinned` for files you fully control (modify, keep, or delete)
 - Use `ignored` for app-specific docs, assets, or config you fully own
 
 ## Status Indicators
@@ -122,11 +122,12 @@ During analysis and sync, files are displayed with status indicators:
 | Symbol | Label | Meaning | Action |
 |:------:|-------|---------|--------|
 | ✓ | `identical` | Fork matches upstream | No action needed |
-| ↑ | `ahead` | Fork has newer commits (pinned/ignored) | Protected, keeping fork |
+| ↑ | `ahead` | Fork has newer commits (pinned) | Protected, keeping fork |
+| ␡ | `deleted` | Fork deleted file (pinned) | Kept deleted |
 | ⚡ | `drifted` | Fork ahead, not protected | At risk, consider pinning |
 | ↓ | `behind` | Upstream has newer commits | Will sync from upstream |
 | ⇅ | `diverged` | Both sides have changes | Will merge from upstream |
-| 🔒 | `locked` | Both sides changed, pinned | Protected, keeping fork |
+| ⊡ | `locked` | Both sides changed, pinned | Protected, keeping fork |
 | ⚠ | `unrelated` | No shared commit history | Manual resolution needed |
 | ? | `unknown` | Could not determine status | Manual check needed |
 
