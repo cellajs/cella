@@ -120,7 +120,12 @@ export async function handleSquashMerge(
   const commitCount = config.pulledCommitCount || totalAhead;
 
   const recentMessages = config.maxSquashPreviews
-    ? await getLastCommitMessages(mergeIntoPath, mergeFromBranch, mergeIntoBranch, Math.min(config.maxSquashPreviews, commitCount))
+    ? await getLastCommitMessages(
+        mergeIntoPath,
+        mergeFromBranch,
+        mergeIntoBranch,
+        Math.min(config.maxSquashPreviews, commitCount),
+      )
     : [];
 
   const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;

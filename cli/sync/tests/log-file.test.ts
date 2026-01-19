@@ -15,13 +15,24 @@ import type { FileAnalysis } from '#/types';
 
 /** Create a minimal mock FileAnalysis */
 function createMockFile(filePath: string, status: 'behind' | 'ahead' | 'diverged' = 'behind'): FileAnalysis {
-  const entry = { path: filePath, blobSha: 'abc123', shortBlobSha: 'abc', lastCommitSha: 'def456', shortCommitSha: 'def' };
+  const entry = {
+    path: filePath,
+    blobSha: 'abc123',
+    shortBlobSha: 'abc',
+    lastCommitSha: 'def456',
+    shortCommitSha: 'def',
+  };
   return {
     filePath,
     upstreamFile: entry,
     forkFile: entry,
     blobStatus: 'different',
-    commitSummary: { status, commitsAhead: status === 'behind' ? 0 : 1, commitsBehind: status === 'ahead' ? 0 : 1, historyCoverage: 'complete' },
+    commitSummary: {
+      status,
+      commitsAhead: status === 'behind' ? 0 : 1,
+      commitsBehind: status === 'ahead' ? 0 : 1,
+      historyCoverage: 'complete',
+    },
     mergeStrategy: { strategy: status === 'diverged' ? 'manual' : 'keep-upstream', reason: 'test' },
   };
 }
