@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "9c7e7368a4760c2e",
+  "inputHash": "d8d5bd8e298b0546",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -2342,6 +2342,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "example": {
           "action": "update",
           "changedKeys": [
+            "email",
             "description",
             "name",
           ],
@@ -2351,8 +2352,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "id": "s933zhzgm8axl572xlcja86p",
           "organizationId": "t2j8omleaz2pg8iwtnhw3666",
           "resourceType": null,
-          "tableName": "memberships",
-          "type": "membership.updated",
+          "tableName": "pages",
+          "type": "page.updated",
           "userId": "qc8osclgd1300kpvq3dotk41",
         },
         "name": "Activity",
