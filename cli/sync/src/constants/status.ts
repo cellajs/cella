@@ -34,11 +34,11 @@ export type StatusEntry = {
 /** Central status configuration with color functions pre-bound. */
 export const STATUS_CONFIG: Record<DisplayLabel, StatusEntry> = {
   identical: { symbol: '✓', colorFn: pc.green, reason: 'Fork matches upstream', action: 'no action needed' },
-  ahead: { symbol: '↑', colorFn: pc.blue, reason: 'Fork has newer commits', action: 'protected, keeping fork' },
+  ahead: { symbol: '↑', colorFn: pc.blue, reason: 'Fork has newer commits', action: 'no action needed' },
   drifted: { symbol: '⚡', colorFn: pc.red, reason: 'Fork ahead, not protected', action: 'at risk, consider pinning' },
   behind: { symbol: '↓', colorFn: pc.cyan, reason: 'Upstream has newer commits', action: 'will sync from upstream' },
   diverged: { symbol: '⇅', colorFn: pc.cyan, reason: 'Both sides have changes', action: 'will merge from upstream' },
-  locked: { symbol: '🔒', colorFn: pc.yellow, reason: 'Both sides changed, pinned', action: 'protected, keeping fork' },
+  locked: { symbol: '⊡', colorFn: pc.yellow, reason: 'Both sides changed, pinned', action: 'protected, keeping fork' },
   unrelated: {
     symbol: '⚠',
     colorFn: pc.magenta,

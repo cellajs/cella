@@ -83,7 +83,7 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
     getCommitSha(analyzedFile),
     getLastSyncedAt(analyzedFile),
     getStrategyFlag(analyzedFile),
-    getStrategyReason(analyzedFile),
+    // getStrategyReason(analyzedFile),
   ].filter(Boolean);
 
   return parts.join(' ').trim();
@@ -105,10 +105,9 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
   const overrideStatus = isPinned ? 'pinned' : isIgnored ? 'ignored' : 'none';
 
   const displayLabel = getDisplayLabel(gitStatus, overrideStatus);
-  const { symbol, colorFn } = STATUS_CONFIG[displayLabel];
-  const labelText = displayLabel === 'locked' ? `${symbol} ${displayLabel}` : displayLabel;
+  const { colorFn } = STATUS_CONFIG[displayLabel];
 
-  return `fork: ${pc.bold(colorFn(labelText))}`;
+  return ` ${pc.bold(colorFn(displayLabel))}`;
 }
 
 /**
@@ -120,8 +119,7 @@ function getCommitState(analyzedFile: FileAnalysis): string {
   const commitsBehind = analyzedFile.commitSummary?.commitsBehind || 0;
 
   if (commitsAhead > 0 && commitsBehind > 0) {
-    const total = commitsAhead + commitsBehind;
-    return pc.bold(`↑ ${pc.blue(commitsAhead)}  ${pc.cyan(`⇅ ${total}`)}  ↓ ${pc.yellow(commitsBehind)}`);
+    return pc.bold(`↑${pc.blue(commitsAhead)}  ↓${pc.yellow(commitsBehind)}`);
   }
   if (commitsAhead > 0) return pc.bold(`↑ ${pc.blue(commitsAhead)}`);
   if (commitsBehind > 0) return pc.bold(`↓ ${pc.yellow(commitsBehind)}`);
@@ -153,7 +151,7 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
   if (analyzedFile.commitSummary?.status === 'upToDate') return pc.dim('✔');
 
   const date = new Date(lastSync);
-  return pc.dim(`Last in sync: ${date.toLocaleDateString()}`);
+  return pc.dim(` ≠ ${date.toLocaleDateString()}`);
 }
 
 /**
@@ -162,7 +160,7 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
  */
 function getStrategyFlag(analyzedFile: FileAnalysis): string {
   const mergeStrategy = analyzedFile.mergeStrategy;
-  if (!mergeStrategy) return pc.bgRed(pc.black(' No Strategy '));
+  if (!mergeStrategy) return pc.bgRed(pc.black('no strategy '));
   if (mergeStrategy.strategy === 'unknown') return pc.bgRed(pc.black(`${mergeStrategy.strategy} `));
   if (mergeStrategy.strategy === 'manual') return pc.bgYellow(pc.black(` ${mergeStrategy.strategy} `));
   return pc.green(pc.black(` ${mergeStrategy.strategy} `));
@@ -172,13 +170,13 @@ function getStrategyFlag(analyzedFile: FileAnalysis): string {
  * Returns the reason for the chosen merge strategy.
  * Examples: "pinned in config", "content identical", "fork ahead", "both sides changed".
  */
-function getStrategyReason(analyzedFile: FileAnalysis): string {
-  const mergeStrategy = analyzedFile.mergeStrategy;
-  if (!mergeStrategy) return '';
-  if (mergeStrategy.strategy === 'unknown') return pc.red(`→ ${mergeStrategy.reason}`);
-  if (mergeStrategy.strategy === 'manual') return pc.yellow(`→ ${mergeStrategy.reason}`);
-  return pc.green(`→ ${mergeStrategy.reason}`);
-}
+// function getStrategyReason(analyzedFile: FileAnalysis): string {
+//   const mergeStrategy = analyzedFile.mergeStrategy;
+//   if (!mergeStrategy) return '';
+//   if (mergeStrategy.strategy === 'unknown') return pc.red(`→ ${mergeStrategy.reason}`);
+//   if (mergeStrategy.strategy === 'manual') return pc.yellow(`→ ${mergeStrategy.reason}`);
+//   return pc.green(`→ ${mergeStrategy.reason}`);
+// }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Console Output Filtering

@@ -73,6 +73,8 @@ async function logBranchSyncState(): Promise<void> {
   } else {
     console.info(`⊙  ${pc.cyan('merge-base')} ${pc.red('none (unrelated histories)')}`);
   }
+
+  console.info();
 }
 
 /**
