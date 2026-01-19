@@ -86,8 +86,8 @@ export function waitForEvent<T>(eventType: Parameters<typeof eventBus.once>[0], 
  * In CI, these are created by the migration. This is a safety check.
  */
 export async function ensureCdcSetup() {
-  const CDC_PUBLICATION_NAME = 'cella_cdc_publication';
-  const CDC_SLOT_NAME = 'cella_cdc_slot';
+  const CDC_PUBLICATION_NAME = 'cella_development_cdc_pub';
+  const CDC_SLOT_NAME = 'cella_development_cdc_slot';
 
   // Check if publication exists
   const pubResult = await db.execute<{ pubname: string }>(

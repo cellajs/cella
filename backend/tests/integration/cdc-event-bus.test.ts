@@ -98,6 +98,22 @@ describe('EventBus Integration', () => {
 
       const entityId = nanoid();
       const userId = nanoid();
+      const organizationId = nanoid();
+
+      // Create a valid user first to satisfy foreign key constraint
+      const userData = mockUser();
+      userData.id = userId;
+      await db.insert(usersTable).values(userData);
+      await db.insert(emailsTable).values({
+        email: userData.email,
+        userId: userData.id,
+        verified: true,
+      });
+
+      // Create a valid organization to satisfy foreign key constraint
+      const orgData = mockOrganization();
+      orgData.id = organizationId;
+      await db.insert(organizationsTable).values(orgData);
 
       // Insert activity directly (simulating what CDC does)
       // Note: membership is a resourceType, not entityType
@@ -110,7 +126,7 @@ describe('EventBus Integration', () => {
         resourceType: 'membership',
         entityId,
         userId,
-        organizationId: nanoid(),
+        organizationId,
         changedKeys: ['userId', 'role'],
       });
 
@@ -131,6 +147,16 @@ describe('EventBus Integration', () => {
       eventBus.on('user.updated', handler);
 
       const userId = nanoid();
+
+      // Create a valid user first to satisfy foreign key constraint
+      const userData = mockUser();
+      userData.id = userId;
+      await db.insert(usersTable).values(userData);
+      await db.insert(emailsTable).values({
+        email: userData.email,
+        userId: userData.id,
+        verified: true,
+      });
 
       // Insert multiple activities
       for (let i = 0; i < 3; i++) {
@@ -174,11 +200,11 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () =
     const result = await db.execute<{ trigger_name: string }>(
       sql`SELECT trigger_name FROM information_schema.triggers 
           WHERE event_object_table = 'activities' 
-          AND trigger_name = 'activity_insert_notify'`,
+          AND trigger_name = 'activities_notify_trigger'`,
     );
 
     expect(result.rows.length).toBe(1);
-    expect(result.rows[0].trigger_name).toBe('activity_insert_notify');
+    expect(result.rows[0].trigger_name).toBe('activities_notify_trigger');
   });
 });
 
