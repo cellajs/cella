@@ -16,13 +16,14 @@ export default defineConfig({
   // Options
   maxSquashPreviews: 10,
   packageJsonSync: ['dependencies', 'devDependencies', 'scripts'],
-  verbose: false,
+  verbose: true,
 
   // File overrides
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
       "info/*",
+      "cli/create-cella/*",
       "backend/drizzle/*",
       "frontend/public/static/docs.gen/*",
       "frontend/src/api.gen/*",

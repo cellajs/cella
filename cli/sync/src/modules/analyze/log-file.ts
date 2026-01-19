@@ -109,19 +109,34 @@ function getFilePath(analyzedFile: FileAnalysis): string {
 
 /**
  * Returns the sync state between fork and upstream.
+ * Display labels are derived from git status + override status:
  * - up-to-date: Fork matches upstream (nothing to sync)
- * - ahead: Fork has newer commits than upstream
+ * - ahead: Fork has newer commits, file is pinned/ignored (protected)
+ * - drifted: Fork has newer commits, file is NOT pinned/ignored (at risk)
  * - behind: Upstream has newer commits than fork
- * - diverged: Both sides have changes (potential conflict)
+ * - locked: Both sides have changes, file is pinned (protected conflict)
  * - unrelated: No shared commit history
  */
 function getGitStatus(analyzedFile: FileAnalysis): string {
   const gitStatus = analyzedFile.commitSummary?.status || 'unknown';
+  const isPinned = analyzedFile.overrideStatus === 'pinned';
+  const isIgnored = analyzedFile.overrideStatus === 'ignored';
+  const isProtected = isPinned || isIgnored;
+
+  // Special case: git "ahead" but unpinned/unignored → display as "drifted" (at risk)
+  if (gitStatus === 'ahead' && !isProtected) {
+    return `fork: ${pc.bold(pc.red('drifted'))}`;
+  }
+
+  // Special case: git "diverged" + pinned → display as "locked" (protected conflict)
+  if (gitStatus === 'diverged' && isPinned) {
+    return `fork: ${pc.bold(pc.yellow('🔒 locked'))}`;
+  }
 
   const statusMap: Record<string, string> = {
     upToDate: `fork: ${pc.bold(pc.green('up to date'))}`,
     ahead: `fork: ${pc.bold(pc.blue('ahead'))}`,
-    behind: `fork: ${pc.bold(pc.yellow('behind'))}`,
+    behind: `fork: ${pc.bold(pc.cyan('behind'))}`,
     diverged: `fork: ${pc.bold(pc.red('diverged'))}`,
     unrelated: `fork: ${pc.bold(pc.magenta('unrelated'))}`,
   };
