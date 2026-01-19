@@ -4,10 +4,8 @@ import { checkCleanState } from '#/modules/setup/check-clean-state';
 import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
-import { gitCheckout, gitReset } from '#/utils/git/command';
 import { handleMerge } from '#/utils/git/git-merge';
 import { createBranchIfMissing } from '#/utils/git/git-refs';
-import { isWorkBranchAheadOfSync } from '#/utils/git/helpers';
 import { createProgress } from '#/utils/progress';
 
 /**
@@ -103,27 +101,15 @@ export async function runSetup() {
     progress.step('updating sync branch');
 
     /**
-     * [EXPERIMENTAL] Reset sync-branch to work-branch if work-branch is ahead.
-     * This happens when the user has committed a squash merge on the work-branch.
-     * Resetting ensures the commit count starts fresh for the next sync.
+     * Merge upstream → sync-branch to incorporate latest upstream changes.
+     * sync-branch maintains full upstream commit history (not squashed),
+     * which allows accurate file-level commit analysis and merge-base detection.
+     *
+     * NOTE: We do NOT merge development → sync-branch here because that would
+     * pollute sync-branch with fork-specific commits, breaking the commit
+     * counting logic which relies on sync-branch only containing upstream SHAs.
      */
-    const workBranchAhead = await isWorkBranchAheadOfSync(
-      config.workingDirectory,
-      config.forkBranchRef,
-      config.forkSyncBranchRef,
-    );
-
-    if (workBranchAhead) {
-      await gitCheckout(config.workingDirectory, config.forkSyncBranchRef);
-      await gitReset(config.workingDirectory, config.forkBranchRef, { hard: true });
-    }
-
-    /**
-     * Merge development → sync-branch to incorporate any fork changes.
-     * This keeps sync-branch aligned with development's content while
-     * preserving its upstream commit ancestry for future syncs.
-     */
-    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.forkBranchRef, null);
+    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.upstreamBranchRef, null);
 
     // Ensure sync branch is clean post-merge
     await checkCleanState(config.workingDirectory, config.forkSyncBranchRef, { skipCheckout: true });

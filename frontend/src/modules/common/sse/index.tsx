@@ -27,10 +27,9 @@ type SSEEventsMap = {
  * Map each entity type to its corresponding query keys.
  * Add other entity types as needed.
  */
+// TODO we need to register these keys from within each module to avoid tight coupling
 const entityKeysMap = {
   organization: organizationQueryKeys,
-  page: pageQueryKeys,
-  user: userQueryKeys,
   membership: memberQueryKeys,
 } as const;
 
