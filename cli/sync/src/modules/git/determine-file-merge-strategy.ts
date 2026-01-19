@@ -11,17 +11,23 @@ import { FileAnalysis, FileMergeStrategy } from '#/types';
  * - `'manual'` - Requires manual resolution (diverged histories)
  * - `'unknown'` - Could not determine, relies on git merge default
  *
+ * Override behavior:
+ * - `ignored` - Never sync (existing or new files), not shown in analysis
+ * - `pinned` - Never sync existing files, but DO add new files; shown in analysis
+ * - `none` - Always sync to match upstream
+ *
  * @param fileAnalysis - Precomputed analysis object for a single file,
  *   containing commit history, blob status, and optional override status.
  *
  * @returns A {@link FileMergeStrategy} object indicating which merge action to take.
  */
 export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMergeStrategy {
-  // Extract override flags from config
   const isPinned = fileAnalysis.overrideStatus === 'pinned';
   const isIgnored = fileAnalysis.overrideStatus === 'ignored';
+  const { upstreamFile, forkFile, blobStatus, commitSummary } = fileAnalysis;
+  const isNewFile = !forkFile || blobStatus === 'missing';
 
-  // 1. Flagged as ignored in settings → skip upstream changes
+  // 1. Ignored files → skip all upstream changes (existing and new)
   if (isIgnored) {
     return {
       strategy: 'skip-upstream',
@@ -29,19 +35,7 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  const { upstreamFile, forkFile, blobStatus, commitSummary } = fileAnalysis;
-  const commitStatus = commitSummary?.status || 'unrelated';
-  const isHeadIdentical = upstreamFile.lastCommitSha === forkFile?.lastCommitSha;
-
-  // 2. Commit heads identical → trivial keep
-  if (isHeadIdentical) {
-    return {
-      strategy: 'keep-fork',
-      reason: 'Commit HEADs identical',
-    };
-  }
-
-  // 3. Blobs identical → trivial keep
+  // 2. Blobs identical → no action needed
   if (blobStatus === 'identical') {
     return {
       strategy: 'keep-fork',
@@ -49,80 +43,34 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  // 4. When fork is up-to-date or ahead → assume resolved in fork
-  if (commitStatus === 'upToDate' || commitStatus === 'ahead') {
-    if (blobStatus === 'different') {
-      return {
-        strategy: 'keep-fork',
-        reason: `Blob differs but history is ${commitStatus}`,
-      };
-    }
-    if (blobStatus === 'missing') {
-      // File was intentionally deleted in fork while ahead/upToDate
-      return {
-        strategy: 'skip-upstream',
-        reason: `File deleted in fork and history is ${commitStatus}`,
-      };
-    }
-  }
-
-  // 5. When fork is behind upstream
-  if (commitStatus === 'behind') {
-    // 5a. File content differs
-    if (blobStatus === 'different') {
-      if (isPinned) {
-        return {
-          strategy: 'keep-fork',
-          reason: 'Fork is behind upstream but flagged as pinned',
-        };
-      }
-      return {
-        strategy: 'keep-upstream',
-        reason: 'Blob differs and fork is behind upstream',
-      };
-    }
-    // 5b. New file in upstream (doesn't exist in fork)
-    // TODO: This path is unreachable for truly new files. When a file doesn't exist in fork,
-    // there's no commit history to compare, so analyzeFileCommits returns 'unrelated' not 'behind'.
-    // New upstream files currently fall through to the 'unrelated' case and require manual resolution.
-    // Consider detecting new files earlier (via blobStatus === 'missing' && !forkFile) and auto-accepting.
-    if (blobStatus === 'missing') {
-      return {
-        strategy: 'keep-upstream',
-        reason: 'New file in upstream',
-      };
-    }
-  }
-
-  // 6. Diverged histories → unsafe without pinned flag
-  if (commitStatus === 'diverged') {
-    if (isPinned) {
-      return {
-        strategy: 'keep-fork',
-        reason: 'History diverged but flagged as pinned',
-      };
-    }
+  // 3. New file in upstream (doesn't exist in fork) → always add, even if pinned
+  // Pinned only protects existing files, not new ones
+  if (isNewFile) {
     return {
-      strategy: 'manual',
-      reason: 'History diverged, requires manual resolution',
+      strategy: 'keep-upstream',
+      reason: 'New file in upstream',
     };
   }
 
-  // 7. Unrelated histories (first sync scenario)
-  if (commitStatus === 'unrelated') {
-    if (isPinned) {
-      return {
-        strategy: 'keep-fork',
-        reason: 'History unrelated but flagged as pinned',
-      };
-    }
+  // 4. Pinned existing files → never sync, keep fork version
+  // Show in analysis to raise awareness about divergence
+  if (isPinned) {
     return {
-      strategy: 'manual',
-      reason: 'History unrelated, requires manual resolution',
+      strategy: 'keep-fork',
+      reason: 'File is pinned to fork version',
     };
   }
 
-  // 8. Fallback
+  // 5. Non-pinned, non-ignored, blobs differ → always sync to upstream
+  // This ensures fork eventually matches upstream for all non-overridden files
+  if (blobStatus === 'different') {
+    return {
+      strategy: 'keep-upstream',
+      reason: 'Syncing to match upstream',
+    };
+  }
+
+  // 6. Fallback (should rarely hit this)
   return {
     strategy: 'unknown',
     reason: 'Could not determine merge strategy',

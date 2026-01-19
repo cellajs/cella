@@ -31,8 +31,6 @@ function createCommitSummary(status: CommitSummary['status'], overrides: Partial
 
 /**
  * Helper to create a FileAnalysis object for testing.
- * By default creates upstream and fork with DIFFERENT commit SHAs to avoid
- * triggering the "HEADs identical" shortcut.
  */
 function createFileAnalysis(overrides: Partial<FileAnalysis> = {}): FileAnalysis {
   const upstreamFile = createFileEntry({
@@ -56,7 +54,7 @@ function createFileAnalysis(overrides: Partial<FileAnalysis> = {}): FileAnalysis
 
 describe('determineFileMergeStrategy', () => {
   describe('ignored files', () => {
-    it('should return skip-upstream for ignored files', () => {
+    it('should skip-upstream for ignored files (existing)', () => {
       const analysis = createFileAnalysis({ overrideStatus: 'ignored' });
       const result = determineFileMergeStrategy(analysis);
 
@@ -64,10 +62,22 @@ describe('determineFileMergeStrategy', () => {
       expect(result.reason).toContain('ignored');
     });
 
-    it('should skip-upstream regardless of commit status for ignored files', () => {
+    it('should skip-upstream for ignored files (new file)', () => {
       const analysis = createFileAnalysis({
         overrideStatus: 'ignored',
-        commitSummary: createCommitSummary('diverged'),
+        forkFile: undefined,
+        blobStatus: 'missing',
+      });
+      const result = determineFileMergeStrategy(analysis);
+
+      expect(result.strategy).toBe('skip-upstream');
+      expect(result.reason).toContain('ignored');
+    });
+
+    it('should skip-upstream regardless of blob status for ignored files', () => {
+      const analysis = createFileAnalysis({
+        overrideStatus: 'ignored',
+        blobStatus: 'identical',
       });
       const result = determineFileMergeStrategy(analysis);
 
@@ -75,19 +85,7 @@ describe('determineFileMergeStrategy', () => {
     });
   });
 
-  describe('identical files', () => {
-    it('should keep-fork when commit HEADs are identical', () => {
-      const sharedCommit = 'shared-commit-sha';
-      const analysis = createFileAnalysis({
-        upstreamFile: createFileEntry({ lastCommitSha: sharedCommit }),
-        forkFile: createFileEntry({ lastCommitSha: sharedCommit }),
-      });
-      const result = determineFileMergeStrategy(analysis);
-
-      expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('HEADs identical');
-    });
-
+  describe('identical blobs', () => {
     it('should keep-fork when blobs are identical', () => {
       const analysis = createFileAnalysis({ blobStatus: 'identical' });
       const result = determineFileMergeStrategy(analysis);
@@ -95,171 +93,124 @@ describe('determineFileMergeStrategy', () => {
       expect(result.strategy).toBe('keep-fork');
       expect(result.reason).toContain('Blobs identical');
     });
-  });
 
-  describe('fork ahead or up-to-date', () => {
-    it('should keep-fork when ahead with different blob', () => {
+    it('should keep-fork when blobs identical even if pinned', () => {
       const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('ahead'),
-        blobStatus: 'different',
-      });
-      const result = determineFileMergeStrategy(analysis);
-
-      expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('ahead');
-    });
-
-    it('should keep-fork when upToDate with different blob', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('upToDate'),
-        blobStatus: 'different',
-      });
-      const result = determineFileMergeStrategy(analysis);
-
-      expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('upToDate');
-    });
-
-    it('should skip-upstream when ahead and file deleted in fork (missing blob)', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('ahead'),
-        blobStatus: 'missing',
-        forkFile: undefined,
-      });
-      const result = determineFileMergeStrategy(analysis);
-
-      expect(result.strategy).toBe('skip-upstream');
-      expect(result.reason).toContain('deleted in fork');
-    });
-  });
-
-  describe('fork behind upstream', () => {
-    it('should keep-upstream when behind with different blob (default)', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('behind'),
-        blobStatus: 'different',
-      });
-      const result = determineFileMergeStrategy(analysis);
-
-      expect(result.strategy).toBe('keep-upstream');
-      expect(result.reason).toContain('behind');
-    });
-
-    it('should keep-fork when behind with different blob but pinned', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('behind'),
-        blobStatus: 'different',
+        blobStatus: 'identical',
         overrideStatus: 'pinned',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('pinned');
+      expect(result.reason).toContain('Blobs identical');
     });
+  });
 
-    it('should keep-upstream for new files in upstream (behind + missing)', () => {
+  describe('new files (missing in fork)', () => {
+    it('should keep-upstream for new files', () => {
       const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('behind'),
-        blobStatus: 'missing',
         forkFile: undefined,
+        blobStatus: 'missing',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-upstream');
       expect(result.reason).toContain('New file');
     });
-  });
 
-  describe('diverged histories', () => {
-    it('should require manual resolution for diverged without pinned', () => {
+    it('should keep-upstream for new files even if pinned (pinned only protects existing)', () => {
       const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('diverged'),
-        blobStatus: 'different',
+        forkFile: undefined,
+        blobStatus: 'missing',
+        overrideStatus: 'pinned',
       });
       const result = determineFileMergeStrategy(analysis);
 
-      expect(result.strategy).toBe('manual');
-      expect(result.reason).toContain('diverged');
+      expect(result.strategy).toBe('keep-upstream');
+      expect(result.reason).toContain('New file');
     });
 
-    it('should keep-fork for diverged when pinned', () => {
+    it('should skip-upstream for new files if ignored', () => {
       const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('diverged'),
-        blobStatus: 'different',
+        forkFile: undefined,
+        blobStatus: 'missing',
+        overrideStatus: 'ignored',
+      });
+      const result = determineFileMergeStrategy(analysis);
+
+      expect(result.strategy).toBe('skip-upstream');
+    });
+  });
+
+  describe('pinned existing files', () => {
+    it('should keep-fork for pinned files with different blobs', () => {
+      const analysis = createFileAnalysis({
         overrideStatus: 'pinned',
+        blobStatus: 'different',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
       expect(result.reason).toContain('pinned');
     });
-  });
 
-  describe('unrelated histories (first sync)', () => {
-    it('should require manual resolution for unrelated without pinned', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('unrelated'),
-        blobStatus: 'different',
-      });
-      const result = determineFileMergeStrategy(analysis);
+    it('should keep-fork for pinned files regardless of commit status', () => {
+      const statuses: CommitSummary['status'][] = ['ahead', 'behind', 'upToDate', 'diverged', 'unrelated'];
 
-      expect(result.strategy).toBe('manual');
-      expect(result.reason).toContain('unrelated');
-    });
+      for (const status of statuses) {
+        const analysis = createFileAnalysis({
+          overrideStatus: 'pinned',
+          blobStatus: 'different',
+          commitSummary: createCommitSummary(status),
+        });
+        const result = determineFileMergeStrategy(analysis);
 
-    it('should keep-fork for unrelated when pinned', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('unrelated'),
-        blobStatus: 'different',
-        overrideStatus: 'pinned',
-      });
-      const result = determineFileMergeStrategy(analysis);
-
-      expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('pinned');
+        expect(result.strategy).toBe('keep-fork');
+      }
     });
   });
 
-  describe('unknown/fallback cases', () => {
-    it('should return unknown when no commit summary', () => {
+  describe('non-pinned files with different blobs', () => {
+    it('should keep-upstream for different blobs (sync to upstream)', () => {
       const analysis = createFileAnalysis({
-        commitSummary: undefined,
         blobStatus: 'different',
       });
-      // Without commitSummary, status defaults to 'unrelated'
       const result = determineFileMergeStrategy(analysis);
 
-      expect(result.strategy).toBe('manual');
+      expect(result.strategy).toBe('keep-upstream');
+      expect(result.reason).toContain('Syncing to match upstream');
     });
 
-    it('should return unknown for unknown commit status', () => {
-      const analysis = createFileAnalysis({
-        commitSummary: createCommitSummary('unknown'),
-        blobStatus: 'different',
-      });
-      const result = determineFileMergeStrategy(analysis);
+    it('should keep-upstream regardless of commit status', () => {
+      const statuses: CommitSummary['status'][] = ['ahead', 'behind', 'upToDate', 'diverged', 'unrelated'];
 
-      expect(result.strategy).toBe('unknown');
-      expect(result.reason).toContain('Could not determine');
+      for (const status of statuses) {
+        const analysis = createFileAnalysis({
+          blobStatus: 'different',
+          commitSummary: createCommitSummary(status),
+        });
+        const result = determineFileMergeStrategy(analysis);
+
+        expect(result.strategy).toBe('keep-upstream');
+      }
     });
   });
 
   describe('edge cases', () => {
-    it('should handle missing forkFile gracefully', () => {
+    it('should handle missing commitSummary gracefully', () => {
       const analysis = createFileAnalysis({
-        forkFile: undefined,
-        blobStatus: 'missing',
-        commitSummary: createCommitSummary('behind'),
+        commitSummary: undefined,
+        blobStatus: 'different',
       });
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-upstream');
     });
 
-    it('should prioritize ignored over pinned', () => {
-      // This shouldn't happen in practice, but test the precedence
+    it('should prioritize ignored check (runs before blob checks)', () => {
       const analysis = createFileAnalysis({
-        overrideStatus: 'ignored', // ignored takes priority
+        overrideStatus: 'ignored',
+        blobStatus: 'identical', // Would normally keep-fork
       });
       const result = determineFileMergeStrategy(analysis);
 

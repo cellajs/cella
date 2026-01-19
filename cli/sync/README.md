@@ -74,28 +74,29 @@ pnpm sync [options]
 
 ## Configuration
 
-Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible default is already included after you created your app.
+Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible default is already included after you created your app. To deviate files or folders from template:
 
-- **`ignored`** - Files skipped entirely during sync (e.g., your app-specific docs)
-- **`pinned`** - Files pinned to fork; your version is preferred during merge conflicts
+- **`ignored`** - Files completely excluded from sync (existing and new)
+- **`pinned`** - Existing files keep your version; new files still added from upstream
 
 ## Merge Strategy
 
-The sync CLI evaluates each file through these questions, in order:
+The sync CLI uses **blob comparison** (file content) to determine what to sync. For each file, it evaluates in order:
 
-1. **Ignored?** → Skip upstream changes entirely (file is yours, untouched)
-2. **Content identical?** → Keep fork (nothing to sync)
-3. **Fork ahead/up-to-date?** → Keep fork (your changes are newer or current)
-4. **Fork behind?** → Take upstream, *unless* `pinned` → keep fork
-5. **Diverged/unrelated?** → Manual resolve, *unless* `pinned` → keep fork
+1. **Ignored?** → Skip entirely (existing and new files)
+2. **Content identical?** → Keep fork (nothing to do)
+3. **New file in upstream?** → Add file (even if path matches a `pinned` pattern)
+4. **Pinned existing file?** → Keep fork version
+5. **Content differs?** → Sync to upstream
+
+This ensures your fork eventually matches upstream for all non-overridden files.
 
 ### Quick Reference
 
 | Scenario | `ignored` | `pinned` | Default |
 |----------|:---------:|:--------:|:-------:|
-| Upstream changed only | ⏭️ Skip | ⬇️ Take upstream | ⬇️ Take upstream |
-| You changed only | ⏭️ Skip | ✅ Keep yours | ✅ Keep yours |
-| Both changed (diverged) | ⏭️ Skip | ✅ Keep yours | ⚠️ Manual resolve |
+| Content identical | ✅ Keep | ✅ Keep | ✅ Keep |
+| Content differs | ⏭️ Skip | ✅ Keep yours | ⬇️ Take upstream |
 | New upstream file | ⏭️ Skip | ➕ Add file | ➕ Add file |
 | Deleted in upstream | ⏭️ Skip | 🗑️ Delete | 🗑️ Delete |
 | Only in your app | ✅ Keep | ✅ Keep | ✅ Keep |
@@ -104,15 +105,15 @@ The sync CLI evaluates each file through these questions, in order:
 
 | Goal | Action |
 |------|--------|
-| File should never receive updates | Add to `ignored` — *"this file is mine, don't touch it"* |
-| Preserve your modifications on conflicts | Add to `pinned` — *"prefer my version when diverged"* |
-| Accept normal git merge behavior | Leave unconfigured — deletions propagate, conflicts require resolution |
+| File should never sync (existing or new) | Add to `ignored` — file is completely yours |
+| Keep your version but allow new files | Add to `pinned` — protects existing, adds new |
+| Always match upstream | Leave unconfigured — syncs automatically |
 
 ### Tips
 
 - Run `pnpm sync --sync-service analyze` first to preview changes without applying
-- Add frequently-modified files to `pinned` to reduce merge conflicts
-- Use `ignored` for app-specific docs, assets, or config you never want synced
+- Use `pinned` for config files you customize but want to see new upstream additions
+- Use `ignored` for app-specific docs, assets, or config you fully own
 
 ## Development
 

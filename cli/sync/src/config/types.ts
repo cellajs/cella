@@ -50,14 +50,14 @@ export interface CellaSyncConfig {
    */
   overrides?: {
     /**
-     * Files pinned to fork — your version is preferred during merge conflicts.
-     * Use for files you've customized but still want to receive non-conflicting updates.
+     * Files pinned to fork — existing files keep your version, but new files are still added.
+     * Use for files you've customized but want to see new additions from upstream.
      * Example: config files, routes, branding assets.
      */
     pinned?: string[];
 
     /**
-     * Files ignored entirely during sync — upstream changes are never applied.
+     * Files ignored entirely during sync — never synced (existing or new).
      * Use for app-specific files that should never sync with upstream.
      * Example: your app's docs, custom modules, local configs.
      */
