@@ -101,6 +101,7 @@ export interface SyncState {
   debug: boolean;
   verbose: boolean;
   skipPackages: boolean;
+  logFile: boolean;
   maxSquashPreviews: number;
   packageJsonSync: PackageJsonSyncKey[];
 

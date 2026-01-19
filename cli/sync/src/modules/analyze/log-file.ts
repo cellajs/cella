@@ -6,10 +6,69 @@
  * - Commit counts (how many commits ahead/behind upstream)
  * - Merge strategy (keep-fork, take-upstream, manual, skip)
  * - Override status (pinned or ignored via cella.config.ts)
+ *
+ * Console output is filtered to show only files needing attention.
+ * Use --log flag to write full analysis to cella-sync.{timestamp}.log.
  */
+import { appendFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import pc from 'picocolors';
 import { config } from '#/config';
 import type { FileAnalysis } from '#/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Log File Support
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Generates a timestamped log filename */
+function getLogFileName(): string {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  return `cella-sync.${timestamp}.log`;
+}
+
+/** Current log file path (set when --log flag is used) */
+let logFilePath: string | null = null;
+
+/**
+ * Initializes the log file for writing full analysis output.
+ * Called at the start of file analysis when --log flag is used.
+ */
+export function initLogFile(): void {
+  if (!config.logFile) return;
+
+  const fileName = getLogFileName();
+  logFilePath = join(config.workingDirectory, fileName);
+
+  const header = `Cella Sync Analysis Log\nGenerated: ${new Date().toISOString()}\n${'─'.repeat(60)}\n\n`;
+  writeFileSync(logFilePath, header);
+  console.info(pc.dim(`Writing full analysis to ${fileName}`));
+}
+
+/**
+ * Writes a line to the log file (strips ANSI colors).
+ */
+function writeToLogFile(line: string): void {
+  if (!logFilePath) return;
+
+  // Strip ANSI color codes for log file
+  const plainLine = line.replace(/\x1b\[[0-9;]*m/g, '');
+  appendFileSync(logFilePath, plainLine + '\n');
+}
+
+/**
+ * Finalizes the log file and reports location to user.
+ */
+export function finalizeLogFile(): void {
+  if (!logFilePath) return;
+
+  appendFileSync(logFilePath, `\n${'─'.repeat(60)}\nEnd of analysis\n`);
+  console.info(pc.green(`✓ Full analysis written to ${logFilePath}`));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Line Formatting
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Creates a formatted log line for an analyzed file.
@@ -17,6 +76,7 @@ import type { FileAnalysis } from '#/types';
  */
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const parts: string[] = [
+    getOverrideFlag(analyzedFile),
     getFilePath(analyzedFile),
     getGitStatus(analyzedFile),
     getCommitState(analyzedFile),
@@ -27,6 +87,19 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   ].filter(Boolean);
 
   return parts.join(' ').trim();
+}
+
+/**
+ * Returns the override status indicator.
+ * - 📌 for pinned files (protected, prefer fork version)
+ * - (empty) for unpinned files (normal sync behavior)
+ * Ignored files are not shown in console output.
+ */
+function getOverrideFlag(analyzedFile: FileAnalysis): string {
+  if (analyzedFile.overrideStatus === 'pinned') {
+    return pc.cyan('◆');
+  }
+  return '◇';
 }
 
 /** Returns the styled file path (relative to repo root). */
@@ -124,6 +197,10 @@ function getStrategyReason(analyzedFile: FileAnalysis): string {
   return pc.green(`→ ${mergeStrategy.reason}`);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Console Output Filtering
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Determines if the file analysis module should display output.
  * Only shown in verbose or debug mode (controlled via --verbose or --debug flags).
@@ -133,33 +210,63 @@ export function shouldLogAnalyzedFileModule(): boolean {
 }
 
 /**
+ * Determines if a file should be shown in console output.
+ *
+ * Console filtering (files needing attention):
+ * - Skip: ignored files (flagged in cella.config.ts)
+ * - Skip: up-to-date files (nothing to sync)
+ * - Skip: files with identical content
+ * - Skip: ahead + pinned files (protected, no action needed)
+ * - Show: ahead + unpinned files (at risk - may want to pin)
+ * - Show: behind, diverged, manual, unknown (require attention)
+ */
+function shouldShowInConsole(analyzedFile: FileAnalysis): boolean {
+  const status = analyzedFile.commitSummary?.status;
+  const reason = analyzedFile.mergeStrategy?.reason || '';
+  const isPinned = analyzedFile.overrideStatus === 'pinned';
+  const isIgnored = analyzedFile.overrideStatus === 'ignored';
+
+  // Never show ignored files in console
+  if (isIgnored) return false;
+
+  // Never show up-to-date files
+  if (status === 'upToDate') return false;
+
+  // Never show files with identical content
+  if (reason.includes('identical')) return false;
+
+  // Ahead + pinned = protected, no action needed
+  if (status === 'ahead' && isPinned) return false;
+
+  // Show ahead + unpinned (at risk), behind, diverged, manual, unknown
+  return true;
+}
+
+/**
  * Logs the analyzed file line with smart filtering.
  *
- * Filtering logic:
- * - Always skip files with identical content (nothing to sync)
- * - In verbose/debug mode: show all non-identical files
- * - Default mode: only show files needing attention (diverged, behind, manual, unknown)
+ * Console: Only files needing attention (ahead+unpinned, behind, diverged, manual, unknown)
+ * Log file: All files (when --log flag is used)
  */
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
-  const status = analyzedFile.commitSummary?.status;
-  const strategy = analyzedFile.mergeStrategy?.strategy;
-  const reason = analyzedFile.mergeStrategy?.reason || '';
+  // Always write to log file if enabled (includes all files)
+  if (config.logFile) {
+    writeToLogFile(line);
+  }
 
-  // Skip files with identical content - trivial keep-fork cases, not useful to show
-  const isIdentical = reason.includes('identical');
-  if (isIdentical) return;
-
-  // In verbose/debug mode, log everything except identical files
+  // In verbose/debug mode, show more files but still filter ignored/up-to-date
   if (config.debug || config.verbose) {
-    console.info(line);
+    if (analyzedFile.overrideStatus !== 'ignored' && analyzedFile.commitSummary?.status !== 'upToDate') {
+      const reason = analyzedFile.mergeStrategy?.reason || '';
+      if (!reason.includes('identical')) {
+        console.info(line);
+      }
+    }
     return;
   }
 
-  // Default: only log files needing attention (diverged, behind, manual, unknown)
-  const needsAttention =
-    status === 'diverged' || status === 'behind' || strategy === 'manual' || strategy === 'unknown';
-
-  if (needsAttention) {
+  // Default: only show files needing attention
+  if (shouldShowInConsole(analyzedFile)) {
     console.info(line);
   }
 }

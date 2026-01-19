@@ -14,4 +14,6 @@ export interface CLIConfig {
   verbose: boolean;
   /** When true, skip package.json sync during sync service */
   skipPackages: boolean;
+  /** When true, write full file analysis to a timestamped log file */
+  logFile: boolean;
 }

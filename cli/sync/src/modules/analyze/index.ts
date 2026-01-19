@@ -12,11 +12,23 @@ import { gitLatestCommit, gitMergeBase } from '#/utils/git/command';
 import { getGitFileHashes } from '#/utils/git/files';
 import { createProgress } from '#/utils/progress';
 import { analyzeFile } from './analyze-file';
-import { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log-file';
+import {
+  analyzedFileLine,
+  finalizeLogFile,
+  initLogFile,
+  logAnalyzedFileLine,
+  shouldLogAnalyzedFileModule,
+} from './log-file';
 import { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log-summary';
 
 // Re-export log utilities for external use
-export { analyzedFileLine, logAnalyzedFileLine, shouldLogAnalyzedFileModule } from './log-file';
+export {
+  analyzedFileLine,
+  finalizeLogFile,
+  initLogFile,
+  logAnalyzedFileLine,
+  shouldLogAnalyzedFileModule,
+} from './log-file';
 export { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log-summary';
 
 // Run 10 analyses at a time
@@ -108,7 +120,10 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
   });
 
   // Log the analyzed files
-  if (shouldLogAnalyzedFileModule()) {
+  if (shouldLogAnalyzedFileModule() || config.logFile) {
+    // Initialize log file if --log flag is used
+    initLogFile();
+
     console.info();
     console.info(pc.cyan('File Analysis'));
     console.info(DIVIDER);
@@ -117,6 +132,9 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
       const line = analyzedFileLine(file);
       logAnalyzedFileLine(file, line);
     }
+
+    // Finalize log file
+    finalizeLogFile();
   }
 
   // Log the summary of analyzed files

@@ -48,6 +48,10 @@ export function onInitialConfigLoad(cli: CLIConfig) {
     config.skipPackages = cli.skipPackages;
   }
 
+  if (cli.logFile) {
+    config.logFile = cli.logFile;
+  }
+
   if (cli.upstreamBranch) {
     config.upstreamBranch = cli.upstreamBranch;
   }

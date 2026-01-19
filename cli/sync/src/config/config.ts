@@ -2,7 +2,7 @@
  * Configuration management for the Cella sync CLI.
  * Uses a flat structure for clarity and consistency.
  */
-import customConfig from '../../../../cella.config';
+import customConfig from '#root/cella.config';
 import {
   forkBranchDefault,
   forkSyncBranchDefault,
@@ -24,6 +24,7 @@ const state: SyncState = {
   debug: false,
   verbose: customConfig.verbose ?? verboseDefault,
   skipPackages: false,
+  logFile: false,
   maxSquashPreviews: customConfig.maxSquashPreviews ?? maxSquashPreviewsDefault,
   packageJsonSync: customConfig.packageJsonSync ?? packageJsonSyncDefault,
 
@@ -135,6 +136,13 @@ export const config = {
   },
   set skipPackages(value: boolean) {
     state.skipPackages = value;
+  },
+
+  get logFile(): boolean {
+    return state.logFile;
+  },
+  set logFile(value: boolean) {
+    state.logFile = value;
   },
 
   get maxSquashPreviews(): number {

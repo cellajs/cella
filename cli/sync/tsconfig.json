@@ -13,7 +13,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "#/*": ["./src/*"]
+      "#/*": ["./src/*"],
+      "#root/*": ["../../*"]
     }
   },
   "include": ["src", "tests", "index.ts"]

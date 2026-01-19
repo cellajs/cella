@@ -16,6 +16,7 @@ let ciMode = false;
 let debugMode = false;
 let verboseMode = false;
 let skipPackages = false;
+let logFileMode = false;
 
 /**
  * Defines the root CLI command using Commander.
@@ -44,6 +45,9 @@ const command = new Command(NAME)
   })
   .option('--skip-packages', 'skip package.json dependency synchronization during sync', () => {
     skipPackages = true;
+  })
+  .option('--log', 'write full file analysis to cella-sync.{timestamp}.log', () => {
+    logFileMode = true;
   })
   .option('--sync-service <name>', 'explicitly tell the CLI which sync service to use', (name: string) => {
     syncService = validateSyncService(name);
@@ -79,6 +83,7 @@ const cli: CLIConfig = {
   debug: debugMode,
   verbose: verboseMode,
   skipPackages,
+  logFile: logFileMode,
 };
 
 /**
