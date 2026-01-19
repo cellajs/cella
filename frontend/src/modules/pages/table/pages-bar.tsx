@@ -70,7 +70,7 @@ export const PagesTableBar = ({
       clearSelection();
     };
 
-    createDialog(<DeletePages pages={selected} pagesCollection={pagesCollection} callback={callback} />, {
+    createDialog(<DeletePages pages={selected} pagesCollection={pagesCollection} callback={callback} isDialog />, {
       id: 'delete-pages',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

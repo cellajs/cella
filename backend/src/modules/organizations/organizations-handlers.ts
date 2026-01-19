@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -8,9 +8,7 @@ import { type Env, getContextMemberships, getContextUser, getContextUserSystemRo
 import { AppError } from '#/lib/error';
 import { sendSSEByUserIds } from '#/lib/sse';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getEntityCounts } from '#/modules/entities/helpers/counts';
-import { getMemberCountsQuery } from '#/modules/entities/helpers/counts/member';
-import { getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts/related-entities';
+import { getEntityCounts, getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
 import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
@@ -117,25 +115,15 @@ const organizationRouteHandlers = app
     // Org-only filters belong in WHERE (safe for both admin + non-admin)
     const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
 
-    const membershipCountsQuery = getMemberCountsQuery(entityType);
-    const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
+    // Get reusable count subqueries and select shape
+    const { memberCountsSubquery, relatedCountsSubquery, countsSelect } = getEntityCountsSelect(entityType);
 
-    const validEntities = getEntityTypesScopedByContextEntityType(entityType);
-    const relatedJsonPairs = validEntities
-      .map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`)
-      .join(', ');
+    // System admin can see all orgs (no join needed), others need membership
+    const baseQuery = db.select({ orgId: organizationsTable.id }).from(organizationsTable);
 
-    // Base query for total
     const totalQuery = isSystemAdmin
-      ? db
-          .select({ orgId: organizationsTable.id })
-          .from(organizationsTable)
-          .leftJoin(membershipsTable, membershipOn)
-          .where(and(...orgWhere))
-          .as('base')
-      : db
-          .select({ orgId: organizationsTable.id })
-          .from(organizationsTable)
+      ? baseQuery.where(and(...orgWhere)).as('base')
+      : baseQuery
           .innerJoin(membershipsTable, membershipOn)
           .where(and(...orgWhere))
           .as('base');
@@ -157,24 +145,15 @@ const organizationRouteHandlers = app
     const selectShape = {
       ...getTableColumns(organizationsTable),
       membership: membershipBaseSelect,
-      counts: {
-        membership: sql`
-        json_build_object(
-          'admin', COALESCE(${membershipCountsQuery.admin}, 0),
-          'member', COALESCE(${membershipCountsQuery.member}, 0),
-          'pending', COALESCE(${membershipCountsQuery.pending}, 0),
-          'total', COALESCE(${membershipCountsQuery.total}, 0)
-        )`,
-        entities: sql`json_build_object(${sql.raw(relatedJsonPairs)})`,
-      },
+      counts: countsSelect,
     } as const;
 
     const organizations = await db
       .select(selectShape)
       .from(organizationsTable)
       .innerJoin(membershipsTable, membershipOn)
-      .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
-      .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
+      .leftJoin(memberCountsSubquery, eq(organizationsTable.id, memberCountsSubquery.id))
+      .leftJoin(relatedCountsSubquery, eq(organizationsTable.id, relatedCountsSubquery.id))
       .where(and(...orgWhere))
       .orderBy(orderColumn)
       .limit(limit)

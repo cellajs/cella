@@ -14,13 +14,13 @@ function getEntityIdColumn(entityType: ContextEntityType) {
 }
 
 /**
- * Generates a query to count the number of admins and members for a specific entity.
- * If an entity is provided, counts are filtered by entity. Otherwise, counts are for all entities.
+ * Generates a subquery to count the number of admins and members for a specific entity type.
+ * Used for LEFT JOINs in list queries.
  *
- * @param entity - The entity type to filter by, or null for counting all entities.
- * @returns Query object that can be executed
+ * @param entityType - The context entity type to count members for
+ * @returns Subquery that can be joined on the entity's id column
  */
-export const getMemberCountsQuery = (entityType: ContextEntityType) => {
+export const getMemberCountsSubquery = (entityType: ContextEntityType) => {
   const targetEntityIdField = appConfig.entityIdColumnKeys[entityType];
   const entityIdColumn = getEntityIdColumn(entityType);
 
@@ -50,26 +50,3 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
     .groupBy(entityIdColumn)
     .as('membership_counts');
 };
-
-/**
- * Executes a count query to count admins and members for a given entity or entity id.
- *
- * @param entityType - The entity to filter by, or null for all entities.
- * @param id - id to filter the count by a specific entity instance.
- * @returns The count of admins, members, pending and total members.
- */
-export function getMemberCounts(entityType: ContextEntityType, id: string) {
-  const query = getMemberCountsQuery(entityType);
-
-  return db
-    .select({
-      admin: query.admin,
-      member: query.member,
-      pending: query.pending,
-      total: query.total,
-    })
-    .from(query)
-    .where(eq(getEntityIdColumn(entityType), id))
-    .limit(1)
-    .then((rows) => rows[0] || { admin: 0, member: 0, pending: 0, total: 0 });
-}

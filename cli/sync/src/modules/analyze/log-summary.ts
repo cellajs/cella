@@ -5,19 +5,34 @@ import pc from 'picocolors';
 import { DIVIDER } from '#/constants';
 import type { FileAnalysis } from '#/types';
 
+/** Aggregated sync status counts for display. */
+type SyncSummary = {
+  totalFiles: number;
+  identical: number;
+  ahead: number;
+  aheadPinned: number;
+  behind: number;
+  locked: number;
+  drifted: number;
+  conflict: number;
+  unrelated: number;
+  unknown: number;
+};
+
 /**
  * Generates summary lines from the analyzed files.
  * Returns a detailed multi-line summary with inline descriptions.
  */
 export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
-  const summary = {
+  const summary: SyncSummary = {
     totalFiles: 0,
     identical: 0,
     ahead: 0,
     aheadPinned: 0,
     behind: 0,
-    locked: 0, // git diverged + pinned
-    drifted: 0, // git ahead + unpinned (at risk)
+    locked: 0,
+    drifted: 0,
+    conflict: 0,
     unrelated: 0,
     unknown: 0,
   };
@@ -45,7 +60,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
       if (isPinned) {
         summary.locked++;
       } else {
-        summary.diverged++;
+        summary.conflict++;
       }
     } else if (gitStatus === 'unrelated') {
       summary.unrelated++;
@@ -54,7 +69,6 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     }
   }
 
-  const aheadUnpinned = summary.ahead - summary.aheadPinned;
   const lines: string[] = [];
 
   // Header
@@ -84,7 +98,7 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     `${pc.yellow('🔒')}${pc.yellow(padNum(summary.locked))} locked${pc.dim('                       both sides changed, pinned to fork')}`,
   );
   lines.push(
-    `${pc.red('⚡')}${pc.red(padNum(summary.diverged))} conflict${pc.dim('                     both sides changed, needs merge')}`,
+    `${pc.red('⚡')}${pc.red(padNum(summary.conflict))} conflict${pc.dim('                     both sides changed, needs merge')}`,
   );
   lines.push(
     `${pc.magenta('⚠')} ${pc.magenta(padNum(summary.unrelated))} unrelated${pc.dim('                    no shared history')}`,

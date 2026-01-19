@@ -260,8 +260,8 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
               pages.map((page) => (
                 <SidebarMenuItem key={page.id}>
                   <Link
-                    to="/docs/page/$id/$mode"
-                    params={{ id: page.id, mode: 'view' }}
+                    to="/docs/page/$id"
+                    params={{ id: page.id }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'w-full justify-start font-normal group px-3 lowercase',

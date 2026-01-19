@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getTableColumns, ilike, inArray, or, SQL } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
 import { db } from '#/db/db';
 import { PageModel, pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
@@ -13,6 +12,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 

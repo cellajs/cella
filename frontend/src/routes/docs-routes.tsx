@@ -44,7 +44,8 @@ const OperationsPage = lazy(() => import('~/modules/docs/operations/operations-p
 const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table'));
 const SchemasPage = lazy(() => import('~/modules/docs/schemas/schemas-page'));
 const PagesTable = lazy(() => import('~/modules/pages/table'));
-const PagePage = lazy(() => import('~/modules/pages/page-page'));
+const ViewPage = lazy(() => import('~/modules/pages/view-page'));
+const UpdatePage = lazy(() => import('~/modules/pages/update-page'));
 
 /**
  * Documentation layout route for API reference and developer guides.
@@ -195,10 +196,10 @@ export const DocsPagesRoute = createRoute({
 });
 
 /**
- * Single page route - displays an individual documentation page.
+ * View page route - displays an individual documentation page.
  */
 export const DocsPageRoute = createRoute({
-  path: '/page/$id/$mode',
+  path: '/page/$id',
   staticData: { isAuth: false },
   loader: ({ params: { id } }) => {
     const pagesCollection = initPagesCollection();
@@ -210,11 +211,33 @@ export const DocsPageRoute = createRoute({
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
     const { pageId, pagesCollection } = useLoaderData({ from: DocsPageRoute.id });
-    const { mode } = DocsPageRoute.useParams();
-    const resolvedMode = mode === 'edit' ? 'edit' : 'view';
     return (
       <Suspense>
-        <PagePage key={pageId} pageId={pageId} pagesCollection={pagesCollection} mode={resolvedMode} />
+        <ViewPage key={pageId} pageId={pageId} pagesCollection={pagesCollection} />
+      </Suspense>
+    );
+  },
+});
+
+/**
+ * Edit page route - displays the page edit form.
+ */
+export const DocsPageEditRoute = createRoute({
+  path: '/page/$id/edit',
+  staticData: { isAuth: false },
+  loader: ({ params: { id } }) => {
+    const pagesCollection = initPagesCollection();
+    return { pageId: id, pagesCollection };
+  },
+  head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
+  getParentRoute: () => DocsLayoutRoute,
+  errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
+  notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
+  component: () => {
+    const { pageId, pagesCollection } = useLoaderData({ from: DocsPageEditRoute.id });
+    return (
+      <Suspense>
+        <UpdatePage key={pageId} pageId={pageId} pagesCollection={pagesCollection} />
       </Suspense>
     );
   },

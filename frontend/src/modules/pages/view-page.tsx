@@ -1,31 +1,27 @@
 import { eq, useLiveQuery } from '@tanstack/react-db';
 import { useNavigate } from '@tanstack/react-router';
-import { Edit, Eye } from 'lucide-react';
+import { EditIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
 import type { initPagesCollection } from '~/modules/pages/collections';
-import UpdatePageForm from '~/modules/pages/update-page-form';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
 const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
-interface PagePageProps {
+interface ViewPageProps {
   pageId: string;
   pagesCollection: ReturnType<typeof initPagesCollection>;
-  mode?: 'view' | 'edit';
 }
 
 /**
  * Displays a page with its name as title and description as the main content.
- * In edit mode, shows the update form instead.
  */
-const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => {
+const ViewPage = ({ pageId, pagesCollection }: ViewPageProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
   const { systemRole } = useUserStore();
 
   // Get page from sync collection
@@ -36,14 +32,6 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
 
   const page = pages?.[0];
 
-  const toggleMode = () => {
-    navigate({
-      to: '/docs/page/$id/$mode',
-      replace: true,
-      params: { id: pageId, mode: mode === 'view' ? 'edit' : 'view' },
-    });
-  };
-
   // Show loading state while waiting for sync
   if (!page) {
     return (
@@ -53,46 +41,23 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
     );
   }
 
-  const headerSection = (
-    <div className="flex items-center justify-between gap-3 mb-6">
-      <div className="flex items-center gap-2">
-        {systemRole && (
-          <Button variant="plain" onClick={toggleMode}>
-            {mode === 'view' ? (
-              <>
-                <Edit size={16} className="mr-2" />
-                {t('common:edit')}
-              </>
-            ) : (
-              <>
-                <Eye size={16} className="mr-2" />
-                {t('common:view')}
-              </>
-            )}
-          </Button>
-        )}
-      </div>
-      <div className="text-sm text-muted-foreground">
-        {t('common:created_at')} {dateShort(page.createdAt)}
-      </div>
-    </div>
-  );
-
-  if (mode === 'edit') {
-    return (
-      <div className="container">
-        <div className="mx-auto max-w-4xl">
-          {headerSection}
-          <UpdatePageForm page={page} pagesCollection={pagesCollection} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container">
       <div className="mx-auto max-w-4xl">
-        {headerSection}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            {systemRole && (
+              <Button variant="plain" onClick={() => navigate({ to: '/docs/page/$id/edit', params: { id: pageId } })}>
+                <EditIcon size={16} className="mr-2" />
+                {t('common:edit')}
+              </Button>
+            )}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {t('common:created_at')} {dateShort(page.createdAt)}
+          </div>
+        </div>
+
         <div className="prose dark:prose-invert">
           <h1 className="pt-2">{page.name}</h1>
 
@@ -113,4 +78,4 @@ const PagePage = ({ pageId, pagesCollection, mode = 'view' }: PagePageProps) => 
   );
 };
 
-export default PagePage;
+export default ViewPage;

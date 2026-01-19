@@ -123,7 +123,9 @@ const OpenApiSpecViewer = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
-        <span className="text-destructive">{t('common:docs.failed_to_load_openapi')}</span>
+        <span className="text-destructive">
+          {t('error:load_resource', { resource: t('common:docs.openapi_specification').toLowerCase() })}
+        </span>
       </div>
     );
   }

@@ -8,6 +8,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { pagesLimit } from '~/modules/pages/query';
 import type { PagesRouteSearchParams } from '~/modules/pages/types';
 import { DocsPagesRoute } from '~/routes/docs-routes';
@@ -63,10 +64,12 @@ const PagesTable = () => {
 
   const clearSelection = () => setSelected([]);
 
-  const error = isError ? new Error(t('common:failed_to_load_pages')) : undefined;
+  const error = isError
+    ? new Error(t('error:load_resource', { resource: t('common:pages').toLowerCase() }))
+    : undefined;
 
   return (
-    <div data-is-compact={isCompact} className="flex flex-col gap-4 h-full">
+    <FocusViewContainer data-is-compact={isCompact} className="container min-h-screen flex flex-col gap-4">
       <PagesTableBar
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
@@ -102,7 +105,7 @@ const PagesTable = () => {
           />
         }
       />
-    </div>
+    </FocusViewContainer>
   );
 };
 

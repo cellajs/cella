@@ -129,7 +129,6 @@
   "docs.auth_required": "Auth required",
   "docs.coming_soon": "Coming soon...",
   "docs.description_updated": "Description updated in source code",
-  "docs.failed_to_load_openapi": "Failed to load OpenAPI specification",
   "docs.guard": "Guard",
   "docs.hide_details": "Hide details",
   "docs.no_description": "No description",

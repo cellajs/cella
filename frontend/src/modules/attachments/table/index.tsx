@@ -167,7 +167,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
 
   const visibleColumns = columns.filter((column) => column.visible);
 
-  const error = isError ? new Error(t('common:failed_to_load_attachments')) : undefined;
+  const error = isError
+    ? new Error(t('error:load_resource', { resource: t('common:attachments').toLowerCase() }))
+    : undefined;
 
   const NoRowsComponent = (
     <ContentPlaceholder
