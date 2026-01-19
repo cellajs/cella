@@ -64,7 +64,7 @@ export function finalizeLogFile(): void {
   if (!logFilePath) return;
 
   appendFileSync(logFilePath, `\n${'─'.repeat(60)}\nEnd of analysis\n`);
-  console.info(pc.green(`✓ Full analysis written to ${logFilePath}`));
+  console.info(pc.green('✓') + ` Full analysis written to ${logFilePath}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

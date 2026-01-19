@@ -135,12 +135,17 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     // Check if any files would be shown in console
     const hasFilesToShow = analyzedFiles.some(shouldShowInConsole);
 
-    if (hasFilesToShow) {
+    // Always loop through files when --log is used (to write all to log file)
+    // Or when there are files to show in console
+    if (hasFilesToShow || config.logFile) {
       for (const file of analyzedFiles) {
         const line = analyzedFileLine(file);
         logAnalyzedFileLine(file, line);
       }
-    } else {
+    }
+
+    // Show "all identical" message if nothing shown in console
+    if (!hasFilesToShow) {
       console.info(pc.dim('all identical'));
     }
 
