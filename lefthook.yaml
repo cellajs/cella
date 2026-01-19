@@ -1,10 +1,10 @@
-# pre-commit:
-#   commands:
-#     validate-config:
-#       run: pnpm --filter @cellajs/sync validate
-#     typescript:
-#       run: pnpm generate:openapi && pnpm ts
-#     biome:
-#       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-#       run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
-#   parallel: false
+pre-commit:
+  commands:
+    # validate-config:
+    #   run: pnpm --filter @cellajs/sync validate
+    typescript:
+      run: pnpm generate:openapi && pnpm ts
+    biome:
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+  parallel: false

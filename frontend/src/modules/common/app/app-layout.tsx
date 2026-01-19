@@ -4,7 +4,7 @@ import AppSheets from '~/modules/common/app/app-sheets';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
-import ErrorNotice from '~/modules/common/error-notice';
+import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import SSE from '~/modules/common/sse';
 import { SSEProvider } from '~/modules/common/sse/provider';
@@ -23,7 +23,7 @@ const AppLayout = () => {
     <div id="appLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => (
-          <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />
+          <ErrorNotice error={error as ErrorNoticeError} level="root" resetErrorBoundary={resetErrorBoundary} />
         )}
       >
         <SSEProvider>

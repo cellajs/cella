@@ -16,10 +16,24 @@ const docsBaseUrl = `${appConfig.frontendUrl}/static/docs.gen`;
 export const openApiUrl = `${appConfig.frontendUrl}/static/openapi.json`;
 
 /**
+ * Query keys for docs-related queries.
+ */
+export const docsKeys = {
+  all: ['docs'] as const,
+  spec: ['openapi-spec'] as const,
+  operations: ['docs', 'operations'] as const,
+  operationTags: ['docs', 'operation-tags'] as const,
+  info: ['docs', 'info'] as const,
+  schemas: ['docs', 'schemas'] as const,
+  schemaTags: ['docs', 'schema-tags'] as const,
+  tagDetails: (tagName: string) => ['docs', 'tag-details', tagName] as const,
+};
+
+/**
  * Query options for fetching the OpenAPI specification JSON.
  */
 export const openApiSpecQueryOptions = queryOptions({
-  queryKey: ['openapi-spec'],
+  queryKey: docsKeys.spec,
   queryFn: async () => {
     const response = await fetch(openApiUrl);
     if (!response.ok) throw new Error(response.statusText);
@@ -32,7 +46,7 @@ export const openApiSpecQueryOptions = queryOptions({
  * Query options for fetching operations list (reduces bundle size).
  */
 export const operationsQueryOptions = queryOptions({
-  queryKey: ['docs', 'operations'],
+  queryKey: docsKeys.operations,
   queryFn: async () => {
     const response = await fetch(`${docsBaseUrl}/operations.gen.json`);
     if (!response.ok) throw new Error(response.statusText);
@@ -45,7 +59,7 @@ export const operationsQueryOptions = queryOptions({
  * Query options for fetching tags list.
  */
 export const tagsQueryOptions = queryOptions({
-  queryKey: ['docs', 'tags'],
+  queryKey: docsKeys.operationTags,
   queryFn: async () => {
     const response = await fetch(`${docsBaseUrl}/tags.gen.json`);
     if (!response.ok) throw new Error(response.statusText);
@@ -58,7 +72,7 @@ export const tagsQueryOptions = queryOptions({
  * Query options for fetching OpenAPI info summary.
  */
 export const infoQueryOptions = queryOptions({
-  queryKey: ['docs', 'info'],
+  queryKey: docsKeys.info,
   queryFn: async () => {
     const response = await fetch(`${docsBaseUrl}/info.gen.json`);
     if (!response.ok) throw new Error(response.statusText);
@@ -71,7 +85,7 @@ export const infoQueryOptions = queryOptions({
  * Query options for fetching schemas list.
  */
 export const schemasQueryOptions = queryOptions({
-  queryKey: ['docs', 'schemas'],
+  queryKey: docsKeys.schemas,
   queryFn: async () => {
     const response = await fetch(`${docsBaseUrl}/schemas.gen.json`);
     if (!response.ok) throw new Error(response.statusText);
@@ -84,7 +98,7 @@ export const schemasQueryOptions = queryOptions({
  * Query options for fetching schema tags list.
  */
 export const schemaTagsQueryOptions = queryOptions({
-  queryKey: ['docs', 'schema-tags'],
+  queryKey: docsKeys.schemaTags,
   queryFn: async () => {
     const response = await fetch(`${docsBaseUrl}/schema-tags.gen.json`);
     if (!response.ok) throw new Error(response.statusText);
@@ -98,7 +112,7 @@ export const schemaTagsQueryOptions = queryOptions({
  */
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
-    queryKey: ['docs', 'tag-details', tagName],
+    queryKey: docsKeys.tagDetails(tagName),
     queryFn: async () => {
       const response = await fetch(`${docsBaseUrl}/details.gen/${tagName}.gen.json`);
       if (!response.ok) throw new Error(response.statusText);

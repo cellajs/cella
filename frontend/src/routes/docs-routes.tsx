@@ -1,4 +1,4 @@
-import type { QueryOptions } from '@tanstack/react-query';
+import type { EnsureQueryDataOptions } from '@tanstack/react-query';
 import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -27,7 +27,9 @@ import { stripParams } from '~/utils/strip-search-params';
  * Ensures query data is available, falling back to cache if fetch fails (offline support).
  * Returns undefined if neither fetch nor cache succeeds.
  */
-async function ensureQueryDataWithFallback<T>(options: QueryOptions<T>): Promise<T | undefined> {
+async function ensureQueryDataWithFallback<T, TQueryKey extends readonly unknown[]>(
+  options: EnsureQueryDataOptions<T, Error, T, TQueryKey>,
+): Promise<T | undefined> {
   try {
     return await queryClient.ensureQueryData(options);
   } catch {

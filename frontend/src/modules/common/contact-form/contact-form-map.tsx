@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
-import ErrorNotice from '~/modules/common/error-notice';
+import ErrorNotice, { type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 import Logo from '/static/logo/logo-icon-only.svg';
@@ -117,7 +117,7 @@ const ContactFormMap = () => {
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />
+        <ErrorNotice level="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
       )}
     >
       <div className="w-full h-full">
