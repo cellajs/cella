@@ -98,7 +98,7 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 | Content identical | ✅ Keep | ✅ Keep | ✅ Keep |
 | Content differs | ⏭️ Skip | ✅ Keep yours | ⬇️ Take upstream |
 | New upstream file | ⏭️ Skip | ➕ Add file | ➕ Add file |
-| Deleted in upstream | ⏭️ Skip | 🗑️ Delete | 🗑️ Delete |
+| Deleted in upstream | ✅ Keep | ✅ Keep | 🗑️ Delete |
 | Only in your app | ✅ Keep | ✅ Keep | ✅ Keep |
 
 ### Override Guide
@@ -114,6 +114,22 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 - Run `pnpm sync --sync-service analyze` first to preview changes without applying
 - Use `pinned` for config files you customize but want to see new upstream additions
 - Use `ignored` for app-specific docs, assets, or config you fully own
+
+## Status Indicators
+
+During analysis and sync, files are displayed with status indicators:
+
+| Symbol | Label | Meaning | Action |
+|:------:|-------|---------|--------|
+| ✓ | `identical` | Fork matches upstream | No action needed |
+| ↑ | `ahead` | Fork has newer commits (pinned/ignored) | Protected, keeping fork |
+| ⚡ | `drifted` | Fork ahead, not protected | At risk, consider pinning |
+| ↓ | `behind` | Upstream has newer commits | Will sync from upstream |
+| ⇅ | `diverged` | Both sides have changes | Will merge from upstream |
+| 🔒 | `locked` | Both sides changed, pinned | Protected, keeping fork |
+| ⚠ | `unrelated` | No shared commit history | Manual resolution needed |
+| ? | `unknown` | Could not determine status | Manual check needed |
+
 
 ## Development
 

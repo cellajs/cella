@@ -173,6 +173,22 @@ export async function gitDiffCached(repoPath: string): Promise<string> {
 }
 
 /**
+ * Gets a list of files staged for deletion in the given repository.
+ * Returns raw stdout from git (one file path per line).
+ *
+ * @param repoPath - The file system path to the git repository
+ *
+ * @returns A string containing newline-separated paths of files staged for deletion
+ *
+ * @example
+ * const deletedFiles = await gitDiffCachedDeleted('/path/to/repo');
+ * console.info(deletedFiles);
+ */
+export async function gitDiffCachedDeleted(repoPath: string): Promise<string> {
+  return runGitCommand(['diff', '--name-only', '--cached', '--diff-filter=D'], repoPath);
+}
+
+/**
  * Lists all files in a branch recursively from the given repository path using git ls-tree.
  *
  * @param repoPath - The file system path to the git repository

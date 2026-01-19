@@ -91,7 +91,7 @@ describe('determineFileMergeStrategy', () => {
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('Blobs identical');
+      expect(result.reason).toContain('Content identical');
     });
 
     it('should keep-fork when blobs identical even if pinned', () => {
@@ -102,7 +102,7 @@ describe('determineFileMergeStrategy', () => {
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-fork');
-      expect(result.reason).toContain('Blobs identical');
+      expect(result.reason).toContain('Content identical');
     });
   });
 
@@ -178,7 +178,7 @@ describe('determineFileMergeStrategy', () => {
       const result = determineFileMergeStrategy(analysis);
 
       expect(result.strategy).toBe('keep-upstream');
-      expect(result.reason).toContain('Syncing to match upstream');
+      expect(result.reason).toContain('Will sync from upstream');
     });
 
     it('should keep-upstream regardless of commit status', () => {

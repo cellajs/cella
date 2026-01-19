@@ -12,7 +12,7 @@ import { flattenInfiniteData } from './flatten';
  */
 export function useFindInQueryCache<T>(
   queryKeys: Array<string | readonly unknown[]>,
-  matcher: (item: T) => boolean,
+  matcher?: (item: T) => boolean,
 ): T | null {
   const queryClient = useQueryClient();
 
@@ -25,7 +25,7 @@ export function useFindInQueryCache<T>(
       for (const query of queries) {
         const data = query.state.data;
         const items = flattenInfiniteData<T>(data);
-        const found = items.find(matcher);
+        const found = matcher ? items.find(matcher) : items[0];
         if (found) return found;
       }
     }

@@ -107,10 +107,10 @@ describe('analyzedSummaryLines', () => {
     expect(lockedLine).toContain('1');
   });
 
-  it('should count conflict files (diverged + unpinned)', () => {
+  it('should count diverged files (diverged + unpinned)', () => {
     const files: FileAnalysis[] = [
       createFileAnalysis({
-        filePath: 'conflict.ts',
+        filePath: 'diverged.ts',
         overrideStatus: undefined,
         commitSummary: {
           status: 'diverged',
@@ -122,8 +122,8 @@ describe('analyzedSummaryLines', () => {
     ];
     const lines = analyzedSummaryLines(files);
     const plainLines = lines.map((l) => l.replace(/\x1b\[[0-9;]*m/g, ''));
-    const conflictLine = plainLines.find((l) => l.includes('conflict'));
-    expect(conflictLine).toContain('1');
+    const divergedLine = plainLines.find((l) => l.includes('diverged'));
+    expect(divergedLine).toContain('1');
   });
 
   it('should count behind files correctly', () => {

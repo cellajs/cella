@@ -29,15 +29,18 @@ async function main(): Promise<void> {
   // Store original branch to restore at end
   const originalBranch = await getCurrentBranch(process.cwd());
 
+  // Determine target branch to restore to (initialized after config is loaded)
+  let targetBranch = originalBranch;
+
   try {
     // Prompt configuration
     await runCli();
 
-    // Determine target branch to restore to:
+    // Update target branch now that config is loaded:
     // - If started on sync-branch: restore to forkBranchRef (working branch)
     // - Otherwise: restore to original branch
     // This ensures we never leave the user on sync-branch
-    const targetBranch = originalBranch === config.forkSyncBranchRef ? config.forkBranchRef : originalBranch;
+    targetBranch = originalBranch === config.forkSyncBranchRef ? config.forkBranchRef : originalBranch;
 
     // If only validating config, run strict validation and exit
     if (config.syncService === 'validate') {

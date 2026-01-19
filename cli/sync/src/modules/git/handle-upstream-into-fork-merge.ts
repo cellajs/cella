@@ -1,6 +1,7 @@
 import { confirm } from '@inquirer/prompts';
 
 import { RepoConfig } from '#/config';
+import { getOverrideStatus } from '#/modules/overrides';
 import { FileAnalysis } from '#/types';
 import {
   gitCleanAllUntrackedFiles,
@@ -8,7 +9,7 @@ import {
   gitRemoveFilePathFromCache,
   gitRestoreStagedFile,
 } from '#/utils/git/command';
-import { getCachedFiles, getUnmergedFiles, resolveConflictAsOurs } from '#/utils/git/files';
+import { getCachedFiles, getStagedDeletions, getUnmergedFiles, resolveConflictAsOurs } from '#/utils/git/files';
 import { handleMerge } from '#/utils/git/git-merge';
 import { pauseSpinner, resumeSpinner } from '#/utils/progress';
 
@@ -35,6 +36,9 @@ export async function handleUpstreamIntoForkMerge(
     forkConfig.syncBranchRef,
     upstreamConfig.branchRef,
     async function resolveConflicts() {
+      // Protect ignored/pinned files from deletion
+      await restoreProtectedDeletions(forkConfig.workingDirectory);
+
       // For non-conflicted files, apply the chosen strategy (e.g., keep fork, remove from fork)
       await cleanupNonConflictedFiles(forkConfig.workingDirectory, analyzedFiles);
 
@@ -81,6 +85,31 @@ async function checkIfFirstSyncAndConfirm(analyzedFiles: FileAnalysis[]): Promis
   }
 
   return false;
+}
+
+/**
+ * Restores files that are staged for deletion but match ignored or pinned patterns.
+ * This protects fork-specific files from being deleted when upstream removes them.
+ *
+ * @param repoPath - Path to the repository
+ *
+ * @returns void
+ */
+async function restoreProtectedDeletions(repoPath: string): Promise<void> {
+  const deletions = await getStagedDeletions(repoPath);
+
+  if (deletions.length === 0) {
+    return;
+  }
+
+  for (const filePath of deletions) {
+    const overrideStatus = getOverrideStatus(filePath);
+
+    // Restore files that are ignored or pinned
+    if (overrideStatus === 'ignored' || overrideStatus === 'pinned') {
+      await gitRestoreStagedFile(repoPath, filePath);
+    }
+  }
 }
 
 /**

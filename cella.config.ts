@@ -31,6 +31,7 @@ export default defineConfig({
     // Files and directories pinned to fork; prefer fork version during merge conflicts
     pinned: [
       "README.md",
+      "lefthook.yaml",
       "package.json",
       "pnpm-lock.yaml",
       "render.yaml",

@@ -4,6 +4,7 @@ import {
   gitAdd,
   gitCheckoutOursFilePath,
   gitDiffCached,
+  gitDiffCachedDeleted,
   gitDiffUnmerged,
   gitLogAllFilesLastCommit,
   gitLogFileHistory,
@@ -137,6 +138,23 @@ export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
  */
 export async function getCachedFiles(repoPath: string): Promise<string[]> {
   const output = await gitDiffCached(repoPath);
+  return output ? output.split('\n').filter(Boolean) : [];
+}
+
+/**
+ * Lists all files that are staged for deletion.
+ * Internally runs `git diff --name-only --cached --diff-filter=D`.
+ *
+ * @param repoPath - The file system path to the Git repository
+ *
+ * @returns An array of file paths staged for deletion
+ *
+ * @example
+ * const deleted = await getStagedDeletions('/repo');
+ * console.info(deleted); // ['old-file.ts', 'removed-config.json']
+ */
+export async function getStagedDeletions(repoPath: string): Promise<string[]> {
+  const output = await gitDiffCachedDeleted(repoPath);
   return output ? output.split('\n').filter(Boolean) : [];
 }
 

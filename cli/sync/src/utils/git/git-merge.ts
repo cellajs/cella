@@ -45,7 +45,9 @@ export async function handleMerge(
 /** Starts the merge process between branches. */
 async function startMerge(mergeIntoPath: string, mergeFromBranch: string, { allowUnrelatedHistories = false } = {}) {
   try {
-    await gitMerge(mergeIntoPath, mergeFromBranch, { noEdit: true, allowUnrelatedHistories });
+    // Use noCommit to prevent auto-commit on clean merges.
+    // This allows resolveConflicts callback to clean up ignored files before committing.
+    await gitMerge(mergeIntoPath, mergeFromBranch, { noCommit: true, noEdit: true, allowUnrelatedHistories });
   } catch (err) {
     if (!isMergeInProgress(mergeIntoPath)) {
       throw err;
