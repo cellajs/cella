@@ -14,7 +14,7 @@ import { FileAnalysis, FileMergeStrategy } from '#/types';
  *
  * Override behavior:
  * - `ignored` - Never sync (existing or new files), not shown in analysis
- * - `pinned` - Never sync existing files, but DO add new files; shown in analysis
+ * - `pinned` - Never sync (existing OR deleted files); pinned means full fork control
  * - `none` - Always sync to match upstream
  *
  * @param fileAnalysis - Precomputed analysis object for a single file,
@@ -26,7 +26,6 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
   const isPinned = fileAnalysis.overrideStatus === 'pinned';
   const isIgnored = fileAnalysis.overrideStatus === 'ignored';
   const { forkFile, blobStatus } = fileAnalysis;
-  const isNewFile = !forkFile || blobStatus === 'missing';
 
   // 1. Ignored files → skip all upstream changes (existing and new)
   if (isIgnored) {
@@ -44,21 +43,21 @@ export function determineFileMergeStrategy(fileAnalysis: FileAnalysis): FileMerg
     };
   }
 
-  // 3. New file in upstream (doesn't exist in fork) → always add, even if pinned
-  // Pinned only protects existing files, not new ones
-  if (isNewFile) {
-    return {
-      strategy: 'keep-upstream',
-      reason: STRATEGY_REASONS.newFile,
-    };
-  }
-
-  // 4. Pinned existing files → never sync, keep fork version
-  // Show in analysis to raise awareness about divergence
+  // 3. Pinned files → always keep fork version (existing, modified, or deleted)
+  // If fork deleted a pinned file, respect that deletion
   if (isPinned) {
     return {
       strategy: 'keep-fork',
       reason: STRATEGY_REASONS.pinned,
+    };
+  }
+
+  // 4. New file in upstream (doesn't exist in fork, not pinned) → add it
+  const isNewFile = !forkFile || blobStatus === 'missing';
+  if (isNewFile) {
+    return {
+      strategy: 'keep-upstream',
+      reason: STRATEGY_REASONS.newFile,
     };
   }
 

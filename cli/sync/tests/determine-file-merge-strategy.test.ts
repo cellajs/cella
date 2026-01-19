@@ -118,7 +118,7 @@ describe('determineFileMergeStrategy', () => {
       expect(result.reason).toContain('New file');
     });
 
-    it('should keep-upstream for new files even if pinned (pinned only protects existing)', () => {
+    it('should keep-fork for new files if pinned (fork may have intentionally deleted)', () => {
       const analysis = createFileAnalysis({
         forkFile: undefined,
         blobStatus: 'missing',
@@ -126,8 +126,8 @@ describe('determineFileMergeStrategy', () => {
       });
       const result = determineFileMergeStrategy(analysis);
 
-      expect(result.strategy).toBe('keep-upstream');
-      expect(result.reason).toContain('New file');
+      expect(result.strategy).toBe('keep-fork');
+      expect(result.reason).toContain('pinned');
     });
 
     it('should skip-upstream for new files if ignored', () => {

@@ -50,8 +50,8 @@ export interface CellaSyncConfig {
    */
   overrides?: {
     /**
-     * Files pinned to fork — existing files keep your version, but new files are still added.
-     * Use for files you've customized but want to see new additions from upstream.
+     * Files pinned to fork — full fork control for existing, modified, or deleted files.
+     * If fork deleted a pinned file, the deletion is respected (file won't be re-added).
      * Example: config files, routes, branding assets.
      */
     pinned?: string[];

@@ -77,7 +77,7 @@ pnpm sync [options]
 Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible default is already included after you created your app. To deviate files or folders from template:
 
 - **`ignored`** - Files completely excluded from sync (existing and new)
-- **`pinned`** - Existing files keep your version; new files still added from upstream
+- **`pinned`** - Full fork control: existing, modified, or deleted files are preserved
 
 ## Merge Strategy
 
@@ -85,8 +85,8 @@ The sync CLI uses **blob comparison** (file content) to determine what to sync. 
 
 1. **Ignored?** → Skip entirely (existing and new files)
 2. **Content identical?** → Keep fork (nothing to do)
-3. **New file in upstream?** → Add file (even if path matches a `pinned` pattern)
-4. **Pinned existing file?** → Keep fork version
+3. **Pinned?** → Keep fork version (existing, modified, or deleted)
+4. **New file in upstream?** → Add file
 5. **Content differs?** → Sync to upstream
 
 This ensures your fork eventually matches upstream for all non-overridden files.
@@ -97,7 +97,7 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 |----------|:---------:|:--------:|:-------:|
 | Content identical | ✅ Keep | ✅ Keep | ✅ Keep |
 | Content differs | ⏭️ Skip | ✅ Keep yours | ⬇️ Take upstream |
-| New upstream file | ⏭️ Skip | ➕ Add file | ➕ Add file |
+| New upstream file | ⏭️ Skip | ✅ Keep (respect deletion) | ➕ Add file |
 | Deleted in upstream | ✅ Keep | ✅ Keep | 🗑️ Delete |
 | Only in your app | ✅ Keep | ✅ Keep | ✅ Keep |
 
@@ -105,8 +105,8 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 
 | Goal | Action |
 |------|--------|
-| File should never sync (existing or new) | Add to `ignored` — file is completely yours |
-| Keep your version but allow new files | Add to `pinned` — protects existing, adds new |
+| File should never sync (existing or new) | Add to `ignored` — file is completely hidden |
+| Full fork control (keep, modify, or delete) | Add to `pinned` — your version always wins |
 | Always match upstream | Leave unconfigured — syncs automatically |
 
 ### Tips
