@@ -73,7 +73,7 @@ export const OrganizationRoute = createRoute({
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: membersRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'members', label: 'common:members' } },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => {
@@ -93,7 +93,7 @@ export const OrganizationMembersRoute = createRoute({
 export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
   validateSearch: attachmentsRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'attachments', label: 'common:attachments' } },
   getParentRoute: () => OrganizationRoute,
   // Note: Don't use loaderDeps here - collections are created once and live queries
   // react to search param changes automatically. Using loaderDeps would recreate
@@ -122,7 +122,7 @@ export const OrganizationAttachmentsRoute = createRoute({
  */
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'settings', label: 'common:settings' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });

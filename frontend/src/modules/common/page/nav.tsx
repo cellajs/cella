@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
+import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
@@ -20,7 +21,12 @@ export type PageTab = {
 };
 
 interface Props {
-  tabs: PageTab[];
+  /** Explicit tabs array - if provided, takes precedence over parentRouteId */
+  tabs?: PageTab[];
+  /** Parent route ID to auto-generate tabs from child routes with staticData.navTab */
+  parentRouteId?: string;
+  /** Filter which tab IDs to show (for permission-based filtering) */
+  filterTabIds?: string[];
   title?: string;
   avatar?: {
     id: string;
@@ -31,10 +37,14 @@ interface Props {
   className?: string;
 }
 
-export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Props) => {
+export const PageNav = ({ tabs: explicitTabs, parentRouteId, filterTabIds, title, avatar, fallbackToFirst, className }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
   const { hasStarted } = useMounted();
+
+  // Use explicit tabs or auto-generate from parent route's children
+  const autoTabs = useNavTabs(parentRouteId ?? '', filterTabIds);
+  const tabs = explicitTabs ?? autoTabs;
 
   const layoutId = useRef(nanoid()).current;
 
@@ -44,7 +54,7 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
 
   // Focus the first tab on mount
   useEffect(() => {
-    if (!isMobile && hasStarted) tabRefs.current[tabs[0].id]?.focus();
+    if (!isMobile && hasStarted && tabs[0]) tabRefs.current[tabs[0].id]?.focus();
   }, [hasStarted]);
 
   const scrollTabIntoView = (id: string) => {

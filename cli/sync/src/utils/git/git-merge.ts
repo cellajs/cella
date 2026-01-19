@@ -86,6 +86,9 @@ async function waitForManualConflictResolution(mergeIntoPath: string) {
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch.
  * Changes are staged but NOT committed, allowing the developer to review before committing.
  *
+ * Uses config.pulledCommitCount (set during setup) for accurate commit messaging,
+ * as this reflects only commits pulled in this session, not all commits on sync-branch.
+ *
  * @param mergeIntoPath - The file path of the repository where the merge is taking place.
  * @param mergeIntoBranch - The target branch to merge into.
  * @param mergeFromBranch - The source branch to merge from.
@@ -102,8 +105,9 @@ export async function handleSquashMerge(
 
   await gitCheckout(mergeIntoPath, mergeIntoBranch);
 
-  const commitCount = await getCommitCount(mergeIntoPath, mergeFromBranch, mergeIntoBranch);
-  if (!commitCount) return null;
+  // Check if there are commits to merge (sync-branch ahead of development)
+  const totalAhead = await getCommitCount(mergeIntoPath, mergeFromBranch, mergeIntoBranch);
+  if (!totalAhead) return null;
 
   await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true });
   await gitAddAll(mergeIntoPath);
@@ -112,8 +116,11 @@ export async function handleSquashMerge(
   const hasStagedChanges = await hasAnythingToCommit(mergeIntoPath);
   if (!hasStagedChanges) return null;
 
+  // Use pulledCommitCount from this session (accurate), fallback to totalAhead
+  const commitCount = config.pulledCommitCount || totalAhead;
+
   const recentMessages = config.maxSquashPreviews
-    ? await getLastCommitMessages(mergeIntoPath, mergeFromBranch, mergeIntoBranch, config.maxSquashPreviews)
+    ? await getLastCommitMessages(mergeIntoPath, mergeFromBranch, mergeIntoBranch, Math.min(config.maxSquashPreviews, commitCount))
     : [];
 
   const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;

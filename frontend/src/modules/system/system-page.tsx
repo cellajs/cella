@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageNav } from '~/modules/common/page/nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
+import { SystemRoute } from '~/routes/system-routes';
 
 const SystemPage = () => {
   const { t } = useTranslation();
@@ -15,15 +16,7 @@ const SystemPage = () => {
         className="pt-4 md:pt-6 md:px-6"
       />
 
-      <PageNav
-        className="mt-4"
-        tabs={[
-          { id: 'users', label: 'common:users', path: '/system/users' },
-          { id: 'organizations', label: 'common:organizations', path: '/system/organizations' },
-          { id: 'requests', label: 'common:requests', path: '/system/requests' },
-          { id: 'metrics', label: 'common:metrics', path: '/system/metrics' },
-        ]}
-      />
+      <PageNav className="mt-4" parentRouteId={SystemRoute.id} />
 
       <FocusViewContainer className="container min-h-screen">
         <Outlet />

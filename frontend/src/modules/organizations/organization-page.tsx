@@ -1,21 +1,16 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
-import { PageNav, type PageTab } from '~/modules/common/page/nav';
+import { PageNav } from '~/modules/common/page/nav';
 import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
+import { OrganizationRoute } from '~/routes/organization-routes';
 import { useUserStore } from '~/store/user';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organizations/leave-organization'));
-
-const organizationTabs: PageTab[] = [
-  { id: 'members', label: 'common:members', path: '/organization/$idOrSlug/members' },
-  { id: 'attachments', label: 'common:attachments', path: '/organization/$idOrSlug/attachments' },
-  { id: 'settings', label: 'common:settings', path: '/organization/$idOrSlug/settings' },
-];
 
 const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
   const { t } = useTranslation();
@@ -25,7 +20,12 @@ const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
   const isAdmin = organization.membership?.role === 'admin' || systemRole === 'admin';
-  const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 2);
+
+  // Filter tabs based on permissions - non-admins don't see settings
+  const filterTabIds = useMemo(
+    () => (isAdmin ? undefined : ['members', 'attachments']),
+    [isAdmin],
+  );
 
   const { mutate } = useOrganizationUpdateMutation();
 
@@ -61,7 +61,12 @@ const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
           )
         }
       />
-      <PageNav title={organization.name} avatar={organization} tabs={tabs} />
+      <PageNav
+        title={organization.name}
+        avatar={organization}
+        parentRouteId={OrganizationRoute.id}
+        filterTabIds={filterTabIds}
+      />
       <FocusViewContainer className="container min-h-screen">
         <Outlet />
       </FocusViewContainer>

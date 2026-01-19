@@ -105,6 +105,9 @@ export interface SyncState {
   maxSquashPreviews: number;
   packageJsonSync: PackageJsonSyncKey[];
 
+  /** Number of commits pulled from upstream in this sync session */
+  pulledCommitCount: number;
+
   // Fork settings
   forkLocalPath: string;
   forkBranch: string;

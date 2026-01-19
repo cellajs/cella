@@ -37,7 +37,7 @@ export const SystemRoute = createRoute({
 export const UsersTableRoute = createRoute({
   path: '/users',
   validateSearch: usersRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'users', label: 'common:users' } },
   head: () => ({ meta: [{ title: appTitle('Users') }] }),
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
@@ -54,7 +54,7 @@ export const UsersTableRoute = createRoute({
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   validateSearch: organizationsRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'organizations', label: 'common:organizations' } },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
@@ -71,7 +71,7 @@ export const OrganizationsTableRoute = createRoute({
 export const RequestsTableRoute = createRoute({
   path: '/requests',
   validateSearch: requestsRouteSearchParamsSchema,
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'requests', label: 'common:requests' } },
   head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
@@ -87,7 +87,7 @@ export const RequestsTableRoute = createRoute({
  */
 export const MetricsRoute = createRoute({
   path: '/metrics',
-  staticData: { isAuth: true },
+  staticData: { isAuth: true, navTab: { id: 'metrics', label: 'common:metrics' } },
   head: () => ({ meta: [{ title: appTitle('Metrics') }] }),
   getParentRoute: () => SystemRoute,
   component: () => (

@@ -5,6 +5,7 @@ import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
 import { handleMerge } from '#/utils/git/git-merge';
+import { getCommitCount } from '#/utils/git/helpers';
 import { createBranchIfMissing } from '#/utils/git/git-refs';
 import { createProgress } from '#/utils/progress';
 
@@ -109,6 +110,15 @@ export async function runSetup() {
      * pollute sync-branch with fork-specific commits, breaking the commit
      * counting logic which relies on sync-branch only containing upstream SHAs.
      */
+
+    // Count commits that will be pulled BEFORE merging (for accurate squash message)
+    const pulledCount = await getCommitCount(
+      config.workingDirectory,
+      config.upstreamBranchRef,
+      config.forkSyncBranchRef,
+    );
+    config.pulledCommitCount = pulledCount;
+
     await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.upstreamBranchRef, null);
 
     // Ensure sync branch is clean post-merge
