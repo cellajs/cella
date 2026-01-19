@@ -131,6 +131,11 @@ export const config = {
     state.verbose = value;
   },
 
+  /** Returns true if either --verbose or --debug flag is set */
+  get isVerbose(): boolean {
+    return state.verbose || state.debug;
+  },
+
   get skipPackages(): boolean {
     return state.skipPackages;
   },

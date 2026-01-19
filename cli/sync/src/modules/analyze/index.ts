@@ -39,7 +39,7 @@ const limit = pLimit(10);
  * Only shown in verbose/debug mode.
  */
 async function logBranchSyncState(): Promise<void> {
-  if (!config.verbose && !config.debug) return;
+  if (!config.isVerbose) return;
 
   const workDir = config.workingDirectory;
   const upstreamRef = config.upstreamBranchRef;

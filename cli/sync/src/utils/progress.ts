@@ -18,7 +18,7 @@ let activeSpinner: Spinner | null = null;
  * Call resume() when the prompt is complete.
  */
 export function pauseSpinner(): void {
-  if (activeSpinner && !config.debug) {
+  if (activeSpinner && !config.isVerbose) {
     activeSpinner.stop();
   }
 }
@@ -27,7 +27,7 @@ export function pauseSpinner(): void {
  * Resume the active spinner after an interactive prompt.
  */
 export function resumeSpinner(): void {
-  if (activeSpinner && !config.debug) {
+  if (activeSpinner && !config.isVerbose) {
     activeSpinner.start();
   }
 }
@@ -48,8 +48,7 @@ export interface ProgressTracker {
  *
  * Behavior by mode:
  * - Normal: Single spinner that updates in place
- * - Verbose: Spinner + prints each step on new line (easier to follow)
- * - Debug: Tree-style log showing header and all steps
+ * - Verbose/Debug: Tree-style log showing header and all steps
  *
  * @param title - The title/header for this operation
  * @returns A ProgressTracker instance
@@ -64,8 +63,8 @@ export function createProgress(title: string): ProgressTracker {
   const completedSteps: string[] = [];
   const spinner = yoctoSpinner({ text: title });
 
-  // In debug mode, show the title header
-  if (config.debug) {
+  // In verbose/debug mode, show the title header; otherwise use spinner
+  if (config.isVerbose) {
     console.info(pc.cyan(`\n${title}`));
   } else {
     activeSpinner = spinner;
@@ -74,15 +73,9 @@ export function createProgress(title: string): ProgressTracker {
 
   return {
     step: (message: string) => {
-      if (config.debug) {
-        // Debug mode: log each step as it happens
+      if (config.isVerbose) {
+        // Verbose/Debug mode: log each step with tree styling
         console.info(pc.gray(`  ├─ ${message}`));
-      } else if (config.verbose) {
-        // Verbose mode: stop spinner, print step, restart spinner
-        spinner.stop();
-        console.info(pc.gray(`  · ${message}`));
-        spinner.text = message;
-        spinner.start();
       } else {
         // Normal mode: update spinner text
         spinner.text = message;
@@ -91,8 +84,8 @@ export function createProgress(title: string): ProgressTracker {
     },
 
     done: (message: string) => {
-      if (config.debug) {
-        // Debug mode: show final step with tree end
+      if (config.isVerbose) {
+        // Verbose/Debug mode: show final step with tree end
         console.info(`  └─ ${pc.green('✓')} ${message}`);
       } else {
         // Normal mode: stop spinner and show success
@@ -104,7 +97,7 @@ export function createProgress(title: string): ProgressTracker {
     },
 
     fail: (message: string) => {
-      if (config.debug) {
+      if (config.isVerbose) {
         console.info(pc.red(`  └─ ✗ ${message}`));
       } else {
         spinner.stop();
@@ -118,7 +111,7 @@ export function createProgress(title: string): ProgressTracker {
         return await fn();
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        if (config.debug) {
+        if (config.isVerbose) {
           console.info(pc.red(`  └─ ✗ ${errorMessage}`));
         } else {
           // Stop spinner and show tree-style breakdown on failure

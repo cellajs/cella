@@ -187,7 +187,7 @@ function getStrategyFlag(analyzedFile: FileAnalysis): string {
  * Only shown in verbose or debug mode (controlled via --verbose or --debug flags).
  */
 export function shouldLogAnalyzedFileModule(): boolean {
-  return config.debug || config.verbose;
+  return config.isVerbose;
 }
 
 /**
@@ -236,7 +236,7 @@ export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): v
   }
 
   // In verbose/debug mode, show more files but still filter ignored/up-to-date
-  if (config.debug || config.verbose) {
+  if (config.isVerbose) {
     if (analyzedFile.overrideStatus !== 'ignored' && analyzedFile.commitSummary?.status !== 'upToDate') {
       const reason = analyzedFile.mergeStrategy?.reason || '';
       if (!reason.includes('identical')) {
