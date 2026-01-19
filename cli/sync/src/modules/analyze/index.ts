@@ -18,6 +18,7 @@ import {
   initLogFile,
   logAnalyzedFileLine,
   shouldLogAnalyzedFileModule,
+  shouldShowInConsole,
 } from './log-file';
 import { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log-summary';
 
@@ -28,6 +29,7 @@ export {
   initLogFile,
   logAnalyzedFileLine,
   shouldLogAnalyzedFileModule,
+  shouldShowInConsole,
 } from './log-file';
 export { analyzedSummaryLines, logAnalyzedSummaryLines, shouldLogAnalyzedSummaryModule } from './log-summary';
 
@@ -127,12 +129,19 @@ export async function runAnalyze(): Promise<FileAnalysis[]> {
     initLogFile();
 
     console.info();
-    console.info(pc.cyan('File Analysis'));
+    console.info(pc.cyan('file analysis'));
     console.info(DIVIDER);
 
-    for (const file of analyzedFiles) {
-      const line = analyzedFileLine(file);
-      logAnalyzedFileLine(file, line);
+    // Check if any files would be shown in console
+    const hasFilesToShow = analyzedFiles.some(shouldShowInConsole);
+
+    if (hasFilesToShow) {
+      for (const file of analyzedFiles) {
+        const line = analyzedFileLine(file);
+        logAnalyzedFileLine(file, line);
+      }
+    } else {
+      console.info(pc.dim('all identical'));
     }
 
     // Finalize log file

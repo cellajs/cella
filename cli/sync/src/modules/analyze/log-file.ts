@@ -201,7 +201,7 @@ export function shouldLogAnalyzedFileModule(): boolean {
  * - Show: ahead + unpinned files (at risk - may want to pin)
  * - Show: behind, diverged, manual, unknown (require attention)
  */
-function shouldShowInConsole(analyzedFile: FileAnalysis): boolean {
+export function shouldShowInConsole(analyzedFile: FileAnalysis): boolean {
   const status = analyzedFile.commitSummary?.status;
   const reason = analyzedFile.mergeStrategy?.reason || '';
   const isPinned = analyzedFile.overrideStatus === 'pinned';

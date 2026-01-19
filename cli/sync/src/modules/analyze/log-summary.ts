@@ -7,7 +7,7 @@ import { type DisplayLabel, getDisplayLabel, STATUS_CONFIG } from '#/constants/s
 import type { FileAnalysis } from '#/types';
 
 /** Pads a number to 4 characters for alignment */
-const pad = (n: number) => String(n).padStart(4, ' ');
+const pad = (n: number) => String(n).padStart(6, ' ');
 
 /** Creates a summary line with consistent formatting */
 function summaryLine(label: DisplayLabel, count: number, indent = ''): string {
@@ -51,10 +51,10 @@ export function analyzedSummaryLines(analyzedFiles: FileAnalysis[]): string[] {
     summaryLine('identical', counts.identical),
     '',
     summaryLine('ahead', counts.ahead),
-    summaryLine('drifted', counts.drifted, '└'),
+    summaryLine('drifted', counts.drifted, '└ '),
     '',
     summaryLine('diverged', counts.diverged),
-    summaryLine('locked', counts.locked, '└'),
+    summaryLine('locked', counts.locked, '└ '),
     '',
     summaryLine('behind', counts.behind),
     '',
