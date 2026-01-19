@@ -17,8 +17,6 @@ import { default as authTotpRoutes, default as authTotpsRoutes } from '#/modules
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authTotpsRouteHandlers = app
@@ -107,7 +105,7 @@ const authTotpsRouteHandlers = app
     const strategy = 'totp';
 
     // Verify if strategy allowed
-    if (!enabledStrategies.includes(strategy)) {
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 

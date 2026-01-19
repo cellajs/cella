@@ -26,8 +26,6 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authPasswordsRouteHandlers = app
@@ -41,7 +39,7 @@ const authPasswordsRouteHandlers = app
 
     // Verify if strategy allowed
     const strategy = 'password';
-    if (!enabledStrategies.includes(strategy)) {
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
@@ -75,7 +73,7 @@ const authPasswordsRouteHandlers = app
 
     // Verify if strategy allowed
     const strategy = 'password';
-    if (!enabledStrategies.includes(strategy)) {
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
@@ -101,6 +99,11 @@ const authPasswordsRouteHandlers = app
    */
   .openapi(authPasswordsRoutes.requestPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
+
+    const strategy = 'password';
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+    }
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -155,7 +158,7 @@ const authPasswordsRouteHandlers = app
 
     // Verify if strategy allowed
     const strategy = 'password';
-    if (!enabledStrategies.includes(strategy)) {
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 
@@ -199,7 +202,7 @@ const authPasswordsRouteHandlers = app
 
     // Verify if strategy allowed
     const strategy = 'password';
-    if (!enabledStrategies.includes(strategy)) {
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
       throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
     }
 

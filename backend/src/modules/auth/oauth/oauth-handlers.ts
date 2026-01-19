@@ -43,7 +43,7 @@ const authOAuthRouteHandlers = app
 
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
       throw new AppError(400, 'unsupported_oauth', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -63,7 +63,7 @@ const authOAuthRouteHandlers = app
     const strategy = 'google' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
       throw new AppError(400, 'unsupported_oauth', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -84,7 +84,7 @@ const authOAuthRouteHandlers = app
     const strategy = 'microsoft' as EnabledOAuthProvider;
     if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
       throw new AppError(400, 'unsupported_oauth', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -120,7 +120,7 @@ const authOAuthRouteHandlers = app
     // When something went wrong during Github OAuth, fail early.
     if (error || !code) {
       throw new AppError(400, 'oauth_failed', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -131,7 +131,7 @@ const authOAuthRouteHandlers = app
 
     if (!state || !cookiePayload) {
       throw new AppError(401, 'invalid_state', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -158,7 +158,7 @@ const authOAuthRouteHandlers = app
       // Handle known OAuth validation errors (e.g. bad token, revoked code)
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
       throw new AppError(401, type, 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
@@ -178,7 +178,7 @@ const authOAuthRouteHandlers = app
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError(401, 'invalid_state', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -200,7 +200,7 @@ const authOAuthRouteHandlers = app
       // Handle known OAuth validation errors (e.g. bad token, revoked code)
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
       throw new AppError(401, type, 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });
@@ -219,7 +219,7 @@ const authOAuthRouteHandlers = app
 
     if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError(401, 'invalid_state', 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
       });
     }
@@ -241,7 +241,7 @@ const authOAuthRouteHandlers = app
       // Handle known OAuth validation errors (e.g. bad token, revoked code)
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
       throw new AppError(401, type, 'error', {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { errorPagePath: '/auth/error', strategy },
         ...(error instanceof Error ? { originalError: error } : {}),
       });

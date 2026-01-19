@@ -68,7 +68,7 @@ const authGeneralRouteHandlers = app
       const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
       if (!tokenRecord.singleUseToken)
         throw new AppError(500, 'invalid_token', 'error', {
-          willRedirect: true,
+          willRedirect: appConfig.mode !== 'test',
           meta: { errorPagePath: '/auth/error' },
         });
 
@@ -101,7 +101,7 @@ const authGeneralRouteHandlers = app
     } catch (err) {
       if (err instanceof AppError) {
         throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-          willRedirect: true,
+          willRedirect: appConfig.mode !== 'test',
           meta: { ...err.meta, errorPagePath: '/auth/error' },
         });
       }

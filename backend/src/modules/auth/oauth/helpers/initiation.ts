@@ -47,7 +47,7 @@ export const handleOAuthInitiation = async (
     } catch (err) {
       if (err instanceof AppError) {
         throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-          willRedirect: true,
+          willRedirect: appConfig.mode !== 'test',
           meta: { ...err.meta, errorPagePath: '/auth/error' },
         });
       }

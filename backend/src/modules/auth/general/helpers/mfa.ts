@@ -1,3 +1,4 @@
+import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -62,7 +63,7 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenFromCookie)
     throw new AppError(401, 'confirm-mfa_not_found', 'error', {
-      willRedirect: true,
+      willRedirect: appConfig.mode !== 'test',
       meta: { errorPagePath: '/auth/error' },
     });
 

@@ -83,9 +83,10 @@ describe('Passkey Authentication', async () => {
         { json: { type: 'mfa' } },
         { headers: defaultHeaders },
       );
+      expect(res.status).toBe(401);
+      const response = await parseResponse<{ type: string }>(res);
 
-      // The endpoint should redirect to error page when confirm-mfa token is missing
-      expect(res.status).toBe(302);
+      expect(response.type).toBe('confirm-mfa_not_found');
     });
 
     it('should reject challenge generation for non-existent user', async () => {

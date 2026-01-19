@@ -94,6 +94,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     userId: user?.id,
     organizationId: organization?.id,
     timestamp: getIsoDate(),
+    meta,
   };
 
   if (detailsRequired) {

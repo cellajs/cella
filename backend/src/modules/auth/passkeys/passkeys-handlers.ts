@@ -89,6 +89,11 @@ const authPasskeysRouteHandlers = app
   .openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
     const { email, type } = ctx.req.valid('json');
 
+    const strategy = 'passkey';
+    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+    }
+
     // Generate a 32-byte random challenge and encode it as Base64
     const challenge = getRandomValues(new Uint8Array(32));
     const challengeBase64 = encodeBase64(challenge);

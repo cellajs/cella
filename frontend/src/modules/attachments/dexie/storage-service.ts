@@ -232,7 +232,7 @@ export class DexieAttachmentStorage {
       const attachmentsToCache = uniqueAttachments.filter((a) => !existingIdSet.has(a.id));
 
       if (!attachmentsToCache.length) {
-        console.log('All attachments already cached');
+        console.info('All attachments already cached');
         return;
       }
 
@@ -299,7 +299,7 @@ export class DexieAttachmentStorage {
         // Use bulkPut instead of bulkAdd to handle potential duplicates gracefully
         await attachmentsDb.attachmentCache.bulkPut(filesToAdd);
 
-        console.log(`Successfully cached ${filesToAdd.length}/${attachmentsToCache.length} images`);
+        console.info(`Successfully cached ${filesToAdd.length}/${attachmentsToCache.length} images`);
       } else {
         console.warn('No images were cached');
       }

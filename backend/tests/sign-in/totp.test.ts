@@ -200,7 +200,9 @@ describe('TOTP Authentication', async () => {
         { headers: defaultHeaders },
       );
 
-      expect(res.status).toBe(302);
+      expect(res.status).toBe(401);
+      const response = await parseResponse<{ type: string }>(res);
+      expect(response.type).toBe('confirm-mfa_not_found');
     });
 
     it('should reject TOTP verification for user without TOTP', async () => {

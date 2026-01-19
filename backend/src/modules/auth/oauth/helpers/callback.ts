@@ -102,7 +102,7 @@ export const handleOAuthCallback = async (
     if (err instanceof AppError) {
       const errorPagePath = type === 'connect' ? '/account' : '/auth/error';
       throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-        willRedirect: true,
+        willRedirect: appConfig.mode !== 'test',
         meta: { ...err.meta, errorPagePath },
       });
     }
