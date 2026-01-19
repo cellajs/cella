@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { glob } from 'node:fs/promises';
 import pc from 'picocolors';
-import type { OverridesConfig } from './types';
 import { getGitFileHashes } from '../utils/git/files';
+import type { OverridesConfig } from './types';
 
 /**
  * Simple glob pattern matching for file paths.

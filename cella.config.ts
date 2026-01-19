@@ -23,8 +23,11 @@ export default defineConfig({
     // Files and directories to be fully ignored during sync
     ignored: [
       "info/*",
+      "backend/drizzle/*",
+      "frontend/public/static/docs.gen/*",
+      "frontend/src/api.gen/*",
     ],
-    // Files pinned to fork; prefer fork version during merge conflicts
+    // Files and directories pinned to fork; prefer fork version during merge conflicts
     pinned: [
       "README.md",
       "package.json",
@@ -33,15 +36,15 @@ export default defineConfig({
       "compose.yaml",
       "cella.config.ts",
       "config/default.ts",
-      "config/staging.ts",
       "config/development.ts",
+      "config/staging.ts",
+      "config/test.ts",
       "config/production.ts",
       "config/tunnel.ts",
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",
       "frontend/public/static/openapi.json",
-      "frontend/public/static/docs.gen/*",
       "frontend/public/static/icons/*",
       "frontend/public/static/images/*",
       "frontend/public/static/logo/*",
@@ -52,7 +55,6 @@ export default defineConfig({
       "frontend/src/menu-config.tsx",
       "frontend/src/alert-config.tsx",
       "frontend/src/offline-config.tsx",
-      "frontend/src/api.gen/*",
       "frontend/src/styling/gradients.css",
       "frontend/src/routes/route-tree.tsx",
       "frontend/src/routes/marketing-routes.tsx",
@@ -66,7 +68,6 @@ export default defineConfig({
       "frontend/src/modules/marketing/about/about-page.tsx",
       "frontend/src/modules/users/profile-page-content.tsx",
       "backend/package.json",
-      "backend/drizzle/*",
       "backend/scripts/seeds/data/*",
       "backend/src/custom-env.ts",
       "backend/src/table-config.ts",

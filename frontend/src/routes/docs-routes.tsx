@@ -1,5 +1,5 @@
-import { createRoute, useLoaderData } from '@tanstack/react-router';
 import type { QueryOptions } from '@tanstack/react-query';
+import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import {
