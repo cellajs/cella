@@ -1,0 +1,2 @@
+CREATE INDEX "inactive_memberships_org_pending_idx" ON "inactive_memberships" USING btree ("organization_id","rejected_at");--> statement-breakpoint
+CREATE INDEX "memberships_context_org_role_idx" ON "memberships" USING btree ("context_type","organization_id","role");

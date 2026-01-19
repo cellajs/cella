@@ -241,10 +241,10 @@ export type Organization = {
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
   membership: MembershipBase | null;
-  counts: {
+  counts?: {
     membership: {
-      admin: number;
       member: number;
+      admin: number;
       pending: number;
       total: number;
     };
@@ -2166,6 +2166,7 @@ export type GetOrganizationsData = {
     userId?: string;
     role?: 'member' | 'admin';
     excludeArchived?: 'true' | 'false';
+    include?: string;
   };
   url: '/organizations';
 };

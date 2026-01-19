@@ -65,6 +65,8 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
 
 /**
  * Infinite query options to get a paginated list of organizations.
+ * Note: `include` is NOT part of the cache key - queries with/without counts share the same cache
+ * for seamless offline behavior. The most recent fetch determines what's cached.
  */
 export const organizationsQueryOptions = (params: OrganizationsListParams) => {
   const {
@@ -74,15 +76,17 @@ export const organizationsQueryOptions = (params: OrganizationsListParams) => {
     userId,
     excludeArchived,
     role,
+    include,
     limit: baseLimit = appConfig.requestLimits.organizations,
   } = params;
 
   const limit = String(baseLimit);
 
+  // Exclude `include` from cache key so queries with/without counts share the same cache
   const keyFilters = { q, sort, order, userId, excludeArchived, role };
 
   const queryKey = keys.list.filtered(keyFilters);
-  const baseQuery = { ...keyFilters, limit };
+  const baseQuery = { ...keyFilters, include, limit };
 
   return infiniteQueryOptions({
     queryKey,

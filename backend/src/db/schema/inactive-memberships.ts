@@ -38,6 +38,8 @@ export const inactiveMembershipsTable = pgTable(
     index('inactive_memberships_user_id_idx').on(table.userId),
     index('inactive_memberships_organization_id_idx').on(table.organizationId),
     index('inactive_memberships_email_idx').on(table.email),
+    // Composite index for pending invite count queries
+    index('inactive_memberships_org_pending_idx').on(table.organizationId, table.rejectedAt),
   ],
 );
 

@@ -5,6 +5,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
+  includeQuerySchema,
   languageSchema,
   paginationQuerySchema,
   validCDNUrlSchema,
@@ -29,8 +30,10 @@ const entityCountSchema = z.object(
 );
 
 export const membershipCountSchema = z.object({
-  admin: z.number(),
-  member: z.number(),
+  ...(Object.fromEntries(appConfig.roles.entityRoles.map((role) => [role, z.number()])) as Record<
+    (typeof appConfig.roles.entityRoles)[number],
+    z.ZodNumber
+  >),
   pending: z.number(),
   total: z.number(),
 });
@@ -44,7 +47,7 @@ export const organizationSchema = z
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
     membership: z.union([membershipBaseSchema, z.null()]),
-    counts: fullCountsSchema,
+    counts: fullCountsSchema.optional(),
   })
   .openapi('Organization', { example: mockOrganizationResponse() });
 
@@ -97,4 +100,5 @@ export const organizationListQuerySchema = paginationQuerySchema.extend({
     .enum(['true', 'false'])
     .optional()
     .transform((val) => val === 'true'),
+  include: includeQuerySchema,
 });

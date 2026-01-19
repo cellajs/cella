@@ -55,7 +55,7 @@ export const useColumns = (isCompact: boolean) => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
+          if ((row.counts?.membership.admin ?? 0) > 0 || (row.counts?.membership.member ?? 0) > 0)
             return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
@@ -123,7 +123,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }) => (
           <>
             <UserRoundIcon className="mr-2 opacity-50" size={16} />
-            {row.counts.membership.member}
+            {row.counts?.membership.member ?? '-'}
           </>
         ),
       },
@@ -137,7 +137,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }) => (
           <>
             <ShieldIcon className="mr-2 opacity-50" size={16} />
-            {row.counts.membership.admin}
+            {row.counts?.membership.admin ?? '-'}
           </>
         ),
       },

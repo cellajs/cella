@@ -1340,10 +1340,10 @@
               "membership": {
                 "type": "object",
                 "properties": {
-                  "admin": {
+                  "member": {
                     "type": "number"
                   },
-                  "member": {
+                  "admin": {
                     "type": "number"
                   },
                   "pending": {
@@ -1354,8 +1354,8 @@
                   }
                 },
                 "required": [
-                  "admin",
                   "member",
+                  "admin",
                   "pending",
                   "total"
                 ]
@@ -1407,8 +1407,7 @@
           "welcomeText",
           "authStrategies",
           "chatSupport",
-          "membership",
-          "counts"
+          "membership"
         ],
         "example": {
           "id": "hmo9fwr239kqavr3yur671kl",
@@ -5113,6 +5112,14 @@
             },
             "required": false,
             "name": "excludeArchived",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "include",
             "in": "query"
           }
         ],

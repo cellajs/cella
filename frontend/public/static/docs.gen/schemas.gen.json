@@ -985,14 +985,14 @@
         },
         "counts": {
           "type": "object",
-          "required": true,
+          "required": false,
           "properties": {
             "membership": {
               "type": "object",
               "required": true,
               "properties": {
-                "admin": { "type": "number", "required": true },
                 "member": { "type": "number", "required": true },
+                "admin": { "type": "number", "required": true },
                 "pending": { "type": "number", "required": true },
                 "total": { "type": "number", "required": true }
               }

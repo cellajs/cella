@@ -86,7 +86,7 @@ const organizationRouteHandlers = app
    * Get list of organizations
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
-    const { q, sort, order, offset, limit, userId, role, excludeArchived } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, userId, role, excludeArchived, include } = ctx.req.valid('query');
 
     const entityType = 'organization';
 
@@ -115,8 +115,9 @@ const organizationRouteHandlers = app
     // Org-only filters belong in WHERE (safe for both admin + non-admin)
     const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
 
-    // Get reusable count subqueries and select shape
-    const { memberCountsSubquery, relatedCountsSubquery, countsSelect } = getEntityCountsSelect(entityType);
+    // Get reusable count subqueries and select shape (only when requested)
+    const includeCounts = include.includes('counts');
+    const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
 
     // System admin can see all orgs (no join needed), others need membership
     const baseQuery = db.select({ orgId: organizationsTable.id }).from(organizationsTable);
@@ -145,15 +146,19 @@ const organizationRouteHandlers = app
     const selectShape = {
       ...getTableColumns(organizationsTable),
       membership: membershipBaseSelect,
-      counts: countsSelect,
+      ...(countData && { counts: countData.countsSelect }),
     } as const;
 
-    const organizations = await db
-      .select(selectShape)
-      .from(organizationsTable)
-      .innerJoin(membershipsTable, membershipOn)
-      .leftJoin(memberCountsSubquery, eq(organizationsTable.id, memberCountsSubquery.id))
-      .leftJoin(relatedCountsSubquery, eq(organizationsTable.id, relatedCountsSubquery.id))
+    // Build query - only join count subqueries when includeCounts is true
+    let query = db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn);
+
+    if (countData) {
+      query = query
+        .leftJoin(countData.memberCountsSubquery, eq(organizationsTable.id, countData.memberCountsSubquery.id))
+        .leftJoin(countData.relatedCountsSubquery, eq(organizationsTable.id, countData.relatedCountsSubquery.id));
+    }
+
+    const organizations = await query
       .where(and(...orgWhere))
       .orderBy(orderColumn)
       .limit(limit)

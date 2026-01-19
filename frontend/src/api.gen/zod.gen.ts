@@ -243,18 +243,20 @@ export const zOrganization = z.object({
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
   membership: z.union([zMembershipBase, z.null()]),
-  counts: z.object({
-    membership: z.object({
-      admin: z.number(),
-      member: z.number(),
-      pending: z.number(),
-      total: z.number(),
+  counts: z.optional(
+    z.object({
+      membership: z.object({
+        member: z.number(),
+        admin: z.number(),
+        pending: z.number(),
+        total: z.number(),
+      }),
+      entities: z.object({
+        attachment: z.number(),
+        page: z.number(),
+      }),
     }),
-    entities: z.object({
-      attachment: z.number(),
-      page: z.number(),
-    }),
-  }),
+  ),
 });
 
 export const zPage = z.object({
@@ -951,6 +953,7 @@ export const zGetOrganizationsData = z.object({
       userId: z.optional(z.string()),
       role: z.optional(z.enum(['member', 'admin'])),
       excludeArchived: z.optional(z.enum(['true', 'false'])),
+      include: z.optional(z.string()),
     }),
   ),
 });

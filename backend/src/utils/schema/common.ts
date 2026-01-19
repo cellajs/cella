@@ -97,6 +97,21 @@ export const paginationQuerySchema = z.object({
     .refine(limitRefine, t('invalid_limit', { max: limitMax })),
 });
 
+/** Valid options for include query param */
+export const includeOptions = ['counts'] as const;
+export type IncludeOption = (typeof includeOptions)[number];
+
+/**
+ * Schema for comma-separated include query param.
+ * Usage: ?include=counts or ?include=counts,stats
+ * Transforms to array of validated options.
+ */
+export const includeQuerySchema = z
+  .string()
+  .optional()
+  .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
+  .pipe(z.array(z.enum(includeOptions)));
+
 export const emailOrTokenIdQuerySchema = z.union([
   z.object({ email: z.email(), tokenId: z.string().optional() }),
   z.object({ email: z.email().optional(), tokenId: z.string() }),

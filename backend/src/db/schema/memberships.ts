@@ -38,6 +38,8 @@ export const membershipsTable = pgTable(
   (table) => [
     index('memberships_user_id_idx').on(table.userId),
     index('memberships_organization_id_idx').on(table.organizationId),
+    // Composite index for count queries by context type
+    index('memberships_context_org_role_idx').on(table.contextType, table.organizationId, table.role),
   ],
 );
 

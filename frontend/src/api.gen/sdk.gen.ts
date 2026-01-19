@@ -1331,6 +1331,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.userid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum=} options.query.excludearchived - `enum` (optional)
+ * @param {string=} options.query.include - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganizations = <ThrowOnError extends boolean = true>(

@@ -36,11 +36,18 @@ export const getMemberCountsSubquery = (entityType: ContextEntityType) => {
     .groupBy(inactiveMembershipsTable[targetEntityIdField])
     .as('invites');
 
+  // Build dynamic role count columns from config
+  const roleCountColumns = Object.fromEntries(
+    appConfig.roles.entityRoles.map((role) => [
+      role,
+      count(sql`CASE WHEN ${membershipsTable.role} = ${role} THEN 1 END`).as(role),
+    ]),
+  );
+
   return db
     .select({
       id: entityIdColumn,
-      admin: count(sql`CASE WHEN ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
-      member: count(sql`CASE WHEN ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
+      ...roleCountColumns,
       pending: sql<number>`CAST(COALESCE(MAX(${inviteCountSubquery.invites}), 0) AS INTEGER)`.as('pending'),
       total: count().as('total'),
     })

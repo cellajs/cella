@@ -41,7 +41,7 @@ const OrganizationsTable = () => {
   const [columns, setColumns] = useColumns(isCompact);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = organizationsQueryOptions({ ...search, limit });
+  const queryOptions = organizationsQueryOptions({ ...search, limit, include: 'counts' });
 
   const {
     data: rows,
