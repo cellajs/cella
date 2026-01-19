@@ -1,4 +1,4 @@
-import type { BaseConfigType } from "./types";
+import type { BaseAuthStrategies, BaseConfigType, BaseOAuthProviders } from "./types";
 
 export const config = {
 
@@ -56,10 +56,10 @@ export const config = {
    ******************************************************************************/
   // Currently available: 'password', 'passkey', 'oauth' and 'totp'.
   // Totp can only be used as a fallback strategy for mfa, with 'passkey' as the primary.
-  enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] as const,
+  enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] satisfies BaseAuthStrategies[],
 
   // Currently supported: 'github', 'google', 'microsoft'.
-  enabledOAuthProviders: ['github'] as const,
+  enabledOAuthProviders: ['github'] satisfies BaseOAuthProviders[],
   tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
   totpConfig: {
     intervalInSeconds: 30,

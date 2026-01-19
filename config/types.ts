@@ -11,6 +11,9 @@ export type BaseConfigType = {
   s3BucketPrefix?: string
 }
 
+export type BaseAuthStrategies = 'password' | 'passkey' | 'oauth' | 'totp'
+export type BaseOAuthProviders = 'github' | 'google' | 'microsoft'
+
 type ConfigType = DeepPartial<typeof config>
 
 export type Config = Omit<ConfigType, keyof BaseConfigType> & BaseConfigType;
