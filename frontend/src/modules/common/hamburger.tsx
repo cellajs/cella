@@ -20,28 +20,30 @@ const HamburgerButton = ({ isOpen, toggle, className, ref }: HamburgerButtonProp
   const mode = useUIStore((state) => state.mode);
   const lineColor = mode === 'dark' ? 'white' : 'black';
 
-  const topLineClass = isOpen ? 'rotate-45 translate-y-1.5' : '';
-  const middleLineClass = isOpen ? 'opacity-0' : 'opacity-100';
-  const bottomLineClass = isOpen ? '-rotate-45 -translate-y-1.5' : '';
-
   return (
     <Button
       ref={ref}
       size="lg"
       variant="ghost"
       className={cn(
-        'group flex h-10 w-10 flex-col items-center justify-center',
+        'group flex h-10 w-10 flex-col items-center justify-center data-[open=true]:pointer-events-none',
         className,
-        isOpen && 'pointer-events-none',
       )}
       type="button"
       onClick={() => toggle()}
       aria-expanded={isOpen}
       aria-label="toggle menu"
+      data-open={isOpen}
     >
-      <HamburgerLine className={topLineClass} lineColor={lineColor} />
-      <HamburgerLine className={middleLineClass} lineColor={lineColor} />
-      <HamburgerLine className={bottomLineClass} lineColor={lineColor} />
+      <HamburgerLine
+        className="group-data-[open=true]:rotate-45 group-data-[open=true]:translate-y-1.5"
+        lineColor={lineColor}
+      />
+      <HamburgerLine className="opacity-100 group-data-[open=true]:opacity-0" lineColor={lineColor} />
+      <HamburgerLine
+        className="group-data-[open=true]:-rotate-45 group-data-[open=true]:-translate-y-1.5"
+        lineColor={lineColor}
+      />
     </Button>
   );
 };

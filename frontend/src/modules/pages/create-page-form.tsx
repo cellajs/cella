@@ -46,7 +46,9 @@ export const CreatePageForm = ({ callback }: Props) => {
         <InputFormField control={form.control} name="name" label={t('common:title')} required />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton allowOfflineDelete disabled={!form.isDirty || createPage.isPending}>{t('common:create')}</SubmitButton>
+          <SubmitButton allowOfflineDelete disabled={!form.isDirty || createPage.isPending}>
+            {t('common:create')}
+          </SubmitButton>
 
           <Button
             type="reset"

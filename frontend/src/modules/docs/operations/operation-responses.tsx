@@ -149,12 +149,10 @@ export const TagExpandButtonContent = ({ tagName, isOpen }: TagExpandButtonProps
   useSuspenseQuery(tagDetailsQueryOptions(tagName));
 
   return (
-    <>
+    <span className="contents group" data-open={isOpen}>
       {t('common:docs.hide_details')}
-      <ChevronDown
-        className={cn('ml-2 h-4 w-4 transition-transform duration-200 opacity-50', isOpen && 'rotate-180')}
-      />
-    </>
+      <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50 group-data-[open=true]:rotate-180" />
+    </span>
   );
 };
 

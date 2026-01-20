@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -73,63 +73,66 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
 
         return (
           <Collapsible key={id} open={isExpanded} onOpenChange={() => toggleExpanded(id)}>
-            <CollapsibleTrigger asChild>
-              <Link
-                to="/legal/$subject"
-                params={{ subject: id }}
-                hash={isMobile ? '' : 'overview'}
-                hashScrollIntoView={{ behavior: 'instant' }}
-                resetScroll={true}
-                draggable="false"
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'lg' }),
-                  'w-full justify-between text-left',
-                  isActive && 'bg-accent',
-                )}
-              >
-                <div className="truncate">{t(label)}</div>
-                <ChevronRightIcon
-                  className={cn('size-4 transition-transform duration-200', isExpanded && 'rotate-90')}
-                />
-              </Link>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-              <div className="relative flex flex-col py-2 ml-3 pl-4">
-                {/* Faded rail line */}
-                <div className="absolute left-0 top-4 bottom-4 w-px bg-muted-foreground/20 rounded-full" />
-                {subjectSections.map(({ id: sectionId, label: sectionLabel }) => {
-                  const isSectionActive = isActive && currentSection === sectionId;
-                  return (
-                    <div key={sectionId} className="relative">
-                      {isSectionActive && (
-                        <motion.span
-                          layoutId={layoutId}
-                          transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                          className="w-[0.20rem] bg-primary rounded-full absolute -left-4.5 ml-px top-2 bottom-2"
-                        />
-                      )}
-                      <Link
-                        to="."
-                        hash={sectionId}
-                        replace
-                        draggable="false"
-                        className={cn(
-                          buttonVariants({ variant: 'ghost', size: 'sm' }),
-                          'hover:bg-accent/50 w-full justify-start text-left text-sm font-light',
-                          isSectionActive && 'font-normal',
-                        )}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          scrollToSection(sectionId);
-                        }}
-                      >
-                        <div className="truncate">{sectionLabel}</div>
-                      </Link>
-                    </div>
-                  );
-                })}
+            <div className="relative group/subject" data-active={isActive} data-expanded={isExpanded}>
+              {/* Rail line - visible when expanded */}
+              <div className="absolute left-2.5 top-4.5 bottom-3 flex-col items-center pointer-events-none hidden group-data-[expanded=true]/subject:flex">
+                <div className="w-px flex-1 bg-muted-foreground/30" />
               </div>
-            </CollapsibleContent>
+              <CollapsibleTrigger asChild>
+                <Link
+                  to="/legal/$subject"
+                  params={{ subject: id }}
+                  hash={isMobile ? '' : 'overview'}
+                  hashScrollIntoView={{ behavior: 'instant' }}
+                  resetScroll={true}
+                  draggable="false"
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'default' }),
+                    'w-full text-left pl-5 h-8 font-normal group opacity-80',
+                    'group-data-[expanded=true]/subject:opacity-100 group-data-[active=true]/subject:bg-accent',
+                  )}
+                >
+                  <div className="absolute left-[0.53rem] w-1 h-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/subject:bg-muted-foreground/60" />
+                  <span className="truncate">{t(label)}</span>
+                  <ChevronDownIcon className="size-4 invisible group-hover:visible transition-transform duration-200 opacity-40 ml-auto group-data-[expanded=true]/subject:rotate-180" />
+                </Link>
+              </CollapsibleTrigger>
+              <CollapsibleContent forceMount className="overflow-hidden data-[state=closed]:hidden">
+                <div className="relative flex flex-col py-1 px-0">
+                  {subjectSections.map(({ id: sectionId, label: sectionLabel }) => {
+                    const isSectionActive = isActive && currentSection === sectionId;
+                    return (
+                      <div key={sectionId} className="relative group/section" data-active={isSectionActive}>
+                        {isSectionActive && (
+                          <motion.span
+                            layoutId={layoutId}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
+                            className="w-[0.20rem] bg-primary rounded-full absolute left-2 ml-px top-2 bottom-2"
+                          />
+                        )}
+                        <Link
+                          to="."
+                          hash={sectionId}
+                          replace
+                          draggable="false"
+                          className={cn(
+                            buttonVariants({ variant: 'ghost', size: 'sm' }),
+                            'hover:bg-accent/50 w-full justify-start text-left group font-normal opacity-75 text-sm h-8 gap-2 pl-5',
+                            'group-data-[active=true]/section:opacity-100',
+                          )}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            scrollToSection(sectionId);
+                          }}
+                        >
+                          <span className="truncate text-[13px]">{sectionLabel}</span>
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </div>
           </Collapsible>
         );
       })}

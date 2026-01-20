@@ -4,6 +4,7 @@ import { RepoConfig } from '#/config';
 import { getOverrideStatus } from '#/modules/overrides';
 import { FileAnalysis } from '#/types';
 import {
+  gitAddAll,
   gitCleanAllUntrackedFiles,
   gitCleanUntrackedFile,
   gitRemoveFilePathFromCache,
@@ -193,6 +194,11 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
     if (!continueResolving) {
       throw new Error('merge process aborted by user');
     }
+
+    // Stage all changes after user resolves conflicts manually.
+    // This handles edge cases like running `pnpm install` during resolution,
+    // which modifies pnpm-lock.yaml and would otherwise cause "uncommitted changes" errors.
+    await gitAddAll(repoPath);
 
     resumeSpinner();
 
