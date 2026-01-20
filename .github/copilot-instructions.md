@@ -9,6 +9,8 @@ Cella is a TypeScript monorepo template for building collaborative web apps with
 - `frontend/` - React SPA, TanStack Router/Query, Zustand
 - `config/` - Shared environment configs (development, production, staging)
 - `locales/` - i18n translations (en, nl)
+- `info/` - Documentation
+- `cdc/` - CDC (Change Data Capture) service (optional)
 
 Both backend and frontend use **modular structure** in `src/modules/` (e.g., `auth`, `users`, `organizations`, `attachments`). Keep new features in their own modules.
 
@@ -54,9 +56,10 @@ pnpm check          # Run generate:openapi + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data
 pnpm test           # Run all Vitest tests
+pnpm sync           # Sync changes from upstream cella to fork (useful for forks)
 ```
 
-## Code Style
+## Code style and conventions
 
 - **Formatter/Linter**: Biome (`pnpm lint:fix`)
 - **Indentation**: 2 spaces, single quotes, trailing commas (ES5)
@@ -64,25 +67,36 @@ pnpm test           # Run all Vitest tests
 - **Variables/functions**: camelCase
 - **Components**: PascalCase
 - **Translation keys**: snake_case
+- **Headers**: Sentence case only (`## Code style`, not `## Code Style`)
 - **React Compiler**: Avoid `useMemo`/`useCallback` in most cases
-- **Import/export** Avoid barrel files unless for utils folders. Dont re-export except for proper barrel files.
+- **Import/export**: Avoid barrel files unless for utils folders. Don't re-export except for proper barrel files.
+- **Test files**: `*.test.ts` adjacent to source or in `tests/`
+- **Commit format**: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
+- **PRs**: Include description, linked issues, screenshots for UI changes
+
+## Learning priority
+
+When understanding Cella's architecture or implementing features, prioritize sources in this order:
+1. **Code** - The source code is the ultimate source of truth
+2. **Invariants & design decisions** - See `info/SYNC_ENGINE_REQUIREMENTS.md` for the "why" behind architectural choices
+3. **Requirements** - Testable contracts in `info/SYNC_ENGINE_REQUIREMENTS.md`
+4. **Architecture docs** - `info/ARCHITECTURE.md`, `info/AGENTS.md`
+
+**Avoid relying on README files** - They often become stale. Prefer reading actual code and design decision documentation.
 
 ## File Locations
 
 | Purpose | Location |
 |---------|----------|
-| DB schemas | `backend/src/db/schema/` |
-| API validation | `backend/src/modules/<module>/schema.ts` |
+| DB schemas | `backend/src/db/schema/[tablename]` |
+| API validation | `backend/src/modules/<module>/[module]-schema.ts` |
 | Generated types | `frontend/src/api.gen/` |
 | Query keys/options | `frontend/src/modules/<module>/query.ts` |
 | Route definitions | `frontend/src/routes/` + `route-tree.tsx` |
-| UI components | `frontend/src/modules/ui/` (Shadcn) |
-| Common components | `frontend/src/modules/common/` |
+| UI react components | `frontend/src/modules/ui/` (Shadcn) |
+| Common react components | `frontend/src/modules/common/` |
 
-## Conventions
-- Test files: `*.test.ts` adjacent to source or in `tests/`
-- Commit format: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
-- PRs: Include description, linked issues, screenshots for UI changes
 
 For detailed architecture, see [info/ARCHITECTURE.md](../info/ARCHITECTURE.md)
 For more rules and guidelinse, see [info/AGENTS.md](../info/AGENTS.md).
+For writing tests and testing instructions, see [info/TESTING.md](../info/TESTING.md).
