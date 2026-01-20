@@ -62,6 +62,146 @@
     }
   },
   {
+    "operationId": "getAttachments",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachments",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "name": { "type": "string", "required": true },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "keywords": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "modifiedBy": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": { "type": "string", "required": true },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "filename": { "type": "string", "required": true },
+                  "contentType": { "type": "string", "required": true },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "size": { "type": "string", "required": true },
+                  "originalKey": { "type": "string", "required": true },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "organizationId": { "type": "string", "required": true }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "orgIdOrSlug": {
+            "type": "string",
+            "required": true,
+            "description": "Entity ID or slug. ID is always preferred."
+          }
+        }
+      },
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["name", "createdAt", "contentType"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
     "operationId": "createAttachment",
     "responses": [
       {

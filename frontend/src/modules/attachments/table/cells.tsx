@@ -151,9 +151,10 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
 interface EllipsisCellProps {
   row: Attachment;
   tabIndex: number;
+  organizationSlug: string;
 }
 
-export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
+export const EllipsisCell = ({ row, tabIndex, organizationSlug }: EllipsisCellProps) => {
   const { t } = useTranslation();
   const { copyToClipboard } = useCopyToClipboard();
 
@@ -173,7 +174,7 @@ export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
         update({
           content: (
             <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-              <DeleteAttachments attachments={[row]} organizationId={row.organizationId} callback={callback} />
+              <DeleteAttachments attachments={[row]} organizationSlug={organizationSlug} callback={callback} />
             </PopConfirm>
           ),
         });

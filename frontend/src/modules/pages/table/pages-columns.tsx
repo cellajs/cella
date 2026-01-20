@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { CloudIcon, CloudOffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page } from '~/api.gen';
@@ -8,6 +9,9 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { UserCellById } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
+
+/** Check if a page is local-only (not yet synced to server) */
+const isLocalPage = (id: string) => id.startsWith('temp-');
 
 export const usePagesTableColumns = (isCompact: boolean) => {
   const { t } = useTranslation();
@@ -43,6 +47,29 @@ export const usePagesTableColumns = (isCompact: boolean) => {
           </span>
         </Link>
       ),
+    },
+    {
+      key: 'syncStatus',
+      name: '',
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row }) => {
+        const isLocal = isLocalPage(row.id);
+        return (
+          <div
+            className="flex justify-center items-center h-full w-full"
+            data-tooltip="true"
+            data-tooltip-content={isLocal ? t('common:local_only') : t('common:online')}
+          >
+            {isLocal ? (
+              <CloudOffIcon className="opacity-50" size={16} />
+            ) : (
+              <CloudIcon className="text-success" size={16} />
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'status',

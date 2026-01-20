@@ -69,5 +69,5 @@ export const attachmentsRouteSearchParamsSchema = z.object({
   groupId: z.string().optional(),
   q: z.string().optional(),
   order: z.enum(['asc', 'desc']).optional(),
-  sort: z.enum(['id', 'name', 'size', 'createdAt']).optional(),
+  sort: z.enum(['name', 'createdAt', 'contentType']).optional(),
 });

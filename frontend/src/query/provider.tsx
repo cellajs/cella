@@ -1,11 +1,10 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'config';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
-import { useOfflineManager } from '~/query/offline-manager';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/query/utils';
@@ -53,19 +52,40 @@ export const offlineQueryConfig = {
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const mutationDefaultsRegistered = useRef(false);
 
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
 
-  // Initialize offline manager for network status tracking and executor coordination
-  // This handles online/offline events and notifies executors when back online
-  const { isOnline, pendingCount } = useOfflineManager(offlineAccess);
+  // Lazily register mutation defaults for offline persistence (avoids circular import at module load)
+  useEffect(() => {
+    if (mutationDefaultsRegistered.current) return;
+    mutationDefaultsRegistered.current = true;
+    import('~/query/mutation-defaults').then(({ registerMutationDefaults }) => registerMutationDefaults());
+  }, []);
+
+  // Track online/offline status
+  useEffect(() => {
+    if (!offlineAccess) return;
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [offlineAccess]);
 
   // Log offline status changes for debugging
   useEffect(() => {
     if (!offlineAccess) return;
-    console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}, Pending mutations: ${pendingCount}`);
-  }, [offlineAccess, isOnline, pendingCount]);
+    console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}`);
+  }, [offlineAccess, isOnline]);
 
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available

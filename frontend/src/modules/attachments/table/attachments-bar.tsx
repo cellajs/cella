@@ -63,7 +63,7 @@ export const AttachmentsTableBar = ({
 
   const openDeleteDialog = () => {
     createDialog(
-      <DeleteAttachments dialog attachments={selected} organizationId={entity.id} callback={clearSelection} />,
+      <DeleteAttachments dialog attachments={selected} organizationSlug={entity.slug} callback={clearSelection} />,
       {
         id: 'delete-attachments',
         triggerRef: deleteButtonRef,

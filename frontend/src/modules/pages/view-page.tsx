@@ -1,10 +1,10 @@
-import { eq, useLiveQuery } from '@tanstack/react-db';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { EditIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
-import type { initPagesCollection } from '~/modules/pages/collections';
+import { pageQueryOptions } from '~/modules/pages/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
@@ -13,26 +13,19 @@ const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
 interface ViewPageProps {
   pageId: string;
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
 /**
  * Displays a page with its name as title and description as the main content.
  */
-const ViewPage = ({ pageId, pagesCollection }: ViewPageProps) => {
+const ViewPage = ({ pageId }: ViewPageProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { systemRole } = useUserStore();
 
-  // Get page from sync collection
-  const { data: pages } = useLiveQuery(
-    (liveQuery) => liveQuery.from({ page: pagesCollection }).where(({ page }) => eq(page.id, pageId)),
-    [pageId],
-  );
+  // Get page from React Query
+  const { data: page } = useSuspenseQuery(pageQueryOptions(pageId));
 
-  const page = pages?.[0];
-
-  // Show loading state while waiting for sync
   if (!page) {
     return (
       <div className="my-4 md:mt-8 mx-auto flex justify-center">

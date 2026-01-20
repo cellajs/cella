@@ -13,7 +13,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import Spinner from '~/modules/common/spinner';
-import type { initPagesCollection } from '~/modules/pages/collections';
+import { usePageUpdateMutation } from '~/modules/pages/query';
 import { Form } from '~/modules/ui/form';
 
 const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
@@ -24,12 +24,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
   page: Page;
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
-const UpdatePageForm = ({ page, pagesCollection }: Props) => {
+const UpdatePageForm = ({ page }: Props) => {
   const { t } = useTranslation();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const updatePage = usePageUpdateMutation();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
@@ -64,24 +64,33 @@ const UpdatePageForm = ({ page, pagesCollection }: Props) => {
     [page.name, page.description],
   );
 
-  // Save handler using collection
+  // Save handler using mutation (fire-and-forget for offline support)
   const handleSave = useCallback(
-    async (data: FormValues) => {
+    (data: FormValues) => {
       setSaveStatus('saving');
-      try {
-        pagesCollection.update(page.id, (draft) => {
-          if (data.name !== undefined) draft.name = data.name;
-          if (data.description !== undefined) draft.description = data.description;
-        });
+      updatePage.mutate(
+        { id: page.id, body: data },
+        {
+          onSuccess: () => {
+            form.reset(data);
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 1000);
+          },
+          onError: () => {
+            setSaveStatus('idle');
+          },
+        },
+      );
+
+      // For offline: optimistic update happens in onMutate, show "saved" after short delay
+      // The mutation will be paused and resume when online
+      if (updatePage.isPaused) {
         form.reset(data);
         setSaveStatus('saved');
-        // Reset to idle after showing "saved" indicator
-        setTimeout(() => setSaveStatus('idle'), 2000);
-      } catch {
-        setSaveStatus('idle');
+        setTimeout(() => setSaveStatus('idle'), 1000);
       }
     },
-    [page.id, pagesCollection, form],
+    [page.id, updatePage, form],
   );
 
   // Auto-save with 5s inactivity delay and 30s max delay

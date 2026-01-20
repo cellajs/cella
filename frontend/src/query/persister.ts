@@ -1,40 +1,90 @@
+/**
+ * React Query IndexedDB Persister
+ *
+ * UNIVERSAL PATTERN - Part of the offline persistence layer.
+ *
+ * This persister stores React Query's cache in IndexedDB using Dexie,
+ * enabling the cache to survive page refreshes and browser restarts.
+ *
+ * Works alongside:
+ * - TanStack Offline Transactions (mutation outbox)
+ * - Electric Sync (real-time data sync)
+ * - Dexie attachment storage (file blobs, attachment-specific)
+ */
+import * as Sentry from '@sentry/react';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
+import { appConfig } from 'config';
 import { Dexie } from 'dexie';
 
-// Create a simple Dexie instance for react-query persistence
+interface PersistedRecord {
+  key: string;
+  timestamp: number;
+  clientState: PersistedClient['clientState'];
+  buster: string;
+}
+
+/**
+ * Dexie database for React Query cache persistence.
+ */
 class QueryPersisterDB extends Dexie {
-  persist!: Dexie.Table<any, string>;
+  persist!: Dexie.Table<PersistedRecord, string>;
 
   constructor() {
-    super('CellaQueryPersister');
-    this.version(1).stores({
-      persist: 'key',
-    });
+    super(`${appConfig.slug}-query-persister`);
+    this.version(1).stores({ persist: 'key' });
   }
 }
 
 const queryDb = new QueryPersisterDB();
 
 /**
- * Create an IndexedDB persister for react-query using Dexie
+ * Creates an IndexedDB persister for React Query using Dexie.
+ * Persists the query cache to survive page refreshes and enable offline access.
  */
 function createIDBPersister(idbValidKey: string = 'reactQuery') {
   return {
     persistClient: async (client: PersistedClient) => {
-      await queryDb.persist.put({ key: idbValidKey, ...client }, idbValidKey);
+      try {
+        await queryDb.persist.put(
+          {
+            key: idbValidKey,
+            timestamp: client.timestamp,
+            clientState: client.clientState,
+            buster: client.buster,
+          },
+          idbValidKey,
+        );
+      } catch (error) {
+        Sentry.captureException(error);
+        console.error('[QueryPersister] Failed to persist client:', error);
+      }
     },
     restoreClient: async () => {
-      const persisted = await queryDb.persist.get(idbValidKey);
-      if (persisted) {
-        const { key, ...client } = persisted;
-        return client as PersistedClient;
+      try {
+        const persisted = await queryDb.persist.get(idbValidKey);
+        if (persisted) {
+          return {
+            timestamp: persisted.timestamp,
+            clientState: persisted.clientState,
+            buster: persisted.buster,
+          } as PersistedClient;
+        }
+        return undefined;
+      } catch (error) {
+        Sentry.captureException(error);
+        console.error('[QueryPersister] Failed to restore client:', error);
+        return undefined;
       }
-      return undefined;
     },
     removeClient: async () => {
-      await queryDb.persist.delete(idbValidKey);
+      try {
+        await queryDb.persist.delete(idbValidKey);
+      } catch (error) {
+        Sentry.captureException(error);
+        console.error('[QueryPersister] Failed to remove client:', error);
+      }
     },
-  } as Persister;
+  } satisfies Persister;
 }
 
 export const persister = createIDBPersister();

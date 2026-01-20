@@ -37,7 +37,8 @@ export const queryClient = new QueryClient({
       retry: false,
     },
     mutations: {
-      retry: false,
+      networkMode: 'offlineFirst', // Mutations fire once, then pause if offline and resume when back online
+      retry: 3, // Retry failed mutations up to 3 times
     },
   },
 });

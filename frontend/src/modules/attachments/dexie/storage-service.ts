@@ -1,3 +1,16 @@
+/**
+ * Dexie Attachment Storage Service
+ *
+ * ATTACHMENT-SPECIFIC - Do NOT copy for other entities.
+ *
+ * This service handles file blob storage and caching:
+ * - Store files created offline for later upload
+ * - Cache downloaded files for offline viewing
+ * - Manage sync status and retry logic for file uploads
+ *
+ * Other product entities don't need this because they don't have
+ * associated file blobs - only metadata stored via Electric sync.
+ */
 import * as Sentry from '@sentry/react';
 import { Attachment, getPresignedUrl } from '~/api.gen';
 import {

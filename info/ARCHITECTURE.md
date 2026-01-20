@@ -11,11 +11,12 @@ This document describes the high-level architecture of Cella.
 ### DX aspects
  * Type safe, without overdoing it. 
  * Only build what you are going to use yourself.
- * Stay humble and remain a template, not a framework. So prevent abstraction layers and leverage libraries to the fullest extent.
+ * Prevent abstraction layers and leverage libraries to the fullest extent.
  * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
- * Modularity. As Cella will grow, we need to make sure you can scaffold only the modules that you need.
- * Open standards. Our long-term vision is that each Cella - as in each cell - can speak fluently with other cells.
- * Focused on client-side rendering (CSR) and static site generation (SSG). These best support the hybrid idiom to support offline and sync capabilities to reduce 'server dependency'. 
+ * Focus on proven OpenAPI and React Query patterns.
+ * Modularity: As Cella will grow, we need to make sure you can scaffold only the modules that you need.
+ * Open standards: Our long-term vision is that each Cella - as in each cell - can speak fluently with other cells.
+ * Focused on client-side rendering (CSR) and in future static site generation (SSG). These best support the hybrid idiom to support offline and sync capabilities to reduce 'server dependency'. 
 
 ### Backend
 - [nodejs](https://nodejs.org)
@@ -31,7 +32,6 @@ This document describes the high-level architecture of Cella.
 - [tanstack router](https://github.com/tanstack/router)
 - [tanstack query](https://github.com/tanstack/query)
 - [zustand](https://github.com/pmndrs/zustand)
-- [electric sync](https://electric-sql.com/)
 
 ### Frontend / UI
 - [react data grid](https://github.com/adazzle/react-data-grid)
@@ -63,7 +63,7 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 │   │   ├── lib               3rd part libs & important helpers
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
-│   │   ├── permissions       Setup of your authorization layer
+│   │   ├── permissions       Permission/authorization layer
 │   │   └── utils             Reusable functions
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
@@ -114,47 +114,3 @@ Context entities are just old-school CRUD openapi endpoints. They do not have a 
 
 Product entities are the types of data that users interact with on a daily basis. They are upgraded using a sync + offline layer with create, update and delete mutations queued (so full offline CRUD) while offline.
 
-Cella uses a layered approach to handle product entity data:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     React Components                        │
-│              useLiveQuery / useSuspenseQuery                │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│              TanStack DB (Reactive/Relational Layer)        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-          ┌───────────────────┴───────────────────┐
-          ▼                                       ▼
-┌─────────────────────────┐         ┌─────────────────────────┐
-│   Electric SQL Sync     │         │    REST API Mutations   │
-└─────────────────────────┘         └─────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│           TanStack Query (Persisted Store Layer)            │
-│  • Query cache management and deduplication                 │
-│  • Background refetching and stale-while-revalidate         │
-│  • Persisted to IndexedDB via Dexie                         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Layer Responsibilities
-
-**TanStack DB + Electric Collections**
-- Reactive live queries with sub-millisecond updates
-- Optimistic mutations with automatic rollback
-- Real-time sync from PostgreSQL via Electric shapes
-
-**TanStack Query + Dexie Persistence**  
-- Persisted cache layer (survives refresh, works offline)
-- Background refetching and cache invalidation
-
-## Security
-Link to valuable resources:
-* https://cheatsheetseries.owasp.org/
-* https://mvsp.dev/mvsp.en/
- 

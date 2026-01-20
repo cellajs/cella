@@ -1330,6 +1330,30 @@ export const zDeleteAttachmentsData = z.object({
  */
 export const zDeleteAttachmentsResponse = zSuccessWithRejectedItems;
 
+export const zGetAttachmentsData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(
+    z.object({
+      q: z.optional(z.string()),
+      sort: z.optional(z.enum(['name', 'createdAt', 'contentType'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()),
+      limit: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Attachments
+ */
+export const zGetAttachmentsResponse = z.object({
+  items: z.array(zAttachment),
+  total: z.number(),
+});
+
 export const zCreateAttachmentData = z.object({
   body: z
     .array(

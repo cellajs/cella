@@ -1,5 +1,4 @@
-import { ilike, isNull, not, or, useLiveQuery } from '@tanstack/react-db';
-import { useLoaderData } from '@tanstack/react-router';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,9 +8,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { pagesLimit } from '~/modules/pages/query';
+import { pagesLimit, pagesQueryOptions } from '~/modules/pages/query';
 import type { PagesRouteSearchParams } from '~/modules/pages/types';
-import { DocsPagesRoute } from '~/routes/docs-routes';
 import { PagesTableBar } from './pages-bar';
 import { usePagesTableColumns } from './pages-columns';
 
@@ -22,7 +20,6 @@ const PagesTable = () => {
   const { t } = useTranslation();
   const [isCompact, setIsCompact] = useState(false);
 
-  const { pagesCollection } = useLoaderData({ from: DocsPagesRoute.id });
   const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
 
   // Table state
@@ -34,22 +31,26 @@ const PagesTable = () => {
   const { columns, visibleColumns, setColumns } = usePagesTableColumns(isCompact);
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
-  // Live query for reactive data from Electric collection
+  const queryOptions = pagesQueryOptions({ q, sort, order, limit });
+
+  // Infinite query for paginated data
   const {
     data: rows,
     isLoading,
-    isError,
-  } = useLiveQuery(
-    (liveQuery) => {
-      return liveQuery
-        .from({ page: pagesCollection })
-        .where(({ page }) =>
-          q ? or(ilike(page.name, `%${q.trim()}%`), ilike(page.description, `%${q.trim()}%`)) : not(isNull(page.id)),
-        )
-        .orderBy(({ page }) => page[sort || 'createdAt'], order || 'desc');
-    },
-    [q, sort, order],
-  );
+    isFetching,
+    error,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    ...queryOptions,
+    select: ({ pages }) => pages.flatMap(({ items }) => items),
+  });
+
+  // Fetch more on scroll
+  const fetchMore = useCallback(async () => {
+    if (!hasNextPage || isLoading || isFetching) return;
+    await fetchNextPage();
+  }, [hasNextPage, isLoading, isFetching, fetchNextPage]);
 
   // Handle row selection
   const onSelectedRowsChange = useCallback(
@@ -64,10 +65,6 @@ const PagesTable = () => {
 
   const clearSelection = () => setSelected([]);
 
-  const error = isError
-    ? new Error(t('error:load_resource', { resource: t('common:pages').toLowerCase() }))
-    : undefined;
-
   return (
     <FocusViewContainer data-is-compact={isCompact} className="container min-h-screen flex flex-col gap-4">
       <PagesTableBar
@@ -80,19 +77,20 @@ const PagesTable = () => {
         isCompact={isCompact}
         setIsCompact={setIsCompact}
         total={rows?.length ?? 0}
-        pagesCollection={pagesCollection}
       />
       <DataTable
         rows={rows}
         rowHeight={52}
         rowKeyGetter={(r) => r.id}
         columns={visibleColumns}
-        enableVirtualization={true}
+        enableVirtualization={false}
         limit={limit}
         error={error}
         isLoading={isLoading}
+        isFetching={isFetching}
         isFiltered={!!q}
-        hasNextPage={false}
+        hasNextPage={hasNextPage}
+        fetchMore={fetchMore}
         selectedRows={new Set(selected.map((row) => row.id))}
         onSelectedRowsChange={onSelectedRowsChange}
         sortColumns={sortColumns}

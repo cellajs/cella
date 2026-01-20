@@ -1,9 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { paginationQuerySchema } from '#/utils/schema/common';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
+const attachmentSelectSchema = createSelectSchema(attachmentsTable);
+
 export const attachmentSchema = z
   .object(createSelectSchema(attachmentsTable).shape)
   .openapi('Attachment', { example: mockAttachmentResponse() });
@@ -16,3 +19,9 @@ export const attachmentUpdateBodySchema = attachmentInsertSchema
     originalKey: true,
   })
   .partial();
+
+const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
+
+export const attachmentListQuerySchema = paginationQuerySchema.extend({
+  sort: attachmentSortKeys.default('createdAt').optional(),
+});

@@ -14,7 +14,6 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { initPagesCollection } from '~/modules/pages/collections';
 import type { PagesRouteSearchParams } from '~/modules/pages/types';
 import { CreatePageForm } from '../create-page-form';
 import DeletePages from '../delete-pages';
@@ -23,7 +22,6 @@ interface PagesTableBarProps extends Omit<BaseTableBarProps<Page, PagesRouteSear
   isCompact: boolean;
   setIsCompact: (isCompact: boolean) => void;
   total: number;
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
 export const PagesTableBar = ({
@@ -36,7 +34,6 @@ export const PagesTableBar = ({
   isCompact,
   setIsCompact,
   total,
-  pagesCollection,
 }: PagesTableBarProps) => {
   const { t } = useTranslation();
 
@@ -70,7 +67,7 @@ export const PagesTableBar = ({
       clearSelection();
     };
 
-    createDialog(<DeletePages pages={selected} pagesCollection={pagesCollection} callback={callback} isDialog />, {
+    createDialog(<DeletePages pages={selected} callback={callback} isDialog />, {
       id: 'delete-pages',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
@@ -111,7 +108,7 @@ export const PagesTableBar = ({
                 label="common:create"
                 icon={PlusIcon}
                 onClick={() => {
-                  createDialog(<CreatePageForm pagesCollection={pagesCollection} callback={onCreatePage} />, {
+                  createDialog(<CreatePageForm callback={onCreatePage} />, {
                     id: 'create-page',
                     triggerRef: createButtonRef,
                     className: 'md:max-w-2xl',

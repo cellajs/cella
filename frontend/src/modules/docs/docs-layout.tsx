@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -10,7 +10,6 @@ import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { DocsLayoutRoute } from '~/routes/docs-routes';
 import { useUIStore } from '~/store/ui';
 
 const DOCS_SIDEBAR_SHEET_ID = 'docs-sidebar';
@@ -23,8 +22,6 @@ const DocsLayout = () => {
   const mainRef = useRef<HTMLElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const { pagesCollection } = useLoaderData({ from: DocsLayoutRoute.id });
-
   // Fetch tags via React Query (reduces bundle size)
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
@@ -32,7 +29,7 @@ const DocsLayout = () => {
   const sheets = useSheeter((state) => state.sheets);
   const sidebarOpen = sheets.some((s) => s.id === DOCS_SIDEBAR_SHEET_ID);
 
-  const sidebarContent = <DocsSidebar tags={tags} pagesCollection={pagesCollection} />;
+  const sidebarContent = <DocsSidebar tags={tags} />;
 
   // Create or remove sheet based on mobile state
   useEffect(() => {

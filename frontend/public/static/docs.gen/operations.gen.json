@@ -1071,6 +1071,23 @@
     }
   },
   {
+    "id": "getAttachments",
+    "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments",
+    "method": "get",
+    "path": "/{orgIdOrSlug}/attachments",
+    "tags": ["attachments"],
+    "summary": "Get attachments",
+    "description": "Returns a paginated list of *attachments* for the organization.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "createAttachment",
     "hash": "tag/attachments/POST/{orgIdOrSlug}/attachments",
     "method": "post",
