@@ -14,7 +14,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OAuthVerificationEmail, type OAuthVerificationEmailProps } from '../../../../../emails';
+import { OAuthVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
@@ -96,10 +96,9 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
   const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
   const recipients = [{ email }];
-  type Recipient = { email: string };
 
   const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
-  mailer.prepareEmails<OAuthVerificationEmailProps, Recipient>(OAuthVerificationEmail, staticOAuthProps, recipients);
+  mailer.prepareEmails(OAuthVerificationEmail, staticOAuthProps, recipients);
 
   logEvent('info', 'Verification email sent', { userId: user.id });
 };

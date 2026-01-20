@@ -37,12 +37,7 @@ import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import {
-  MemberInviteEmail,
-  type MemberInviteEmailProps,
-  MemberInviteWithTokenEmail,
-  type MemberInviteWithTokenEmailProps,
-} from '../../../emails';
+import { MemberInviteEmail, MemberInviteWithTokenEmail } from '../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -326,9 +321,9 @@ const membershipRouteHandlers = app
       .filter(({ email }) => insertedInactiveMemberships.some((m) => m.email === email))
       .map(({ email, type }) => {
         const rawToken = rawByEmail.get(email)!;
-        const memberInviteLink = `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
+        const inviteLink = `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
 
-        return { email, lng, name: slugFromEmail(email), memberInviteLink };
+        return { email, lng, name: slugFromEmail(email), inviteLink };
       });
 
     // Static email props are same for each scenario
@@ -336,24 +331,14 @@ const membershipRouteHandlers = app
 
     // Step 7: Send basic invite emails for Scenarios 1b + 2a
     if (noTokenRecipients.length > 0) {
-      await mailer.prepareEmails<MemberInviteEmailProps, (typeof noTokenRecipients)[number]>(
-        MemberInviteEmail,
-        staticProps,
-        noTokenRecipients,
-        user.email,
-      );
+      await mailer.prepareEmails(MemberInviteEmail, staticProps, noTokenRecipients, user.email);
     }
 
     // TODO for scenario 2b we might want to send a different email notifying user of direct addition
 
     // Step 8: Send invite with token emails for Scenario 3
     if (withTokenRecipients.length > 0) {
-      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, (typeof withTokenRecipients)[number]>(
-        MemberInviteWithTokenEmail,
-        staticProps,
-        withTokenRecipients,
-        user.email,
-      );
+      await mailer.prepareEmails(MemberInviteWithTokenEmail, staticProps, withTokenRecipients, user.email);
     }
 
     const invitesSentCount = insertedInactiveMemberships.length;

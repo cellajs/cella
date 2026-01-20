@@ -28,12 +28,7 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import {
-  NewsletterEmail,
-  type NewsletterEmailProps,
-  SystemInviteEmail,
-  type SystemInviteEmailProps,
-} from '../../../emails';
+import { NewsletterEmail, SystemInviteEmail } from '../../../emails';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -157,17 +152,11 @@ const systemRouteHandlers = app
       email,
       lng,
       name: slugFromEmail(email),
-      systemInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
+      inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${newToken}`,
     }));
-    type Recipient = (typeof recipients)[number];
 
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
-    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(
-      SystemInviteEmail,
-      staticProps,
-      recipients,
-      user.email,
-    );
+    await mailer.prepareEmails(SystemInviteEmail, staticProps, recipients, user.email);
 
     logEvent('info', 'Users invited on system level', { count: recipients.length });
 
@@ -300,11 +289,9 @@ const systemRouteHandlers = app
     // Replace all src attributes in content
     const newContent = await replaceSignedSrcs(content);
 
-    type Recipient = (typeof recipients)[number];
-
     // Prepare emails and send them
     const staticProps = { content: newContent, subject, testEmail: toSelf, lng: user.language };
-    await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
+    await mailer.prepareEmails(NewsletterEmail, staticProps, recipients, user.email);
 
     logEvent('info', 'Newsletter sent', { count: recipients.length });
 

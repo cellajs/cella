@@ -1,19 +1,16 @@
-import { appConfig } from 'config';
-import i18n from 'i18next';
-import { Text } from 'jsx-email';
-import type { BasicTemplateType } from '../../src/lib/mailer';
-import { EmailLogo } from '../components/email-logo';
-import { EmailContainer } from '../components/email-container';
-import { EmailBody } from '../components/email-body';
-import { EmailHeader } from '../components/email-header';
-import { Footer } from '../components/footer';
+import { appConfig } from "config";
+import i18n from "i18next";
+import { Text } from "jsx-email";
+import type { BasicTemplateType } from "../types";
+import { EmailLogo } from "../components/email-logo";
+import { EmailContainer } from "../components/email-container";
+import { EmailBody } from "../components/email-body";
+import { EmailHeader } from "../components/email-header";
+import { Footer } from "../components/footer";
 
-export type AccountSecurityType =
-  | 'mfa-enabled'
-  | 'mfa-disabled'
-  | 'wrong-password-lockout';
+type AccountSecurityType = "mfa-enabled" | "mfa-disabled" | "wrong-password-lockout";
 
-export interface AccountSecurityProps extends BasicTemplateType {
+interface AccountSecurityProps extends BasicTemplateType {
   name: string;
   type: AccountSecurityType;
   details?: Record<string, string | number>; // Optional extra details for dynamic messages

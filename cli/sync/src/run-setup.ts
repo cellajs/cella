@@ -5,8 +5,8 @@ import { checkConfig } from '#/modules/setup/check-config';
 import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
 import { handleMerge } from '#/utils/git/git-merge';
-import { getCommitCount } from '#/utils/git/helpers';
 import { createBranchIfMissing } from '#/utils/git/git-refs';
+import { getCommitCount } from '#/utils/git/helpers';
 import { createProgress } from '#/utils/progress';
 
 /**

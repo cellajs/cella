@@ -1,34 +1,28 @@
 import brevo from '@getbrevo/brevo';
 import { appConfig } from 'config';
 import { render } from 'jsx-email';
-import type { ReactElement } from 'react';
 import { env } from '#/env';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 
 // Check if the API key is set
-const hasApiKey = !!env.BREVO_API_KEY;
-if (hasApiKey) apiInstance.setApiKey(0, env.BREVO_API_KEY ?? '');
+if (!!env.BREVO_API_KEY) apiInstance.setApiKey(0, env.BREVO_API_KEY);
 
-// Basic email template type
-export type BasicTemplateType = {
-  lng: string;
-  subject: string;
-  name?: string;
-  testEmail?: boolean;
-  senderThumbnailUrl?: string | null;
-  senderName?: string;
-  unsubscribeLink?: string;
-};
+/* ---------------------------------- Types --------------------------------- */
+
+type EmailComponent<P> = (props: P) => React.ReactElement;
+type TemplateProps<T> = T extends EmailComponent<infer P> ? P : never;
+type RecipientBase = { email: string };
 
 type Mailer = {
-  prepareEmails<T extends BasicTemplateType, R extends { email: string }>(
-    template: (props: T & R) => ReactElement,
-    staticProps: Partial<T> & BasicTemplateType,
+  prepareEmails<Template extends (props: any) => React.ReactElement, R extends { email: string } = { email: string }>(
+    template: Template,
+    staticProps: Omit<TemplateProps<Template>, keyof R>,
     recipients: R[],
     replyTo?: string,
   ): Promise<void>;
+  send(to: string, subject: string, html: string, replyTo?: string): Promise<void>;
 
   send(to: string, subject: string, html: string, replyTo?: string): Promise<void>;
 };
@@ -43,9 +37,9 @@ export const mailer: Mailer = {
    * @param recipients - The list of recipients with email addresses and any recipient-specific properties.
    * @param replyTo - Optional, email address for the "Reply-To" field.
    */
-  async prepareEmails<T extends BasicTemplateType, R extends { email: string }>(
-    template: (props: T & R) => React.ReactElement,
-    staticProps: Partial<T> & BasicTemplateType,
+  async prepareEmails<Template extends (props: any) => React.ReactElement, R extends RecipientBase = RecipientBase>(
+    template: Template,
+    staticProps: Omit<TemplateProps<Template>, keyof R>,
     recipients: R[],
     replyTo?: string,
   ) {
@@ -54,12 +48,11 @@ export const mailer: Mailer = {
       const templateProps = {
         ...staticProps,
         ...recipient,
-      } as T & R;
+      } as TemplateProps<typeof template>;
 
-      // Render the email template
-      const emailHtml = await render(template(templateProps));
+      const html = await render(template(templateProps));
 
-      await this.send(recipient.email, staticProps.subject, emailHtml, replyTo);
+      await this.send(recipient.email, templateProps.subject, html, replyTo);
     }
   },
 
@@ -72,15 +65,14 @@ export const mailer: Mailer = {
    * @param replyTo - Optional, email address for the "Reply-To" field.
    */
   async send(to: string, subject: string, html: string, replyTo?: string) {
-    if (!hasApiKey) {
-      console.info(`Email to ${to} is not sent because API key is missing.`);
+    if (!env.BREVO_API_KEY) {
+      console.info(`Email to ${to} not sent: BREVO_API_KEY missing.`);
       return;
     }
 
     const sendSmtpEmail = new brevo.SendSmtpEmail();
-    const sanitizedSubject = sanitizeEmailSubject(subject || `${appConfig.name} message`);
 
-    sendSmtpEmail.subject = sanitizedSubject;
+    sendSmtpEmail.subject = sanitizeEmailSubject(subject || `${appConfig.name} message`);
     sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
     sendSmtpEmail.replyTo = { email: replyTo || appConfig.supportEmail };
@@ -89,7 +81,7 @@ export const mailer: Mailer = {
     try {
       await apiInstance.sendTransacEmail(sendSmtpEmail);
     } catch (err) {
-      console.warn('Failed to send email. \n', err);
+      console.warn('Failed to send email:\n', err);
     }
   },
 };

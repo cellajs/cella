@@ -27,12 +27,7 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import {
-  MemberInviteWithTokenEmail,
-  type MemberInviteWithTokenEmailProps,
-  SystemInviteEmail,
-  type SystemInviteEmailProps,
-} from '../../../../emails';
+import { MemberInviteWithTokenEmail, SystemInviteEmail } from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -230,7 +225,7 @@ const authGeneralRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+      inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
     };
 
     // Prepare email props, default is system invite
@@ -278,20 +273,10 @@ const authGeneralRouteHandlers = app
         lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
       };
 
-      await mailer.prepareEmails<MemberInviteWithTokenEmailProps, typeof recipient>(
-        MemberInviteWithTokenEmail,
-        emailProps,
-        [recipient],
-        userEmail,
-      );
+      await mailer.prepareEmails(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
       logEvent('info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
     } else {
-      await mailer.prepareEmails<SystemInviteEmailProps, typeof recipient>(
-        SystemInviteEmail,
-        defaultEmailProps,
-        [recipient],
-        userEmail,
-      );
+      await mailer.prepareEmails(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
       logEvent('info', 'System invitation has been resent');
     }
 

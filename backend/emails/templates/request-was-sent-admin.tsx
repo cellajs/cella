@@ -1,17 +1,16 @@
-import i18n from 'i18next';
-import { Text } from 'jsx-email';
+import i18n from "i18next";
+import { Text } from "jsx-email";
 
-import { appConfig } from 'config';
-import { EmailLogo } from '../components/email-logo';
-import { EmailContainer } from '../components/email-container';
-import { EmailBody } from '../components/email-body';
-import { EmailHeader } from '../components/email-header';
-import { Footer } from '../components/footer';
-import { RequestResponseEmailProps } from './request-was-sent';
-
+import { appConfig } from "config";
+import { EmailLogo } from "../components/email-logo";
+import { EmailContainer } from "../components/email-container";
+import { EmailBody } from "../components/email-body";
+import { EmailHeader } from "../components/email-header";
+import { Footer } from "../components/footer";
+import { RequestResponseEmailProps } from "./request-was-sent";
 
 /**
- * Email template for responses to sysadmin after users requests such as waitlist signups, newsletter subscriptions, or 
+ * Email template for responses to sysadmin after users requests such as waitlist signups, newsletter subscriptions, or
  * contact form submissions.
  */
 export const RequestInfoEmail = ({ lng, type, subject, message }: RequestResponseEmailProps) => {

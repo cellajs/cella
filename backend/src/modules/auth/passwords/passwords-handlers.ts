@@ -24,7 +24,7 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../../emails';
+import { CreatePasswordEmail } from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -141,9 +141,7 @@ const authPasswordsRouteHandlers = app
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
 
-    type Recipient = { email: string };
-
-    mailer.prepareEmails<CreatePasswordEmailProps, Recipient>(CreatePasswordEmail, staticProps, recipients);
+    mailer.prepareEmails(CreatePasswordEmail, staticProps, recipients);
 
     logEvent('info', 'Create password link sent', { userId: user.id });
 

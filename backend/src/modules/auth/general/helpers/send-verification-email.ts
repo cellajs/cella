@@ -12,7 +12,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../../emails';
+import { EmailVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
@@ -87,9 +87,8 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
   const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
   const recipients = [{ email }];
-  type Recipient = { email: string };
 
-  mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
+  mailer.prepareEmails(EmailVerificationEmail, staticProps, recipients);
 
   logEvent('info', 'Verification email sent', { userId: user.id });
 };

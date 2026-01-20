@@ -1,17 +1,17 @@
-import i18n from 'i18next';
-import { Text } from 'jsx-email';
+import i18n from "i18next";
+import { Text } from "jsx-email";
 
-import { appConfig } from 'config';
-import type { BasicTemplateType } from '../../src/lib/mailer';
-import { EmailLogo } from '../components/email-logo';
-import { EmailContainer } from '../components/email-container';
-import { EmailBody } from '../components/email-body';
-import { EmailHeader } from '../components/email-header';
-import { Footer } from '../components/footer';
+import { appConfig } from "config";
+import type { BasicTemplateType } from "../types";
+import { EmailLogo } from "../components/email-logo";
+import { EmailContainer } from "../components/email-container";
+import { EmailBody } from "../components/email-body";
+import { EmailHeader } from "../components/email-header";
+import { Footer } from "../components/footer";
 
 export interface RequestResponseEmailProps extends BasicTemplateType {
-  type: "waitlist" | "newsletter" | "contact",
-  message: string | null
+  type: "waitlist" | "newsletter" | "contact";
+  message: string | null;
 }
 
 /**
@@ -20,17 +20,14 @@ export interface RequestResponseEmailProps extends BasicTemplateType {
 export const RequestResponseEmail = ({ lng, type, subject, message }: RequestResponseEmailProps) => {
   return (
     <EmailContainer previewText={subject}>
-      <EmailHeader
-        headerText={
-          <div dangerouslySetInnerHTML={{ __html: i18n.t(`backend:email.${type}_request.title`, { lng }) }} />
-        }
-      />
+      <EmailHeader headerText={<div dangerouslySetInnerHTML={{ __html: i18n.t(`backend:email.${type}_request.title`, { lng }) }} />} />
       <EmailBody>
         <Text>{subject}</Text>
         {message && <Text>{message}</Text>}
 
-        <Text><span dangerouslySetInnerHTML={{ __html: i18n.t(`backend:email.${type}_request.text`, { lng, appName: appConfig.name }) }} /></Text>
-
+        <Text>
+          <span dangerouslySetInnerHTML={{ __html: i18n.t(`backend:email.${type}_request.text`, { lng, appName: appConfig.name }) }} />
+        </Text>
       </EmailBody>
 
       <EmailLogo />

@@ -15,7 +15,7 @@ import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { RequestInfoEmail, RequestResponseEmail, type RequestResponseEmailProps } from '../../../emails';
+import { RequestInfoEmail, RequestResponseEmail } from '../../../emails';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
@@ -86,14 +86,10 @@ const requestRouteHandlers = app
     const recipients = [{ email: normalizedEmail }];
 
     if (!matrixResp || !matrixResp.ok) {
-      mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestInfoEmail, { ...staticProps, subject: title }, [
-        { email: appConfig.company.email },
-      ]);
+      mailer.prepareEmails(RequestInfoEmail, { ...staticProps, subject: title }, [{ email: appConfig.company.email }]);
     }
 
-    type Recipient = { email: string };
-
-    mailer.prepareEmails<RequestResponseEmailProps, Recipient>(RequestResponseEmail, staticProps, recipients);
+    mailer.prepareEmails(RequestResponseEmail, staticProps, recipients);
 
     const data = {
       ...createdRequest,

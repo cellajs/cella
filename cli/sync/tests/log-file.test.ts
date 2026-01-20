@@ -1,7 +1,7 @@
 /**
  * Tests for log file output functionality (--log flag).
  */
-import { readFileSync, readdirSync, unlinkSync } from 'node:fs';
+import { readdirSync, readFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
