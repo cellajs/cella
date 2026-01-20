@@ -2,7 +2,9 @@ import { onlineManager } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
+import { attachmentsRouteSearchParamsSchema } from '~/modules/attachments/search-params-schemas';
 import ErrorNotice from '~/modules/common/error-notice';
+import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import {
   findOrganizationInListCache,
   organizationQueryKeys,
@@ -10,7 +12,6 @@ import {
 } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
-import { attachmentsRouteSearchParamsSchema, membersRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';

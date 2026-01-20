@@ -9,8 +9,8 @@ import type {
   UpdateMembershipResponse,
 } from '~/api.gen';
 import type { ContextEntityData } from '~/modules/entities/types';
+import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
-import type { membersRouteSearchParamsSchema } from '~/routes/search-params-schemas';
 
 export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSchema>;
 

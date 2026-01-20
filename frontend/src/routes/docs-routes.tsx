@@ -11,13 +11,13 @@ import {
   tagDetailsQueryOptions,
   tagsQueryOptions,
 } from '~/modules/docs/query';
-import { queryClient } from '~/query/query-client';
-import { PublicLayoutRoute } from '~/routes/base-routes';
 import {
   operationsRouteSearchParamsSchema,
-  pagesRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
-} from '~/routes/search-params-schemas';
+} from '~/modules/docs/search-params-schemas';
+import { pagesRouteSearchParamsSchema } from '~/modules/pages/search-params-schemas';
+import { queryClient } from '~/query/query-client';
+import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { stripParams } from '~/utils/strip-search-params';
