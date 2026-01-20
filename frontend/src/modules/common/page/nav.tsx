@@ -37,7 +37,15 @@ interface Props {
   className?: string;
 }
 
-export const PageNav = ({ tabs: explicitTabs, parentRouteId, filterTabIds, title, avatar, fallbackToFirst, className }: Props) => {
+export const PageNav = ({
+  tabs: explicitTabs,
+  parentRouteId,
+  filterTabIds,
+  title,
+  avatar,
+  fallbackToFirst,
+  className,
+}: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
   const { hasStarted } = useMounted();

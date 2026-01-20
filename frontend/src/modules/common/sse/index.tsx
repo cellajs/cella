@@ -7,8 +7,6 @@ import type { ContextEntityData } from '~/modules/entities/types';
 import type { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { organizationQueryKeys } from '~/modules/organizations/query';
-import { pageQueryKeys } from '~/modules/pages/query';
-import { userQueryKeys } from '~/modules/users/query';
 
 /**
  * Define the types of SSE events and their corresponding data payloads.

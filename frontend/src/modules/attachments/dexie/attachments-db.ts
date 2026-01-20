@@ -1,3 +1,16 @@
+/**
+ * Dexie Database for Attachment File Storage
+ *
+ * ATTACHMENT-SPECIFIC - Do NOT copy for other entities.
+ *
+ * This database stores:
+ * - attachmentCache: Cached file blobs for offline viewing
+ * - attachmentFiles: Files created offline, pending upload
+ *
+ * Other product entities don't need Dexie storage because they don't
+ * have associated file blobs. They only store metadata which is handled
+ * by the Electric sync + TanStack DB layer.
+ */
 import { appConfig } from 'config';
 import { Dexie, type EntityTable } from 'dexie';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';

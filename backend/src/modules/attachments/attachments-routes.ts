@@ -4,6 +4,7 @@ import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/gua
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManySchema,
+  attachmentListQuerySchema,
   attachmentSchema,
   attachmentUpdateBodySchema,
 } from '#/modules/attachments/attachments-schema';
@@ -15,9 +16,32 @@ import {
   inOrgParamSchema,
 } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
 const attachmentRoutes = {
+  /**
+   * Get list of attachments for an organization
+   */
+  getAttachments: createXRoute({
+    operationId: 'getAttachments',
+    method: 'get',
+    path: '/',
+    xGuard: [isAuthenticated, hasOrgAccess],
+    tags: ['attachments'],
+    summary: 'Get attachments',
+    description: 'Returns a paginated list of *attachments* for the organization.',
+    request: {
+      params: inOrgParamSchema,
+      query: attachmentListQuerySchema,
+    },
+    responses: {
+      200: {
+        description: 'Attachments',
+        content: { 'application/json': { schema: paginationSchema(attachmentSchema) } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
   /**
    * Create one or more attachments
    */

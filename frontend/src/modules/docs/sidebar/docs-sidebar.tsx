@@ -1,5 +1,4 @@
-import { isNull, not, useLiveQuery } from '@tanstack/react-db';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
@@ -12,7 +11,7 @@ import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
-import type { initPagesCollection } from '~/modules/pages/collections';
+import { pagesQueryOptions } from '~/modules/pages/query';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {
@@ -51,13 +50,12 @@ const OpenApiJsonActions = () => {
 
 interface DocsSidebarProps {
   tags: GenTagSummary[];
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
 /**
  * Sidebar for the Docs section, including logo, Spec JSON actions, API reference (operations & schemas), and pages groups.
  */
-export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
+export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -79,15 +77,11 @@ export function DocsSidebar({ tags, pagesCollection }: DocsSidebarProps) {
   // Track if current section is forcibly collapsed
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(null);
 
-  // Live query for pages - only published pages, ordered by name
-  const { data: pages } = useLiveQuery(
-    (liveQuery) =>
-      liveQuery
-        .from({ page: pagesCollection })
-        .where(({ page }) => not(isNull(page.id)))
-        .orderBy(({ page }) => page.name, 'asc'),
-    [],
-  );
+  // Query for pages - using React Query instead of useLiveQuery
+  const { data: pages } = useInfiniteQuery({
+    ...pagesQueryOptions({}),
+    select: ({ pages }) => pages.flatMap(({ items }) => items),
+  });
 
   const closeSheet = () => {
     if (!isMobile) return;

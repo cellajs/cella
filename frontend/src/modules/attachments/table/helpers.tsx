@@ -1,38 +1,26 @@
-import { onlineManager } from '@tanstack/react-query';
-import { useLoaderData } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { createAttachment } from '~/api.gen';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
-import { useOfflineAttachments } from '~/modules/attachments/offline';
+import { attachmentQueryKeys } from '~/modules/attachments/query';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
-import { OrganizationAttachmentsRoute } from '~/routes/organization-routes';
+import { queryClient } from '~/query/query-client';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-export const useAttachmentsUploadDialog = (organizationId: string) => {
-  const { attachmentsCollection, localAttachmentsCollection } = useLoaderData({
-    from: OrganizationAttachmentsRoute.id,
-  });
-
-  // Use offline attachments hook to properly wrap inserts in transactions
-  const { insertOffline } = useOfflineAttachments({
-    attachmentsCollection,
-    organizationId,
-  });
-
+export const useAttachmentsUploadDialog = (organizationSlug: string) => {
   const open = () => {
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
-      const attachments = parseUploadedAttachments(result, organizationId);
+      const attachments = parseUploadedAttachments(result, organizationSlug);
 
-      if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
-        // Use insertOffline which wraps the insert in a proper transaction
-        await insertOffline(attachments);
-      } else {
-        // Local collection has onInsert handler configured
-        localAttachmentsCollection.insert(attachments);
-      }
+      // Create attachments via API
+      await createAttachment({ path: { orgIdOrSlug: organizationSlug }, body: attachments });
+
+      // Invalidate the cache to refresh the table
+      queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });
+
       useUploader.getState().remove();
     };
 
@@ -40,7 +28,7 @@ export const useAttachmentsUploadDialog = (organizationId: string) => {
       id: 'upload-attachment',
       isPublic: false,
       personalUpload: false,
-      organizationId,
+      organizationId: organizationSlug,
       templateId: 'attachment',
       restrictions: {
         maxNumberOfFiles,

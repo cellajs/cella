@@ -13,7 +13,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import Spinner from '~/modules/common/spinner';
-import type { initPagesCollection } from '~/modules/pages/collections';
+import { usePageUpdateMutation } from '~/modules/pages/query';
 import { Form } from '~/modules/ui/form';
 
 const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
@@ -24,12 +24,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
   page: Page;
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
-const UpdatePageForm = ({ page, pagesCollection }: Props) => {
+const UpdatePageForm = ({ page }: Props) => {
   const { t } = useTranslation();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const updatePage = usePageUpdateMutation();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
@@ -64,15 +64,12 @@ const UpdatePageForm = ({ page, pagesCollection }: Props) => {
     [page.name, page.description],
   );
 
-  // Save handler using collection
+  // Save handler using mutation
   const handleSave = useCallback(
     async (data: FormValues) => {
       setSaveStatus('saving');
       try {
-        pagesCollection.update(page.id, (draft) => {
-          if (data.name !== undefined) draft.name = data.name;
-          if (data.description !== undefined) draft.description = data.description;
-        });
+        await updatePage.mutateAsync({ id: page.id, body: data });
         form.reset(data);
         setSaveStatus('saved');
         // Reset to idle after showing "saved" indicator
@@ -81,7 +78,7 @@ const UpdatePageForm = ({ page, pagesCollection }: Props) => {
         setSaveStatus('idle');
       }
     },
-    [page.id, pagesCollection, form],
+    [page.id, updatePage, form, t],
   );
 
   // Auto-save with 5s inactivity delay and 30s max delay

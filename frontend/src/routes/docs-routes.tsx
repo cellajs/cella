@@ -11,7 +11,6 @@ import {
   tagDetailsQueryOptions,
   tagsQueryOptions,
 } from '~/modules/docs/query';
-import { initPagesCollection } from '~/modules/pages/collections';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import {
@@ -61,13 +60,11 @@ export const DocsLayoutRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
-    const pagesCollection = initPagesCollection();
     // Prefetch tags and schemas (schemas used for error response deduplication)
     await Promise.all([
       ensureQueryDataWithFallback(tagsQueryOptions),
       ensureQueryDataWithFallback(schemasQueryOptions),
     ]);
-    return { pagesCollection };
   },
   component: () => (
     <Suspense>
@@ -184,10 +181,6 @@ export const DocsPagesRoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Pages') }] }),
   getParentRoute: () => DocsLayoutRoute,
-  async loader() {
-    const pagesCollection = initPagesCollection();
-    return { pagesCollection };
-  },
   component: () => (
     <Suspense>
       <PagesTable />
@@ -201,19 +194,16 @@ export const DocsPagesRoute = createRoute({
 export const DocsPageRoute = createRoute({
   path: '/page/$id',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => {
-    const pagesCollection = initPagesCollection();
-    return { pageId: id, pagesCollection };
-  },
+  loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId, pagesCollection } = useLoaderData({ from: DocsPageRoute.id });
+    const { pageId } = useLoaderData({ from: DocsPageRoute.id });
     return (
       <Suspense>
-        <ViewPage key={pageId} pageId={pageId} pagesCollection={pagesCollection} />
+        <ViewPage key={pageId} pageId={pageId} />
       </Suspense>
     );
   },
@@ -225,19 +215,16 @@ export const DocsPageRoute = createRoute({
 export const DocsPageEditRoute = createRoute({
   path: '/page/$id/edit',
   staticData: { isAuth: false },
-  loader: ({ params: { id } }) => {
-    const pagesCollection = initPagesCollection();
-    return { pageId: id, pagesCollection };
-  },
+  loader: ({ params: { id } }) => ({ pageId: id }),
   head: () => ({ meta: [{ title: appTitle('Edit Page') }] }),
   getParentRoute: () => DocsLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="public" error={error} homePath="/docs" />,
   notFoundComponent: () => <ErrorNotice level="public" error={new Error('Page not found')} homePath="/docs" />,
   component: () => {
-    const { pageId, pagesCollection } = useLoaderData({ from: DocsPageEditRoute.id });
+    const { pageId } = useLoaderData({ from: DocsPageEditRoute.id });
     return (
       <Suspense>
-        <UpdatePage key={pageId} pageId={pageId} pagesCollection={pagesCollection} />
+        <UpdatePage key={pageId} pageId={pageId} />
       </Suspense>
     );
   },

@@ -42,7 +42,7 @@
   {
     "name": "attachments",
     "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to\n        entities such as organizations or users. Files are uploaded directly by the client; the API handles\n        metadata registration, linking, access, and preview utilities.",
-    "count": 5
+    "count": 6
   },
   {
     "name": "pages",

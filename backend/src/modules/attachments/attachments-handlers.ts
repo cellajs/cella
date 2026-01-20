@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { count, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, or, type SQL } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -14,6 +14,8 @@ import { defaultHook } from '#/utils/default-hook';
 import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { getOrderColumn } from '#/utils/order-column';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -45,6 +47,50 @@ const attachmentsRouteHandlers = app
     };
 
     return await proxyElectricSync(table, enrichedQuery, 'attachment');
+  })
+  /**
+   * Get list of attachments
+   */
+  .openapi(attachmentRoutes.getAttachments, async (ctx) => {
+    const { q, sort, order, limit, offset } = ctx.req.valid('query');
+
+    const organization = getContextOrganization();
+
+    const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
+
+    if (q?.trim()) {
+      const queryToken = prepareStringForILikeFilter(q.trim());
+      filters.push(
+        or(
+          ilike(attachmentsTable.name, queryToken),
+          ilike(attachmentsTable.filename, queryToken),
+          ilike(attachmentsTable.contentType, queryToken),
+        ) as SQL,
+      );
+    }
+
+    const orderColumn = getOrderColumn(
+      {
+        name: attachmentsTable.name,
+        createdAt: attachmentsTable.createdAt,
+        contentType: attachmentsTable.contentType,
+      },
+      sort,
+      attachmentsTable.createdAt,
+      order,
+    );
+
+    const attachmentsQuery = db
+      .select(getTableColumns(attachmentsTable))
+      .from(attachmentsTable)
+      .where(and(...filters));
+
+    const [items, [{ total }]] = await Promise.all([
+      attachmentsQuery.orderBy(orderColumn).limit(limit).offset(offset),
+      db.select({ total: count() }).from(attachmentsQuery.as('attachments')),
+    ]);
+
+    return ctx.json({ items, total }, 200);
   })
   /**
    * Create one or more attachments

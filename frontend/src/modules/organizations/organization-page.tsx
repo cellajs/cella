@@ -22,10 +22,7 @@ const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
   const isAdmin = organization.membership?.role === 'admin' || systemRole === 'admin';
 
   // Filter tabs based on permissions - non-admins don't see settings
-  const filterTabIds = useMemo(
-    () => (isAdmin ? undefined : ['members', 'attachments']),
-    [isAdmin],
-  );
+  const filterTabIds = useMemo(() => (isAdmin ? undefined : ['members', 'attachments']), [isAdmin]);
 
   const { mutate } = useOrganizationUpdateMutation();
 

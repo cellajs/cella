@@ -1,34 +1,27 @@
-import { eq, useLiveQuery } from '@tanstack/react-db';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { EyeIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
-import type { initPagesCollection } from '~/modules/pages/collections';
+import { pageQueryOptions } from '~/modules/pages/query';
 import UpdatePageForm from '~/modules/pages/update-page-form';
 import { Button } from '~/modules/ui/button';
 import { dateShort } from '~/utils/date-short';
 
 interface UpdatePageProps {
   pageId: string;
-  pagesCollection: ReturnType<typeof initPagesCollection>;
 }
 
 /**
  * Edit page view with the update form.
  */
-const UpdatePage = ({ pageId, pagesCollection }: UpdatePageProps) => {
+const UpdatePage = ({ pageId }: UpdatePageProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Get page from sync collection
-  const { data: pages } = useLiveQuery(
-    (liveQuery) => liveQuery.from({ page: pagesCollection }).where(({ page }) => eq(page.id, pageId)),
-    [pageId],
-  );
+  // Get page from React Query
+  const { data: page } = useSuspenseQuery(pageQueryOptions(pageId));
 
-  const page = pages?.[0];
-
-  // Show loading state while waiting for sync
   if (!page) {
     return (
       <div className="my-4 md:mt-8 mx-auto flex justify-center">
@@ -52,7 +45,7 @@ const UpdatePage = ({ pageId, pagesCollection }: UpdatePageProps) => {
           </div>
         </div>
 
-        <UpdatePageForm page={page} pagesCollection={pagesCollection} />
+        <UpdatePageForm page={page} />
       </div>
     </div>
   );

@@ -72,6 +72,9 @@ import type {
   GetActivitiesData,
   GetActivitiesErrors,
   GetActivitiesResponses,
+  GetAttachmentsData,
+  GetAttachmentsErrors,
+  GetAttachmentsResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -1945,6 +1948,38 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get attachments
+ *
+ * Returns a paginated list of *attachments* for the organization.
+ *
+ * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
+ *
+ * @param {getAttachmentsData} options
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<GetAttachmentsData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgIdOrSlug}/attachments',
+    ...options,
   });
 
 /**

@@ -3202,6 +3202,61 @@ export type DeleteAttachmentsResponses = {
 
 export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
 
+export type GetAttachmentsData = {
+  body?: never;
+  path: {
+    /**
+     * Entity ID or slug. ID is always preferred.
+     */
+    orgIdOrSlug: string;
+  };
+  query?: {
+    q?: string;
+    sort?: 'name' | 'createdAt' | 'contentType';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+  };
+  url: '/{orgIdOrSlug}/attachments';
+};
+
+export type GetAttachmentsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
+
+export type GetAttachmentsResponses = {
+  /**
+   * Attachments
+   */
+  200: {
+    items: Array<Attachment>;
+    total: number;
+  };
+};
+
+export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
+
 export type CreateAttachmentData = {
   body: Array<{
     createdAt?: string;
