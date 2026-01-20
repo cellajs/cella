@@ -86,16 +86,16 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Decision**: Feed stream events into React Query cache, not parallel state. 
 - **Alternatives rejected**:
   - Custom reactive store: Duplicates React Query functionality
-  - Replace React Query: Loses existing patterns and app-wide cache (re)usability
+  - Replace React Query: Loses existing patterns and app-wide cache reusability
 - **Trade-off**: Bound to React Query patterns, but consistent with rest of Cella
 
 #### DEC-9: Organization-level stream granularity
-- **Decision**: One SSE stream per org, delivering all product entity types for that org
+- **Decision**: One SSE stream per org, delivering all product entity types for that org, filtered down by membership/role 
 - **Alternatives rejected**:
   - Per-entity-type streams: More connections, harder to coordinate
   - Global stream: Authorization complexity, wasted bandwidth for multi-org users
   - Per-entity streams: Connection explosion (N entities × M users)
-- **Trade-off**: Client filters by entity type, but simpler server and natural permission boundary
+- **Trade-off**: Client filters by entity type, but simpler server and permission boundary by tenant
 
 #### DEC-10: Single LISTEN connection with subscriber registry
 - **Decision**: API server maintains one PostgreSQL LISTEN connection, fans out to SSE subscribers via in-memory registry
@@ -113,7 +113,7 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Trade-off**: Couples CDC to stream architecture, but eliminates extra DB queries
 
 #### DEC-12: LIST endpoints for initial load, stream for deltas
-- **Decision**: React Query fetches initial data via REST, stream only delivers changes after subscription starts
+- **Decision**: React Query prefetches/fetches initial data via REST, stream only delivers changes after subscription starts
 - **Alternatives rejected**:
   - Stream delivers full state: Complex, duplicates LIST logic
   - Stream with history replay: Complicated offset management, ordering issues
