@@ -11,12 +11,13 @@ import {
   type UpdatePageData,
   updatePage,
 } from '~/api.gen';
+import { zPage } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
+import { createOptimisticEntity } from '~/query/utils/create-optimistic';
 import { flattenInfiniteData } from '~/query/utils/flatten';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
-import { nanoid } from '~/utils/nanoid';
 import { createEntityKeys } from '../entities/create-query-keys';
 
 export const pagesLimit = appConfig.requestLimits.pages;
@@ -104,16 +105,8 @@ export const usePageCreateMutation = () => {
       // Cancel outgoing refetches to avoid overwriting optimistic update
       await qc.cancelQueries({ queryKey: keys.list.base });
 
-      // Create optimistic page with temporary id
-      const optimisticPage: Page = {
-        id: `temp-${nanoid()}`,
-        entityType: 'page',
-        createdAt: new Date().toISOString(),
-        createdBy: null,
-        modifiedAt: null,
-        modifiedBy: null,
-        ...newPageData,
-      } as Page;
+      // Create optimistic page from Zod schema + input (no hardcoded defaults!)
+      const optimisticPage = createOptimisticEntity(zPage, newPageData);
 
       // Add to cache optimistically
       mutateCache.create([optimisticPage]);

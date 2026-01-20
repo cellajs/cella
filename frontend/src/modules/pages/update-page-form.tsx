@@ -64,21 +64,33 @@ const UpdatePageForm = ({ page }: Props) => {
     [page.name, page.description],
   );
 
-  // Save handler using mutation
+  // Save handler using mutation (fire-and-forget for offline support)
   const handleSave = useCallback(
-    async (data: FormValues) => {
+    (data: FormValues) => {
       setSaveStatus('saving');
-      try {
-        await updatePage.mutateAsync({ id: page.id, body: data });
+      updatePage.mutate(
+        { id: page.id, body: data },
+        {
+          onSuccess: () => {
+            form.reset(data);
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 1000);
+          },
+          onError: () => {
+            setSaveStatus('idle');
+          },
+        },
+      );
+
+      // For offline: optimistic update happens in onMutate, show "saved" after short delay
+      // The mutation will be paused and resume when online
+      if (updatePage.isPaused) {
         form.reset(data);
         setSaveStatus('saved');
-        // Reset to idle after showing "saved" indicator
-        setTimeout(() => setSaveStatus('idle'), 2000);
-      } catch {
-        setSaveStatus('idle');
+        setTimeout(() => setSaveStatus('idle'), 1000);
       }
     },
-    [page.id, updatePage, form, t],
+    [page.id, updatePage, form],
   );
 
   // Auto-save with 5s inactivity delay and 30s max delay

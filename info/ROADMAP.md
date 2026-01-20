@@ -5,8 +5,6 @@ Last update: July 11,2025
 
 ## ⭐ &nbsp; Current
 * Security improvements in authentication and authorization
-* Use tanstack/db to create a better pattern for syncing data and optimistic UI state
-* Vitest + Playwright + Storybook
 * Write many more tests
 * Navigation UI improvements
 * Table grid (mobile) UI improvements
