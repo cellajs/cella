@@ -528,7 +528,7 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| CDC-010 | CDC MUST call `pg_notify('activity', payload)` after activity INSERT | CDC Worker | LISTEN receives notification |
+| CDC-010 | CDC MUST call `pg_notify('cella_activities', payload)` after activity INSERT | CDC Worker | LISTEN receives notification |
 | CDC-011 | NOTIFY payload MUST include `orgId` | CDC Worker | Payload structure |
 | CDC-012 | NOTIFY payload MUST include `activityId` | CDC Worker | Payload structure |
 | CDC-013 | NOTIFY payload MUST include `entityType` | CDC Worker | Payload structure |

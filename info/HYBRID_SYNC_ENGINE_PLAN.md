@@ -456,25 +456,25 @@ Instead of each SSE connection polling the database, leverage the CDC worker tha
 │  │                     │     │  (INSERT)           │                        │
 │  │  After INSERT:      │     └─────────────────────┘                        │
 │  │  pg_notify(         │                                                    │
-│  │    'activity',      │                                                    │
-│  │    {orgId, ...}     │                                                    │
+│  │   'cella_activities'│                                                    │
+│  │    {orgId, entity}  │                                                    │
 │  │  )                  │                                                    │
 │  └──────────┬──────────┘                                                    │
 │             │                                                                │
-│             │ NOTIFY 'activity'                                              │
+│             │ NOTIFY 'cella_activities'                                      │
 │             ▼                                                                │
 │  ┌─────────────────────────────────────────────────────────────────┐        │
 │  │                    API Server (Hono)                             │        │
 │  │                                                                  │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ Single LISTEN conn  │◄─── One listener for ALL orgs          │        │
-│  │  │ for 'activity'      │                                        │        │
+│  │  │ EventBus (single    │◄─── One LISTEN for ALL orgs            │        │
+│  │  │ LISTEN connection)  │     Channel: 'cella_activities'        │        │
 │  │  └──────────┬──────────┘                                        │        │
-│  │             │                                                    │        │
+│  │             │ Emits ActivityEvent                                │        │
 │  │             ▼                                                    │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ SubscriberRegistry  │  Map<orgId, Set<SSEStream>>            │        │
-│  │  │                     │                                        │        │
+│  │  │ StreamSubscriber    │  Map<orgId, Set<SSEStream>>            │        │
+│  │  │ Manager             │                                        │        │
 │  │  │ org-123: [stream1,  │  Fan-out: O(1) lookup + O(subscribers) │        │
 │  │  │           stream2]  │  broadcast per org                     │        │
 │  │  │ org-456: [stream3]  │                                        │        │
@@ -491,7 +491,7 @@ Instead of each SSE connection polling the database, leverage the CDC worker tha
 ```
 
 **Why this is better:**
-- **One DB connection** for LISTEN vs N polling queries
+- **One DB connection** for LISTEN via EventBus vs N polling queries
 - **Instant delivery** - no 500ms poll delay
 - **Scales with orgs** not with subscribers
 - **CDC already has the data** - no round-trip through database
@@ -953,8 +953,8 @@ AFTER (push):      CDC (no auth) → NOTIFY → API → Fan-out (auth here!)
 
 **Key security principles:**
 1. **CDC is trusted** - It runs in your infrastructure, reads from replication slot
-2. **NOTIFY channel is internal** - Only API server(s) should LISTEN
-3. **Authorization happens at fan-out** - `SubscriberRegistry.broadcast()` uses `isPermissionAllowed()` 
+2. **NOTIFY channel is internal** - Only API server(s) should LISTEN (via EventBus)
+3. **Authorization happens at fan-out** - `StreamSubscriberManager.broadcast()` uses `isPermissionAllowed()` 
 4. **Reuses existing permission logic** - Same `accessPolicies` config from `permissions-config.ts`
 
 **How it aligns with Cella's permission system:**
@@ -974,7 +974,7 @@ export const accessPolicies = configureAccessPolicies(hierarchy, appConfig.entit
 // Stream uses same isPermissionAllowed() as REST handlers:
 // - getValidProductEntity() uses it for single entity access
 // - splitByAllowance() uses it for batch filtering  
-// - SubscriberRegistry.broadcast() uses it for stream filtering
+// - StreamSubscriberManager.broadcast() uses it for stream filtering
 ```
 
 **Stream event payload** (uses sync wrapper):
@@ -2372,9 +2372,10 @@ if (JSON.stringify(payload).length > 7500) {
   payload.entity = null;  // Fallback: subscriber will fetch
 }
 
-await db.execute(sql`NOTIFY activity, ${JSON.stringify(payload)}`);
+// Use same channel as existing trigger (cella_activities) - see DEC-11
+await db.execute(sql`NOTIFY cella_activities, ${JSON.stringify(payload)}`);
 
-// API server: Subscriber registry handles fan-out
+// API server: EventBus receives NOTIFY, StreamSubscriberManager handles fan-out
 // Entity data comes from NOTIFY payload (zero extra queries for most events)
 ```
 
