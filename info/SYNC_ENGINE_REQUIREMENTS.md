@@ -65,27 +65,6 @@ This section defines precise vocabulary for concepts that could otherwise be con
 | **Backfill** | Same as catch-up; sometimes used to emphasize historical data fetch | Alternative term in sync literature |
 | **Upstream change** | A server-side mutation that client must pull before pushing its own | What client pulls before pushing |
 
-### Online vs offline sync
-
-Upstream-first means "pull before push" - but how this works differs by connectivity:
-
-**Online (stream connected)**:
-- Stream keeps client continuously up-to-date
-- Mutations sent immediately after optimistic update
-- Conflicts are rare: only truly concurrent edits (same field, same moment) can conflict
-
-**Offline (queued mutations)**:
-- Mutations queue locally in IndexedDB outbox
-- User continues working, sees optimistic updates
-- On reconnect: catch-up first, THEN flush outbox
-- Conflict likelihood grows with offline duration (more server changes accumulated)
-- **Rich client advantage**: Conflicts detected client-side before pushing, enabling:
-  - Side-by-side comparison (your value vs server value)
-  - Per-field resolution (keep mine, keep theirs, merge)
-  - Batch review of multiple conflicts
-  - No 409 errors - user resolves proactively
-
-This is why Cella's hybrid approach works: most users are online most of the time (upstream-first eliminates conflicts), but when offline, the rich client provides graceful conflict resolution that server-side 409s cannot match.
 
 ### Conflict handling
 
@@ -590,18 +569,17 @@ Reference implementations to follow:
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | API-001 | Product entity mutation requests MUST use `{ data, tx }` wrapper | Backend Route | OpenAPI schema validation |
-| API-001a | `tx` property MUST be required (not optional) for product entities | Backend Route | Schema rejects missing tx |
-| API-001b | Context entity endpoints (organizations, etc.) MUST NOT use tx wrapper | Backend Route | Context routes use simple body |
-| API-001c | No separate "synced" endpoints SHOULD be created (e.g., no `/pages/synced`) | Backend Route | Route audit finds no `/synced` paths |
-| API-002 | `tx.transactionId` MUST be required | Backend Route | Validation rejects missing |
-| API-003 | `tx.sourceId` MUST be required | Backend Route | Validation rejects missing |
-| API-004 | `tx.changedField` MUST be a string for update mutations | Backend Route | String required for updates |
-| API-004a | `tx.changedField` MUST be null for create mutations | Backend Route | Null for creates |
-| API-004b | `tx.changedField` MUST be null for delete mutations | Backend Route | Null for deletes |
-| API-004c | `data` object SHOULD contain only the field declared in `tx.changedField` | Backend Handler | Validation optional (strict mode) |
-| API-005 | `tx.expectedTransactionId` MUST be optional | Backend Route | Validation accepts null/undefined |
-| API-006 | Mutation responses MUST return `{ data, tx }` wrapper | Backend Handler | Response shape validation |
-| API-007 | Response `tx.transactionId` MUST echo request's transactionId | Backend Handler | Echo verification |
+| API-002 | `tx` property MUST be required (not optional) for product entities | Backend Route | Schema rejects missing tx |
+| API-003 | Context entity endpoints (organizations, etc.) MUST NOT use tx wrapper | Backend Route | Context routes use simple body |
+| API-004 | No separate "synced" endpoints SHOULD be created (e.g., no `/pages/synced`) | Backend Route | Route audit finds no `/synced` paths |
+| API-005 | `tx.transactionId` MUST be required | Backend Route | Validation rejects missing |
+| API-006 | `tx.sourceId` MUST be required | Backend Route | Validation rejects missing |
+| API-007 | `tx.changedField` MUST be a string for update mutations, null for create/delete | Backend Route | Type varies by mutation |
+| API-008 | `data` object SHOULD contain only the field declared in `tx.changedField` | Backend Handler | Validation optional (strict mode) |
+| API-009 | `tx.expectedTransactionId` MUST be required for update/delete, null for create | Backend Route | Required except creates |
+| API-010 | `tx.expectedTransactionId` MAY be null if field has no prior transaction | Backend Handler | First write to field passes |
+| API-011 | Mutation responses MUST return `{ data, tx }` wrapper | Backend Handler | Response shape validation |
+| API-012 | Response `tx.transactionId` MUST echo request's transactionId | Backend Handler | Echo verification |
 
 > **Data object shape**: The `data` object uses standard entity update shape (same structure as context entity endpoints). This allows schema reuse and familiar patterns. The `tx.changedField` declaration is the source of truth for conflict detection - only that field is tracked, even if `data` contains additional fields.
 
@@ -609,19 +587,19 @@ Reference implementations to follow:
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| API-010 | Field conflict MUST return HTTP 409 | Backend Handler | Status code check |
-| API-011 | Conflict response MUST include `code: 'FIELD_CONFLICT'` | Backend Handler | Response body validation |
-| API-012 | Conflict response MUST include `field` (which field conflicted) | Backend Handler | Response body validation |
-| API-013 | Conflict response MUST include `expectedTransactionId` (what client sent) | Backend Handler | Response body validation |
-| API-014 | Conflict response MUST include `serverTransactionId` (current server value) | Backend Handler | Response body validation |
+| API-020 | Field conflict MUST return HTTP 409 | Backend Handler | Status code check |
+| API-021 | Conflict response MUST include `code: 'FIELD_CONFLICT'` | Backend Handler | Response body validation |
+| API-022 | Conflict response MUST include `field` (which field conflicted) | Backend Handler | Response body validation |
+| API-023 | Conflict response MUST include `expectedTransactionId` (what client sent) | Backend Handler | Response body validation |
+| API-024 | Conflict response MUST include `serverTransactionId` (current server value) | Backend Handler | Response body validation |
 
 ### Idempotency
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| API-020 | Duplicate `transactionId` MUST return existing entity (not create new) | Backend Handler | Idempotent create |
-| API-021 | Idempotent response MUST return HTTP 200 (not 201) | Backend Handler | Status code for duplicate |
-| API-022 | Idempotent response MUST include same `tx.transactionId` | Backend Handler | Response validation |
+| API-030 | Duplicate `transactionId` MUST return existing entity (not create new) | Backend Handler | Idempotent create |
+| API-031 | Idempotent response MUST return HTTP 200 (not 201) | Backend Handler | Status code for duplicate |
+| API-032 | Idempotent response MUST include same `tx.transactionId` | Backend Handler | Response validation |
 
 ### Upstream-first backend enforcement
 
@@ -629,14 +607,14 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| API-030 | `sync.streamOffset` MUST be optional in mutation requests | Backend Route | Schema allows null/undefined |
-| API-031 | If `streamOffset` provided, server MUST compare to latest activityId for org | Backend Handler | Comparison executed |
-| API-032 | If client offset is > threshold events behind, MUST return HTTP 409 | Backend Handler | Stale client rejected |
-| API-033 | Stale client response MUST include `code: 'STREAM_BEHIND'` | Backend Handler | Response body validation |
-| API-034 | Stale client response MUST include `serverOffset` (current latest) | Backend Handler | Response body validation |
-| API-035 | Stale client response MUST include `clientOffset` (what client sent) | Backend Handler | Response body validation |
-| API-036 | Threshold SHOULD be configurable (default: 10 events) | Backend Handler | Config-driven |
-| API-037 | If `streamOffset` not provided, enforcement MUST be skipped | Backend Handler | Backwards compatible |
+| API-040 | `sync.streamOffset` MUST be optional in mutation requests | Backend Route | Schema allows null/undefined |
+| API-041 | If `streamOffset` provided, server MUST compare to latest activityId for org | Backend Handler | Comparison executed |
+| API-042 | If client offset is > threshold events behind, MUST return HTTP 409 | Backend Handler | Stale client rejected |
+| API-043 | Stale client response MUST include `code: 'STREAM_BEHIND'` | Backend Handler | Response body validation |
+| API-044 | Stale client response MUST include `serverOffset` (current latest) | Backend Handler | Response body validation |
+| API-045 | Stale client response MUST include `clientOffset` (what client sent) | Backend Handler | Response body validation |
+| API-046 | Threshold SHOULD be configurable (default: 10 events) | Backend Handler | Config-driven |
+| API-047 | If `streamOffset` not provided, enforcement MUST be skipped | Backend Handler | Backwards compatible |
 
 ---
 
@@ -649,8 +627,7 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | CDC-001 | CDC Worker MUST read `tx` JSONB from replicated row | CDC Worker | Activity has tx data |
 | CDC-002 | CDC Worker MUST store tx metadata as `tx` JSONB in activity record | CDC Worker | Activity.tx contains metadata |
 | CDC-003 | CDC Worker MUST set `tx: null` for non-synced entities | CDC Worker | Context entity has null tx |
-| CDC-004 | For INSERT actions, `changedField` MAY be null or '*' | CDC Worker | Insert activity validation |
-| CDC-005 | For DELETE actions, `changedField` MAY be null or '*' | CDC Worker | Delete activity validation |
+| CDC-004 | For INSERT/DELETE actions, `changedField` MUST be null | CDC Worker | Null for creates/deletes |
 
 ### NOTIFY integration
 
@@ -662,9 +639,7 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | CDC-013 | NOTIFY payload MUST include `entityType` | CDC Worker | Payload structure |
 | CDC-014 | NOTIFY payload MUST include `entityId` | CDC Worker | Payload structure |
 | CDC-015 | NOTIFY payload MUST include `action` ('create', 'update', 'delete') | CDC Worker | Payload structure |
-| CDC-016 | NOTIFY payload MUST include `transactionId` (nullable) | CDC Worker | Payload structure |
-| CDC-017 | NOTIFY payload MUST include `sourceId` (nullable) | CDC Worker | Payload structure |
-| CDC-018 | NOTIFY payload MUST include `changedField` (nullable) | CDC Worker | Payload structure |
+| CDC-016 | NOTIFY payload MUST include `tx` (nullable) | CDC Worker | Payload structure |
 | CDC-019 | NOTIFY payload MUST include `entity` data from replication row | CDC Worker | Payload includes entity |
 | CDC-020 | If payload exceeds 7500 bytes, `entity` MUST be set to null | CDC Worker | Large entity handling |
 | CDC-021 | CDC Worker MUST call NOTIFY on same channel as trigger (`cella_activities`) | CDC Worker | Channel name matches |
@@ -712,16 +687,15 @@ The existing EventBus (`backend/src/lib/event-bus.ts`) is renamed to ActivityBus
 
 ### Stream subscriber routing
 
-The stream subscriber manager routes activity notifications to SSE connections. It subscribes to ActivityBus (see AB-010) rather than maintaining its own LISTEN connection.
+The live stream subscriber manager routes activity notifications to SSE connections. It subscribes to ActivityBus (see AB-010) rather than maintaining its own LISTEN connection.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| STREAM-010 | ~~Registry MUST maintain single LISTEN connection~~ → Moved to AB-010 | ActivityBus | Connection count = 1 |
-| STREAM-011 | Subscriber manager MUST route notifications by `orgId` | Stream Subscriber Manager | Cross-org isolation |
-| STREAM-012 | Subscriber manager MUST skip notifications with `activityId <= subscriber.cursor` | Stream Subscriber Manager | No duplicate delivery |
-| STREAM-013 | Subscriber manager MUST apply `entityTypes` filter per subscriber | Stream Subscriber Manager | Type filtering |
-| STREAM-014 | Subscriber manager MUST call `isPermissionAllowed()` before sending | Stream Subscriber Manager | Permission denied = not sent |
-| STREAM-015 | Subscriber manager MUST clean up subscriber on disconnect | Stream Subscriber Manager | Memory cleanup |
+| STREAM-010 | Subscriber manager MUST route notifications by `orgId` | Stream Subscriber Manager | Cross-org isolation |
+| STREAM-011 | Subscriber manager MUST skip notifications with `activityId <= subscriber.cursor` | Stream Subscriber Manager | No duplicate delivery |
+| STREAM-012 | Subscriber manager MUST apply `entityTypes` filter per subscriber | Stream Subscriber Manager | Type filtering |
+| STREAM-013 | Subscriber manager MUST call `isPermissionAllowed()` before sending | Stream Subscriber Manager | Permission denied = not sent |
+| STREAM-014 | Subscriber manager MUST clean up subscriber on disconnect | Stream Subscriber Manager | Memory cleanup |
 
 ### Stream message format
 
@@ -734,8 +708,8 @@ SSE messages use the SSE `event` field for type (`'change'` or `'offset'`). The 
 | STREAM-022 | Message MUST include `tx.transactionId` | Stream Handler | Message structure |
 | STREAM-023 | Message MUST include `tx.sourceId` | Stream Handler | Message structure |
 | STREAM-024 | Message MUST include `tx.changedField` | Stream Handler | Message structure |
-| STREAM-025 | Message MUST include `sync.action` | Stream Handler | Message structure |
-| STREAM-026 | Message MUST include `sync.activityId` | Stream Handler | Message structure |
+| STREAM-025 | Message MUST include `action` | Stream Handler | Message structure |
+| STREAM-026 | Message MUST include `activityId` | Stream Handler | Message structure |
 | STREAM-027 | SSE `id` field MUST equal `activityId` (for resumption) | Stream Handler | SSE id field |
 
 ### Catch-up entity fetching
@@ -803,11 +777,11 @@ Live updates receive entity data from the unified ActivityBus, which gets it fro
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| CONFLICT-001 | If `expectedTransactionId` provided, handler MUST check activitiesTable | Backend Handler | Query executed |
+| CONFLICT-001 | For update/delete mutations, handler MUST check activitiesTable using `expectedTransactionId` | Backend Handler | Query executed |
 | CONFLICT-002 | Query MUST find latest activity for `(entityType, entityId, changedField)` | Backend Handler | Correct query |
 | CONFLICT-003 | If latest `transactionId` ≠ `expectedTransactionId`, MUST return 409 | Backend Handler | Conflict detected |
-| CONFLICT-004 | If no previous activity for field, conflict check MUST pass | Backend Handler | First write succeeds |
-| CONFLICT-005 | If `expectedTransactionId` is null/undefined, conflict check MUST be skipped | Backend Handler | Optional check |
+| CONFLICT-004 | If no previous activity for field, conflict check MUST pass (first write) | Backend Handler | First write succeeds |
+| CONFLICT-005 | For create mutations, conflict check MUST be skipped (`expectedTransactionId` is null) | Backend Handler | No check for create |
 
 ### Frontend conflict handling
 
