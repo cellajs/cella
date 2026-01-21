@@ -3,7 +3,113 @@
 This document defines the requirements for building the Hybrid Sync Engine. It combines **design decisions** (the "why") with **testable contracts** (the "what").
 
 > **Related documents:**
-> - [HYBRID_SYNC_ENGINE_PLAN.md](./HYBRID_SYNC_ENGINE_PLAN.md) - Implementation plan, code examples, and TODO list
+> [HYBRID_SYNC_ENGINE_PLAN.md](./HYBRID_SYNC_ENGINE_PLAN.md) - Implementation plan, code examples, and TODO list
+
+---
+
+## Scope Boundaries
+
+### Out-of-scope: Existing SSE infrastructure
+
+Cella has an existing SSE system for user-scoped realtime updates. This is **out-of-scope** for the sync engine work:
+
+| Component | Location | Purpose |
+|-----------|----------|--------|
+| `/me/sse` endpoint | `backend/src/modules/me/me-handlers.ts` | User-scoped SSE connection |
+| `sendSSE`, `sendSSEByUserIds` | `backend/src/lib/sse.ts` | Push events to connected users |
+| `useSSE`, `useTypedSSE` | `frontend/src/modules/common/sse/` | React hooks for SSE subscription |
+| `SSEContext`, `SSEProvider` | `frontend/src/modules/common/sse/` | EventSource context provider |
+| `SSEEventsMap` | `frontend/src/modules/common/sse/index.tsx` | Typed event definitions |
+
+**Current usage:** Membership changes, entity CRUD for context entities (organizations).
+
+**Why out-of-scope:**
+- User-scoped (keyed by userId) vs. sync engine org-scoped (keyed by orgId)
+- No transaction tracking, no offline support
+- Different authorization model (user session vs. org membership)
+- Works for context entities; sync engine targets product entities
+
+**Future work:** Consolidate existing SSE with sync engine patterns:
+- Migrate context entity updates to use EventBus
+- Unify frontend hooks (`useSSE` → sync stream hooks)
+- Single SSE connection strategy across all realtime needs
+
+> **Guidance for implementers:** Ignore the existing `/me/sse` code paths during sync engine work. Do not modify `sendSSE`, `sendSSEByUserIds`, `useSSE`, or `useTypedSSE`. The new org-scoped stream endpoint is a separate implementation.
+
+---
+
+## Terminology
+
+This section defines precise vocabulary for concepts that could otherwise be confused.
+
+### Core concepts
+
+| Term | Definition | Example |
+|------|------------|--------|
+| **Activity** | A record in `activitiesTable` representing an entity change | `{ type: 'page.updated', entityId: '...' }` |
+| **Activity log** | The `activitiesTable` as durable storage of all entity changes (not "event log") | Queryable via catch-up, source of truth for history |
+| **NOTIFY payload** | The JSON sent via `pg_notify('cella_activities', ...)` | Trigger sends activity-only; CDC sends activity + entity |
+| **Activity notification** | The typed object EventBus emits after parsing a NOTIFY payload | `ActivityEvent` interface in `event-bus.ts` |
+| **Stream message** | The SSE payload delivered to frontend (type `'change'` or `'offset'`) | `{ data, sync }` wrapper sent over SSE |
+| **Live update** | A realtime entity change pushed via SSE (not "live event") | Entity data from CDC NOTIFY → stream message |
+| **Transaction** | A client-initiated mutation identified by `transactionId` | Tracks lifecycle: pending → sent → confirmed |
+
+### Sync patterns
+
+| Term | Definition | Why it matters |
+|------|------------|----------------|
+| **Upstream-first** | Client must pull latest server state before pushing mutations | Eliminates 90%+ of conflicts as most - not all! - are online; mutations based on current data |
+| **Optimistic update** | Apply UI changes immediately, before server confirms | Instant UX; rolled back only if server rejects |
+| **Catch-up** | Query `activitiesTable` for changes since client's last offset | Used on SSE reconnect to fill gaps; distinct from live push |
+| **Backfill** | Same as catch-up; sometimes used to emphasize historical data fetch | Alternative term in sync literature |
+| **Upstream change** | A server-side mutation that client must pull before pushing its own | Part of upstream-first sync pattern |
+
+### Conflict handling
+
+| Term | Definition | When used |
+|------|------------|-----------|
+| **LWW (Last Write Wins)** | Conflict resolution where most recent write overwrites previous | Opaque values (enums, foreign keys) where merge isn't meaningful |
+| **CRDT** | Data structures that automatically merge concurrent changes | Text (Yjs), counters, sets - not yet implemented in v1 |
+| **Field-level tracking** | Track which field a mutation changes, not just the entity | Allows concurrent edits to different fields without conflict |
+| **Mutation outbox** | IndexedDB queue of pending mutations awaiting sync | Persists offline mutations; enables squashing and conflict detection |
+| **Squashing** | Merge multiple mutations to same field into one | User types fast offline → only final value sent |
+| **Rebase** | Update mutation's `expectedTransactionId` after upstream change | "Keep Mine" conflict resolution - retry with new baseline |
+
+### Multi-tab coordination
+
+| Term | Definition | Why it matters |
+|------|------------|----------------|
+| **Leader tab** | The one browser tab that holds the sync lock and owns SSE | Prevents duplicate connections and race conditions |
+| **Follower tab** | Any tab that receives updates via BroadcastChannel from leader | Gets same data without opening its own SSE |
+| **Fan-out** | Distributing one activity notification to multiple subscribers | O(1) lookup by org, then O(subscribers) for that org |
+| **BroadcastChannel** | Browser API for cross-tab messaging | How leader distributes stream messages to followers |
+| **Web Locks API** | Browser API for exclusive locks | How leader election works - one tab holds `{slug}-sync-leader` |
+
+### Identifiers and cursors
+
+| Term | Definition | Format/Example |
+|------|------------|----------------|
+| **Transaction ID** | Client-generated ID for a mutation, used for idempotency and tracking | HLC format: `{wallTime}.{logical}.{nodeId}` (32 chars) |
+| **HLC (Hybrid Logical Clock)** | Timestamp format preserving causality across clients | Sortable, unique, causality-preserving |
+| **Stream offset** | The `activityId` marking client's position in the activity stream | Persisted to IndexedDB; used for catch-up on reconnect |
+| **Cursor** | Server-side tracker of where each subscriber is in the stream | Prevents duplicate delivery; advanced on each send |
+| **Source ID** | Identifies which tab/instance made a mutation | Prevents echo (don't re-apply your own change from stream) |
+
+### Disambiguation
+
+- **"Event"** is reserved for: (1) SSE event type (`event: 'change'`), (2) DOM events (`online`/`offline`), (3) EventBus as a component name
+- **"EventBus"** is a proper noun - the component that LISTENs to PostgreSQL NOTIFY and emits activity notifications
+- **"Stream"** refers to the SSE connection delivering stream messages, not a generic data flow
+
+### Avoid these terms
+
+| Avoid | Use instead | Why |
+|-------|-------------|-----|
+| "event log" | **activity log** | Reserves "event" for specific uses |
+| "stream event" | **stream message** | Distinguishes from SSE event type field |
+| "EventBus event" | **activity notification** | Clarifies what EventBus emits |
+| "live event" | **live update** | Consistency with "upstream change" |
+| "upstream event" | **upstream change** | Not an event, it's server state |
 
 ---
 
@@ -21,7 +127,7 @@ This section captures key architectural decisions, invariants, and constraints t
 | INV-4 | Upstream-first controls when mutations are SENT, not when user sees changes | Distinguishes sync guarantees from UX |
 | INV-5 | One mutation = one transaction = one field change | `sync.changedField` declares which single field is targeted; `data` object may contain entity structure but only declared field is tracked for conflicts |
 | INV-6 | Only leader tab opens SSE connection | Prevents duplicate connections and race conditions |
-| INV-7 | Live events receive entity data from CDC NOTIFY; catch-up queries JOIN with entity tables | Two paths for entity data: CDC has it from replication, catch-up must fetch it |
+| INV-7 | Live updates receive entity data from CDC NOTIFY; catch-up queries JOIN with entity tables | Two paths for entity data: CDC has it from replication, catch-up must fetch it |
 
 ### opMode (operational mode)
 
@@ -92,7 +198,7 @@ Each module operates in one of three modes:
   - No ordering: Random conflict resolution
 - **Trade-off**: Slight latency when behind, but predictable ordering and simpler conflicts
 
-#### DEC-7: activitiesTable as durable event log (no separate sync table)
+#### DEC-7: activitiesTable as  activity log (no separate sync table)
 - **Decision**: Extend existing activities with sync column, not new table
 - **Alternatives rejected**:
   - Separate `sync_transactions` table: Duplicate data, extra complexity
@@ -100,7 +206,7 @@ Each module operates in one of three modes:
 - **Trade-off**: Couples sync to audit log, but reuses existing infrastructure
 
 #### DEC-8: React Query as cache layer (not custom store)
-- **Decision**: Feed stream events into React Query cache, not parallel state. 
+- **Decision**: Feed stream messages into React Query cache, not parallel state. 
 - **Alternatives rejected**:
   - Custom reactive store: Duplicates React Query functionality
   - Replace React Query: Loses existing patterns and app-wide cache reusability
@@ -115,10 +221,10 @@ Each module operates in one of three modes:
 - **Trade-off**: Client filters by entity type, but simpler server and permission boundary by tenant
 
 #### DEC-10: Single LISTEN via EventBus, subscriber routing for fan-out
-- **Decision**: EventBus maintains one PostgreSQL LISTEN connection for `cella_activities`; Stream subscribers register for event routing via in-memory registry
+- **Decision**: EventBus maintains one PostgreSQL LISTEN connection for `cella_activities`; Stream subscribers register for routing via in-memory registry
 - **How it works**:
-  - EventBus: Single LISTEN connection, parses NOTIFY payloads, emits typed events (see DEC-20)
-  - Stream Subscribers: Register interest per orgId, receive filtered events
+  - EventBus: Single LISTEN connection, parses NOTIFY payloads, emits activity notifications (see DEC-20)
+  - Stream Subscribers: Register interest per orgId, receive filtered notifications
   - Separation: EventBus handles connection; subscriber routing handles fan-out + permissions
 - **Alternatives rejected**:
   - Per-SSE LISTEN connection: Connection pool exhaustion
@@ -164,12 +270,12 @@ Each module operates in one of three modes:
 - **Trade-off**: Memory proportional to active orgs, but fast fan-out
 
 #### DEC-15: Two paths for entity data (live vs catch-up)
-- **Decision**: Live events include entity data from EventBus (which gets it from CDC NOTIFY payload); catch-up queries JOIN activities with entity tables
+- **Decision**: Live updates include entity data from EventBus (which gets it from CDC NOTIFY payload); catch-up queries JOIN activities with entity tables
 - **Why two paths**:
   - CDC has entity data from PostgreSQL logical replication row
   - After activity is inserted, entity data is NOT stored in activitiesTable (per DEC-7)
   - Catch-up queries only have activitiesTable, must JOIN to get entity data
-- **Live path**: `CDC replication row → NOTIFY payload → EventBus → Stream handler → SSE event`
+- **Live path**: `CDC replication row → NOTIFY payload → EventBus → Stream handler → stream message`
 - **Catch-up path**: `SELECT activities JOIN pages/attachments → API → HTTP response`
 - **Alternatives rejected**:
   - Store entity snapshot in activitiesTable: Bloats storage, duplicates data
@@ -286,7 +392,7 @@ The sync engine MUST integrate with existing Cella patterns, not create parallel
 | `onError` / `onSuccess` | `frontend/src/query/` | Global mutation callbacks |
 
 **Integration rules:**
-- INT-QUERY-001: Stream events MUST update cache via `queryClient.setQueryData()` / `setQueriesData()`
+- INT-QUERY-001: Stream messages MUST update cache via `queryClient.setQueryData()` / `setQueriesData()`
 - INT-QUERY-002: Optimistic mutations MUST use existing `useMutateQueryData()` hook pattern
 - INT-QUERY-003: Query keys MUST follow existing `createEntityKeys()` pattern
 - INT-QUERY-004: DO NOT create a parallel cache - React Query is the single source of UI truth
@@ -363,6 +469,7 @@ Reference implementations to follow:
 - Implements idempotency via `transactionId` lookup
 - Returns `{ data, sync }` wrapper in response
 
+<!--  TODO is this the best term for it -->
 ### CDC Worker
 - Reads transient `sync` JSONB from replicated row
 - Extracts `transactionId`, `sourceId`, `changedField` from sync object
@@ -370,6 +477,7 @@ Reference implementations to follow:
 - Includes entity data in NOTIFY payload (from replication row)
 - Handles 8KB NOTIFY limit gracefully
 
+<!--  TODO is this the best term for it -->
 ### EventBus (API Server)
 - Existing `backend/src/lib/event-bus.ts` upgraded for sync
 - Maintains single LISTEN connection for `cella_activities` channel
@@ -378,10 +486,10 @@ Reference implementations to follow:
 - Serves both internal handlers and sync stream consumers
 
 ### Stream Handler (API Server)
-- Subscribes to EventBus for live events
-- Routes events to correct org subscribers
+- Subscribes to EventBus for live updates
+- Routes activity notifications to correct org subscribers
 - Applies permission checks using `isPermissionAllowed()`
-- Uses `event.entity` when present; fallback fetch when null
+- Uses `notification.entity` when present; fallback fetch when null
 - Tracks cursor per subscriber
 - Cleans up on disconnect
 
@@ -399,19 +507,19 @@ Reference implementations to follow:
 
 ### Frontend Stream Hook
 - Opens EventSource to stream endpoint
-- Updates React Query cache from events
-- Confirms pending transactions when matching event arrives
-- Implements hydrate barrier (queue events during initial load)
+- Updates React Query cache from stream messages
+- Confirms pending transactions when matching message arrives
+- Implements hydrate barrier (queue messages during initial load)
 
 ### Transaction Manager
 - Stores pending transactions (memory + IndexedDB)
 - Provides `trackTransaction()` and `getTransactionStatus()` APIs
-- Confirms transactions when stream event matches
+- Confirms transactions when stream message matches
 
 ### Tab Coordinator
 - Elects leader via Web Locks API
 - Leader owns SSE connection
-- Broadcasts stream events to follower tabs via BroadcastChannel
+- Broadcasts stream messages to follower tabs via BroadcastChannel
 
 ---
 
@@ -579,57 +687,59 @@ The existing EventBus (`backend/src/lib/event-bus.ts`) is upgraded to handle bot
 | STREAM-005 | `offset={number}` MUST return activities with id > offset | Stream Handler | Cursor-based pagination |
 | STREAM-006 | `live=sse` MUST return SSE stream (Content-Type: text/event-stream) | Stream Handler | Content type check |
 | STREAM-007 | `entityTypes` param MUST filter to specified types | Stream Handler | Filtering works |
-| STREAM-008 | Catch-up MUST complete before registering for live events | Stream Handler | Order of operations |
+| STREAM-008 | Catch-up MUST complete before registering for live updates | Stream Handler | Order of operations |
 
 ### Stream subscriber routing
 
-The stream subscriber manager routes EventBus events to SSE connections. It subscribes to EventBus (see EB-010) rather than maintaining its own LISTEN connection.
+The stream subscriber manager routes activity notifications to SSE connections. It subscribes to EventBus (see EB-010) rather than maintaining its own LISTEN connection.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | STREAM-010 | ~~Registry MUST maintain single LISTEN connection~~ → Moved to EB-010 | EventBus | Connection count = 1 |
-| STREAM-011 | Subscriber manager MUST route events by `orgId` | Stream Subscriber Manager | Cross-org isolation |
-| STREAM-012 | Subscriber manager MUST skip events with `activityId <= subscriber.cursor` | Stream Subscriber Manager | No duplicate delivery |
+| STREAM-011 | Subscriber manager MUST route notifications by `orgId` | Stream Subscriber Manager | Cross-org isolation |
+| STREAM-012 | Subscriber manager MUST skip notifications with `activityId <= subscriber.cursor` | Stream Subscriber Manager | No duplicate delivery |
 | STREAM-013 | Subscriber manager MUST apply `entityTypes` filter per subscriber | Stream Subscriber Manager | Type filtering |
 | STREAM-014 | Subscriber manager MUST call `isPermissionAllowed()` before sending | Stream Subscriber Manager | Permission denied = not sent |
 | STREAM-015 | Subscriber manager MUST clean up subscriber on disconnect | Stream Subscriber Manager | Memory cleanup |
 
-### Stream event format
+### Stream message format
+
+SSE messages use the SSE `event` field for type (`'change'` or `'offset'`). The term "stream message" refers to the complete payload.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| STREAM-020 | Event MUST have `event: 'change'` type | Stream Handler | SSE event type |
-| STREAM-021 | Event MUST include `data` (entity or null for delete) | Stream Handler | Event structure |
-| STREAM-022 | Event MUST include `sync.transactionId` | Stream Handler | Event structure |
-| STREAM-023 | Event MUST include `sync.sourceId` | Stream Handler | Event structure |
-| STREAM-024 | Event MUST include `sync.changedField` | Stream Handler | Event structure |
-| STREAM-025 | Event MUST include `sync.action` | Stream Handler | Event structure |
-| STREAM-026 | Event MUST include `sync.activityId` | Stream Handler | Event structure |
+| STREAM-020 | Message MUST have SSE `event: 'change'` type | Stream Handler | SSE event type |
+| STREAM-021 | Message MUST include `data` (entity or null for delete) | Stream Handler | Message structure |
+| STREAM-022 | Message MUST include `sync.transactionId` | Stream Handler | Message structure |
+| STREAM-023 | Message MUST include `sync.sourceId` | Stream Handler | Message structure |
+| STREAM-024 | Message MUST include `sync.changedField` | Stream Handler | Message structure |
+| STREAM-025 | Message MUST include `sync.action` | Stream Handler | Message structure |
+| STREAM-026 | Message MUST include `sync.activityId` | Stream Handler | Message structure |
 | STREAM-027 | SSE `id` field MUST equal `activityId` (for resumption) | Stream Handler | SSE id field |
 
 ### Catch-up entity fetching
 
-Catch-up queries must fetch entity data by JOINing activities with entity tables (since NOTIFY payload is not available for historical events). See DEC-15 for rationale.
+Catch-up queries must fetch entity data by JOINing activities with entity tables (since NOTIFY payload is not available for historical changes). See DEC-15 for rationale.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | STREAM-030 | Catch-up query MUST JOIN activities with entity tables to get entity data | Activity Fetcher | Query includes entity |
 | STREAM-031 | Entity data MUST be included in catch-up response (`data` field) | Activity Fetcher | Response has entity |
-| STREAM-032 | For delete events, `data` MUST be null (entity no longer exists) | Activity Fetcher | Delete handling |
+| STREAM-032 | For deletes, `data` MUST be null (entity no longer exists) | Activity Fetcher | Delete handling |
 | STREAM-033 | If entity was deleted after activity, `data` SHOULD be null | Activity Fetcher | Stale delete handling |
-| STREAM-034 | Catch-up response format MUST match live event format | Activity Fetcher | Consistent structure |
-| STREAM-035 | Catch-up MUST use same permission filtering as live events | Activity Fetcher | Consistent authorization |
+| STREAM-034 | Catch-up response format MUST match live update format | Activity Fetcher | Consistent structure |
+| STREAM-035 | Catch-up MUST use same permission filtering as live updates | Activity Fetcher | Consistent authorization |
 
-### Live event entity data
+### Live update entity data
 
-Live events receive entity data from the unified EventBus, which gets it from CDC NOTIFY payload (zero extra queries for product entities in realtime mode). See DEC-11, DEC-15, and DEC-20 for rationale.
+Live updates receive entity data from the unified EventBus, which gets it from CDC NOTIFY payload (zero extra queries for product entities in realtime mode). See DEC-11, DEC-15, and DEC-20 for rationale.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| STREAM-040 | Live event MUST use entity data from EventBus when available | Stream Handler | Entity from EventBus |
-| STREAM-041 | If EventBus event has no entity (trigger-only or oversized), handler MUST fetch entity | Stream Handler | Fallback fetch |
+| STREAM-040 | Live update MUST use entity data from EventBus when available | Stream Handler | Entity from EventBus |
+| STREAM-041 | If activity notification has no entity (trigger-only or oversized), handler MUST fetch entity | Stream Handler | Fallback fetch |
 | STREAM-042 | Fallback fetch MUST query entity table by `entityId` | Stream Handler | Correct fetch |
-| STREAM-043 | If fallback fetch fails (entity deleted), event MUST still be sent with `data: null` | Stream Handler | Graceful degradation |
+| STREAM-043 | If fallback fetch fails (entity deleted), message MUST still be sent with `data: null` | Stream Handler | Graceful degradation |
 
 ---
 
@@ -660,7 +770,7 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | FE-MUT-020 | Transaction MUST be tracked as `pending` in onMutate | Transaction Manager | State = pending |
 | FE-MUT-021 | Transaction MUST transition to `sent` on API success | Transaction Manager | State = sent |
 | FE-MUT-022 | Transaction MUST transition to `failed` on API error | Transaction Manager | State = failed |
-| FE-MUT-023 | Transaction MUST transition to `confirmed` when stream event arrives | Transaction Manager | State = confirmed |
+| FE-MUT-023 | Transaction MUST transition to `confirmed` when stream message arrives | Transaction Manager | State = confirmed |
 | FE-MUT-024 | Pending transactions MUST be persisted to IndexedDB | Transaction Manager | Survives refresh |
 
 ---
@@ -682,7 +792,7 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | CONFLICT-010 | Frontend MUST track last-seen `transactionId` per `(entityId, field)` | Field Transaction Store | State maintained |
-| CONFLICT-011 | Stream events MUST update field transaction tracking | Stream Hook | Tracking updated |
+| CONFLICT-011 | Stream messages MUST update field transaction tracking | Stream Hook | Tracking updated |
 | CONFLICT-012 | `getExpectedTransactionId(entityId, field)` MUST return last-seen value | Field Transaction Store | Correct lookup |
 | CONFLICT-013 | 409 response MUST trigger merge strategy (CRDT → LWW → UI) | Mutation Hook | Tiered resolution |
 
@@ -717,6 +827,19 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | NET-009 | Existing `useOnlineManager` hook MUST be deprecated and migrated | Network Service | No duplicate hooks |
 | NET-010 | Sync engine components MUST use network status service (not `onlineManager`) | All Sync Components | Consistent usage |
 
+### Stream offset persistence
+
+The stream offset (last received `activityId`) MUST be persisted to survive tab closure. Without this, users who close their browser and return later would start from `'now'` and miss all changes made while away.
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| OFFLINE-OFFSET-001 | Stream offset MUST be persisted to IndexedDB per org | Offset Store | Survives tab closure |
+| OFFLINE-OFFSET-002 | Offset store key MUST be `{orgId}` | Offset Store | Unique per org |
+| OFFLINE-OFFSET-003 | On SSE connect, offset MUST be read from IndexedDB (fallback to `'now'`) | Stream Hook | Uses persisted offset |
+| OFFLINE-OFFSET-004 | On each stream message, offset MUST be updated in IndexedDB | Stream Hook | Offset advances |
+| OFFLINE-OFFSET-005 | Offset writes MAY be debounced (max 1 write per 5 seconds) | Offset Store | Reduce write frequency |
+| OFFLINE-OFFSET-006 | Offset store MUST use same IndexedDB database as mutation outbox | Offset Store | Single database |
+
 ### Mutation outbox
 
 | Req ID | Requirement | Owner | Test Case |
@@ -733,7 +856,7 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | OFFLINE-010 | On reconnect, stream MUST catch up BEFORE flushing outbox | Sync Coordinator | Order of operations |
-| OFFLINE-011 | If stream event conflicts with queued mutation (same field), mark as `conflicted` | Sync Coordinator | Conflict detection |
+| OFFLINE-011 | If stream message conflicts with queued mutation (same field), mark as `conflicted` | Sync Coordinator | Conflict detection |
 | OFFLINE-012 | Conflicted mutations MUST NOT be auto-flushed | Sync Coordinator | Awaits resolution |
 | OFFLINE-013 | Non-conflicted mutations MUST be flushed in order | Sync Coordinator | Sequential flush |
 
@@ -764,9 +887,9 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| TAB-010 | Leader MUST broadcast stream events via BroadcastChannel | Tab Coordinator | Broadcast sent |
+| TAB-010 | Leader MUST broadcast stream messages via BroadcastChannel | Tab Coordinator | Broadcast sent |
 | TAB-011 | BroadcastChannel name MUST be `{$appConfig.slug}-sync` | Tab Coordinator | Channel name |
-| TAB-012 | Followers MUST apply broadcast events to React Query cache | Tab Coordinator | Cache updated |
+| TAB-012 | Followers MUST apply broadcast messages to React Query cache | Tab Coordinator | Cache updated |
 | TAB-013 | Follower cache update MUST match leader cache update | Tab Coordinator | Consistent state |
 
 ### Leader handoff
@@ -795,8 +918,8 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| SEC-010 | Events MUST only be routed to subscribers of the matching org | Stream Subscriber Manager | Org isolation |
-| SEC-011 | Stream MUST only deliver events for subscribed org | Stream Handler | Cross-org blocked |
+| SEC-010 | Activity notifications MUST only be routed to subscribers of the matching org | Stream Subscriber Manager | Org isolation |
+| SEC-011 | Stream MUST only deliver messages for subscribed org | Stream Handler | Cross-org blocked |
 | SEC-012 | Entity data in NOTIFY MUST NOT include sensitive computed fields | CDC Worker | No password hashes etc |
 
 ---
@@ -808,7 +931,7 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | PERF-001 | Optimistic update MUST appear in < 50ms from user action | Mutation Hook | UI timing |
-| PERF-002 | Stream event MUST arrive within 100ms of CDC processing | Full Pipeline | E2E timing |
+| PERF-002 | Stream message MUST arrive within 100ms of CDC processing | Full Pipeline | E2E timing |
 | PERF-003 | Catch-up query MUST complete in < 500ms for 100 activities | Activity Fetcher | Query timing |
 
 ### Scalability
@@ -817,8 +940,8 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 |--------|-------------|-------|-----------|
 | PERF-010 | LISTEN connection count MUST be 1 per API server instance | EventBus | Connection count |
 | PERF-011 | Fan-out MUST be O(subscribers per org), not O(total subscribers) | Stream Subscriber Manager | Lookup efficiency |
-| PERF-012 | Entity fetch SHOULD be avoided when EventBus event includes entity | Stream Subscriber Manager | Zero extra queries |
-| PERF-013 | Oversized entity fallback MUST fetch at most 1 entity per event | Stream Subscriber Manager | Bounded queries |
+| PERF-012 | Entity fetch SHOULD be avoided when activity notification includes entity | Stream Subscriber Manager | Zero extra queries |
+| PERF-013 | Oversized entity fallback MUST fetch at most 1 entity per message | Stream Subscriber Manager | Bounded queries |
 
 ### Resource limits
 
@@ -842,7 +965,7 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | **Backend Handlers** | API-001 to API-037, CONFLICT-001 to CONFLICT-005, INT-CTX-001 to INT-CTX-003 |
 | **Frontend: Sync Primitives** | DATA-020 to DATA-026, NET-001 to NET-010, INT-QUERY-001 to INT-QUERY-005 |
 | **Frontend: Mutation Hooks** | FE-MUT-001 to FE-MUT-024, INT-MUT-001 to INT-MUT-004 |
-| **Frontend: Stream Hook** | STREAM-020 to STREAM-027 (event format) |
+| **Frontend: Stream Hook** | STREAM-020 to STREAM-027 (message format) |
 | **Offline & Conflicts** | NET-001 to NET-010, OFFLINE-001 to OFFLINE-024, CONFLICT-010 to CONFLICT-013, MERGE-001 to MERGE-007 |
 | **Multi-Tab Coordination** | TAB-001 to TAB-022 |
 | **Security** | SEC-001 to SEC-012 |
@@ -855,6 +978,12 @@ Live events receive entity data from the unified EventBus, which gets it from CD
 | Unit Tests | DATA-020 to DATA-026, FE-MUT-001 to FE-MUT-004, CONFLICT-010 to CONFLICT-013, MERGE-001 to MERGE-007 |
 | Integration Tests | API-001 to API-037, CDC-001 to CDC-020, STREAM-001 to STREAM-043 |
 | E2E Tests | PERF-001 to PERF-002, OFFLINE-010 to OFFLINE-013, TAB-001 to TAB-022 |
+
+---
+
+## Acknowledgements
+
+See [HYBRID_SYNC_ENGINE_PLAN.md#acknowledgements](./HYBRID_SYNC_ENGINE_PLAN.md#acknowledgements) for sources and inspirations behind this design.
 | Schema Tests | DATA-001 to DATA-015 |
 | Security Tests | SEC-001 to SEC-012 |
 

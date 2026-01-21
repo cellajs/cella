@@ -1,20 +1,27 @@
 # Cella hybrid sync engine plan
 
-> **CRITICAL**
+> **CRITICAL**:
 Whenever you change the plan, iterate over the requirements and decisions document to confirm they still are consistent with the plan and whether to extend this document: [SYNC_ENGINE_REQUIREMENTS.md](./SYNC_ENGINE_REQUIREMENTS.md) - Design decisions, invariants, and testable requirements
+
+> **Existing archicture**:
+It is important to know Cella's base architecture and especially to realize the dynamic nature of the entity model:  Cella as a template has a composition of entities but a 'fork' of can have a different and extended composition: [ARCHITECTURE.md](./ARCHITECTURE.md)
+
+**Terminology**:
+The sync engine uses precise vocabulary to avoid confusion. See [SYNC_ENGINE_REQUIREMENTS.md#terminology](./SYNC_ENGINE_REQUIREMENTS.md#terminology) for the authoritative glossary covering:
 
 ## Summary
 
-This document outlines a plan to build a lightweight hybrid sync engine that extends Cella's existing OpenAPI + React Query infrastructure with sync and offline capabilities for product entities. The approach is "hybrid" because context entities use standard REST/OpenAPI endpoints while product entity modules use enhanced endpoints with transaction tracking, offline support, realtime sync stream.
+This document outlines a plan to build a **hybrid sync engine** that extends existing **OpenAPI + React Query** infrastructure with sync and offline capabilities. This engine is - *currently* - designed to be a integral part of cella and its entity model. The approach is "hybrid" because the default is standard REST/OpenAPI endpoints while product entity modules *can* be enhanced with transaction tracking, offline support, realtime sync stream. 
 
-| opMode | Features | Example |
+| `opMode` | Features | Example |
 |--------|----------|---------|
-| **basic** | REST CRUD, server-generated IDs | Context entities (organizations) |
-| **synced** | + `{ data, sync }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | Product entities (pages, attachments) |
-| **realtime** | + SSE transaction stream, live cache updates, multi-tab leader election | Heavy-use product entities |
+| **basic** | REST CRUD, server-generated IDs | Context entities (`organization`) |
+| **synced** | + `{ data, sync }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | Product entities (`page`, `attachment`) |
+| **realtime** | + SSE transaction stream, live cache updates, multi-tab leader election | Daily-use (eg. `task`, not in cella) |
 
 > This plan focuses on upgrading product entities from **basic** → **synced** → **realtime**.
 
+---
 
 ## Problem statement
 
@@ -40,22 +47,23 @@ Cella's existing infrastructure provides 70% of what's needed:
 ## Core concepts
 
 **Design philosophy**
-- **OpenAPI-first** - All features work through the existing OpenAPI infrastructure.
+- **Extend on OpenAPI** - All features work through the existing OpenAPI infrastructure.
 - **React Query base** - Build on top of, not around, TanStack Query.
 - **Progressive enhancement** - REST for context entities; product entities add optimistic updates → offline → realtime.
 
 **Architecture**
-- **Leverage CDC** - Use pg `activitiesTable` as durable event log (no separate transaction storage).
+- **Leverage CDC** - Use pg `activitiesTable` as durable activity log (no separate transaction storage).
 - **Transaction stream** - SSE streaming backed by CDC worker + postgres NOTIFY for realtime sync.
 - **Separation of concerns** - LIST endpoints handle queries/filtering; Stream is dumb, just provides new data.
 - **React Query as merge point** - Both initial load and stream updates feed into the same cache.
-- **Two paths for entity data** - Live events get entity data from CDC NOTIFY; catch-up queries JOIN activities with entity tables.
+- **Two paths for entity data** - Live updates get entity data from CDC NOTIFY; catch-up queries JOIN activities with entity tables.
 
 **Sync mechanics**
 - **Client-generated IDs** - Product entities use client-generated transaction IDs for determinism.
-- **Upstream-first sync** - Pull before push; client must be caught up before sending mutations. This provides temporal ordering - your mutation is always based on latest state.
+- **Upstream-first sync** - Pull before push; client must be caught up before sending mutations. This provides temporal ordering - when online(!) your mutation is always based on latest state.
 - **Hybrid logical clocks (HLC)** - Transaction IDs use HLC for causality-preserving, sortable timestamps.
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect.
+- **Persisted stream offset** - Store last received `activityId` in IndexedDB per org, so closing browser doesn't lose position.
 - **Field-level tracking** - One mutation = one transaction = one field change. The `data` object uses standard entity update shape; `sync.changedField` declares which single field is tracked for conflicts (see DEC-18).
 - **Merge strategy** - When upstream changes conflict with pending local mutations: (1) try CRDT merge for compatible types (text, counters, sets), (2) fall back to LWW for opaque values, (3) show a generic resolution UI if user intervention needed.
 - **Single-writer multi-tab** - One leader tab owns SSE connection and broadcasts to followers.
@@ -86,20 +94,20 @@ Cella's existing infrastructure provides 70% of what's needed:
 
 ## Upstream-first sync pattern
 
-> "Upstream events always need to be pulled before a client can push its own events to preserve a global total order of events."
+> "Upstream changes always need to be pulled before a client can push its own changes to preserve a global total order."
 
 Optimistic updates are immediate and unconditional. "Upstream-first" controls *when mutations are sent to server*, not when the user sees their change. This gives instant UX while maintaining sync guarantees.
 
-- **Global total order** - All clients see events in the same order
+- **Global total order** - All clients see changes in the same order
 - **No stale writes** - Client has latest state before mutating
 - **Solve conflicts locally** - Merge (CRDT/LWW/UI) happens in frontend when pulling upstream reveals conflicts with pending local mutations 
 
 **How it works in Cella:**
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────────┐
 │                        Upstream-First Mutation Flow                      │
-├─────────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  1. User triggers mutation                                               │
 │     │                                                                    │
@@ -114,8 +122,8 @@ Optimistic updates are immediate and unconditional. "Upstream-first" controls *w
 │     │               ▼                                                    │
 │     │           5. Server validates (conflict check, idempotency)        │
 │     │               │                                                    │
-│     │               ├── OK ──► Confirm via stream event                  │
-│     │               │                                                    │ƒ√
+│     │               ├── OK ──► Confirm via stream message                │
+│     │               │                                                    │
 │     │               └── CONFLICT ──► Show resolution UI, maybe rollback  │
 │     │                                                                    │
 │     └── NO (offline or behind) ──► 4. Queue mutation locally             │
@@ -126,7 +134,7 @@ Optimistic updates are immediate and unconditional. "Upstream-first" controls *w
 │                                        ▼                                 │
 │                                    6. If conflict detected: resolve      │
 │                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 
@@ -206,14 +214,14 @@ Cella already has a robust CDC system with `activitiesTable`. Extend it for tran
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Stream Endpoint delivers event with full entity data                 │
-│ SSE event: { action: 'create', entity: {...}, transactionId: 'xyz123' }│
+│ Stream Endpoint delivers message with full entity data               │
+│ SSE: { action: 'create', entity: {...}, transactionId: 'xyz123' }    │
 └──────────────────────────────────┬──────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ Frontend: Reconcile pending transactions                             │
-│ if (event.transactionId === pendingTx.id) { confirm(); }             │
+│ if (message.transactionId === pendingTx.id) { confirm(); }           │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -374,7 +382,7 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
       }
       mutateCache.create(createdAttachments);
       
-      // Mark as sent - final 'confirmed' status set when stream event arrives
+      // Mark as sent - final 'confirmed' status set when stream message arrives
       if (context?.transactionId) {
         trackTransaction(context.transactionId, { status: 'sent' });
       }
@@ -877,7 +885,7 @@ export async function fetchAndEnrichActivities({
   }
   
   // NOTE: Catch-up queries JOIN activities with entity tables to get entity data.
-  // This differs from live events where CDC includes entity data in NOTIFY payload.
+  // This differs from live updates where CDC includes entity data in NOTIFY payload.
   // See DEC-11, DEC-15, and STREAM-030 in SYNC_ENGINE_REQUIREMENTS.md for rationale.
   
   // Dynamic JOIN based on entity type (simplified - actual implementation uses type switch)
@@ -926,12 +934,12 @@ export async function getLatestActivityId(orgId: string): Promise<number> {
 | Scales with | Subscribers × poll rate | Changes × subscribers per org |
 | DB connections | 1 per query | 1 LISTEN (persistent) |
 
-**Key optimization**: CDC includes entity data in NOTIFY payload (it already has it from replication), so API server typically does zero DB queries for live events. Only catch-up queries (which JOIN activities with entity tables) and rare oversized entity fallbacks require fetches.
+**Key optimization**: CDC includes entity data in NOTIFY payload (it already has it from replication), so API server typically does zero DB queries for live updates. Only catch-up queries (which JOIN activities with entity tables) and rare oversized entity fallbacks require fetches.
 
 > **Entity data paths** (see DEC-15 in SYNC_ENGINE_REQUIREMENTS.md):
-> - **Live events**: Entity data from CDC NOTIFY payload → zero extra queries
+> - **Live updates**: Entity data from CDC NOTIFY payload → zero extra queries
 > - **Catch-up**: JOIN activities with entity tables → one query with JOIN
-> - **Oversized fallback**: Fetch entity by ID → one extra query per event (rare)
+> - **Oversized fallback**: Fetch entity by ID → one extra query per message (rare)
 
 **Security & authorization considerations:**
 
@@ -977,11 +985,11 @@ export const accessPolicies = configureAccessPolicies(hierarchy, appConfig.entit
 // - StreamSubscriberManager.broadcast() uses it for stream filtering
 ```
 
-**Stream event payload** (uses sync wrapper):
+**Stream message payload** (uses sync wrapper):
 
 ```typescript
-// Matches createStreamEventSchema output
-interface StreamEvent<T = Entity> {
+// Matches createStreamMessageSchema output
+interface StreamMessage<T = Entity> {
   data: T | null;                  // Full entity data (null if deleted)
   sync: {
     transactionId: string | null; // For transaction confirmation
@@ -1005,49 +1013,67 @@ export function useEntityStream(
   orgIdOrSlug: string,
   options?: {
     entityTypes?: string[];
-    onEvent?: (event: StreamEvent) => void;
+    onMessage?: (message: StreamMessage) => void;
   }
 ) {
   const queryClient = useQueryClient();
   const isOnline = useOnlineManager((s) => s.isOnline);
-  const offsetRef = useRef<string>('now');
+  
+  // Persisted offset - survives tab closure (see OFFLINE-0)
+  const offsetRef = useRef<string | null>(null);
+  const debouncedSaveOffset = useDebouncedCallback(
+    (offset: string) => offsetStore.set(orgIdOrSlug, offset),
+    5000 // Max 1 write per 5 seconds
+  );
   
   useEffect(() => {
     if (!isOnline || !orgIdOrSlug) return;
     
-    const params = new URLSearchParams({
-      offset: offsetRef.current,
-      live: 'sse',
-    });
-    if (options?.entityTypes?.length) {
-      params.set('entityTypes', options.entityTypes.join(','));
-    }
-    
-    const eventSource = new EventSource(`/api/stream/${orgIdOrSlug}?${params}`);
-    
-    eventSource.addEventListener('offset', (e) => {
-      offsetRef.current = e.data;
-    });
-    
-    eventSource.addEventListener('change', (e) => {
-      const event: StreamEvent = JSON.parse(e.data);
-      offsetRef.current = e.lastEventId;
+    // Read persisted offset on connect (critical for offline recovery)
+    const initOffset = async () => {
+      const persisted = await offsetStore.get(orgIdOrSlug);
+      offsetRef.current = persisted ?? 'now';
       
-      // Update React Query cache
-      applyEventToCache(queryClient, event);
+      const params = new URLSearchParams({
+        offset: offsetRef.current,
+        live: 'sse',
+      });
+      if (options?.entityTypes?.length) {
+        params.set('entityTypes', options.entityTypes.join(','));
+      }
       
-      options?.onEvent?.(event);
-    });
+      const eventSource = new EventSource(`/api/stream/${orgIdOrSlug}?${params}`);
+      
+      eventSource.addEventListener('offset', (e) => {
+        offsetRef.current = e.data;
+        debouncedSaveOffset(e.data);
+      });
+      
+      eventSource.addEventListener('change', (e) => {
+        const message: StreamMessage = JSON.parse(e.data);
+        offsetRef.current = e.lastEventId;
+        debouncedSaveOffset(e.lastEventId);
+        
+        // Update React Query cache
+        applyMessageToCache(queryClient, message);
+        
+        options?.onMessage?.(message);
+      });
+      
+      return () => eventSource.close();
+    };
     
-    return () => eventSource.close();
+    const cleanup = initOffset();
+    return () => { cleanup.then(fn => fn?.()); };
   }, [orgIdOrSlug, isOnline]);
 }
 
 /**
- * Apply stream event to React Query cache.
+ * Apply stream message to React Query cache.
  */
-function applyEventToCache(queryClient: QueryClient, event: StreamEvent) {
-  const { action, entityType, entityId, entity } = event;
+function applyMessageToCache(queryClient: QueryClient, message: StreamMessage) {
+  const { action, entityType, entityId } = message;
+  const entity = message.data;
   
   // Update detail cache
   if (action === 'delete') {
@@ -1067,16 +1093,16 @@ function applyEventToCache(queryClient: QueryClient, event: StreamEvent) {
 }
 ```
 
-**Sync confirmation via stream events**:
+**Sync confirmation via stream messages**:
 
 ```typescript
 // Transaction is confirmed when it appears in the stream
 eventSource.addEventListener('change', (e) => {
-  const event: StreamEvent = JSON.parse(e.data);
+  const message: StreamMessage = JSON.parse(e.data);
   
-  if (event.transactionId && pendingTransactions.has(event.transactionId)) {
-    trackTransaction(event.transactionId, { status: 'confirmed' });
-    pendingTransactions.delete(event.transactionId);
+  if (message.sync.transactionId && pendingTransactions.has(message.sync.transactionId)) {
+    trackTransaction(message.sync.transactionId, { status: 'confirmed' });
+    pendingTransactions.delete(message.sync.transactionId);
   }
 });
 ```
@@ -1283,6 +1309,31 @@ The sync engine builds on existing Cella infrastructure. These components need u
 | **CDC Worker** | `cdc/src/worker.ts`, `cdc/src/handlers/*` | Logical replication → activities table | Add NOTIFY call with entity data on same channel |
 | **SSE Endpoint** | `backend/src/modules/me/me-handlers.ts` | Generic user SSE at `/me/sse` | Reference for new org-scoped stream endpoint |
 
+### Out-of-scope: Existing SSE code
+
+> ⚠️ **Do not modify** the existing SSE infrastructure during sync engine work. Consolidation is future work.
+
+The following code is **out-of-scope** and should be ignored:
+
+| Component | Location | Why Out-of-Scope |
+|-----------|----------|------------------|
+| `/me/sse` endpoint | `backend/src/modules/me/me-handlers.ts` | User-scoped, not org-scoped |
+| `sendSSE`, `sendSSEByUserIds` | `backend/src/lib/sse.ts` | Uses `streams` Map keyed by userId |
+| `useSSE`, `useTypedSSE` | `frontend/src/modules/common/sse/` | Tied to user SSE connection |
+| `SSEContext`, `SSEProvider` | `frontend/src/modules/common/sse/` | Provides user EventSource |
+| `SSEEventsMap` events | `frontend/src/modules/common/sse/index.tsx` | `membership_*`, `entity_*` for context entities |
+
+**The sync engine creates a separate org-scoped stream** (`/organizations/:orgId/stream`) that:
+- Uses EventBus (which LISTENs to `cella_activities`)
+- Is keyed by orgId, not userId
+- Includes transaction tracking and entity data
+- Targets product entities, not context entities
+
+**Future consolidation work** (not in this plan):
+- Migrate context entity SSE to use EventBus
+- Unify `useSSE` and sync stream hooks
+- Single SSE connection strategy
+
 ### Data flow (current vs. upgraded)
 
 **Current flow (trigger-only):**
@@ -1407,7 +1458,7 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
   - Set `changedField` to `null` or `'*'` for insert/delete
   - **Depends on**: SCHEMA-2 migration (adds `sync` JSONB column to activitiesTable)
 
-- [ ] **CDC-3** Add NOTIFY hook to CDC worker (for live events)
+- [ ] **CDC-3** Add NOTIFY hook to CDC worker (for live updates)
   - Location: `cdc/src/handlers/activity-notify.ts`
   - Call `pg_notify('cella_activities', payload)` after activity INSERT (see DEC-11)
   - **MUST use same channel as trigger** (`cella_activities`) - see CDC-021
@@ -1424,22 +1475,22 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
   - `fetchActivitiesWithEntityData({ orgId, cursor, entityTypes })` - JOINs activities with entity tables (see DEC-15, STREAM-030)
   - Uses `isPermissionAllowed()` for entity-level filtering (same pattern as `splitByAllowance`)
   - `getLatestActivityId(orgId)` - for `offset=now`
-  - `fetchEntityById(entityType, entityId)` - fallback for EventBus events without entity data
+  - `fetchEntityById(entityType, entityId)` - fallback for activity notifications without entity data
 
 - [ ] **STREAM-2** Create stream subscriber manager
   - Location: `backend/src/lib/stream/stream-subscribers.ts`
-  - Subscribes to unified EventBus for `cella_activities` events (see DEC-20)
-  - Routes events to correct org subscribers based on `event.organizationId`
+  - Subscribes to unified EventBus for `cella_activities` notifications (see DEC-20)
+  - Routes notifications to correct org subscribers based on `notification.organizationId`
   - Subscriber includes `memberships: MembershipBaseModel[]` and `userSystemRole`
   - `checkEntityAccess()` uses `isPermissionAllowed()` - same logic as REST handlers
-  - Entity data comes from `event.entity`; fallback fetch if null (see STREAM-040 to STREAM-043)
+  - Entity data comes from `notification.entity`; fallback fetch if null (see STREAM-040 to STREAM-043)
 
 - [ ] **STREAM-3** Create stream endpoint handler
   - Location: `backend/src/modules/streams/stream-handlers.ts`
   - Use Cella context helpers: `getContextUser`, `getContextOrganization`, `getContextMemberships`
   - Apply org guard middleware (same as REST endpoints)
   - Catch-up: fetch activities with entity data via JOIN (see STREAM-030 to STREAM-035)
-  - Live: register with stream subscriber manager for push events
+  - Live: register with stream subscriber manager for push updates
 
 - [ ] **STREAM-4** Add stream routes + OpenAPI schema
   - Location: `backend/src/modules/streams/stream-routes.ts`
@@ -1454,7 +1505,7 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 - [ ] **SYNC-SCHEMA-1** Create sync wrapper schemas
   - Location: `backend/src/modules/sync/schema.ts`
   - `syncRequestSchema` with `transactionId`, `sourceId`, `changedField`, `expectedTransactionId`
-  - `syncResponseSchema`, `syncStreamEventSchema` with `changedField`
+  - `syncResponseSchema`, `syncStreamMessageSchema` with `changedField`
   - Factory functions for wrapping entity schemas
 
 ---
@@ -1523,7 +1574,7 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
   - Location: `frontend/src/lib/sync/field-transactions.ts`
   - Map of `entityId:field → transactionId` (what's the last tx I saw for this field?)
   - `getExpectedTransactionId(entityId, field)` - for conflict detection
-  - `setFieldTransactionId(entityId, field, transactionId)` - updated from stream events
+  - `setFieldTransactionId(entityId, field, transactionId)` - updated from stream messages
   - `updateFieldTransactionsFromEntity(entityId, fieldTxMap)` - batch update
 
 - [ ] **FE-SYNC-4** Create unified network status service (see DEC-16, NET-001 to NET-010)
@@ -1566,22 +1617,30 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 - [ ] **FE-STREAM-1** Create frontend stream hook
   - Location: `frontend/src/lib/sync/use-entity-stream.ts`
   - EventSource subscription with offset tracking
-  - Update field transaction tracking from stream events
-  - Apply events to React Query cache
+  - Update field transaction tracking from stream messages
+  - Apply messages to React Query cache
 
 - [ ] **FE-STREAM-2** Create cache update utilities
-  - Location: `frontend/src/lib/sync/apply-event-to-cache.ts`
+  - Location: `frontend/src/lib/sync/apply-message-to-cache.ts`
   - Handle create/update/delete for detail and list queries
   - Support infinite query data structure (same pattern as existing mutations)
 
 - [ ] **FE-STREAM-3** Add transaction status UI indicators
   - Hook: `useTransactionStatus(transactionId)`
   - Visual states: pending spinner, syncing, confirmed checkmark, failed error
-  - Confirm via stream event matching
+  - Confirm via stream message matching
 
 ---
 
 ### Offline & conflict resolution
+
+- [ ] **OFFLINE-0** Persist stream offset to IndexedDB
+  - Location: `frontend/src/lib/sync/offset-store.ts`
+  - Store last received `activityId` per org
+  - Read on SSE connect (fallback to `'now'` if not found)
+  - Write on each stream message (debounced, max 1 write per 5s)
+  - Use same IndexedDB database as mutation outbox
+  - **Critical for offline**: Without this, closing tab loses position and user misses all changes
 
 - [ ] **OFFLINE-1** Add field-level transaction tracking to offline executor
   - File: `frontend/src/modules/attachments/offline/executor.ts`
@@ -1602,7 +1661,7 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 
 - [ ] **OFFLINE-4** Create client-side conflict detection
   - Location: `frontend/src/lib/sync/conflict-detection.ts`
-  - When stream event arrives, check for queued mutations on same field
+  - When stream message arrives, check for queued mutations on same field
   - Mark queued mutation as `conflicted` with server value
   - Mutation stays in queue until explicitly resolved
 
@@ -1634,7 +1693,7 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 
 - [ ] **TAB-2** Implement single-writer pattern
   - Only leader tab opens SSE connection
-  - Leader broadcasts stream events to follower tabs
+  - Leader broadcasts stream messages to follower tabs
   - Followers apply broadcasts to their React Query cache
 
 - [ ] **TAB-3** Handle leader handoff
@@ -1735,7 +1794,7 @@ export const pages = pgTable('pages', {
 |-----------|---------|----------|-------|
 | GET | Flat params | `Entity[]` / `Entity` | No sync - resolve conflicts client-side |
 | POST/PATCH/DELETE | `{ data, sync }` | `{ data, sync }` | Server tracks transaction + source + changedField |
-| Stream event | N/A | `{ data, sync }` | Includes sourceId, changedField for "is this mine?" |
+| Stream message | N/A | `{ data, sync }` | Includes sourceId, changedField for "is this mine?" |
 
 **Sync metadata schemas:**
 
@@ -1753,7 +1812,7 @@ export const syncResponseSchema = z.object({
   transactionId: z.string().nullable(),
 });
 
-export const syncStreamEventSchema = z.object({
+export const syncStreamMessageSchema = z.object({
   transactionId: z.string().nullable(),
   sourceId: z.string().nullable(),
   changedField: z.string().nullable(),
@@ -1768,8 +1827,8 @@ export const createSyncedMutationSchema = <T extends z.ZodTypeAny>(dataSchema: T
 export const createSyncedResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({ data: dataSchema, sync: syncResponseSchema });
 
-export const createStreamEventSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({ data: dataSchema.nullable(), sync: syncStreamEventSchema });
+export const createStreamMessageSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({ data: dataSchema.nullable(), sync: syncStreamMessageSchema });
 ```
 
 **Key additions for field-level tracking:**
@@ -1800,7 +1859,7 @@ export const createTransactionId = () => {
 | Purpose | How sourceId serves it |
 |---------|------------------------|
 | Mutation source | Sent in `sync.sourceId`, stored in `lastSourceId` column |
-| "Is this mine?" | Compare stream event's `sourceId` to your own |
+| "Is this mine?" | Compare stream message's `sourceId` to your own |
 | Leader election | Unique per tab, elect one leader via Web Locks |
 
 **Why not userId?** We have `userId` for audit ("who"). `sourceId` is for sync ("which instance+browserTab").
@@ -1812,7 +1871,7 @@ export const createTransactionId = () => {
 │  (none)  │ ───────────────>│ pending  │ ─────────────────>│   sent   │
 └──────────┘                 └──────────┘                   └──────────┘
                                   │                              │
-                                  │ API error                    │ Stream event
+                                  │ API error                    │ Stream message
                                   ▼                              ▼
                              ┌──────────┐                   ┌───────────┐
                              │  failed  │                   │ confirmed │
@@ -1845,27 +1904,30 @@ interface FieldConflictResponse {
 When pulling upstream changes, detect conflicts with queued mutations locally:
 
 ```typescript
-// When stream event arrives, check for conflicts with queued mutations
-function handleUpstreamEvent(event: StreamEvent) {
-  const { entityId, changedField, transactionId, data } = event.sync;
+// When stream message arrives, check for conflicts with queued mutations
+function handleUpstreamMessage(message: StreamMessage) {
+  const { entityId, changedField, transactionId } = message.sync;
+  const serverData = message.data;
   
   // Check if we have a queued mutation for this field
   const queued = outbox.find(m => 
     m.entityId === entityId && m.field === changedField
   );
   
-  if (queued) {
+  if (queued && serverData && changedField) {
     // Conflict! The field we wanted to change was modified server-side
     queued.status = 'conflicted';
     queued.conflict = {
-      serverValue: data[changedField],
+      serverValue: serverData[changedField],
       serverTransactionId: transactionId,
     };
     // UI will show conflict indicator, mutation stays in queue until resolved
   }
   
   // Update field transaction tracking regardless
-  setFieldTransactionId(entityId, changedField, transactionId);
+  if (changedField) {
+    setFieldTransactionId(entityId, changedField, transactionId);
+  }
 }
 ```
 
@@ -2012,53 +2074,106 @@ const debouncedUpdate = useDebouncedCallback(
 
 ### Hydrate barrier (race prevention)
 
-**Problem**: Stream events arriving before initial LIST query completes can cause data regression:
+**Problem**: Stream messages arriving before initial LIST query completes can cause data regression:
 1. User opens app, LIST query starts fetching
 2. Stream connects with `offset=now`
-3. Stream event arrives (newer data)
+3. Stream message arrives (newer data)
 4. LIST response arrives (older snapshot!)
 5. User sees data regress to older state
 
-**Solution: Queue stream events during hydration**
+**Solution: Queue stream messages during hydration**
 
 ```typescript
 // frontend/src/lib/sync/use-entity-stream.ts
 export function useEntityStream(orgIdOrSlug: string) {
   const queryClient = useQueryClient();
-  const queuedEvents = useRef<StreamEvent[]>([]);
+  const queuedMessages = useRef<StreamMessage[]>([]);
   const isHydrating = useRef(true);
   
   // Track when initial queries complete
   useEffect(() => {
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
       if (event.type === 'updated' && event.query.state.status === 'success') {
-        // Initial hydration complete, flush queued events
+        // Initial hydration complete, flush queued messages
         if (isHydrating.current) {
           isHydrating.current = false;
-          for (const queuedEvent of queuedEvents.current) {
-            applyEventToCache(queryClient, queuedEvent);
+          for (const queuedMessage of queuedMessages.current) {
+            applyMessageToCache(queryClient, queuedMessage);
           }
-          queuedEvents.current = [];
+          queuedMessages.current = [];
         }
       }
     });
     return unsubscribe;
   }, [queryClient]);
   
-  const handleStreamEvent = useCallback((event: StreamEvent) => {
+  const handleStreamMessage = useCallback((message: StreamMessage) => {
     if (isHydrating.current) {
-      // Queue events during initial load
-      queuedEvents.current.push(event);
+      // Queue messages during initial load
+      queuedMessages.current.push(message);
       return;
     }
-    applyEventToCache(queryClient, event);
+    applyMessageToCache(queryClient, message);
   }, [queryClient]);
   
-  // ... EventSource setup using handleStreamEvent
+  // ... EventSource setup using handleStreamMessage
 }
 ```
 
 **Hydration Detection**: Use React Query's `isFetching` state or track first successful fetch per query key.
+
+### Stream offset store (offline)
+
+The stream offset must be persisted to survive tab closure. Without this, users who close their browser and return later would start from `'now'` and miss all changes made while away.
+
+```typescript
+// frontend/src/lib/sync/offset-store.ts
+import Dexie from 'dexie';
+
+interface OffsetEntry {
+  orgId: string;
+  offset: string;
+  updatedAt: number;
+}
+
+class SyncDatabase extends Dexie {
+  offsets!: Dexie.Table<OffsetEntry, string>;
+  outbox!: Dexie.Table<OutboxEntry, string>;  // Same DB for both
+  
+  constructor() {
+    super('cella-sync');
+    this.version(1).stores({
+      offsets: 'orgId',
+      outbox: '[entityType+entityId+field]',
+    });
+  }
+}
+
+const db = new SyncDatabase();
+
+/**
+ * Persisted stream offset store.
+ * Stores last received activityId per org.
+ */
+export const offsetStore = {
+  async get(orgId: string): Promise<string | null> {
+    const entry = await db.offsets.get(orgId);
+    return entry?.offset ?? null;
+  },
+  
+  async set(orgId: string, offset: string): Promise<void> {
+    await db.offsets.put({
+      orgId,
+      offset,
+      updatedAt: Date.now(),
+    });
+  },
+  
+  async clear(orgId: string): Promise<void> {
+    await db.offsets.delete(orgId);
+  },
+};
+```
 
 ### Field-level mutation outbox (offline)
 
@@ -2118,7 +2233,7 @@ class FieldMutationOutbox {
   }
   
   /**
-   * Check for conflicts when upstream event arrives.
+   * Check for conflicts when upstream message arrives.
    */
   checkUpstreamConflict(entityId: string, field: string, serverValue: unknown, serverTxId: string): void {
     const key = `*:${entityId}:${field}`;
@@ -2177,8 +2292,8 @@ After squashing:
 - No intermediate states on server
 
 **Upstream-First Flow**:
-1. Come online → Pull stream events (upstream-first)
-2. For each event: check if queued mutation conflicts
+1. Come online → Pull stream messages (upstream-first)
+2. For each message: check if queued mutation conflicts
 3. Mark conflicted mutations, show resolution UI
 4. Flush remaining pending mutations
 
@@ -2203,7 +2318,7 @@ After squashing:
 │           ▼                               │                   │             │
 │  ┌─────────────────┐                      │                   │             │
 │  │ BroadcastChannel│──────────────────────┴───────────────────┘             │
-│  │ "cella-sync"    │     (broadcasts stream events to all tabs)             │
+│  │ "cella-sync"    │     (broadcasts stream messages to all tabs)          │
 │  └─────────────────┘                                                        │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -2243,11 +2358,11 @@ class TabCoordinator {
   }
   
   /**
-   * Broadcast event to all tabs (leader only).
+   * Broadcast message to all tabs (leader only).
    */
-  broadcast(event: StreamEvent): void {
+  broadcast(message: StreamMessage): void {
     if (this.isLeader) {
-      this.channel.postMessage(event);
+      this.channel.postMessage(message);
     }
   }
   
@@ -2400,26 +2515,31 @@ await db.execute(sql`NOTIFY cella_activities, ${JSON.stringify(payload)}`);
 
 ## Appendix A: Comparison matrix
 
-| Feature | TinyBase | LiveStore | Electric | Proposed hybrid |
-|---------|----------|-----------|----------|-----------------|
-| Installation | npm package | npm package | npm + sidecar | Cella template |
-| Data Model | Key-value + Tables | Event Sourcing | Shapes | CRUD + Transactions |
-| Local Storage | IndexedDB / OPFS / SQLite | SQLite WASM | TanStack DB | IndexedDB (Dexie + RQ) |
-| Sync Protocol | CRDT (MergeableStore) | Push/Pull events | HTTP shapes | Transaction Stream SSE |
-| Offline Writes | ✅ Native CRDT | ✅ Eventlog | ❌ | ✅ Mutation outbox |
-| Merge Location | Client only (CRDT) | Client only | Client only | Client + Server |
-| Optimistic Updates | ✅ Reactive listeners | ✅ Automatic | ⚠️ Patterns | ✅ Transaction-tracked |
-| Conflict Resolution | CRDT auto-merge, field-level | Rebase, upstream-first, event-level | LWW | LWW, field-level, upstream-first |
-| Transaction Tracking | ⚠️ Checkpoints (local) | ✅ Full eventlog | ❌ | ✅ Per-operation (persisted) |
-| Audit Trail | ❌ | ✅ Eventlog | ❌ | ✅ activitiesTable |
-| CDC Integration | N/A | N/A | ❌ | ✅ PostgreSQL replication |
-| Realtime Updates | ✅ WebSocket/Broadcast | ✅ | ✅ Shapes | ✅ SSE + NOTIFY |
-| Multi-Tab Sync | ✅ BroadcastChannel | ✅ | ✅ | ✅ Leader election |
-| Bundle Size | 5.4-12.1kB | ~50kB | ~30kB | ~5kB (hooks only) |
-| React Integration | ✅ ui-react module | ✅ | ✅ TanStack | ✅ TanStack Query |
-| Schema Validation | ✅ Built-in + Zod | ⚠️ | ⚠️ | ✅ Zod (OpenAPI) |
-| Devtools | ✅ Inspector | ⚠️ | ⚠️ | ✅ React Query Devtools |
-| Undo/Redo | ✅ Checkpoints | ✅ Eventlog | ❌ | ⚠️ Via activities |
+| Feature | Linear | TinyBase | LiveStore | Electric | Cella Hybrid |
+|---------|--------|----------|-----------|----------|--------------|
+| Architecture | Local-first (SQLite) | Local-first (CRDT) | Event sourcing | Shape-based sync | Server-first + cache |
+| Installation | Proprietary | npm package | npm package | npm + sidecar | Cella template |
+| Data Model | Relational (SQLite) | Key-value + Tables | Event Sourcing | Shapes | CRUD + Transactions |
+| Local Storage | SQLite WASM (wa-sqlite) | IndexedDB / OPFS / SQLite | SQLite WASM | TanStack DB | IndexedDB (Dexie + RQ) |
+| Source of Truth | Local SQLite | Client (CRDT) | Client eventlog | Server: replication | Server: replication |
+| Sync Protocol | Custom sync log | CRDT (MergeableStore) | Push/Pull events | HTTP shapes | Transaction Stream SSE |
+| Offline Reads | ✅ Full SQL queries | ✅ Full | ✅ Full | ⚠️ Cached shapes | ⚠️ Cached data |
+| Offline Writes | ✅ Full | ✅ Native CRDT | ✅ Eventlog | ❌ | ✅ Mutation outbox |
+| Merge Location | Client + Server | Client only (CRDT) | Client only | Client only | Client + Server |
+| Optimistic Updates | ✅ Instant (local-first) | ✅ Reactive listeners | ✅ Automatic | ⚠️ Patterns | ✅ Transaction-tracked |
+| Conflict Resolution | Per-model resolvers | CRDT auto-merge | Rebase, upstream-first | LWW | LWW → CRDT → UI |
+| Upstream-First | ✅ Yes | ❌ CRDT-based | ✅ Yes | ❌ | ✅ Yes |
+| Transaction Tracking | ✅ Full | ⚠️ Checkpoints (local) | ✅ Full eventlog | ❌ | ✅ Per-operation |
+| Audit Trail | ✅ Sync log | ❌ | ✅ Eventlog | ❌ | ✅ activitiesTable |
+| Realtime Updates | ✅ WebSocket | ✅ WebSocket/Broadcast | ✅ | ✅ Shapes | ✅ SSE + NOTIFY |
+| Multi-Tab Sync | ✅ SharedWorker | ✅ BroadcastChannel | ✅ | ✅ | ✅ Leader election |
+| Bundle Size | Large (SQLite WASM) | 5.4-12.1kB | ~50kB | ~30kB | ~5kB (hooks only) |
+| React Integration | Custom hooks | ✅ ui-react module | ✅ | ✅ TanStack | ✅ TanStack Query |
+| OpenAPI Compatible | ❌ Bypasses REST | ❌ | ❌ | ❌ | ✅ Extends REST |
+| Progressive Adoption | ❌ All-or-nothing | ⚠️ | ⚠️ | ⚠️ | ✅ REST → Sync |
+| Devtools | ✅ Custom | ✅ Inspector | ⚠️ | ⚠️ | ✅ React Query Devtools |
+| Undo/Redo | ✅ | ✅ Checkpoints | ✅ Eventlog | ❌ | ⚠️ Via activities |
+| Broader scope use | N/A (own infra) | N/A | N/A | ❌ | ✅ Eventbus can support API internals |
 
 ---
 
@@ -2480,6 +2600,17 @@ Key differences:
 - `onMutate` generates `transactionId` and returns `{ input, transactionId, optimisticEntity }`
 - `mutationFn` receives the onMutate return and sends `{ data, sync }` wrapper
 - Track transaction lifecycle: `pending` → `sent` → `confirmed` (via stream)
+
+---
+
+## Acknowledgements
+
+This sync engine design draws from established patterns in distributed systems and local-first software. Key influences:
+- [ElectricSQL](https://electric-sql.com/) - Shape-based sync, PostgreSQL logical replication
+- [LiveStore](https://livestore.io/) - SQLite-based sync with reactive queries, event sourcing
+- [TinyBase](https://tinybase.org/) - Reactive data store with sync, CRDT support, and persistence
+- [Last-Write-Wins (LWW)](https://en.wikipedia.org/wiki/Eventual_consistency) - Simple resolution for opaque values
+- [Hybrid Logical Clocks (HLC)](https://cse.buffalo.edu/tech-reports/2014-04.pdf) - Kulkarni et al., causality-preserving timestamps
 
 ---
 
