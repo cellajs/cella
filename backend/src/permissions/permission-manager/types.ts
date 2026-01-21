@@ -5,6 +5,7 @@ import type {
   EntityRole,
   EntityType,
   ProductEntityType,
+  SystemRole,
 } from 'config';
 
 /**
@@ -157,3 +158,11 @@ export interface AccessPolicyConfiguration {
  * Callback function for configuring access policies.
  */
 export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
+
+/**
+ * Options for permission checking.
+ */
+export interface PermissionCheckOptions {
+  /** System role of the user (e.g., 'admin'). System admins get all permissions. */
+  systemRole?: SystemRole | 'user';
+}

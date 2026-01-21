@@ -48,7 +48,8 @@ export const MembersTableBar = ({
   const { q, role, order, sort } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
-  const isAdmin = entity.membership?.role === 'admin';
+  // Use can.update if available for permission-based access control
+  const canUpdate = entity.can?.update ?? false;
   const entityType = entity.entityType;
 
   // Clear selected rows on search
@@ -151,7 +152,7 @@ export const MembersTableBar = ({
               </>
             ) : (
               !isFiltered &&
-              isAdmin && (
+              canUpdate && (
                 <TableBarButton
                   ref={inviteButtonRef}
                   icon={MailIcon}
@@ -162,7 +163,7 @@ export const MembersTableBar = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {isAdmin && !isFiltered && <PendingMemberships entity={entity} />}
+                {canUpdate && !isFiltered && <PendingMemberships entity={entity} />}
               </TableCount>
             )}
           </FilterBarActions>

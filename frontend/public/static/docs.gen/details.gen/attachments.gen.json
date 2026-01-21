@@ -126,7 +126,18 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "organizationId": { "type": "string", "required": true }
+                  "organizationId": { "type": "string", "required": true },
+                  "can": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "create": { "type": "boolean", "required": true },
+                      "read": { "type": "boolean", "required": true },
+                      "update": { "type": "boolean", "required": true },
+                      "delete": { "type": "boolean", "required": true },
+                      "search": { "type": "boolean", "required": true }
+                    }
+                  }
                 },
                 "ref": "#/components/schemas/Attachment"
               }
@@ -263,7 +274,18 @@
                 "type": ["string", "null"],
                 "required": true
               },
-              "organizationId": { "type": "string", "required": true }
+              "organizationId": { "type": "string", "required": true },
+              "can": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "create": { "type": "boolean", "required": true },
+                  "read": { "type": "boolean", "required": true },
+                  "update": { "type": "boolean", "required": true },
+                  "delete": { "type": "boolean", "required": true },
+                  "search": { "type": "boolean", "required": true }
+                }
+              }
             },
             "ref": "#/components/schemas/Attachment"
           },
@@ -528,7 +550,18 @@
               "type": ["string", "null"],
               "required": true
             },
-            "organizationId": { "type": "string", "required": true }
+            "organizationId": { "type": "string", "required": true },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
+            }
           },
           "ref": "#/components/schemas/Attachment",
           "contentType": "application/json"

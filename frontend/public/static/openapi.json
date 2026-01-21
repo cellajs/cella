@@ -1380,6 +1380,33 @@
               "membership",
               "entities"
             ]
+          },
+          "can": {
+            "type": "object",
+            "properties": {
+              "create": {
+                "type": "boolean"
+              },
+              "read": {
+                "type": "boolean"
+              },
+              "update": {
+                "type": "boolean"
+              },
+              "delete": {
+                "type": "boolean"
+              },
+              "search": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "create",
+              "read",
+              "update",
+              "delete",
+              "search"
+            ]
           }
         },
         "required": [
@@ -1650,6 +1677,33 @@
           },
           "organizationId": {
             "type": "string"
+          },
+          "can": {
+            "type": "object",
+            "properties": {
+              "create": {
+                "type": "boolean"
+              },
+              "read": {
+                "type": "boolean"
+              },
+              "update": {
+                "type": "boolean"
+              },
+              "delete": {
+                "type": "boolean"
+              },
+              "search": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "create",
+              "read",
+              "update",
+              "delete",
+              "search"
+            ]
           }
         },
         "required": [

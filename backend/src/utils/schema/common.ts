@@ -30,6 +30,15 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 /** Schema for a generic name (string) */
 export const nameSchema = z.string();
 
+/** Schema for entity action permissions (`can` object) */
+export const entityCanSchema = z.object({
+  create: z.boolean(),
+  read: z.boolean(),
+  update: z.boolean(),
+  delete: z.boolean(),
+  search: z.boolean(),
+});
+
 /** Schema for an entity ID (string) */
 export const idSchema = z.string();
 

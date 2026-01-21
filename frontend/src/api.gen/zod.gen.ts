@@ -257,6 +257,15 @@ export const zOrganization = z.object({
       }),
     }),
   ),
+  can: z.optional(
+    z.object({
+      create: z.boolean(),
+      read: z.boolean(),
+      update: z.boolean(),
+      delete: z.boolean(),
+      search: z.boolean(),
+    }),
+  ),
 });
 
 export const zPage = z.object({
@@ -295,6 +304,15 @@ export const zAttachment = z.object({
   convertedKey: z.union([z.string(), z.null()]),
   thumbnailKey: z.union([z.string(), z.null()]),
   organizationId: z.string(),
+  can: z.optional(
+    z.object({
+      create: z.boolean(),
+      read: z.boolean(),
+      update: z.boolean(),
+      delete: z.boolean(),
+      search: z.boolean(),
+    }),
+  ),
 });
 
 export const zMembership = z.object({

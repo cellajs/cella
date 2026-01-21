@@ -34,7 +34,8 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
 
   const entityType = entity.entityType;
   const organizationId = entity.organizationId || entity.id;
-  const isAdmin = entity.membership?.role === 'admin';
+  // Use can.update if available for permission-based access control
+  const canUpdate = entity.can?.update ?? false;
 
   // Table state
   const { q, role, sort, order } = search;
@@ -42,7 +43,7 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
 
   // Build columns
   const [selected, setSelected] = useState<Member[]>([]);
-  const [columns, setColumns] = useColumns(isAdmin, isSheet);
+  const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = membersQueryOptions({

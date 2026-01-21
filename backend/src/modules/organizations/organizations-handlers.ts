@@ -173,10 +173,10 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership } = await getValidContextEntity(idOrSlug, 'organization', 'read');
+    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'read');
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
-    const data = { ...organization, membership, counts };
+    const data = { ...organization, membership, counts, can };
 
     return ctx.json(data, 200);
   })
@@ -186,7 +186,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership } = await getValidContextEntity(idOrSlug, 'organization', 'update');
+    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'update');
     const user = getContextUser();
 
     const updatedFields = ctx.req.valid('json');
@@ -232,7 +232,7 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
-    const data = { ...updatedOrganization, membership, counts };
+    const data = { ...updatedOrganization, membership, counts, can };
 
     return ctx.json(data, 200);
   })

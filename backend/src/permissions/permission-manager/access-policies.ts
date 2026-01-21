@@ -142,8 +142,7 @@ export const getSubjectPolicies = (
 export const getPolicyPermissions = (
   policies: SubjectAccessPolicies,
   contextType: ContextEntityType,
-  // TODO this should be typed as EntityRole?
-  role: string,
+  role: EntityRole,
 ): EntityActionPermissions | undefined => {
   const entry = policies.find((p) => p.contextType === contextType && p.role === role);
   return entry?.permissions;
