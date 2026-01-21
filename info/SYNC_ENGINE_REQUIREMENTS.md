@@ -2,6 +2,9 @@
 
 This document defines the requirements for building the Hybrid Sync Engine. It combines **design decisions** (the "why") with **testable contracts** (the "what").
 
+> **Related documents:**
+> - [HYBRID_SYNC_ENGINE_PLAN.md](./HYBRID_SYNC_ENGINE_PLAN.md) - Implementation plan, code examples, and TODO list
+
 ---
 
 ## Design Decisions
@@ -14,10 +17,23 @@ This section captures key architectural decisions, invariants, and constraints t
 |----|-----------|-----------|
 | INV-1 | Optimistic updates happen BEFORE checking stream/online status | User sees instant feedback regardless of sync state |
 | INV-2 | Transaction IDs are immutable once generated | Same ID used for retries enables idempotency |
-| INV-3 | CDC is the single source of truth for activity history | Entity tables have transient sync columns that get overwritten |
+| INV-3 | CDC is the single source of truth for activity history | Entity tables have transient `sync` JSONB that gets overwritten |
 | INV-4 | Upstream-first controls when mutations are SENT, not when user sees changes | Distinguishes sync guarantees from UX |
-| INV-5 | One mutation = one transaction = one field change | Enables field-level conflict resolution |
+| INV-5 | One mutation = one transaction = one field change | `sync.changedField` declares which single field is targeted; `data` object may contain entity structure but only declared field is tracked for conflicts |
 | INV-6 | Only leader tab opens SSE connection | Prevents duplicate connections and race conditions |
+| INV-7 | Live events receive entity data from CDC NOTIFY; catch-up queries JOIN with entity tables | Two paths for entity data: CDC has it from replication, catch-up must fetch it |
+
+### opMode (operational mode)
+
+Each module operates in one of three modes:
+
+| opMode | Entity type | Request shape | Sync features |
+|--------|-------------|---------------|---------------|
+| **basic** | Context entities (organizations, memberships) | Simple body | None - standard REST/CRUD |
+| **synced** | Product entities | `{ data, sync }` wrapper | Transaction tracking, offline queue, conflict detection |
+| **realtime** | Product entities (heavy-use) | `{ data, sync }` wrapper | + SSE stream, live updates, multi-tab coordination |
+
+> **Note**: `synced` and `realtime` are additive - `realtime` includes all `synced` features.
 
 ### Constraints (hard limits)
 
@@ -61,12 +77,13 @@ This section captures key architectural decisions, invariants, and constraints t
   - Store entity in activity table: Bloats activity storage
 - **Trade-off**: Occasional fallback fetch for >7.5KB entities, but zero queries for 99% of events
 
-#### DEC-5: Transient sync columns on entity tables
-- **Decision**: `sync_transaction_id`, `sync_source_id`, `sync_changed_field` columns that get overwritten
+#### DEC-5: Transient sync column as JSONB object
+- **Decision**: Single `sync` JSONB column containing `{ transactionId, sourceId, changedField }`
 - **Alternatives rejected**:
   - Separate sync metadata table: Extra join, complexity
   - Store in activity only: Handler can't pass to CDC via replication
-- **Trade-off**: Three extra columns per product entity, but clean data flow
+  - Three separate columns: More schema clutter, less extensible
+- **Trade-off**: One extra column per product entity; slightly more verbose query syntax but extensible and matches API shape
 
 #### DEC-6: Upstream-first pattern
 - **Decision**: Client must be caught up before sending mutations to server
@@ -76,7 +93,7 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Trade-off**: Slight latency when behind, but predictable ordering and simpler conflicts
 
 #### DEC-7: activitiesTable as durable event log (no separate sync table)
-- **Decision**: Extend existing activities with sync columns, not new table
+- **Decision**: Extend existing activities with sync column, not new table
 - **Alternatives rejected**:
   - Separate `sync_transactions` table: Duplicate data, extra complexity
   - In-memory only: Lost on restart
@@ -97,20 +114,31 @@ This section captures key architectural decisions, invariants, and constraints t
   - Per-entity streams: Connection explosion (N entities × M users)
 - **Trade-off**: Client filters by entity type, but simpler server and permission boundary by tenant
 
-#### DEC-10: Single LISTEN connection with subscriber registry
-- **Decision**: API server maintains one PostgreSQL LISTEN connection, fans out to SSE subscribers via in-memory registry
+#### DEC-10: Single LISTEN via EventBus, subscriber routing for fan-out
+- **Decision**: EventBus maintains one PostgreSQL LISTEN connection for `cella_activities`; Stream subscribers register for event routing via in-memory registry
+- **How it works**:
+  - EventBus: Single LISTEN connection, parses NOTIFY payloads, emits typed events (see DEC-20)
+  - Stream Subscribers: Register interest per orgId, receive filtered events
+  - Separation: EventBus handles connection; subscriber routing handles fan-out + permissions
 - **Alternatives rejected**:
   - Per-SSE LISTEN connection: Connection pool exhaustion
   - Polling: 500ms+ latency, N queries per interval
   - External pub/sub (Redis): Additional infrastructure dependency
 - **Trade-off**: In-memory state (lost on restart, but clients reconnect), but O(1) DB connections
 
-#### DEC-11: CDC triggers NOTIFY (not database trigger)
-- **Decision**: CDC worker calls `pg_notify()` after inserting activity, includes entity data from replication row
+#### DEC-11: Unified NOTIFY - CDC extends trigger payload with entity data
+- **Decision**: CDC worker calls `pg_notify('cella_activities', payload)` on the **same channel** as the existing trigger, but with enriched payload that includes entity data from replication row
+- **How it works**:
+  - Existing trigger fires on activities INSERT: sends `{ id, type, entityType, entityId, action, ... }` (activity-only)
+  - CDC worker ALSO calls NOTIFY on same channel: sends `{ ...activity, entity: {...} }` (activity + entity)
+  - EventBus receives both, handles both payload shapes gracefully
+  - For product entities in realtime mode, CDC payload includes entity data (zero extra queries)
+  - For context entities or basic mode, trigger payload is still received (handlers fetch entity if needed)
 - **Alternatives rejected**:
-  - Database trigger on activities: Can't include entity data (trigger only sees activity row)
+  - Dual-channel (separate `cella_sync` channel): Complexity, two LISTEN connections, confusing ownership
+  - Disable trigger when CDC active: Breaks basic mode, complicates deployment
   - API server triggers NOTIFY: API doesn't have entity data, would need extra fetch
-- **Trade-off**: Couples CDC to stream architecture, but eliminates extra DB queries
+- **Trade-off**: Two NOTIFY sources for same channel, but unified consumer and backward compatible
 
 #### DEC-12: LIST endpoints for initial load, stream for deltas
 - **Decision**: React Query prefetches/fetches initial data via REST, stream only delivers changes after subscription starts
@@ -127,12 +155,104 @@ This section captures key architectural decisions, invariants, and constraints t
   - No authorization: Security hole
 - **Trade-off**: Some wasted bytes for filtered types, but simpler server and flexible client
 
-#### DEC-14: SubscriberRegistry keyed by orgId
-- **Decision**: `Map<orgId, Set<Subscriber>>` for O(1) org lookup during broadcast
+#### DEC-14: Stream subscriber routing keyed by orgId
+- **Decision**: Stream subscriber manager uses `Map<orgId, Set<Subscriber>>` for O(1) org lookup during event routing
+- **Note**: This is the routing layer that subscribes to EventBus (see DEC-10, DEC-20), not the LISTEN connection itself
 - **Alternatives rejected**:
   - Flat subscriber list: O(N) scan per event
   - Nested by entity type: Premature optimization, adds complexity
 - **Trade-off**: Memory proportional to active orgs, but fast fan-out
+
+#### DEC-15: Two paths for entity data (live vs catch-up)
+- **Decision**: Live events include entity data from EventBus (which gets it from CDC NOTIFY payload); catch-up queries JOIN activities with entity tables
+- **Why two paths**:
+  - CDC has entity data from PostgreSQL logical replication row
+  - After activity is inserted, entity data is NOT stored in activitiesTable (per DEC-7)
+  - Catch-up queries only have activitiesTable, must JOIN to get entity data
+- **Live path**: `CDC replication row → NOTIFY payload → EventBus → Stream handler → SSE event`
+- **Catch-up path**: `SELECT activities JOIN pages/attachments → API → HTTP response`
+- **Alternatives rejected**:
+  - Store entity snapshot in activitiesTable: Bloats storage, duplicates data
+  - Catch-up refetches via LIST endpoints: Client complexity, permission differences
+  - CDC stores entity then catch-up reads it: Requires separate storage, stale data risk
+- **Trade-off**: Two code paths to maintain, but optimal for both scenarios (no extra queries live, no storage bloat)
+
+#### DEC-16: Unified network status service (replace onlineManager)
+- **Decision**: Create a global network status service that replaces TanStack Query's `onlineManager` with enhanced connectivity detection
+- **Capabilities**:
+  - Browser `navigator.onLine` + online/offline events (basic)
+  - Network Information API for `effectiveType` (slow-2g, 2g, 3g, 4g)
+  - Periodic health check verification (actual server reachability)
+  - Poor connection detection via API response timing
+- **Use cases**:
+  - `isOnline`: Basic online/offline (mutation queue, SSE reconnect)
+  - `isVerified`: Confirmed server reachability (distinguish airplane mode from server down)
+  - `effectiveType`: Adaptive behavior for slow connections (e.g., enter offline mode proactively)
+- **Alternatives rejected**:
+  - Keep using `onlineManager`: No connectivity verification, no slow connection detection
+  - Per-component network detection: Inconsistent state across app
+- **Trade-off**: Health check requests add minimal overhead, but provide reliable connectivity status
+- **Future consideration**: Auto-enable `offlineAccess` mode when `effectiveType` is slow-2g/2g or when API response times exceed threshold
+
+#### DEC-17: sync JSONB on activitiesTable (distinct from changedKeys)
+- **Decision**: Activities table has `sync` JSONB column for sync metadata, separate from existing `changedKeys`
+- **Why separate columns**:
+  - `changedKeys`: CDC-detected array of fields that changed (used by activity feed, all entities)
+  - `sync`: Client-declared sync metadata (used by sync engine, product entities only)
+  - `sync: null` for non-synced entities (organizations, memberships)
+- **Alternatives rejected**:
+  - Merge into `changedKeys`: Conflates detected vs declared data
+  - Three separate columns: Less extensible, doesn't group related data
+- **Trade-off**: Two similar-sounding fields, but semantically distinct with exclusive consumers
+
+#### DEC-18: Data object uses standard entity structure
+- **Decision**: The `data` object in `{ data, sync }` wrapper accepts standard entity update shape; `sync.changedField` declares which single field is tracked for conflict detection
+- **Behavior**:
+  - `data` uses familiar partial update shape (same as context entity endpoints)
+  - `sync.changedField` declares which field is tracked for conflict detection
+  - Only the declared `changedField` is stored in activity and used for conflict detection
+  - Backend MAY validate that only declared field is present in `data` (strict mode)
+- **Why this design**:
+  - Consistent API: Frontend sends familiar partial update objects
+  - Clear contract: `sync.changedField` makes intent explicit
+  - Reusable schemas: `data` shape can share validation with context entities
+- **Alternatives rejected**:
+  - Separate endpoints per field: Explosion of endpoints
+  - Different data structure for synced: Inconsistent API surface
+- **Trade-off**: Client must send multiple mutations for multi-field edits, but conflicts are isolated per-field
+
+#### DEC-19: Sync wrapper is required for product entities (no legacy mode)
+- **Decision**: Product entity mutation endpoints REQUIRE `{ data, sync }` wrapper - the `sync` property is mandatory, not optional
+- **Scope**: Only applies to product entities (pages, attachments) - context entities (organizations, memberships) continue to use simple request bodies
+- **No legacy mode**: All product entity mutations must include sync metadata; there is no "legacy" code path in handlers
+- **Why this design**:
+  - Consistency: All mutations for a product entity are tracked, no gaps in transaction history
+  - Simpler handlers: No detection logic needed, always expect `{ data, sync }`
+  - Reliable conflict detection: Every mutation has a transactionId, expectedTransactionId works reliably
+  - No migration complexity: Product entities are new/upgraded, no legacy clients to support
+- **Alternatives rejected**:
+  - Optional sync wrapper: Creates gaps in transaction tracking, complicates offline queue
+  - Separate synced endpoints: Doubles API surface (see rationale below)
+- **Clarification**: We still avoid separate `/pages/synced` endpoints. The existing endpoint path is used, but request schema is upgraded to require sync wrapper
+
+#### DEC-20: Unified EventBus for internal + sync events
+- **Decision**: The existing EventBus (`backend/src/lib/event-bus.ts`) is upgraded to serve both internal handlers AND sync stream consumers
+- **How it works**:
+  - EventBus LISTENs to `cella_activities` channel (unchanged)
+  - `ActivityEvent` interface extended with optional `entity: Record<string, unknown> | null`
+  - When CDC sends enriched payload, EventBus parses `entity` field
+  - When trigger sends activity-only payload, `entity` is undefined/null
+  - Sync stream handlers use `event.entity` when present; fallback fetch when null
+  - Existing internal handlers continue to work (they don't need entity data)
+- **Benefits**:
+  - Single EventBus serves all realtime needs
+  - No duplicate LISTEN connections
+  - Backward compatible - existing handlers unaffected
+  - Progressive - entity data available when CDC is running
+- **Alternatives rejected**:
+  - Separate SubscriberRegistry for sync: Duplicate infrastructure
+  - New EventBus for sync only: Two LISTEN connections per org
+- **Trade-off**: EventBus becomes more central, but consolidates realtime infrastructure
 
 ---
 
@@ -151,7 +271,7 @@ The sync engine MUST integrate with existing Cella patterns, not create parallel
 | `getContextUserSystemRole()` | `backend/src/lib/context.ts` | Check if user is system admin (bypasses ACLs) |
 
 **Integration rules:**
-- INT-PERM-001: Stream subscriber registry MUST store `memberships` from request context
+- INT-PERM-001: Stream subscriber manager MUST store `memberships` from request context
 - INT-PERM-002: Stream fan-out MUST call `isPermissionAllowed(memberships, 'read', entity)` before sending
 - INT-PERM-003: System admins (`userSystemRole === 'admin'`) MUST bypass entity ACLs (same as REST handlers)
 - INT-PERM-004: Permission logic MUST NOT be duplicated - import from `#/permissions`
@@ -206,9 +326,9 @@ Reference implementations to follow:
 
 | Existing code | Location | How sync engine uses it |
 |---------------|----------|-------------------------|
-| `activitiesTable` | `backend/src/db/schema/activities.ts` | Extended with sync columns, not replaced |
-| CDC worker | `cdc/src/` | Extended to extract sync columns and NOTIFY |
-| `extractActivityContext()` | `cdc/src/utils/` | Extended to read transient sync columns |
+| `activitiesTable` | `backend/src/db/schema/activities.ts` | Extended with sync column, not replaced |
+| CDC worker | `cdc/src/` | Extended to extract sync column and NOTIFY |
+| `extractActivityContext()` | `cdc/src/utils/` | Extended to read transient sync column |
 
 **Integration rules:**
 - INT-CDC-001: Sync columns added to existing `activitiesTable`, not separate table
@@ -224,7 +344,9 @@ Reference implementations to follow:
 | **Transaction ID** | Client-generated unique identifier using Hybrid Logical Clock (format: `{wallTime}.{logical}.{nodeId}`) |
 | **Source ID** | Unique identifier for a browser tab/instance (generated once per page load via `crypto.randomUUID()`) |
 | **Activity** | A row in `activitiesTable` representing an entity change (create/update/delete) |
-| **Transient sync columns** | Columns on entity tables (`sync_transaction_id`, `sync_source_id`, `sync_changed_field`) written by handlers, read by CDC, overwritten on next mutation |
+| **Transient sync column** | JSONB column `sync` on entity tables containing `{ transactionId, sourceId, changedField }`, written by handlers, read by CDC, overwritten on next mutation |
+| **changedKeys** | CDC-detected array of all fields that changed (used by activity feed, all entities. For sync this will only be one per activity) |
+| **sync.changedField** | Client-declared field this mutation targets (used by sync engine, product entities only) |
 | **Upstream-first** | Pattern where clients must pull latest server state before pushing mutations |
 | **Field-level conflict resolution** | Tiered approach: (1) CRDT merge for compatible types (text, counters, sets), (2) LWW for opaque values (enums, FKs), (3) resolution UI when user input needed |
 | **Stream offset** | The `activityId` used for resumption (cursor position in the activity stream) |
@@ -236,29 +358,37 @@ Reference implementations to follow:
 
 ### Backend Handler
 - Validates incoming `{ data, sync }` wrapper
-- Writes transient sync columns to entity row
+- Writes transient `sync` JSONB to entity row
 - Checks field-level conflicts when `expectedTransactionId` provided
 - Implements idempotency via `transactionId` lookup
 - Returns `{ data, sync }` wrapper in response
 
 ### CDC Worker
-- Reads transient sync columns from replicated row
-- Populates `transactionId`, `sourceId`, `changedField` in activity record
-- Calls `pg_notify('activity', payload)` after activity INSERT
+- Reads transient `sync` JSONB from replicated row
+- Extracts `transactionId`, `sourceId`, `changedField` from sync object
+- Calls `pg_notify('cella_activities', payload)` after activity INSERT (same channel as trigger)
 - Includes entity data in NOTIFY payload (from replication row)
 - Handles 8KB NOTIFY limit gracefully
 
-### Subscriber Registry (API Server)
-- Maintains single LISTEN connection for `activity` channel
-- Routes notifications to correct org subscribers
+### EventBus (API Server)
+- Existing `backend/src/lib/event-bus.ts` upgraded for sync
+- Maintains single LISTEN connection for `cella_activities` channel
+- Handles both trigger payloads (activity-only) and CDC payloads (activity + entity)
+- Emits typed `ActivityEvent` with optional `entity` field
+- Serves both internal handlers and sync stream consumers
+
+### Stream Handler (API Server)
+- Subscribes to EventBus for live events
+- Routes events to correct org subscribers
 - Applies permission checks using `isPermissionAllowed()`
+- Uses `event.entity` when present; fallback fetch when null
 - Tracks cursor per subscriber
 - Cleans up on disconnect
 
 ### Stream Endpoint
 - Validates org membership via guard middleware
 - Supports catch-up mode (fetch activities since offset)
-- Supports live SSE mode (register with subscriber registry)
+- Supports live SSE mode (register with stream handler for push events)
 - Uses Cella context helpers for authorization
 
 ### Frontend Mutation Hook
@@ -287,25 +417,29 @@ Reference implementations to follow:
 
 ## Data requirements
 
-### Entity transient sync columns
+### Entity transient sync column
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| DATA-001 | Product entity tables MUST have `sync_transaction_id` VARCHAR(32) column | DB Schema | Schema includes column |
-| DATA-002 | Product entity tables MUST have `sync_source_id` VARCHAR(64) column | DB Schema | Schema includes column |
-| DATA-003 | Product entity tables MUST have `sync_changed_field` VARCHAR(64) column | DB Schema | Schema includes column |
-| DATA-004 | Transient sync columns MUST be nullable | DB Schema | Column allows NULL |
-| DATA-005 | Transient sync columns MUST NOT be exposed in API responses (data portion) | Backend Handler | Response shape validation |
+| DATA-001 | Product entity tables MUST have `sync` JSONB column | DB Schema | Schema includes column |
+| DATA-002 | `sync` column MUST contain `transactionId` (string, max 32 chars) | DB Schema | Valid JSON structure |
+| DATA-003 | `sync` column MUST contain `sourceId` (string, max 64 chars) | DB Schema | Valid JSON structure |
+| DATA-004 | `sync` column MUST contain `changedField` (string or null, max 64 chars) | DB Schema | Valid JSON structure |
+| DATA-005 | `sync` column MUST be nullable (null when no sync metadata) | DB Schema | Column allows NULL |
+| DATA-006 | `sync` column MUST NOT be exposed in API responses (data portion) | Backend Handler | Response shape validation |
 
 ### Activities table extensions
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| DATA-010 | `activitiesTable` MUST have `transaction_id` VARCHAR(32) column | DB Schema | Schema includes column |
-| DATA-011 | `activitiesTable` MUST have `source_id` VARCHAR(64) column | DB Schema | Schema includes column |
-| DATA-012 | `activitiesTable` MUST have `changed_field` VARCHAR(64) column | DB Schema | Schema includes column |
-| DATA-013 | `activitiesTable` MUST have index on `transaction_id` | DB Schema | Index exists |
-| DATA-014 | `activitiesTable` MUST have composite index on `(entity_type, entity_id, changed_field)` | DB Schema | Index exists |
+| DATA-010 | `activitiesTable` MUST have `sync` JSONB column | DB Schema | Schema includes column |
+| DATA-011 | `sync` column MUST contain `transactionId` (string, max 32 chars) when present | DB Schema | Valid JSON structure |
+| DATA-012 | `sync` column MUST contain `sourceId` (string, max 64 chars) when present | DB Schema | Valid JSON structure |
+| DATA-013 | `sync` column MUST contain `changedField` (string or null, max 64 chars) when present | DB Schema | Valid JSON structure |
+| DATA-014 | `sync` column MUST be null for non-synced entities (organizations, etc.) | DB Schema | Null for context entities |
+| DATA-015 | `activitiesTable` MUST have expression index on `(sync->>'transactionId')` | DB Schema | Index exists |
+| DATA-016 | `activitiesTable` MUST have composite expression index for field conflict queries | DB Schema | Index exists |
+| DATA-017 | Existing `changedKeys` column MUST remain unchanged (CDC-detected changes) | DB Schema | Column preserved |
 
 ### Transaction ID format (hybrid logical clock)
 
@@ -327,13 +461,21 @@ Reference implementations to follow:
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| API-001 | Mutation requests MUST accept `{ data, sync }` wrapper | Backend Route | OpenAPI schema validation |
-| API-002 | `sync.transactionId` MUST be required for tracked entities | Backend Route | Validation rejects missing |
-| API-003 | `sync.sourceId` MUST be required for tracked entities | Backend Route | Validation rejects missing |
-| API-004 | `sync.changedField` MUST be required for update mutations | Backend Route | Validation rejects missing |
+| API-001 | Product entity mutation requests MUST use `{ data, sync }` wrapper | Backend Route | OpenAPI schema validation |
+| API-001a | `sync` property MUST be required (not optional) for product entities | Backend Route | Schema rejects missing sync |
+| API-001b | Context entity endpoints (organizations, etc.) MUST NOT use sync wrapper | Backend Route | Context routes use simple body |
+| API-001c | No separate "synced" endpoints SHOULD be created (e.g., no `/pages/synced`) | Backend Route | Route audit finds no `/synced` paths |
+| API-002 | `sync.transactionId` MUST be required | Backend Route | Validation rejects missing |
+| API-003 | `sync.sourceId` MUST be required | Backend Route | Validation rejects missing |
+| API-004 | `sync.changedField` MUST be a string for update mutations | Backend Route | String required for updates |
+| API-004a | `sync.changedField` MUST be null for create mutations | Backend Route | Null for creates |
+| API-004b | `sync.changedField` MUST be null for delete mutations | Backend Route | Null for deletes |
+| API-004c | `data` object SHOULD contain only the field declared in `sync.changedField` | Backend Handler | Validation optional (strict mode) |
 | API-005 | `sync.expectedTransactionId` MUST be optional | Backend Route | Validation accepts null/undefined |
 | API-006 | Mutation responses MUST return `{ data, sync }` wrapper | Backend Handler | Response shape validation |
 | API-007 | Response `sync.transactionId` MUST echo request's transactionId | Backend Handler | Echo verification |
+
+> **Data object shape**: The `data` object uses standard entity update shape (same structure as context entity endpoints). This allows schema reuse and familiar patterns. The `sync.changedField` declaration is the source of truth for conflict detection - only that field is tracked, even if `data` contains additional fields.
 
 ### Conflict response
 
@@ -376,9 +518,9 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| CDC-001 | CDC MUST read `sync_transaction_id` from replicated row | CDC Worker | Activity has transactionId |
-| CDC-002 | CDC MUST read `sync_source_id` from replicated row | CDC Worker | Activity has sourceId |
-| CDC-003 | CDC MUST read `sync_changed_field` from replicated row | CDC Worker | Activity has changedField |
+| CDC-001 | CDC MUST read `sync` JSONB from replicated row | CDC Worker | Activity has sync data |
+| CDC-002 | CDC MUST store sync metadata as `sync` JSONB in activity record | CDC Worker | Activity.sync contains metadata |
+| CDC-003 | CDC MUST set `sync: null` for non-synced entities | CDC Worker | Context entity has null sync |
 | CDC-004 | For INSERT actions, `changedField` MAY be null or '*' | CDC Worker | Insert activity validation |
 | CDC-005 | For DELETE actions, `changedField` MAY be null or '*' | CDC Worker | Delete activity validation |
 
@@ -397,6 +539,30 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | CDC-018 | NOTIFY payload MUST include `changedField` (nullable) | CDC Worker | Payload structure |
 | CDC-019 | NOTIFY payload MUST include `entity` data from replication row | CDC Worker | Payload includes entity |
 | CDC-020 | If payload exceeds 7500 bytes, `entity` MUST be set to null | CDC Worker | Large entity handling |
+| CDC-021 | CDC MUST call NOTIFY on same channel as trigger (`cella_activities`) | CDC Worker | Channel name matches |
+
+---
+
+## EventBus requirements
+
+The existing EventBus (`backend/src/lib/event-bus.ts`) is upgraded to handle both internal activity events and sync stream delivery. See DEC-20.
+
+### Payload handling
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| EB-001 | EventBus MUST accept payloads with or without `entity` field | EventBus | Both payload types parsed |
+| EB-002 | When payload includes `entity`, it MUST be available on `ActivityEvent` | EventBus | Entity accessible |
+| EB-003 | When payload has no `entity`, `event.entity` MUST be undefined or null | EventBus | Graceful fallback |
+| EB-004 | EventBus MUST NOT break existing handlers that ignore `entity` | EventBus | Backward compatibility |
+
+### Connection management
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| EB-010 | EventBus MUST maintain single LISTEN connection for `cella_activities` | EventBus | Connection count = 1 |
+| EB-011 | EventBus MUST reconnect on connection loss | EventBus | Reconnection test |
+| EB-012 | EventBus MUST emit typed events to subscribers | EventBus | Type safety |
 
 ---
 
@@ -415,16 +581,18 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | STREAM-007 | `entityTypes` param MUST filter to specified types | Stream Handler | Filtering works |
 | STREAM-008 | Catch-up MUST complete before registering for live events | Stream Handler | Order of operations |
 
-### Subscriber registry
+### Stream subscriber routing
+
+The stream subscriber manager routes EventBus events to SSE connections. It subscribes to EventBus (see EB-010) rather than maintaining its own LISTEN connection.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| STREAM-010 | Registry MUST maintain single LISTEN connection | Subscriber Registry | Connection count = 1 |
-| STREAM-011 | Registry MUST route notifications by `orgId` | Subscriber Registry | Cross-org isolation |
-| STREAM-012 | Registry MUST skip events with `activityId <= subscriber.cursor` | Subscriber Registry | No duplicate delivery |
-| STREAM-013 | Registry MUST apply `entityTypes` filter per subscriber | Subscriber Registry | Type filtering |
-| STREAM-014 | Registry MUST call `isPermissionAllowed()` before sending | Subscriber Registry | Permission denied = not sent |
-| STREAM-015 | Registry MUST clean up subscriber on disconnect | Subscriber Registry | Memory cleanup |
+| STREAM-010 | ~~Registry MUST maintain single LISTEN connection~~ → Moved to EB-010 | EventBus | Connection count = 1 |
+| STREAM-011 | Subscriber manager MUST route events by `orgId` | Stream Subscriber Manager | Cross-org isolation |
+| STREAM-012 | Subscriber manager MUST skip events with `activityId <= subscriber.cursor` | Stream Subscriber Manager | No duplicate delivery |
+| STREAM-013 | Subscriber manager MUST apply `entityTypes` filter per subscriber | Stream Subscriber Manager | Type filtering |
+| STREAM-014 | Subscriber manager MUST call `isPermissionAllowed()` before sending | Stream Subscriber Manager | Permission denied = not sent |
+| STREAM-015 | Subscriber manager MUST clean up subscriber on disconnect | Stream Subscriber Manager | Memory cleanup |
 
 ### Stream event format
 
@@ -439,6 +607,30 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | STREAM-026 | Event MUST include `sync.activityId` | Stream Handler | Event structure |
 | STREAM-027 | SSE `id` field MUST equal `activityId` (for resumption) | Stream Handler | SSE id field |
 
+### Catch-up entity fetching
+
+Catch-up queries must fetch entity data by JOINing activities with entity tables (since NOTIFY payload is not available for historical events). See DEC-15 for rationale.
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| STREAM-030 | Catch-up query MUST JOIN activities with entity tables to get entity data | Activity Fetcher | Query includes entity |
+| STREAM-031 | Entity data MUST be included in catch-up response (`data` field) | Activity Fetcher | Response has entity |
+| STREAM-032 | For delete events, `data` MUST be null (entity no longer exists) | Activity Fetcher | Delete handling |
+| STREAM-033 | If entity was deleted after activity, `data` SHOULD be null | Activity Fetcher | Stale delete handling |
+| STREAM-034 | Catch-up response format MUST match live event format | Activity Fetcher | Consistent structure |
+| STREAM-035 | Catch-up MUST use same permission filtering as live events | Activity Fetcher | Consistent authorization |
+
+### Live event entity data
+
+Live events receive entity data from the unified EventBus, which gets it from CDC NOTIFY payload (zero extra queries for product entities in realtime mode). See DEC-11, DEC-15, and DEC-20 for rationale.
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| STREAM-040 | Live event MUST use entity data from EventBus when available | Stream Handler | Entity from EventBus |
+| STREAM-041 | If EventBus event has no entity (trigger-only or oversized), handler MUST fetch entity | Stream Handler | Fallback fetch |
+| STREAM-042 | Fallback fetch MUST query entity table by `entityId` | Stream Handler | Correct fetch |
+| STREAM-043 | If fallback fetch fails (entity deleted), event MUST still be sent with `data: null` | Stream Handler | Graceful degradation |
+
 ---
 
 ## Frontend mutation requirements
@@ -451,6 +643,7 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | FE-MUT-002 | `transactionId` MUST be passed to API in `sync` wrapper | Mutation Hook | API receives transactionId |
 | FE-MUT-003 | `sourceId` MUST be module-level constant (same for all mutations in tab) | Mutation Hook | sourceId consistency |
 | FE-MUT-004 | Update mutations MUST include `changedField` in sync | Mutation Hook | Field tracking |
+| FE-MUT-005 | Delete mutations MUST generate `transactionId` (with `changedField: null`) | Mutation Hook | Delete has transactionId |
 
 ### Optimistic updates
 
@@ -509,6 +702,21 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 
 ## Offline requirements
 
+### Network status detection
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| NET-001 | Network status service MUST replace `onlineManager` from TanStack Query | Network Service | Single source of truth |
+| NET-002 | `isOnline` MUST reflect browser's `navigator.onLine` status | Network Service | Basic detection works |
+| NET-003 | Service MUST subscribe to browser `online`/`offline` events | Network Service | Events update state |
+| NET-004 | `isVerified` MUST reflect actual server reachability (via health check) | Network Service | Connectivity verified |
+| NET-005 | Health check interval SHOULD be configurable (default: 30s when online) | Network Service | Interval configurable |
+| NET-006 | Health check SHOULD use `/api/health` HEAD request | Network Service | Minimal overhead |
+| NET-007 | `latency` SHOULD be `'high'` or `'low'` based on health check response time | Network Service | Latency classification |
+| NET-008 | Service SHOULD be a Zustand store (not just a hook) for global access | Network Service | Store pattern |
+| NET-009 | Existing `useOnlineManager` hook MUST be deprecated and migrated | Network Service | No duplicate hooks |
+| NET-010 | Sync engine components MUST use network status service (not `onlineManager`) | All Sync Components | Consistent usage |
+
 ### Mutation outbox
 
 | Req ID | Requirement | Owner | Test Case |
@@ -517,7 +725,7 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | OFFLINE-002 | Outbox entries MUST include `entityType`, `entityId`, `field` | Mutation Outbox | Entry structure |
 | OFFLINE-003 | Outbox entries MUST include `transactionId` (same across retries) | Mutation Outbox | Idempotency key |
 | OFFLINE-004 | Outbox entries MUST include `expectedTransactionId` | Mutation Outbox | Conflict detection |
-| OFFLINE-005 | Same-field mutations MUST squash (keep latest value only) | Mutation Outbox | Squashing behavior |
+| OFFLINE-005 | Same-field mutations MUST squash (keep latest value AND latest transactionId) | Mutation Outbox | Squashing behavior |
 | OFFLINE-006 | Different-field mutations MUST queue separately | Mutation Outbox | No cross-field squash |
 
 ### Upstream-first sync
@@ -578,16 +786,16 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | SEC-001 | Stream endpoint MUST validate org membership before registration | Stream Handler | Non-member rejected |
-| SEC-002 | `isPermissionAllowed()` MUST be called for each entity in broadcast | Subscriber Registry | Permission check |
-| SEC-003 | Subscribers MUST store `memberships` for permission checks | Subscriber Registry | Membership stored |
-| SEC-004 | System admins (`userSystemRole === 'admin'`) MUST bypass entity ACLs | Subscriber Registry | Admin access |
-| SEC-005 | Permission check MUST use same logic as REST handlers | Subscriber Registry | Consistent authorization |
+| SEC-002 | `isPermissionAllowed()` MUST be called for each entity in broadcast | Stream Subscriber Manager | Permission check |
+| SEC-003 | Subscribers MUST store `memberships` for permission checks | Stream Subscriber Manager | Membership stored |
+| SEC-004 | System admins (`userSystemRole === 'admin'`) MUST bypass entity ACLs | Stream Subscriber Manager | Admin access |
+| SEC-005 | Permission check MUST use same logic as REST handlers | Stream Subscriber Manager | Consistent authorization |
 
 ### Data isolation
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| SEC-010 | NOTIFY payloads MUST NOT leak across organizations | Subscriber Registry | Org isolation |
+| SEC-010 | Events MUST only be routed to subscribers of the matching org | Stream Subscriber Manager | Org isolation |
 | SEC-011 | Stream MUST only deliver events for subscribed org | Stream Handler | Cross-org blocked |
 | SEC-012 | Entity data in NOTIFY MUST NOT include sensitive computed fields | CDC Worker | No password hashes etc |
 
@@ -607,10 +815,10 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| PERF-010 | LISTEN connection count MUST be 1 per API server instance | Subscriber Registry | Connection count |
-| PERF-011 | Fan-out MUST be O(subscribers per org), not O(total subscribers) | Subscriber Registry | Lookup efficiency |
-| PERF-012 | Entity fetch SHOULD be avoided when NOTIFY includes entity data | Subscriber Registry | Zero extra queries |
-| PERF-013 | Oversized entity fallback MUST fetch at most 1 entity per event | Subscriber Registry | Bounded queries |
+| PERF-010 | LISTEN connection count MUST be 1 per API server instance | EventBus | Connection count |
+| PERF-011 | Fan-out MUST be O(subscribers per org), not O(total subscribers) | Stream Subscriber Manager | Lookup efficiency |
+| PERF-012 | Entity fetch SHOULD be avoided when EventBus event includes entity | Stream Subscriber Manager | Zero extra queries |
+| PERF-013 | Oversized entity fallback MUST fetch at most 1 entity per event | Stream Subscriber Manager | Bounded queries |
 
 ### Resource limits
 
@@ -624,27 +832,30 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 
 ## Appendix: Requirement cross-reference
 
-### By implementation phase
+### By component
 
-| Phase | Requirements |
-|-------|--------------|
-| Phase 1: Schema | DATA-001 to DATA-014 |
-| Phase 2: Frontend Infra | DATA-020 to DATA-026, FE-MUT-001 to FE-MUT-004, INT-QUERY-001 to INT-QUERY-005 |
-| Phase 3: Mutation Hooks | FE-MUT-010 to FE-MUT-024, API-001 to API-022, INT-MUT-001 to INT-MUT-004 |
-| Phase 4: Backend Handlers | API-001 to API-022, CONFLICT-001 to CONFLICT-005, INT-CTX-001 to INT-CTX-003 |
-| Phase 5: Stream | CDC-001 to CDC-020, STREAM-001 to STREAM-027, SEC-001 to SEC-012, INT-PERM-001 to INT-PERM-004, INT-CDC-001 to INT-CDC-003 |
-| Phase 6: Offline + Merge | OFFLINE-001 to OFFLINE-024, CONFLICT-010 to CONFLICT-013, MERGE-001 to MERGE-007 |
-| Phase 7: Multi-Tab | TAB-001 to TAB-022 |
-| Future: Backend Enforcement | API-030 to API-037 |
+| Component | Requirements |
+|-----------|--------------|
+| **Schema & Data** | DATA-001 to DATA-026 |
+| **CDC Worker** | CDC-001 to CDC-020, INT-CDC-001 to INT-CDC-003 |
+| **Stream Endpoint** | STREAM-001 to STREAM-043, INT-PERM-001 to INT-PERM-004 |
+| **Backend Handlers** | API-001 to API-037, CONFLICT-001 to CONFLICT-005, INT-CTX-001 to INT-CTX-003 |
+| **Frontend: Sync Primitives** | DATA-020 to DATA-026, NET-001 to NET-010, INT-QUERY-001 to INT-QUERY-005 |
+| **Frontend: Mutation Hooks** | FE-MUT-001 to FE-MUT-024, INT-MUT-001 to INT-MUT-004 |
+| **Frontend: Stream Hook** | STREAM-020 to STREAM-027 (event format) |
+| **Offline & Conflicts** | NET-001 to NET-010, OFFLINE-001 to OFFLINE-024, CONFLICT-010 to CONFLICT-013, MERGE-001 to MERGE-007 |
+| **Multi-Tab Coordination** | TAB-001 to TAB-022 |
+| **Security** | SEC-001 to SEC-012 |
+| **Performance** | PERF-001 to PERF-022 |
 
 ### By test type
 
 | Test Type | Requirements |
 |-----------|--------------|
 | Unit Tests | DATA-020 to DATA-026, FE-MUT-001 to FE-MUT-004, CONFLICT-010 to CONFLICT-013, MERGE-001 to MERGE-007 |
-| Integration Tests | API-001 to API-037, CDC-001 to CDC-020, STREAM-001 to STREAM-027 |
+| Integration Tests | API-001 to API-037, CDC-001 to CDC-020, STREAM-001 to STREAM-043 |
 | E2E Tests | PERF-001 to PERF-002, OFFLINE-010 to OFFLINE-013, TAB-001 to TAB-022 |
-| Schema Tests | DATA-001 to DATA-014 |
+| Schema Tests | DATA-001 to DATA-015 |
 | Security Tests | SEC-001 to SEC-012 |
 
 ---

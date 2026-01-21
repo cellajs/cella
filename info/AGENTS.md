@@ -56,6 +56,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **Entities**: Entities are categorized into `ContextEntityType` (has memberships, like organizations) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md` for details.
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
 - **Debug Mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env` to enable debug features:
+- **Stores, no Providers**: The code base favours Stores over react Provider pattern due to DX and render performance.
 
 ## Coding Style & Naming Conventions
 - Formatter/Linter: Biome (see `biome.json`). Run it with `pnpm lint` or `pnpm lint:fix`.
