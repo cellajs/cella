@@ -1,6 +1,6 @@
+import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from '@cella/data-grid';
 import type { QueryKey } from '@tanstack/react-query';
 import type { Dispatch, SetStateAction } from 'react';
-import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from 'react-data-grid';
 import { ApiError } from '~/api.gen';
 
 export type BaseTableSearchVariables<T> = T & {

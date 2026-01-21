@@ -338,6 +338,8 @@
   "order": "Order",
   "organization": "Organization",
   "organization_other": "Organizations",
+  "selection_limit": "Selection limited to {{max}} items",
+  "selection_limit_all": "Can't select all. Limit is {{max}} items",
   "organizations": "Organizations",
   "overview_view": "Overview",
   "page": "Page",

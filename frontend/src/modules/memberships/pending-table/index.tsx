@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { BirdIcon } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { zGetPendingMembershipsData } from '~/api.gen/zod.gen';
@@ -16,6 +16,9 @@ import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
 import type { PendingMembership } from '~/modules/memberships/types';
 
 const LIMIT = appConfig.requestLimits.pendingMemberships;
+
+/** Stable row key getter function - defined outside component to prevent re-renders */
+const rowKeyGetter = (row: PendingMembership) => row.id;
 
 const pendingMembershipsSearchSchema = zGetPendingMembershipsData.shape.query.pick({ sort: true, order: true });
 
@@ -36,6 +39,9 @@ export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps
   // Build columns
   const [columns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+
+  // Memoize visible columns to prevent recalculation on every render
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = pendingMembershipsQueryOptions({
     idOrSlug: entity.slug,
@@ -71,9 +77,9 @@ export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps
         {...{
           rows,
           rowHeight: 52,
-          rowKeyGetter: (row) => row.id,
-          columns: columns.filter((column) => column.visible),
-          enableVirtualization: false,
+          rowKeyGetter,
+          columns: visibleColumns,
+          enableVirtualization: true,
           limit,
           error,
           isLoading,

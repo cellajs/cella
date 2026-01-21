@@ -1,8 +1,8 @@
+import type { RowsChangeData } from '@cella/data-grid';
 import { onlineManager, useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { BirdIcon } from 'lucide-react';
-import { useCallback, useState } from 'react';
-import type { RowsChangeData } from 'react-data-grid';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { membershipInvite, type Organization } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
@@ -19,6 +19,9 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { useUserStore } from '~/store/user';
 
 const LIMIT = appConfig.requestLimits.organizations;
+
+/** Stable row key getter function - defined outside component to prevent re-renders */
+const rowKeyGetter = (row: Organization) => row.id;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
@@ -108,9 +111,19 @@ const OrganizationsTable = () => {
     await fetchNextPage();
   }, [hasNextPage, isLoading, isFetching]);
 
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
+  // Memoize callback to prevent unnecessary re-renders
+  const onSelectedRowsChange = useCallback(
+    (value: Set<string>) => {
+      if (rows) setSelected(rows.filter((row) => value.has(row.id)));
+    },
+    [rows],
+  );
+
+  // Memoize the Set of selected row IDs to prevent unnecessary re-renders
+  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+
+  // Memoize visible columns to prevent recalculation on every render
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   return (
     <div className="flex flex-col gap-4 h-full" data-is-compact={isCompact}>
@@ -130,9 +143,9 @@ const OrganizationsTable = () => {
           rows,
           rowHeight: 52,
           onRowsChange,
-          rowKeyGetter: (row) => row.id,
-          columns: columns.filter((column) => column.visible),
-          enableVirtualization: false,
+          rowKeyGetter,
+          columns: visibleColumns,
+          enableVirtualization: true,
           limit,
           error,
           isLoading,
@@ -140,7 +153,7 @@ const OrganizationsTable = () => {
           isFiltered: !!q,
           hasNextPage,
           fetchMore,
-          selectedRows: new Set(selected.map((s) => s.id)),
+          selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,

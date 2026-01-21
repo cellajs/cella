@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { DataTable } from '~/modules/common/data-table';
@@ -8,11 +9,17 @@ import { useColumns } from '~/modules/me/invitations-table/invitations-columns';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { Invitation } from '~/modules/me/types';
 
+/** Stable row key getter function - defined outside component to prevent re-renders */
+const rowKeyGetter = (row: Invitation) => row.inactiveMembership.id;
+
 const InvitationsTable = () => {
   const { t } = useTranslation();
 
   // Build columns
   const columns = useColumns();
+
+  // Memoize visible columns to prevent recalculation on every render
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const queryOptions = meInvitationsQueryOptions();
   const { data, isLoading, isFetching, error } = useQuery({
@@ -65,9 +72,9 @@ const InvitationsTable = () => {
             rows: data?.items,
             rowHeight: 52,
             // onRowsChange,
-            rowKeyGetter: (row) => row.inactiveMembership.id,
-            columns: columns.filter((column) => column.visible),
-            enableVirtualization: false,
+            rowKeyGetter,
+            columns: visibleColumns,
+            enableVirtualization: true,
             error,
             isLoading,
             isFetching,

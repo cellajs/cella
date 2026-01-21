@@ -10,10 +10,10 @@ import StepperFooter from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/utils/flatten';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
@@ -36,7 +36,7 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   // Fetch organizations to determine if user has created any
-  const orgQuery = useInfiniteQuery(getContextEntityTypeToListQueries().organization({ userId: user.id }));
+  const orgQuery = useInfiniteQuery(organizationsQueryOptions({ userId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganizations = organizations.length > 0;
 

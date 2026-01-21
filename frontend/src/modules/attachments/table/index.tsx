@@ -1,8 +1,8 @@
+import type { RowsChangeData } from '@cella/data-grid';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { PaperclipIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import type { RowsChangeData } from 'react-data-grid';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
@@ -16,6 +16,9 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ContextEntityData } from '~/modules/entities/types';
 
 const LIMIT = appConfig.requestLimits.attachments;
+
+/** Stable row key getter function - defined outside component to prevent re-renders */
+const rowKeyGetter = (row: Attachment) => row.id;
 
 export interface AttachmentsTableProps {
   entity: ContextEntityData;
@@ -91,11 +94,11 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     [rows],
   );
 
-  const rowKeyGetter = (row: Attachment) => row.id;
+  // Memoize the Set of selected row IDs to prevent unnecessary re-renders
+  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const selectedRows = new Set(selected.map((s) => s.id));
-
-  const visibleColumns = columns.filter((column) => column.visible);
+  // Memoize visible columns to prevent recalculation on every render
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   const NoRowsComponent = (
     <ContentPlaceholder
@@ -130,7 +133,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           onRowsChange,
           rowKeyGetter,
           columns: visibleColumns,
-          enableVirtualization: false,
+          enableVirtualization: true,
           limit,
           error,
           isLoading,
@@ -138,7 +141,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           isFiltered: !!q,
           hasNextPage,
           fetchMore,
-          selectedRows,
+          selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,

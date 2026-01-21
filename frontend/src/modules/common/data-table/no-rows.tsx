@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react';
-import 'react-data-grid/lib/styles.css';
+import '@cella/data-grid/styles.css';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import '~/modules/common/data-table/style.css';

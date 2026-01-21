@@ -122,7 +122,7 @@
     "player.style": "^0.3.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
-    "react-data-grid": "7.0.0-beta.59",
+    "@cella/data-grid": "workspace:*",
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.3",
     "react-error-boundary": "^6.1.0",

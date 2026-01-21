@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -10,6 +10,9 @@ import { useColumns } from '~/modules/users/table/users-columns';
 import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modules/users/types';
 
 const LIMIT = appConfig.requestLimits.users;
+
+/** Stable row key getter function - defined outside component to prevent re-renders */
+const rowKeyGetter = (row: UserWithRoleAndMemberships) => row.id;
 
 const UsersTable = () => {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/appLayout/system/users' });
@@ -42,9 +45,19 @@ const UsersTable = () => {
     await fetchNextPage();
   }, [hasNextPage, isLoading, isFetching]);
 
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
+  // Memoize callback to prevent unnecessary re-renders
+  const onSelectedRowsChange = useCallback(
+    (value: Set<string>) => {
+      if (rows) setSelected(rows.filter((row) => value.has(row.id)));
+    },
+    [rows],
+  );
+
+  // Memoize the Set of selected row IDs to prevent unnecessary re-renders
+  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+
+  // Memoize visible columns to prevent recalculation on every render
+  const visibleColumns = useMemo(() => columns.filter((column) => column.visible), [columns]);
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -61,9 +74,9 @@ const UsersTable = () => {
         {...{
           rows,
           rowHeight: 52,
-          rowKeyGetter: (row) => row.id,
-          columns: columns.filter((column) => column.visible),
-          enableVirtualization: false,
+          rowKeyGetter,
+          columns: visibleColumns,
+          enableVirtualization: true,
           limit,
           error,
           isLoading,
@@ -71,7 +84,7 @@ const UsersTable = () => {
           isFiltered: role !== undefined || !!q,
           hasNextPage,
           fetchMore,
-          selectedRows: new Set(selected.map((s) => s.id)),
+          selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,

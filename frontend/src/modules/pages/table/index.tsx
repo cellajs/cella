@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Page } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
@@ -12,6 +12,9 @@ import { pagesLimit, pagesQueryOptions } from '~/modules/pages/query';
 import type { PagesRouteSearchParams } from '~/modules/pages/types';
 import { PagesTableBar } from './pages-bar';
 import { usePagesTableColumns } from './pages-columns';
+
+/** Stable row key getter function - defined outside component to prevent re-renders */
+const rowKeyGetter = (row: Page) => row.id;
 
 /**
  * Pages table component for listing pages in a data table.
@@ -63,6 +66,9 @@ const PagesTable = () => {
     [rows],
   );
 
+  // Memoize the Set of selected row IDs to prevent unnecessary re-renders
+  const selectedRowIds = useMemo(() => new Set(selected.map((row) => row.id)), [selected]);
+
   const clearSelection = () => setSelected([]);
 
   return (
@@ -81,9 +87,9 @@ const PagesTable = () => {
       <DataTable
         rows={rows}
         rowHeight={52}
-        rowKeyGetter={(r) => r.id}
+        rowKeyGetter={rowKeyGetter}
         columns={visibleColumns}
-        enableVirtualization={false}
+        enableVirtualization={true}
         limit={limit}
         error={error}
         isLoading={isLoading}
@@ -91,7 +97,7 @@ const PagesTable = () => {
         isFiltered={!!q}
         hasNextPage={hasNextPage}
         fetchMore={fetchMore}
-        selectedRows={new Set(selected.map((row) => row.id))}
+        selectedRows={selectedRowIds}
         onSelectedRowsChange={onSelectedRowsChange}
         sortColumns={sortColumns}
         onSortColumnsChange={setSortColumns}

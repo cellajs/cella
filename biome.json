@@ -8,6 +8,7 @@
       "frontend/vite/**",
       "cli/sync/src/**",
       "cli/sync/tests/**",
+      "packages/data-grid/src/**",
       "src/**",
       "locales",
       "frontend/openapi-ts.config.ts"

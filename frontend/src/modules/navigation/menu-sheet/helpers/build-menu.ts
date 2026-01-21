@@ -23,7 +23,7 @@ const baseMenu = buildInitialMenu(appConfig.menuStructure);
  * @returns The constructed user menu with items grouped by entity type
  */
 export function buildMenu(
-  byType: Map<ContextEntityType, UserMenuItem[]>,
+  byType: Map<MenuSection['entityType'] | MenuSection['subentityType'], UserMenuItem[]>,
   menuStructure: MenuSection[],
   opts?: { detailedMenu?: boolean },
 ) {

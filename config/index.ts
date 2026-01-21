@@ -26,8 +26,8 @@ export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
  * Menu sections in the menu structure
  */
 export type MenuSection = {
-  entityType: ContextEntityType;
-  subentityType: ContextEntityType | null;
+  entityType: typeof appConfig.menuStructure[number]['entityType'];
+  subentityType: typeof appConfig.menuStructure[number]['subentityType'] | null;
 };
 
 /**
