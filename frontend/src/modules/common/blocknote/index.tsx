@@ -45,36 +45,36 @@ import { useUIStore } from '~/store/ui';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
-      type: 'edit' | 'create';
-      updateData: (strBlocks: string) => void;
-      autoFocus?: boolean;
-      collaborative: true;
-      user: {
-        id?: string;
-        name: string;
-        color?: string;
-      };
-    })
+    type: 'edit' | 'create';
+    updateData: (strBlocks: string) => void;
+    autoFocus?: boolean;
+    collaborative: true;
+    user: {
+      id?: string;
+      name: string;
+      color?: string;
+    };
+  })
   | (CommonBlockNoteProps & {
-      type: 'edit' | 'create';
-      updateData: (strBlocks: string) => void;
-      autoFocus?: boolean;
-      collaborative?: false | undefined;
-      user?: never;
-    })
+    type: 'edit' | 'create';
+    updateData: (strBlocks: string) => void;
+    autoFocus?: boolean;
+    collaborative?: false | undefined;
+    user?: never;
+  })
   | (CommonBlockNoteProps & {
-      type: 'preview';
-      editable?: never;
-      updateData?: never;
-      autoFocus?: never;
-      onEscapeClick?: never;
-      onEnterClick?: never;
-      onBeforeLoad?: never;
-      filePanel?: never;
-      baseFilePanelProps?: never;
-      collaborative?: never;
-      user?: never;
-    });
+    type: 'preview';
+    editable?: never;
+    updateData?: never;
+    autoFocus?: never;
+    onEscapeClick?: never;
+    onEnterClick?: never;
+    onBeforeLoad?: never;
+    filePanel?: never;
+    baseFilePanelProps?: never;
+    collaborative?: never;
+    user?: never;
+  });
 
 function BlockNote({
   id,
@@ -120,19 +120,19 @@ function BlockNote({
 
   const collaborationConfig = collaborative
     ? {
-        // The Yjs Provider responsible for transporting updates:
-        provider: new WebrtcProvider(id, new Y.Doc()),
-        // Where to store BlockNote data in the Y.Doc:
-        fragment: new Y.Doc().getXmlFragment('document-store'),
-        // Information (name and color) for this user:
-        user: {
-          name: user?.name || 'Anonymous User',
-          color: user?.color || getRandomColor(),
-        },
-        // When to show user labels on the collaboration cursor. Set by default to
-        // "activity" (show when the cursor moves), but can also be set to "always".
-        showCursorLabels: 'activity' as const,
-      }
+      // The Yjs Provider responsible for transporting updates:
+      provider: new WebrtcProvider(id, new Y.Doc()),
+      // Where to store BlockNote data in the Y.Doc:
+      fragment: new Y.Doc().getXmlFragment('document-store'),
+      // Information (name and color) for this user:
+      user: {
+        name: user?.name || 'Anonymous User',
+        color: user?.color || getRandomColor(),
+      },
+      // When to show user labels on the collaboration cursor. Set by default to
+      // "activity" (show when the cursor moves), but can also be set to "always".
+      showCursorLabels: 'activity' as const,
+    }
     : undefined;
 
   const editor = useCreateBlockNote({

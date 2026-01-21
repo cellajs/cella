@@ -165,9 +165,9 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                       className={cn(
                         'size-4 ml-auto transition-transform duration-200 opacity-40',
                         isListMode &&
-                          expandedSection === 'operations' &&
-                          forcedCollapsed !== 'operations' &&
-                          'rotate-180',
+                        expandedSection === 'operations' &&
+                        forcedCollapsed !== 'operations' &&
+                        'rotate-180',
                       )}
                     />
                   </Link>

@@ -79,7 +79,7 @@ export function useBreakpoints(
 ) {
   // useSyncExternalStore provides tear-free reads from external state
   const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => {},
+    enableReactivity ? subscribe : () => () => { },
     getSnapshot,
     getServerSnapshot,
   );

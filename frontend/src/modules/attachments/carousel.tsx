@@ -38,13 +38,13 @@ interface CarouselPropsBase {
 
 type CarouselProps =
   | (CarouselPropsBase & {
-      isDialog: true;
-      saveInSearchParams: boolean; // Required when isDialog is true
-    })
+    isDialog: true;
+    saveInSearchParams: boolean; // Required when isDialog is true
+  })
   | (CarouselPropsBase & {
-      isDialog?: false;
-      saveInSearchParams?: never; // Disallowed when isDialog is false
-    });
+    isDialog?: false;
+    saveInSearchParams?: never; // Disallowed when isDialog is false
+  });
 
 function AttachmentsCarousel({
   items,

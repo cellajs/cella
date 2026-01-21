@@ -57,7 +57,7 @@ function HorizontalStepBase(props: StepSharedProps, ref: React.ForwardedRef<HTML
         'data-[completed=true]:not-last:after:bg-primary',
         'data-[invalid=true]:not-last:after:bg-destructive',
         variant === 'circle-alt' &&
-          'justify-start flex-col flex-1 not-last:after:relative not-last:after:order-[-1] not-last:after:start-[50%] not-last:after:end-[50%] not-last:after:top-[calc(var(--step-icon-size)/2)] not-last:after:w-[calc((100%-var(--step-icon-size))-(var(--step-gap)))]',
+        'justify-start flex-col flex-1 not-last:after:relative not-last:after:order-[-1] not-last:after:start-[50%] not-last:after:end-[50%] not-last:after:top-[calc(var(--step-icon-size)/2)] not-last:after:w-[calc((100%-var(--step-icon-size))-(var(--step-gap)))]',
         variant === 'circle' && 'not-last:after:flex-1 not-last:after:ms-(--step-gap) not-last:after:me-(--step-gap)',
         variant === 'line' && 'flex-col flex-1 border-t-[.19rem] data-[active=true]:border-primary',
         styles?.['horizontal-step'],

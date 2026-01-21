@@ -90,10 +90,10 @@ export const ShouldOpenPopover: Story = {
 function formatDate(date: Date | undefined) {
   return date
     ? date.toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      })
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    })
     : '';
 }
 

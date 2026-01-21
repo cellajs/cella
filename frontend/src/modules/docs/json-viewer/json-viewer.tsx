@@ -53,24 +53,24 @@ function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPa
  */
 function createRefDataType(onNavigate: (targetPath: string) => void): DataType<string> {
   return {
-  is: (value, path) => {
-    const lastKey = path[path.length - 1];
-    return lastKey === '$ref' && typeof value === 'string' && value.startsWith('#/');
-  },
-  Component: ({ value }) => (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onNavigate(value);
-      }}
-      className="text-primary hover:underline cursor-pointer font-mono text-sm"
-      title={`Go to ${value}`}
-    >
-      "{value}"
-    </button>
-  ),
+    is: (value, path) => {
+      const lastKey = path[path.length - 1];
+      return lastKey === '$ref' && typeof value === 'string' && value.startsWith('#/');
+    },
+    Component: ({ value }) => (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onNavigate(value);
+        }}
+        className="text-primary hover:underline cursor-pointer font-mono text-sm"
+        title={`Go to ${value}`}
+      >
+        "{value}"
+      </button>
+    ),
   };
 }
 
