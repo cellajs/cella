@@ -4,7 +4,7 @@ import LegalContact from '~/modules/marketing/legal/legal-contact';
 import SharedDataTypes from '~/modules/marketing/legal/shared-data-types';
 import Subprocessors from '~/modules/marketing/legal/subprocessors';
 
-const PrivacyText = () => {
+function PrivacyText() {
   const lastUpdated = 'September 23, 2024';
 
   const appName = appConfig.name;
@@ -250,6 +250,6 @@ const PrivacyText = () => {
       </section>
     </div>
   );
-};
+}
 
 export default PrivacyText;

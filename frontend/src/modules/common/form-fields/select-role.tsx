@@ -11,7 +11,7 @@ interface SelectRoleProps {
   className?: string;
 }
 
-const SelectRole = ({ entity = false, onChange, value, className }: SelectRoleProps) => {
+function SelectRole({ entity = false, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
@@ -35,6 +35,6 @@ const SelectRole = ({ entity = false, onChange, value, className }: SelectRolePr
       </SelectContent>
     </Select>
   );
-};
+}
 
 export default SelectRole;

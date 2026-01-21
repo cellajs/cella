@@ -12,7 +12,7 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 /**
  * Create new organization from the menu.
  */
-const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
+function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   const callback = (args: CallbackArgs<Organization>) => {
     useDialoger.getState().remove('create-organization');
     if (args.status === 'success')
@@ -31,7 +31,7 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
     ),
     description: i18n.t('common:create_organization.text'),
   });
-};
+}
 
 /**
  * Configuration to set menu sections with options for different context entities.

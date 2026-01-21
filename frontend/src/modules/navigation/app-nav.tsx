@@ -23,7 +23,7 @@ export const navSheetClassName =
  * - Sets up hotkeys for quick navigation access.
  * - Listens to route changes to close dialogs and sheets.
  */
-const AppNav = () => {
+function AppNav() {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const isDesktop = useBreakpoints('min', 'xl', true);
@@ -123,6 +123,6 @@ const AppNav = () => {
       )}
     </>
   );
-};
+}
 
 export default AppNav;

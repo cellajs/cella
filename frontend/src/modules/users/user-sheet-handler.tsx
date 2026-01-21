@@ -4,7 +4,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UserSheet from '~/modules/users/user-sheet';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-const UserSheetHandler = memo(() => {
+function UserSheetHandlerBase() {
   const navigate = useNavigate();
 
   const { userSheetId } = useSearch({ strict: false });
@@ -56,6 +56,8 @@ const UserSheetHandler = memo(() => {
   }, [userSheetId, orgIdOrSlug]);
 
   return null;
-});
+}
+
+const UserSheetHandler = memo(UserSheetHandlerBase);
 
 export default UserSheetHandler;

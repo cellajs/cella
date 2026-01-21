@@ -37,7 +37,7 @@ interface UpdateUserFormProps {
   callback?: (args: CallbackArgs<User>) => void;
 }
 
-const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
+function UpdateUserForm({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;

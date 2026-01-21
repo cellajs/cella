@@ -30,7 +30,7 @@ export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
 /**
  * Returns a locale key string based on the error type or query.
  */
-const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): string => {
+function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): string {
   if (errorFromQuery) return errorFromQuery;
   if (!error) return 'error';
 
@@ -40,7 +40,7 @@ const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): s
     return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
 
   return error.name;
-};
+}
 
 /**
  * Returns localized error info (title and message) for a given error.
@@ -77,7 +77,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
  * app: no footer required
  * public: show footer
  */
-const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/' }: ErrorNoticeProps) => {
+function ErrorNotice({ error, children, resetErrorBoundary, level, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
@@ -208,6 +208,6 @@ const ErrorNotice = ({ error, children, resetErrorBoundary, level, homePath = '/
       </div>
     </>
   );
-};
+}
 
 export default ErrorNotice;

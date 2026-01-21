@@ -15,9 +15,11 @@ import type { Request, RequestsRouteSearchParams } from '~/modules/requests/type
 const LIMIT = appConfig.requestLimits.requests;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: Request) => row.id;
+function rowKeyGetter(row: Request) {
+  return row.id;
+}
 
-const RequestsTable = () => {
+function RequestsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/appLayout/system/requests' });
 
@@ -103,6 +105,6 @@ const RequestsTable = () => {
       />
     </div>
   );
-};
+}
 
 export default RequestsTable;

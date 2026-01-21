@@ -14,12 +14,14 @@ import { PagesTableBar } from './pages-bar';
 import { usePagesTableColumns } from './pages-columns';
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: Page) => row.id;
+function rowKeyGetter(row: Page) {
+  return row.id;
+}
 
 /**
  * Pages table component for listing pages in a data table.
  */
-const PagesTable = () => {
+function PagesTable() {
   const { t } = useTranslation();
   const [isCompact, setIsCompact] = useState(false);
 

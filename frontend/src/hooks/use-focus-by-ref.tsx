@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
  *
  * @returns A ref to attach to an element and a function to manually re-trigger focus.
  */
-const useFocusByRef = () => {
+function useFocusByRef() {
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const setFocus = () => {
@@ -20,6 +20,6 @@ const useFocusByRef = () => {
   }, [setFocus]);
 
   return { focusRef, setFocus };
-};
+}
 
 export default useFocusByRef;

@@ -32,7 +32,7 @@ interface CreateNewsletterFormProps {
   callback?: (args: CallbackArgs) => void;
 }
 
-const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
+function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -173,6 +173,6 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
       </form>
     </Form>
   );
-};
+}
 
 export default CreateNewsletterForm;

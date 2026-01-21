@@ -18,7 +18,7 @@ import InviteSearchForm from '~/modules/users/invite-search-form';
 const InviteFormSchema = zMembershipInviteData.shape.body;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
-export const useInviteFormDraft = (entityId?: string) => {
+export function useInviteFormDraft(entityId?: string) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: 'invite-users',
     formOptions: {
@@ -26,7 +26,7 @@ export const useInviteFormDraft = (entityId?: string) => {
       defaultValues: { emails: [], role: 'member' },
     },
   });
-};
+}
 
 interface InviteUsersProps {
   entity?: ContextEntityData;
@@ -36,7 +36,7 @@ interface InviteUsersProps {
 }
 
 // When no entity type, it's a system invite
-const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) => {
+function InviteUsers({ entity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(baseMode);
@@ -144,6 +144,6 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
       </AnimatePresence>
     </MotionConfig>
   );
-};
+}
 
 export default InviteUsers;

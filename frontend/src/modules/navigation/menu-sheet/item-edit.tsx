@@ -96,15 +96,17 @@ interface MenuItemEditButtonProps {
   onClick: () => void;
   subitem?: boolean;
 }
-const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) => (
-  <Button
-    variant="link"
-    size="sm"
-    className="py-0 px-1 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:bg-accent/50 hover:underline underline-offset-1"
-    aria-label={`Click ${title}`}
-    onClick={onClick}
-  >
-    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1.5" />
-    {title}
-  </Button>
-);
+function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) {
+  return (
+    <Button
+      variant="link"
+      size="sm"
+      className="py-0 px-1 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:bg-accent/50 hover:underline underline-offset-1"
+      aria-label={`Click ${title}`}
+      onClick={onClick}
+    >
+      <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1.5" />
+      {title}
+    </Button>
+  );
+}

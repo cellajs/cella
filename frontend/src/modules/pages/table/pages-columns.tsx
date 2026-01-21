@@ -11,9 +11,11 @@ import { UserCellById } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 /** Check if a page is local-only (not yet synced to server) */
-const isLocalPage = (id: string) => id.startsWith('temp-');
+function isLocalPage(id: string) {
+  return id.startsWith('temp-');
+}
 
-export const usePagesTableColumns = (isCompact: boolean) => {
+export function usePagesTableColumns(isCompact: boolean) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
@@ -114,4 +116,4 @@ export const usePagesTableColumns = (isCompact: boolean) => {
     visibleColumns: columns.filter((column) => column.visible),
     setColumns,
   };
-};
+}

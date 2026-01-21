@@ -6,7 +6,7 @@ interface DeviceFrameProps {
   renderCarousel: (className: string) => React.ReactElement;
 }
 
-const DeviceFrame = ({ type, inView, renderCarousel }: DeviceFrameProps) => {
+function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) {
   switch (type) {
     case 'tablet':
       return (
@@ -48,6 +48,6 @@ const DeviceFrame = ({ type, inView, renderCarousel }: DeviceFrameProps) => {
     default:
       return null;
   }
-};
+}
 
 export default DeviceFrame;

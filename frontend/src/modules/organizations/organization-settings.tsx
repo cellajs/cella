@@ -25,7 +25,7 @@ const tabs = [
   { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
 
-const OrganizationSettings = ({ organization }: { organization: Organization }) => {
+function OrganizationSettings({ organization }: { organization: Organization }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { idOrSlug } = useParams({ from: '/appLayout/organization/$idOrSlug/settings' });
@@ -139,6 +139,6 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
       </div>
     </div>
   );
-};
+}
 
 export default OrganizationSettings;

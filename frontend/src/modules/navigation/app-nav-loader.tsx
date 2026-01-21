@@ -9,7 +9,7 @@ import { cn } from '~/utils/cn';
 /**
  * Navigation loader component shown during data fetching.
  */
-const AppNavLoader = ({ className }: { className?: string }) => {
+function AppNavLoader({ className }: { className?: string }) {
   const isFetching = useIsFetching({
     predicate: (query) => {
       if (query.meta === undefined || !('offlinePrefetch' in query.meta) || !query.meta.offlinePrefetch) return true;
@@ -42,6 +42,6 @@ const AppNavLoader = ({ className }: { className?: string }) => {
       />
     </>
   );
-};
+}
 
 export default AppNavLoader;

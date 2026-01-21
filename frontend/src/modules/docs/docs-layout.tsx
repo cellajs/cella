@@ -14,7 +14,7 @@ import { useUIStore } from '~/store/ui';
 
 const DOCS_SIDEBAR_SHEET_ID = 'docs-sidebar';
 
-const DocsLayout = () => {
+function DocsLayout() {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const focusView = useUIStore((state) => state.focusView);
@@ -130,6 +130,6 @@ const DocsLayout = () => {
       </ResizableGroup>
     </div>
   );
-};
+}
 
 export default DocsLayout;

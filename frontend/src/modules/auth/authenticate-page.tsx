@@ -17,7 +17,7 @@ import { useUserStore } from '~/store/user';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
-const shouldShowDivider = (step: AuthStep): boolean => {
+function shouldShowDivider(step: AuthStep): boolean {
   // Get enabled authentication strategies
   const isOAuthEnabled = enabledStrategies.includes('oauth');
   const isPasswordEnabled = enabledStrategies.includes('password');
@@ -29,13 +29,13 @@ const shouldShowDivider = (step: AuthStep): boolean => {
     // Case 2: OAuth are enabled, and the current step is 'check'
     (isOAuthEnabled && step === 'checkEmail')
   );
-};
+}
 
 export interface StepBaseProp {
   emailEnabled: boolean;
 }
 
-const AuthenticatePage = () => {
+function AuthenticatePage() {
   const { t } = useTranslation();
 
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
@@ -84,6 +84,6 @@ const AuthenticatePage = () => {
       )}
     </>
   );
-};
+}
 
 export default AuthenticatePage;

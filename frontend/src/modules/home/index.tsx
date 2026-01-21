@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
 
-const Home = () => {
+function Home() {
   const { t } = useTranslation();
   const { setDownAlert } = useAlertStore();
 

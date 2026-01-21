@@ -11,13 +11,13 @@ type InfiniteLoaderProps = {
   fetchMore?: () => Promise<unknown>;
 };
 
-export const InfiniteLoader = ({
+export function InfiniteLoader({
   hasNextPage,
   isFetching,
   measureStyle,
   isFetchMoreError,
   fetchMore,
-}: InfiniteLoaderProps) => {
+}: InfiniteLoaderProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
@@ -47,22 +47,26 @@ export const InfiniteLoader = ({
       {fetchMore && !isFetching && !hasNextPage && <AllLoaded />}
     </>
   );
-};
+}
 
-const AllLoaded = () => (
-  <div className="opacity-50 w-full text-xl mt-4 mb-10 text-center">
-    <div>&#183;</div>
-    <div className="-mt-5">&#183;</div>
-    <div className="-mt-5">&#183;</div>
-    <div className="-mt-3">&#176;</div>
-  </div>
-);
+function AllLoaded() {
+  return (
+    <div className="opacity-50 w-full text-xl mt-4 mb-10 text-center">
+      <div>&#183;</div>
+      <div className="-mt-5">&#183;</div>
+      <div className="-mt-5">&#183;</div>
+      <div className="-mt-3">&#176;</div>
+    </div>
+  );
+}
 
-const Loading = () => (
-  <div className="flex space-x-1 opacity-50 justify-center items-center relative top-4 h-0 mb-10 w-full animate-pulse">
-    <span className="sr-only">Loading...</span>
-    <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
-    <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
-    <div className="h-1 w-3 bg-foreground rounded-full animate-bounce" />
-  </div>
-);
+function Loading() {
+  return (
+    <div className="flex space-x-1 opacity-50 justify-center items-center relative top-4 h-0 mb-10 w-full animate-pulse">
+      <span className="sr-only">Loading...</span>
+      <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
+      <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
+      <div className="h-1 w-3 bg-foreground rounded-full animate-bounce" />
+    </div>
+  );
+}

@@ -10,9 +10,11 @@ import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { Invitation } from '~/modules/me/types';
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: Invitation) => row.inactiveMembership.id;
+function rowKeyGetter(row: Invitation) {
+  return row.inactiveMembership.id;
+}
 
-const InvitationsTable = () => {
+function InvitationsTable() {
   const { t } = useTranslation();
 
   // Build columns
@@ -85,6 +87,6 @@ const InvitationsTable = () => {
       </div>
     </div>
   );
-};
+}
 
 export default InvitationsTable;

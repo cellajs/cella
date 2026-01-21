@@ -8,7 +8,7 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
 );
 
 // Function to get the matched breakpoint based on window width
-const getMatchedBreakpoints = () => {
+function getMatchedBreakpoints() {
   if (typeof window === 'undefined') return sortedBreakpoints[0];
 
   const width = window.innerWidth;
@@ -26,14 +26,14 @@ const getMatchedBreakpoints = () => {
     }
   }
   return matched;
-};
+}
 
 // Store global state in a module-level variable - initialize immediately
 let currentBreakpoint = getMatchedBreakpoints();
 const listeners = new Set<() => void>();
 
 // Function to update global breakpoint state (runs only when necessary)
-const updateGlobalBreakpoint = () => {
+function updateGlobalBreakpoint() {
   const newBreakpoint = getMatchedBreakpoints();
   if (newBreakpoint !== currentBreakpoint) {
     currentBreakpoint = newBreakpoint;
@@ -41,7 +41,7 @@ const updateGlobalBreakpoint = () => {
       listener();
     }
   }
-};
+}
 
 // Attach the listener once per app lifecycle
 if (typeof window !== 'undefined') {
@@ -49,14 +49,19 @@ if (typeof window !== 'undefined') {
 }
 
 // Subscribe function for useSyncExternalStore
-const subscribe = (callback: () => void) => {
+function subscribe(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
-};
+}
 
 // Snapshot functions for useSyncExternalStore
-const getSnapshot = () => currentBreakpoint;
-const getServerSnapshot = () => sortedBreakpoints[0];
+function getSnapshot() {
+  return currentBreakpoint;
+}
+
+function getServerSnapshot() {
+  return sortedBreakpoints[0];
+}
 
 /**
  * Breakpoint hook to determine if the current viewport matches the specified breakpoint condition.
@@ -67,11 +72,11 @@ const getServerSnapshot = () => sortedBreakpoints[0];
  * @example
  * const isMobile = useBreakpoints('max', 'sm', false); // Non-reactive
  */
-export const useBreakpoints = (
+export function useBreakpoints(
   mustBe: 'min' | 'max',
   breakpoint: keyof typeof breakpoints,
   enableReactivity = true,
-) => {
+) {
   // useSyncExternalStore provides tear-free reads from external state
   const breakpointState = useSyncExternalStore(
     enableReactivity ? subscribe : () => () => {},
@@ -85,4 +90,4 @@ export const useBreakpoints = (
   return mustBe === 'min'
     ? currentBreakpointIndex > targetBreakpointIndex
     : currentBreakpointIndex <= targetBreakpointIndex;
-};
+}

@@ -49,7 +49,7 @@ export const offlineQueryConfig = {
  * available from the entity list queries used to build the menu, while this provider
  * focuses on prefetching the detailed content users will need when navigating.
  */
-export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
+export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);

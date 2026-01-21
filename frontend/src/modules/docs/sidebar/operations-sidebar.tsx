@@ -23,7 +23,7 @@ type OperationItemProps = {
 };
 
 /** Individual operation item - subscribes to location independently to minimize re-renders */
-const OperationItem = memo(({ operation, layoutId, isMobile }: OperationItemProps) => {
+function OperationItemBase({ operation, layoutId, isMobile }: OperationItemProps) {
   const { hash } = useLocation();
   const isActive = hash === operation.hash;
 
@@ -63,7 +63,9 @@ const OperationItem = memo(({ operation, layoutId, isMobile }: OperationItemProp
       </Link>
     </div>
   );
-});
+}
+
+const OperationItem = memo(OperationItemBase);
 
 type TagItemProps = {
   tag: GenTagSummary;
@@ -74,7 +76,7 @@ type TagItemProps = {
 };
 
 /** Individual tag collapsible item - subscribes to location independently */
-const TagItem = memo(({ tag, operations, isExpanded, layoutId, isMobile }: TagItemProps) => {
+function TagItemBase({ tag, operations, isExpanded, layoutId, isMobile }: TagItemProps) {
   const { hash } = useLocation();
   const isActive = hash === `tag/${tag.name}` || hash?.startsWith(`tag/${tag.name}/`);
 
@@ -120,7 +122,9 @@ const TagItem = memo(({ tag, operations, isExpanded, layoutId, isMobile }: TagIt
       </SidebarMenuItem>
     </Collapsible>
   );
-});
+}
+
+const TagItem = memo(TagItemBase);
 
 /**
  * Sidebar menu listing operation section tags with their operation lists.

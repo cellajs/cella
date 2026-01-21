@@ -5,12 +5,12 @@ import { hexToHsl } from '~/utils/hex-to-hsl';
 
 const root = window.document.documentElement;
 
-const setModeClass = (mode: Mode) => {
+function setModeClass(mode: Mode) {
   root.classList.remove('light', 'dark');
   root.classList.add(mode);
-};
+}
 
-const setThemeColor = (passedTheme: Theme) => {
+function setThemeColor(passedTheme: Theme) {
   if (passedTheme === 'none') return root.classList.remove('theme-base');
   root.classList.add('theme-base');
 
@@ -28,7 +28,7 @@ const setThemeColor = (passedTheme: Theme) => {
   }
   // update CSS rule for .theme-base
   themeStyleTag.innerHTML = `.theme-base { --primary: ${hslColor}; }`;
-};
+}
 
 /**
  * Service component to set theme and mode classes on root element

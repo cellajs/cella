@@ -13,7 +13,7 @@ interface Props {
   tabIndex: number;
 }
 
-export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonElement | null>) => {
+export function openUpdateUserSheet(user: User, buttonRef: RefObject<HTMLButtonElement | null>) {
   const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
   const createSheet = useSheeter.getState().create;
 
@@ -34,9 +34,9 @@ export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonE
       titleContent: <UnsavedBadge title={title} />,
     },
   );
-};
+}
 
-const UpdateRow = ({ user, tabIndex }: Props) => {
+function UpdateRow({ user, tabIndex }: Props) {
   const buttonRef = useRef(null);
 
   return (
@@ -53,6 +53,6 @@ const UpdateRow = ({ user, tabIndex }: Props) => {
       <PencilIcon size={16} />
     </Button>
   );
-};
+}
 
 export default UpdateRow;

@@ -18,7 +18,7 @@ interface ViewPageProps {
 /**
  * Displays a page with its name as title and description as the main content.
  */
-const ViewPage = ({ pageId }: ViewPageProps) => {
+function ViewPage({ pageId }: ViewPageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { systemRole } = useUserStore();

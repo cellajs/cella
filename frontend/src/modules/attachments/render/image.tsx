@@ -23,20 +23,23 @@ interface ControlButtonProps {
   icon: React.ReactNode;
   className: string;
 }
+function ControlButton({ tooltipContent, onClick, icon, className }: ControlButtonProps) {
+  return (
+    <TooltipButton toolTipContent={tooltipContent}>
+      <Button
+        onClick={onClick}
+        className={cn('bg-background border border-input rounded-none hover:bg-accent text-accent-foreground', className)}
+      >
+        {icon}
+      </Button>
+    </TooltipButton>
+  );
+}
 
-const ControlButton = ({ tooltipContent, onClick, icon, className }: ControlButtonProps) => (
-  <TooltipButton toolTipContent={tooltipContent}>
-    <Button
-      onClick={onClick}
-      className={cn('bg-background border border-input rounded-none hover:bg-accent text-accent-foreground', className)}
-    >
-      {icon}
-    </Button>
-  </TooltipButton>
-);
-
-const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
-  ({ image, alt, resetImageState, showButtons, imageClassName, onPanStateToggle }, forwardedRef) => {
+function RenderImage(
+  { image, alt, resetImageState, showButtons, imageClassName, onPanStateToggle }: RenderImageProps,
+  forwardedRef: React.ForwardedRef<HTMLImageElement>,
+) {
     const [dx, setDx] = useState(0);
     const [dy, setDy] = useState(0);
 
@@ -161,7 +164,6 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
         </ImageViewer>
       </>
     );
-  },
-);
+}
 
-export default RenderImage;
+export default forwardRef<HTMLImageElement, RenderImageProps>(RenderImage);

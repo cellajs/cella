@@ -24,7 +24,7 @@ export type AboutSectionId = (typeof aboutSectionIds)[number];
 
 const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
-const AboutPage = () => {
+function AboutPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -133,6 +133,6 @@ const AboutPage = () => {
       <MarketingFooter />
     </>
   );
-};
+}
 
 export default AboutPage;

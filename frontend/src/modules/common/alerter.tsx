@@ -2,7 +2,7 @@ import { alertsConfig } from '~/alert-config';
 import { type AlertContextMode, AlertWrap } from '~/modules/common/alert-wrap';
 import { useAlertStore } from '~/store/alert';
 
-const Alerter = ({ mode }: { mode: AlertContextMode }) => {
+function Alerter({ mode }: { mode: AlertContextMode }) {
   const { alertsSeen } = useAlertStore();
 
   return (

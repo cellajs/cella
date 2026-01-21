@@ -9,14 +9,15 @@ import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
+
 import { useUIStore } from '~/store/ui';
 
-const PasskeyStrategy = ({
+function PasskeyStrategy({
   email,
   type,
 }: Omit<PasskeyCredentialProps, 'type'> & {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
-}) => {
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -60,6 +61,6 @@ const PasskeyStrategy = ({
       </Button>
     </div>
   );
-};
+}
 
 export default PasskeyStrategy;

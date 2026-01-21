@@ -7,7 +7,7 @@ interface AttachmentDialogProps {
   attachments: CarouselItemData[];
 }
 
-const AttachmentDialog = ({ attachmentId, attachments }: AttachmentDialogProps) => {
+function AttachmentDialog({ attachmentId, attachments }: AttachmentDialogProps) {
   const index = attachments.findIndex(({ id }) => id === attachmentId);
   const itemIndex = index === -1 ? 0 : index;
 
@@ -18,6 +18,6 @@ const AttachmentDialog = ({ attachmentId, attachments }: AttachmentDialogProps) 
   ) : (
     <ContentPlaceholder icon={FlameKindlingIcon} title="error:not_found.text" />
   );
-};
+}
 
 export default AttachmentDialog;

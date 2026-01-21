@@ -9,7 +9,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { flushStores } from '~/utils/flush-stores';
 
 // Sign out user and clear all stores and query cache
-export const SignOut = () => {
+export function SignOut() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -40,4 +40,4 @@ export const SignOut = () => {
   }, []);
 
   return <ContentPlaceholder className="h-screen" icon={HeartIcon} title="common:signing_out" />;
-};
+}

@@ -42,7 +42,7 @@ const tabs = [
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
 
-const UserAccountPage = () => {
+function UserAccountPage() {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
@@ -305,6 +305,6 @@ const UserAccountPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default UserAccountPage;

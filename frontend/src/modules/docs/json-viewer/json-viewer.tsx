@@ -8,15 +8,15 @@ import { defaultTheme } from './types';
  * Parses a $ref path into an array of keys.
  * e.g., "#/components/schemas/UserSchema" -> ["components", "schemas", "UserSchema"]
  */
-const parseRefPath = (refPath: string): string[] => {
+function parseRefPath(refPath: string): string[] {
   if (!refPath.startsWith('#/')) return [];
   return refPath.slice(2).split('/');
-};
+}
 
 /**
  * Scrolls to the target schema and highlights it for 3 seconds.
  */
-const scrollToRef = (containerRef: React.RefObject<HTMLDivElement | null>, refPath: string) => {
+function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPath: string) {
   if (!containerRef.current) return;
 
   const schemaName = refPath.split('/').pop() || refPath;
@@ -46,12 +46,13 @@ const scrollToRef = (containerRef: React.RefObject<HTMLDivElement | null>, refPa
       }
     }, 150);
   });
-};
+}
 
 /**
  * Creates a custom data type for OpenAPI $ref values.
  */
-const createRefDataType = (onNavigate: (targetPath: string) => void): DataType<string> => ({
+function createRefDataType(onNavigate: (targetPath: string) => void): DataType<string> {
+  return {
   is: (value, path) => {
     const lastKey = path[path.length - 1];
     return lastKey === '$ref' && typeof value === 'string' && value.startsWith('#/');
@@ -70,7 +71,8 @@ const createRefDataType = (onNavigate: (targetPath: string) => void): DataType<s
       "{value}"
     </button>
   ),
-});
+  };
+}
 
 /**
  * A lightweight JSON viewer component with collapsible nodes.

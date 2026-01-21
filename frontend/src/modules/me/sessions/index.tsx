@@ -10,7 +10,7 @@ import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
-const SessionsList = () => {
+function SessionsList() {
   const { t } = useTranslation();
 
   const queryOptions = meAuthQueryOptions();
@@ -83,6 +83,6 @@ const SessionsList = () => {
       </div>
     </>
   );
-};
+}
 
 export default SessionsList;

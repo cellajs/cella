@@ -26,7 +26,7 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   disableScroll?: boolean;
 };
 
-const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
+function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
 
@@ -106,6 +106,6 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
       </div>
     </div>
   );
-};
+}
 
 export { PageHeader };

@@ -18,7 +18,7 @@ import { useUserStore } from '~/store/user';
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
 // Main contact form map component
-const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
+function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
@@ -105,6 +105,6 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
       )}
     </div>
   );
-};
+}
 
 export default ContactForm;

@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
-const LeaveOrgButton = (props: LeaveEntityButtonProps) => {
+function LeaveOrgButton(props: LeaveEntityButtonProps) {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
 
@@ -38,6 +38,6 @@ const LeaveOrgButton = (props: LeaveEntityButtonProps) => {
       </Popover>
     </div>
   );
-};
+}
 
 export default LeaveOrgButton;

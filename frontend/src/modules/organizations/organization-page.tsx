@@ -12,7 +12,7 @@ import { useUserStore } from '~/store/user';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organizations/leave-organization'));
 
-const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
+function OrganizationPage({ organizationId }: { organizationId: string }) {
   const { t } = useTranslation();
   const systemRole = useUserStore((state) => state.systemRole);
 
@@ -69,6 +69,6 @@ const OrganizationPage = ({ organizationId }: { organizationId: string }) => {
       </FocusViewContainer>
     </>
   );
-};
+}
 
 export default OrganizationPage;

@@ -22,7 +22,7 @@ type SchemaItemProps = {
 };
 
 /** Individual schema item - subscribes to location independently to minimize re-renders */
-const SchemaItem = memo(({ schema, tagName, layoutId, isMobile }: SchemaItemProps) => {
+function SchemaItemBase({ schema, tagName, layoutId, isMobile }: SchemaItemProps) {
   const { hash } = useLocation();
   const schemaId = schema.ref.replace(/^#/, '');
   const isActive = hash === schemaId;
@@ -58,7 +58,9 @@ const SchemaItem = memo(({ schema, tagName, layoutId, isMobile }: SchemaItemProp
       </Link>
     </div>
   );
-});
+}
+
+const SchemaItem = memo(SchemaItemBase);
 
 type SchemaTagItemProps = {
   tag: GenSchemaTagSummary;
@@ -69,7 +71,7 @@ type SchemaTagItemProps = {
 };
 
 /** Individual schema tag collapsible item - subscribes to location independently */
-const SchemaTagItem = memo(({ tag, schemas, isExpanded, layoutId, isMobile }: SchemaTagItemProps) => {
+function SchemaTagItemBase({ tag, schemas, isExpanded, layoutId, isMobile }: SchemaTagItemProps) {
   const { hash } = useLocation();
   const childSchemaIds = schemas.map((s) => s.ref.replace(/^#/, ''));
   const isActive = hash === tag.name || childSchemaIds.includes(hash);
@@ -122,7 +124,9 @@ const SchemaTagItem = memo(({ tag, schemas, isExpanded, layoutId, isMobile }: Sc
       </SidebarMenuItem>
     </Collapsible>
   );
-});
+}
+
+const SchemaTagItem = memo(SchemaTagItemBase);
 
 /**
  * Sidebar menu listing schema tags, each with their schema lists.

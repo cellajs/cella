@@ -14,7 +14,7 @@ export type ShowcaseItem = {
   darkItems: { id: string; url: string; contentType: string }[];
 };
 
-const Showcase = () => {
+function Showcase() {
   const { t } = useTranslation();
 
   const lightItems = showcaseItems.flatMap((item) => item.lightItems);

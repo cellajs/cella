@@ -9,7 +9,7 @@ type Props = {
   isDisabled?: boolean;
 };
 
-const PullToRefresh = ({ onRefresh, refreshThreshold = 100, maximumPullLength = 200, isDisabled = false }: Props) => {
+function PullToRefresh({ onRefresh, refreshThreshold = 100, maximumPullLength = 200, isDisabled = false }: Props) {
   const [pullPosition, setPullPosition] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -143,6 +143,6 @@ const PullToRefresh = ({ onRefresh, refreshThreshold = 100, maximumPullLength = 
       </div>
     </>
   );
-};
+}
 
 export default PullToRefresh;

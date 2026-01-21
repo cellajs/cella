@@ -24,7 +24,7 @@ interface Props {
   className?: string;
 }
 
-const FilePlaceholder = ({ contentType, iconSize = 20, strokeWidth = 1.5, className }: Props) => {
+function FilePlaceholder({ contentType, iconSize = 20, strokeWidth = 1.5, className }: Props) {
   const iconProps = { size: iconSize, strokeWidth, className };
 
   if (contentType) {
@@ -36,6 +36,6 @@ const FilePlaceholder = ({ contentType, iconSize = 20, strokeWidth = 1.5, classN
   }
 
   return <FileIcon size={iconSize} />;
-};
+}
 
 export default FilePlaceholder;

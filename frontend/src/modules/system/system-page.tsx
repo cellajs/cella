@@ -5,7 +5,7 @@ import { PageNav } from '~/modules/common/page/nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { SystemRoute } from '~/routes/system-routes';
 
-const SystemPage = () => {
+function SystemPage() {
   const { t } = useTranslation();
 
   return (
@@ -23,6 +23,6 @@ const SystemPage = () => {
       </FocusViewContainer>
     </>
   );
-};
+}
 
 export default SystemPage;

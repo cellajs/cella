@@ -18,7 +18,9 @@ import type { ContextEntityData } from '~/modules/entities/types';
 const LIMIT = appConfig.requestLimits.attachments;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: Attachment) => row.id;
+function rowKeyGetter(row: Attachment) {
+  return row.id;
+}
 
 export interface AttachmentsTableProps {
   entity: ContextEntityData;
@@ -26,7 +28,7 @@ export interface AttachmentsTableProps {
   canUpload?: boolean;
 }
 
-const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
+function AttachmentsTable({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 

@@ -36,7 +36,7 @@ const verticalStepVariants = cva(
   },
 );
 
-const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props, ref) => {
+function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTMLDivElement>) {
   const {
     children,
     index,
@@ -169,6 +169,8 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
       </div>
     </div>
   );
-});
+}
+
+const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>(VerticalStepBase);
 
 export { VerticalStep };

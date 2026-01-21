@@ -22,7 +22,7 @@ interface Props {
   contentClassName?: string;
 }
 
-const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName = '' }: Props) => {
+function UserLanguage({ align = 'end', triggerClassName = '', contentClassName = '' }: Props) {
   const { t } = useTranslation();
 
   const { user, updateUser } = useUserStore();
@@ -64,6 +64,6 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+}
 
 export default UserLanguage;

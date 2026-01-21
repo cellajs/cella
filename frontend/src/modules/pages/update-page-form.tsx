@@ -26,7 +26,7 @@ interface Props {
   page: Page;
 }
 
-const UpdatePageForm = ({ page }: Props) => {
+function UpdatePageForm({ page }: Props) {
   const { t } = useTranslation();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const updatePage = usePageUpdateMutation();
@@ -155,6 +155,6 @@ const UpdatePageForm = ({ page }: Props) => {
       </form>
     </Form>
   );
-};
+}
 
 export default UpdatePageForm;

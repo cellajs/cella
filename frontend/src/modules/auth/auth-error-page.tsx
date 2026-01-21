@@ -9,7 +9,7 @@ import { useAuthStore } from '~/store/auth';
 /**
  * Displays an error notice in authentication layout.
  */
-const AuthErrorPage = () => {
+function AuthErrorPage() {
   const { t } = useTranslation();
 
   const { error: errorType, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/error' });
@@ -34,6 +34,6 @@ const AuthErrorPage = () => {
       </Link>
     </ErrorNotice>
   );
-};
+}
 
 export default AuthErrorPage;

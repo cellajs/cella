@@ -7,7 +7,7 @@ interface Props {
 }
 
 // TODO review mb move quey here out of column
-const AttachmentPreview = ({ url, contentType, name }: Props) => {
+function AttachmentPreview({ url, contentType, name }: Props) {
   if (!url || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;
 
   return (
@@ -20,6 +20,6 @@ const AttachmentPreview = ({ url, contentType, name }: Props) => {
       decoding="async"
     />
   );
-};
+}
 
 export default AttachmentPreview;

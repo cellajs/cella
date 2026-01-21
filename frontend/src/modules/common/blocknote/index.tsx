@@ -76,7 +76,7 @@ type BlockNoteProps =
       user?: never;
     });
 
-const BlockNote = ({
+function BlockNote({
   id,
   type,
   className = '',
@@ -105,7 +105,7 @@ const BlockNote = ({
   onEnterClick, // Trigger on Cmd+Enter
   onFocus,
   onBeforeLoad,
-}: BlockNoteProps) => {
+}: BlockNoteProps) {
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -335,6 +335,6 @@ const BlockNote = ({
       <CustomFilePanel filePanel={filePanel} baseFilePanelProps={baseFilePanelProps} />
     </BlockNoteView>
   );
-};
+}
 
 export default BlockNote;

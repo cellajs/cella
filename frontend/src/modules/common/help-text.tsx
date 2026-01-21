@@ -11,7 +11,7 @@ interface HelpTextProps {
   type?: 'popover';
 }
 
-const HelpText = ({ content, children, className, type }: HelpTextProps) => {
+function HelpText({ content, children, className, type }: HelpTextProps) {
   const [collapsed, setCollapsed] = useState(true);
 
   if (type === 'popover') {
@@ -50,6 +50,6 @@ const HelpText = ({ content, children, className, type }: HelpTextProps) => {
       <div className="font-light text-sm text-muted-foreground">{!collapsed && <span>{content}</span>}</div>
     </div>
   );
-};
+}
 
 export default HelpText;

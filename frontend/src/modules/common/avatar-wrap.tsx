@@ -15,7 +15,7 @@ export interface AvatarWrapProps extends AvatarProps {
   icon?: LucideIcon;
 }
 
-const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props }: AvatarWrapProps) => {
+function AvatarWrapBase({ type, id, name, icon: Icon, url, className, ...props }: AvatarWrapProps) {
   if (Icon)
     return (
       <Avatar
@@ -51,6 +51,8 @@ const AvatarWrap = memo(({ type, id, name, icon: Icon, url, className, ...props 
       )}
     </Avatar>
   );
-});
+}
+
+const AvatarWrap = memo(AvatarWrapBase);
 
 export { AvatarWrap };

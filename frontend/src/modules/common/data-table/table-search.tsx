@@ -16,7 +16,7 @@ interface TableSearchProps {
   setQuery: (value: string) => void;
 }
 
-const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) => {
+function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);

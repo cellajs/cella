@@ -28,7 +28,7 @@ type FormValues = z.infer<typeof formSchema>;
 /**
  * Handles user sign-in, including standard password login and token-based invitation flow.
  */
-export const SignInStep = () => {
+export function SignInStep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { email, resetSteps } = useAuthStore();
@@ -156,4 +156,4 @@ export const SignInStep = () => {
       )}
     </Form>
   );
-};
+}

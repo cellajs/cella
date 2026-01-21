@@ -10,7 +10,7 @@ import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-const StopImpersonation = () => {
+function StopImpersonation() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -33,6 +33,6 @@ const StopImpersonation = () => {
       </Button>
     </TooltipButton>
   );
-};
+}
 
 export default StopImpersonation;

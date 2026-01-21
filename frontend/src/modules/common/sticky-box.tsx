@@ -1,6 +1,6 @@
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
-const getScrollParent = (node: HTMLElement) => {
+function getScrollParent(node: HTMLElement) {
   let parent: HTMLElement | null = node;
   // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
   while ((parent = parent.parentElement)) {
@@ -11,12 +11,13 @@ const getScrollParent = (node: HTMLElement) => {
     }
   }
   return window;
-};
+}
 
-const isOffsetElement = (el: HTMLElement): boolean =>
-  el.firstChild ? (el.firstChild as HTMLElement).offsetParent === el : true;
+function isOffsetElement(el: HTMLElement): boolean {
+  return el.firstChild ? (el.firstChild as HTMLElement).offsetParent === el : true;
+}
 
-const offsetTill = (node: HTMLElement, target: HTMLElement) => {
+function offsetTill(node: HTMLElement, target: HTMLElement) {
   let current = node;
   let finalTarget = target;
 
@@ -32,9 +33,9 @@ const offsetTill = (node: HTMLElement, target: HTMLElement) => {
     current = current.offsetParent as HTMLElement;
   } while (current && current !== finalTarget);
   return offset;
-};
+}
 
-const getParentNode = (node: HTMLElement) => {
+function getParentNode(node: HTMLElement) {
   let currentParent = node.parentElement;
   while (currentParent) {
     const style = getComputedStyle(currentParent, null);
@@ -42,7 +43,7 @@ const getParentNode = (node: HTMLElement) => {
     currentParent = currentParent.parentElement;
   }
   return currentParent || window;
-};
+}
 
 let stickyProp: null | string = null;
 if (CSS?.supports) {
@@ -124,12 +125,12 @@ const getDimensions = <T extends object>(opts: {
   return mResult;
 };
 
-const getVerticalPadding = (node: HTMLElement) => {
+function getVerticalPadding(node: HTMLElement) {
   const computedParentStyle = getComputedStyle(node, null);
   const parentPaddingTop = Number.parseInt(computedParentStyle.getPropertyValue('padding-top'), 10);
   const parentPaddingBottom = Number.parseInt(computedParentStyle.getPropertyValue('padding-bottom'), 10);
   return { top: parentPaddingTop, bottom: parentPaddingBottom };
-};
+}
 
 enum MODES {
   stickyTop,
@@ -140,7 +141,7 @@ enum MODES {
 
 type StickyMode = null | (typeof MODES)[keyof typeof MODES];
 
-const setup = (node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxConfig>) => {
+function setup(node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxConfig>) {
   const { bottom, offsetBottom, offsetTop } = opts;
   const scrollPane = getScrollParent(node);
 
@@ -348,7 +349,7 @@ const setup = (node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxCon
     () => scrollPane.removeEventListener('scroll', handleScroll),
     () => scrollPane.removeEventListener('mousewheel', handleScroll),
   );
-};
+}
 
 export type StickyBoxConfig = {
   offsetTop?: number;
@@ -359,12 +360,12 @@ export type StickyBoxConfig = {
 
 export type UseStickyBoxOptions = StickyBoxConfig;
 
-export const useStickyBox = ({
+export function useStickyBox({
   offsetTop = 0,
   offsetBottom = 0,
   bottom = false,
   enabled = true,
-}: StickyBoxConfig = {}) => {
+}: StickyBoxConfig = {}) {
   if (!enabled) return [() => {}, false] as const;
 
   const [node, setNode] = useState<HTMLElement | null>(null);
@@ -433,11 +434,11 @@ export const useStickyBox = ({
   }, [node, offsetBottom, offsetTop, bottom, enabled]);
 
   return [setNode, isSticky] as const;
-};
+}
 
 export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'>;
 
-const StickyBox = (props: StickyBoxCompProps) => {
+function StickyBox(props: StickyBoxCompProps) {
   const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
 
   const ref = useRef<HTMLDivElement>(null);
@@ -452,7 +453,7 @@ const StickyBox = (props: StickyBoxCompProps) => {
       {children}
     </div>
   );
-};
+}
 
 export default StickyBox;
 

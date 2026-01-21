@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-const FocusTrap = ({
+function FocusTrap({
   children,
   mainElementId,
   active = true,
@@ -8,7 +8,7 @@ const FocusTrap = ({
   children: React.ReactNode;
   mainElementId?: string;
   active?: boolean;
-}) => {
+}) {
   const focusTrapRef = useRef<HTMLDivElement | null>(null);
 
   const handleTabKey = (e: KeyboardEvent) => {
@@ -74,6 +74,6 @@ const FocusTrap = ({
       {children}
     </div>
   );
-};
+}
 
 export default FocusTrap;

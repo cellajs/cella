@@ -9,14 +9,16 @@ interface HamburgerButtonProps {
   className?: string;
   ref?: Ref<HTMLButtonElement>;
 }
-const HamburgerLine = ({ className, lineColor }: { className: string; lineColor: string }) => (
-  <div
-    className={cn('ease my-[.13rem] h-[.1rem] w-5.5 rounded-full transition duration-300', className)}
-    style={{ backgroundColor: lineColor }}
-  />
-);
+function HamburgerLine({ className, lineColor }: { className: string; lineColor: string }) {
+  return (
+    <div
+      className={cn('ease my-[.13rem] h-[.1rem] w-5.5 rounded-full transition duration-300', className)}
+      style={{ backgroundColor: lineColor }}
+    />
+  );
+}
 
-const HamburgerButton = ({ isOpen, toggle, className, ref }: HamburgerButtonProps) => {
+function HamburgerButton({ isOpen, toggle, className, ref }: HamburgerButtonProps) {
   const mode = useUIStore((state) => state.mode);
   const lineColor = mode === 'dark' ? 'white' : 'black';
 
@@ -46,6 +48,6 @@ const HamburgerButton = ({ isOpen, toggle, className, ref }: HamburgerButtonProp
       />
     </Button>
   );
-};
+}
 
 export default HamburgerButton;

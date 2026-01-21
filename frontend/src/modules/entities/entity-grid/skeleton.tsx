@@ -1,7 +1,7 @@
 import useMounted from '~/hooks/use-mounted';
 import { Skeleton } from '~/modules/ui/skeleton';
 
-export const EntityGridSkeleton = () => {
+export function EntityGridSkeleton() {
   const { hasStarted } = useMounted();
 
   const items = Array.from({ length: 6 }, () => ({
@@ -18,9 +18,9 @@ export const EntityGridSkeleton = () => {
       ))}
     </div>
   );
-};
+}
 
-const SkeletonItem = ({ membersCount }: { membersCount: number }) => {
+function SkeletonItem({ membersCount }: { membersCount: number }) {
   return (
     <Skeleton className="overflow-hidden py-6 px-4">
       <div className="w-full relative group">
@@ -40,4 +40,4 @@ const SkeletonItem = ({ membersCount }: { membersCount: number }) => {
       </div>
     </Skeleton>
   );
-};
+}

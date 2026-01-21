@@ -17,7 +17,7 @@ import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 import { buttonVariants } from '../../ui/button';
 
-const OperationsPage = () => {
+function OperationsPage() {
   const { t } = useTranslation();
   // Get active tag from URL search param
   const { operationTag: activeTag } = useSearch({ from: '/publicLayout/docs/operations' });
@@ -129,6 +129,6 @@ const OperationsPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default OperationsPage;

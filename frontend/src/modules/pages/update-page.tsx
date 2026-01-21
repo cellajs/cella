@@ -15,7 +15,7 @@ interface UpdatePageProps {
 /**
  * Edit page view with the update form.
  */
-const UpdatePage = ({ pageId }: UpdatePageProps) => {
+function UpdatePage({ pageId }: UpdatePageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

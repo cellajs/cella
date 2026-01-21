@@ -25,7 +25,7 @@ interface OnboardingProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProps) => {
+function Onboarding({ onboarding = 'start', setOnboardingState }: OnboardingProps) {
   const { user } = useUserStore();
   const { hasStarted } = useMounted();
   const { t } = useTranslation();
@@ -116,6 +116,6 @@ const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProp
       </div>
     </div>
   );
-};
+}
 
 export default Onboarding;

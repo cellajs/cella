@@ -45,13 +45,13 @@ const basicBlockTypes = {
   },
 };
 
-const UppyFilePanel = ({
+function UppyFilePanel({
   onComplete,
   onError,
   organizationId,
   blockId,
   isPublic = false,
-}: BaseUppyFilePanelProps & FilePanelProps) => {
+}: BaseUppyFilePanelProps & FilePanelProps) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { isOnline } = useOnlineManager();
@@ -181,6 +181,6 @@ const UppyFilePanel = ({
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 export default UppyFilePanel;

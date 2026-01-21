@@ -24,10 +24,10 @@ const DebugToolbars =
 
 // Cached base nav items
 let baseNavItems: NavItem[] | null = null;
-const getBaseNavItems = () => {
+function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
-};
+}
 
 interface SidebarNavProps {
   triggerNavItem: TriggerNavItemFn;

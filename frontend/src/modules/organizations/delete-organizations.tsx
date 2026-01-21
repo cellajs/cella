@@ -10,7 +10,7 @@ interface Props {
   callback?: (args: CallbackArgs<Organization[]>) => void;
 }
 
-const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Props) => {
+function DeleteOrganizations({ organizations, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteOrganizations, isPending } = useOrganizationDeleteMutation();
 
@@ -24,6 +24,6 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
-};
+}
 
 export default DeleteOrganizations;

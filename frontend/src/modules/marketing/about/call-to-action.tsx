@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Button } from '~/modules/ui/button';
 
-const CallToAction = () => {
+function CallToAction() {
   const { t } = useTranslation();
 
   const ref = useRef(null);

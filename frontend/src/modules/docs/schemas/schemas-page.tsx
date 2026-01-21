@@ -16,7 +16,7 @@ import { buttonVariants } from '../../ui/button';
  * Schemas page displaying all component schemas from the OpenAPI spec.
  * Schemas are categorized into base, data, and errors tags.
  */
-const SchemasPage = () => {
+function SchemasPage() {
   const { t } = useTranslation();
   // Get active schema tag from URL search param (hash)
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/publicLayout/docs/schemas' });
@@ -115,6 +115,6 @@ const SchemasPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default SchemasPage;

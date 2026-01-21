@@ -12,9 +12,11 @@ import type { UsersRouteSearchParams, UserWithRoleAndMemberships } from '~/modul
 const LIMIT = appConfig.requestLimits.users;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: UserWithRoleAndMemberships) => row.id;
+function rowKeyGetter(row: UserWithRoleAndMemberships) {
+  return row.id;
+}
 
-const UsersTable = () => {
+function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/appLayout/system/users' });
 
   // Table state

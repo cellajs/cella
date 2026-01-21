@@ -9,10 +9,10 @@ import { cn } from '~/utils/cn';
 
 // Cached base nav items
 let baseNavItems: NavItem[] | null = null;
-const getBaseNavItems = () => {
+function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
-};
+}
 
 interface BottomBarNavProps {
   triggerNavItem: TriggerNavItemFn;

@@ -23,7 +23,7 @@ interface Props {
 /**
  * Profile page for a user
  */
-const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
+function UserProfilePage({ idOrSlug, isSheet, orgIdOrSlug }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
@@ -95,6 +95,6 @@ const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
       </Suspense>
     </>
   );
-};
+}
 
 export default UserProfilePage;

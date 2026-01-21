@@ -9,7 +9,7 @@ interface MarketingLayoutProps {
   children?: React.ReactNode;
 }
 
-const MarketingLayout = ({ title, children }: MarketingLayoutProps) => {
+function MarketingLayout({ title, children }: MarketingLayoutProps) {
   const { t } = useTranslation();
 
   return (

@@ -11,11 +11,11 @@ interface Props {
 /**
  * This is a placeholder component for the user profile page content
  **/
-const ProfilePageContent = ({ isSheet, userId, orgIdOrSlug }: Props) => {
+function ProfilePageContent({ isSheet, userId, orgIdOrSlug }: Props) {
   if (!orgIdOrSlug)
     return <OrganizationsGrid fixedQuery={{ userId }} saveDataInSearch={!isSheet} focusView={!isSheet} />;
 
   return <ContentPlaceholder icon={SquirrelIcon} title="common:no_resource_yet" />;
-};
+}
 
 export default ProfilePageContent;

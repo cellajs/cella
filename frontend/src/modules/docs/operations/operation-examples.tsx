@@ -13,7 +13,10 @@ import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types
 import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
-const resolveResponseSchema = (response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined => {
+function resolveResponseSchema(
+  response: GenResponseSummary,
+  schemas: GenComponentSchema[],
+): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
   if (response.name) {
@@ -21,7 +24,7 @@ const resolveResponseSchema = (response: GenResponseSummary, schemas: GenCompone
     return schemaEntry?.schema;
   }
   return undefined;
-};
+}
 
 interface ExamplesAccordionProps {
   responses: GenResponseSummary[];
@@ -35,7 +38,7 @@ interface ExamplesAccordionProps {
  * Accordion component to display operation response examples.
  * Only shows responses that have examples, with example view preselected.
  */
-const ExamplesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ExamplesAccordionProps) => {
+function ExamplesAccordion({ responses, schemas, operationId, zodContent, typesContent }: ExamplesAccordionProps) {
   const { t } = useTranslation();
 
   // Filter to only responses with examples
@@ -89,7 +92,7 @@ const ExamplesAccordion = ({ responses, schemas, operationId, zodContent, typesC
       })}
     </Accordion>
   );
-};
+}
 
 interface OperationExamplesProps {
   operationId: string;

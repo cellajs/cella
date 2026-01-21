@@ -7,9 +7,10 @@ import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
+
 import { Input } from '~/modules/ui/input';
 
-export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: string; onEmailChange?: () => void }) => {
+export function RequestPasswordForm({ email = '', onEmailChange }: { email?: string; onEmailChange?: () => void }) {
   const { t } = useTranslation();
 
   const isMobile = window.innerWidth < 640;
@@ -62,4 +63,4 @@ export const RequestPasswordForm = ({ email = '', onEmailChange }: { email?: str
       </div>
     </div>
   );
-};
+}

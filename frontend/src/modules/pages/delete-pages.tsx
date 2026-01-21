@@ -10,7 +10,7 @@ type Props = {
   callback?: (args: CallbackArgs<Page[]>) => void;
 };
 
-const DeletePages = ({ pages, callback, isDialog }: Props) => {
+function DeletePages({ pages, callback, isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const deletePage = usePageDeleteMutation();
 

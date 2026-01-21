@@ -17,7 +17,7 @@ interface InfoRow {
  * Displays API overview information in a table format.
  * Shows title, version, and description from the OpenAPI info.
  */
-const OverviewTable = () => {
+function OverviewTable() {
   const { t } = useTranslation();
 
   // Fetch info via React Query (reduces bundle size)
@@ -81,6 +81,6 @@ const OverviewTable = () => {
       </CardContent>
     </Card>
   );
-};
+}
 
 export default OverviewTable;

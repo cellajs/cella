@@ -6,7 +6,7 @@ import type { StepSharedProps } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { cn } from '~/utils/cn';
 
-const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>((props, ref) => {
+function HorizontalStepBase(props: StepSharedProps, ref: React.ForwardedRef<HTMLDivElement>) {
   const {
     isError,
     isLoading,
@@ -98,6 +98,8 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>((props,
       </div>
     </div>
   );
-});
+}
+
+const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(HorizontalStepBase);
 
 export { HorizontalStep };

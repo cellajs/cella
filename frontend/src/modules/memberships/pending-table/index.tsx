@@ -18,7 +18,9 @@ import type { PendingMembership } from '~/modules/memberships/types';
 const LIMIT = appConfig.requestLimits.pendingMemberships;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: PendingMembership) => row.id;
+function rowKeyGetter(row: PendingMembership) {
+  return row.id;
+}
 
 const pendingMembershipsSearchSchema = zGetPendingMembershipsData.shape.query.pick({ sort: true, order: true });
 
@@ -28,7 +30,7 @@ export interface PendingMembershipsTableProps {
   entity: ContextEntityData;
 }
 
-export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps) => {
+export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });
 
@@ -99,6 +101,6 @@ export const PendingMembershipsTable = ({ entity }: PendingMembershipsTableProps
       />
     </div>
   );
-};
+}
 
 export default PendingMembershipsTable;

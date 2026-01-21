@@ -9,7 +9,7 @@ interface SelectRoleProps {
   className?: string;
 }
 
-const SelectRoles = ({ onChange, value = [], className }: SelectRoleProps) => {
+function SelectRoles({ onChange, value = [], className }: SelectRoleProps) {
   const { t } = useTranslation();
 
   const handleCheckboxChange = (role: string) => {
@@ -36,6 +36,6 @@ const SelectRoles = ({ onChange, value = [], className }: SelectRoleProps) => {
       ))}
     </div>
   );
-};
+}
 
 export default SelectRoles;

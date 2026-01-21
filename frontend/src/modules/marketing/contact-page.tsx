@@ -30,7 +30,7 @@ if (appConfig.company.tel)
     text: appConfig.company.tel,
   });
 
-const ContactPage = () => {
+function ContactPage() {
   const { t } = useTranslation();
 
   return (

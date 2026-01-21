@@ -16,7 +16,7 @@ export interface PageCoverProps {
   coverUpdateCallback: (bannerKey: string) => void;
 }
 
-const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) => {
+function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) {
   const { t } = useTranslation();
   const upload = useUploader();
 
@@ -69,6 +69,8 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
       )}
     </div>
   );
-});
+}
+
+const PageCover = memo(PageCoverBase);
 
 export { PageCover };

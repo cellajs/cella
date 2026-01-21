@@ -3,7 +3,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { faqsData } from '~/modules/marketing/marketing-config';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 
-const FAQ = () => {
+function FAQ() {
   const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-3xl">

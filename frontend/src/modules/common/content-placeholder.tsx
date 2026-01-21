@@ -14,14 +14,14 @@ interface Props {
   titleProps?: TOptions & { returnObjects?: false };
 }
 
-const ContentPlaceholder = ({
+function ContentPlaceholder({
   title,
   icon: Icon,
   text,
   textClassName = '',
   className = '',
   titleProps = {},
-}: Props) => {
+}: Props) {
   const { t } = useTranslation();
 
   const titleText = t(title, { ...titleProps, returnObjects: false });
@@ -33,6 +33,6 @@ const ContentPlaceholder = ({
       {text && <div className={cn('mt-12 text-sm font-medium', textClassName)}>{text}</div>}
     </div>
   );
-};
+}
 
 export default ContentPlaceholder;

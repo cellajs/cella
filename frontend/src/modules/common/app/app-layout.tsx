@@ -18,7 +18,7 @@ import { SidebarWrapper } from '~/modules/ui/sidebar';
  * - Renders navigation, content area, dialogs, sheets, and other global components.
  * - dialoger, dropdowner and sheeter need to be inside SSE provider to receive SSE events.
  */
-const AppLayout = () => {
+function AppLayout() {
   return (
     <div id="appLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">
       <ErrorBoundary
@@ -42,6 +42,6 @@ const AppLayout = () => {
       </ErrorBoundary>
     </div>
   );
-};
+}
 
 export default AppLayout;

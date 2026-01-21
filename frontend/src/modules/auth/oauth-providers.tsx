@@ -20,7 +20,7 @@ type OAuthProvider = (typeof mapOAuthProviders)[number];
  *
  * @param authStep The action type to perform
  */
-const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
+function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { tokenId, redirect } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });

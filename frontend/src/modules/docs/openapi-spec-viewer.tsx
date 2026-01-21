@@ -16,7 +16,7 @@ import { cn } from '~/utils/cn';
 /**
  * Recursively counts all search matches in a value (keys and primitive values).
  */
-const countSearchMatches = (value: unknown, searchText: string): number => {
+function countSearchMatches(value: unknown, searchText: string): number {
   if (!searchText) return 0;
   const lowerSearch = searchText.toLowerCase();
   let count = 0;
@@ -43,13 +43,13 @@ const countSearchMatches = (value: unknown, searchText: string): number => {
   }
 
   return count;
-};
+}
 
 /**
  * Displays the full OpenAPI specification JSON with collapsible sections.
  * Uses custom json-viewer with 'openapi' mode for $ref click-to-scroll navigation.
  */
-const OpenApiSpecViewer = () => {
+function OpenApiSpecViewer() {
   const { t } = useTranslation();
 
   const [searchText, setSearchText] = useState('');
@@ -238,6 +238,6 @@ const OpenApiSpecViewer = () => {
       </div>
     </>
   );
-};
+}
 
 export default OpenApiSpecViewer;

@@ -5,7 +5,7 @@ import Spinner from '~/modules/common/spinner';
 
 const BlockNote = lazy(() => import('~/modules/common/blocknote'));
 
-const NewsletterPreview = () => {
+function NewsletterPreview() {
   const form = useFormWithDraft('create-newsletter');
 
   return (
@@ -25,5 +25,5 @@ const NewsletterPreview = () => {
       </section>
     </div>
   );
-};
+}
 export default NewsletterPreview;

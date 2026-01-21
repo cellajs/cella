@@ -46,13 +46,13 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
-const AttachmentsCarousel = ({
+function AttachmentsCarousel({
   items,
   isDialog = false,
   itemIndex = 0,
   saveInSearchParams = false,
   classNameContainer,
-}: CarouselProps) => {
+}: CarouselProps) {
   const navigate = useNavigate();
 
   const removeDialog = useDialoger((state) => state.remove);
@@ -203,6 +203,6 @@ const AttachmentsCarousel = ({
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)] p-1" />}
     </BaseCarousel>
   );
-};
+}
 
 export default AttachmentsCarousel;

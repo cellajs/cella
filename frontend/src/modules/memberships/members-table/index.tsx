@@ -18,7 +18,9 @@ import type { Member, MembersRouteSearchParams } from '~/modules/memberships/typ
 const LIMIT = appConfig.requestLimits.members;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: Member) => row.id;
+function rowKeyGetter(row: Member) {
+  return row.id;
+}
 
 export interface MembersTableWrapperProps {
   entity: ContextEntityData;
@@ -26,7 +28,7 @@ export interface MembersTableWrapperProps {
   children?: React.ReactNode;
 }
 
-const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapperProps) => {
+function MembersTable({ entity, isSheet = false, children }: MembersTableWrapperProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 

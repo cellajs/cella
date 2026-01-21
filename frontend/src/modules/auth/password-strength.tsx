@@ -9,12 +9,12 @@ interface PasswordStrengthProps {
   minLength?: number;
 }
 
-const PasswordStrength = ({
+function PasswordStrength({
   password,
   userInputs = [],
   barColors = ['#cccccc30', '#ef4836', '#f6b44d', '#2b90ef', '#25c281'],
   minLength = 4,
-}: PasswordStrengthProps) => {
+}: PasswordStrengthProps) {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
@@ -40,6 +40,6 @@ const PasswordStrength = ({
       ))}
     </div>
   );
-};
+}
 
 export default PasswordStrength;

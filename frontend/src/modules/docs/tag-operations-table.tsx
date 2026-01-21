@@ -16,7 +16,7 @@ interface TagOperationsTableProps {
 /**
  * Columns for TagOperationsTable
  */
-const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] => {
+function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
   const { scrollToSection } = useScrollSpy({ smoothScroll: true });
@@ -88,7 +88,7 @@ const useColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
     },
   ];
-};
+}
 
 /**
  * Simple read-only operations table for displaying operations within a tag section

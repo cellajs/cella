@@ -5,7 +5,7 @@ import { useEffect } from 'react';
  *
  * @param ids - An array of element IDs to hide.
  */
-const useHideElementsById = (ids: string[]): void => {
+function useHideElementsById(ids: string[]): void {
   useEffect(() => {
     const hiddenElements: HTMLElement[] = [];
 
@@ -23,6 +23,6 @@ const useHideElementsById = (ids: string[]): void => {
       }
     };
   }, [ids]);
-};
+}
 
 export default useHideElementsById;

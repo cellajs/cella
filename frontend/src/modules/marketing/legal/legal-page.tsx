@@ -5,7 +5,7 @@ import { LegalContent } from '~/modules/marketing/legal/legal-content';
 /**
  * Legal page showing core legal texts (privacy policy, terms of use) with sidebar navigation.
  */
-export const LegalPage = () => {
+export function LegalPage() {
   const { t } = useTranslation();
 
   return (
@@ -13,4 +13,4 @@ export const LegalPage = () => {
       <LegalContent />
     </MarketingLayout>
   );
-};
+}

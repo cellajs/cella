@@ -36,7 +36,7 @@ type FormValues = z.infer<typeof formSchema>;
 /**
  * Handles user sign-up, including standard registration and invitation token flow.
  */
-export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
+export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -149,4 +149,4 @@ export const SignUpStep = ({ tokenData }: { tokenData?: TokenData }) => {
       )}
     </Form>
   );
-};
+}

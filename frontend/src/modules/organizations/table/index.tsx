@@ -21,9 +21,11 @@ import { useUserStore } from '~/store/user';
 const LIMIT = appConfig.requestLimits.organizations;
 
 /** Stable row key getter function - defined outside component to prevent re-renders */
-const rowKeyGetter = (row: Organization) => row.id;
+function rowKeyGetter(row: Organization) {
+  return row.id;
+}
 
-const OrganizationsTable = () => {
+function OrganizationsTable() {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const updateMember = useMemberUpdateMutation();
@@ -168,6 +170,6 @@ const OrganizationsTable = () => {
       />
     </div>
   );
-};
+}
 
 export default OrganizationsTable;

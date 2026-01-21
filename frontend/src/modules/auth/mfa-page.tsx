@@ -13,7 +13,7 @@ import { useUserStore } from '~/store/user';
 /**
  * Handles multifactor authentication in the authentication flows.
  */
-const MfaPage = () => {
+function MfaPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

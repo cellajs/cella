@@ -8,7 +8,7 @@ import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { useUserStore } from '~/store/user';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
-const WelcomePage = () => {
+function WelcomePage() {
   const { user } = useUserStore();
 
   const [onboarding, setOnboardingState] = useState<OnboardingStates>(

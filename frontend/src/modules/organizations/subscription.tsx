@@ -7,7 +7,7 @@ import type { Organization } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 
-const Subscription = ({ organization }: { organization: Organization }) => {
+function Subscription({ organization }: { organization: Organization }) {
   const { t } = useTranslation();
 
   // WIP: Continue here later
@@ -49,6 +49,6 @@ const Subscription = ({ organization }: { organization: Organization }) => {
       </Button>
     </>
   );
-};
+}
 
 export default Subscription;

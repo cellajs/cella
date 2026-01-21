@@ -13,7 +13,7 @@ interface Props {
   tabIndex: number;
 }
 
-const openUpdateSheet = (organization: Organization | Organization, buttonRef: RefObject<HTMLButtonElement | null>) => {
+function openUpdateSheet(organization: Organization | Organization, buttonRef: RefObject<HTMLButtonElement | null>) {
   useSheeter.getState().create(
     <div className="container w-full">
       <Card className="mb-20">
@@ -35,9 +35,9 @@ const openUpdateSheet = (organization: Organization | Organization, buttonRef: R
       ),
     },
   );
-};
+}
 
-const UpdateRow = ({ organization, tabIndex }: Props) => {
+function UpdateRow({ organization, tabIndex }: Props) {
   const buttonRef = useRef(null);
 
   return (
@@ -55,6 +55,6 @@ const UpdateRow = ({ organization, tabIndex }: Props) => {
       <PencilIcon size={16} />
     </Button>
   );
-};
+}
 
 export default UpdateRow;

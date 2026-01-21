@@ -13,7 +13,7 @@ export interface AboutCard {
   country: string;
 }
 
-const AboutCards = () => {
+function AboutCards() {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
 
@@ -62,6 +62,6 @@ const AboutCards = () => {
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );
-};
+}
 
 export default AboutCards;

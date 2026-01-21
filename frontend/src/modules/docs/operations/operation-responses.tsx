@@ -17,7 +17,10 @@ import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types
 import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
-const resolveResponseSchema = (response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined => {
+function resolveResponseSchema(
+  response: GenResponseSummary,
+  schemas: GenComponentSchema[],
+): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
   if (response.name) {
@@ -25,7 +28,7 @@ const resolveResponseSchema = (response: GenResponseSummary, schemas: GenCompone
     return schemaEntry?.schema;
   }
   return undefined;
-};
+}
 
 interface ResponsesAccordionProps {
   responses: GenResponseSummary[];
@@ -38,7 +41,7 @@ interface ResponsesAccordionProps {
 /**
  * Accordion component to display operation responses.
  */
-const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) => {
+function ResponsesAccordion({ responses, schemas, operationId, zodContent, typesContent }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
   if (responses.length === 0) {
@@ -85,7 +88,7 @@ const ResponsesAccordion = ({ responses, schemas, operationId, zodContent, types
       })}
     </Accordion>
   );
-};
+}
 
 interface OperationResponsesProps {
   operationId: string;

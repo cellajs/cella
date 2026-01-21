@@ -19,7 +19,7 @@ interface Props {
   label?: string;
 }
 
-export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: Props) => {
+export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: Props) {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({
@@ -87,4 +87,4 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: P
       </form>
     </Form>
   );
-};
+}

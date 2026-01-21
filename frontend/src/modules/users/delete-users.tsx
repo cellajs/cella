@@ -13,7 +13,7 @@ interface Props {
   callback?: (args: CallbackArgs<User[]>) => void;
 }
 
-const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
+function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
 

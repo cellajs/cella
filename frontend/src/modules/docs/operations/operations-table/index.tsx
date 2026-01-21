@@ -21,7 +21,7 @@ async function updateOperationField(operationId: string, field: 'summary' | 'des
   return response.json();
 }
 
-const OperationsTable = () => {
+function OperationsTable() {
   const { search, setSearch } = useSearchParams<{ q?: string }>({ from: '/publicLayout/docs/operations/table' });
 
   const q = search.q || '';
@@ -127,6 +127,6 @@ const OperationsTable = () => {
       </div>
     </FocusViewContainer>
   );
-};
+}
 
 export default OperationsTable;

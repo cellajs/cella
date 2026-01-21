@@ -34,7 +34,7 @@ const entityKeysMap = {
 /**
  * Helper to parse SSE event data and call the provided callback with typed data.
  */
-const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: (data: SSEEventsMap[T]) => void) => {
+function useTypedSSE<T extends keyof SSEEventsMap>(type: T, callback: (data: SSEEventsMap[T]) => void) {
   useSSE(type, (e: MessageEvent<string>) => {
     console.debug('SSE event received', type, e.data);
 
@@ -46,7 +46,7 @@ const useTypedSSE = <T extends keyof SSEEventsMap>(type: T, callback: (data: SSE
       console.error(`Failed to parse SSE event – ${type}`, error);
     }
   });
-};
+}
 
 /**
  * React component that listens for SSE events and invalidates or updates the React Query cache.

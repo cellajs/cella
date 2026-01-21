@@ -32,7 +32,7 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Props) => {
+function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
 
@@ -195,6 +195,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       </form>
     </Form>
   );
-};
+}
 
 export default UpdateOrganizationForm;

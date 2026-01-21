@@ -10,7 +10,7 @@ const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
 // Lazy load bg animation
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
 
-const AuthLayout = () => {
+function AuthLayout() {
   const { hasStarted, hasWaited } = useMounted();
 
   return (

@@ -4,13 +4,13 @@ import UserSheetHandler from '~/modules/users/user-sheet-handler';
 /**
  * Sheets that should always be available in app.
  */
-const AppSheets = () => {
+function AppSheets() {
   return (
     <>
       <UserSheetHandler />
       <AttachmentDialogHandler />
     </>
   );
-};
+}
 
 export default AppSheets;

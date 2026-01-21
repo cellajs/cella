@@ -6,7 +6,7 @@ import OverviewTable from './overview-table';
 /**
  * Overview page component displaying OpenAPI specification details.
  */
-const OverviewPage = () => {
+function OverviewPage() {
   const { t } = useTranslation();
 
   return (
@@ -16,6 +16,6 @@ const OverviewPage = () => {
       <OpenApiSpecViewer />
     </div>
   );
-};
+}
 
 export default OverviewPage;

@@ -54,7 +54,7 @@ interface TagInputProps extends OmittedInputProps {
   validateTag?: (tag: string) => boolean;
 }
 
-const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) => {
+function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputElement>) {
   const {
     tags,
     setTags,
@@ -314,7 +314,9 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
       )}
     </div>
   );
-});
+}
+
+const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(TagInputBase);
 
 type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'onTagClick'> & {
   activeTagIndex: null | number;
@@ -325,7 +327,7 @@ type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'onTagClick'>
   onRemoveTag: (id: string) => void;
 };
 
-const TagList = ({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) => {
+function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) {
   return (
     <div className={cn('flex flex-wrap gap-1 rounded-md flex-row', classStyleProps.tagListClasses)}>
       {tags.map((tag, index) => (
@@ -375,6 +377,6 @@ const TagList = ({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagInde
       ))}
     </div>
   );
-};
+}
 
 export { TagInput };

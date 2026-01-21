@@ -24,7 +24,7 @@ interface Props {
 /**
  * Form for inviting users by email.
  */
-const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
+function InviteEmailForm({ entity, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
@@ -117,6 +117,6 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
       </form>
     </Form>
   );
-};
+}
 
 export default InviteEmailForm;

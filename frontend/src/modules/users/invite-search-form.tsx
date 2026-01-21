@@ -19,7 +19,7 @@ interface Props {
 /**
  * Invite members by searching for users which are already in the system
  */
-const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
+function InviteSearchForm({ entity, dialog: isDialog }: Props) {
   const { t } = useTranslation();
   if (!entity) return null;
 
@@ -93,6 +93,6 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
       </form>
     </Form>
   );
-};
+}
 
 export default InviteSearchForm;

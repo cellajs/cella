@@ -15,7 +15,7 @@ interface DeviceMockupProps {
   type: DeviceType;
 }
 
-const DeviceMockup = ({ lightItems, darkItems, type, className }: DeviceMockupProps) => {
+function DeviceMockup({ lightItems, darkItems, type, className }: DeviceMockupProps) {
   const mode = useUIStore((state) => state.mode);
 
   const items = mode === 'dark' ? darkItems : lightItems;
@@ -37,6 +37,6 @@ const DeviceMockup = ({ lightItems, darkItems, type, className }: DeviceMockupPr
       />
     </div>
   );
-};
+}
 
 export default DeviceMockup;

@@ -24,7 +24,7 @@ interface UserThemeProps {
  * Component to switch between light/dark modes and optionally select color themes.
  * Renders a dropdown menu with available themes or a switch if only one theme is available.
  */
-const UserTheme = ({ size = 20, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
+function UserTheme({ size = 20, buttonClassName = '', contentClassName = '' }: UserThemeProps) {
   const { t } = useTranslation();
   const { mode, theme, setMode, setTheme } = useUIStore();
 
@@ -92,6 +92,6 @@ const UserTheme = ({ size = 20, buttonClassName = '', contentClassName = '' }: U
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+}
 
 export default UserTheme;

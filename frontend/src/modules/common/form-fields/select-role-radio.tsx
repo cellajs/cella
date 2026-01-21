@@ -9,7 +9,7 @@ interface Props {
   className?: string;
 }
 
-const SelectRoleRadio = ({ onChange, value, className }: Props) => {
+function SelectRoleRadio({ onChange, value, className }: Props) {
   const { t } = useTranslation();
 
   const roles = appConfig.roles.entityRoles;
@@ -27,6 +27,6 @@ const SelectRoleRadio = ({ onChange, value, className }: Props) => {
       ))}
     </RadioGroup>
   );
-};
+}
 
 export default SelectRoleRadio;

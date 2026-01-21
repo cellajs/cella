@@ -35,7 +35,7 @@ export interface ComboboxProps {
   };
 }
 
-const Combobox = ({
+function Combobox({
   options,
   value,
   onChange,
@@ -44,7 +44,7 @@ const Combobox = ({
   contentWidthMatchInput = true,
   disabled = false,
   placeholders: passedPlaseholders = {},
-}: ComboboxProps) => {
+}: ComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -175,6 +175,6 @@ const Combobox = ({
       </PopoverContent>
     </Popover>
   );
-};
+}
 
 export default Combobox;

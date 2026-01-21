@@ -27,14 +27,14 @@ interface FloatingNavProps {
  * - Shows/hides buttons based on scroll direction.
  * - Supports custom items or route-based nav items from staticData.
  */
-const FloatingNav = ({
+function FloatingNav({
   items: customItems,
   triggerNavItem,
   scrollContainerRef,
   bodyClass = 'floating-nav',
   resetTrigger,
   onScrollTopChange,
-}: FloatingNavProps) => {
+}: FloatingNavProps) {
   const routerState = useRouterState();
   const isMobile = useBreakpoints('max', 'sm');
   const { isVisible: showButtons, scrollTop, reset } = useScrollVisibility(isMobile, scrollContainerRef);
@@ -98,7 +98,7 @@ const FloatingNav = ({
       })}
     </nav>
   );
-};
+}
 
 export default FloatingNav;
 export { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';

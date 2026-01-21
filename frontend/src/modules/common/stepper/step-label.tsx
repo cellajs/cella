@@ -35,7 +35,7 @@ const descriptionVariants = cva('', {
   },
 });
 
-const StepLabel = ({ isCurrentStep, opacity, label, description }: StepLabelProps) => {
+function StepLabel({ isCurrentStep, opacity, label, description }: StepLabelProps) {
   const { variant, styles, size, orientation } = useStepper();
   const shouldRender = !!label || !!description;
 
@@ -72,6 +72,6 @@ const StepLabel = ({ isCurrentStep, opacity, label, description }: StepLabelProp
       )}
     </div>
   ) : null;
-};
+}
 
 export { StepLabel };

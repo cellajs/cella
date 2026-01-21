@@ -13,7 +13,7 @@ interface Props {
   callback?: (args: CallbackArgs<Attachment[]>) => void;
 }
 
-const DeleteAttachments = ({ attachments, organizationSlug, callback, dialog: isDialog }: Props) => {
+function DeleteAttachments({ attachments, organizationSlug, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const deleteAttachments = useAttachmentDeleteMutation(organizationSlug);
 
@@ -34,6 +34,6 @@ const DeleteAttachments = ({ attachments, organizationSlug, callback, dialog: is
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
-};
+}
 
 export default DeleteAttachments;

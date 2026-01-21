@@ -8,11 +8,11 @@ import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
 
-const StepperFooter = ({
+function StepperFooter({
   setOnboardingState,
 }: {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
-}) => {
+}) {
   const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
 
@@ -48,6 +48,6 @@ const StepperFooter = ({
       )}
     </div>
   );
-};
+}
 
 export default StepperFooter;

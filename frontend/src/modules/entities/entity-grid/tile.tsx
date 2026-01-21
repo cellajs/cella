@@ -9,6 +9,9 @@ import { getEntityRoute } from '~/routes-resolver';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
+/**
+ * Tile component to display an entity in a grid layout.
+ */
 export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
   const { to, params, search } = getEntityRoute(entity);
   return (
@@ -22,9 +25,8 @@ export const EntityGridTile = ({ entity }: { entity: ContextEntityData }) => {
         >
           {typeof window !== 'undefined' && (
             <div
-              className={`w-full relative flex flex-col bg-cover min-h-30 bg-center aspect-3/1 bg-opacity-80 ${
-                entity.bannerUrl ? '' : numberToColorClass(entity.id)
-              }`}
+              className={`w-full relative flex flex-col bg-cover min-h-30 bg-center aspect-3/1 bg-opacity-80 ${entity.bannerUrl ? '' : numberToColorClass(entity.id)
+                }`}
               style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
             >
               <div className="grow" />

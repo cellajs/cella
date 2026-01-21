@@ -1,7 +1,7 @@
 import type { RenderHeaderCellProps } from '@cella/data-grid';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 
-const HeaderCell = <TData,>({ column, sortDirection }: RenderHeaderCellProps<TData>) => {
+function HeaderCell<TData>({ column, sortDirection }: RenderHeaderCellProps<TData>) {
   if (!column.sortable) {
     return <div>{column.name}</div>;
   }
@@ -18,6 +18,6 @@ const HeaderCell = <TData,>({ column, sortDirection }: RenderHeaderCellProps<TDa
       )}
     </div>
   );
-};
+}
 
 export default HeaderCell;

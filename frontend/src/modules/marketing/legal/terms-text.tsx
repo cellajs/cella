@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import LegalContact from '~/modules/marketing/legal/legal-contact';
 
-const TermsText = () => {
+function TermsText() {
   const lastUpdated = 'September 23, 2024';
 
   const appName = appConfig.name;
@@ -347,6 +347,6 @@ const TermsText = () => {
       </section>
     </div>
   );
-};
+}
 
 export default TermsText;

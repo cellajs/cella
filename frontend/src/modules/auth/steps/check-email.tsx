@@ -26,7 +26,7 @@ type FormValues = z.infer<typeof formSchema>;
  * then routes to the appropriate next step (sign-in, sign-up, waitlist, or invite-only)
  * based on API response and configuration.
  */
-export const CheckEmailStep = () => {
+export function CheckEmailStep() {
   const { t } = useTranslation();
 
   const { setStep } = useAuthStore();
@@ -84,4 +84,4 @@ export const CheckEmailStep = () => {
       )}
     </Form>
   );
-};
+}

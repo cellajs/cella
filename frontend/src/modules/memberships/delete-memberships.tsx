@@ -14,14 +14,14 @@ interface Props {
   callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
-const DeleteMemberships = ({
+function DeleteMemberships({
   members,
   entityIdOrSlug,
   entityType,
   organizationId,
   callback,
   dialog: isDialog,
-}: Props) => {
+}: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
 
@@ -40,6 +40,6 @@ const DeleteMemberships = ({
       pending={isPending}
     />
   );
-};
+}
 
 export default DeleteMemberships;

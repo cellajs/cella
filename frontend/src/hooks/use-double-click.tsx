@@ -19,14 +19,14 @@ interface UseDoubleClickOptions {
  * @param allowedTargets - Set a Lover case element name that allow to be tracked by hook
  * @param excludeIds - Set a element id that excluded from tracking by hook
  */
-const useDoubleClick = ({
+function useDoubleClick({
   ref,
   latency = 300,
   excludeIds = [],
   allowedTargets = [],
   onSingleClick = () => null,
   onDoubleClick = () => null,
-}: UseDoubleClickOptions) => {
+}: UseDoubleClickOptions) {
   useEffect(() => {
     const clickRef = ref.current;
     if (!clickRef) return;
@@ -73,6 +73,6 @@ const useDoubleClick = ({
       clickRef.removeEventListener('click', handleClick);
     };
   });
-};
+}
 
 export default useDoubleClick;

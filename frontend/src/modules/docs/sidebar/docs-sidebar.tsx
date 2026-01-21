@@ -33,7 +33,7 @@ const DebugToolbars =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
 /** Suspense-wrapped JsonActions for OpenAPI spec */
-const OpenApiJsonActions = () => {
+function OpenApiJsonActions() {
   const { t } = useTranslation();
   const { data } = useSuspenseQuery(openApiSpecQueryOptions);
   return (
@@ -46,7 +46,7 @@ const OpenApiJsonActions = () => {
       viewerUrl="/docs/overview"
     />
   );
-};
+}
 
 interface DocsSidebarProps {
   tags: GenTagSummary[];

@@ -17,7 +17,7 @@ import { getMethodColor } from '../../helpers/get-method-color';
 /**
  * Opens a sheet with operation detail view
  */
-const openOperationSheet = (operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) => {
+function openOperationSheet(operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) {
   useSheeter.getState().create(
     <Suspense fallback={<Spinner className="mt-[40vh]" />}>
       <div className="container pb-[50vh] pt-3">
@@ -32,12 +32,12 @@ const openOperationSheet = (operation: GenOperationSummary, buttonRef: RefObject
       title: i18n.t('common:docs.operation_detail'),
     },
   );
-};
+}
 
 /**
  * Opens a sheet with operation examples view (ViewerGroup with example preselected)
  */
-const openExamplesSheet = (operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) => {
+function openExamplesSheet(operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) {
   useSheeter.getState().create(
     <Suspense fallback={<Spinner className="mt-[40vh]" />}>
       <div className="container pb-[50vh] pt-3">
@@ -52,12 +52,12 @@ const openExamplesSheet = (operation: GenOperationSummary, buttonRef: RefObject<
       title: i18n.t('common:docs.response_examples'),
     },
   );
-};
+}
 
 /**
  * Cell component for clickable operation path that opens detail sheet
  */
-const PathCell = ({ row }: { row: GenOperationSummary }) => {
+function PathCell({ row }: { row: GenOperationSummary }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -70,12 +70,12 @@ const PathCell = ({ row }: { row: GenOperationSummary }) => {
       {row.path}
     </button>
   );
-};
+}
 
 /**
  * Cell component for clickable example icon that opens examples sheet
  */
-const ExampleCell = ({ row }: { row: GenOperationSummary }) => {
+function ExampleCell({ row }: { row: GenOperationSummary }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   if (!row.hasExample) return <></>;
@@ -90,7 +90,7 @@ const ExampleCell = ({ row }: { row: GenOperationSummary }) => {
       <BirdIcon className="h-4 w-4" />
     </button>
   );
-};
+}
 
 export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefinition[] = []) => {
   const { t } = useTranslation();

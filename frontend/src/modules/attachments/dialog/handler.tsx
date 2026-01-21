@@ -6,7 +6,7 @@ import { clearAttachmentDialogSearchParams } from '~/modules/attachments/dialog/
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-const AttachmentDialogHandler = memo(() => {
+function AttachmentDialogHandlerBase() {
   const { attachmentDialogId, groupId } = useSearch({ strict: false });
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
@@ -55,6 +55,8 @@ const AttachmentDialogHandler = memo(() => {
   }, [attachmentDialogId]);
 
   return null;
-});
+}
+
+const AttachmentDialogHandler = memo(AttachmentDialogHandlerBase);
 
 export default AttachmentDialogHandler;

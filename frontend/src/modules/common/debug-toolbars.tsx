@@ -23,7 +23,7 @@ const debugOptions: DebugItem[] = [
   { id: 'react-scan', icon: '⏱️' },
 ];
 
-const DebugToolbars = () => {
+function DebugToolbars() {
   // Function to handle toggling debug options in different ways
   const debugToggle = (item: DebugItem) => {
     if (item.url) return window.open(item.url);

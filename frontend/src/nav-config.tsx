@@ -12,7 +12,7 @@ import { MenuSheet } from '~/modules/navigation/menu-sheet';
 /**
  * Declare search nav button action
  */
-const startSearchAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
+function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   if (!onlineManager.isOnline()) return toaster(i18n.t('common:action.offline.text'), 'warning');
 
   return useDialoger.getState().create(<AppSearch />, {
@@ -22,7 +22,7 @@ const startSearchAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
     drawerOnMobile: false,
     showCloseButton: false,
   });
-};
+}
 
 /**
  * Declare all of your main navigation items, visible in main navigation bar or as floating buttons on mobile

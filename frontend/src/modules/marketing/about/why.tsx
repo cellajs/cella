@@ -4,7 +4,7 @@ import Spinner from '~/modules/common/spinner';
 import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
-const Why = () => {
+function Why() {
   const { t } = useTranslation();
 
   return (
@@ -43,6 +43,6 @@ const Why = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Why;

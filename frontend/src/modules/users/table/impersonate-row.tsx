@@ -15,7 +15,7 @@ interface Props {
   tabIndex: number;
 }
 
-const handleStartImpersonation = async (targetUserId: string) => {
+async function handleStartImpersonation(targetUserId: string) {
   try {
     await startImpersonation({ query: { targetUserId } });
     useUIStore.getState().setImpersonating(true);
@@ -26,9 +26,9 @@ const handleStartImpersonation = async (targetUserId: string) => {
     toaster(i18n.t('error:impersonation_failed'), 'error');
     console.error(error);
   }
-};
+}
 
-const ImpersonateRow = ({ user, tabIndex }: Props) => {
+function ImpersonateRow({ user, tabIndex }: Props) {
   return (
     <Button
       variant="cell"
@@ -42,6 +42,6 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
       <VenetianMaskIcon size={16} />
     </Button>
   );
-};
+}
 
 export default ImpersonateRow;

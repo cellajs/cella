@@ -26,7 +26,7 @@ interface Props {
 const formSchema = zCreateOrganizationData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: Props) => {
+function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
@@ -96,6 +96,6 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
       </form>
     </Form>
   );
-};
+}
 
 export default CreateOrganizationForm;
