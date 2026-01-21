@@ -19,6 +19,9 @@ interface Props {
   label?: string;
 }
 
+/**
+ * Collects and submits a TOTP verification code.
+ */
 export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: Props) {
   const { t } = useTranslation();
 

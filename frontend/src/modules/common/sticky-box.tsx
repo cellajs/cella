@@ -360,6 +360,9 @@ export type StickyBoxConfig = {
 
 export type UseStickyBoxOptions = StickyBoxConfig;
 
+/**
+ * Provides sticky positioning behavior for a target element.
+ */
 export function useStickyBox({
   offsetTop = 0,
   offsetBottom = 0,

@@ -1,6 +1,9 @@
 import useMounted from '~/hooks/use-mounted';
 import { Skeleton } from '~/modules/ui/skeleton';
 
+/**
+ * Renders a loading skeleton for the entity grid.
+ */
 export function EntityGridSkeleton() {
   const { hasStarted } = useMounted();
 

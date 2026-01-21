@@ -18,6 +18,9 @@ interface ResetBlockTypeItemProp {
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
 }
 
+/**
+ * Renders a block type selector item for the side menu.
+ */
 export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;

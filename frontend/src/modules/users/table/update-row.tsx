@@ -13,6 +13,9 @@ interface Props {
   tabIndex: number;
 }
 
+/**
+ * Opens the update user sheet anchored to the given button ref.
+ */
 export function openUpdateUserSheet(user: User, buttonRef: RefObject<HTMLButtonElement | null>) {
   const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
   const createSheet = useSheeter.getState().create;

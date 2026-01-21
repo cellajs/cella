@@ -10,6 +10,9 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 
 import { Input } from '~/modules/ui/input';
 
+/**
+ * Renders the reset password request form.
+ */
 export function RequestPasswordForm({ email = '', onEmailChange }: { email?: string; onEmailChange?: () => void }) {
   const { t } = useTranslation();
 

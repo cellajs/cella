@@ -15,6 +15,9 @@ function isLocalPage(id: string) {
   return id.startsWith('temp-');
 }
 
+/**
+ * Builds column definitions for the pages table.
+ */
 export function usePagesTableColumns(isCompact: boolean) {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);

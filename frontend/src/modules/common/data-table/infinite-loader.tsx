@@ -11,6 +11,9 @@ type InfiniteLoaderProps = {
   fetchMore?: () => Promise<unknown>;
 };
 
+/**
+ * Handles infinite scrolling state and triggers fetch on viewport entry.
+ */
 export function InfiniteLoader({
   hasNextPage,
   isFetching,

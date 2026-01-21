@@ -4,6 +4,9 @@ import DropdownerDrawer from '~/modules/common/dropdowner/drawer';
 import { DropdownerDropdown } from '~/modules/common/dropdowner/dropdown';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 
+/**
+ * Renders dropdowns as drawers on mobile and popovers on desktop.
+ */
 export function Dropdowner() {
   const dropdown = useDropdowner((state) => state.dropdown);
   const isMobile = useBreakpoints('max', 'sm');

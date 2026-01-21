@@ -30,6 +30,9 @@ export interface PendingMembershipsTableProps {
   entity: ContextEntityData;
 }
 
+/**
+ * Displays a table of pending memberships for a context entity.
+ */
 export function PendingMembershipsTable({ entity }: PendingMembershipsTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });

@@ -18,6 +18,9 @@ import InviteSearchForm from '~/modules/users/invite-search-form';
 const InviteFormSchema = zMembershipInviteData.shape.body;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
+/**
+ * Creates a draft-backed invite form for the given entity.
+ */
 export function useInviteFormDraft(entityId?: string) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: 'invite-users',

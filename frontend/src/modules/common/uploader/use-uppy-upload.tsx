@@ -18,6 +18,9 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 
 const uppyRestrictions = appConfig.uppy.defaultRestrictions;
 
+/**
+ * Initializes and manages the Uppy upload instance.
+ */
 export function useUploadUppy() {
   const { t } = useTranslation();
   const uploaderData = useUploader((state) => state.uploaderConfig);

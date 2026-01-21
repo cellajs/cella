@@ -27,6 +27,9 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
   isFiltered: boolean;
 };
 
+/**
+ * Displays a paginated grid of entity tiles with loading and empty states.
+ */
 export function BaseEntityGrid<TEntity extends { id: string }>({
   label,
   entities,
