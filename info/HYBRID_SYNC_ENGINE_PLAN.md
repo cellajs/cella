@@ -11,13 +11,13 @@ The sync engine uses precise vocabulary to avoid confusion. See [SYNC_ENGINE_REQ
 
 ## Summary
 
-This document outlines a plan to build a **hybrid sync engine** that extends existing **OpenAPI + React Query** infrastructure with sync and offline capabilities. This engine is - *currently* - designed to be a integral part of cella and its entity model. The approach is "hybrid" because the default is standard REST/OpenAPI endpoints while product entity modules *can* be enhanced with transaction tracking, offline support, realtime sync stream. 
+This document outlines a plan to build a **hybrid sync engine** that extends existing **OpenAPI + React Query** infrastructure with sync and offline capabilities. This engine is - *currently* - designed to be a integral part of cella and its entity model. The approach is "hybrid" because the default is standard REST/OpenAPI endpoints while product entity modules *can* be enhanced with transaction tracking, offline support, and live stream for realtime sync. 
 
 | `opMode` | Features | Example |
 |--------|----------|---------|
 | **basic** | REST CRUD, server-generated IDs | Context entities (`organization`) |
-| **synced** | + `{ data, sync }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | Product entities (`page`, `attachment`) |
-| **realtime** | + SSE transaction stream, live cache updates, multi-tab leader election | Daily-use (eg. `task`, not in cella) |
+| **offline** | + `{ data, tx }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | Product entities (`page`, `attachment`) |
+| **realtime** | + Live stream (SSE), live cache updates, multi-tab leader election | Daily-use (eg. `task`, not in cella) |
 
 > This plan focuses on upgrading product entities from **basic** → **synced** → **realtime**.
 
@@ -29,10 +29,10 @@ Several sync solutions exist (Electric SQL, TinyBase, LiveStore, Liveblocks, etc
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
-| **OpenAPI contract** | Bypassed - sync happens outside REST | Extends existing endpoints with `{ data, sync }` wrapper |
+| **OpenAPI contract** | Bypassed - sync happens outside REST | Extends existing endpoints with `{ data, tx }` wrapper |
 | **Authorization** | Requires re-implementing permission logic | Reuses `isPermissionAllowed()` and existing guards |
 | **Schema ownership** | Sync layer often dictates schema patterns | Drizzle/zod schemas remain authoritative |
-| **Audit trail** | Not covered in general | Activities already recorded through Change Data Capture (CDC) |
+| **Audit trail** | Not covered in general | Activities already recorded through a Change Data Capture (CDC worker) |
 | **Opt-in complexity** | All-or-nothing adoption | Progressive: REST → Tracked → Offline → Realtime |
 | **React Query base layer** | New reactive layer | Builds on existing TanStack Query cache |
 
@@ -46,29 +46,36 @@ Cella's existing infrastructure provides 70% of what's needed:
 
 ## Core concepts
 
-**Design philosophy**
+### Design philosophy
 - **Extend on OpenAPI** - All features work through the existing OpenAPI infrastructure.
 - **React Query base** - Build on top of, not around, TanStack Query.
 - **Progressive enhancement** - REST for context entities; product entities add optimistic updates → offline → realtime.
 
-**Architecture**
-- **Leverage CDC** - Use pg `activitiesTable` as durable activity log (no separate transaction storage).
-- **Transaction stream** - SSE streaming backed by CDC worker + postgres NOTIFY for realtime sync.
-- **Separation of concerns** - LIST endpoints handle queries/filtering; Stream is dumb, just provides new data.
-- **React Query as merge point** - Both initial load and stream updates feed into the same cache.
-- **Two paths for entity data** - Live updates get entity data from CDC NOTIFY; catch-up queries JOIN activities with entity tables.
+### Architecture
+- **Leverage CDC Worker** - Use pg `activitiesTable` as durable activity log (no separate transaction storage).
+- **Live stream** - SSE streaming backed by CDC Worker + postgres NOTIFY for realtime sync (`realtime` opMode only).
+- **Separation of concerns** - LIST endpoints handle queries/filtering; live stream is dumb, just provides new data.
+- **React Query as merge point** - Both initial load and live stream updates feed into the same cache.
+- **Two paths for entity data** - Live updates get entity data from CDC Worker NOTIFY; catch-up queries JOIN activities with entity tables.
 
-**Sync mechanics**
+### Sync mechanics
 - **Client-generated IDs** - Product entities use client-generated transaction IDs for determinism.
-- **Upstream-first sync** - Pull before push; client must be caught up before sending mutations. This provides temporal ordering - when online(!) your mutation is always based on latest state.
+- **Upstream-first sync** - Pull before push (see [online vs offline sync](./SYNC_ENGINE_REQUIREMENTS.md#online-vs-offline-sync)).
 - **Hybrid logical clocks (HLC)** - Transaction IDs use HLC for causality-preserving, sortable timestamps.
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect.
 - **Persisted stream offset** - Store last received `activityId` in IndexedDB per org, so closing browser doesn't lose position.
-- **Field-level tracking** - One mutation = one transaction = one field change. The `data` object uses standard entity update shape; `sync.changedField` declares which single field is tracked for conflicts (see DEC-18).
-- **Merge strategy** - When upstream changes conflict with pending local mutations: (1) try CRDT merge for compatible types (text, counters, sets), (2) fall back to LWW for opaque values, (3) show a generic resolution UI if user intervention needed.
+- **Field-level tracking** - One mutation = one transaction = one field change. The `data` object uses standard entity update shape; `tx.changedField` declares which single field is tracked for conflicts (see DEC-18).
+- **Merge strategy** - LWW (server wins) as default, resolution UI for fields needing user input.
 - **Single-writer multi-tab** - One leader tab owns SSE connection and broadcasts to followers.
 
-** OpenAPI + React Query infra to build on top of:
+### Type safety
+
+Having backend, frontend, CDC, config in one repo puts us in an excellent position to provide end-to-end type safety across the entire 'sync engine flow'. 
+
+- **Prevent type assertions** - Avoid `as`, `as unknown as`, and `!` assertions. They break the compile-time safety that catches sync bugs.
+- **Use generics over casts** - For dynamic entity types, use discriminated unions and generic functions. 
+
+### Basic layer to build on top of
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -94,13 +101,15 @@ Cella's existing infrastructure provides 70% of what's needed:
 
 ## Upstream-first sync pattern
 
-> "Upstream changes always need to be pulled before a client can push its own changes to preserve a global total order."
+> "Pull before push" - client must be caught up before sending mutations.
 
-Optimistic updates are immediate and unconditional. "Upstream-first" controls *when mutations are sent to server*, not when the user sees their change. This gives instant UX while maintaining sync guarantees.
+See [terminology: online vs offline sync](./SYNC_ENGINE_REQUIREMENTS.md#online-vs-offline-sync) for the full explanation.
 
-- **Global total order** - All clients see changes in the same order
-- **No stale writes** - Client has latest state before mutating
-- **Solve conflicts locally** - Merge (CRDT/LWW/UI) happens in frontend when pulling upstream reveals conflicts with pending local mutations 
+**Key points:**
+- Optimistic updates are immediate and unconditional (instant UX)
+- "Upstream-first" controls *when mutations are sent*, not when user sees changes
+- Online: stream keeps client current, conflicts are rare (~90%+ of usage)
+- Offline: mutations queue locally, conflicts resolved client-side on reconnect 
 
 **How it works in Cella:**
 
@@ -142,26 +151,24 @@ Optimistic updates are immediate and unconditional. "Upstream-first" controls *w
 
 ## Architecture design
 
-### Transaction tracking schema (field-level)
+### Transaction tracking schema
 
-**Conflict reduction strategy**:
+**Conflict reduction strategy** (three layers):
 
-Conflicts are minimized through two complementary approaches:
+1. **Upstream-first** - Pull before push eliminates ~90% of potential conflicts (see [terminology](./SYNC_ENGINE_REQUIREMENTS.md#online-vs-offline-sync))
 
-- **Upstream-first sync**: Clients must pull latest server state before pushing mutations. This eliminates most conflicts because the client is working with current data. Only truly concurrent edits (made during the brief window between pull and push) can conflict.
+2. **Field-level tracking** - Conflicts scoped to individual fields. Two users editing different fields = no conflict.
 
-- **Field-level tracking**: When conflicts do occur, they're scoped to individual fields. Two users editing different fields simultaneously = no conflict.
+3. **Merge** - For same-field conflicts: LWW (server wins) → resolution UI (user decides)
 
-- **Merge strategy**: For same-field conflicts, try CRDT merge for compatible types (text, counters, sets), fall back to LWW for opaque values (enums, foreign keys), and show resolution UI when user intervention is needed.
+When offline, conflict likelihood grows with duration, but the rich client enables graceful resolution before pushing.
 
-Together, these make conflicts rare in practice: upstream-first handles 90%+ of cases, field-level tracking handles most of the remainder, and the tiered merge strategy handles the rest gracefully.
-
-**Entity row structure** - Single transient sync JSONB column:
+**Entity row structure** - Single transient `tx` JSONB column:
 
 ```typescript
 // In product entity tables (pages, attachments, etc.)
-// This is TRANSIENT - written by handler, read by CDC, overwritten on next mutation
-sync: jsonb('sync').$type<{
+// This is TRANSIENT - written by handler, read by CDC Worker, overwritten on next mutation
+tx: jsonb('tx').$type<{
   transactionId: string;   // Current mutation's transaction ID (max 32 chars)
   sourceId: string;        // Tab/instance that made this mutation (max 64 chars)
   changedField: string | null;  // Which field this mutation changes (max 64 chars)
@@ -170,38 +177,32 @@ sync: jsonb('sync').$type<{
 
 **Why "transient"?**
 - These columns are only populated during mutation
-- CDC reads them and stores in activitiesTable
+- CDC Worker reads them and stores in activitiesTable
 - They get overwritten on next mutation (no history on entity)
-- The entity table is NOT the source of truth for sync state
-- activitiesTable has complete field-level audit trail
+- The entity table is NOT the source of truth for 'sync state'
 
-**Benefits**:
-- **Field-level conflicts** - Two users editing different fields = no conflict
-- **Tiered merge strategy** - Try CRDT merge for compatible types, fall back to LWW for opaque values, show resolution UI when needed
-- **Clean entity schema** - Sync state lives in activities, not entity
-- **Full history** - activitiesTable has complete field-level audit trail
 
-### Leveraging existing CDC infrastructure
+### Leveraging existing Change Data Capture Worker
 
-Cella already has a robust CDC system with `activitiesTable`. Extend it for transaction tracking:
+Cella already has a robust CDC Worker system with `activitiesTable`. Extend it for transaction tracking:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Frontend: Create Page                                                │
+│ Frontend: Create page                                                │
 │ const transactionId = nanoid();                                      │
-│ api.createPage({ body: { data, sync: { transactionId, sourceId, changedField: null } } }) │
+│ api.createPage({ body: { data, tx: { transactionId, sourceId, changedField: null } } }) │
 └──────────────────────────────────┬──────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Backend Handler                                                      │
-│ const { data, sync } = ctx.req.valid('json');                        │
-│ INSERT INTO pages (..., last_transaction_id = sync.transactionId)    │
+│ Backend handler                                                      │
+│ const { data, tx } = ctx.req.valid('json');                          │
+│ INSERT INTO pages (..., tx = { transactionId, sourceId, ... })       │
 └──────────────────────────────────┬──────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ PostgreSQL Logical Replication → CDC Worker                         │
+│ PostgreSQL logical replication → CDC Worker                         │
 │ Extracts transactionId from row.sync_transaction_id                  │
 └──────────────────────────────────┬──────────────────────────────────┘
                                    │
@@ -232,8 +233,8 @@ Cella already has a robust CDC system with `activitiesTable`. Extend it for tran
 export const activitiesTable = pgTable('activities', {
   // ... existing columns (including changedKeys for activity feed)
   
-  // NEW: Sync metadata for transaction tracking (null for non-synced entities)
-  sync: jsonb('sync').$type<{
+  // NEW: Transaction metadata for sync tracking (null for non-synced entities)
+  tx: jsonb('tx').$type<{
     transactionId: string;
     sourceId: string;
     changedField: string | null;
@@ -241,18 +242,18 @@ export const activitiesTable = pgTable('activities', {
   
 }, (table) => [
   // ... existing indexes
-  // Expression indexes for sync queries
-  index('idx_activities_sync_tx').on(sql`(sync->>'transactionId')`),
+  // Expression indexes for tx queries
+  index('idx_activities_tx_id').on(sql`(tx->>'transactionId')`),
   // Fast lookup: "what's the latest transaction for this entity+field?"
-  index('idx_activities_sync_field').on(
+  index('idx_activities_tx_field').on(
     table.entityType, 
     table.entityId, 
-    sql`(sync->>'changedField')`
+    sql`(tx->>'changedField')`
   ),
 ]);
 ```
 
-### Extended CDC context extraction
+### Extended CDC Worker context extraction
 
 ```typescript
 // cdc/src/utils/extract-activity-context.ts - additions
@@ -260,7 +261,7 @@ export interface ActivityContext {
   // ... existing
   transactionId: string | null;  // NEW
   sourceId: string | null;       // NEW
-  changedField: string | null;   // NEW: Field-level tracking
+  changedField: string | null;   // NEW
 }
 
 export function extractActivityContext(
@@ -270,11 +271,11 @@ export function extractActivityContext(
 ): ActivityContext {
   // ... existing extraction
 
-  // NEW: Read transient sync JSONB (written by handler, read here)
-  const syncData = getRowValue(row, 'sync') as { transactionId?: string; sourceId?: string; changedField?: string } | null;
-  const transactionId = syncData?.transactionId ?? null;
-  const sourceId = syncData?.sourceId ?? null;
-  const changedField = syncData?.changedField ?? null;
+  // NEW
+  const txData = getRowValue(row, 'tx') as { transactionId?: string; sourceId?: string; changedField?: string } | null;
+  const transactionId = txData?.transactionId ?? null;
+  const sourceId = txData?.sourceId ?? null;
+  const changedField = txData?.changedField ?? null;
 
   return {
     // ... existing
@@ -284,14 +285,6 @@ export function extractActivityContext(
   };
 }
 ```
-
-**Handling different actions:**
-
-| Action | changedField | Notes |
-|--------|--------------|-------|
-| `insert` | `null` or `'*'` | Entire entity is new |
-| `update` | Specific field name | From `sync_changed_field` column |
-| `delete` | `null` or `'*'` | Entire entity removed |
 
 ### Frontend mutation pattern with transactions
 
@@ -319,6 +312,8 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
   const mutateCache = useMutateQueryData(keys.list.base);
   const { trackTransaction } = useTransactionManager();
 
+  const pendingTxRef = useRef<string | null>(null);
+
   return useMutation<
     Attachment[], 
     ApiError, 
@@ -328,28 +323,31 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
     mutationKey: keys.create,
     
     mutationFn: async (body) => {
-      // Note: transactionId is added in onMutate and passed via context
-      // The actual API call includes sync metadata
+      // transactionId is set in onMutate before mutationFn runs
+      const transactionId = pendingTxRef.current;
+      if (!transactionId) throw new Error('Transaction ID not set');
+      
       return createAttachment({ 
         path: { orgIdOrSlug }, 
         body: {
           data: body,
-          sync: {
-            transactionId: (qc.getMutationDefaults(keys.create) as any)?.transactionId,
-            sourceId,
-          },
+          tx: { transactionId, sourceId },
         },
       });
     },
 
     onMutate: async (newAttachments) => {
       const transactionId = createTransactionId();
+      pendingTxRef.current = transactionId;
       
       // Cancel outgoing refetches (same as existing pattern)
       await qc.cancelQueries({ queryKey: keys.list.base });
 
-      // Attachments already have IDs from Transloadit
-      const optimisticAttachments = newAttachments as Attachment[];
+      // Type guard: ensure attachments have required fields
+      // (Transloadit provides IDs, so this validates rather than asserts)
+      const optimisticAttachments = newAttachments.filter(
+        (a): a is Attachment => 'id' in a && typeof a.id === 'string'
+      );
 
       // Track pending transaction for stream confirmation
       trackTransaction(transactionId, {
@@ -398,13 +396,13 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
 
 **Key differences from base pattern:**
 - Generates `transactionId` in `onMutate` 
-- Includes `{ data, sync }` wrapper in API body
-- Tracks transaction lifecycle: `pending` → `sent` → `confirmed` (via stream)
+- Includes `{ data, tx }` wrapper in API body
+- Tracks transaction lifecycle: `pending` → `sent` → `confirmed` (via live stream)
 - Existing optimistic update patterns (`mutateCache.create/remove`) remain unchanged
 
-### Realtime sync via transaction stream
+### Realtime sync via live stream
 
-**Architecture: LIST for initial load, stream for deltas**
+**Architecture: LIST for initial load, live stream for deltas**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -412,7 +410,7 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  1. Initial Load:              2. Subscribe to Updates:                  │
-│     React Query                  Transaction Stream                      │
+│     React Query                  Live Stream                             │
 │     ┌──────────────┐               ┌──────────────────┐                 │
 │     │ useQuery(    │               │ stream.subscribe │                 │
 │     │   pagesQuery │               │   offset: 'now'  │◄─── Start now   │
@@ -420,7 +418,7 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
 │     └──────┬───────┘               └────────┬─────────┘                 │
 │            │                                │                            │
 │            ▼                                ▼                            │
-│     GET /pages?q=X&sort=Y          GET /stream/{org}?live=sse           │
+│     GET /pages?q=X&sort=Y          GET /{org}/live?sse                  │
 │     (full query power)              (just deltas, no filtering)         │
 │            │                                │                            │
 │            ▼                                ▼                            │
@@ -443,13 +441,13 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
 | **Authorization** | ✅ Org membership | ✅ Same check |
 | **Entity fetching** | ✅ Query + transform | ✅ Reuse same logic |
 
-**Stream architecture: CDC → NOTIFY → API → SSE fan-out**
+**Stream architecture: CDC Worker → NOTIFY → API → SSE fan-out**
 
 Instead of each SSE connection polling the database, leverage the CDC worker that already processes all changes:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        Push-based stream architecture                        │
+│                        Push-based stream architecture                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  PostgreSQL                                                                  │
@@ -475,13 +473,13 @@ Instead of each SSE connection polling the database, leverage the CDC worker tha
 │  │                    API Server (Hono)                             │        │
 │  │                                                                  │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ EventBus (single    │◄─── One LISTEN for ALL orgs            │        │
-│  │  │ LISTEN connection)  │     Channel: 'cella_activities'        │        │
-│  │  └──────────┬──────────┘                                        │        │
+│  │  │ ActivityBus (single │◄─── One LISTEN for ALL orgs            │        │
+│  │  │ LISTEN connection)  │     (Activitybus also used              │        │
+│  │  └──────────┬──────────┘      for API internal emits)           │        │
 │  │             │ Emits ActivityEvent                                │        │
 │  │             ▼                                                    │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ StreamSubscriber    │  Map<orgId, Set<SSEStream>>            │        │
+│  │  │ StreamSubscriber    │  Map<orgId, Set<LiveStreamConnection>> │        │
 │  │  │ Manager             │                                        │        │
 │  │  │ org-123: [stream1,  │  Fan-out: O(1) lookup + O(subscribers) │        │
 │  │  │           stream2]  │  broadcast per org                     │        │
@@ -499,10 +497,10 @@ Instead of each SSE connection polling the database, leverage the CDC worker tha
 ```
 
 **Why this is better:**
-- **One DB connection** for LISTEN via EventBus vs N polling queries
+- **One DB connection** for LISTEN via ActivityBus vs N polling queries
 - **Instant delivery** - no 500ms poll delay
-- **Scales with orgs** not with subscribers
-- **CDC already has the data** - no round-trip through database
+- **Scales with orgs** not with subscribers, multi-tenant security through existing middleware
+- **CDC Worker already has the data** - no round-trip through database
 
 **Stream filtering**: Client filters and dedupes. Stream delivers all org changes to simplify server implementation and allow client-side flexibility for filtering by entity type or other criteria.
 
@@ -515,9 +513,9 @@ import { sql } from 'drizzle-orm';
 interface NotifyPayload {
   orgId: string;
   activityId: number;
-  entityType: string;
+  entityType: EntityType;
   entityId: string;
-  action: 'create' | 'update' | 'delete';
+  action: ActivityAction;
   transactionId: string | null;
   sourceId: string | null;
   changedField: string | null;
@@ -525,7 +523,7 @@ interface NotifyPayload {
 }
 
 /**
- * CDC already has the entity data from logical replication.
+ * CDC Worker already has the entity data from logical replication.
  * Include it in the NOTIFY payload to avoid extra DB fetch by API server.
  */
 async function notifyActivity(
@@ -557,17 +555,17 @@ async function notifyActivity(
   await db.execute(sql`SELECT pg_notify('cella_activities', ${JSON.stringify(payload)})`);
 }
 
-// Usage in CDC insert handler:
+// Usage in CDC Worker insert handler:
 async function handleInsert(row: Record<string, unknown>, activity: ActivityInsert) {
   const [inserted] = await db.insert(activitiesTable).values(activity).returning();
   
-  // Pass entity data directly - CDC already has it from replication!
+  // Pass entity data directly - CDC Worker already has it from replication!
   await notifyActivity(activity, inserted.id, row);
 }
 ```
 
-**Why CDC can include entity data:**
-- Logical replication delivers full row data to CDC
+**Why CDC Worker can include entity data:**
+- Logical replication delivers full row data to CDC Worker
 - No extra database query needed
 - Reduces latency (one less round-trip)
 - 8KB NOTIFY limit handled gracefully (fallback for large entities)
@@ -576,7 +574,7 @@ async function handleInsert(row: Record<string, unknown>, activity: ActivityInse
 
 > ⚠️ This approach was considered but rejected. See DEC-11 in [SYNC_ENGINE_REQUIREMENTS.md](./SYNC_ENGINE_REQUIREMENTS.md).
 >
-> A database trigger on the activities table cannot include entity data because the trigger only has access to the activities row, not the original entity. The CDC worker has access to the entity from replication and can include it directly in the NOTIFY payload.
+> A database trigger on the activities table cannot include entity data because the trigger only has access to the activities row, not the original entity. The CDC Worker has access to the entity from replication and can include it directly in the NOTIFY payload.
 
 ```sql
 -- REJECTED: This trigger cannot include entity data!
@@ -604,20 +602,16 @@ CREATE TRIGGER activity_notify
 
 **API server: Stream subscriber manager**
 
-> **Note**: This example shows the pattern for subscriber routing. In the unified EventBus approach (DEC-20), the stream subscriber manager subscribes to EventBus rather than maintaining its own LISTEN connection. The existing EventBus (`backend/src/lib/event-bus.ts`) handles the LISTEN connection.
-
-Uses Cella's existing permission system (`isPermissionAllowed`, `MembershipBaseModel`) for authorization during fan-out.
-
 ```typescript
 // backend/src/lib/stream/stream-subscribers.ts
-// NOTE: This subscribes to EventBus, not directly to LISTEN
+// NOTE: This subscribes to ActivityBus, not directly to LISTEN
 import type { Pool, PoolClient } from 'pg';
 import type { ProductEntityType } from 'config';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { isPermissionAllowed } from '#/permissions';
 
 interface Subscriber {
-  stream: SSEStream;
+  stream: LiveStreamConnection;
   entityTypes: ProductEntityType[] | null;  // null = all product entity types
   cursor: number;
   userId: string;
@@ -639,12 +633,12 @@ interface ActivityNotification {
 
 class StreamSubscriberManager {
   private subscribers = new Map<string, Set<Subscriber>>();
-  private unsubscribeFromEventBus: (() => void) | null = null;
+  private unsubscribeFromActivityBus: (() => void) | null = null;
   
-  async initialize(eventBus: EventBus): Promise<void> {
-    // Subscribe to EventBus instead of maintaining own LISTEN connection
-    // EventBus already handles the LISTEN for 'cella_activities' channel
-    this.unsubscribeFromEventBus = eventBus.on('activity', async (event) => {
+  async initialize(activityBus: ActivityBus): Promise<void> {
+    // Subscribe to ActivityBus instead of maintaining own LISTEN connection
+    // ActivityBus already handles the LISTEN for 'cella_activities' channel
+    this.unsubscribeFromActivityBus = activityBus.on('activity', async (event) => {
       await this.broadcast(event);
     });
   }
@@ -668,7 +662,7 @@ class StreamSubscriberManager {
     const orgSubscribers = this.subscribers.get(payload.orgId);
     if (!orgSubscribers || orgSubscribers.size === 0) return;
     
-    // Entity data already included from CDC - no extra fetch needed!
+    // Entity data already included from CDC Worker - no extra fetch needed!
     // Only fetch if entity was omitted (oversized payload fallback)
     let enriched = payload.entity 
       ? payload 
@@ -885,7 +879,7 @@ export async function fetchAndEnrichActivities({
   }
   
   // NOTE: Catch-up queries JOIN activities with entity tables to get entity data.
-  // This differs from live updates where CDC includes entity data in NOTIFY payload.
+  // This differs from live updates where CDC Worker includes entity data in NOTIFY payload.
   // See DEC-11, DEC-15, and STREAM-030 in SYNC_ENGINE_REQUIREMENTS.md for rationale.
   
   // Dynamic JOIN based on entity type (simplified - actual implementation uses type switch)
@@ -929,15 +923,15 @@ export async function getLatestActivityId(orgId: string): Promise<number> {
 | Metric | Polling (old) | NOTIFY + fan-out (new) |
 |--------|---------------|------------------------|
 | DB queries/sec (100 subscribers) | 200 (100 × 2/sec) | ~0 (only catch-up, large entity fallback) |
-| Entity fetches per change | N/A | 0 (CDC includes data) or 1 (oversized fallback) |
+| Entity fetches per change | N/A | 0 (CDC Worker includes data) or 1 (oversized fallback) |
 | Latency | 0-500ms (poll interval) | <10ms (instant push) |
 | Scales with | Subscribers × poll rate | Changes × subscribers per org |
 | DB connections | 1 per query | 1 LISTEN (persistent) |
 
-**Key optimization**: CDC includes entity data in NOTIFY payload (it already has it from replication), so API server typically does zero DB queries for live updates. Only catch-up queries (which JOIN activities with entity tables) and rare oversized entity fallbacks require fetches.
+**Key optimization**: CDC Worker includes entity data in NOTIFY payload (it already has it from replication), so API server typically does zero DB queries for live updates. Only catch-up queries (which JOIN activities with entity tables) and rare oversized entity fallbacks require fetches.
 
 > **Entity data paths** (see DEC-15 in SYNC_ENGINE_REQUIREMENTS.md):
-> - **Live updates**: Entity data from CDC NOTIFY payload → zero extra queries
+> - **Live updates**: Entity data from CDC Worker NOTIFY payload → zero extra queries
 > - **Catch-up**: JOIN activities with entity tables → one query with JOIN
 > - **Oversized fallback**: Fetch entity by ID → one extra query per message (rare)
 
@@ -947,21 +941,21 @@ The push-based architecture shifts the authorization boundary:
 
 ```
 BEFORE (polling):  User → API (auth) → DB query → Response
-AFTER (push):      CDC (no auth) → NOTIFY → API → Fan-out (auth here!)
+AFTER (push):      CDC Worker (no auth) → NOTIFY → API → Fan-out (auth here!)
 ```
 
 | Concern | Risk level | Mitigation |
 |---------|------------|------------|
-| **NOTIFY payload visibility** | Medium | CDC runs on private network; any DB LISTEN sees all payloads |
+| **NOTIFY payload visibility** | Medium | CDC Worker runs on private network; any DB LISTEN sees all payloads |
 | **Org-level auth** | ✅ Handled | Org guard middleware validates membership before stream registration |
 | **Entity-level ACLs** | ✅ Handled | `isPermissionAllowed()` called in `broadcast()` using subscriber's memberships |
 | **System admin bypass** | ✅ Handled | `userSystemRole === 'admin'` check mirrors REST handler pattern |
-| **CDC has no user context** | ✅ By design | CDC is data-plane; API server is auth-plane; separation is correct |
+| **CDC Worker has no user context** | ✅ By design | CDC Worker is data-plane; API server is auth-plane; separation is correct |
 | **Data in transit** | Low | Internal service communication; use TLS if CDC/API on separate hosts |
 
 **Key security principles:**
-1. **CDC is trusted** - It runs in your infrastructure, reads from replication slot
-2. **NOTIFY channel is internal** - Only API server(s) should LISTEN (via EventBus)
+1. **CDC Worker is trusted** - It runs in your infrastructure, reads from replication slot
+2. **NOTIFY channel is internal** - Only API server(s) should LISTEN (via ActivityBus)
 3. **Authorization happens at fan-out** - `StreamSubscriberManager.broadcast()` uses `isPermissionAllowed()` 
 4. **Reuses existing permission logic** - Same `accessPolicies` config from `permissions-config.ts`
 
@@ -985,19 +979,19 @@ export const accessPolicies = configureAccessPolicies(hierarchy, appConfig.entit
 // - StreamSubscriberManager.broadcast() uses it for stream filtering
 ```
 
-**Stream message payload** (uses sync wrapper):
+**Stream message payload** (uses tx wrapper):
 
 ```typescript
 // Matches createStreamMessageSchema output
 interface StreamMessage<T = Entity> {
   data: T | null;                  // Full entity data (null if deleted)
-  sync: {
+  tx: {
     transactionId: string | null; // For transaction confirmation
     sourceId: string | null;      // "Is this mine?" check
     action: 'create' | 'update' | 'delete';
     activityId: number;           // Stream offset for resumption
   };
-  // Additional fields (not in sync wrapper, but useful)
+  // Additional fields (not in tx wrapper, but useful)
   entityType: string;              // 'page' | 'attachment'
   entityId: string;
   changedKeys: string[] | null;    // Which fields changed (for updates)
@@ -1100,9 +1094,9 @@ function applyMessageToCache(queryClient: QueryClient, message: StreamMessage) {
 eventSource.addEventListener('change', (e) => {
   const message: StreamMessage = JSON.parse(e.data);
   
-  if (message.sync.transactionId && pendingTransactions.has(message.sync.transactionId)) {
-    trackTransaction(message.sync.transactionId, { status: 'confirmed' });
-    pendingTransactions.delete(message.sync.transactionId);
+  if (message.tx.transactionId && pendingTransactions.has(message.tx.transactionId)) {
+    trackTransaction(message.tx.transactionId, { status: 'confirmed' });
+    pendingTransactions.delete(message.tx.transactionId);
   }
 });
 ```
@@ -1184,44 +1178,44 @@ async function updatePageTitle(pageId: string, title: string) {
 }
 ```
 
-**Backend: Field-level conflict check + transient sync column**:
+**Backend: Field-level conflict check + transient `tx` column**:
 
 ```typescript
 // Backend: Verify no concurrent modifications to this field
 app.openapi(routes.updatePage, async (ctx) => {
   const { id } = ctx.req.valid('param');
-  const { data, sync } = ctx.req.valid('json');
+  const { data, tx } = ctx.req.valid('json');
   
   // 1. Conflict detection (if expectedTransactionId provided)
-  if (sync?.expectedTransactionId && sync?.changedField) {
+  if (tx?.expectedTransactionId && tx?.changedField) {
     const { hasConflict, serverTransactionId } = await checkFieldConflict({
       entityType: 'page',
       entityId: id,
-      changedField: sync.changedField,
-      expectedTransactionId: sync.expectedTransactionId,
+      changedField: tx.changedField,
+      expectedTransactionId: tx.expectedTransactionId,
     });
     
     if (hasConflict) {
       return ctx.json({
         error: 'conflict',
         code: 'FIELD_CONFLICT',
-        field: sync.changedField,
-        expectedTransactionId: sync.expectedTransactionId,
+        field: tx.changedField,
+        expectedTransactionId: tx.expectedTransactionId,
         serverTransactionId,
-        message: `Field "${sync.changedField}" was modified by another user`,
+        message: `Field "${tx.changedField}" was modified by another user`,
       }, 409);
     }
   }
   
-  // 2. Apply update with transient sync JSONB (CDC will read this)
+  // 2. Apply update with transient tx JSONB (CDC Worker will read this)
   const [page] = await db.update(pagesTable)
     .set({
       ...data,
-      // Transient sync column (written here, read by CDC)
-      sync: sync ? { 
-        transactionId: sync.transactionId, 
-        sourceId: sync.sourceId, 
-        changedField: sync.changedField 
+      // Transient tx column (written here, read by CDC Worker)
+      tx: tx ? { 
+        transactionId: tx.transactionId, 
+        sourceId: tx.sourceId, 
+        changedField: tx.changedField 
       } : null,
       modifiedAt: new Date(),
       modifiedBy: ctx.get('user').id,
@@ -1229,7 +1223,7 @@ app.openapi(routes.updatePage, async (ctx) => {
     .where(eq(pagesTable.id, id))
     .returning();
   
-  return ctx.json({ data: page, sync: { transactionId: sync?.transactionId ?? null } });
+  return ctx.json({ data: page, tx: { transactionId: tx?.transactionId ?? null } });
 });
 ```
 
@@ -1242,7 +1236,7 @@ app.openapi(routes.updatePage, async (ctx) => {
 
 /**
  * Check if a transaction has already been processed.
- * Uses the CDC-populated activitiesTable as the source of truth.
+ * Uses the CDC Worker-populated activitiesTable as the source of truth.
  */
 export async function isTransactionProcessed(
   db: DbClient,
@@ -1276,8 +1270,8 @@ export async function getEntityByTransaction(
 
 // Usage in handler
 app.openapi(routes.createPage, async (ctx) => {
-  const { data, sync } = ctx.req.valid('json');
-  const { transactionId, sourceId } = sync;
+  const { data, tx } = ctx.req.valid('json');
+  const { transactionId, sourceId } = tx;
   
   if (await isTransactionProcessed(db, transactionId)) {
     // Idempotent: return existing entity
@@ -1287,7 +1281,7 @@ app.openapi(routes.createPage, async (ctx) => {
         .from(pagesTable)
         .where(eq(pagesTable.id, ref.entityId));
       
-      return ctx.json({ data: existing, sync: { transactionId } });
+      return ctx.json({ data: existing, tx: { transactionId } });
     }
   }
   
@@ -1304,7 +1298,7 @@ The sync engine builds on existing Cella infrastructure. These components need u
 
 | Component | Current Location | Current Purpose | Upgrade Needed |
 |-----------|------------------|-----------------|----------------|
-| **EventBus** | `backend/src/lib/event-bus.ts` | LISTENs to `cella_activities`, emits typed events | Extend `ActivityEvent` with optional `entity` field |
+| **ActivityBus** | `backend/src/lib/event-bus.ts` → `activity-bus.ts` | LISTENs to `cella_activities`, emits typed events | Rename file; extend `ActivityEvent` with optional `entity` field |
 | **Database Trigger** | `backend/drizzle/0002_activity_notify_trigger.sql` | Sends `pg_notify` on activities INSERT | Keep as-is (fallback for basic mode) |
 | **CDC Worker** | `cdc/src/worker.ts`, `cdc/src/handlers/*` | Logical replication → activities table | Add NOTIFY call with entity data on same channel |
 | **SSE Endpoint** | `backend/src/modules/me/me-handlers.ts` | Generic user SSE at `/me/sse` | Reference for new org-scoped stream endpoint |
@@ -1324,31 +1318,31 @@ The following code is **out-of-scope** and should be ignored:
 | `SSEEventsMap` events | `frontend/src/modules/common/sse/index.tsx` | `membership_*`, `entity_*` for context entities |
 
 **The sync engine creates a separate org-scoped stream** (`/organizations/:orgId/stream`) that:
-- Uses EventBus (which LISTENs to `cella_activities`)
+- Uses ActivityBus (which LISTENs to `cella_activities`)
 - Is keyed by orgId, not userId
 - Includes transaction tracking and entity data
 - Targets product entities, not context entities
 
 **Future consolidation work** (not in this plan):
-- Migrate context entity SSE to use EventBus
-- Unify `useSSE` and sync stream hooks
+- Migrate context entity SSE to use ActivityBus
+- Unify `useSSE` and live stream hooks
 - Single SSE connection strategy
 
 ### Data flow (current vs. upgraded)
 
 **Current flow (trigger-only):**
 ```
-Entity mutation → CDC → activitiesTable INSERT → Trigger → pg_notify('cella_activities', activity) → EventBus → handlers
+Entity mutation → CDC Worker → activitiesTable INSERT → Trigger → pg_notify('cella_activities', activity) → ActivityBus → handlers
 ```
 
-**Upgraded flow (CDC + entity data):**
+**Upgraded flow (CDC Worker + entity data):**
 ```
-Entity mutation → CDC → activitiesTable INSERT → Trigger (activity-only, fallback)
+Entity mutation → CDC Worker → activitiesTable INSERT → Trigger (activity-only, fallback)
                     ↓
-                 CDC also calls → pg_notify('cella_activities', { activity, entity }) → EventBus → sync stream
+                 CDC Worker also calls → pg_notify('cella_activities', { activity, entity }) → ActivityBus → live stream
 ```
 
-Both payloads arrive on the same channel. EventBus handles both gracefully - existing handlers continue to work with activity-only payloads, while sync stream uses entity data when present.
+Both payloads arrive on the same channel. ActivityBus handles both gracefully - existing handlers continue to work with activity-only payloads, while live stream uses entity data when present.
 
 ---
 
@@ -1363,10 +1357,10 @@ The tasks below are organized by component. Use this dependency graph to determi
 │                                                                              │
 │   Schema & Migrations ─────┬──────────────────────────────────────────────►  │
 │                            │                                                 │
-│   Infrastructure: EventBus─┼─(can be done in parallel)──────────────────►    │
+│   Infrastructure: ActivityBus─(can be done in parallel)─────────────────►    │
 │                            │                                                 │
 │                            ▼                                                 │
-│   CDC Worker ──────────────┬──(depends on both Schema + EventBus)────────►   │
+│   CDC Worker ──────────────┬──(depends on both Schema + ActivityBus)─────►   │
 │                            │                                                 │
 │                            ▼                                                 │
 │   Stream Endpoint ─────────┼─────────────────────────────────────────────►   │
@@ -1401,64 +1395,65 @@ The tasks below are organized by component. Use this dependency graph to determi
 
 ### Schema & migrations
 
-- [ ] **SCHEMA-1** Add transient sync column to product entity schemas
+- [ ] **SCHEMA-1** Add transient `tx` column to product entity schemas
   - Files: `backend/src/db/schema/pages.ts`, `attachments.ts`
-  - Column: `sync` JSONB containing `{ transactionId, sourceId, changedField }`
-  - Add expression index if needed: `CREATE INDEX ON pages ((sync->>'transactionId'))`
+  - Column: `tx` JSONB containing `{ transactionId, sourceId, changedField }`
+  - Add expression index if needed: `CREATE INDEX ON pages ((tx->>'transactionId'))`
   - Create migration
 
-- [ ] **SCHEMA-2** Extend `activitiesTable` with sync JSONB column
+- [ ] **SCHEMA-2** Extend `activitiesTable` with `tx` JSONB column
   - File: `backend/src/db/schema/activities.ts`
-  - Add: `sync` JSONB column (null for non-synced entities)
-  - Add expression indexes: `(sync->>'transactionId')`, composite for field conflict queries
+  - Add: `tx` JSONB column (null for non-synced entities)
+  - Add expression indexes: `(tx->>'transactionId')`, composite for field conflict queries
   - Keep existing `changedKeys` column unchanged (different purpose)
 
 ---
 
-### Infrastructure: EventBus upgrade
+### Infrastructure: ActivityBus upgrade
 
-Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
+Rename and upgrade the existing EventBus to ActivityBus to handle entity data from CDC Worker. See DEC-20.
 
-- [ ] **INFRA-EB-1** Extend `ActivityEvent` interface with entity field
-  - File: `backend/src/lib/event-bus.ts`
-  - Add: `entity?: Record<string, unknown> | null` to `ActivityEvent` interface
+- [ ] **INFRA-AB-1** Rename EventBus to ActivityBus
+  - Rename file: `backend/src/lib/event-bus.ts` → `activity-bus.ts`
+  - Update all imports across codebase
+  - Extend `ActivityEvent` interface with `entity?: Record<string, unknown> | null`
   - Existing fields remain unchanged for backward compatibility
 
-- [ ] **INFRA-EB-2** Update EventBus payload parsing
-  - File: `backend/src/lib/event-bus.ts`
+- [ ] **INFRA-AB-2** Update ActivityBus payload parsing
+  - File: `backend/src/lib/activity-bus.ts`
   - Parse `entity` field from NOTIFY payload when present
   - Gracefully handle payloads without `entity` (trigger-only)
   - No behavior change for existing handlers
 
-- [ ] **INFRA-EB-3** Add tests for dual payload handling
-  - Location: `backend/tests/event-bus.test.ts`
+- [ ] **INFRA-AB-3** Add tests for dual payload handling
+  - Location: `backend/tests/activity-bus.test.ts`
   - Test: Trigger payload (activity-only) emits event with `entity: undefined`
-  - Test: CDC payload (activity + entity) emits event with `entity: {...}`
+  - Test: CDC Worker payload (activity + entity) emits event with `entity: {...}`
   - Test: Existing handlers continue to work
 
-- [ ] **INFRA-EB-4** Document EventBus upgrade
-  - Location: `backend/src/lib/event-bus.ts` (JSDoc comments)
-  - Explain dual-source architecture (trigger vs. CDC)
+- [ ] **INFRA-AB-4** Document ActivityBus upgrade
+  - Location: `backend/src/lib/activity-bus.ts` (JSDoc comments)
+  - Explain dual-source architecture (trigger vs. CDC Worker)
   - Reference DEC-11 and DEC-20
 
 ---
 
-### CDC worker
+### CDC Worker
 
-- [ ] **CDC-1** Update CDC context extraction for field-level
+- [ ] **CDC-1** Update CDC Worker context extraction for field-level
   - File: `cdc/src/utils/extract-activity-context.ts`
-  - Read `sync` JSONB from replicated row (requires SCHEMA-1 migration)
-  - Extract `transactionId` from `sync.transactionId`
-  - Extract `sourceId` from `sync.sourceId`
-  - Extract `changedField` from `sync.changedField`
+  - Read `tx` JSONB from replicated row (requires SCHEMA-1 migration)
+  - Extract `transactionId` from `tx.transactionId`
+  - Extract `sourceId` from `tx.sourceId`
+  - Extract `changedField` from `tx.changedField`
 
-- [ ] **CDC-2** Update CDC handlers to include field-level info
+- [ ] **CDC-2** Update CDC Worker handlers to include field-level info
   - Files: `cdc/src/handlers/insert.ts`, `update.ts`, `delete.ts`
   - Include `transactionId`, `sourceId`, `changedField` in activity record
   - Set `changedField` to `null` or `'*'` for insert/delete
-  - **Depends on**: SCHEMA-2 migration (adds `sync` JSONB column to activitiesTable)
+  - **Depends on**: SCHEMA-2 migration (adds `tx` JSONB column to activitiesTable)
 
-- [ ] **CDC-3** Add NOTIFY hook to CDC worker (for live updates)
+- [ ] **CDC-3** Add NOTIFY hook to CDC Worker (for live updates)
   - Location: `cdc/src/handlers/activity-notify.ts`
   - Call `pg_notify('cella_activities', payload)` after activity INSERT (see DEC-11)
   - **MUST use same channel as trigger** (`cella_activities`) - see CDC-021
@@ -1479,7 +1474,7 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 
 - [ ] **STREAM-2** Create stream subscriber manager
   - Location: `backend/src/lib/stream/stream-subscribers.ts`
-  - Subscribes to unified EventBus for `cella_activities` notifications (see DEC-20)
+  - Subscribes to unified ActivityBus for `cella_activities` notifications (see DEC-20)
   - Routes notifications to correct org subscribers based on `notification.organizationId`
   - Subscriber includes `memberships: MembershipBaseModel[]` and `userSystemRole`
   - `checkEntityAccess()` uses `isPermissionAllowed()` - same logic as REST handlers
@@ -1496,16 +1491,16 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
   - Location: `backend/src/modules/streams/stream-routes.ts`
   - Define route with `@hono/zod-openapi` (consistent with other modules)
   - Mount in `backend/src/routes.ts` with org guard
-  - Initialize stream subscriber manager on server start (subscribes to EventBus)
+  - Initialize stream subscriber manager on server start (subscribes to ActivityBus)
 
 ---
 
-### Sync schemas (backend)
+### Transaction schemas (backend)
 
-- [ ] **SYNC-SCHEMA-1** Create sync wrapper schemas
+- [ ] **TX-SCHEMA-1** Create tx wrapper schemas
   - Location: `backend/src/modules/sync/schema.ts`
-  - `syncRequestSchema` with `transactionId`, `sourceId`, `changedField`, `expectedTransactionId`
-  - `syncResponseSchema`, `syncStreamMessageSchema` with `changedField`
+  - `txRequestSchema` with `transactionId`, `sourceId`, `changedField`, `expectedTransactionId`
+  - `txResponseSchema`, `txStreamMessageSchema` with `changedField`
   - Factory functions for wrapping entity schemas
 
 ---
@@ -1525,29 +1520,29 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 - [ ] **HANDLER-3** Upgrade existing page handlers for sync support
   - File: `backend/src/modules/pages/pages-handlers.ts`
   - **Upgrade existing endpoints** (createPage, updatePage, deletePage) - do NOT create separate synced endpoints
-  - Request schema requires `{ data, sync }` wrapper - `sync` is mandatory (DEC-19)
-  - Extract `{ data, sync }` from validated body (no detection logic needed)
+  - Request schema requires `{ data, tx }` wrapper - `tx` is mandatory (DEC-19)
+  - Extract `{ data, tx }` from validated body (no detection logic needed)
   - Check field conflict if `expectedTransactionId` provided
-  - Set transient `sync` JSONB: `{ transactionId, sourceId, changedField }`
+  - Set transient `tx` JSONB: `{ transactionId, sourceId, changedField }`
   - Reference: DEC-19, API-001, API-001a
-  - Return `{ data, sync }` wrapper in response
+  - Return `{ data, tx }` wrapper in response
 
   ```typescript
-  // Example: Product entity handler - sync wrapper is REQUIRED
+  // Example: Product entity handler - tx wrapper is REQUIRED
   app.openapi(routes.createPageRoute, async (ctx) => {
-    // Schema guarantees { data, sync } shape - no detection needed
-    const { data, sync } = ctx.req.valid('json');
+    // Schema guarantees { data, tx } shape - no detection needed
+    const { data, tx } = ctx.req.valid('json');
     
     const page = await insertPage({
       ...data,
-      sync: {
-        transactionId: sync.transactionId,
-        sourceId: sync.sourceId,
-        changedField: sync.changedField,
+      tx: {
+        transactionId: tx.transactionId,
+        sourceId: tx.sourceId,
+        changedField: tx.changedField,
       },
     });
     
-    return ctx.json({ data: page, sync: { transactionId: sync.transactionId } }, 201);
+    return ctx.json({ data: page, tx: { transactionId: tx.transactionId } }, 201);
   });
   ```
 
@@ -1595,15 +1590,15 @@ Upgrade the existing EventBus to handle entity data from CDC. See DEC-20.
 - [ ] **FE-MUT-1** Update `usePageCreateMutation`
   - File: `frontend/src/modules/pages/query.ts`
   - Generate transaction ID in `onMutate`
-  - Use `{ data, sync }` wrapper with `changedField: null` (create = all fields)
+  - Use `{ data, tx }` wrapper with `changedField: null` (create = all fields)
   - Track with transaction manager
 
 - [ ] **FE-MUT-2** Update `usePageUpdateMutation` for field-level
   - One mutation = one field change (see DEC-18 for data structure)
   - `data` object uses standard entity update shape: `{ name: 'New title' }`
-  - `sync.changedField` declares the target: `changedField: 'name'`
+  - `tx.changedField` declares the target: `changedField: 'name'`
   - Include `expectedTransactionId` from field transaction tracking
-  - Example: `{ data: { name: 'New title' }, sync: { transactionId, sourceId, changedField: 'name', expectedTransactionId } }`
+  - Example: `{ data: { name: 'New title' }, tx: { transactionId, sourceId, changedField: 'name', expectedTransactionId } }`
 
 - [ ] **FE-MUT-3** Update `usePageDeleteMutation`
   - Use `changedField: null` for deletes
@@ -1756,17 +1751,17 @@ export const compareTransactionIds = (a: string, b: string): number => {
 // Example output: "1705123456789.0000.src_abc123def456"
 ```
 
-### Entity transient sync column
+### Entity transient `tx` column
 
-Product entity tables have a single transient JSONB column for sync metadata:
+Product entity tables have a single transient JSONB column for transaction metadata:
 
 ```typescript
 // In backend/src/db/schema/pages.ts (and other product entities)
 export const pages = pgTable('pages', {
   // ... existing columns ...
   
-  // Transient sync metadata (written by handler, read by CDC, overwritten on next mutation)
-  sync: jsonb('sync').$type<{
+  // Transient transaction metadata (written by handler, read by CDC Worker, overwritten on next mutation)
+  tx: jsonb('tx').$type<{
     transactionId: string;
     sourceId: string;
     changedField: string | null;
@@ -1776,7 +1771,7 @@ export const pages = pgTable('pages', {
 
 **Why "transient"?**
 - Written by handler during mutation
-- Read by CDC to populate activitiesTable
+- Read by CDC Worker to populate activitiesTable
 - Overwritten on next mutation (no history preserved on entity)
 - Entity table is NOT the source of truth for sync state
 - activitiesTable has complete field-level audit trail
@@ -1786,21 +1781,21 @@ export const pages = pgTable('pages', {
 - Field-level requires history: "what was the last transaction for THIS field?"
 - That history lives in activitiesTable, queried via `checkFieldConflict()`
 
-### Sync wrapper schema (replaces HTTP headers)
+### Transaction wrapper schema (replaces HTTP headers)
 
-**Better DX**: Instead of custom HTTP headers, use typed `{ data, sync }` wrapper for mutations.
+**Better DX**: Instead of custom HTTP headers, use typed `{ data, tx }` wrapper for mutations.
 
 | Operation | Request | Response | Notes |
 |-----------|---------|----------|-------|
-| GET | Flat params | `Entity[]` / `Entity` | No sync - resolve conflicts client-side |
-| POST/PATCH/DELETE | `{ data, sync }` | `{ data, sync }` | Server tracks transaction + source + changedField |
-| Stream message | N/A | `{ data, sync }` | Includes sourceId, changedField for "is this mine?" |
+| GET | Flat params | `Entity[]` / `Entity` | No tx - resolve conflicts client-side |
+| POST/PATCH/DELETE | `{ data, tx }` | `{ data, tx }` | Server tracks transaction + source + changedField |
+| Stream message | N/A | `{ data, tx }` | Includes sourceId, changedField for "is this mine?" |
 
-**Sync metadata schemas:**
+**Transaction metadata schemas:**
 
 ```typescript
 // backend/src/modules/sync/schema.ts
-export const syncRequestSchema = z.object({
+export const txRequestSchema = z.object({
   transactionId: z.string().describe('Unique mutation ID (client-generated)'),
   sourceId: z.string().describe('Tab/instance ID - origin of mutation'),
   changedField: z.string().nullable().describe('Which field this mutation changes (null for create/delete)'),
@@ -1808,11 +1803,11 @@ export const syncRequestSchema = z.object({
     .describe('Expected last transaction ID for this field (for conflict detection)'),
 });
 
-export const syncResponseSchema = z.object({
+export const txResponseSchema = z.object({
   transactionId: z.string().nullable(),
 });
 
-export const syncStreamMessageSchema = z.object({
+export const txStreamMessageSchema = z.object({
   transactionId: z.string().nullable(),
   sourceId: z.string().nullable(),
   changedField: z.string().nullable(),
@@ -1821,14 +1816,14 @@ export const syncStreamMessageSchema = z.object({
 });
 
 // Factory functions for wrapping entity schemas
-export const createSyncedMutationSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({ data: dataSchema, sync: syncRequestSchema }); // sync is REQUIRED for product entities
+export const createTxMutationSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({ data: dataSchema, tx: txRequestSchema }); // tx is REQUIRED for product entities
 
-export const createSyncedResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({ data: dataSchema, sync: syncResponseSchema });
+export const createTxResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({ data: dataSchema, tx: txResponseSchema });
 
 export const createStreamMessageSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({ data: dataSchema.nullable(), sync: syncStreamMessageSchema });
+  z.object({ data: dataSchema.nullable(), tx: txStreamMessageSchema });
 ```
 
 **Key additions for field-level tracking:**
@@ -1858,7 +1853,7 @@ export const createTransactionId = () => {
 
 | Purpose | How sourceId serves it |
 |---------|------------------------|
-| Mutation source | Sent in `sync.sourceId`, stored in `lastSourceId` column |
+| Mutation source | Sent in `tx.sourceId`, stored in `lastSourceId` column |
 | "Is this mine?" | Compare stream message's `sourceId` to your own |
 | Leader election | Unique per tab, elect one leader via Web Locks |
 
@@ -1878,14 +1873,15 @@ export const createTransactionId = () => {
                              └──────────┘                   └───────────┘
 ```
 
-### Conflict resolution strategy (field-level)
+### Conflict resolution strategy
 
-**Conflict reduction through two layers:**
+**Three-layer conflict reduction** 
 
-- **Upstream-first sync**: Pull latest before pushing → 90%+ of conflicts avoided
-- **Field-level LWW**: Different fields = no conflict → most remaining conflicts avoided
+1. Upstream-first → ~90% avoided (online users are always current)
+2. Field-level tracking → different fields = no conflict
+3. Merge → LWW (server wins) or resolution UI for same-field conflicts
 
-**When conflicts DO occur** (rare: same field edited during brief pull-push window):
+**When conflicts DO occur** (same field edited while offline or during brief pull-push window):
 
 ```typescript
 // Server returns 409 with field-specific info
@@ -2399,32 +2395,32 @@ useEffect(() => {
 
 ### For existing entities
 
-- **Add transient sync column** (non-breaking)
-   - Add `sync` JSONB column (nullable)
+- **Add transient `tx` column** (non-breaking)
+   - Add `tx` JSONB column (nullable)
    - No indexes needed (transient column, overwritten each mutation)
-   - Optionally add expression index: `CREATE INDEX ON pages ((sync->>'transactionId'))`
+   - Optionally add expression index: `CREATE INDEX ON pages ((tx->>'transactionId'))`
 
 - **Extend activitiesTable** (non-breaking)
-   - Add `transactionId`, `sourceId`, `changedField` columns (nullable)
-   - Add indexes on `transaction_id`, `source_id`, and composite `(entity_type, entity_id, changed_field)`
+   - Add `tx` JSONB column (nullable) containing `{ transactionId, sourceId, changedField }`
+   - Add expression indexes on `(tx->>'transactionId')` and composite for field conflict queries
 
 - **Update CDC handlers**
    - Extract transaction info when available
    - Backwards compatible: old rows without transactions still work
 
 - **Update backend handlers incrementally**
-   - Add sync wrapper `{ data, sync }` to tracked entity routes
+   - Add tx wrapper `{ data, tx }` to tracked entity routes
    - Old clients need updating (breaking change for tracked entities)
 
 - **Update frontend mutation hooks**
    - Add transaction tracking
-   - Use sync wrapper in request/response
+   - Use tx wrapper in request/response
 
 ### For new product entities
 
 Use the `createSyncedEntity` factory (Phase 7) or follow this checklist:
 
-- Add `lastTransactionId` and `lastSourceId` columns to schema
+- Add transient `tx` JSONB column to schema (see SCHEMA-1)
 - Register table in CDC tracked tables
 - Create mutation hooks with transaction tracking
 - Use `useEntityStream` hook if realtime sync needed
@@ -2441,7 +2437,7 @@ Use the `createSyncedEntity` factory (Phase 7) or follow this checklist:
 interface SyncEntityConfig<T> {
   name: string;
   schema: z.ZodSchema<T>;
-  mode: 'rest' | 'stream';  // 'stream' = Transaction Stream SSE
+  mode: 'rest' | 'stream';  // 'stream' = Live stream SSE (realtime opMode)
   offlineEnabled: boolean;
   conflictResolution: 'lww' | 'optimistic-lock';
 }
@@ -2490,7 +2486,7 @@ if (JSON.stringify(payload).length > 7500) {
 // Use same channel as existing trigger (cella_activities) - see DEC-11
 await db.execute(sql`NOTIFY cella_activities, ${JSON.stringify(payload)}`);
 
-// API server: EventBus receives NOTIFY, StreamSubscriberManager handles fan-out
+// API server: ActivityBus receives NOTIFY, StreamSubscriberManager handles fan-out
 // Entity data comes from NOTIFY payload (zero extra queries for most events)
 ```
 
@@ -2522,12 +2518,12 @@ await db.execute(sql`NOTIFY cella_activities, ${JSON.stringify(payload)}`);
 | Data Model | Relational (SQLite) | Key-value + Tables | Event Sourcing | Shapes | CRUD + Transactions |
 | Local Storage | SQLite WASM (wa-sqlite) | IndexedDB / OPFS / SQLite | SQLite WASM | TanStack DB | IndexedDB (Dexie + RQ) |
 | Source of Truth | Local SQLite | Client (CRDT) | Client eventlog | Server: replication | Server: replication |
-| Sync Protocol | Custom sync log | CRDT (MergeableStore) | Push/Pull events | HTTP shapes | Transaction Stream SSE |
+| Sync Protocol | Custom sync log | CRDT (MergeableStore) | Push/Pull events | HTTP shapes | Live stream SSE |
 | Offline Reads | ✅ Full SQL queries | ✅ Full | ✅ Full | ⚠️ Cached shapes | ⚠️ Cached data |
 | Offline Writes | ✅ Full | ✅ Native CRDT | ✅ Eventlog | ❌ | ✅ Mutation outbox |
 | Merge Location | Client + Server | Client only (CRDT) | Client only | Client only | Client + Server |
 | Optimistic Updates | ✅ Instant (local-first) | ✅ Reactive listeners | ✅ Automatic | ⚠️ Patterns | ✅ Transaction-tracked |
-| Conflict Resolution | Per-model resolvers | CRDT auto-merge | Rebase, upstream-first | LWW | LWW → CRDT → UI |
+| Conflict Resolution | Per-model resolvers | CRDT auto-merge | Rebase, upstream-first | LWW | LWW → UI |
 | Upstream-First | ✅ Yes | ❌ CRDT-based | ✅ Yes | ❌ | ✅ Yes |
 | Transaction Tracking | ✅ Full | ⚠️ Checkpoints (local) | ✅ Full eventlog | ❌ | ✅ Per-operation |
 | Audit Trail | ✅ Sync log | ❌ | ✅ Eventlog | ❌ | ✅ activitiesTable |
@@ -2539,7 +2535,7 @@ await db.execute(sql`NOTIFY cella_activities, ${JSON.stringify(payload)}`);
 | Progressive Adoption | ❌ All-or-nothing | ⚠️ | ⚠️ | ⚠️ | ✅ REST → Sync |
 | Devtools | ✅ Custom | ✅ Inspector | ⚠️ | ⚠️ | ✅ React Query Devtools |
 | Undo/Redo | ✅ | ✅ Checkpoints | ✅ Eventlog | ❌ | ⚠️ Via activities |
-| Broader scope use | N/A (own infra) | N/A | N/A | ❌ | ✅ Eventbus can support API internals |
+| Broader scope use | N/A (own infra) | N/A | N/A | ❌ | ✅ ActivityBus can support API internals |
 
 ---
 
@@ -2598,7 +2594,7 @@ See [Frontend mutation pattern with transactions](#frontend-mutation-pattern-wit
 Key differences:
 - Import `sourceId` and `createTransactionId` from `~/lib/sync/source-id`
 - `onMutate` generates `transactionId` and returns `{ input, transactionId, optimisticEntity }`
-- `mutationFn` receives the onMutate return and sends `{ data, sync }` wrapper
+- `mutationFn` receives the onMutate return and sends `{ data, tx }` wrapper
 - Track transaction lifecycle: `pending` → `sent` → `confirmed` (via stream)
 
 ---
