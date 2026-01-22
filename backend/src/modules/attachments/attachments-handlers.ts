@@ -127,7 +127,7 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    await getValidProductEntity(id, 'attachment', 'update');
+    const { can } = await getValidProductEntity(id, 'attachment', 'update');
 
     const user = getContextUser();
     const updatedFields = ctx.req.valid('json');
@@ -144,7 +144,7 @@ const attachmentsRouteHandlers = app
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    return ctx.json(updatedAttachment, 200);
+    return ctx.json({ ...updatedAttachment, can }, 200);
   })
   /**
    * Delete attachments by ids

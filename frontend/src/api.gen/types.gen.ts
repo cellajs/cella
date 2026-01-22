@@ -253,6 +253,13 @@ export type Organization = {
       page: number;
     };
   };
+  can?: {
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+    search: boolean;
+  };
 };
 
 export type Page = {
@@ -291,6 +298,13 @@ export type Attachment = {
   convertedKey: string | null;
   thumbnailKey: string | null;
   organizationId: string;
+  can?: {
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+    search: boolean;
+  };
 };
 
 export type Membership = {

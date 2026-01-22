@@ -18,13 +18,12 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
   const memberships = getContextMemberships();
 
   const { entityType } = entity;
-  const isSystemAdmin = userSystemRole === 'admin';
 
-  // Step 1: Permission check
-  const { allowed } = isPermissionAllowed(memberships, 'create', entity);
+  // Step 1: Permission check (system admin bypass is handled inside)
+  const { allowed } = isPermissionAllowed(memberships, 'create', entity, { systemRole: userSystemRole });
 
-  // Deny if not allowed and not system admin
-  if (!allowed && !isSystemAdmin) {
+  // Deny if not allowed
+  if (!allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType });
   }
 

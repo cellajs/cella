@@ -7,12 +7,10 @@ import type {
   EntityActionPermissions,
   HierarchyConfig,
   MembershipForPermission,
+  PermissionCheckOptions,
   PermissionDecision,
   SubjectForPermission,
 } from './types';
-
-// Re-export PermissionDecision as the result type (maintains backward compatibility via `can` and `membership`)
-export type { PermissionDecision };
 
 /** @deprecated Use PermissionDecision instead */
 export type AllPermissionsResult<T extends MembershipForPermission> = PermissionDecision<T>;
@@ -128,6 +126,8 @@ const formatPermissionDecision = <T extends MembershipForPermission>(decision: P
  * - `actions` attribution: For each action, tracks all grants that enabled it.
  *   Useful for debugging ("why can user delete?") and auditing.
  *
+ * - `options.systemRole`: If 'admin', grants all permissions regardless of memberships.
+ *
  * ## Example: Checking "attachment" with organizationId="org1"
  * 1. relevantContexts = [organization] (attachment's ancestor)
  * 2. primaryContext = organization
@@ -140,17 +140,51 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
   policies: AccessPolicies,
   memberships: T[],
   subject: SubjectForPermission,
+  options?: PermissionCheckOptions,
 ): PermissionDecision<T> => {
-  // Index memberships by "${contextType}:${contextId}" for O(1) lookup
-  const membershipIndex = buildMembershipIndex(memberships);
-
-  // Index policies by "${contextType}:${role}" for this subject's entityType
-  const policyIndex = buildPolicyIndex(policies, subject.entityType);
+  const isSystemAdmin = options?.systemRole === 'admin';
 
   // Get context types to check: for product entities this is their ancestors,
   // for context entities this is [self, ...ancestors]
   const relevantContexts = getRelevantContexts(hierarchy, subject.entityType);
   const primaryContext = relevantContexts[0];
+
+  // If system admin, grant all permissions immediately
+  if (isSystemAdmin) {
+    const allGranted = Object.fromEntries(
+      appConfig.entityActions.map((action) => [
+        action,
+        {
+          enabled: true,
+          grantedBy: [{ contextType: 'system' as ContextEntityType, contextId: 'admin', role: 'admin' }],
+        },
+      ]),
+    ) as Record<EntityActionType, ActionAttribution>;
+
+    const can = Object.fromEntries(appConfig.entityActions.map((action) => [action, true])) as Record<
+      EntityActionType,
+      boolean
+    >;
+
+    return {
+      subject: {
+        entityType: subject.entityType,
+        id: subject.id,
+        contextIds: {},
+      },
+      relevantContexts,
+      primaryContext,
+      actions: allGranted,
+      can,
+      membership: null,
+    };
+  }
+
+  // Index memberships by "${contextType}:${contextId}" for O(1) lookup
+  const membershipIndex = buildMembershipIndex(memberships);
+
+  // Index policies by "${contextType}:${role}" for this subject's entityType
+  const policyIndex = buildPolicyIndex(policies, subject.entityType);
 
   // Initialize action attribution table: each action starts denied with no grants
   const actions = Object.fromEntries(

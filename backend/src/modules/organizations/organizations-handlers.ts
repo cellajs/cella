@@ -13,7 +13,7 @@ import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/help
 import { insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/organizations-routes';
-import { getValidContextEntity } from '#/permissions/get-context-entity';
+import { getValidContextEntity, isPermissionAllowed } from '#/permissions';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -164,7 +164,13 @@ const organizationRouteHandlers = app
       .limit(limit)
       .offset(offset);
 
-    return ctx.json({ items: organizations, total }, 200);
+    // Enrich organizations with can object
+    const organizationsWithCan = organizations.map((org) => {
+      const { can } = isPermissionAllowed(getContextMemberships(), 'read', org, { systemRole: userSystemRole });
+      return { ...org, can };
+    });
+
+    return ctx.json({ items: organizationsWithCan, total }, 200);
   })
 
   /**
@@ -173,10 +179,10 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership } = await getValidContextEntity(idOrSlug, 'organization', 'read');
+    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'read');
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
-    const data = { ...organization, membership, counts };
+    const data = { ...organization, membership, counts, can };
 
     return ctx.json(data, 200);
   })
@@ -186,7 +192,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership } = await getValidContextEntity(idOrSlug, 'organization', 'update');
+    const { entity: organization, membership, can } = await getValidContextEntity(idOrSlug, 'organization', 'update');
     const user = getContextUser();
 
     const updatedFields = ctx.req.valid('json');
@@ -232,7 +238,7 @@ const organizationRouteHandlers = app
     logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const counts = await getEntityCounts(organization.entityType, organization.id);
-    const data = { ...updatedOrganization, membership, counts };
+    const data = { ...updatedOrganization, membership, counts, can };
 
     return ctx.json(data, 200);
   })

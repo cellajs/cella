@@ -5,6 +5,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import {
+  entityCanSchema,
   includeQuerySchema,
   languageSchema,
   paginationQuerySchema,
@@ -48,6 +49,7 @@ export const organizationSchema = z
     authStrategies: z.array(z.enum(authStrategiesEnum)),
     membership: z.union([membershipBaseSchema, z.null()]),
     counts: fullCountsSchema.optional(),
+    can: entityCanSchema.optional(),
   })
   .openapi('Organization', { example: mockOrganizationResponse() });
 

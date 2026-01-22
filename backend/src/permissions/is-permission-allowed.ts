@@ -1,6 +1,7 @@
 import type { EntityActionType } from 'config';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAllPermissions, type SubjectForPermission } from './permission-manager';
+import type { PermissionCheckOptions } from './permission-manager/types';
 import { accessPolicies, hierarchy } from './permissions-config';
 
 /**
@@ -40,17 +41,21 @@ type PermissionEntity = SubjectForPermission & { id?: string };
  * 3. **Single pass**: The `can` object and `membership` are built in the core permission
  *    checking logic (check.ts) as we iterate over the permissions config.
  *
+ * 4. **System admin**: If options.systemRole is 'admin', all permissions are granted.
+ *
  * @param memberships - User's memberships.
  * @param action - The entity action to check.
  * @param entity - The entity being accessed with entityType and id (for context) or context IDs (for product).
+ * @param options - Optional permission check options (e.g., systemRole).
  * @returns Permission result with allowed state, membership, and can object.
  */
 export const isPermissionAllowed = (
   memberships: MembershipBaseModel[],
   action: EntityActionType,
   entity: PermissionEntity,
+  options?: PermissionCheckOptions,
 ): PermissionResult => {
-  const { can, membership } = checkAllPermissions(hierarchy, accessPolicies, memberships, entity);
+  const { can, membership } = checkAllPermissions(hierarchy, accessPolicies, memberships, entity, options);
 
   return {
     allowed: can[action],

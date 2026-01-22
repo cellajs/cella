@@ -149,6 +149,17 @@
                   }
                 }
               }
+            },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
             }
           },
           "extendsRef": "#/components/schemas/Organization",
@@ -426,6 +437,17 @@
                           "page": { "type": "number", "required": true }
                         }
                       }
+                    }
+                  },
+                  "can": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "create": { "type": "boolean", "required": true },
+                      "read": { "type": "boolean", "required": true },
+                      "update": { "type": "boolean", "required": true },
+                      "delete": { "type": "boolean", "required": true },
+                      "search": { "type": "boolean", "required": true }
                     }
                   }
                 },
@@ -743,6 +765,17 @@
                   }
                 }
               }
+            },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
+              }
             }
           },
           "ref": "#/components/schemas/Organization",
@@ -1004,6 +1037,17 @@
                     "page": { "type": "number", "required": true }
                   }
                 }
+              }
+            },
+            "can": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "create": { "type": "boolean", "required": true },
+                "read": { "type": "boolean", "required": true },
+                "update": { "type": "boolean", "required": true },
+                "delete": { "type": "boolean", "required": true },
+                "search": { "type": "boolean", "required": true }
               }
             }
           },

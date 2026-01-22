@@ -8,21 +8,19 @@ import { PageNav } from '~/modules/common/page/nav';
 import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import { OrganizationRoute } from '~/routes/organization-routes';
-import { useUserStore } from '~/store/user';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organizations/leave-organization'));
 
 function OrganizationPage({ organizationId }: { organizationId: string }) {
   const { t } = useTranslation();
-  const systemRole = useUserStore((state) => state.systemRole);
 
   const orgQueryOptions = organizationQueryOptions(organizationId);
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
-  const isAdmin = organization.membership?.role === 'admin' || systemRole === 'admin';
+  const canUpdate = organization.can?.update ?? false;
 
-  // Filter tabs based on permissions - non-admins don't see settings
-  const filterTabIds = useMemo(() => (isAdmin ? undefined : ['members', 'attachments']), [isAdmin]);
+  // Filter tabs based on permissions - users who can't update don't see settings
+  const filterTabIds = useMemo(() => (canUpdate ? undefined : ['members', 'attachments']), [canUpdate]);
 
   const { mutate } = useOrganizationUpdateMutation();
 
@@ -41,7 +39,7 @@ function OrganizationPage({ organizationId }: { organizationId: string }) {
       <PageHeader
         entity={organization}
         organizationId={organization.id}
-        canUpdate={isAdmin}
+        canUpdate={canUpdate}
         coverUpdateCallback={coverUpdateCallback}
         panel={
           organization.membership && (

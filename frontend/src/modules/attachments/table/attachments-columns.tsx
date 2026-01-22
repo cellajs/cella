@@ -12,15 +12,14 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { ContextEntityData } from '~/modules/entities/types';
 import { Input } from '~/modules/ui/input';
 import { UserCellById } from '~/modules/users/user-cell';
-import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
-  const storeUserSystemRole = useUserStore((state) => state.systemRole);
 
   const isMobile = useBreakpoints('max', 'sm', false);
-  const isAdmin = entity.membership?.role === 'admin' || storeUserSystemRole === 'admin';
+  // Use can.update if available, fallback to role check for backwards compatibility
+  const canUpdate = entity.can?.update ?? false;
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
     () => [
@@ -43,7 +42,7 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
         minWidth: 180,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
-        ...(isAdmin && {
+        ...(canUpdate && {
           renderEditCell: ({ row, onRowChange }) => (
             <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
           ),
@@ -170,7 +169,7 @@ export const useColumns = (entity: ContextEntityData, isSheet: boolean, isCompac
         ),
       },
     ],
-    [t, isMobile, isSheet, isCompact, isAdmin],
+    [t, isMobile, isSheet, isCompact, canUpdate],
   );
 
   return columns;
