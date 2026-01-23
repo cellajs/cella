@@ -140,8 +140,15 @@ async function cleanupNonConflictedFiles(repoPath: string, analyzedFiles: FileAn
     }
 
     if (file?.mergeStrategy?.strategy === 'skip-upstream') {
-      await gitRemoveFilePathFromCache(repoPath, filePath);
-      await gitCleanUntrackedFile(repoPath, filePath);
+      // For ignored files: if file exists in fork, restore it; if new from upstream, remove it
+      if (file?.forkFile) {
+        // File exists in fork - restore fork's version (don't delete it!)
+        await gitRestoreStagedFile(repoPath, filePath);
+      } else {
+        // New file from upstream - don't add it
+        await gitRemoveFilePathFromCache(repoPath, filePath);
+        await gitCleanUntrackedFile(repoPath, filePath);
+      }
     }
   }
 }
@@ -173,8 +180,15 @@ async function resolveMergeConflicts(repoPath: string, analyzedFiles: FileAnalys
     }
 
     if (file?.mergeStrategy?.strategy === 'skip-upstream') {
-      await gitRemoveFilePathFromCache(repoPath, filePath);
-      await gitCleanUntrackedFile(repoPath, filePath);
+      // For ignored files: if file exists in fork, keep fork version; if new from upstream, remove it
+      if (file?.forkFile) {
+        // File exists in fork - resolve conflict by keeping fork's version
+        await resolveConflictAsOurs(repoPath, filePath);
+      } else {
+        // New file from upstream - don't add it
+        await gitRemoveFilePathFromCache(repoPath, filePath);
+        await gitCleanUntrackedFile(repoPath, filePath);
+      }
       continue;
     }
   }

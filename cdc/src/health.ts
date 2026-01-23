@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { logEvent } from '#/utils/logger';
 import { env } from './env';
 import { getCdcHealthState, type CdcHealthState } from './worker';
 
@@ -81,6 +82,6 @@ export function startHealthServer(): void {
   });
 
   server.listen(env.CDC_HEALTH_PORT, '0.0.0.0', () => {
-    console.info(`CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
+    logEvent('info', 'CDC health server listening', { port: env.CDC_HEALTH_PORT });
   });
 }

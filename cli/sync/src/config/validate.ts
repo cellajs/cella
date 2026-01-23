@@ -5,6 +5,13 @@ import { getGitFileHashes } from '../utils/git/files';
 import type { OverridesConfig } from './types';
 
 /**
+ * Escapes all regex special characters in a string.
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Simple glob pattern matching for file paths.
  * Supports * wildcard at end of pattern (e.g., 'info/*', 'frontend/public/static/*').
  */
@@ -15,8 +22,9 @@ function matchesPattern(pattern: string, filePath: string): boolean {
     return filePath.startsWith(`${dir}/`);
   }
   if (pattern.includes('*')) {
-    // Convert glob to regex: escape dots, replace * with .*
-    const regex = new RegExp(`^${pattern.replace(/\./g, '\\.').replace(/\*/g, '.*')}$`);
+    // Escape all regex metacharacters, then restore glob wildcard semantics
+    const escaped = escapeRegex(pattern).replace(/\\\*/g, '.*');
+    const regex = new RegExp(`^${escaped}$`);
     return regex.test(filePath);
   }
   // Exact match or directory prefix

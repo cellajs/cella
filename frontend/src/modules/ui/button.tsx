@@ -57,7 +57,14 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
-function Button({ className, variant, size, asChild = false, ...props }: React.ComponentProps<'button'> & ButtonProps) {
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  loading: _loading,
+  ...props
+}: React.ComponentProps<'button'> & ButtonProps) {
   const Comp = asChild ? Slot : 'button';
   return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
 }

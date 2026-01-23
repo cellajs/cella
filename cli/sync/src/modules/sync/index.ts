@@ -1,40 +1,36 @@
 /**
- * Sync module - Handles the full synchronization process between upstream and fork.
+ * Sync module - Merges upstream changes into sync-branch with conflict resolution.
+ *
+ * This is phase 3 of the sync pipeline. After this:
+ * - sync-branch has upstream changes merged (with conflicts resolved)
+ * - Changes are NOT yet squashed to development
+ * - Packages, validation, and squash happen in subsequent phases
  */
 import { config } from '#/config';
 import { handleUpstreamIntoForkMerge } from '#/modules/git/handle-upstream-into-fork-merge';
 import type { FileAnalysis } from '#/types';
-import { handleSquashMerge } from '#/utils/git/git-merge';
 import { createProgress } from '#/utils/progress';
 
 /**
- * Runs the full synchronization process between the upstream and fork repositories.
+ * Merges upstream changes into the sync branch with conflict resolution.
  *
- * This function orchestrates:
- * 1. Merge upstream into sync branch - applies updates with conflict resolution
- * 2. Squash sync branch into target branch - staged, not committed
+ * This function:
+ * 1. Merges upstream → sync-branch
+ * 2. Resolves conflicts using analyzed strategies (pinned/ignored)
+ * 3. Prompts for manual resolution if needed
+ *
+ * Does NOT squash to development - that happens after packages and validation.
  *
  * @param analyzedFiles - Array of FileAnalysis objects from runAnalyze()
- * @returns A promise resolving to the suggested commit message, or null if no changes.
  */
-export async function runSync(analyzedFiles: FileAnalysis[]): Promise<string | null> {
+export async function runSync(analyzedFiles: FileAnalysis[]): Promise<void> {
   const progress = createProgress('syncing');
 
-  return await progress.wrap(async () => {
+  await progress.wrap(async () => {
     progress.step('merging upstream → sync branch');
 
     await handleUpstreamIntoForkMerge(config.upstream, config.fork, analyzedFiles);
 
-    progress.step('squashing → target branch');
-
-    const commitMessage = await handleSquashMerge(config.forkLocalPath, config.forkBranchRef, config.forkSyncBranchRef);
-
-    if (commitMessage) {
-      progress.done(`changes staged on '${config.forkBranchRef}'`);
-    } else {
-      progress.done('no changes to sync');
-    }
-
-    return commitMessage;
+    progress.done('upstream merged into sync branch');
   });
 }

@@ -125,9 +125,13 @@ export async function handleSquashMerge(
   if (!totalAhead) return null;
 
   try {
-    await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true });
+    // Use acceptTheirs because sync-branch already has correctly resolved content:
+    // - Files resolved as 'keep-fork' → sync-branch kept fork version
+    // - Files resolved as 'keep-upstream' → sync-branch has upstream version
+    // This prevents re-prompting for conflicts already resolved in the first merge.
+    await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true, acceptTheirs: true });
   } catch {
-    // Squash merge can have conflicts if development diverged from sync-branch
+    // Squash merge can still have conflicts if development diverged from sync-branch
     // (e.g., direct commits on development after a previous sync)
     await waitForManualConflictResolution(mergeIntoPath);
   }
@@ -141,14 +145,19 @@ export async function handleSquashMerge(
   // Use pulledCommitCount from this session (accurate), fallback to totalAhead
   const commitCount = config.pulledCommitCount || totalAhead;
 
-  const recentMessages = config.maxSquashPreviews
-    ? await getLastCommitMessages(
-        mergeIntoPath,
-        mergeFromBranch,
-        mergeIntoBranch,
-        Math.min(config.maxSquashPreviews, commitCount),
-      )
-    : [];
+  // Use pre-captured commit messages from upstream (captured before merges in runSetup)
+  // This avoids polluted messages from merge commits on sync-branch
+  const recentMessages =
+    config.pulledCommitMessages.length > 0
+      ? config.pulledCommitMessages
+      : config.maxSquashPreviews
+        ? await getLastCommitMessages(
+            mergeIntoPath,
+            config.upstreamBranchRef,
+            config.forkSyncBranchRef,
+            Math.min(config.maxSquashPreviews, commitCount),
+          )
+        : [];
 
   const commitCountText = commitCount === 1 ? '1 commit' : `${commitCount} commits`;
   let commitMessage = `chore(sync): ${commitCountText} from ${config.upstreamRemoteName}`;

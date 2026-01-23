@@ -108,6 +108,9 @@ export interface SyncState {
   /** Number of commits pulled from upstream in this sync session */
   pulledCommitCount: number;
 
+  /** Commit messages from upstream pulled in this sync session */
+  pulledCommitMessages: string[];
+
   // Fork settings
   forkLocalPath: string;
   forkBranch: string;

@@ -4,7 +4,9 @@ import { config } from '#/config';
 import { runAnalyze } from '#/modules/analyze';
 import { validateConfig } from '#/modules/cli/handlers';
 import { runPackages } from '#/modules/package';
+import { runSquash } from '#/modules/squash';
 import { runSync } from '#/modules/sync';
+import { runValidate } from '#/modules/validate';
 import { runCli } from '#/run-cli';
 import { runSetup } from '#/run-setup';
 import { gitCheckout } from '#/utils/git/command';
@@ -13,15 +15,17 @@ import { getCurrentBranch } from '#/utils/git/helpers';
 /**
  * Orchestrates the full execution flow of the Cella sync CLI.
  *
- * This includes:
- *  - Running the initial CLI (config)
- *  - Validating the overrides configuration
- *  - Performing repository and configuration preflight checks
- *  - Analyzing file differences between upstream and fork
- *  - Running the repository sync (if enabled)
- *  - Running dependency sync (if enabled)
+ * Pipeline phases:
+ * 1. CLI - Prompt for configuration
+ * 2. Setup - Preflight checks, branch preparation
+ * 3. Analyze - Diff upstream vs fork, determine strategies
+ * 4. Sync - Merge upstream → sync-branch (resolve conflicts)
+ * 5. Packages - Sync package.json dependencies (on sync-branch)
+ * 6. Validate - Run pnpm install && pnpm check (on sync-branch)
+ * 7. Squash - Squash sync-branch → development (after validation)
  *
- * Each step exits early on error, and errors are caught at the top level.
+ * Development branch is only touched in the final squash phase,
+ * ensuring it always receives validated, working code.
  *
  * @returns A Promise that resolves when the entire pipeline has executed.
  */
@@ -57,15 +61,22 @@ async function main(): Promise<void> {
     // Perform analysis (file diffs, metadata, merge strategies, etc.)
     const analyzedFiles = await runAnalyze();
 
-    // Apply file sync logic (sync service only)
+    // Apply sync pipeline (sync service only)
     if (config.syncService === 'sync') {
-      const commitMessage = await runSync(analyzedFiles);
+      // Phase 4: Merge upstream → sync-branch (with conflict resolution)
+      await runSync(analyzedFiles);
 
-      // Apply package.json dependency synchronization (unless skipped)
+      // Phase 5: Sync package.json dependencies (on sync-branch)
       if (!config.skipPackages) {
         await runPackages(analyzedFiles);
         console.info();
       }
+
+      // Phase 6: Validate (pnpm install && pnpm check) and stage all changes
+      await runValidate();
+
+      // Phase 7: Squash validated sync-branch → development
+      const commitMessage = await runSquash();
 
       // Show final instructions for staged changes
       if (commitMessage) {

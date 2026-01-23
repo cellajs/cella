@@ -6,7 +6,7 @@ import { checkRepository } from '#/modules/setup/check-repository';
 import { fetchLatestChanges } from '#/modules/setup/fetch-latest-changes';
 import { handleMerge } from '#/utils/git/git-merge';
 import { createBranchIfMissing } from '#/utils/git/git-refs';
-import { getCommitCount } from '#/utils/git/helpers';
+import { getCommitCount, getLastCommitMessages } from '#/utils/git/helpers';
 import { createProgress } from '#/utils/progress';
 
 /**
@@ -102,16 +102,16 @@ export async function runSetup() {
     progress.step('updating sync branch');
 
     /**
-     * Merge upstream → sync-branch to incorporate latest upstream changes.
+     * First, merge development → sync-branch to align sync-branch with current fork state.
+     * This prevents double-conflicts during the squash merge back to development.
+     *
+     * Then merge upstream → sync-branch to incorporate latest upstream changes.
      * sync-branch maintains full upstream commit history (not squashed),
      * which allows accurate file-level commit analysis and merge-base detection.
-     *
-     * NOTE: We do NOT merge development → sync-branch here because that would
-     * pollute sync-branch with fork-specific commits, breaking the commit
-     * counting logic which relies on sync-branch only containing upstream SHAs.
      */
 
     // Count commits that will be pulled BEFORE merging (for accurate squash message)
+    // Compare upstream against sync-branch to see what's new from upstream
     const pulledCount = await getCommitCount(
       config.workingDirectory,
       config.upstreamBranchRef,
@@ -119,7 +119,28 @@ export async function runSetup() {
     );
     config.pulledCommitCount = pulledCount;
 
-    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.upstreamBranchRef, null);
+    // Capture commit messages from upstream BEFORE merging
+    // This gives us clean upstream messages without merge commit noise
+    if (pulledCount > 0 && config.maxSquashPreviews) {
+      const messages = await getLastCommitMessages(
+        config.workingDirectory,
+        config.upstreamBranchRef,
+        config.forkSyncBranchRef,
+        Math.min(config.maxSquashPreviews, pulledCount),
+      );
+      config.pulledCommitMessages = messages;
+    }
+
+    // Merge development → sync-branch (align with fork's current state)
+    // This ensures sync-branch has fork's content before analyzing and applying upstream changes.
+    // This should be conflict-free since sync-branch is an ancestor of development
+    // (or identical if no new commits on development since last sync).
+    await handleMerge(config.workingDirectory, config.forkSyncBranchRef, config.forkBranchRef, null);
+
+    // NOTE: We intentionally do NOT merge upstream here.
+    // The upstream merge happens in runSync() AFTER analyze, so that:
+    // 1. Analysis compares upstream vs fork's current state (not already-merged state)
+    // 2. Conflict resolution can use the analyzed override strategies (pinned/ignored)
 
     // Ensure sync branch is clean post-merge
     await checkCleanState(config.workingDirectory, config.forkSyncBranchRef, { skipCheckout: true });

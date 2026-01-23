@@ -7,6 +7,10 @@ import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-da
 import { entityToPrefetchQueries } from '~/offline-config';
 import { prefetchQuery } from '~/query/basic';
 import { initializeMutationDefaults } from '~/query/mutation-registry';
+// Import query modules AFTER mutation-registry to ensure registrars is initialized.
+// These modules call addMutationRegistrar() at module load time.
+import '~/modules/attachments/query';
+import '~/modules/pages/query';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { useUIStore } from '~/store/ui';

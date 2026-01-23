@@ -47,7 +47,7 @@ export function packageSummaryLine(stats: PackageSyncStats): string {
   const keyBadges: string[] = [];
   for (const [key, count] of Object.entries(stats.updatesByKey)) {
     if (count > 0) {
-      const shortKey = key.replace('dependencies', 'deps').replace('devDeps', 'devDeps');
+      const shortKey = key.replace('devDependencies', 'devDeps').replace('dependencies', 'deps');
       keyBadges.push(pc.cyan(count) + ' ' + shortKey);
     }
   }

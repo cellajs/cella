@@ -149,7 +149,18 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
   const relevantContexts = getRelevantContexts(hierarchy, subject.entityType);
   const primaryContext = relevantContexts[0];
 
-  // If system admin, grant all permissions immediately
+  // Index memberships by "${contextType}:${contextId}" for O(1) lookup
+  // Done early so we can resolve membership even for system admins
+  const membershipIndex = buildMembershipIndex(memberships);
+
+  // Resolve primary context membership (used by both system admin and normal flow)
+  const primaryContextId = getSubjectContextId(subject, primaryContext);
+  const primaryMemberships = primaryContextId
+    ? (membershipIndex.get(`${primaryContext}:${primaryContextId}`) ?? [])
+    : [];
+  const resolvedMembership = primaryMemberships[0] ?? null;
+
+  // If system admin, grant all permissions immediately (but still return membership if exists)
   if (isSystemAdmin) {
     const allGranted = Object.fromEntries(
       appConfig.entityActions.map((action) => [
@@ -170,18 +181,15 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
       subject: {
         entityType: subject.entityType,
         id: subject.id,
-        contextIds: {},
+        contextIds: primaryContextId ? { [primaryContext]: primaryContextId } : {},
       },
       relevantContexts,
       primaryContext,
       actions: allGranted,
       can,
-      membership: null,
+      membership: resolvedMembership,
     };
   }
-
-  // Index memberships by "${contextType}:${contextId}" for O(1) lookup
-  const membershipIndex = buildMembershipIndex(memberships);
 
   // Index policies by "${contextType}:${role}" for this subject's entityType
   const policyIndex = buildPolicyIndex(policies, subject.entityType);
@@ -193,8 +201,6 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
 
   // Collect resolved context IDs for debugging
   const contextIds: Partial<Record<ContextEntityType, string>> = {};
-
-  let membership: T | null = null;
 
   // Walk through each context level (entity's own context first, then ancestors)
   for (const contextType of relevantContexts) {
@@ -212,11 +218,6 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
     const matchingMemberships = membershipIndex.get(`${contextType}:${subjectContextId}`) ?? [];
 
     for (const m of matchingMemberships) {
-      // Capture the FIRST membership from the primary context only
-      if (contextType === primaryContext && membership === null) {
-        membership = m;
-      }
-
       // Look up what permissions this role grants for this entity type in this context
       const permissions = policyIndex.get(`${contextType}:${m.role}`);
       if (!permissions) continue;
@@ -251,7 +252,7 @@ export const checkAllPermissions = <T extends MembershipForPermission>(
     primaryContext,
     actions,
     can,
-    membership,
+    membership: resolvedMembership,
   };
 
   if (env.DEBUG) {

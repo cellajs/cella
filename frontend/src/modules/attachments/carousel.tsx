@@ -1,11 +1,12 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
-import { DownloadIcon, ExternalLinkIcon, XIcon } from 'lucide-react';
+import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { clearAttachmentDialogSearchParams, openAttachmentDialog } from '~/modules/attachments/dialog/lib';
 import { AttachmentRender } from '~/modules/attachments/render';
 import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
+import CloseButton from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
@@ -151,14 +152,7 @@ function AttachmentsCarousel({
             </Button>
           )}
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-my-1 size-8 opacity-70 hover:opacity-100"
-            onClick={() => removeDialog()}
-          >
-            <XIcon className="h-6 w-6" strokeWidth={1.5} />
-          </Button>
+          <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
         </div>
       )}
 

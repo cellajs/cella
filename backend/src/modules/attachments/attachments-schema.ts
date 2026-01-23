@@ -30,7 +30,7 @@ export const attachmentCreateBodySchema = attachmentInsertSchema.pick({
   thumbnailKey: true,
 });
 
-export const attachmentCreateManySchema = attachmentCreateBodySchema.array().min(1).max(50);
+const attachmentCreateManySchema = attachmentCreateBodySchema.array().min(1).max(50);
 
 export const attachmentUpdateBodySchema = attachmentInsertSchema
   .pick({

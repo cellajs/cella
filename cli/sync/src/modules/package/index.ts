@@ -1,11 +1,13 @@
 /**
  * Package module - Synchronizes package.json dependencies between upstream and fork.
+ *
+ * This is phase 4 of the sync pipeline. Runs on sync-branch (not development).
+ * Staging is deferred to the validate phase.
  */
 import * as path from 'path';
 import { config } from '#/config';
 import type { FileAnalysis, PackageJson } from '#/types';
 import { readJsonFile, writeJsonFile } from '#/utils/files';
-import { gitAddAll, gitCheckout } from '#/utils/git/command';
 import { getRemoteJsonFile } from '#/utils/git/helpers';
 import { createProgress } from '#/utils/progress';
 import { applyPackageUpdates, getPackageUpdates } from './get-values-to-update';
@@ -30,9 +32,11 @@ export {
 /**
  * Synchronizes package dependencies between the upstream repository and the fork.
  *
- * Processes package.json files from analyzed files that:
+ * Runs on sync-branch. Processes package.json files from analyzed files that:
  * - exist in both upstream and fork
  * - are not ignored via overrides configuration
+ *
+ * Does NOT stage changes - that's handled by the validate phase.
  *
  * @param analyzedFiles - The results from runAnalyze()
  */
@@ -40,9 +44,8 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
   const progress = createProgress('syncing packages');
 
   const summaryLine = await progress.wrap(async () => {
-    progress.step('checking out target branch');
-
-    await gitCheckout(config.workingDirectory, config.forkBranchRef);
+    // NOTE: We're already on sync-branch from the sync phase
+    // No need to checkout - packages are applied on sync-branch before validation
 
     const newPackageJsons: { [filePath: string]: PackageJson } = {};
     const stats = createPackageSyncStats();
@@ -86,7 +89,8 @@ export async function runPackages(analyzedFiles: FileAnalysis[]) {
       writeJsonFile(resolvedForkPath, newPackageJson);
     }
 
-    await gitAddAll(config.workingDirectory);
+    // NOTE: Do NOT stage here - validate phase will stage all changes
+    // after pnpm install && pnpm check completes
 
     progress.done('');
 

@@ -33,10 +33,11 @@ export const requestLogger = pino(
     : pino.transport({
         target: 'pino-pretty',
         options: {
-          colorize: true,
-          singleLine: true,
+          colorize: false,
+          singleLine: false,
           ignore: 'pid,hostname,level,time',
           messageFormat: '{requestId} {method} {status} {url} ({responseTime}ms) @{userId}',
+          hideObject: true,
         },
       }),
 );

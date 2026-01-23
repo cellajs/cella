@@ -28,6 +28,7 @@ const state: SyncState = {
   maxSquashPreviews: customConfig.maxSquashPreviews ?? maxSquashPreviewsDefault,
   packageJsonSync: customConfig.packageJsonSync ?? packageJsonSyncDefault,
   pulledCommitCount: 0,
+  pulledCommitMessages: [],
 
   // Fork settings
   forkLocalPath: monorepoRoot,
@@ -161,6 +162,14 @@ export const config = {
   },
   set pulledCommitCount(value: number) {
     state.pulledCommitCount = value;
+  },
+
+  /** Commit messages from upstream pulled in this sync session */
+  get pulledCommitMessages(): string[] {
+    return state.pulledCommitMessages;
+  },
+  set pulledCommitMessages(value: string[]) {
+    state.pulledCommitMessages = value;
   },
 
   get packageJsonSync(): PackageJsonSyncKey[] {

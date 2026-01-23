@@ -1,3 +1,4 @@
+import { logEvent } from '#/utils/logger';
 import { startHealthServer } from './health';
 import { startCdcWorker, stopCdcWorker } from './worker';
 
@@ -20,13 +21,13 @@ if (devMode !== 'full' && process.env.NODE_ENV !== 'production') {
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
-  console.info('\nReceived SIGINT, shutting down CDC worker...');
+  logEvent('info', 'Received SIGINT, shutting down CDC worker...');
   await stopCdcWorker();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  console.info('\nReceived SIGTERM, shutting down CDC worker...');
+  logEvent('info', 'Received SIGTERM, shutting down CDC worker...');
   await stopCdcWorker();
   process.exit(0);
 });
@@ -36,6 +37,6 @@ startHealthServer();
 
 // Start the worker
 startCdcWorker().catch((error) => {
-  console.error('Failed to start CDC worker:', error);
+  logEvent('error', 'Failed to start CDC worker', { error });
   process.exit(1);
 });
