@@ -15,7 +15,7 @@ import { organizationQueryKeys, organizationsQueryOptions } from '~/modules/orga
 import { OrganizationsTableBar } from '~/modules/organizations/table/organizations-bar';
 import { useColumns } from '~/modules/organizations/table/organizations-columns';
 import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { useMutateQueryData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 
 const LIMIT = appConfig.requestLimits.organizations;

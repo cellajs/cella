@@ -25,8 +25,6 @@ services:
         sync: false
       - key: COOKIE_SECRET
         sync: false
-      - key: ELECTRIC_API_SECRET
-        sync: false
       - key: NODE_VERSION
         sync: true
         value: 24

@@ -2,24 +2,13 @@ import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { downloadTemplate } from 'giget';
-import colors from 'picocolors';
-import yoctoSpinner from 'yocto-spinner';
-import { addRemote } from './add-remote.js';
-import { TEMPLATE_URL } from './constants.js';
-import { cleanTemplate } from './utils/clean-template.js';
-import { runGitCommand } from './utils/run-git-command.js';
-import { generate, install } from './utils/run-package-manager-command.js';
-
-interface CreateOptions {
-  projectName: string;
-  targetFolder: string;
-  newBranchName?: string | null;
-  skipInstall: boolean;
-  skipGit: boolean;
-  skipClean: boolean;
-  skipGenerate: boolean;
-  packageManager: string;
-}
+import { addRemote } from '#/add-remote';
+import { TEMPLATE_URL } from '#/constants';
+import { type CreateOptions, showSkipWarning, showSuccess } from '#/modules/cli';
+import { cleanTemplate } from '#/utils/clean-template';
+import { gitAddAll, gitBranch, gitCheckout, gitCommit, gitInit } from '#/utils/git';
+import { createProgress } from '#/utils/progress';
+import { generate, install } from '#/utils/run-package-manager-command';
 
 export async function create({
   projectName,
@@ -34,157 +23,80 @@ export async function create({
   // Save the original working directory
   const originalCwd = process.cwd();
 
-  console.info();
+  const progress = createProgress('creating project');
 
-  // Create the target folder if it doesn't exist
-  const createFolderSpinner = yoctoSpinner({
-    text: 'Creating project folder',
-  }).start();
+  try {
+    // Create the target folder
+    progress.step('creating project folder');
+    await mkdir(targetFolder, { recursive: true });
+    process.chdir(targetFolder);
 
-  await mkdir(targetFolder, { recursive: true });
-  process.chdir(targetFolder);
+    // Download the template
+    progress.step('downloading cella template');
+    await downloadTemplate(TEMPLATE_URL, {
+      cwd: process.cwd(),
+      dir: targetFolder,
+      force: true,
+      provider: 'github',
+    });
 
-  createFolderSpinner.success('Project folder created');
-
-  // Download the template from the specified URL
-  const downloadSpinner = yoctoSpinner({
-    text: 'Downloading `cella` template',
-  }).start();
-
-  await downloadTemplate(TEMPLATE_URL, {
-    cwd: process.cwd(),
-    dir: targetFolder,
-    force: true,
-    provider: 'github',
-  });
-
-  downloadSpinner.success('`cella` template downloaded');
-
-  // Clean the template if the skipClean flag is not set
-  if (!skipClean) {
-    const cleanSpinner = yoctoSpinner({
-      text: 'cleaning `cella` template',
-    }).start();
-
-    try {
-      await cleanTemplate({
-        targetFolder,
-      });
-      cleanSpinner.success('`cella` template cleaned');
-    } catch (e) {
-      console.error(e);
-      cleanSpinner.error('Failed to clean `cella` template');
-      process.exit(1);
+    // Clean the template
+    if (!skipClean) {
+      progress.step('cleaning template');
+      await cleanTemplate({ targetFolder });
     }
-  } else {
-    console.info(`${colors.yellow('⚠')} --skip-clean > Skip cleaning \`cella\` template`);
-  }
 
-  // Install dependencies if the skipInstall flag is not set
-  if (!skipInstall) {
-    const installSpinner = yoctoSpinner({
-      text: 'installing dependencies',
-    }).start();
-
-    try {
+    // Install dependencies
+    if (!skipInstall) {
+      progress.step('installing dependencies');
       await install(packageManager);
-      installSpinner.success('Dependencies installed');
-    } catch (e) {
-      console.error(e);
-      installSpinner.error('Failed to install dependencies');
-      process.exit(1);
     }
-  } else {
-    console.info(`${colors.yellow('⚠')} --skip-install > Skip installing dependencies`);
-  }
 
-  // Generate SQL files if the skipGenerate flag is not set
-  if (!skipGenerate) {
-    const generateSpinner = yoctoSpinner({
-      text: 'generating SQL files',
-    }).start();
-
-    try {
+    // Generate SQL files
+    if (!skipGenerate) {
+      progress.step('generating migrations');
       await generate(packageManager);
-      generateSpinner.success('SQL files generated');
-    } catch (e) {
-      console.error(e);
-      generateSpinner.error('Failed to generate SQL files');
-      process.exit(1);
     }
-  } else {
-    console.info(`${colors.yellow('⚠')} --skip-generate > Skip generating SQL files`);
-  }
 
-  // Initialize Git repository if skipGit flag is not set
-  if (!skipGit) {
-    const gitSpinner = yoctoSpinner({
-      text: 'initializing git repository',
-    }).start();
+    // Initialize git repository
+    if (!skipGit) {
+      const gitFolderPath = join(targetFolder, '.git');
 
-    const gitFolderPath = join(targetFolder, '.git');
+      if (!existsSync(gitFolderPath)) {
+        progress.step('initializing git');
+        await gitInit(targetFolder);
+        await gitAddAll(targetFolder);
+        await gitCommit(targetFolder, 'Initial commit');
 
-    if (!existsSync(gitFolderPath)) {
-      try {
-        // Run Git commands to initialize the repository and make the first commit
-        await runGitCommand({ targetFolder, command: 'init' });
-        await runGitCommand({ targetFolder, command: 'add .' });
-        await runGitCommand({ targetFolder, command: 'commit -m "Initial commit"' });
-
-        // If a new branch name is specified, create and checkout the branch
         if (newBranchName) {
-          await runGitCommand({ targetFolder, command: `branch ${newBranchName}` });
-          await runGitCommand({ targetFolder, command: `checkout ${newBranchName}` });
-          gitSpinner.success(`Git repository initialized, initial commit created, and new branch ${newBranchName} created`);
-        } else {
-          gitSpinner.success('Git repository initialized and initial commit created');
+          progress.step(`creating branch '${newBranchName}'`);
+          await gitBranch(targetFolder, newBranchName);
+          await gitCheckout(targetFolder, newBranchName);
         }
-      } catch (e) {
-        console.error(e);
-        gitSpinner.error('Failed to initialize Git repository or create branch');
-        process.exit(1);
       }
-    } else {
-      gitSpinner.warning('Git repository already initialized > Skip git init');
     }
-  } else {
-    console.info(`${colors.yellow('⚠')} --skip-git > Skip git init`);
+
+    // Add upstream remote
+    progress.step('adding upstream remote');
+    await addRemote({ targetFolder, silent: true });
+
+    // Done
+    progress.done(`created ${projectName}`);
+  } catch (error) {
+    progress.fail(error instanceof Error ? error.message : String(error));
+    process.exit(1);
   }
 
-  // Add Cella as upstream remote
-  await addRemote({ targetFolder });
-
-  // Final success message indicating project creation
-  console.info();
-  console.info(`${colors.green('Success')} Created ${projectName} at ${targetFolder}`);
-  console.info();
+  // Show skipped steps as warnings
+  if (skipClean) showSkipWarning('--skip-clean', 'template not cleaned');
+  if (skipInstall) showSkipWarning('--skip-install', 'dependencies not installed');
+  if (skipGenerate) showSkipWarning('--skip-generate', 'migrations not generated');
+  if (skipGit) showSkipWarning('--skip-git', 'git not initialized');
 
   // Check if the working directory needs to be changed
   const needsCd = originalCwd !== targetFolder;
   const relativePath = relative(originalCwd, targetFolder);
 
-  if (needsCd) {
-    // Calculate the relative path between the original working directory and the target folder
-    console.info('now go to your project using:');
-    console.info(colors.cyan(`  cd ${relativePath}`)); // Adding './' to make it clear it's a relative path
-    console.info();
-  }
-
-  console.info(`${needsCd ? 'then ' : ''}quick start using pglite with:`);
-  console.info(colors.cyan(`  ${packageManager} quick`));
-  console.info();
-
-  console.info('Already have docker installed? Then you can run a full setup:');
-  console.info(colors.cyan(`  ${packageManager} docker`));
-  console.info(colors.cyan(`  ${packageManager} dev`));
-  console.info(colors.cyan(`  ${packageManager} seed`));
-  console.info();
-
-  console.info('Once running, you can sign in using:');
-  console.info(`email: ${colors.greenBright('admin-test@cellajs.com')}`);
-  console.info(`password: ${colors.greenBright('12345678')}`);
-  console.info();
-  console.info(`For more info, check out: ${relativePath}/README.md`);
-  console.info(`Enjoy building ${projectName} using cella! 🎉`);
-  console.info();
+  // Display final success message
+  showSuccess(projectName, targetFolder, relativePath, needsCd, packageManager);
 }

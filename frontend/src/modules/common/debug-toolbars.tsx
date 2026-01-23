@@ -77,6 +77,6 @@ function DebugToolbars() {
       </DropdownMenu>
     </>
   );
-};
+}
 
 export default DebugToolbars;

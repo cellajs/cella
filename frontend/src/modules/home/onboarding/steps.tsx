@@ -14,7 +14,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { flattenInfiniteData } from '~/query/utils/flatten';
+import { flattenInfiniteData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 

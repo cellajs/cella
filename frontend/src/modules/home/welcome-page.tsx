@@ -46,5 +46,5 @@ function WelcomePage() {
       {onboarding === 'completed' && <OnboardingCompleted />}
     </>
   );
-};
+}
 export default WelcomePage;

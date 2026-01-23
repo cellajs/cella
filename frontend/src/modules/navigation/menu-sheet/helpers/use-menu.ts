@@ -3,7 +3,7 @@ import { appConfig, type ContextEntityType } from 'config';
 import { useMemo } from 'react';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { flattenInfiniteData } from '~/query/utils/flatten';
+import { flattenInfiniteData } from '~/query/basic';
 import { buildMenu } from './build-menu';
 
 /**

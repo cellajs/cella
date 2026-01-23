@@ -87,6 +87,6 @@ function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) {
       })}
     </div>
   );
-};
+}
 
 export default OAuthProviders;

@@ -1,27 +1,23 @@
 /**
- * Integration tests for CDC → Activities → EventBus flow.
+ * Integration tests for CDC → Activities → ActivityBus flow.
  *
  * These tests verify:
- * 1. EventBus can receive events via PostgreSQL NOTIFY
- * 2. Activity insertions trigger NOTIFY (via database trigger)
- * 3. Full flow: DB change → CDC → activities table → trigger → eventBus
+ * 1. ActivityBus can receive events locally
+ * 2. Full flow: DB change → CDC Worker → WebSocket → ActivityBus
  *
  * Prerequisites:
  * - Real PostgreSQL with logical replication enabled
- * - Migrations applied (creates trigger)
- * - For full CDC tests: CDC worker running
+ * - For full CDC tests: CDC worker running with WebSocket connection
  */
 
-import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { db } from '#/db/db';
-import { activitiesTable } from '#/db/schema/activities';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
-import type { ActivityEvent } from '#/lib/event-bus';
-import { eventBus } from '#/lib/event-bus';
+import type { ActivityEvent } from '#/sync/activity-bus';
+import { eventBus } from '#/sync/activity-bus';
 import { nanoid } from '#/utils/nanoid';
 import { mockOrganization } from '../../mocks/mock-organization';
 import { mockUser } from '../../mocks/mock-user';
@@ -55,6 +51,7 @@ describe('EventBus Integration', () => {
         organizationId: null,
         changedKeys: ['email', 'name'],
         createdAt: new Date().toISOString(),
+        tx: null,
       };
 
       await eventBus.emit('user.created', mockEvent);
@@ -80,6 +77,7 @@ describe('EventBus Integration', () => {
         organizationId: nanoid(),
         changedKeys: ['name'],
         createdAt: new Date().toISOString(),
+        tx: null,
       };
 
       await eventBus.emit('organization.updated', mockEvent);
@@ -87,102 +85,6 @@ describe('EventBus Integration', () => {
 
       // Should only be called once
       expect(handler).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  // Skip CDC-dependent tests when not in full test mode
-  describe.skipIf(process.env.TEST_MODE !== 'full')('Activity trigger → EventBus', () => {
-    it('should receive event when activity is inserted directly', async () => {
-      // This tests the PostgreSQL trigger path
-      const eventPromise = waitForEvent<ActivityEvent>('membership.created', 5000);
-
-      const entityId = nanoid();
-      const userId = nanoid();
-      const organizationId = nanoid();
-
-      // Create a valid user first to satisfy foreign key constraint
-      const userData = mockUser();
-      userData.id = userId;
-      await db.insert(usersTable).values(userData);
-      await db.insert(emailsTable).values({
-        email: userData.email,
-        userId: userData.id,
-        verified: true,
-      });
-
-      // Create a valid organization to satisfy foreign key constraint
-      const orgData = mockOrganization();
-      orgData.id = organizationId;
-      await db.insert(organizationsTable).values(orgData);
-
-      // Insert activity directly (simulating what CDC does)
-      // Note: membership is a resourceType, not entityType
-      await db.insert(activitiesTable).values({
-        id: nanoid(),
-        type: 'membership.created',
-        action: 'create',
-        tableName: 'memberships',
-        entityType: null,
-        resourceType: 'membership',
-        entityId,
-        userId,
-        organizationId,
-        changedKeys: ['userId', 'role'],
-      });
-
-      // Wait for the trigger to fire NOTIFY → eventBus receives
-      const event = await eventPromise;
-
-      expect(event.type).toBe('membership.created');
-      expect(event.entityId).toBe(entityId);
-      expect(event.userId).toBe(userId);
-    });
-
-    it('should handle multiple activities in sequence', async () => {
-      const events: ActivityEvent[] = [];
-      const handler = (event: ActivityEvent) => {
-        events.push(event);
-      };
-
-      eventBus.on('user.updated', handler);
-
-      const userId = nanoid();
-
-      // Create a valid user first to satisfy foreign key constraint
-      const userData = mockUser();
-      userData.id = userId;
-      await db.insert(usersTable).values(userData);
-      await db.insert(emailsTable).values({
-        email: userData.email,
-        userId: userData.id,
-        verified: true,
-      });
-
-      // Insert multiple activities
-      for (let i = 0; i < 3; i++) {
-        await db.insert(activitiesTable).values({
-          id: nanoid(),
-          type: 'user.updated',
-          action: 'update',
-          tableName: 'users',
-          entityType: 'user',
-          resourceType: null,
-          entityId: userId,
-          userId,
-          organizationId: null,
-          changedKeys: ['name'],
-        });
-      }
-
-      // Give some time for all events to propagate
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      expect(events.length).toBe(3);
-      events.forEach((event) => {
-        expect(event.entityId).toBe(userId);
-      });
-
-      eventBus.off('user.updated', handler);
     });
   });
 });
@@ -195,22 +97,11 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () =
     const { publicationExists } = await ensureCdcSetup();
     expect(publicationExists).toBe(true);
   });
-
-  it('should have activity notify trigger installed', async () => {
-    const result = await db.execute<{ trigger_name: string }>(
-      sql`SELECT trigger_name FROM information_schema.triggers 
-          WHERE event_object_table = 'activities' 
-          AND trigger_name = 'activities_notify_trigger'`,
-    );
-
-    expect(result.rows.length).toBe(1);
-    expect(result.rows[0].trigger_name).toBe('activities_notify_trigger');
-  });
 });
 
 /**
  * Full CDC flow tests.
- * These require the CDC worker to be running.
+ * These require the CDC worker to be running with WebSocket connection.
  * Skip in CI unless CDC is available.
  */
 describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {

@@ -782,6 +782,23 @@
     }
   },
   {
+    "id": "pagesPublicStream",
+    "hash": "tag/pages/GET/pages/stream",
+    "method": "get",
+    "path": "/pages/stream",
+    "tags": ["pages"],
+    "summary": "Public stream of page changes",
+    "description": "Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isPublicAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "syncPages",
     "hash": "tag/pages/GET/pages/sync-pages",
     "method": "get",
@@ -809,7 +826,7 @@
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated", "isSystemAdmin"],
       "xRateLimiter": []
@@ -877,7 +894,7 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated", "isSystemAdmin"],
       "xRateLimiter": []
@@ -1037,6 +1054,23 @@
     }
   },
   {
+    "id": "getRuntimeMetrics",
+    "hash": "tag/metrics/GET/metrics/runtime",
+    "method": "get",
+    "path": "/metrics/runtime",
+    "tags": ["metrics"],
+    "summary": "Get runtime metrics",
+    "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.\n      Includes memory usage, CPU time, uptime, and event loop utilization.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["isAuthenticated", "hasSystemAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
     "id": "getPublicCounts",
     "hash": "tag/metrics/GET/metrics/public",
     "method": "get",
@@ -1050,6 +1084,23 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["isPublicAccess"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "syncStream",
+    "hash": "tag/sync/GET/organizations/{orgIdOrSlug}/sync/stream",
+    "method": "get",
+    "path": "/organizations/{orgIdOrSlug}/sync/stream",
+    "tags": ["sync"],
+    "summary": "Live stream of entity changes",
+    "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1132,7 +1183,7 @@
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []

@@ -23,6 +23,16 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
+ * Offline entities that support offline transactions
+ */
+export type OfflineEntityType = (typeof appConfig.offlineEntityTypes)[number];
+
+/**
+ * Realtime entities that support realtime & offline transactions
+ */
+export type RealtimeEntityType = (typeof appConfig.realtimeEntityTypes)[number];
+
+/**
  * Menu sections in the menu structure
  */
 export type MenuSection = {

@@ -113,6 +113,6 @@ function PagesTable() {
       />
     </FocusViewContainer>
   );
-};
+}
 
 export default PagesTable;

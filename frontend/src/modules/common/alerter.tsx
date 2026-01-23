@@ -20,6 +20,6 @@ function Alerter({ mode }: { mode: AlertContextMode }) {
       })}
     </>
   );
-};
+}
 
 export default Alerter;

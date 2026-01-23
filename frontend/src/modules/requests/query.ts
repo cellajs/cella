@@ -15,10 +15,7 @@ import {
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
-import {
-  baseInfiniteQueryOptions,
-  infiniteQueryUseCachedIfCompleteOptions,
-} from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/basic';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.

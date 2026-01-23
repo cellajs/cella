@@ -1,12 +1,61 @@
 import z from 'zod';
 import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+
+import { createStreamMessageSchema } from '#/modules/sync/schema';
 import { baseElectricSyncQuery, idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
-import { pageCreateBodySchema, pageListQuerySchema, pageSchema, pageUpdateBodySchema } from './pages-schema';
+import {
+  pageCreateTxBodySchema,
+  pageListQuerySchema,
+  pageSchema,
+  pageTxResponseSchema,
+  pageUpdateTxBodySchema,
+} from './pages-schema';
+
+/**
+ * Query parameters for the public pages stream.
+ */
+const publicStreamQuerySchema = z.object({
+  offset: z.string().optional().describe('Cursor offset: "-1" for all history, "now" for live-only, or activity ID'),
+  live: z.enum(['sse']).optional().describe('Set to "sse" for live updates (SSE stream)'),
+});
+
+/**
+ * Catch-up response for public pages stream.
+ */
+const publicStreamResponseSchema = z.object({
+  activities: z.array(createStreamMessageSchema(z.unknown())),
+  cursor: z.string().nullable().describe('Last activity ID (use as offset for next request)'),
+});
 
 const pagesRoutes = {
+  /**
+   * Public stream for page changes (no auth required)
+   */
+  publicStream: createXRoute({
+    operationId: 'pagesPublicStream',
+    method: 'get',
+    path: '/stream',
+    xGuard: isPublicAccess,
+    tags: ['pages'],
+    summary: 'Public stream of page changes',
+    description:
+      'Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.',
+    request: { query: publicStreamQuerySchema },
+    responses: {
+      200: {
+        description: 'Catch-up activities or SSE stream started',
+        content: {
+          'application/json': {
+            schema: publicStreamResponseSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
   /**
    * Sync pages using Electric shape proxy
    */
@@ -38,7 +87,7 @@ const pagesRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: pageCreateBodySchema } },
+        content: { 'application/json': { schema: pageCreateTxBodySchema } },
       },
     },
     responses: {
@@ -46,7 +95,7 @@ const pagesRoutes = {
         description: 'Page',
         content: {
           'application/json': {
-            schema: pageSchema,
+            schema: pageTxResponseSchema,
           },
         },
       },
@@ -118,13 +167,13 @@ const pagesRoutes = {
       }),
       body: {
         required: true,
-        content: { 'application/json': { schema: pageUpdateBodySchema } },
+        content: { 'application/json': { schema: pageUpdateTxBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'Page updated',
-        content: { 'application/json': { schema: pageSchema } },
+        content: { 'application/json': { schema: pageTxResponseSchema } },
       },
       ...errorResponseRefs,
     },

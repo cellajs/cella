@@ -74,6 +74,6 @@ function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }:
       </InputGroupAddon>
     </InputGroup>
   );
-};
+}
 
 export default TableSearch;

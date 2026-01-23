@@ -211,5 +211,7 @@
   "verification_not_found": "Failed to verify email, token missing or invalid.",
   "sync_table_mismatch": "Table mismatch",
   "sync_organization_required": "Organization required",
-  "sync_organization_mismatch": "Organization mismatch"
+  "sync_organization_mismatch": "Organization mismatch",
+  "field_conflict": "Field conflict",
+  "field_conflict.text": "This field was modified by another user. Please refresh and try again."
 }

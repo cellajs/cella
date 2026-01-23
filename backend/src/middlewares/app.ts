@@ -1,3 +1,4 @@
+import { httpInstrumentationMiddleware } from '@hono/otel';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { compress } from 'hono/compress';
@@ -15,28 +16,29 @@ const app = new OpenAPIHono<Env>();
 // Secure headers
 app.use('*', secureHeaders({ referrerPolicy: 'strict-origin-when-cross-origin' }));
 
-// Get metrics and trace
+// OpenTelemetry HTTP instrumentation (route-aware spans)
+app.use(
+  '*',
+  httpInstrumentationMiddleware({
+    serviceName: appConfig.name,
+    serviceVersion: '1.0',
+  }),
+);
+
+// Get metrics and trace (prom-client)
 app.use('*', observabilityMiddleware);
 
-// Error and perf monitoring
+// Error and perf monitoring (Sentry)
 app.use('*', monitoringMiddleware);
 
-// Logger
+// Logger (pino)
 app.use('*', loggerMiddleware);
 
-const electricHeaders = [
-  'electric-cursor',
-  'electric-handle',
-  'electric-schema',
-  'electric-offset',
-  'electric-up-to-date',
-];
 const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
   allowHeaders: [],
-  exposeHeaders: electricHeaders,
 };
 
 // CORS

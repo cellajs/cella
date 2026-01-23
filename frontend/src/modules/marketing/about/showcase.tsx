@@ -57,6 +57,6 @@ function Showcase() {
       </div>
     </div>
   );
-};
+}
 
 export default Showcase;

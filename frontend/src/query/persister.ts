@@ -7,8 +7,6 @@
  * enabling the cache to survive page refreshes and browser restarts.
  *
  * Works alongside:
- * - TanStack Offline Transactions (mutation outbox)
- * - Electric Sync (real-time data sync)
  * - Dexie attachment storage (file blobs, attachment-specific)
  */
 import * as Sentry from '@sentry/react';

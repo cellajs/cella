@@ -6,7 +6,7 @@ import type { UserBase } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
+import { useFindInListCache } from '~/query/basic';
 import { cn } from '~/utils/cn';
 
 interface BaseProps {
@@ -82,7 +82,7 @@ export const UserCellById = ({
   ...baseProps
 }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
   // Find user from cache (search in both 'user' and 'member' queries)
-  const user = useFindInQueryCache<UserBase>([['user'], ['member']], (item) => item.id === userId);
+  const user = useFindInListCache<UserBase>([['user'], ['member']], userId ?? '');
 
   if (!userId) return <span className="text-muted">-</span>;
 

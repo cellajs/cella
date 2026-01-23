@@ -9,14 +9,15 @@ import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
-import { eventBus } from '#/lib/event-bus';
 import app from '#/routes';
+import { activityBus } from '#/sync/activity-bus';
+import { cdcWebSocketServer } from '#/sync/cdc-websocket';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
 // import { sdk } from './tracing';
 
-const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
+const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).default : () => null;
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => env.DEV_MODE === 'basic';
 
@@ -46,17 +47,20 @@ const main = async () => {
     await pgMigrate(db, migrateConfig);
   }
 
-  // Start event bus (listens to CDC activities via pg NOTIFY)
-  await eventBus.start();
+  // Start ActivityBus (listens to CDC activities via pg NOTIFY as fallback)
+  await activityBus.start();
 
-  // Start server
-  serve(
+  // Start server with WebSocket support for CDC Worker
+  const server = serve(
     {
       fetch: app.fetch,
       hostname: '0.0.0.0',
       port: Number(env.PORT ?? '4000'),
     },
     async (info) => {
+      // Attach CDC WebSocket server to HTTP server
+      cdcWebSocketServer.attachToServer(server);
+
       const tunnelUrl = await startTunnel(info);
 
       ascii();

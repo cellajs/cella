@@ -20,6 +20,6 @@ function EmailVerificationPage() {
       {reason === 'signup' && <LegalNotice mode="verify" />}
     </div>
   );
-};
+}
 
 export default EmailVerificationPage;

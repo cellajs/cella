@@ -9,16 +9,82 @@ import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
 import metricRoutes from '#/modules/metrics/metrics-routes';
-import type { publicCountsSchema } from '#/modules/metrics/metrics-schema';
+import type { publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
 import { entityTables } from '#/table-config';
+import { metricExporter } from '#/tracing';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 type CountsType = z.infer<typeof publicCountsSchema>;
+type RuntimeMetricsType = z.infer<typeof runtimeMetricsSchema>;
+
 // Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: CountsType; expiresAt: number }>();
+
+/**
+ * Converts OTel metric data to a simplified JSON format.
+ */
+const formatOtelMetrics = () => {
+  const resourceMetrics = metricExporter.getMetrics();
+  const metrics: RuntimeMetricsType['otel'] = [];
+
+  for (const rm of resourceMetrics) {
+    for (const sm of rm.scopeMetrics) {
+      for (const metric of sm.metrics) {
+        const dataPoints = metric.dataPoints.map((dp) => {
+          // Handle different value types (gauge, histogram, sum)
+          let value: number | Record<string, number>;
+          if ('value' in dp) {
+            value = dp.value as number;
+          } else if ('sum' in dp) {
+            // Histogram - return summary stats
+            const hist = dp as { sum?: number; count?: number; min?: number; max?: number };
+            value = {
+              sum: hist.sum ?? 0,
+              count: hist.count ?? 0,
+              min: hist.min ?? 0,
+              max: hist.max ?? 0,
+            };
+          } else {
+            value = 0;
+          }
+
+          return {
+            value,
+            attributes: dp.attributes
+              ? Object.fromEntries(Object.entries(dp.attributes).map(([k, v]) => [k, String(v)]))
+              : undefined,
+            startTime: dp.startTime
+              ? new Date(Number(dp.startTime[0]) * 1000 + dp.startTime[1] / 1e6).toISOString()
+              : undefined,
+            endTime: dp.endTime
+              ? new Date(Number(dp.endTime[0]) * 1000 + dp.endTime[1] / 1e6).toISOString()
+              : undefined,
+          };
+        });
+
+        // Determine metric type from dataPointType
+        let type: 'gauge' | 'counter' | 'histogram' | 'sum' = 'gauge';
+        const dpType = String(metric.dataPointType);
+        if (dpType.includes('HISTOGRAM')) type = 'histogram';
+        else if (dpType.includes('SUM')) type = 'sum';
+        else if (dpType.includes('COUNTER')) type = 'counter';
+
+        metrics.push({
+          name: metric.descriptor.name,
+          description: metric.descriptor.description || undefined,
+          unit: metric.descriptor.unit || undefined,
+          type,
+          dataPoints,
+        });
+      }
+    }
+  }
+
+  return metrics;
+};
 
 const metricRouteHandlers = app
   /**
@@ -35,6 +101,32 @@ const metricRouteHandlers = app
     // const parsedDurationMetrics = parsePromMetrics(metrics, metricsConfig.requestDuration.name);
 
     return ctx.json(requestsPerMinute, 200);
+  })
+  /**
+   * Get runtime metrics (Node.js process + OTel instrumentation)
+   */
+  .openapi(metricRoutes.getRuntimeMetrics, async (ctx) => {
+    const memoryUsage = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
+
+    const runtimeMetrics: RuntimeMetricsType = {
+      process: {
+        uptime: process.uptime(),
+        memory: {
+          heapUsed: memoryUsage.heapUsed,
+          heapTotal: memoryUsage.heapTotal,
+          external: memoryUsage.external,
+          rss: memoryUsage.rss,
+        },
+        cpu: {
+          user: cpuUsage.user,
+          system: cpuUsage.system,
+        },
+      },
+      otel: formatOtelMetrics(),
+    };
+
+    return ctx.json(runtimeMetrics, 200);
   })
   /**
    * Get public counts with caching

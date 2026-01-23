@@ -119,13 +119,13 @@ export function SidebarNav({ triggerNavItem, sheetContainerRef }: SidebarNavProp
               'flex flex-col bg-background h-full sm:left-16',
               sheetOverlay
                 ? cn(
-                  'absolute top-0 z-100 w-80 transition-[left,opacity] duration-200 linear',
-                  isCollapsed ? 'left-full opacity-100' : 'left-0 opacity-0 pointer-events-none',
-                )
+                    'absolute top-0 z-100 w-80 transition-[left,opacity] duration-200 linear',
+                    isCollapsed ? 'left-full opacity-100' : 'left-0 opacity-0 pointer-events-none',
+                  )
                 : cn(
-                  'overflow-hidden transition-[width,opacity] duration-200 linear',
-                  isCollapsed ? 'opacity-100' : 'opacity-0',
-                ),
+                    'overflow-hidden transition-[width,opacity] duration-200 linear',
+                    isCollapsed ? 'opacity-100' : 'opacity-0',
+                  ),
             )}
             style={!sheetOverlay ? { width: sheetPanelWidth } : undefined}
           >

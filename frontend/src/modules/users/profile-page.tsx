@@ -9,7 +9,7 @@ import { PageHeader } from '~/modules/common/page/header';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUpdateSelfMutation } from '~/modules/me/query';
-import { userQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
+import { userQueryOptions, useUserUpdateMutation } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
@@ -42,7 +42,7 @@ function UserProfilePage({ idOrSlug, isSheet, orgIdOrSlug }: Props) {
   });
 
   // Pick correct mutation hook
-  const useMutationHook = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
+  const useMutationHook = isSelf ? useUpdateSelfMutation : useUserUpdateMutation;
   const { mutate } = useMutationHook();
 
   const coverUpdateCallback = (bannerUrl: string) => {

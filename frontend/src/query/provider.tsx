@@ -1,23 +1,37 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'config';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { entityToPrefetchQueries } from '~/offline-config';
+import { prefetchQuery } from '~/query/basic';
+import { initializeMutationDefaults } from '~/query/mutation-registry';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
-import { waitFor } from '~/query/utils';
-import { prefetchQuery } from '~/query/utils/prefetch-query';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
+// Initialize mutation defaults BEFORE any cache restoration.
+// This registers mutationFn for each entity type so that paused mutations
+// can resume after page reload (mutationFn cannot be serialized to IndexedDB).
+initializeMutationDefaults(queryClient);
+
+/** Configuration for offline-capable queries. */
 export const offlineQueryConfig = {
   gcTime: 24 * 60 * 60 * 1000, // Cache expiration time: 24 hours
   meta: {
     offlinePrefetch: true,
   },
 };
+
+/**
+ * Wait for a given number of milliseconds.
+ *
+ * @param ms - Number of milliseconds to wait.
+ * @returns Promise that resolves after the given number of milliseconds.
+ */
+export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * QueryClientProvider wrapper that handles two modes of operation:
@@ -53,17 +67,9 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   const { user } = useUserStore();
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const mutationDefaultsRegistered = useRef(false);
 
   // Disable offline access if PWA is not enabled in the config
   if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
-
-  // Lazily register mutation defaults for offline persistence (avoids circular import at module load)
-  useEffect(() => {
-    if (mutationDefaultsRegistered.current) return;
-    mutationDefaultsRegistered.current = true;
-    import('~/query/mutation-defaults').then(({ registerMutationDefaults }) => registerMutationDefaults());
-  }, []);
 
   // Track online/offline status
   useEffect(() => {
@@ -147,4 +153,4 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       {children}
     </PersistQueryClientProvider>
   );
-};
+}

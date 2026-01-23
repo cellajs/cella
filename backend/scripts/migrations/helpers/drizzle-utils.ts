@@ -71,7 +71,7 @@ export function resolveSqlContent(sqlOrPath: string): string {
 /**
  * Add or update a SQL migration in the Drizzle migrations folder.
  *
- * @param tag - Unique identifier for the migration (e.g., 'cdc_setup', 'activity_notify_trigger')
+ * @param tag - Unique identifier for the migration (e.g., 'cdc_setup')
  * @param sql - SQL content (not a file path - use resolveSqlContent first if needed)
  * @returns Object containing the filename, path, tag, and whether it was an update
  */

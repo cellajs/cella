@@ -17,8 +17,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { Request, RequestsRouteSearchParams } from '~/modules/requests/types';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { useInfiniteQueryTotal, useMutateQueryData } from '~/query/basic';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 

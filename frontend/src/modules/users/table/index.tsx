@@ -94,6 +94,6 @@ function UsersTable() {
       />
     </div>
   );
-};
+}
 
 export default UsersTable;

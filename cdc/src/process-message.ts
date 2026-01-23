@@ -4,9 +4,18 @@ import { handleDelete, handleInsert, handleUpdate } from './handlers';
 import { getTableEntry } from './utils';
 
 /**
- * Process a pgoutput message and return an activity if applicable.
+ * Result of processing a CDC message.
+ * Includes both the activity to insert and the entity data for WebSocket delivery.
  */
-export function processMessage(message: Pgoutput.Message): InsertActivityModel | null {
+export interface ProcessMessageResult {
+  activity: InsertActivityModel;
+  entityData: Record<string, unknown>;
+}
+
+/**
+ * Process a pgoutput message and return activity + entity data if applicable.
+ */
+export function processMessage(message: Pgoutput.Message): ProcessMessageResult | null {
   // Only process insert, update, delete messages with a relation
   if (message.tag !== 'insert' && message.tag !== 'update' && message.tag !== 'delete') {
     return null;

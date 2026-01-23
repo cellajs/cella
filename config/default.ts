@@ -84,6 +84,9 @@ export const config = {
 
   contextEntityTypes: ['organization'] as const, // Entities with memberships
   productEntityTypes: ['attachment', 'page'] as const, // Content entities
+  
+  offlineEntityTypes: [] as const, // Entities that support offline transactions
+  realtimeEntityTypes: ['attachment', 'page'] as const, // Entities with realtime & offline transactions
 
   entityIdColumnKeys: {
     user: 'userId',
@@ -269,7 +272,6 @@ export const config = {
   generateScripts: [
     { name: 'Drizzle migrations', command: 'drizzle-kit generate --config drizzle.config.ts' },
     { name: 'CDC setup migration', command: 'tsx scripts/migrations/cdc-migration.ts' },
-    { name: 'Activity notify trigger', command: 'tsx scripts/migrations/activity-trigger-migration.ts' },
   ],
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 };

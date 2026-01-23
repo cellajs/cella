@@ -37,6 +37,6 @@ function FAQ() {
       </Accordion>
     </div>
   );
-};
+}
 
 export default FAQ;

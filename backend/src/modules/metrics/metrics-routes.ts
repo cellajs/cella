@@ -1,7 +1,7 @@
 import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { metricListSchema, publicCountsSchema } from '#/modules/metrics/metrics-schema';
+import { metricListSchema, publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 
 const metricRouteConfig = {
@@ -21,6 +21,26 @@ const metricRouteConfig = {
       200: {
         description: 'Metrics',
         content: { 'application/json': { schema: metricListSchema } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Get runtime metrics (Node.js + OTel)
+   */
+  getRuntimeMetrics: createXRoute({
+    operationId: 'getRuntimeMetrics',
+    method: 'get',
+    path: '/runtime',
+    xGuard: [isAuthenticated, hasSystemAccess],
+    tags: ['metrics'],
+    summary: 'Get runtime metrics',
+    description: `Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.
+      Includes memory usage, CPU time, uptime, and event loop utilization.`,
+    responses: {
+      200: {
+        description: 'Runtime metrics',
+        content: { 'application/json': { schema: runtimeMetricsSchema } },
       },
       ...errorResponseRefs,
     },

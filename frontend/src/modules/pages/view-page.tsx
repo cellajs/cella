@@ -69,6 +69,6 @@ function ViewPage({ pageId }: ViewPageProps) {
       </div>
     </div>
   );
-};
+}
 
 export default ViewPage;

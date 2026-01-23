@@ -13,10 +13,7 @@ import type { GenComponentSchema, GenResponseSummary, GenSchema } from '../types
 import { ViewerGroup } from '../viewer-group';
 
 /** Resolve response schema, looking up by name from prefetched schemas for error responses */
-function resolveResponseSchema(
-  response: GenResponseSummary,
-  schemas: GenComponentSchema[],
-): GenSchema | undefined {
+function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
   if (response.name) {

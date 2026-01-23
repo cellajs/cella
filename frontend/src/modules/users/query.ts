@@ -1,15 +1,16 @@
-import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { UserWithRoleAndMemberships } from '~/modules/users/types';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import {
   baseInfiniteQueryOptions,
+  createEntityKeys,
   infiniteQueryUseCachedIfCompleteOptions,
-} from '~/query/utils/infinite-query-options';
-import { createEntityKeys } from '../entities/create-query-keys';
+  invalidateIfLastMutation,
+  useMutateQueryData,
+} from '~/query/basic';
 
 type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;
 
@@ -60,30 +61,32 @@ export const usersQueryOptions = ({
 };
 
 /**
- * Mutation hook for updating user
- *
- * @returns The mutation hook for updating the user.
+ * Mutation hook for updating a user.
  */
-export const useUpdateUserMutation = () => {
+export const useUserUpdateMutation = () => {
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
+
   return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
     mutationKey: keys.update,
     mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body }),
     onSuccess: (updatedUser) => {
-      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
-
       mutateCache.update([updatedUser]);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
     },
     gcTime: 1000 * 10,
   });
 };
 
 /**
- * Custom hook to delete users.
- * This hook provides the functionality to delete one or more users.
- *
- * @returns The mutation hook for deleting users.
+ * Mutation hook for deleting users.
  */
 export const useUserDeleteMutation = () => {
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
+
   return useMutation<void, ApiError, User[]>({
     mutationKey: keys.delete,
     mutationFn: async (users) => {
@@ -91,9 +94,10 @@ export const useUserDeleteMutation = () => {
       await deleteUsers({ body: { ids } });
     },
     onSuccess: (_, users) => {
-      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
-
       mutateCache.remove(users);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
     },
   });
 };

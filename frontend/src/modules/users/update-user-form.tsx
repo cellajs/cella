@@ -23,7 +23,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
-import { useUpdateUserMutation } from '~/modules/users/query';
+import { useUserUpdateMutation } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 
 const formSchema = zUpdateUserData.shape.body.unwrap();
@@ -49,7 +49,7 @@ function UpdateUserForm({ user, callback, sheet: isSheet, hiddenFields, children
     useHideElementsById(fieldIds);
   }
 
-  const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
+  const mutationFn = isSelf ? useUpdateSelfMutation : useUserUpdateMutation;
   const { mutate, isPending } = mutationFn();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -196,6 +196,6 @@ function UpdateUserForm({ user, callback, sheet: isSheet, hiddenFields, children
       </form>
     </Form>
   );
-};
+}
 
 export default UpdateUserForm;

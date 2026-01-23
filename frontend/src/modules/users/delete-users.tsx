@@ -36,6 +36,6 @@ function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={isPending} />;
-};
+}
 
 export default DeleteUsers;

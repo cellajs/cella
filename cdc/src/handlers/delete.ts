@@ -2,13 +2,14 @@ import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { nanoid } from '#/utils/nanoid';
 import { getTableName } from 'drizzle-orm';
+import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData } from '../utils';
+import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData } from '../utils';
 
 /**
- * Handle a DELETE message and create an activity.
+ * Handle a DELETE message and create an activity with entity data.
  */
-export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.MessageDelete): InsertActivityModel {
+export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.MessageDelete): ProcessMessageResult {
   // For DELETE, we only have old row data (if REPLICA IDENTITY is set)
   const row = convertRowKeys(extractRowData(message.old));
   const ctx = extractActivityContext(entry, row);
@@ -22,7 +23,10 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
   // which no longer exists. Set to null to avoid foreign key violation.
   const userId = tableName === 'users' ? null : ctx.userId;
 
-  return {
+  // Extract tx data from product entities (null for context entities)
+  const tx = extractTxData(row);
+
+  const activity: InsertActivityModel = {
     id: nanoid(),
     userId,
     entityType: ctx.entityType,
@@ -33,5 +37,8 @@ export function handleDelete(entry: TableRegistryEntry, message: Pgoutput.Messag
     entityId: ctx.entityId,
     organizationId: ctx.organizationId,
     changedKeys: null,
+    tx,
   };
+
+  return { activity, entityData: row };
 }

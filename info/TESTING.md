@@ -12,6 +12,14 @@ Cella supports three test modes to balance speed vs. coverage:
 | `core` | PostgreSQL | ✅ | ❌ | ❌ | Standard CI/pre-commit |
 | `full` | PostgreSQL | ✅ | ✅ | ✅ | Complete validation |
 
+These align with development modes:
+
+| Dev Command | Test Command | DEV_MODE | Description |
+|-------------|--------------|----------|-------------|
+| `pnpm quick` | `pnpm test:basic` | basic | PGlite, no Docker |
+| `pnpm dev:core` | `pnpm test:core` | core | PostgreSQL, no CDC |
+| `pnpm dev` | `pnpm test:full` | full | PostgreSQL + CDC Worker |
+
 ### Basic Mode (`pnpm test:basic`)
 
 - **Database**: None (database tests skipped)
@@ -47,13 +55,13 @@ pnpm test
 
 ### Full Mode (`pnpm test:full`)
 - **Database**: PostgreSQL in Docker container
-- **Requirements**: Docker running, all services available
+- **Requirements**: Docker running, CDC Worker available
 - **Coverage**: All tests including CDC integration tests and CLI workspace
 
 Best for:
 - Pre-release validation
 - Complete CI pipeline
-- Testing CDC event flow end-to-end
+- Testing CDC Worker → WebSocket → ActivityBus flow end-to-end
 
 ```bash
 pnpm test:full

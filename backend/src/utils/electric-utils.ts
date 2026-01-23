@@ -27,7 +27,9 @@ const prepareElectricUrl = (table: string, query: ElectricUrlQuery): URL => {
   const originUrl = new URL(`${appConfig.electricUrl}/v1/shape`);
   const params = originUrl.searchParams;
 
-  params.set('api_secret', env.ELECTRIC_API_SECRET);
+  if (env.ELECTRIC_API_SECRET) {
+    params.set('api_secret', env.ELECTRIC_API_SECRET);
+  }
   params.set('table', table);
 
   // Copy over the relevant query params that the Electric client adds

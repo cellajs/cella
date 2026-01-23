@@ -16,7 +16,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { useFindInQueryCache } from '~/query/utils/use-find-in-query-cache';
+import { useFindInListCache } from '~/query/basic';
 import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
@@ -31,7 +31,7 @@ function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   // Find parent entity from cache
-  const parentData = useFindInQueryCache<ContextEntityBase | UserBase>(parent ? [parent.entityType] : [], (item) =>
+  const parentData = useFindInListCache<ContextEntityBase | UserBase>(parent ? [parent.entityType] : [], (item) =>
     parent ? item.id === parent.idOrSlug || item.slug === parent.idOrSlug : false,
   );
 

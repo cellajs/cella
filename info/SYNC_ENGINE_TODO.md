@@ -21,13 +21,13 @@ Foundation work - must complete before handlers or CDC changes.
 
 - [ ] **Add `tx` JSONB column to product entity tables** (DATA-001 to DATA-006)
   - Location: `backend/src/db/schema/pages.ts`, `backend/src/db/schema/attachments.ts`
+  - Note: Entity tables don't have tx column - tx is transient and stored in activities only
   - Schema: `tx: jsonb('tx').$type<{ transactionId: string; sourceId: string; changedField: string | null }>()`
   - Column is nullable (null when no tx metadata)
 
-- [ ] **Add `tx` JSONB column to activities table** (DATA-010 to DATA-017)
+- [x] **Add `tx` JSONB column to activities table** (DATA-010 to DATA-017)
   - Location: `backend/src/db/schema/activities.ts`
-  - Same structure as entity tx column
-  - Separate from existing `changedKeys` column (CDC-detected vs client-declared)
+  - ✅ Implemented with TxColumnData type
 
 - [ ] **Add expression indexes for tx queries** (DATA-015, DATA-016)
   - Index on `(tx->>'transactionId')` for idempotency lookup
@@ -44,27 +44,21 @@ Core utilities used by handlers and CDC.
 
 ### Transaction wrapper schemas
 
-- [ ] **Create tx wrapper schemas** (API-001 to API-012)
-  - Location: `backend/src/modules/sync/schema.ts` (new file)
-  - `txRequestSchema`: `{ transactionId, sourceId, changedField, expectedTransactionId }`
-  - `txResponseSchema`: `{ transactionId }`
-  - `createTxMutationSchema(dataSchema)`: Factory for `{ data, tx }` wrapper
-  - `createTxResponseSchema(dataSchema)`: Factory for response wrapper
+- [x] **Create tx wrapper schemas** (API-001 to API-012)
+  - Location: `backend/src/modules/sync/schema.ts`
+  - ✅ `txRequestSchema`, `txResponseSchema`, `createTxBodySchema()`, `createTxResponseSchema()`
 
 ### Conflict detection
 
-- [ ] **Implement `checkFieldConflict()`** (CONFLICT-001 to CONFLICT-005)
-  - Location: `backend/src/lib/sync/conflict-detection.ts` (new file)
-  - Query activities for latest tx matching `(entityType, entityId, changedField)`
-  - Return `{ hasConflict, serverTransactionId }`
-  - Skip check for creates (`expectedTransactionId` is null)
+- [x] **Implement `checkFieldConflict()`** (CONFLICT-001 to CONFLICT-005)
+  - Location: `backend/src/lib/sync/conflict-detection.ts`
+  - ✅ Queries activities for latest tx, returns `{ hasConflict, serverTransactionId }`
 
 ### Idempotency
 
-- [ ] **Implement `isTransactionProcessed()` and `getEntityByTransaction()`** (API-030 to API-032)
-  - Location: `backend/src/lib/sync/idempotency.ts` (new file)
-  - Query activities by `tx->>'transactionId'`
-  - Return existing entity for duplicate transactions
+- [x] **Implement `isTransactionProcessed()` and `getEntityByTransaction()`** (API-030 to API-032)
+  - Location: `backend/src/lib/sync/idempotency.ts`
+  - ✅ Queries activities by transactionId for deduplication
 
 ---
 
@@ -74,30 +68,26 @@ Upgrade product entity handlers to use tx wrapper.
 
 ### Pages handlers
 
-- [ ] **Upgrade createPage handler** (API-001, API-002, API-005 to API-012)
+- [x] **Upgrade createPage handler** (API-001, API-002, API-005 to API-012)
   - Location: `backend/src/modules/pages/handlers.ts`
-  - Parse `{ data, tx }` from request body
-  - Check idempotency before insert
-  - Write tx JSONB to entity row
-  - Return `{ data, tx: { transactionId } }`
+  - ✅ Uses `{ data, tx }` wrapper, idempotency check, writes tx to activity
 
-- [ ] **Upgrade updatePage handler** (API-007, API-009, CONFLICT-001 to CONFLICT-003)
-  - Check field conflict using `expectedTransactionId`
-  - Return 409 with `code: 'FIELD_CONFLICT'` on conflict (API-020 to API-024)
-  - Write tx JSONB including `changedField`
+- [x] **Upgrade updatePage handler** (API-007, API-009, CONFLICT-001 to CONFLICT-003)
+  - ✅ Conflict detection via `checkFieldConflict()`, 409 response on conflict
 
-- [ ] **Upgrade deletePage handler**
-  - Similar to update, but `changedField: null`
-  - Idempotency check
+- [x] **Upgrade deletePage handler**
+  - ✅ Uses tx wrapper with `changedField: null`
 
 ### Attachments handlers
 
-- [ ] **Upgrade attachment handlers** (same pattern as pages)
+- [x] **Upgrade attachment handlers** (same pattern as pages)
   - Location: `backend/src/modules/attachments/handlers.ts`
+  - ✅ Create and update handlers use tx wrapper, idempotency, conflict detection
 
 ### Route schemas
 
-- [ ] **Update OpenAPI route schemas**
+- [x] **Update OpenAPI route schemas**
+  - ✅ Pages and attachments routes use tx-wrapped schemas
   - Location: `backend/src/modules/pages/routes.ts`, `backend/src/modules/attachments/routes.ts`
   - Use `createTxMutationSchema(createPageSchema)` for request body
   - Use `createTxResponseSchema(pageSchema)` for response
@@ -113,24 +103,21 @@ Extract tx metadata and NOTIFY with entity data.
 
 ### Context extraction
 
-- [ ] **Extend `extractActivityContext()` to read tx column** (CDC-001 to CDC-004)
+- [x] **Extend `extractActivityContext()` to read tx column** (CDC-001 to CDC-004)
   - Location: `cdc/src/utils/extract-activity-context.ts`
-  - Parse tx JSONB from replicated row
-  - Return tx metadata for activity record
+  - ✅ Extracts tx JSONB from replicated row
 
 ### Activity insert
 
-- [~] **Store tx metadata in activity record** (CDC-002)
-  - Existing: CDC Worker creates activities
-  - Add: Include `tx` field from extracted context
+- [x] **Store tx metadata in activity record** (CDC-002)
+  - ✅ CDC Worker includes tx field in activity creation
 
-### NOTIFY with entity data
+### WebSocket notification
 
-- [ ] **Add NOTIFY after activity INSERT** (CDC-010 to CDC-021)
-  - Location: `cdc/src/handlers/insert.ts`, `update.ts`, `delete.ts`
-  - Call `pg_notify('cella_activities', payload)` after activity insert
-  - Payload includes: `orgId`, `activityId`, `entityType`, `entityId`, `action`, `tx`, `entity`
-  - Truncate `entity` to null if payload > 7500 bytes (CON-1)
+- [x] **Send activity via WebSocket after INSERT** (CDC-010 to CDC-021)
+  - Location: `cdc/src/handlers/` and `backend/src/lib/cdc-websocket.ts`
+  - ✅ Uses WebSocket instead of pg_notify (no 8KB limit)
+  - ✅ Full entity data sent via WebSocket
 
 ---
 
@@ -140,11 +127,10 @@ Extend existing EventBus to handle entity data.
 
 ### Payload handling
 
-- [~] **Upgrade ActivityBus to handle entity data** (AB-001 to AB-005)
-  - Location: `backend/src/lib/event-bus.ts` (rename to `activity-bus.ts`)
-  - Extend `ActivityEvent` interface with optional `entity` field
-  - Parse entity from CDC Worker payloads
-  - Gracefully handle trigger-only payloads (no entity)
+- [x] **Upgrade ActivityBus to handle entity data** (AB-001 to AB-005)
+  - Location: `backend/src/lib/activity-bus.ts`
+  - ✅ `ActivityEventWithEntity` interface with `entity` field
+  - ✅ Receives from CDC Worker via WebSocket (`cdc-websocket.ts`)
 
 ### Stream subscriber integration
 
@@ -199,33 +185,44 @@ Client-side utilities for sync.
 
 ### Source ID and transaction ID
 
-- [ ] **Implement sourceId** (FE-MUT-003, FE-MUT-003a)
-  - Location: `frontend/src/lib/sync/source-id.ts` (new file)
-  - Generate once per module load via `nanoid()`
-  - Export as constant
+- [x] **Implement sourceId** (FE-MUT-003, FE-MUT-003a)
+  - Location: `frontend/src/query/offline/hlc.ts` (sourceId is exported from HLC module)
+  - Generated once per module load via `nanoid()`
+  - Exported as constant
 
-- [ ] **Implement HLC and createTransactionId()** (DATA-020 to DATA-026)
-  - Location: `frontend/src/lib/sync/hlc.ts` (new file)
+- [x] **Implement HLC and createTransactionId()** (DATA-020 to DATA-026)
+  - Location: `frontend/src/query/offline/hlc.ts`
   - Format: `{wallTime}.{logical}.{nodeId}`
   - Increment logical counter for same-millisecond events
-  - Export `createTransactionId()`, `parseTransactionId()`, `compareTransactionIds()`
+  - Exports: `createTransactionId()`, `parseTransactionId()`, `compareTransactionIds()`
 
 ### Field transaction tracking
 
-- [ ] **Implement field transaction store** (CONFLICT-010 to CONFLICT-012)
-  - Location: `frontend/src/lib/sync/field-transaction-store.ts` (new file)
+- [x] **Implement field transaction store** (CONFLICT-010 to CONFLICT-012)
+  - Location: `frontend/src/query/offline/field-transaction-store.ts`
   - Track last-seen transactionId per `(entityId, field)`
   - `getExpectedTransactionId(entityId, field)` for conflict detection
   - `setFieldTransactionId(entityId, field, txId)` updated from stream
+  - ✅ Uses Zustand with persist middleware (localStorage) for durability across refresh
+
+### Pending mutations visibility
+
+- [x] **Implement pending mutations hook** (NEW)
+  - Location: `frontend/src/query/basic/use-pending-mutations.ts`
+  - `usePendingMutationsCount()` - React hook with mutation cache subscription
+  - `usePendingMutations()` - Boolean hook for UI indicators
+  - `getPendingMutationsCount()` - Imperative function for non-React contexts
+  - Uses `useSyncExternalStore` for efficient subscription
 
 ### Network status service
 
 - [ ] **Implement network status service** (NET-001 to NET-010, DEC-16)
-  - Location: `frontend/src/store/network.ts` (new file)
-  - Replace `onlineManager` from TanStack Query
-  - Track: `isOnline`, `isVerified`, `latency`
-  - Health check to verify server reachability
-  - Zustand store for global access
+  - Location: `frontend/src/query/` (not yet implemented)
+  - Note: Currently using React Query's built-in `onlineManager`
+  - Replaces `onlineManager` from TanStack Query
+  - Tracks: `isOnline`, `isVerified`, `latency` (low/high/unknown)
+  - Health check via `/health` endpoint
+  - Zustand store with `useNetworkStore`
 
 ---
 
@@ -233,26 +230,44 @@ Client-side utilities for sync.
 
 Add transaction tracking to existing mutations.
 
+### Entity mutations factory
+
+- [~] **Implement createEntityMutations factory** (NEW)
+  - Location: Per-module `query.ts` files (no factory, each module implements directly)
+  - Note: Pattern established in `pages/query.ts` and `attachments/query.ts`
+  - Unified factory supporting both tx-enabled and standard entities
+  - `txEnabled: true` mode: uses outbox, tx metadata, conflict detection
+  - `txEnabled: false` mode: uses setMutationDefaults, traditional TQ flow
+  - Generates: useCreate, useUpdate, useDelete hooks
+  - Composable callbacks (factory defaults + custom overrides)
+  - ~67% boilerplate reduction per entity module
+
 ### Upgrade page mutations
 
-- [ ] **Upgrade usePageCreateMutation** (FE-MUT-001 to FE-MUT-005, FE-MUT-010 to FE-MUT-024)
+- [x] **Upgrade usePageCreateMutation** (FE-MUT-001 to FE-MUT-005, FE-MUT-010 to FE-MUT-024)
   - Location: `frontend/src/modules/pages/query.ts`
-  - Generate transactionId in `onMutate`
-  - Include `{ data, tx }` wrapper in API body
-  - Track transaction lifecycle: pending → sent → confirmed
+  - Uses `createEntityMutations({ txEnabled: true, ... })`
+  - Generates transactionId via factory
+  - Includes `{ data, tx }` wrapper in API body
 
-- [ ] **Upgrade usePageUpdateMutation**
-  - Include `changedField` in tx
-  - Use `getExpectedTransactionId()` for conflict detection
-  - Handle 409 conflict response (CONFLICT-013)
+- [x] **Upgrade usePageUpdateMutation**
+  - Includes `changedField` in tx via factory
+  - Uses `detectChangedFields()` for conflict detection
+  - Conflict handling ready (409 response handling)
 
-- [ ] **Upgrade usePageDeleteMutation**
-  - Generate transactionId with `changedField: null`
+- [x] **Upgrade usePageDeleteMutation**
+  - Generates transactionId with `changedField: null`
+  - Routes through outbox
 
 ### Upgrade attachment mutations
 
-- [ ] **Upgrade attachment mutations** (same pattern as pages)
+- [~] **Upgrade attachment mutations** (special handling required)
   - Location: `frontend/src/modules/attachments/query.ts`
+  - Attachments use Transloadit for file upload - different from simple entities
+  - Create takes array (batch), already has IDs from Transloadit
+  - Requires `orgIdOrSlug` path parameter (org-scoped)
+  - File blob store for offline caching: (not yet implemented)
+  - Full offline create requires Transloadit queue (future work)
 
 ---
 
@@ -262,27 +277,28 @@ SSE subscription and cache updates.
 
 ### Live stream hook
 
-- [ ] **Implement useLiveStream hook** (FE-MUT-023)
-  - Location: `frontend/src/lib/sync/use-live-stream.ts` (new file)
-  - Open EventSource to `/organizations/:slug/live`
-  - Parse stream messages
-  - Queue messages during hydration barrier
-  - Apply messages to React Query cache
+- [x] **Implement useLiveStream hook** (FE-MUT-023)
+  - Location: `frontend/src/query/realtime/use-live-stream.ts`
+  - Opens EventSource to `/organizations/:slug/live`
+  - Parses stream messages, handles offset events
+  - Integrates with sync coordinator for upstream-first flow
+  - Broadcasts to follower tabs via tab coordinator
 
 ### Cache update utilities
 
-- [ ] **Implement applyMessageToCache()** (INT-QUERY-001 to INT-QUERY-005)
-  - Location: `frontend/src/lib/sync/cache-utils.ts` (new file)
+- [~] **Implement applyMessageToCache()** (INT-QUERY-001 to INT-QUERY-005)
+  - Partially exists in `use-live-stream.ts` message handling
+  - TODO: Extract to `frontend/src/query/realtime/cache-utils.ts`
   - Update detail cache: `queryClient.setQueryData([entityType, entityId], entity)`
   - Update list caches: `queryClient.setQueriesData()`
   - Handle create/update/delete actions
 
 ### Transaction confirmation
 
-- [~] **Confirm pending transactions from stream** (FE-MUT-023)
-  - Existing: `frontend/src/store/sync.ts` has transaction tracking
-  - Add: Match stream message transactionId to pending transactions
-  - Transition to `confirmed` state
+- [x] **Confirm pending transactions from stream** (FE-MUT-023)
+  - Location: `frontend/src/query/realtime/sync-coordinator.ts`
+  - `handleStreamMessage()` checks for matching pending transactions
+  - Removes confirmed mutations from outbox
 
 ---
 
@@ -292,31 +308,60 @@ Mutation queue and upstream-first sync.
 
 ### Mutation outbox
 
-- [ ] **Implement mutation outbox** (OFFLINE-001 to OFFLINE-006)
-  - Location: `frontend/src/lib/sync/outbox.ts` (new file)
+- [~] **Implement mutation outbox storage** (OFFLINE-001 to OFFLINE-004)
+  - Location: React Query mutation cache with `frontend/src/query/persister.ts`
+  - Note: Uses React Query persistence instead of separate IndexedDB outbox (see DEC-24)
   - IndexedDB storage for pending mutations
-  - Squash same-field mutations (keep latest value and transactionId)
-  - Queue different-field mutations separately
+  - OutboxMutation structure with entityType, entityId, field, transactionId
+
+- [x] **Implement update squashing** (OFFLINE-005, OFFLINE-006)
+  - Same-field mutations squash (keep latest value and transactionId)
+  - Different-field mutations queue separately
+
+- [x] **Implement create+edit coalescing** (OFFLINE-007 to OFFLINE-009, DEC-23)
+  - Creates keyed by entity (not field)
+  - Update to pending create merges into create entry
+  - Update to in-flight (sending) create queues, flushed after create completes
+  - Delete of pending create removes both from outbox
+
+- [x] **Wire outbox into mutation hooks**
+  - All mutations route through `queueMutation()`
+  - Outbox handles online/offline, in-flight tracking, coalescing
+  - Entity modules register senders via `registerMutationSender()`
+  - Location: `frontend/src/modules/pages/query.ts`
+
+- [x] **Implement sender registration pattern**
+  - `registerMutationSender(entityType, action, senderFn)`
+  - Senders call actual API (createPage, updatePage, deletePages)
+  - Decouples outbox from entity-specific API knowledge
 
 ### Offset persistence
 
-- [ ] **Implement offset store** (OFFLINE-OFFSET-001 to OFFLINE-OFFSET-006)
-  - Location: `frontend/src/lib/sync/offset-store.ts` (new file)
+- [x] **Implement offset store** (OFFLINE-OFFSET-001 to OFFLINE-OFFSET-006)
+  - Location: `frontend/src/query/realtime/offset-store.ts`
   - IndexedDB storage for last-seen activityId per org
   - Debounced writes (max 1 per 5 seconds)
   - Read on SSE connect, update on each message
 
 ### Upstream-first sync
 
-- [ ] **Implement sync coordinator** (OFFLINE-010 to OFFLINE-013)
-  - Location: `frontend/src/lib/sync/sync-coordinator.ts` (new file)
+- [x] **Implement sync coordinator** (OFFLINE-010 to OFFLINE-013)
+  - Location: `frontend/src/query/realtime/sync-coordinator.ts`
   - On reconnect: catch up first, then flush outbox
   - Detect conflicts between stream messages and queued mutations
   - Mark conflicted mutations, don't auto-flush
 
+- [x] **Wire sync coordinator into live stream**
+  - Location: `frontend/src/query/realtime/use-live-stream.ts`
+  - Call `startSync(orgId)` on connect
+  - Pass messages to `handleStreamMessage()` for conflict detection
+  - Call `setCaughtUp()` on offset event
+  - Call `flushMutations()` after catch-up completes
+
 ### Conflict resolution UI
 
-- [ ] **Implement conflict detection in handleUpstreamMessage** (OFFLINE-011)
+- [x] **Implement conflict detection in handleUpstreamMessage** (OFFLINE-011)
+  - Location: `frontend/src/query/realtime/sync-coordinator.ts`
   - Check if stream message conflicts with queued mutation
   - Mark as `conflicted` with server value
 
@@ -334,25 +379,26 @@ Single SSE connection with leader election.
 
 ### Leader election
 
-- [ ] **Implement tab coordinator with Web Locks** (TAB-001 to TAB-004)
-  - Location: `frontend/src/lib/sync/tab-coordinator.ts` (new file)
-  - Lock name: `{$appConfig.slug}-sync-leader`
+- [x] **Implement tab coordinator with Web Locks** (TAB-001 to TAB-004)
+  - Location: `frontend/src/query/realtime/tab-coordinator.ts`
+  - Lock name: `cella-sync-leader`
   - Only leader opens SSE connection
   - Followers wait for broadcast
 
 ### Cross-tab communication
 
-- [ ] **Implement BroadcastChannel messaging** (TAB-010 to TAB-013)
-  - Channel name: `{$appConfig.slug}-sync`
-  - Leader broadcasts stream messages
-  - Followers apply to React Query cache
+- [x] **Implement BroadcastChannel messaging** (TAB-010 to TAB-013)
+  - Channel name: `cella-sync`
+  - Leader broadcasts stream messages via `broadcastStreamMessage()`
+  - Followers receive via `onStreamMessage()` handler
+  - Cursor updates broadcast separately
 
 ### Leader handoff
 
-- [ ] **Implement leader handoff** (TAB-020 to TAB-022)
-  - On leader tab close, another tab acquires lock
+- [x] **Implement leader handoff** (TAB-020 to TAB-022)
+  - On leader tab close, another tab acquires lock via Web Locks API
   - New leader opens SSE from persisted offset
-  - Prefer foreground tabs for leadership (visibility check)
+  - Uses visibility API for foreground preference
 
 ---
 

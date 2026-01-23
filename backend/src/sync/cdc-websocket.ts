@@ -1,0 +1,263 @@
+import type { IncomingMessage } from 'node:http';
+import type { Duplex } from 'node:stream';
+import type { ServerType } from '@hono/node-server';
+import { z } from '@hono/zod-openapi';
+import { type WebSocket, WebSocketServer } from 'ws';
+import { env } from '#/env';
+import { logEvent } from '#/utils/logger';
+import { type ActivityEventWithEntity, activityBus } from './activity-bus';
+
+/**
+ * Zod schema for CDC WebSocket message payload.
+ * Validates the { activity, entity } structure sent by CDC Worker.
+ */
+const cdcMessageSchema = z.object({
+  activity: z.object({
+    id: z.string(),
+    type: z.string(),
+    action: z.enum(['create', 'update', 'delete']),
+    tableName: z.string(),
+    entityType: z.string().nullable(),
+    resourceType: z.string().nullable(),
+    entityId: z.string(),
+    userId: z.string().nullable(),
+    organizationId: z.string().nullable(),
+    changedKeys: z.array(z.string()).nullable(),
+    tx: z
+      .object({
+        transactionId: z.string(),
+        sourceId: z.string(),
+        changedField: z.string().nullable(),
+      })
+      .nullable(),
+    createdAt: z.string(),
+  }),
+  entity: z.record(z.string(), z.unknown()),
+});
+
+type CdcMessage = z.infer<typeof cdcMessageSchema>;
+
+/** Idle timeout in ms - close connection if no message received within this time */
+const IDLE_TIMEOUT_MS = 90_000;
+
+/** Ping interval in ms */
+const PING_INTERVAL_MS = 30_000;
+
+/**
+ * CDC WebSocket Server manages the connection from CDC Worker.
+ * Only accepts one connection at a time (the active CDC Worker).
+ */
+class CdcWebSocketServer {
+  private wss: WebSocketServer | null = null;
+  private currentConnection: WebSocket | null = null;
+  private idleTimer: NodeJS.Timeout | null = null;
+  private pingInterval: NodeJS.Timeout | null = null;
+
+  // Health metrics
+  private _cdcConnected = false;
+  private _lastMessageAt: Date | null = null;
+  private _messagesReceived = 0;
+  private _parseErrors = 0;
+
+  /**
+   * Attach WebSocket server to an existing HTTP server.
+   * Handles upgrade requests to /internal/cdc with auth validation.
+   */
+  attachToServer(server: ServerType): void {
+    this.wss = new WebSocketServer({ noServer: true });
+
+    // Type assertion needed because ServerType is broader than HTTP1 Server
+    (server as NodeJS.EventEmitter).on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+      // Only handle /internal/cdc path
+      const url = new URL(request.url ?? '', `http://${request.headers.host}`);
+      if (url.pathname !== '/internal/cdc') {
+        socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      // Validate shared secret (skip in basic mode or if not configured)
+      const secret = request.headers['x-cdc-secret'];
+      if (env.CDC_INTERNAL_SECRET && secret !== env.CDC_INTERNAL_SECRET) {
+        logEvent('warn', 'CDC WebSocket auth failed', { ip: request.socket.remoteAddress });
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      this.wss?.handleUpgrade(request, socket, head, (ws) => {
+        this.handleConnection(ws);
+      });
+    });
+
+    logEvent('info', 'CDC WebSocket server attached to HTTP server');
+  }
+
+  /**
+   * Handle a new WebSocket connection from CDC Worker.
+   * Replaces existing connection if one exists.
+   */
+  private handleConnection(ws: WebSocket): void {
+    // Close existing connection if any (graceful replacement)
+    if (this.currentConnection) {
+      logEvent('info', 'Replacing existing CDC Worker connection');
+      this.currentConnection.close(1000, 'Replaced by new connection');
+    }
+
+    this.currentConnection = ws;
+    this._cdcConnected = true;
+    this.resetIdleTimer();
+    this.startPingInterval();
+
+    logEvent('info', 'CDC Worker connected via WebSocket');
+
+    ws.on('message', (data) => {
+      this.resetIdleTimer();
+      this.handleMessage(data.toString());
+    });
+
+    ws.on('pong', () => {
+      this.resetIdleTimer();
+    });
+
+    ws.on('close', (code, reason) => {
+      logEvent('info', 'CDC Worker disconnected', { code, reason: reason.toString() });
+      this.cleanup();
+    });
+
+    ws.on('error', (err) => {
+      logEvent('error', 'CDC WebSocket error', { error: err.message });
+      this.cleanup();
+    });
+  }
+
+  /**
+   * Handle incoming message from CDC Worker.
+   * Validates JSON schema and emits to ActivityBus.
+   */
+  private handleMessage(data: string): void {
+    try {
+      const parsed = JSON.parse(data);
+      const result = cdcMessageSchema.safeParse(parsed);
+
+      if (!result.success) {
+        this._parseErrors++;
+        logEvent('warn', 'Invalid CDC message schema', { errors: result.error.issues });
+        return;
+      }
+
+      const message: CdcMessage = result.data;
+      this._messagesReceived++;
+      this._lastMessageAt = new Date();
+
+      // Transform to ActivityEventWithEntity and emit
+      // Type assertion needed because entityType/resourceType are string in Zod schema
+      // but typed as specific union in ActivityEvent. CDC Worker is trusted source.
+      const activityEvent = {
+        ...message.activity,
+        createdAt: message.activity.createdAt,
+        entity: message.entity,
+      } as ActivityEventWithEntity;
+
+      activityBus.emitFromCdc(activityEvent);
+
+      logEvent('debug', 'CDC message processed', {
+        type: message.activity.type,
+        entityId: message.activity.entityId,
+      });
+    } catch (err) {
+      this._parseErrors++;
+      logEvent('error', 'Failed to parse CDC message', { error: err });
+    }
+  }
+
+  /**
+   * Reset idle timer - connection will be closed if no activity.
+   */
+  private resetIdleTimer(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      logEvent('warn', 'CDC WebSocket idle timeout, closing connection');
+      this.currentConnection?.close(1000, 'Idle timeout');
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  /**
+   * Start sending periodic pings to keep connection alive.
+   */
+  private startPingInterval(): void {
+    if (this.pingInterval) clearInterval(this.pingInterval);
+    this.pingInterval = setInterval(() => {
+      if (this.currentConnection?.readyState === 1) {
+        // WebSocket.OPEN
+        this.currentConnection.ping();
+      }
+    }, PING_INTERVAL_MS);
+  }
+
+  /**
+   * Clean up connection state.
+   */
+  private cleanup(): void {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    this.currentConnection = null;
+    this._cdcConnected = false;
+  }
+
+  /**
+   * Get health status for the CDC WebSocket connection.
+   */
+  getHealthStatus(): {
+    cdcConnected: boolean;
+    lastMessageAt: string | null;
+    messagesReceived: number;
+    parseErrors: number;
+    status: 'healthy' | 'degraded' | 'unknown';
+  } {
+    // Determine status based on connection and message timing
+    let status: 'healthy' | 'degraded' | 'unknown' = 'unknown';
+
+    if (this._cdcConnected) {
+      // If connected and received message recently (within 60s), healthy
+      const sixtySecondsAgo = Date.now() - 60_000;
+      if (this._lastMessageAt && this._lastMessageAt.getTime() > sixtySecondsAgo) {
+        status = 'healthy';
+      } else if (this._lastMessageAt) {
+        status = 'degraded'; // Connected but no recent messages
+      } else {
+        status = 'healthy'; // Just connected, no messages yet is OK
+      }
+    } else if (env.DEV_MODE === 'full' || process.env.NODE_ENV === 'production') {
+      // CDC expected but not connected
+      status = 'degraded';
+    }
+    // In basic/core mode without CDC, status remains 'unknown' (not applicable)
+
+    return {
+      cdcConnected: this._cdcConnected,
+      lastMessageAt: this._lastMessageAt?.toISOString() ?? null,
+      messagesReceived: this._messagesReceived,
+      parseErrors: this._parseErrors,
+      status,
+    };
+  }
+
+  /**
+   * Close the WebSocket server.
+   */
+  close(): void {
+    this.cleanup();
+    this.wss?.close();
+    this.wss = null;
+  }
+}
+
+/** Singleton CDC WebSocket server instance */
+export const cdcWebSocketServer = new CdcWebSocketServer();

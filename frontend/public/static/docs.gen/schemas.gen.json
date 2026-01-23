@@ -387,6 +387,21 @@
               "itemType": "object"
             }
           ]
+        },
+        "tx": {
+          "required": true,
+          "anyOf": [
+            { "type": "string", "required": false },
+            { "type": "number", "required": false },
+            { "type": "boolean", "required": false },
+            { "type": "null", "required": false },
+            { "type": "object", "required": false },
+            {
+              "type": "array",
+              "required": false,
+              "itemType": "object"
+            }
+          ]
         }
       }
     },
@@ -402,7 +417,8 @@
       "entityId": "21rs6psa9stclacdgtonoqr1",
       "organizationId": "t2j8omleaz2pg8iwtnhw3666",
       "createdAt": "2024-10-11T19:21:02.239Z",
-      "changedKeys": ["email", "description", "name"]
+      "changedKeys": ["email", "description", "name"],
+      "tx": null
     }
   },
   {
@@ -1073,6 +1089,29 @@
     }
   },
   {
+    "name": "TxStreamMessage",
+    "ref": "#/components/schemas/TxStreamMessage",
+    "type": ["object", "null"],
+    "schema": {
+      "type": ["object", "null"],
+      "properties": {
+        "transactionId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "sourceId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "changedField": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
     "name": "Page",
     "ref": "#/components/schemas/Page",
     "type": "object",
@@ -1134,8 +1173,60 @@
       "createdAt": "2024-08-06T10:28:33.226Z",
       "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
       "modifiedAt": "2024-08-06T10:28:33.226Z",
-      "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
+      "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+      "tx": null
     }
+  },
+  {
+    "name": "TxResponse",
+    "ref": "#/components/schemas/TxResponse",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string",
+          "required": true,
+          "description": "Echoes the request transactionId"
+        }
+      }
+    },
+    "schemaTag": "data"
+  },
+  {
+    "name": "TxRequest",
+    "ref": "#/components/schemas/TxRequest",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string",
+          "required": true,
+          "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+          "maxLength": 64
+        },
+        "sourceId": {
+          "type": "string",
+          "required": true,
+          "description": "Tab/instance identifier",
+          "maxLength": 64
+        },
+        "changedField": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "Which field this mutation changes (null for create/delete)",
+          "maxLength": 64
+        },
+        "expectedTransactionId": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "Last known transaction ID for this field (null for create or first write)",
+          "maxLength": 64
+        }
+      }
+    },
+    "schemaTag": "data"
   },
   {
     "name": "Attachment",
@@ -1226,6 +1317,7 @@
       "createdBy": "0uwim8y2tppz7th9tol75wjz",
       "modifiedAt": "2024-10-12T17:43:05.360Z",
       "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+      "tx": null,
       "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
     }
   },

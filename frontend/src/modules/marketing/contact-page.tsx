@@ -73,6 +73,6 @@ function ContactPage() {
       </div>
     </MarketingLayout>
   );
-};
+}
 
 export default ContactPage;

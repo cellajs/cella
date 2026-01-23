@@ -14,6 +14,6 @@
       "#json/*": ["../json/*"],
     }
   },
-  "include": ["src/**/*", "../backend/src/**/*", "../backend/emails/**/*", "../backend/mocks/**/*", "../config/*", "../json/*", "../locales/*"],
-  "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/scripts", "../backend/tests"]
+  "include": ["src/**/*", "../backend/src/**/*", "../backend/emails/**/*", "../backend/mocks/**/*", "../backend/scripts/**/*", "../config/*", "../json/*", "../locales/*"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
 }

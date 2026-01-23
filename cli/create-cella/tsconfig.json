@@ -6,9 +6,15 @@
     "target": "ESNext",
     "module": "ESNext",
     "strict": true,
-    "incremental": false,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "declaration": true,
-    "composite": false
+    "composite": false,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "#/*": ["./src/*"]
+    }
   },
-  "include": ["src", "tsup.config.ts"]
+  "include": ["src", "tests", "index.js", "tsup.config.ts"]
 }

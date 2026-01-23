@@ -5,36 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1768483548571,
-      "tag": "0000_spicy_exodus",
+      "when": 1769082133924,
+      "tag": "0000_mixed_marvel_apes",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1768483549157,
+      "when": 1769082134465,
       "tag": "0001_cdc_setup",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1768483549352,
-      "tag": "0002_activity_notify_trigger",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1768511973823,
-      "tag": "0003_steep_shen",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1768832544843,
-      "tag": "0004_unknown_masked_marvel",
       "breakpoints": true
     }
   ]

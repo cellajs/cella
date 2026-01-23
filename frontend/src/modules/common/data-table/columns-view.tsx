@@ -60,9 +60,9 @@ function ColumnsView<TData>({ columns, setColumns, className = '', isCompact, se
                 columns.map((c) =>
                   c.name === column.name
                     ? {
-                      ...c,
-                      visible: !c.visible,
-                    }
+                        ...c,
+                        visible: !c.visible,
+                      }
                     : c,
                 ),
               )

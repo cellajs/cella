@@ -60,10 +60,10 @@ try {
       passiveArg = { passive: true };
     },
   });
-  const emptyHandler = () => { };
+  const emptyHandler = () => {};
   window.addEventListener('testPassive', emptyHandler, opts);
   window.removeEventListener('testPassive', emptyHandler, opts);
-} catch (e) { }
+} catch (e) {}
 
 /*
 
@@ -226,8 +226,8 @@ function setup(node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxCon
         parentNode === window
           ? 0
           : offsetTill(parentNode as HTMLElement, scrollPane as HTMLElement) +
-          parentPaddings.top +
-          scrollPaneDims.offsetTop,
+            parentPaddings.top +
+            scrollPaneDims.offsetTop,
     }),
   });
 
@@ -369,7 +369,7 @@ export function useStickyBox({
   bottom = false,
   enabled = true,
 }: StickyBoxConfig = {}) {
-  if (!enabled) return [() => { }, false] as const;
+  if (!enabled) return [() => {}, false] as const;
 
   const [node, setNode] = useState<HTMLElement | null>(null);
   const [isSticky, setIsSticky] = useState<boolean>(false);

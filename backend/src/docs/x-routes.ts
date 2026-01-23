@@ -6,10 +6,13 @@ import {
   type XMiddlewareOptions,
 } from '#/docs/extensions-config';
 import { getSpecificationExtensions } from '#/docs/openapi-describer';
+import type { OpenApiTagId } from '#/docs/tags-config';
 import { toMiddlewareArray } from '#/docs/utils';
 import { isPublicAccess } from '#/middlewares/guard/is-public-access';
 
-type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
+/** Route options with typed tags restricted to OpenApiTagId values. */
+type RouteOptions = Omit<Parameters<typeof createRoute>[0], 'tags'> &
+  XMiddlewareOptions & { operationId: string; tags?: OpenApiTagId[] };
 
 type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
   typeof createRoute<P, Omit<R, ExtensionPropId>>

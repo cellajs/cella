@@ -44,6 +44,6 @@ function CallToAction() {
       </div>
     </div>
   );
-};
+}
 
 export default CallToAction;

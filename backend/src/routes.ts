@@ -12,6 +12,7 @@ import metricRouteHandlers from '#/modules/metrics/metrics-handlers';
 import organizationRouteHandlers from '#/modules/organizations/organizations-handlers';
 import pagesRouteHandlers from '#/modules/pages/pages-handlers';
 import requestRouteHandlers from '#/modules/requests/requests-handlers';
+import syncRouteHandlers from '#/modules/sync/sync-handlers';
 import systemRouteHandlers from '#/modules/system/system-handlers';
 import userRouteHandlers from '#/modules/users/users-handlers';
 import baseApp from '#/server';
@@ -32,6 +33,7 @@ const app = baseApp
   .route('/system', systemRouteHandlers)
   .route('/requests', requestRouteHandlers)
   .route('/metrics', metricRouteHandlers)
+  .route('/', syncRouteHandlers)
   .route('/:orgIdOrSlug/attachments', attachmentRouteHandlers)
   .route('/:orgIdOrSlug/memberships', membershipRouteHandlers);
 

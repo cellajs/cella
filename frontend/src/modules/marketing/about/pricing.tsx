@@ -64,8 +64,9 @@ function Pricing() {
         return (
           <div
             key={id}
-            className={`bg-card relative flex flex-col justify-between rounded-lg border p-6 ${borderColor} ${isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full'
-              }`}
+            className={`bg-card relative flex flex-col justify-between rounded-lg border p-6 ${borderColor} ${
+              isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full'
+            }`}
           >
             {popular && (
               <Badge
@@ -121,6 +122,6 @@ function Pricing() {
       })}
     </div>
   );
-};
+}
 
 export default Pricing;

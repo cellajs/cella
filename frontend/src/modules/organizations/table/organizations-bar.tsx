@@ -22,7 +22,7 @@ import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import type { OrganizationsRouteSearchParams } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import { useInfiniteQueryTotal } from '~/query/basic';
 
 type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsRouteSearchParams> & {
   isCompact: boolean;

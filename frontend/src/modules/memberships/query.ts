@@ -2,10 +2,7 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from '~/api.gen';
 import type { Member, PendingMembership } from '~/modules/memberships/types';
-import {
-  baseInfiniteQueryOptions,
-  infiniteQueryUseCachedIfCompleteOptions,
-} from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/basic';
 
 type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
   GetPendingMembershipsData['path'];

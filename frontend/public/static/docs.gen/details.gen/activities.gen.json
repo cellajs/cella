@@ -62,6 +62,21 @@
                         "itemType": "object"
                       }
                     ]
+                  },
+                  "tx": {
+                    "required": true,
+                    "anyOf": [
+                      { "type": "string", "required": false },
+                      { "type": "number", "required": false },
+                      { "type": "boolean", "required": false },
+                      { "type": "null", "required": false },
+                      { "type": "object", "required": false },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
                   }
                 },
                 "ref": "#/components/schemas/Activity"

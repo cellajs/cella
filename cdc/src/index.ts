@@ -1,10 +1,12 @@
-import { startCdcWorker } from './worker';
+import { startHealthServer } from './health';
+import { startCdcWorker, stopCdcWorker } from './worker';
 
 /**
  * CDC Worker Entry Point
  *
  * This script starts the Change Data Capture worker that subscribes to
  * PostgreSQL logical replication and creates activities from database changes.
+ * It also sends activity notifications to the API server via WebSocket.
  *
  * Only runs when DEV_MODE=full (production always runs CDC).
  * In basic/core modes, CDC is disabled for simpler local development.
@@ -17,15 +19,20 @@ if (devMode !== 'full' && process.env.NODE_ENV !== 'production') {
 }
 
 // Handle graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.info('\nReceived SIGINT, shutting down CDC worker...');
+  await stopCdcWorker();
   process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.info('\nReceived SIGTERM, shutting down CDC worker...');
+  await stopCdcWorker();
   process.exit(0);
 });
+
+// Start health server for monitoring
+startHealthServer();
 
 // Start the worker
 startCdcWorker().catch((error) => {

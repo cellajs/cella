@@ -19,6 +19,9 @@
   },
   "type": "module",
   "main": "./src/index.ts",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "bin": {
     "create-cella": "index.js"
   },
@@ -28,7 +31,12 @@
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",
     "prepublishOnly": "pnpm run build",
-    "ts": "tsc --noEmit"
+    "check": "pnpm ts && pnpm biome check --write .",
+    "ts": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@inquirer/prompts": "^6.0.1",

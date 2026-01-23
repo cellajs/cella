@@ -1,6 +1,10 @@
 # @cellajs/create-cella
 
-Scaffold a new Cella project from the template.
+CLI tool to scaffold a new Cella project from the template.
+
+## Overview
+
+This CLI creates a new Cella project by downloading the latest template, setting up your development environment, and configuring git with upstream tracking for future syncs.
 
 ## Usage
 
@@ -8,7 +12,17 @@ Scaffold a new Cella project from the template.
 pnpm create @cellajs/cella my-app
 ```
 
-## Options
+Running without arguments starts interactive mode, prompting for:
+
+1. **Project name** – Directory name and package name
+2. **New branch** – Optionally create a dev branch alongside `main`
+3. **Directory conflict** – If target exists, choose to cancel or continue
+
+## CLI Options
+
+```bash
+pnpm create @cellajs/cella [directory] [options]
+```
 
 | Flag | Description |
 |------|-------------|
@@ -19,14 +33,6 @@ pnpm create @cellajs/cella my-app
 | `--skip-new-branch` | Skip creating a new branch |
 | `--new-branch-name <name>` | Create additional branch (e.g., `development`) |
 
-## Interactive Mode
-
-Running without arguments prompts for:
-
-1. **Project name** – Directory name and package name
-2. **New branch** – Optionally create a dev branch alongside `main`
-3. **Directory conflict** – If target exists, choose to cancel or continue
-
 ## What It Does
 
 1. Downloads latest Cella template via [giget](https://github.com/unjs/giget)
@@ -35,22 +41,51 @@ Running without arguments prompts for:
 4. Generates initial database migrations (Drizzle SQL files)
 5. Initializes git repository with initial commit
 6. Creates optional development branch
-7. Adds Cella as upstream remote (`cella-upstream`)
+7. Adds Cella as upstream remote for future syncs
+
+## After Setup
+
+Once your project is created:
+
+```bash
+cd my-app
+pnpm quick          # Quick start with PGlite (no Docker)
+# or
+pnpm docker && pnpm dev && pnpm seed   # Full setup with PostgreSQL
+```
+
+Sign in with:
+- Email: `admin-test@cellajs.com`
+- Password: `12345678`
+
+## Keeping in Sync
+
+Your project is configured with Cella as an upstream remote. To pull future updates:
+
+```bash
+pnpm sync
+```
+
+See [@cellajs/sync](../sync/README.md) for details on the sync process.
 
 ## Development
 
 ```bash
-pnpm ts           # Type check
-pnpm start        # Run locally (tsx)
-pnpm build        # Build for npm publish
-pnpm clean        # Remove dist folder
-pnpm test-build   # Build and test
-```
+cd cli/create-cella
 
-## Publishing
+# Type check
+pnpm ts
 
-```bash
-pnpm prepublishOnly  # Builds automatically
-npm publish
+# Lint
+pnpm lint:fix
+
+# Run tests
+pnpm test
+
+# Run locally
+pnpm start
+
+# Build for npm publish
+pnpm build
 ```
 

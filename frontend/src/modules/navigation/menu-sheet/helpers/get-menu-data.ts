@@ -2,8 +2,8 @@ import { appConfig, ContextEntityType } from 'config';
 import { ContextEntityDataWithMembership } from '~/modules/me/types';
 import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { flattenInfiniteData } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
-import { flattenInfiniteData } from '~/query/utils/flatten';
 import { useUserStore } from '~/store/user';
 
 /**

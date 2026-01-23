@@ -39,6 +39,6 @@ function AuthLayout() {
       </div>
     </div>
   );
-};
+}
 
 export default AuthLayout;

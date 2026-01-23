@@ -63,12 +63,12 @@ function FloatingNav({
 
     items = isMobile
       ? navItems
-        .filter((item) => floatingItemIds.includes(item.id))
-        .map((item) => ({
-          id: item.id,
-          icon: item.icon,
-          onClick: () => triggerNavItem(item.id),
-        }))
+          .filter((item) => floatingItemIds.includes(item.id))
+          .map((item) => ({
+            id: item.id,
+            icon: item.icon,
+            onClick: () => triggerNavItem(item.id),
+          }))
       : [];
   }
 

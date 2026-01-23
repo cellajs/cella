@@ -12,6 +12,7 @@ const baseAttachmentValues = {
   modifiedAt: null,
   modifiedBy: null,
   keywords: '',
+  tx: null, // Sync metadata (not used in optimistic updates)
 };
 
 export const parseUploadedAttachments = (

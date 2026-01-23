@@ -28,10 +28,10 @@ const StepperContext = React.createContext<
   steps: [],
   activeStep: 0,
   initialStep: 0,
-  nextStep: () => { },
-  prevStep: () => { },
-  resetSteps: () => { },
-  setStep: () => { },
+  nextStep: () => {},
+  prevStep: () => {},
+  resetSteps: () => {},
+  setStep: () => {},
 });
 
 function StepperProvider({ value, children }: StepperContextProviderProps) {

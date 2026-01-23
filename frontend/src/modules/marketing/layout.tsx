@@ -27,6 +27,6 @@ function MarketingLayout({ title, children }: MarketingLayoutProps) {
       </Suspense>
     </div>
   );
-};
+}
 
 export default MarketingLayout;

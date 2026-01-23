@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { ActivityModel } from '#/db/schema/activities';
-import { activityActions } from '#/lib/event-bus';
+import { activityActions } from '#/sync/activity-bus';
 import { mockNanoid, withFakerSeed } from './utils';
 import { entityTableNames } from '#/table-config';
 
@@ -35,6 +35,7 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
         action === 'update'
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
+      tx: null,
     };
   });
 

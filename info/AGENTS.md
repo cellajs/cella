@@ -7,7 +7,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 
 ## Tech Stack
 - **Backend**: Node.js (v24), Hono, Drizzle ORM, PostgreSQL (or PGlite for local dev), Scalar (API Docs).
-- **Frontend**: React, TanStack Router, TanStack Query, Zustand, Electric Sync, Shadcn UI, Tailwind CSS.
+- **Frontend**: React, TanStack Router, TanStack Query, Zustand, Shadcn UI, Tailwind CSS.
 - **Tools**: Pnpm (workspaces), Biome (lint/format), Vitest (testing), Vite.
 - **IDE Support**: Development with VSCode and WebStorm/JetBrains should be supported.  
 
@@ -52,7 +52,6 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - **Database**: Drizzle ORM is mandatory. Schema definitions are in `backend/src/db/schema/`. Use `pnpm generate` in the root or backend to create migrations.
 
 ## Coding Patterns
-- **Sync/Offline**: Leverage Electric Sync for realtime and offline capabilities using `useLiveQuery`. Look at the `pages` module for a reference implementation.
 - **Entities**: Entities are categorized into `ContextEntityType` (has memberships, like organizations) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md` for details.
 - **Environment**: Check `.env` and `config/default.ts` for configuration.
 - **Debug Mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env` to enable debug features:
@@ -65,7 +64,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Type assertions: Avoid `as` type assertions. Prefer type-safe patterns like `Object.assign` for intersection types, factory functions with `satisfies`, or const assertions (`as const`). When unavoidable, isolate assertions in well-documented helper functions.
 - Prefer feature-oriented folders; test files near code or under `tests/`.
 - Zod v4 only: `import { z } from 'zod'`. However, in backend due to using hono/zod-openapi, `import { z } from '@hono/zod-openapi'` is required.
-- camelCase for variables and functions, PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
+- camelCase for variables and functions (including constants - no UPPER_CASE), PascalCase for React components. File names should be kebab-case. Language translation keys should be snake_case.
 - Documentation: Add JSDoc block comments to all exported functions and components. Keep comments concise (1-3 lines) describing the purpose and key behavior. In backend we usually add a full JSDoc including params and response, in frontend we limit it to 1-3 text lines, unless its complex and critical functionality.
 - Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
 - Icons: We use lucide icons and import them using Icon suffix, such as `PencilIcon`.
@@ -91,9 +90,9 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Keep changes scoped; update docs and `.env.example` when config changes.
 
 ## Commands
-- `pnpm dev`: Start development with PostgreSQL (DEV_MODE=core).
+- `pnpm dev`: Start development with PostgreSQL + CDC Worker (DEV_MODE=full).
+- `pnpm dev:core`: Start development with PostgreSQL only (DEV_MODE=core, no CDC).
 - `pnpm quick`: Start development with PGlite (DEV_MODE=basic, fast, no Docker).
-- `pnpm dev:full`: Start development with PostgreSQL and optional workers (DEV_MODE=full).
 - `pnpm test`: Run all tests across the monorepo (alias for `pnpm test:core`).
 - `pnpm test:basic`: Fast unit tests only (no Docker required).
 - `pnpm test:core`: Standard tests with PostgreSQL (requires Docker).

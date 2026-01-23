@@ -22,7 +22,7 @@ export default defineConfig({
   overrides: {
     // Files and directories to be fully ignored during sync
     ignored: [
-      "info/*",
+      "info/QUICKSTART.md",
       "cli/create-cella/*",
       "backend/drizzle/*",
       "frontend/public/static/docs.gen/*",

@@ -49,6 +49,6 @@ function UpdatePage({ pageId }: UpdatePageProps) {
       </div>
     </div>
   );
-};
+}
 
 export default UpdatePage;

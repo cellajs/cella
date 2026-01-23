@@ -28,6 +28,6 @@ function BgAnimation() {
   }, [document]);
 
   return <canvas id="animation-canvas" className="absolute z-[-1] w-full h-full opacity-30" />;
-};
+}
 
 export default BgAnimation;

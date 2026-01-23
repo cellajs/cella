@@ -7,18 +7,22 @@
   },
   "scripts": {
     "start": "tsx src/index.ts",
-    "dev": "cross-env NODE_ENV=development tsx watch --env-file=../backend/.env src/index.ts",
+    "dev": "cross-env NODE_ENV=development wait-on -i 2000 -t 60000 http://localhost:4000/ping && tsx watch --env-file=../backend/.env src/index.ts",
     "ts": "tsc --pretty"
   },
   "dependencies": {
     "config": "workspace:*",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.45.1",
-    "pg-logical-replication": "^2.3.0"
+    "pg-logical-replication": "^2.3.0",
+    "ws": "^8.19.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "cross-env": "^7.0.3",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wait-on": "^8.0.5"
   }
 }

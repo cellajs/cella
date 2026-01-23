@@ -58,6 +58,149 @@
     ]
   },
   {
+    "operationId": "getRuntimeMetrics",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Runtime metrics",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "process": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "uptime": {
+                  "type": "number",
+                  "required": true,
+                  "description": "Process uptime in seconds"
+                },
+                "memory": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "heapUsed": {
+                      "type": "number",
+                      "required": true,
+                      "description": "Heap memory used in bytes"
+                    },
+                    "heapTotal": {
+                      "type": "number",
+                      "required": true,
+                      "description": "Total heap memory in bytes"
+                    },
+                    "external": {
+                      "type": "number",
+                      "required": true,
+                      "description": "External memory in bytes"
+                    },
+                    "rss": {
+                      "type": "number",
+                      "required": true,
+                      "description": "Resident set size in bytes"
+                    }
+                  }
+                },
+                "cpu": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "user": {
+                      "type": "number",
+                      "required": true,
+                      "description": "CPU time spent in user mode (microseconds)"
+                    },
+                    "system": {
+                      "type": "number",
+                      "required": true,
+                      "description": "CPU time spent in system mode (microseconds)"
+                    }
+                  }
+                }
+              }
+            },
+            "otel": {
+              "type": "array",
+              "required": true,
+              "description": "OpenTelemetry metrics from RuntimeNodeInstrumentation",
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "required": true },
+                  "description": { "type": "string", "required": false },
+                  "unit": { "type": "string", "required": false },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["gauge", "counter", "histogram", "sum"]
+                  },
+                  "dataPoints": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "required": true,
+                          "anyOf": [
+                            { "type": "number", "required": false },
+                            { "type": "object", "required": false }
+                          ]
+                        },
+                        "attributes": { "type": "object", "required": false },
+                        "startTime": { "type": "string", "required": false },
+                        "endTime": { "type": "string", "required": false }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
     "operationId": "getPublicCounts",
     "responses": [
       {

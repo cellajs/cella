@@ -59,6 +59,6 @@ function MfaPage() {
       <TotpStrategy isActive={isActive} setIsActive={setIsActive} />
     </>
   );
-};
+}
 
 export default MfaPage;

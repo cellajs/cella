@@ -78,7 +78,7 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
       // If name is changed, update the attachment
       for (const index of indexes) {
         const attachment = changedRows[index];
-        updateAttachment.mutate({ id: attachment.id, body: { name: attachment.name } });
+        updateAttachment.mutate({ id: attachment.id, data: { name: attachment.name } });
       }
     },
     [updateAttachment, t],
@@ -152,6 +152,6 @@ function AttachmentsTable({ entity, canUpload = true, isSheet = false }: Attachm
       />
     </div>
   );
-};
+}
 
 export default AttachmentsTable;

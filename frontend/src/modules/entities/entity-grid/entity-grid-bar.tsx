@@ -7,7 +7,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import SelectSort from '~/modules/common/form-fields/select-sort';
-import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import { useInfiniteQueryTotal } from '~/query/basic';
 
 export type EntityGridBarSearch = {
   q?: string;

@@ -1,5 +1,126 @@
 [
   {
+    "operationId": "pagesPublicStream",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Catch-up activities or SSE stream started",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "activities": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "data": { "type": "object", "required": false },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment", "page"]
+                  },
+                  "entityId": { "type": "string", "required": true },
+                  "action": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["create", "update", "delete"]
+                  },
+                  "activityId": { "type": "string", "required": true },
+                  "changedKeys": {
+                    "type": ["array", "null"],
+                    "required": true,
+                    "itemType": "string"
+                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "tx": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "properties": {
+                      "transactionId": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "sourceId": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "changedField": {
+                        "type": ["string", "null"],
+                        "required": true
+                      }
+                    },
+                    "ref": "#/components/schemas/TxStreamMessage"
+                  }
+                }
+              }
+            },
+            "cursor": {
+              "type": ["string", "null"],
+              "required": true,
+              "description": "Last activity ID (use as offset for next request)"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "offset": {
+            "type": "string",
+            "required": false,
+            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
+          },
+          "live": {
+            "type": "string",
+            "required": false,
+            "description": "Set to \"sse\" for live updates (SSE stream)",
+            "enum": ["sse"]
+          }
+        }
+      }
+    }
+  },
+  {
     "operationId": "syncPages",
     "responses": [
       { "status": 200, "description": "Success" },
@@ -58,69 +179,71 @@
       {
         "status": 201,
         "description": "Page",
-        "name": "Page",
-        "ref": "#/components/schemas/Page",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
-            "entityType": {
-              "type": "string",
+            "data": {
+              "type": "object",
               "required": true,
-              "enum": ["page"]
+              "properties": {
+                "createdAt": { "type": "string", "required": true },
+                "id": { "type": "string", "required": true },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["page"]
+                },
+                "name": { "type": "string", "required": true },
+                "description": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "modifiedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "keywords": { "type": "string", "required": true },
+                "createdBy": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "modifiedBy": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "status": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["unpublished", "published", "archived"]
+                },
+                "parentId": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "displayOrder": {
+                  "type": "number",
+                  "required": true,
+                  "minimum": -140737488355328,
+                  "maximum": 140737488355327
+                }
+              },
+              "ref": "#/components/schemas/Page"
             },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "keywords": { "type": "string", "required": true },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "status": {
-              "type": "string",
+            "tx": {
+              "type": "object",
               "required": true,
-              "enum": ["unpublished", "published", "archived"]
-            },
-            "parentId": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "displayOrder": {
-              "type": "number",
-              "required": true,
-              "minimum": -140737488355328,
-              "maximum": 140737488355327
+              "properties": {
+                "transactionId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Echoes the request transactionId"
+                }
+              },
+              "ref": "#/components/schemas/TxResponse"
             }
           },
-          "ref": "#/components/schemas/Page",
           "contentType": "application/json"
-        },
-        "example": {
-          "id": "co96vrmic3wbowmxzbqa1e9f",
-          "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "solvo atrox tendo",
-          "status": "unpublished",
-          "parentId": null,
-          "displayOrder": 32.69,
-          "createdAt": "2024-08-06T10:28:33.226Z",
-          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
         }
       },
       {
@@ -163,7 +286,44 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "required": false }
+          "data": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "name": { "type": "string", "required": false }
+            }
+          },
+          "tx": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "transactionId": {
+                "type": "string",
+                "required": true,
+                "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                "maxLength": 64
+              },
+              "sourceId": {
+                "type": "string",
+                "required": true,
+                "description": "Tab/instance identifier",
+                "maxLength": 64
+              },
+              "changedField": {
+                "type": ["string", "null"],
+                "required": true,
+                "description": "Which field this mutation changes (null for create/delete)",
+                "maxLength": 64
+              },
+              "expectedTransactionId": {
+                "type": ["string", "null"],
+                "required": true,
+                "description": "Last known transaction ID for this field (null for create or first write)",
+                "maxLength": 64
+              }
+            },
+            "ref": "#/components/schemas/TxRequest"
+          }
         },
         "required": true,
         "contentType": "application/json"
@@ -418,7 +578,8 @@
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
+          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "tx": null
         }
       },
       {
@@ -471,69 +632,71 @@
       {
         "status": 200,
         "description": "Page updated",
-        "name": "Page",
-        "ref": "#/components/schemas/Page",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true },
-            "entityType": {
-              "type": "string",
+            "data": {
+              "type": "object",
               "required": true,
-              "enum": ["page"]
+              "properties": {
+                "createdAt": { "type": "string", "required": true },
+                "id": { "type": "string", "required": true },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["page"]
+                },
+                "name": { "type": "string", "required": true },
+                "description": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "modifiedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "keywords": { "type": "string", "required": true },
+                "createdBy": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "modifiedBy": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "status": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["unpublished", "published", "archived"]
+                },
+                "parentId": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "displayOrder": {
+                  "type": "number",
+                  "required": true,
+                  "minimum": -140737488355328,
+                  "maximum": 140737488355327
+                }
+              },
+              "ref": "#/components/schemas/Page"
             },
-            "name": { "type": "string", "required": true },
-            "description": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "keywords": { "type": "string", "required": true },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "modifiedBy": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "status": {
-              "type": "string",
+            "tx": {
+              "type": "object",
               "required": true,
-              "enum": ["unpublished", "published", "archived"]
-            },
-            "parentId": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "displayOrder": {
-              "type": "number",
-              "required": true,
-              "minimum": -140737488355328,
-              "maximum": 140737488355327
+              "properties": {
+                "transactionId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Echoes the request transactionId"
+                }
+              },
+              "ref": "#/components/schemas/TxResponse"
             }
           },
-          "ref": "#/components/schemas/Page",
           "contentType": "application/json"
-        },
-        "example": {
-          "id": "co96vrmic3wbowmxzbqa1e9f",
-          "entityType": "page",
-          "name": "Infit pauci optio demo.",
-          "description": "[{\"content\":[{\"type\":\"text\",\"text\":\"Adhaero torrens adfectus incidunt voluptates cornu tempus eaque universe volubilis. Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi.\\nVel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito. Vox nemo ipsa video tremo molestias charisma clam ipsa suscipit.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "solvo atrox tendo",
-          "status": "unpublished",
-          "parentId": null,
-          "displayOrder": 32.69,
-          "createdAt": "2024-08-06T10:28:33.226Z",
-          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
         }
       },
       {
@@ -581,26 +744,63 @@
       "body": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "required": false },
-          "description": {
-            "type": ["string", "null"],
-            "required": false
+          "data": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "name": { "type": "string", "required": false },
+              "description": {
+                "type": ["string", "null"],
+                "required": false
+              },
+              "keywords": { "type": "string", "required": false },
+              "displayOrder": {
+                "type": "number",
+                "required": false,
+                "minimum": -140737488355328,
+                "maximum": 140737488355327
+              },
+              "status": {
+                "type": "string",
+                "required": false,
+                "enum": ["unpublished", "published", "archived"]
+              },
+              "parentId": {
+                "type": ["string", "null"],
+                "required": false
+              }
+            }
           },
-          "keywords": { "type": "string", "required": false },
-          "displayOrder": {
-            "type": "number",
-            "required": false,
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "status": {
-            "type": "string",
-            "required": false,
-            "enum": ["unpublished", "published", "archived"]
-          },
-          "parentId": {
-            "type": ["string", "null"],
-            "required": false
+          "tx": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "transactionId": {
+                "type": "string",
+                "required": true,
+                "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)",
+                "maxLength": 64
+              },
+              "sourceId": {
+                "type": "string",
+                "required": true,
+                "description": "Tab/instance identifier",
+                "maxLength": 64
+              },
+              "changedField": {
+                "type": ["string", "null"],
+                "required": true,
+                "description": "Which field this mutation changes (null for create/delete)",
+                "maxLength": 64
+              },
+              "expectedTransactionId": {
+                "type": ["string", "null"],
+                "required": true,
+                "description": "Last known transaction ID for this field (null for create or first write)",
+                "maxLength": 64
+              }
+            },
+            "ref": "#/components/schemas/TxRequest"
           }
         },
         "required": true,

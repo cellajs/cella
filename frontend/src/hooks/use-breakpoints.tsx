@@ -72,14 +72,10 @@ function getServerSnapshot() {
  * @example
  * const isMobile = useBreakpoints('max', 'sm', false); // Non-reactive
  */
-export function useBreakpoints(
-  mustBe: 'min' | 'max',
-  breakpoint: keyof typeof breakpoints,
-  enableReactivity = true,
-) {
+export function useBreakpoints(mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   // useSyncExternalStore provides tear-free reads from external state
   const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => { },
+    enableReactivity ? subscribe : () => () => {},
     getSnapshot,
     getServerSnapshot,
   );

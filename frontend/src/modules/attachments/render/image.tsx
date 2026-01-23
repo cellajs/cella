@@ -28,7 +28,10 @@ function ControlButton({ tooltipContent, onClick, icon, className }: ControlButt
     <TooltipButton toolTipContent={tooltipContent}>
       <Button
         onClick={onClick}
-        className={cn('bg-background border border-input rounded-none hover:bg-accent text-accent-foreground', className)}
+        className={cn(
+          'bg-background border border-input rounded-none hover:bg-accent text-accent-foreground',
+          className,
+        )}
       >
         {icon}
       </Button>

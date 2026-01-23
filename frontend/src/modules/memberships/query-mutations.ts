@@ -18,9 +18,8 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries, useMutateQueryData } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
-import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/utils/mutate-query';
 
 const limit = appConfig.requestLimits.members;
 

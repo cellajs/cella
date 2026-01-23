@@ -6,7 +6,7 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { flattenInfiniteData } from '~/query/utils/flatten';
+import { flattenInfiniteData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {

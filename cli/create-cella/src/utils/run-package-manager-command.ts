@@ -8,7 +8,11 @@ import spawn from 'cross-spawn';
  * @param env - Additional environment variables to set during command execution.
  * @returns A promise that resolves if the command executes successfully; otherwise, it rejects with an error message.
  */
-export async function runPackageManagerCommand(packageManager: string, args: string[], env: Record<string, string> = {}): Promise<void> {
+export async function runPackageManagerCommand(
+  packageManager: string,
+  args: string[],
+  env: Record<string, string> = {},
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(packageManager, args, {
       env: {

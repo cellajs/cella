@@ -34,6 +34,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
+      tx: null,
       ...generateMockContextEntityIdColumns('relatable'),
     };
   });

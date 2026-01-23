@@ -13,6 +13,6 @@ function AccessibilityPage() {
       </section>
     </MarketingLayout>
   );
-};
+}
 
 export default AccessibilityPage;

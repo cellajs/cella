@@ -114,6 +114,9 @@ import type {
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
+  GetRuntimeMetricsData,
+  GetRuntimeMetricsErrors,
+  GetRuntimeMetricsResponses,
   GetTokenDataData,
   GetTokenDataErrors,
   GetTokenDataResponses,
@@ -149,6 +152,9 @@ import type {
   PaddleWebhookData,
   PaddleWebhookErrors,
   PaddleWebhookResponses,
+  PagesPublicStreamData,
+  PagesPublicStreamErrors,
+  PagesPublicStreamResponses,
   RedirectToAttachmentData,
   RedirectToAttachmentErrors,
   RedirectToAttachmentResponses,
@@ -191,6 +197,9 @@ import type {
   SyncPagesData,
   SyncPagesErrors,
   SyncPagesResponses,
+  SyncStreamData,
+  SyncStreamErrors,
+  SyncStreamResponses,
   SystemInviteData,
   SystemInviteErrors,
   SystemInviteResponses,
@@ -1461,6 +1470,27 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Public stream of page changes
+ *
+ * Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.
+ *
+ * **GET /pages/stream** ·· [pagesPublicStream](https://api.cellajs.com/docs#tag/pages/get/pages/stream) ·· _pages_
+ *
+ * @param {pagesPublicStreamData} options
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {enum=} options.query.live - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const pagesPublicStream = <ThrowOnError extends boolean = true>(
+  options?: Options<PagesPublicStreamData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<PagesPublicStreamResponses, PagesPublicStreamErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/pages/stream',
+    ...options,
+  });
+
+/**
  * Sync pages
  *
  * Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.
@@ -1542,7 +1572,8 @@ export const getPages = <ThrowOnError extends boolean = true>(options?: Options<
  * **POST /pages** ·· [createPage](https://api.cellajs.com/docs#tag/pages/post/pages) ·· _pages_
  *
  * @param {createPageData} options
- * @param {string=} options.body.name - `string` (optional)
+ * @param {object=} options.body.data - `object` (optional)
+ * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 429
  */
 export const createPage = <ThrowOnError extends boolean = true>(options: Options<CreatePageData, ThrowOnError>) =>
@@ -1590,12 +1621,8 @@ export const getPage = <ThrowOnError extends boolean = true>(options: Options<Ge
  *
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {string | null=} options.body.description - `string | null` (optional)
- * @param {string=} options.body.keywords - `string` (optional)
- * @param {number=} options.body.displayOrder - `number` (optional)
- * @param {enum=} options.body.status - `enum` (optional)
- * @param {string | null=} options.body.parentId - `string | null` (optional)
+ * @param {object=} options.body.data - `object` (optional)
+ * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updatePage = <ThrowOnError extends boolean = true>(options: Options<UpdatePageData, ThrowOnError>) =>
@@ -1865,6 +1892,33 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
   });
 
 /**
+ * Get runtime metrics
+ *
+ * Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.
+ * Includes memory usage, CPU time, uptime, and event loop utilization.
+ *
+ * **GET /metrics/runtime** ·· [getRuntimeMetrics](https://api.cellajs.com/docs#tag/metrics/get/metrics/runtime) ·· _metrics_
+ *
+ * @param {getRuntimeMetricsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getRuntimeMetrics = <ThrowOnError extends boolean = true>(
+  options?: Options<GetRuntimeMetricsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<GetRuntimeMetricsResponses, GetRuntimeMetricsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/metrics/runtime',
+    ...options,
+  });
+
+/**
  * Get public counts
  *
  * Returns basic count metrics for entity types such as `users` and `organizations`.
@@ -1881,6 +1935,34 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/metrics/public',
+    ...options,
+  });
+
+/**
+ * Live stream of entity changes
+ *
+ * Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.
+ *
+ * **GET /organizations/{orgIdOrSlug}/sync/stream** ·· [syncStream](https://api.cellajs.com/docs#tag/sync/get/organizations/{orgIdOrSlug}/sync/stream) ·· _sync_
+ *
+ * @param {syncStreamData} options
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {enum=} options.query.live - `enum` (optional)
+ * @param {string=} options.query.entitytypes - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const syncStream = <ThrowOnError extends boolean = true>(options: Options<SyncStreamData, ThrowOnError>) =>
+  (options.client ?? client).get<SyncStreamResponses, SyncStreamErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/organizations/{orgIdOrSlug}/sync/stream',
     ...options,
   });
 
@@ -1991,7 +2073,9 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  *
  * @param {createAttachmentData} options
  * @param {string} options.path.orgidorslug - `string`
- * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ * @param {any[]=} options.body.data - `any[]` (optional)
+ * @param {any=} options.body.tx - `any` (optional)
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 429
  */
 export const createAttachment = <ThrowOnError extends boolean = true>(
   options: Options<CreateAttachmentData, ThrowOnError>,
@@ -2023,8 +2107,8 @@ export const createAttachment = <ThrowOnError extends boolean = true>(
  * @param {updateAttachmentData} options
  * @param {string} options.path.id - `string`
  * @param {string} options.path.orgidorslug - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {string=} options.body.originalKey - `string` (optional)
+ * @param {object=} options.body.data - `object` (optional)
+ * @param {any=} options.body.tx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(

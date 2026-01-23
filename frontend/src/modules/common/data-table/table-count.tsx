@@ -36,6 +36,6 @@ function TableCount({ count, label, className, isFiltered, children, onResetFilt
       {children}
     </div>
   );
-};
+}
 
 export default TableCount;

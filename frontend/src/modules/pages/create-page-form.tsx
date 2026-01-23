@@ -14,7 +14,8 @@ interface Props {
   callback?: () => void;
 }
 
-const formSchema = zCreatePageData.shape.body;
+// Form only collects the data portion - tx is added by mutation
+const formSchema = zCreatePageData.shape.body.shape.data;
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreatePageForm = ({ callback }: Props) => {

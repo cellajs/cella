@@ -14,6 +14,6 @@ function Spinner({ className = '', noDelay = false }) {
       <Loader2Icon className={cn('opacity-50 text-foreground mx-auto h-6 w-6 animate-spin', className)} />
     </div>
   );
-};
+}
 
 export default Spinner;

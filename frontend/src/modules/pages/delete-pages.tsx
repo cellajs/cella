@@ -21,6 +21,6 @@ function DeletePages({ pages, callback, isDialog }: Props) {
   };
 
   return <DeleteForm onDelete={handleDelete} onCancel={() => removeDialog()} pending={deletePage.isPending} />;
-};
+}
 
 export default DeletePages;

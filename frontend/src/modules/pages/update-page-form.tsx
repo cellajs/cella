@@ -18,7 +18,8 @@ import { Form } from '~/modules/ui/form';
 
 const BlockNoteContentField = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
-const formSchema = zUpdatePageData.shape.body;
+// Use only the data portion (not the tx wrapper)
+const formSchema = zUpdatePageData.shape.body.shape.data;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -68,8 +69,9 @@ function UpdatePageForm({ page }: Props) {
   const handleSave = useCallback(
     (data: FormValues) => {
       setSaveStatus('saving');
+
       updatePage.mutate(
-        { id: page.id, body: data },
+        { id: page.id, data },
         {
           onSuccess: () => {
             form.reset(data);

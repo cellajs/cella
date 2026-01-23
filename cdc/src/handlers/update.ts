@@ -2,13 +2,14 @@ import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/db/schema/activities';
 import { nanoid } from '#/utils/nanoid';
 import { getTableName } from 'drizzle-orm';
+import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, getChangedKeys } from '../utils';
+import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractTxData, getChangedKeys } from '../utils';
 
 /**
- * Handle an UPDATE message and create an activity.
+ * Handle an UPDATE message and create an activity with entity data.
  */
-export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.MessageUpdate): InsertActivityModel | null {
+export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.MessageUpdate): ProcessMessageResult | null {
   const oldRow = convertRowKeys(extractRowData(message.old));
   const newRow = convertRowKeys(extractRowData(message.new));
 
@@ -24,7 +25,10 @@ export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.Messag
   const entityOrResourceType = ctx.entityType ?? ctx.resourceType;
   const type = `${entityOrResourceType}.${actionToVerb(action)}`;
 
-  return {
+  // Extract tx data from product entities (null for context entities)
+  const tx = extractTxData(newRow);
+
+  const activity: InsertActivityModel = {
     id: nanoid(),
     userId: ctx.userId,
     entityType: ctx.entityType,
@@ -35,5 +39,8 @@ export function handleUpdate(entry: TableRegistryEntry, message: Pgoutput.Messag
     entityId: ctx.entityId,
     organizationId: ctx.organizationId,
     changedKeys,
+    tx,
   };
+
+  return { activity, entityData: newRow };
 }

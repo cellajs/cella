@@ -11,15 +11,15 @@ The sync engine uses precise vocabulary to avoid confusion. See [SYNC_ENGINE_REQ
 
 ## Summary
 
-This document outlines a plan to build a **hybrid sync engine** that extends existing **OpenAPI + React Query** infrastructure with sync and offline capabilities. This engine is - *currently* - designed to be a integral part of cella and its entity model. The approach is "hybrid" because the default is standard REST/OpenAPI endpoints while product entity modules *can* be enhanced with transaction tracking, offline support, and live stream for realtime sync. 
+This document outlines a plan to build a **hybrid sync engine** that extends existing **OpenAPI + React Query** infrastructure with sync and offline capabilities. This engine is - *currently* - designed to be a integral part of cella and its entity model. The approach is "hybrid" because the default is standard REST/OpenAPI endpoints while synced entity modules *can* be enhanced with transaction tracking, offline support, and live stream for realtime sync. 
 
-| `opMode` | Features | Example |
+| Entity type | Features | Example |
 |--------|----------|---------|
-| **basic** | REST CRUD, server-generated IDs | Context entities (`organization`) |
-| **offline** | + `{ data, tx }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | Product entities (`page`, `attachment`) |
-| **realtime** | + Live stream (SSE), live cache updates, multi-tab leader election | Daily-use (eg. `task`, not in cella) |
+| **entityType** | all REST CRUD entities, server-generated IDs, can also be split by context or product | `organization` |
+| **OfflineEntityType** | + `{ data, tx }` wrapper, client IDs, transaction tracking, offline queue, conflict detection | (currently empty) |
+| **RealtimeEntityType** | + Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
 
-> This plan focuses on upgrading product entities from **basic** → **synced** → **realtime**.
+> This plan focuses on upgrading synced entities (`OfflineEntityType` + `RealtimeEntityType`) with sync primitives using a minimal surface area so that an 'upgrade' doesnt mean a complete rewrite of the code for that entity.
 
 ---
 
@@ -49,17 +49,18 @@ Cella's existing infrastructure provides 70% of what's needed:
 ### Design philosophy
 - **Extend on OpenAPI** - All features work through the existing OpenAPI infrastructure.
 - **React Query base** - Build on top of, not around, TanStack Query.
-- **Progressive enhancement** - REST for context entities; product entities add optimistic updates → offline → realtime.
+- **Progressive enhancement** - REST for context entities; synced entities add optimistic updates → offline → realtime.
+- **Minimal UI surface area** - Forms and UI components should remain unaware of sync mechanics. Sync concerns (tx metadata, changedField detection, mutation splitting) are handled in the mutation layer (`query.ts`), not in forms.
 
 ### Architecture
 - **Leverage CDC Worker** - Use pg `activitiesTable` as durable activity log (no separate transaction storage).
-- **Live stream** - SSE streaming backed by CDC Worker + postgres NOTIFY for realtime sync (`realtime` opMode only).
+- **Live stream** - SSE streaming backed by CDC Worker + WebSocket for realtime sync (`RealtimeEntityType` only).
 - **Separation of concerns** - LIST endpoints handle queries/filtering; live stream is dumb, just provides new data.
 - **React Query as merge point** - Both initial load and live stream updates feed into the same cache.
-- **Two paths for entity data** - Live updates get entity data from CDC Worker NOTIFY; catch-up queries JOIN activities with entity tables.
+- **Two paths for entity data** - Live updates get entity data from CDC Worker via WebSocket; catch-up queries JOIN activities with entity tables.
 
 ### Sync mechanics
-- **Client-generated IDs** - Product entities use client-generated transaction IDs for determinism.
+- **Client-generated IDs** - Synced entities use client-generated transaction IDs for determinism.
 - **Upstream-first sync** - Pull before push will prevent most conflicts for online clients.
 - **Hybrid logical clocks (HLC)** - Transaction IDs use HLC for causality-preserving, sortable timestamps.
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect.
@@ -68,12 +69,177 @@ Cella's existing infrastructure provides 70% of what's needed:
 - **Merge strategy** - LWW (server wins) as default, resolution UI for fields needing user input.
 - **Single-writer multi-tab** - One leader tab owns SSE connection and broadcasts to followers.
 
+### Mutation layer responsibilities
+
+The mutation layer (`query.ts`) encapsulates all sync logic so forms remain simple:
+
+1. **changedField detection** - Compare incoming data against cached entity to detect which field(s) changed
+2. **Mutation splitting** - If multiple fields changed, split into separate mutations (one per field) for proper conflict tracking
+3. **tx metadata generation** - Generate `transactionId`, `sourceId`, `expectedTransactionId`, `changedField`
+4. **Conflict detection prep** - Look up last known transaction ID per field for `expectedTransactionId`
+5. **Optimistic updates** - Apply changes to cache immediately, rollback on error
+
+**Form contract**: Forms call `updateMutation.mutate({ id, data })` - no sync knowledge required.
+
+```typescript
+// Mutation layer handles everything internally
+export const usePageUpdateMutation = () => {
+  return useMutation({
+    mutationFn: ({ id, data }) => {
+      // 1. Get current entity from cache
+      const current = findPageInCache(id);
+      
+      // 2. Detect changed fields
+      const changedFields = detectChangedFields(current, data);
+      
+      // 3. If multiple fields, split into sequential mutations
+      if (changedFields.length > 1) {
+        return splitAndExecuteMutations(id, data, changedFields);
+      }
+      
+      // 4. Single field - generate tx and execute
+      const changedField = changedFields[0] ?? null;
+      const tx = buildTxMetadata(id, changedField);
+      return updatePage({ path: { id }, body: { data, tx } });
+    },
+    // ...optimistic update logic
+  });
+};
+```
+
 ### Type safety
 
 Having backend, frontend, CDC, config in one repo puts us in an excellent position to provide end-to-end type safety across the entire 'sync engine flow'. 
 
 - **Prevent type assertions** - Avoid `as`, `as unknown as`, and `!` assertions. They break the compile-time safety that catches sync bugs.
-- **Use generics over casts** - For dynamic entity types, use discriminated unions and generic functions. 
+- **Use generics over casts** - For dynamic entity types, use discriminated unions and generic functions.
+
+### OpenAPI as stream contract
+
+The stream implementation should derive as much as possible from generated OpenAPI types to minimize hardcoding. Current state and proposals:
+
+**Current hardcoded elements in `use-live-stream.ts`:**
+- URL path: `/organizations/${orgId}/sync/stream`
+- Query param names: `live`, `offset`, `entityTypes`
+- SSE event names: `message`, `offset`
+- Entity type values for filtering
+
+**Proposal A: Derive types only (current approach)**
+- Types derived from `SyncStreamResponses` (done in `stream-types.ts`)
+- URL/params still hardcoded but TypeScript catches schema drift
+- Minimal runtime overhead, maximum simplicity
+- **Trade-off**: URL changes require manual updates
+
+**Proposal B: Use generated zod for runtime validation**
+```typescript
+import { zSyncStreamResponse } from '~/api.gen/zod.gen';
+
+// Parse SSE data with runtime validation
+const handleMessage = (event: MessageEvent) => {
+  const result = zSyncStreamResponse.shape.activities.element.safeParse(
+    JSON.parse(event.data)
+  );
+  if (!result.success) {
+    console.warn('Stream message validation failed:', result.error);
+    return;
+  }
+  onMessage?.(result.data);
+};
+```
+- **Benefit**: Runtime validation catches schema mismatches
+- **Trade-off**: Performance overhead for each message
+
+**Proposal C: Extract URL pattern from types**
+```typescript
+import type { SyncStreamData } from '~/api.gen';
+
+// URL template from generated types (requires string manipulation)
+type StreamUrl = SyncStreamData['url']; // '/organizations/{orgIdOrSlug}/sync/stream'
+
+// Build URL from template
+const buildStreamUrl = (orgId: string): string => {
+  const template: StreamUrl = '/organizations/{orgIdOrSlug}/sync/stream';
+  return `${API_BASE}${template.replace('{orgIdOrSlug}', orgId)}`;
+};
+
+// Query params typed from schema
+type StreamQuery = NonNullable<SyncStreamData['query']>;
+const params: StreamQuery = { live: 'sse', offset, entityTypes: types.join(',') };
+```
+- **Benefit**: URL pattern and params match OpenAPI exactly
+- **Trade-off**: More boilerplate, template string manipulation
+
+**Proposal D: Generate SSE client helper**
+Add to `openapi-ts.config.ts` a custom plugin that generates an SSE helper:
+```typescript
+// api.gen/sse.gen.ts (generated)
+export const syncStreamSSE = (params: SyncStreamData) => {
+  const url = buildUrl('/organizations/{orgIdOrSlug}/sync/stream', params);
+  return new EventSource(url, { withCredentials: true });
+};
+```
+- **Benefit**: Fully generated, type-safe SSE creation
+- **Trade-off**: Requires custom openapi-ts plugin
+
+**Recommended approach**: Start with **Proposal A** (types only) + elements of **Proposal C** (typed query params). Add **Proposal B** (zod validation) only in debug mode. Defer **Proposal D** until SSE patterns stabilize.
+
+#### Type strictness by layer
+
+Different layers have different typing constraints. The strategy is: **lenient at ingestion boundaries, strict at API/stream/frontend**.
+
+| Layer | Strictness | Why | Typing approach |
+|-------|-----------|-----|-----------------|
+| **CDC Worker** | Lenient | Receives `Record<string, unknown>` from pg-logical-replication. Row data is inherently untyped. | Use runtime validation, `unknown` types, and type guards. Assertions acceptable for well-tested extraction utilities. |
+| **ActivityBus** | Moderate | Receives from WebSocket (CDC Worker). Data crosses JSON boundary. | Validate payload shape with Zod, emit typed `ActivityEvent`. |
+| **API Handlers** | Strict | OpenAPI schemas provide compile-time contracts. | Use generated types, no assertions. Type guards for string→enum. |
+| **Stream Handlers** | Strict | SSE messages have defined schemas. | Use `RealtimeEntityType`, `ActivityAction` from config. |
+| **Frontend** | Strict | Generated SDK types from `api.gen/`. | Derive types from generated schemas, no custom duplicates. |
+
+#### Config-based entity type usage
+
+The config exports typed arrays and type guards for entity classification:
+
+```typescript
+// config/default.ts exports:
+export const realtimeEntityTypes = ['attachment', 'page'] as const;
+export const offlineEntityTypes = [] as const;
+
+// Derived types
+export type RealtimeEntityType = (typeof realtimeEntityTypes)[number];
+export type OfflineEntityType = (typeof offlineEntityTypes)[number];
+```
+
+**Usage by layer:**
+
+| Layer | Uses | Example |
+|-------|------|---------|
+| **CDC Worker** | `EntityType` (all entities) | `extractActivityContext()` returns `entityType: EntityType \| null` |
+| **Stream Handlers** | `RealtimeEntityType` | Filter activities to only stream realtime entities |
+| **API Handlers** | `RealtimeEntityType` or `OfflineEntityType` | Accept `{ data, tx }` wrapper for synced entities |
+| **Frontend** | `RealtimeEntityType` | `useLiveStream()` hook subscribes to realtime entities |
+
+**Type guard pattern:**
+
+```typescript
+// In stream-subscriber-manager.ts (strict layer)
+import { config, type RealtimeEntityType } from 'config';
+const { realtimeEntityTypes } = config;
+
+const isRealtimeEntityType = (type: string): type is RealtimeEntityType =>
+  realtimeEntityTypes.includes(type as RealtimeEntityType);
+
+// In routeActivity() - only process realtime entities
+if (!isRealtimeEntityType(notification.entityType)) return;
+```
+
+**CDC Worker (lenient layer) - no type guard needed:**
+
+```typescript
+// In cdc/src/utils/extract-activity-context.ts
+// The entry.type comes from table registry, already typed as EntityType
+const entityType = entry.kind === 'entity' ? entry.type : null;
+// No assertion needed - discriminated union handles it
+```
 
 ## Flow charts
 
@@ -103,9 +269,9 @@ Having backend, frontend, CDC, config in one repo puts us in an excellent positi
 
 #### New: Hybrid sync engine
 
-> **SERVER:** CDC Worker → NOTIFY → API → SSE fan-out
+> **SERVER:** CDC Worker → WebSocket → API → SSE fan-out
 
-This architecture uses one DB connection for LISTEN via ActivityBus (vs N polling queries), provides instant delivery with no 500ms poll delay, scales with orgs not with subscribers (multi-tenant security through existing middleware), and avoids round-trips through the database since the CDC Worker already has the data.
+This architecture uses a persistent WebSocket connection from CDC Worker to API server (no payload limits), provides instant delivery with no poll delay, scales with orgs not with subscribers (multi-tenant security through existing middleware), and avoids round-trips through the database since the CDC Worker already has the data.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -113,31 +279,36 @@ This architecture uses one DB connection for LISTEN via ActivityBus (vs N pollin
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  PostgreSQL                                                                 │
-│  ┌─────────────────────┐                                                    │
-│  │ Logical Replication │                                                    │
-│  │ (`entity` changes)  │                                                    │
-│  └──────────┬──────────┘                                                    │
+│  ┌──────────────────────────────────┐                                       │
+│  │ Logical Replication              │                                       │
+│  │ (`entity` + `resource` changes)  │                                       │
+│  └──────────┬───────────────────────┘                                       │
 │             │                                                               │
 │             ▼                                                               │
 │  ┌─────────────────────┐     ┌─────────────────────┐                        │
 │  │    CDC Worker       │────>│  activitiesTable    │                        │
 │  │                     │     │  (INSERT)           │                        │
 │  │  After INSERT:      │     └─────────────────────┘                        │
-│  │  pg_notify(         │                                                    │
-│  │   'cella_activities'│                                                    │
-│  │   {orgId, `entity`} │                                                    │
+│  │  ws.send(           │                                                    │
+│  │   {activity, entity}│                                                    │
 │  │  )                  │                                                    │
 │  └──────────┬──────────┘                                                    │
 │             │                                                               │
-│             │ NOTIFY 'cella_activities'                                     │
+│             │ WebSocket (persistent, replication backpressure)              │
 │             ▼                                                               │
 │  ┌─────────────────────────────────────────────────────────────────┐        │
 │  │                    API Server (Hono)                            │        │
 │  │                                                                 │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ ActivityBus (single │◄─── One LISTEN for ALL orgs            │        │
-│  │  │ LISTEN connection)  │     (Activitybus also used             │        │
-│  │  └──────────┬──────────┘      for API internal emits)           │        │
+│  │  │ /internal/cdc       │                                        │        │
+│  │  │ (WebSocket)         │                                        │        │
+│  │  │ All entity types    │                                        │        │
+│  │  └──────────┬──────────┘                                        │        │
+│  │             │                                                   │        │
+│  │             ▼                                                   │        │
+│  │  ┌─────────────────────┐                                        │        │
+│  │  │ ActivityBus         │◄─── WebSocket from CDC Worker          │        │
+│  │  └──────────┬──────────┘                                        │        │
 │  │             │ Emits ActivityEvent                               │        │
 │  │             ▼                                                   │        │
 │  │  ┌─────────────────────┐                                        │        │
@@ -260,16 +431,15 @@ export const activitiesTable = pgTable('activities', {
 ]);
 ```
 
-### CDC Worker: Transaction extraction, activity insert, and NOTIFY
+### CDC Worker: Transaction extraction, activity insert, and WebSocket notification
 
 The CDC Worker processes three sync-related tasks:
 1. **Extract tx metadata** from replicated row data
 2. **Insert activity record** into activitiesTable (with tx metadata)
-3. **NOTIFY with entity data** so stream consumers get instant and complete updates
+3. **Send via WebSocket** so stream consumers get instant and complete updates (no payload limit)
 
 ```typescript
 // cdc/src/utils/extract-activity-context.ts
-
 
 // Zod schema for tx parsing (synced entities only)
 const txColumnSchema = z.object({
@@ -303,43 +473,101 @@ export function extractActivityContext(
   };
 }
 
-// cdc/src/handlers/activity-notify.ts
+// cdc/src/lib/api-websocket.ts
 
-interface NotifyPayload {
-  orgId: string;
-  activityId: number;
-  entityType: EntityType;
-  entityId: string;
-  action: ActivityAction;
-  tx: Tx | null;
-  entity: Record<string, unknown> | null;
+/**
+ * WebSocket client for CDC Worker → API Server communication.
+ * Persistent connection with automatic reconnection.
+ */
+class ApiWebSocket {
+  private ws: WebSocket | null = null;
+  private reconnectTimeout: Timer | null = null;
+  private messageQueue: string[] = [];
+  
+  constructor(private url: string, private secret: string) {}
+  
+  async connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.ws = new WebSocket(this.url, {
+        headers: { 'x-cdc-secret': this.secret },
+      });
+      
+      this.ws.onopen = () => {
+        // Flush queued messages
+        for (const msg of this.messageQueue) {
+          this.ws?.send(msg);
+        }
+        this.messageQueue = [];
+        resolve();
+      };
+      
+      this.ws.onclose = () => this.scheduleReconnect();
+      this.ws.onerror = (err) => reject(err);
+    });
+  }
+  
+  send(data: unknown): void {
+    const message = JSON.stringify(data);
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(message);
+    } else {
+      this.messageQueue.push(message); // Queue for reconnection
+    }
+  }
+  
+  private scheduleReconnect(): void {
+    if (this.reconnectTimeout) return;
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      this.connect().catch(() => this.scheduleReconnect());
+    }, 5000);
+  }
+}
+
+// Singleton instance
+export const apiWebSocket = new ApiWebSocket(
+  env.API_INTERNAL_WS_URL, // e.g., ws://localhost:4000/internal/cdc
+  env.CDC_INTERNAL_SECRET,
+);
+
+// cdc/src/handlers/activity-sender.ts
+
+interface ActivityPayload {
+  activity: {
+    id: string;
+    type: string;
+    action: ActivityAction;
+    entityType: EntityType;
+    entityId: string;
+    organizationId: string;
+    tx: Tx | null;
+    changedKeys: string[] | null;
+    createdAt: string;
+  };
+  entity: Record<string, unknown>;
 }
 
 /**
- * NOTIFY with entity data from logical replication row.
- * API server receives this via ActivityBus for instant stream delivery.
+ * Send activity + entity data via WebSocket to API server.
+ * No payload limit - full entity data always included.
  */
-async function notifyActivity(
-  activity: ActivityInsert,
-  activityId: number,
-  entityData: Record<string, unknown> | null,
-): Promise<void> {
-  const payload: NotifyPayload = {
-    orgId: activity.organizationId,
-    activityId,
-    entityType: activity.entityType,
-    entityId: activity.entityId,
-    action: activity.action,
-    tx: activity.tx,
+function sendActivityToApi(activity: ActivityModel, entityData: Record<string, unknown>): void {
+  const payload: ActivityPayload = {
+    activity: {
+      id: activity.id,
+      type: activity.type,
+      action: activity.action,
+      entityType: activity.entityType,
+      entityId: activity.entityId,
+      organizationId: activity.organizationId,
+      tx: activity.tx,
+      changedKeys: activity.changedKeys,
+      createdAt: activity.createdAt.toISOString(),
+    },
     entity: entityData,
   };
   
-  // PostgreSQL NOTIFY has 8KB limit
-  if (JSON.stringify(payload).length > 7500) {
-    payload.entity = null; // API server will fetch on-demand
-  }
-  
-  await db.execute(sql`SELECT pg_notify('cella_activities', ${JSON.stringify(payload)})`);
+  apiWebSocket.send(payload);
 }
 
 // cdc/src/handlers/insert.ts - Complete flow
@@ -361,8 +589,8 @@ async function handleInsert(row: Record<string, unknown>, entry: TableRegistryEn
   // 3. Insert activity
   const [inserted] = await db.insert(activitiesTable).values(activity).returning();
   
-  // 4. NOTIFY for instant stream delivery (entity data from replication row)
-  await notifyActivity(activity, inserted.id, row);
+  // 4. Send via WebSocket for instant stream delivery (full entity data, no limit)
+  sendActivityToApi(inserted, row);
 }
 ```
 
@@ -373,11 +601,12 @@ async function handleInsert(row: Record<string, unknown>, entry: TableRegistryEn
 
 ```typescript
 // backend/src/lib/stream/stream-subscribers.ts
-// NOTE: This subscribes to ActivityBus, not directly to LISTEN
+// NOTE: This subscribes to ActivityBus, which receives from CDC Worker via WebSocket
+//       (all entity types with full entity data, no payload limit)
 
 interface Subscriber {
   stream: LiveStreamConnection;
-  entityTypes: ProductEntityType[] | null;  // null = all product entity types
+  entityTypes: RealtimeEntityType[] | null;  // null = all realtime entity types
   cursor: number;
   userId: string;
   userSystemRole: SystemRoleModel['role'] | 'user';   // From getContextUserSystemRole()
@@ -387,11 +616,11 @@ interface Subscriber {
 interface ActivityNotification {
   orgId: string;
   activityId: number;
-  entityType: ProductEntityType;
+  entityType: RealtimeEntityType;
   entityId: string;
   action: ActivityAction;
   tx: Tx | null;
-  entity: Record<string, unknown> | null;
+  entity: Record<string, unknown>;  // Always present for realtime entities (via WebSocket)
 }
 
 class StreamSubscriberManager {
@@ -399,8 +628,8 @@ class StreamSubscriberManager {
   private unsubscribeFromActivityBus: (() => void) | null = null;
   
   async initialize(activityBus: ActivityBus): Promise<void> {
-    // Subscribe to ActivityBus instead of maintaining own LISTEN connection
-    // ActivityBus already handles the LISTEN for 'cella_activities' channel
+    // Subscribe to ActivityBus which receives from CDC Worker via WebSocket
+    // All entity types include full entity data (no payload limit)
     this.unsubscribeFromActivityBus = activityBus.on('activity', async (event) => {
       await this.broadcast(event);
     });
@@ -425,12 +654,8 @@ class StreamSubscriberManager {
     const orgSubscribers = this.subscribers.get(payload.orgId);
     if (!orgSubscribers || orgSubscribers.size === 0) return;
     
-    // Entity data already included from CDC Worker - no extra fetch needed!
-    // Only fetch if entity was omitted (oversized payload fallback)
-    let enriched = payload.entity 
-      ? payload 
-      : await enrichActivityWithEntity(payload.activityId);
-    if (!enriched) return;
+    // Entity data always included from CDC Worker via WebSocket (no payload limit)
+    // No fallback fetch needed for realtime entities
     
     // Fan out to all subscribers for this org
     for (const subscriber of orgSubscribers) {
@@ -507,8 +732,8 @@ const entitiesHandlers = app
   .openapi(entitiesRoutes.subscribeToStream, async (ctx) => {
     const { offset, live, entityTypes: entityTypesParam } = ctx.req.valid('query');
     
-    // Parse entity types from query param - route schema already validates these are ProductEntityType values
-    // The split + filter produces string[] but zod validation in route schema ensures they match ProductEntityType
+    // Parse entity types from query param - route schema already validates these are RealtimeEntityType values
+    // The split + filter produces string[] but zod validation in route schema ensures they match RealtimeEntityType
     const entityTypesList = entityTypesParam?.split(',').filter(Boolean);
     const entityTypes = entityTypesList?.length ? entityTypesList : null;
     
@@ -598,7 +823,7 @@ export default streamHandlers;
 interface FetchActivitiesParams {
   orgId: string;
   cursor: number;
-  entityTypes: ProductEntityType[] | null;
+  entityTypes: RealtimeEntityType[] | null;
   memberships: MembershipBaseModel[];
   userSystemRole: SystemRoleModel['role'] | 'user';
 }
@@ -625,7 +850,7 @@ export async function fetchAndEnrichActivities({
   }
   
   // NOTE: Catch-up queries JOIN activities with entity tables to get entity data.
-  // This differs from live updates where CDC Worker includes entity data in NOTIFY payload.
+  // This differs from live updates where CDC Worker sends entity data via WebSocket.
 
   // Dynamic JOIN based on entity type (simplified - actual implementation uses type switch)
   const activitiesWithEntity = await fetchActivitiesWithEntityData(db, filters, entityTypes);
@@ -690,7 +915,7 @@ interface StreamMessage<T = unknown> {
 **Frontend: Live stream + React Query integration**
 
 ```typescript
-// frontend/src/lib/sync/use-live-stream.ts
+// frontend/src/query/realtime/use-live-stream.ts
 export function useLiveStream(
   orgIdOrSlug: string,
   options?: {
@@ -838,7 +1063,7 @@ Cella uses **Hybrid Logical Clocks (HLC)** for transaction IDs. HLC combines phy
 **Format**: `{wallTime}.{logical}.{nodeId}` (~32 chars)
 
 ```typescript
-// frontend/src/lib/sync/hlc.ts
+// frontend/src/query/offline/hlc.ts
 
 // One HLC instance per tab (nodeId = sourceId)
 const hlc = new HLC({ nodeId: sourceId });
@@ -873,10 +1098,10 @@ export const compareTransactionIds = (a: string, b: string): number => {
 
 ### Entity transient `tx` column
 
-Product entity tables have a single transient JSONB column for transaction metadata:
+Synced entity tables have a single transient JSONB column for transaction metadata:
 
 ```typescript
-// In backend/src/db/schema/pages.ts (and other product entities)
+// In backend/src/db/schema/pages.ts (and other synced entities)
 export const pages = pgTable('pages', {
   // ... existing columns ...
   
@@ -928,10 +1153,11 @@ export const txSchema = z.object({
 **Single module for sync primitives** - consolidates `sourceId` and transaction ID generation:
 
 ```typescript
-// frontend/src/lib/sync/source-id.ts
+// frontend/src/query/offline/hlc.ts
+// (sourceId is generated here, not in separate file)
 
 /** Unique identifier for this browser tab (generated once per page load) */
-export const sourceId = crypto.randomUUID();
+export const sourceId = nanoid();
 
 /** 
  * Create a transaction ID with timestamp prefix for sortability.
@@ -1017,7 +1243,7 @@ Conflicts are scoped to individual fields via `tx.changedField`. Two users editi
 
 When offline, conflict likelihood grows with duration, but  client should enable graceful resolution before pushing.
 
-**Entity row structure** - Product entity tables have a single transient `tx` JSONB column for transaction metadata. 
+**Entity row structure** - Synced entity tables have a single transient `tx` JSONB column for transaction metadata. 
 
 Conflict detection and resolution spans backend and frontend:
 1. **Backend** - Validates `expectedTransactionId` against activitiesTable
@@ -1101,7 +1327,8 @@ app.openapi(routes.updatePage, async (ctx) => {
   return ctx.json({ data: page, tx: { transactionId: tx.transactionId } });
 });
 
-// frontend/src/lib/sync/conflict-detection.ts
+// frontend/src/query/realtime/sync-coordinator.ts
+// (conflict detection is part of sync coordinator)
 
 /**
  * When stream message arrives, check for conflicts with queued mutations.
@@ -1236,7 +1463,7 @@ Example using `page` entity.
 
 /**
  * Create a page with optimistic updates and transaction tracking.
- * Demonstrates the sync pattern for product entities.
+ * Demonstrates the sync pattern for synced entities.
  */
 export const usePageCreateMutation = (orgIdOrSlug: string) => {
   const qc = useQueryClient();
@@ -1366,7 +1593,8 @@ export const usePageCreateMutation = (orgIdOrSlug: string) => {
 Best for: Title editing, content fields, any rapid-fire user input.
 
 ```typescript
-// frontend/src/lib/sync/use-field-mutation.ts
+// frontend/src/query/offline/squash-utils.ts
+// (The cancel-in-flight pattern is implemented via squashPendingMutation)
 
 /**
  * Field-level mutation with in-flight cancellation.
@@ -1434,7 +1662,8 @@ const updateTitle = useFieldMutation(
 Best for: Toggle switches, explicit save buttons, non-typing interactions.
 
 ```typescript
-// frontend/src/lib/sync/mutation-lock.ts
+// Note: Mutex pattern can be implemented if needed
+// Currently we use React Query's mutation state instead
 const mutatingEntities = new Map<string, Promise<unknown>>();
 
 /**
@@ -1551,7 +1780,8 @@ The mutation handling differs based on connectivity:
 The stream offset must be persisted to survive tab closure. Without this, users who close their browser and return later would start from `'now'` and miss all changes made while away.
 
 ```typescript
-// frontend/src/lib/sync/offset-store.ts
+// frontend/src/query/realtime/offset-store.ts
+// (Actual implementation uses Zustand + Dexie)
 
 interface OffsetEntry {
   orgId: string;
@@ -1609,8 +1839,12 @@ Time 3: Update title again → Mutation C queued (field: 'title', txId: C)
 
 **Field-Level Solution**: Queue per-field, squash same-field changes:
 
+> **Note**: The actual implementation uses React Query's mutation cache with
+> `squashPendingMutation()` from `query/offline/squash-utils.ts` rather than
+> a separate IndexedDB outbox. See DEC-24 in SYNC_ENGINE_REQUIREMENTS.md.
+
 ```typescript
-// frontend/src/lib/sync/mutation-outbox.ts
+// Conceptual model (implemented via React Query mutation cache)
 interface OutboxEntry {
   entityType: string;
   entityId: string;
@@ -1720,6 +1954,96 @@ After squashing:
 3. Mark conflicted mutations, show resolution UI
 4. Flush remaining pending mutations
 
+### Offline mutation coalescing (create + edit scenarios)
+
+When a user creates an entity offline and then edits it before reconnecting, the mutations are **coalesced** into a single create request. This is distinct from field-level squashing (same field edited multiple times).
+
+**Key difference from update squashing:**
+- **Update squashing** (OFFLINE-005): Same field updated 3x → 1 update request with final value
+- **Create coalescing** (DEC-23): Create + edit title + edit content → 1 create request with final values
+
+**Why coalesce creates?**
+The entity doesn't exist on server yet, so:
+- Field-level conflict detection is meaningless (no prior transaction to compare against)
+- Multiple update requests would fail (entity not found)
+- Intermediate states on server add no value
+
+**Outbox key strategy:**
+```typescript
+// Different keying for different operations
+const getOutboxKey = (mutation: MutationEntry): string => {
+  if (mutation.type === 'create' || mutation.type === 'delete') {
+    // Entity-level: one entry per entity for create/delete
+    return `${mutation.entityType}:${mutation.entityId}`;
+  }
+  // Field-level: one entry per field for updates
+  return `${mutation.entityType}:${mutation.entityId}:${mutation.field}`;
+};
+```
+
+**Scenario walkthroughs:**
+
+**Scenario A: Create + multiple edits while offline**
+```
+Time 1: User creates page offline    → Outbox: { type: 'create', data: { title: 'New', content: '' } }
+Time 2: User edits title             → Outbox: { type: 'create', data: { title: 'Updated', content: '' } }  ← merged
+Time 3: User edits content           → Outbox: { type: 'create', data: { title: 'Updated', content: '...' } }  ← merged
+Time 4: User comes online            → 1 API call: POST /pages with final values
+```
+
+**Scenario B: Create + delete while offline**
+```
+Time 1: User creates page offline    → Outbox: { type: 'create', ... }
+Time 2: User deletes the page        → Outbox: empty  ← both cancelled
+Time 3: User comes online            → 0 API calls (nothing happened from server's perspective)
+```
+
+**Scenario C: Create online, edit offline**
+```
+Time 1: User creates page online     → Server has page (confirmed)
+Time 2: User goes offline
+Time 3: User edits title             → Outbox: { type: 'update', field: 'title', ... }
+Time 4: User edits content           → Outbox: { type: 'update', field: 'content', ... }  ← separate entry
+Time 5: User comes online            → 2 API calls: field-level updates (standard behavior)
+```
+
+**Implementation in FieldMutationOutbox:**
+```typescript
+class FieldMutationOutbox {
+  add(mutation: MutationEntry): void {
+    // Check for pending create of same entity
+    const createKey = `${mutation.entityType}:${mutation.entityId}`;
+    const pendingCreate = this.entries.get(createKey);
+    
+    if (pendingCreate?.type === 'create' && mutation.type === 'update') {
+      // Merge update into pending create
+      pendingCreate.data = { ...pendingCreate.data, ...mutation.data };
+      pendingCreate.updatedAt = Date.now();
+      return;
+    }
+    
+    if (pendingCreate?.type === 'create' && mutation.type === 'delete') {
+      // Cancel both - entity never reached server
+      this.entries.delete(createKey);
+      return;
+    }
+    
+    // Standard add/squash logic for updates
+    const key = this.getKey(mutation);
+    const existing = this.entries.get(key);
+    
+    if (existing && mutation.type === 'update') {
+      // Squash: same field updated again
+      existing.data = mutation.data;
+      existing.transactionId = mutation.transactionId;
+      existing.updatedAt = Date.now();
+    } else {
+      this.entries.set(key, { ...mutation, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+  }
+}
+```
+
 ### Multi-tab coordination
 
 **Architecture**: Single-writer, multi-reader (from TanStack DB persistence plan)
@@ -1750,7 +2074,7 @@ After squashing:
 **Leader Election** (Web Locks API):
 
 ```typescript
-// frontend/src/lib/sync/tab-coordinator.ts
+// frontend/src/query/realtime/tab-coordinator.ts
 class TabCoordinator {
   private isLeader = false;
   private channel = new BroadcastChannel('cella-sync');
@@ -1838,7 +2162,7 @@ useEffect(() => {
 | Upstream-First | ✅ Yes | ❌ CRDT-based | ✅ Yes | ❌ | ✅ Yes |
 | Transaction Tracking | ✅ Full | ⚠️ Checkpoints (local) | ✅ Full eventlog | ❌ | ✅ Per-operation |
 | Audit Trail | ✅ Sync log | ❌ | ✅ Eventlog | ❌ | ✅ activitiesTable |
-| Realtime Updates | ✅ WebSocket | ✅ WebSocket/Broadcast | ✅ | ✅ Shapes | ✅ SSE + NOTIFY |
+| Realtime Updates | ✅ WebSocket | ✅ WebSocket/Broadcast | ✅ | ✅ Shapes | ✅ SSE + WebSocket |
 | Multi-Tab Sync | ✅ SharedWorker | ✅ BroadcastChannel | ✅ | ✅ | ✅ Leader election |
 | Bundle Size | Large (SQLite WASM) | 5.4-12.1kB | ~50kB | ~30kB | ~5kB (hooks only) |
 | React Integration | Custom hooks | ✅ ui-react module | ✅ | ✅ TanStack | ✅ TanStack Query |

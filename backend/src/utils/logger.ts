@@ -1,5 +1,5 @@
 import { appConfig, type Severity } from 'config';
-import { eventLogger } from '#/pino-config';
+import { eventLogger } from '#/pino';
 
 const isProduction = appConfig.mode === 'production';
 

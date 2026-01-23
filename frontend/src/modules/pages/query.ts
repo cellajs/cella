@@ -1,4 +1,10 @@
-import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  type QueryClient,
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { appConfig } from 'config';
 import {
   type CreatePageData,
@@ -11,41 +17,47 @@ import {
   type UpdatePageData,
   updatePage,
 } from '~/api.gen';
-import { zPage } from '~/api.gen/zod.gen';
-import type { ApiError } from '~/lib/api';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { queryClient } from '~/query/query-client';
-import { createOptimisticEntity } from '~/query/utils/create-optimistic';
-import { flattenInfiniteData } from '~/query/utils/flatten';
-import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
-import { createEntityKeys } from '../entities/create-query-keys';
+import { zPage, zUpdatePageData } from '~/api.gen/zod.gen';
+import {
+  baseInfiniteQueryOptions,
+  createEntityKeys,
+  createOptimisticEntity,
+  findInListCache,
+  invalidateIfLastMutation,
+  useMutateQueryData,
+} from '~/query/basic';
+import { addMutationRegistrar } from '~/query/mutation-registry';
+import { createTxForCreate, createTxForUpdate, squashPendingMutation, updateFieldTransactions } from '~/query/offline';
+
+// Use generated types from api.gen for mutation input shapes
+type CreatePageInput = CreatePageData['body']['data'];
+type UpdatePageInput = UpdatePageData['body']['data'];
+
+/** All updatable fields extracted from generated zod schema - used for conflict detection. */
+const pageTrackedFields = zUpdatePageData.shape.body.shape.data.keyof().options;
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
 type PageFilters = Omit<GetPagesData['query'], 'limit' | 'offset'>;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Page query keys
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Use factory for consistent query keys across detail and list queries
 const keys = createEntityKeys<PageFilters>('page');
 
-/**
- * Page query keys.
- */
 export const pageQueryKeys = keys;
 
-/**
- * Find a page in the list cache by id.
- * Searches through all cached page list queries.
- */
-export const findPageInListCache = (id: string): Page | undefined => {
-  const queries = queryClient.getQueryCache().findAll({ queryKey: keys.list.base });
+/** Base mutation key for all page mutations - used for over-invalidation prevention. */
+const pagesMutationKeyBase = ['page'] as const;
 
-  for (const query of queries) {
-    const items = flattenInfiniteData<Page>(query.state.data);
-    const found = items.find((page) => page.id === id);
-    if (found) return found;
-  }
+// ═══════════════════════════════════════════════════════════════════════════
+// Query options
+// ═══════════════════════════════════════════════════════════════════════════
 
-  return undefined;
-};
+/** Find a page in the list cache by id. */
+export const findPageInListCache = (id: string) => findInListCache<Page>(keys.list.base, id);
 
 /**
  * Query options for a single page by id.
@@ -89,135 +101,212 @@ export const pagesQueryOptions = (params: PagesListParams = {}) => {
   });
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Mutation hooks - standard React Query with sync utilities
+// ═══════════════════════════════════════════════════════════════════════════
+
 /**
  * Custom hook to create a new page with optimistic updates.
- * The new page appears immediately in the UI while the server request is in flight.
+ * Uses sync utilities for transaction metadata.
  */
 export const usePageCreateMutation = () => {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<Page, ApiError, CreatePageData['body'], { optimisticPage: Page }>({
+  return useMutation({
     mutationKey: keys.create,
-    mutationFn: (body) => createPage({ body }),
 
-    onMutate: async (newPageData) => {
-      // Cancel outgoing refetches to avoid overwriting optimistic update
-      await qc.cancelQueries({ queryKey: keys.list.base });
+    // Execute API call with transaction metadata for conflict tracking
+    mutationFn: async (data: CreatePageInput) => {
+      const tx = createTxForCreate();
+      const result = await createPage({ body: { data, tx } });
+      return result;
+    },
 
-      // Create optimistic page from Zod schema + input (no hardcoded defaults!)
-      const optimisticPage = createOptimisticEntity(zPage, newPageData);
+    // Runs BEFORE mutationFn - prepare optimistic state
+    onMutate: async (newData) => {
+      // Cancel in-flight queries to prevent race conditions with stale data
+      await queryClient.cancelQueries({ queryKey: keys.list.base });
 
-      // Add to cache optimistically
+      // Build optimistic entity from schema (auto-generates temp ID, timestamps, user refs)
+      const optimisticPage = createOptimisticEntity(zPage, newData);
+
+      // Insert optimistic entity into list cache for instant UI update
       mutateCache.create([optimisticPage]);
 
+      // Return context for rollback/replacement in later callbacks
       return { optimisticPage };
     },
 
-    onError: (_err, _newPage, context) => {
-      // Remove the optimistic page on error
+    // Runs on API failure - rollback optimistic changes
+    onError: (_err, _newData, context) => {
+      // Remove the optimistic entity we added in onMutate
       if (context?.optimisticPage) {
         mutateCache.remove([context.optimisticPage]);
       }
     },
 
-    onSuccess: (createdPage, _variables, context) => {
-      // Replace optimistic page with real data from server
+    // Runs on API success - finalize with real data
+    onSuccess: (result, _variables, context) => {
+      // Remove temp entity and insert real one with server-assigned ID
       if (context?.optimisticPage) {
         mutateCache.remove([context.optimisticPage]);
       }
-      mutateCache.create([createdPage]);
+      mutateCache.create([result.data]);
+
+      // Store server timestamps for future conflict detection
+      updateFieldTransactions('page', result.data.id, result.tx);
     },
 
+    // Runs after success OR error - ensure cache stays fresh
     onSettled: () => {
-      // Always refetch to ensure cache is in sync
-      qc.invalidateQueries({ queryKey: keys.list.base });
+      // Skip invalidation if other page mutations still in flight (prevents over-invalidation)
+      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
     },
   });
 };
 
 /**
  * Custom hook to update an existing page with optimistic updates.
+ * Implements squashing: cancels pending same-field mutations.
  */
 export const usePageUpdateMutation = () => {
-  const qc = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<Page, ApiError, { id: string; body: UpdatePageData['body'] }, { previousPage: Page | undefined }>({
+  return useMutation({
     mutationKey: keys.update,
-    mutationFn: ({ id, body }) => updatePage({ body, path: { id } }),
 
-    onMutate: async ({ id, body }) => {
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: keys.list.base });
-      await qc.cancelQueries({ queryKey: keys.detail.byId(id) });
+    // Execute API call with field-level transaction metadata
+    mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
+      // Build tx with HLC timestamp + field tracking for server-side conflict detection
+      const tx = createTxForUpdate('page', id, data, pageTrackedFields);
+      const result = await updatePage({ path: { id }, body: { data, tx } });
+      return result;
+    },
 
-      // Snapshot previous value
+    // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
+    onMutate: async ({ id, data }) => {
+      // Cancel in-flight mutations updating the same fields (prevents redundant requests)
+      await squashPendingMutation(queryClient, keys.update, id, data, pageTrackedFields);
+
+      // Cancel queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: keys.list.base });
+
+      // Snapshot current state for potential rollback
       const previousPage = findPageInListCache(id);
 
       if (previousPage) {
-        // Optimistically update in cache
-        const optimisticPage = { ...previousPage, ...body, modifiedAt: new Date().toISOString() };
+        // Merge new data into existing entity for instant UI update
+        const optimisticPage = { ...previousPage, ...data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticPage]);
       }
 
+      // Return snapshot for rollback in onError
       return { previousPage };
     },
 
+    // Runs on API failure - restore previous state
     onError: (_err, _variables, context) => {
-      // Rollback to previous value
+      // Revert cache to pre-mutation snapshot
       if (context?.previousPage) {
         mutateCache.update([context.previousPage]);
       }
     },
 
-    onSuccess: (updatedPage) => {
-      // Update with real data from server
-      mutateCache.update([updatedPage]);
+    // Runs on API success - apply authoritative server data
+    onSuccess: (result) => {
+      // Replace optimistic data with server response (source of truth)
+      mutateCache.update([result.data]);
+
+      // Store server timestamps for future conflict detection
+      updateFieldTransactions('page', result.data.id, result.tx);
     },
 
+    // Runs after success OR error - refresh detail view
     onSettled: (_data, _error, { id }) => {
-      // Refetch to ensure cache is in sync
-      qc.invalidateQueries({ queryKey: keys.list.base });
-      qc.invalidateQueries({ queryKey: keys.detail.byId(id) });
+      // Skip invalidation if other page mutations still in flight
+      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.detail.byId(id));
     },
   });
 };
 
 /**
  * Custom hook to delete pages with optimistic updates.
+ * Accepts array of pages for batch delete compatibility.
  */
 export const usePageDeleteMutation = () => {
-  const qc = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<void, ApiError, Page[], { deletedPages: Page[] }>({
+  return useMutation({
     mutationKey: keys.delete,
-    mutationFn: async (pages) => {
-      const ids = pages.map(({ id }) => id);
+
+    // Execute batch delete API call
+    mutationFn: async (pages: Page[]) => {
+      const ids = pages.map((p) => p.id);
       await deletePages({ body: { ids } });
     },
 
+    // Runs BEFORE mutationFn - remove items immediately from UI
     onMutate: async (pagesToDelete) => {
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: keys.list.base });
+      // Cancel queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: keys.list.base });
 
-      // Remove from cache optimistically
+      // Remove from cache for instant UI feedback
       mutateCache.remove(pagesToDelete);
 
+      // Store deleted items for potential restoration
       return { deletedPages: pagesToDelete };
     },
 
+    // Runs on API failure - restore deleted items
     onError: (_err, _pages, context) => {
-      // Restore deleted pages on error
+      // Re-add items that failed to delete on server
       if (context?.deletedPages) {
         mutateCache.create(context.deletedPages);
       }
     },
 
+    // Runs after success OR error - ensure cache stays fresh
     onSettled: () => {
-      // Refetch to ensure cache is in sync
-      qc.invalidateQueries({ queryKey: keys.list.base });
+      // Skip invalidation if other page mutations still in flight (prevents over-invalidation)
+      invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
     },
   });
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Mutation defaults registration (for offline persistence)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Register mutation defaults for pages.
+ * This enables mutations to resume after page reload by providing mutationFn globally.
+ * Called during app initialization before persisted cache restoration.
+ */
+addMutationRegistrar((queryClient: QueryClient) => {
+  // Create mutation
+  queryClient.setMutationDefaults(keys.create, {
+    mutationFn: async (data: CreatePageInput) => {
+      const tx = createTxForCreate();
+      return createPage({ body: { data, tx } });
+    },
+  });
+
+  // Update mutation
+  queryClient.setMutationDefaults(keys.update, {
+    mutationFn: async ({ id, data }: { id: string; data: UpdatePageInput }) => {
+      const tx = createTxForUpdate('page', id, data, pageTrackedFields);
+      return updatePage({ path: { id }, body: { data, tx } });
+    },
+  });
+
+  // Delete mutation
+  queryClient.setMutationDefaults(keys.delete, {
+    mutationFn: async (pages: Page[]) => {
+      const ids = pages.map((p) => p.id);
+      await deletePages({ body: { ids } });
+    },
+  });
+});

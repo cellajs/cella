@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import {
   type CreateOrganizationData,
@@ -13,11 +13,13 @@ import {
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { queryClient } from '~/query/query-client';
-import { flattenInfiniteData } from '~/query/utils/flatten';
-import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
-import { createEntityKeys } from '../entities/create-query-keys';
+import {
+  baseInfiniteQueryOptions,
+  createEntityKeys,
+  findInListCache,
+  invalidateIfLastMutation,
+  useMutateQueryData,
+} from '~/query/basic';
 
 type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
 
@@ -28,21 +30,9 @@ const keys = createEntityKeys<OrganizationFilters>('organization');
  */
 export const organizationQueryKeys = keys;
 
-/**
- * Find an organization in the list cache by id or slug.
- * Searches through all cached organization list queries.
- */
-export const findOrganizationInListCache = (idOrSlug: string): Organization | undefined => {
-  const queries = queryClient.getQueryCache().findAll({ queryKey: keys.list.base });
-
-  for (const query of queries) {
-    const items = flattenInfiniteData<Organization>(query.state.data);
-    const found = items.find((org) => org.id === idOrSlug || org.slug === idOrSlug);
-    if (found) return found;
-  }
-
-  return undefined;
-};
+/** Find an organization in the list cache by id or slug. */
+export const findOrganizationInListCache = (idOrSlug: string) =>
+  findInListCache<Organization>(keys.list.base, (org) => org.id === idOrSlug || org.slug === idOrSlug);
 
 /**
  * Query options for a single organization by id or slug.
@@ -103,38 +93,50 @@ export const organizationsQueryOptions = (params: OrganizationsListParams) => {
 };
 
 /**
- * Custom hook to create a new organization.
+ * Mutation hook for creating a new organization.
  */
 export const useOrganizationCreateMutation = () => {
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base);
+
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
     mutationKey: keys.create,
     mutationFn: (body) => createOrganization({ body }),
     onSuccess: (createdOrganization) => {
-      const mutateCache = useMutateQueryData(keys.list.base);
-
       mutateCache.create([createdOrganization]);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
     },
   });
 };
 
 /**
- * Custom hook to update an existing organization.
+ * Mutation hook for updating an existing organization.
  */
 export const useOrganizationUpdateMutation = () => {
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
+
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: keys.update,
     mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
     onSuccess: (updatedOrganization) => {
-      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
       mutateCache.update([updatedOrganization]);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
     },
   });
 };
 
 /**
- * Custom hook to delete organizations.
+ * Mutation hook for deleting organizations.
  */
 export const useOrganizationDeleteMutation = () => {
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
+
   return useMutation<void, ApiError, Organization[]>({
     mutationKey: keys.delete,
     mutationFn: async (organizations) => {
@@ -142,9 +144,10 @@ export const useOrganizationDeleteMutation = () => {
       await deleteOrganizations({ body: { ids } });
     },
     onSuccess: (_, organizations) => {
-      const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['remove']);
-
       mutateCache.remove(organizations);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
     },
   });
 };

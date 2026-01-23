@@ -3,66 +3,25 @@
 import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { confirm, input, select } from '@inquirer/prompts';
-import colors from 'picocolors';
 
-import { cli } from './cli';
-import { AUTHOR, DESCRIPTION, GITHUB, LOGO, TEMPLATE_URL, VERSION, WEBSITE } from './constants';
-import { create } from './create';
-import { extractPackageJsonVersionFromUri } from './utils/extract-package-json-version-from-uri';
-import { isEmptyDirectory } from './utils/is-empty-directory';
-import { validateProjectName } from './utils/validate-project-name';
-
-interface CreateOptions {
-  projectName: string;
-  targetFolder: string;
-  newBranchName?: string | null;
-  skipInstall: boolean;
-  skipGit: boolean;
-  skipClean: boolean;
-  skipGenerate: boolean;
-  packageManager: string;
-}
+import { TEMPLATE_URL } from '#/constants';
+import { create } from '#/create';
+import { type CreateOptions, cli, showWelcome } from '#/modules/cli';
+import { extractPackageJsonVersionFromUri } from '#/utils/extract-package-json-version-from-uri';
+import { isEmptyDirectory } from '#/utils/is-empty-directory';
+import { validateProjectName } from '#/utils/validate-project-name';
 
 async function main(): Promise<void> {
-  console.info(LOGO);
-
   // Get the latest version of the template
   const templateVersion = await extractPackageJsonVersionFromUri(TEMPLATE_URL);
 
-  // Display CLI version and created by information
-  console.info();
-  console.info(DESCRIPTION);
-  console.info();
-  console.info(`Cella version: ${colors.green(templateVersion)}`);
-  console.info(`Cli version ${colors.green(VERSION)}`);
-  console.info(`Created by ${AUTHOR}`);
-  console.info(`${GITHUB} | ${WEBSITE}`);
-  console.info();
+  // Display CLI welcome banner
+  showWelcome(templateVersion);
 
   // Skip creating a new branch if --skipNewBranch flag is provided or git is skipped
   if (cli.options.skipNewBranch || cli.options.skipGit) {
     cli.createNewBranch = false;
     cli.newBranchName = null;
-  }
-
-  // Skip generating sql files if --skipGenerate flag is provided
-  if (cli.options.skipGenerate === true) {
-    cli.options.skipGenerate = true;
-  }
-
-  // Skip installing packages if --skipInstall flag is provided
-  if (cli.options.skipInstall === true) {
-    cli.options.skipInstall = true;
-  }
-
-  // Skip cleaning the template if --skipClean flag is provided
-  if (cli.options.skipClean === true) {
-    cli.options.skipClean = true;
-  }
-
-  // Skip initializing git if --skipGit flag is provided
-  if (cli.options.skipGit === true) {
-    cli.options.skipGit = true;
   }
 
   // Prompt for project name if not provided

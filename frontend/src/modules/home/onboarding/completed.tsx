@@ -8,7 +8,7 @@ import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
-import { flattenInfiniteData } from '~/query/utils/flatten';
+import { flattenInfiniteData } from '~/query/basic';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 

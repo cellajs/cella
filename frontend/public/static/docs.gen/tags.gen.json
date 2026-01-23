@@ -47,16 +47,21 @@
   {
     "name": "pages",
     "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline\n        capabilities. Pages can be organized hierarchically and are used in /docs.",
-    "count": 6
+    "count": 7
   },
   {
     "name": "metrics",
     "description": "Endpoints for retrieving system level statistics and basic observability data. Includes internal\n        metrics as well as simple, high level counts for entities such as `users` and `organizations`.",
-    "count": 2
+    "count": 3
   },
   {
     "name": "activities",
     "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery.",
+    "count": 1
+  },
+  {
+    "name": "sync",
+    "description": "Endpoints for *real-time synchronization* of entity changes via Server-Sent Events (SSE). Clients\n        subscribe to entity streams and receive live updates for create, update, and delete operations.\n        Supports resumable connections using Last-Event-ID for reliable message delivery.",
     "count": 1
   }
 ]

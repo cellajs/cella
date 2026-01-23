@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import { infiniteQueryOptions, type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import {
   type Attachment,
@@ -10,12 +10,23 @@ import {
   type UpdateAttachmentData,
   updateAttachment,
 } from '~/api.gen';
-import type { ApiError } from '~/lib/api';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { queryClient } from '~/query/query-client';
-import { flattenInfiniteData } from '~/query/utils/flatten';
-import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
-import { createEntityKeys } from '../entities/create-query-keys';
+import { zUpdateAttachmentData } from '~/api.gen/zod.gen';
+import {
+  baseInfiniteQueryOptions,
+  createEntityKeys,
+  findInListCache,
+  invalidateIfLastMutation,
+  useMutateQueryData,
+} from '~/query/basic';
+import { addMutationRegistrar } from '~/query/mutation-registry';
+import { createTxForCreate, createTxForUpdate, squashPendingMutation, updateFieldTransactions } from '~/query/offline';
+
+// Use generated types from api.gen for mutation input shapes
+type CreateAttachmentInput = CreateAttachmentData['body']['data'];
+type UpdateAttachmentInput = UpdateAttachmentData['body']['data'];
+
+/** All updatable fields extracted from generated zod schema - used for conflict detection. */
+const attachmentTrackedFields = zUpdateAttachmentData.shape.body.shape.data.keyof().options;
 
 export const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -29,6 +40,9 @@ const keys = createEntityKeys<AttachmentFilters>('attachment');
  * Attachment query keys.
  */
 export const attachmentQueryKeys = keys;
+
+/** Base mutation key for all attachment mutations - used for over-invalidation prevention. */
+const attachmentsMutationKeyBase = ['attachment'] as const;
 
 type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'> & {
   orgIdOrSlug: string;
@@ -61,154 +75,227 @@ export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
   });
 };
 
-/**
- * Find an attachment in the list cache by id.
- * Searches through all cached attachment list queries.
- */
-export const findAttachmentInListCache = (id: string): Attachment | undefined => {
-  const queries = queryClient.getQueryCache().findAll({ queryKey: keys.list.base });
+/** Find an attachment in the list cache by id. */
+export const findAttachmentInListCache = (id: string) => findInListCache<Attachment>(keys.list.base, id);
 
-  for (const query of queries) {
-    const items = flattenInfiniteData<Attachment>(query.state.data);
-    const found = items.find((att) => att.id === id);
-    if (found) return found;
-  }
-
-  return undefined;
-};
+// ═══════════════════════════════════════════════════════════════════════════
+// Mutation hooks - standard React Query with sync utilities
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Custom hook to create one or more attachments with optimistic updates.
- * New attachments appear immediately in the UI while the server upload is in progress.
+ * Uses sync utilities for transaction metadata.
  */
 export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<Attachment[], ApiError, CreateAttachmentData['body'], { optimisticAttachments: Attachment[] }>({
+  return useMutation({
     mutationKey: keys.create,
-    mutationFn: (body) => createAttachment({ path: { orgIdOrSlug }, body }),
 
+    // Execute API call with transaction metadata for conflict tracking
+    mutationFn: async (data: CreateAttachmentInput) => {
+      const tx = createTxForCreate();
+      const result = await createAttachment({ path: { orgIdOrSlug }, body: { data, tx } });
+      return result;
+    },
+
+    // Runs BEFORE mutationFn - prepare optimistic state
     onMutate: async (newAttachments) => {
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: keys.list.base });
+      // Cancel in-flight queries to prevent race conditions with stale data
+      await queryClient.cancelQueries({ queryKey: keys.list.base });
 
-      // Create optimistic attachments (they already have server-generated IDs from Transloadit)
-      const optimisticAttachments = newAttachments as Attachment[];
+      // Build optimistic attachments (they already have IDs from Transloadit)
+      const optimisticAttachments = newAttachments.map((att) => ({
+        ...att,
+        entityType: 'attachment' as const,
+        createdAt: new Date().toISOString(),
+        modifiedAt: null,
+        modifiedBy: null,
+        description: '',
+        keywords: '',
+        url: '',
+        thumbnailUrl: null,
+      })) as Attachment[];
 
-      // Add to cache optimistically
+      // Insert optimistic entities into list cache for instant UI update
       mutateCache.create(optimisticAttachments);
 
+      // Return context for rollback/replacement in later callbacks
       return { optimisticAttachments };
     },
 
-    onError: (_err, _newAttachments, context) => {
-      // Remove the optimistic attachments on error
+    // Runs on API failure - rollback optimistic changes
+    onError: (_err, _newData, context) => {
+      // Remove the optimistic entities we added in onMutate
       if (context?.optimisticAttachments) {
         mutateCache.remove(context.optimisticAttachments);
       }
     },
 
-    onSuccess: (createdAttachments, _variables, context) => {
-      // Replace optimistic data with real data from server
+    // Runs on API success - finalize with real data
+    onSuccess: (result, _variables, context) => {
+      // Remove temp entities and insert real ones with server data
       if (context?.optimisticAttachments) {
         mutateCache.remove(context.optimisticAttachments);
       }
-      mutateCache.create(createdAttachments);
+      mutateCache.create(result.data);
+
+      // Store server timestamps for future conflict detection (use first attachment id)
+      if (result.data.length > 0) {
+        updateFieldTransactions('attachment', result.data[0].id, result.tx);
+      }
     },
 
+    // Runs after success OR error - ensure cache stays fresh
     onSettled: () => {
-      // Always refetch to ensure cache is in sync
-      qc.invalidateQueries({ queryKey: keys.list.base });
+      // Skip invalidation if other attachment mutations still in flight (prevents over-invalidation)
+      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
     },
   });
 };
 
 /**
  * Custom hook to update an existing attachment with optimistic updates.
+ * Implements squashing: cancels pending same-field mutations.
  */
 export const useAttachmentUpdateMutation = (orgIdOrSlug: string) => {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<
-    Attachment,
-    ApiError,
-    { id: string; body: UpdateAttachmentData['body'] },
-    { previousAttachment: Attachment | undefined }
-  >({
+  return useMutation({
     mutationKey: keys.update,
-    mutationFn: ({ id, body }) => updateAttachment({ body, path: { orgIdOrSlug, id } }),
 
-    onMutate: async ({ id, body }) => {
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: keys.list.base });
+    // Execute API call with field-level transaction metadata
+    mutationFn: async ({ id, data }: { id: string; data: UpdateAttachmentInput }) => {
+      // Build tx with HLC timestamp + field tracking for server-side conflict detection
+      const tx = createTxForUpdate('attachment', id, data, attachmentTrackedFields);
+      const result = await updateAttachment({ path: { orgIdOrSlug, id }, body: { data, tx } });
+      return result;
+    },
 
-      // Snapshot previous value
+    // Runs BEFORE mutationFn - squash duplicates and prepare optimistic state
+    onMutate: async ({ id, data }) => {
+      // Cancel in-flight mutations updating the same fields (prevents redundant requests)
+      await squashPendingMutation(queryClient, keys.update, id, data, attachmentTrackedFields);
+
+      // Cancel queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: keys.list.base });
+
+      // Snapshot current state for potential rollback
       const previousAttachment = findAttachmentInListCache(id);
 
       if (previousAttachment) {
-        // Optimistically update in cache
-        const optimisticAttachment = { ...previousAttachment, ...body, modifiedAt: new Date().toISOString() };
+        // Merge new data into existing entity for instant UI update
+        const optimisticAttachment = { ...previousAttachment, ...data, modifiedAt: new Date().toISOString() };
         mutateCache.update([optimisticAttachment]);
       }
 
+      // Return snapshot for rollback in onError
       return { previousAttachment };
     },
 
+    // Runs on API failure - restore previous state
     onError: (_err, _variables, context) => {
-      // Rollback to previous value
+      // Revert cache to pre-mutation snapshot
       if (context?.previousAttachment) {
         mutateCache.update([context.previousAttachment]);
       }
     },
 
-    onSuccess: (updatedAttachment) => {
-      // Update with real data from server
-      mutateCache.update([updatedAttachment]);
+    // Runs on API success - apply authoritative server data
+    onSuccess: (result) => {
+      // Replace optimistic data with server response (source of truth)
+      mutateCache.update([result.data]);
+
+      // Store server timestamps for future conflict detection
+      updateFieldTransactions('attachment', result.data.id, result.tx);
     },
 
+    // Runs after success OR error - refresh queries
     onSettled: () => {
-      // Refetch to ensure cache is in sync
-      qc.invalidateQueries({ queryKey: keys.list.base });
+      // Skip invalidation if other attachment mutations still in flight (prevents over-invalidation)
+      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
     },
   });
 };
 
 /**
  * Custom hook to delete attachments with optimistic updates.
+ * Accepts array of attachments for batch delete compatibility.
  */
 export const useAttachmentDeleteMutation = (orgIdOrSlug: string) => {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const mutateCache = useMutateQueryData(keys.list.base);
 
-  return useMutation<void, ApiError, Attachment[], { deletedAttachments: Attachment[] }>({
+  return useMutation({
     mutationKey: keys.delete,
-    mutationFn: async (attachments) => {
-      const ids = attachments.map(({ id }) => id);
+
+    // Execute batch delete API call
+    mutationFn: async (attachments: Attachment[]) => {
+      const ids = attachments.map((a) => a.id);
       await deleteAttachments({ path: { orgIdOrSlug }, body: { ids } });
     },
 
+    // Runs BEFORE mutationFn - remove items immediately from UI
     onMutate: async (attachmentsToDelete) => {
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: keys.list.base });
+      // Cancel queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: keys.list.base });
 
-      // Remove from cache optimistically
+      // Remove from cache for instant UI feedback
       mutateCache.remove(attachmentsToDelete);
 
+      // Store deleted items for potential restoration
       return { deletedAttachments: attachmentsToDelete };
     },
 
+    // Runs on API failure - restore deleted items
     onError: (_err, _attachments, context) => {
-      // Restore deleted attachments on error
+      // Re-add items that failed to delete on server
       if (context?.deletedAttachments) {
         mutateCache.create(context.deletedAttachments);
       }
     },
 
+    // Runs after success OR error - ensure cache stays fresh
     onSettled: () => {
-      // Refetch to ensure cache is in sync
-      qc.invalidateQueries({ queryKey: keys.list.base });
+      // Skip invalidation if other attachment mutations still in flight (prevents over-invalidation)
+      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
     },
   });
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Mutation defaults registration (for offline persistence)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Register mutation defaults for attachments.
+ * NOTE: Attachment mutations require orgIdOrSlug which must be included in mutation variables
+ * for persistence to work. The hooks wrap this internally.
+ */
+addMutationRegistrar((queryClient: QueryClient) => {
+  // Create mutation - variables include orgIdOrSlug for persistence
+  queryClient.setMutationDefaults(keys.create, {
+    mutationFn: async ({ orgIdOrSlug, data }: { orgIdOrSlug: string; data: CreateAttachmentInput }) => {
+      const tx = createTxForCreate();
+      return createAttachment({ path: { orgIdOrSlug }, body: { data, tx } });
+    },
+  });
+
+  // Update mutation - variables include orgIdOrSlug for persistence
+  queryClient.setMutationDefaults(keys.update, {
+    mutationFn: async ({ orgIdOrSlug, id, data }: { orgIdOrSlug: string; id: string; data: UpdateAttachmentInput }) => {
+      const tx = createTxForUpdate('attachment', id, data, attachmentTrackedFields);
+      return updateAttachment({ path: { orgIdOrSlug, id }, body: { data, tx } });
+    },
+  });
+
+  // Delete mutation - variables include orgIdOrSlug for persistence
+  queryClient.setMutationDefaults(keys.delete, {
+    mutationFn: async ({ orgIdOrSlug, attachments }: { orgIdOrSlug: string; attachments: Attachment[] }) => {
+      const ids = attachments.map((a) => a.id);
+      await deleteAttachments({ path: { orgIdOrSlug }, body: { ids } });
+    },
+  });
+});

@@ -68,8 +68,9 @@ export const AccountSheet = () => {
     <div ref={buttonWrapper} className="p-3 w-full flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
       <Link to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
         <div
-          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${user.bannerUrl ? '' : numberToColorClass(user.id)
-            }`}
+          className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
+            user.bannerUrl ? '' : numberToColorClass(user.id)
+          }`}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         >
           <AvatarWrap

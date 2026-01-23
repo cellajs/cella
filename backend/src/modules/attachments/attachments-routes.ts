@@ -3,10 +3,12 @@ import { createXRoute } from '#/docs/x-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
-  attachmentCreateManySchema,
+  attachmentCreateTxBodySchema,
   attachmentListQuerySchema,
   attachmentSchema,
-  attachmentUpdateBodySchema,
+  attachmentTxResponseSchema,
+  attachmentUpdateTxBodySchema,
+  attachmentUpdateTxResponseSchema,
 } from '#/modules/attachments/attachments-schema';
 import {
   baseElectricSyncQuery,
@@ -58,17 +60,17 @@ const attachmentRoutes = {
       params: inOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: attachmentCreateManySchema } },
+        content: { 'application/json': { schema: attachmentCreateTxBodySchema } },
       },
     },
     responses: {
+      200: {
+        description: 'Attachments already created (idempotent)',
+        content: { 'application/json': { schema: attachmentTxResponseSchema } },
+      },
       201: {
-        description: 'Attachment',
-        content: {
-          'application/json': {
-            schema: z.array(attachmentSchema),
-          },
-        },
+        description: 'Attachments created',
+        content: { 'application/json': { schema: attachmentTxResponseSchema } },
       },
       ...errorResponseRefs,
     },
@@ -88,17 +90,13 @@ const attachmentRoutes = {
       params: idInOrgParamSchema,
       body: {
         required: true,
-        content: { 'application/json': { schema: attachmentUpdateBodySchema } },
+        content: { 'application/json': { schema: attachmentUpdateTxBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'Attachment was updated',
-        content: {
-          'application/json': {
-            schema: attachmentSchema,
-          },
-        },
+        content: { 'application/json': { schema: attachmentUpdateTxResponseSchema } },
       },
       ...errorResponseRefs,
     },

@@ -10,6 +10,7 @@ import { AppError } from '#/lib/error';
 import attachmentRoutes from '#/modules/attachments/attachments-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
+import { checkFieldConflict, getEntityByTransaction, isTransactionProcessed } from '#/sync';
 import { defaultHook } from '#/utils/default-hook';
 import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
@@ -96,9 +97,23 @@ const attachmentsRouteHandlers = app
    * Create one or more attachments
    */
   .openapi(attachmentRoutes.createAttachments, async (ctx) => {
-    const newAttachments = ctx.req.valid('json');
+    const { data: newAttachments, tx } = ctx.req.valid('json');
+
+    // Idempotency check - return existing entities if transaction already processed
+    if (await isTransactionProcessed(tx.transactionId)) {
+      const ref = await getEntityByTransaction(tx.transactionId);
+      if (ref) {
+        // For batch create, the first attachment ID is stored - fetch all from that batch
+        const existing = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, ref.entityId));
+        if (existing.length > 0) {
+          const attachmentsWithoutTx = existing.map(({ tx: _tx, ...rest }) => rest);
+          return ctx.json({ data: attachmentsWithoutTx, tx: { transactionId: tx.transactionId } }, 200);
+        }
+      }
+    }
 
     const organization = getContextOrganization();
+    const user = getContextUser();
     const attachmentRestrictions = organization.restrictions.attachment;
 
     // Check restriction limits
@@ -115,22 +130,63 @@ const attachmentsRouteHandlers = app
       throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
     }
 
-    const createdAttachments = await db.insert(attachmentsTable).values(newAttachments).returning();
+    // Prepare attachments with tx metadata for CDC
+    const attachmentsToInsert = newAttachments.map((att) => ({
+      ...att,
+      entityType: 'attachment' as const,
+      createdAt: getIsoDate(),
+      createdBy: user.id,
+      modifiedAt: null,
+      modifiedBy: null,
+      keywords: '', // Required by productEntityColumns
+      description: '', // Required by baseEntityColumns
+      // Sync: write transient tx metadata for CDC Worker
+      tx: {
+        transactionId: tx.transactionId,
+        sourceId: tx.sourceId,
+        changedField: null, // null for create
+      },
+    }));
+
+    const createdAttachments = await db.insert(attachmentsTable).values(attachmentsToInsert).returning();
 
     logEvent('info', `${createdAttachments.length} attachments have been created`);
 
-    return ctx.json(createdAttachments, 201);
+    // Return without tx column (transient)
+    const attachmentsWithoutTx = createdAttachments.map(({ tx: _tx, ...rest }) => rest);
+    return ctx.json({ data: attachmentsWithoutTx, tx: { transactionId: tx.transactionId } }, 201);
   })
   /**
    * Update an attachment by id
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
+    const { data: updatedFields, tx } = ctx.req.valid('json');
 
     const { can } = await getValidProductEntity(id, 'attachment', 'update');
 
     const user = getContextUser();
-    const updatedFields = ctx.req.valid('json');
+
+    // Conflict detection for field-level updates
+    if (tx.changedField && tx.expectedTransactionId !== undefined) {
+      const { hasConflict, serverTransactionId } = await checkFieldConflict({
+        entityType: 'attachment',
+        entityId: id,
+        changedField: tx.changedField,
+        expectedTransactionId: tx.expectedTransactionId,
+      });
+
+      if (hasConflict) {
+        throw new AppError(409, 'field_conflict', 'warn', {
+          entityType: 'attachment',
+          meta: {
+            field: tx.changedField,
+            expectedTransactionId: tx.expectedTransactionId,
+            serverTransactionId,
+          },
+        });
+      }
+    }
 
     const [updatedAttachment] = await db
       .update(attachmentsTable)
@@ -138,13 +194,21 @@ const attachmentsRouteHandlers = app
         ...updatedFields,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
+        // Sync: write transient tx metadata for CDC Worker
+        tx: {
+          transactionId: tx.transactionId,
+          sourceId: tx.sourceId,
+          changedField: tx.changedField,
+        },
       })
       .where(eq(attachmentsTable.id, id))
       .returning();
 
     logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
-    return ctx.json({ ...updatedAttachment, can }, 200);
+    // Return without tx column (transient)
+    const { tx: _tx, ...attachmentWithoutTx } = updatedAttachment;
+    return ctx.json({ data: { ...attachmentWithoutTx, can }, tx: { transactionId: tx.transactionId } }, 200);
   })
   /**
    * Delete attachments by ids

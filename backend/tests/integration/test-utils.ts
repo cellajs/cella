@@ -23,7 +23,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { eventBus } from '#/lib/event-bus';
+import { eventBus } from '#/sync/activity-bus';
 
 /**
  * Run database migrations for integration tests.

@@ -6,7 +6,7 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
-import { eventLogger } from '#/pino-config';
+import { eventLogger } from '#/pino';
 import { getIsoDate } from '#/utils/iso-date';
 import type { apiErrorSchema } from '#/utils/schema/api-error';
 

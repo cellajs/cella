@@ -1,6 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { and, count, desc, eq, getTableColumns, gt, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { streamSSE } from 'hono/streaming';
+import { nanoid as generateNanoid } from 'nanoid';
 import { db } from '#/db/db';
+import { activitiesTable } from '#/db/schema/activities';
 import { PageModel, pagesTable } from '#/db/schema/pages';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
@@ -8,6 +11,9 @@ import { resolveEntity } from '#/lib/entity.ts';
 import { AppError } from '#/lib/error';
 import pagesRoutes from '#/modules/pages/pages-routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
+import { checkFieldConflict, getEntityByTransaction, isTransactionProcessed } from '#/sync';
+import { eventBus } from '#/sync/activity-bus';
+import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
 import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
@@ -15,10 +21,122 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { routeToPublicPageSubscribers } from './public-stream-router';
+import { type PublicPageSubscriber, publicPageIndexKey } from './public-stream-types';
+
+// Register ActivityBus listeners for public page stream
+eventBus.on('page.created', routeToPublicPageSubscribers);
+eventBus.on('page.updated', routeToPublicPageSubscribers);
+eventBus.on('page.deleted', routeToPublicPageSubscribers);
+
+/**
+ * Fetch catch-up activities for public pages stream.
+ */
+async function fetchPublicPageActivities(cursor: string | null, limit = 100) {
+  const conditions = [eq(activitiesTable.entityType, 'page')];
+
+  if (cursor) {
+    conditions.push(gt(activitiesTable.id, cursor));
+  }
+
+  const activities = await db
+    .select()
+    .from(activitiesTable)
+    .where(and(...conditions))
+    .orderBy(desc(activitiesTable.createdAt))
+    .limit(limit);
+
+  return activities.map((activity) => ({
+    activityId: activity.id,
+    action: activity.action as 'create' | 'update' | 'delete',
+    entityType: 'page' as const,
+    entityId: activity.entityId!,
+    changedKeys: activity.changedKeys ?? null,
+    createdAt: activity.createdAt,
+    tx: null,
+    data: null,
+  }));
+}
+
+/**
+ * Get the latest page activity ID for cursor initialization.
+ */
+async function getLatestPageActivityId(): Promise<string | null> {
+  const result = await db
+    .select({ id: activitiesTable.id })
+    .from(activitiesTable)
+    .where(eq(activitiesTable.entityType, 'page'))
+    .orderBy(desc(activitiesTable.createdAt))
+    .limit(1);
+
+  return result[0]?.id ?? null;
+}
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const pagesRouteHandlers = app
+  /**
+   * Public stream for page changes
+   */
+  .openapi(pagesRoutes.publicStream, async (ctx) => {
+    const { offset, live } = ctx.req.valid('query');
+
+    // Resolve cursor from offset parameter
+    let cursor: string | null = null;
+    if (offset === 'now') {
+      cursor = await getLatestPageActivityId();
+    } else if (offset === '-1') {
+      cursor = null;
+    } else if (offset) {
+      cursor = offset;
+    }
+
+    // Non-streaming catch-up request
+    if (live !== 'sse') {
+      const activities = await fetchPublicPageActivities(cursor);
+      const lastActivity = activities.at(-1);
+
+      return ctx.json({
+        activities,
+        cursor: lastActivity?.activityId ?? cursor,
+      });
+    }
+
+    // SSE streaming mode
+    return streamSSE(ctx, async (stream) => {
+      ctx.header('Content-Encoding', '');
+
+      // Send catch-up activities
+      const catchUpActivities = await fetchPublicPageActivities(cursor);
+      for (const activity of catchUpActivities) {
+        await writeChange(stream, activity.activityId, activity);
+        cursor = activity.activityId;
+      }
+
+      // Send offset marker (catch-up complete)
+      await writeOffset(stream, cursor);
+
+      // Register subscriber
+      const subscriber: PublicPageSubscriber = {
+        id: generateNanoid(),
+        indexKey: publicPageIndexKey,
+        stream,
+        cursor,
+      };
+
+      streamSubscriberManager.register(subscriber);
+      logEvent('info', 'Public page stream subscriber registered', { subscriberId: subscriber.id });
+
+      // Handle disconnect
+      stream.onAbort(() => {
+        streamSubscriberManager.unregister(subscriber.id);
+        logEvent('info', 'Public page stream subscriber disconnected', { subscriberId: subscriber.id });
+      });
+
+      // Keep connection alive
+      await keepAlive(stream);
+    });
+  })
   /**
    * Proxy to electric for syncing to client
    * Hono handlers are executed in registration order,
@@ -36,7 +154,19 @@ const pagesRouteHandlers = app
    * Create page
    */
   .openapi(pagesRoutes.createPage, async (ctx) => {
-    const pageData = ctx.req.valid('json');
+    const { data: pageData, tx } = ctx.req.valid('json');
+
+    // Idempotency check - return existing entity if transaction already processed
+    if (await isTransactionProcessed(tx.transactionId)) {
+      const ref = await getEntityByTransaction(tx.transactionId);
+      if (ref) {
+        const [existing] = await db.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
+        if (existing) {
+          const { tx: _tx, ...pageWithoutTx } = existing;
+          return ctx.json({ data: pageWithoutTx, tx: { transactionId: tx.transactionId } }, 200);
+        }
+      }
+    }
 
     const user = getContextUser();
 
@@ -51,13 +181,21 @@ const pagesRouteHandlers = app
       keywords: '',
       modifiedAt: null,
       modifiedBy: null,
+      // Sync: write transient tx metadata for CDC Worker
+      tx: {
+        transactionId: tx.transactionId,
+        sourceId: tx.sourceId,
+        changedField: null, // null for create
+      },
     };
 
     const [pageRecord] = await db.insert(pagesTable).values(newPage).returning();
 
     logEvent('info', `A new ${pageRecord.status} page was created`);
 
-    return ctx.json(pageRecord, 201);
+    // Return without tx column (transient)
+    const { tx: _tx, ...pageWithoutTx } = pageRecord;
+    return ctx.json({ data: pageWithoutTx, tx: { transactionId: tx.transactionId } }, 201);
   })
   /**
    * Get Pages
@@ -143,23 +281,51 @@ const pagesRouteHandlers = app
 
     await getValidProductEntity(id, 'page', 'update');
 
+    const { data: pageData, tx } = ctx.req.valid('json');
     const user = getContextUser();
-    const pageData = ctx.req.valid('json');
 
-    // TODO: validation layer
+    // Conflict detection for field-level updates
+    if (tx.changedField && tx.expectedTransactionId !== undefined) {
+      const { hasConflict, serverTransactionId } = await checkFieldConflict({
+        entityType: 'page',
+        entityId: id,
+        changedField: tx.changedField,
+        expectedTransactionId: tx.expectedTransactionId,
+      });
+
+      if (hasConflict) {
+        throw new AppError(409, 'field_conflict', 'warn', {
+          entityType: 'page',
+          meta: {
+            field: tx.changedField,
+            expectedTransactionId: tx.expectedTransactionId,
+            serverTransactionId,
+          },
+        });
+      }
+    }
+
     const [page] = await db
       .update(pagesTable)
       .set({
         ...pageData,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
+        // Sync: write transient tx metadata for CDC Worker
+        tx: {
+          transactionId: tx.transactionId,
+          sourceId: tx.sourceId,
+          changedField: tx.changedField,
+        },
       })
       .where(eq(pagesTable.id, id))
       .returning();
 
     logEvent('info', 'Page updated', { pageId: page.id });
 
-    return ctx.json(page, 200);
+    // Return without tx column (transient)
+    const { tx: _tx, ...pageWithoutTx } = page;
+    return ctx.json({ data: pageWithoutTx, tx: { transactionId: tx.transactionId } }, 200);
   })
   /**
    * Delete pages by ids

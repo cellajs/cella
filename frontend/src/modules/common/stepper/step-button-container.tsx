@@ -58,7 +58,7 @@ function StepButtonContainer({
       onClick={() => {
         onClickStep?.(index || 0, setStep) || onClickStepGeneral?.(index || 0, setStep);
       }}
-      onKeyDown={() => { }}
+      onKeyDown={() => {}}
     >
       {children}
     </Button>

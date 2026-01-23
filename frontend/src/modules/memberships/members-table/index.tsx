@@ -155,6 +155,6 @@ function MembersTable({ entity, isSheet = false, children }: MembersTableWrapper
       />
     </div>
   );
-};
+}
 
 export default MembersTable;

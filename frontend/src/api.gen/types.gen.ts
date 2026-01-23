@@ -113,6 +113,15 @@ export type Activity = {
         [key: string]: unknown;
       }
     | Array<unknown>;
+  tx:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
 };
 
 export type Me = {
@@ -262,6 +271,12 @@ export type Organization = {
   };
 };
 
+export type TxStreamMessage = {
+  transactionId: string | null;
+  sourceId: string | null;
+  changedField: string | null;
+} | null;
+
 export type Page = {
   createdAt: string;
   id: string;
@@ -275,6 +290,32 @@ export type Page = {
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
+};
+
+export type TxResponse = {
+  /**
+   * Echoes the request transactionId
+   */
+  transactionId: string;
+};
+
+export type TxRequest = {
+  /**
+   * Client-generated unique ID (HLC format: timestamp.logical.nodeId)
+   */
+  transactionId: string;
+  /**
+   * Tab/instance identifier
+   */
+  sourceId: string;
+  /**
+   * Which field this mutation changes (null for create/delete)
+   */
+  changedField: string | null;
+  /**
+   * Last known transaction ID for this field (null for create or first write)
+   */
+  expectedTransactionId: string | null;
 };
 
 export type Attachment = {
@@ -2378,6 +2419,71 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
+export type PagesPublicStreamData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
+     */
+    offset?: string;
+    /**
+     * Set to "sse" for live updates (SSE stream)
+     */
+    live?: 'sse';
+  };
+  url: '/pages/stream';
+};
+
+export type PagesPublicStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PagesPublicStreamError = PagesPublicStreamErrors[keyof PagesPublicStreamErrors];
+
+export type PagesPublicStreamResponses = {
+  /**
+   * Catch-up activities or SSE stream started
+   */
+  200: {
+    activities: Array<{
+      data?: unknown;
+      entityType: 'attachment' | 'page';
+      entityId: string;
+      action: 'create' | 'update' | 'delete';
+      activityId: string;
+      changedKeys: Array<string> | null;
+      createdAt: string;
+      tx: TxStreamMessage;
+    }>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
+    cursor: string | null;
+  };
+};
+
+export type PagesPublicStreamResponse = PagesPublicStreamResponses[keyof PagesPublicStreamResponses];
+
 export type SyncPagesData = {
   body?: never;
   path?: never;
@@ -2519,7 +2625,10 @@ export type GetPagesResponse = GetPagesResponses[keyof GetPagesResponses];
 
 export type CreatePageData = {
   body: {
-    name?: string;
+    data: {
+      name?: string;
+    };
+    tx: TxRequest;
   };
   path?: never;
   query?: never;
@@ -2555,7 +2664,10 @@ export type CreatePageResponses = {
   /**
    * Page
    */
-  201: Page;
+  201: {
+    data: Page;
+    tx: TxResponse;
+  };
 };
 
 export type CreatePageResponse = CreatePageResponses[keyof CreatePageResponses];
@@ -2605,12 +2717,15 @@ export type GetPageResponse = GetPageResponses[keyof GetPageResponses];
 
 export type UpdatePageData = {
   body: {
-    name?: string;
-    description?: string | null;
-    keywords?: string;
-    displayOrder?: number;
-    status?: 'unpublished' | 'published' | 'archived';
-    parentId?: string | null;
+    data: {
+      name?: string;
+      description?: string | null;
+      keywords?: string;
+      displayOrder?: number;
+      status?: 'unpublished' | 'published' | 'archived';
+      parentId?: string | null;
+    };
+    tx: TxRequest;
   };
   path: {
     id: string;
@@ -2648,7 +2763,10 @@ export type UpdatePageResponses = {
   /**
    * Page updated
    */
-  200: Page;
+  200: {
+    data: Page;
+    tx: TxResponse;
+  };
 };
 
 export type UpdatePageResponse = UpdatePageResponses[keyof UpdatePageResponses];
@@ -3071,6 +3189,103 @@ export type GetMetricsResponses = {
 
 export type GetMetricsResponse = GetMetricsResponses[keyof GetMetricsResponses];
 
+export type GetRuntimeMetricsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/metrics/runtime';
+};
+
+export type GetRuntimeMetricsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetRuntimeMetricsError = GetRuntimeMetricsErrors[keyof GetRuntimeMetricsErrors];
+
+export type GetRuntimeMetricsResponses = {
+  /**
+   * Runtime metrics
+   */
+  200: {
+    process: {
+      /**
+       * Process uptime in seconds
+       */
+      uptime: number;
+      memory: {
+        /**
+         * Heap memory used in bytes
+         */
+        heapUsed: number;
+        /**
+         * Total heap memory in bytes
+         */
+        heapTotal: number;
+        /**
+         * External memory in bytes
+         */
+        external: number;
+        /**
+         * Resident set size in bytes
+         */
+        rss: number;
+      };
+      cpu: {
+        /**
+         * CPU time spent in user mode (microseconds)
+         */
+        user: number;
+        /**
+         * CPU time spent in system mode (microseconds)
+         */
+        system: number;
+      };
+    };
+    /**
+     * OpenTelemetry metrics from RuntimeNodeInstrumentation
+     */
+    otel: Array<{
+      name: string;
+      description?: string;
+      unit?: string;
+      type: 'gauge' | 'counter' | 'histogram' | 'sum';
+      dataPoints: Array<{
+        value:
+          | number
+          | {
+              [key: string]: number;
+            };
+        attributes?: {
+          [key: string]: string;
+        };
+        startTime?: string;
+        endTime?: string;
+      }>;
+    }>;
+  };
+};
+
+export type GetRuntimeMetricsResponse = GetRuntimeMetricsResponses[keyof GetRuntimeMetricsResponses];
+
 export type GetPublicCountsData = {
   body?: never;
   path?: never;
@@ -3116,6 +3331,80 @@ export type GetPublicCountsResponses = {
 };
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
+
+export type SyncStreamData = {
+  body?: never;
+  path: {
+    /**
+     * Organization ID or slug
+     */
+    orgIdOrSlug: string;
+  };
+  query?: {
+    /**
+     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
+     */
+    offset?: string;
+    /**
+     * Set to "sse" for live updates (SSE stream)
+     */
+    live?: 'sse';
+    /**
+     * Comma-separated entity types to filter (e.g., "page,attachment")
+     */
+    entityTypes?: string;
+  };
+  url: '/organizations/{orgIdOrSlug}/sync/stream';
+};
+
+export type SyncStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SyncStreamError = SyncStreamErrors[keyof SyncStreamErrors];
+
+export type SyncStreamResponses = {
+  /**
+   * Catch-up activities or SSE stream started
+   */
+  200: {
+    activities: Array<{
+      data?: unknown;
+      entityType: 'attachment' | 'page';
+      entityId: string;
+      action: 'create' | 'update' | 'delete';
+      activityId: string;
+      changedKeys: Array<string> | null;
+      createdAt: string;
+      tx: TxStreamMessage;
+    }>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
+    cursor: string | null;
+  };
+};
+
+export type SyncStreamResponse = SyncStreamResponses[keyof SyncStreamResponses];
 
 export type SyncAttachmentsData = {
   body?: never;
@@ -3272,28 +3561,25 @@ export type GetAttachmentsResponses = {
 export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
 
 export type CreateAttachmentData = {
-  body: Array<{
-    createdAt?: string;
-    id?: string;
-    entityType?: 'attachment';
-    name?: string;
-    description?: string | null;
-    modifiedAt?: string | null;
-    keywords: string;
-    createdBy?: string | null;
-    modifiedBy?: string | null;
-    public?: boolean;
-    bucketName: string;
-    groupId?: string | null;
-    filename: string;
-    contentType: string;
-    convertedContentType?: string | null;
-    size: string;
-    originalKey: string;
-    convertedKey?: string | null;
-    thumbnailKey?: string | null;
-    organizationId: string;
-  }>;
+  body: {
+    data: Array<{
+      id?: string;
+      name?: string;
+      filename: string;
+      contentType: string;
+      size: string;
+      organizationId: string;
+      createdBy?: string | null;
+      originalKey: string;
+      bucketName: string;
+      public?: boolean;
+      groupId?: string | null;
+      convertedContentType?: string | null;
+      convertedKey?: string | null;
+      thumbnailKey?: string | null;
+    }>;
+    tx: TxRequest;
+  };
   path: {
     /**
      * Entity ID or slug. ID is always preferred.
@@ -3331,17 +3617,30 @@ export type CreateAttachmentError = CreateAttachmentErrors[keyof CreateAttachmen
 
 export type CreateAttachmentResponses = {
   /**
-   * Attachment
+   * Attachments already created (idempotent)
    */
-  201: Array<Attachment>;
+  200: {
+    data: Array<Attachment>;
+    tx: TxResponse;
+  };
+  /**
+   * Attachments created
+   */
+  201: {
+    data: Array<Attachment>;
+    tx: TxResponse;
+  };
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
 
 export type UpdateAttachmentData = {
   body: {
-    name?: string;
-    originalKey?: string;
+    data: {
+      name?: string;
+      originalKey?: string;
+    };
+    tx: TxRequest;
   };
   path: {
     id: string;
@@ -3383,7 +3682,10 @@ export type UpdateAttachmentResponses = {
   /**
    * Attachment was updated
    */
-  200: Attachment;
+  200: {
+    data: Attachment;
+    tx: TxResponse;
+  };
 };
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];

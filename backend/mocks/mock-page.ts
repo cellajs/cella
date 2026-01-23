@@ -31,6 +31,7 @@ export const mockPage = (key = 'page:default'): PageModel =>
       createdBy: userId,
       modifiedAt: createdAt,
       modifiedBy: userId,
+      tx: null,
     };
   });
 

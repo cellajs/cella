@@ -27,7 +27,7 @@ Cella has an existing SSE system for user-scoped realtime updates. This is **out
 - User-scoped (keyed by userId) vs. sync engine org-scoped (keyed by orgId)
 - No transaction tracking, no offline support
 - Different authorization model (user session vs. org membership)
-- Works for context entities; sync engine targets product entities
+- Works for context entities; sync engine targets realtime entities
 
 **Future work:** Consolidate existing SSE with sync engine patterns:
 - Migrate context entity updates to use ActivityBus
@@ -48,12 +48,34 @@ This section defines precise vocabulary for concepts that could otherwise be con
 |------|------------|--------|
 | **Activity** | A record in `activitiesTable` representing an entity change | `{ type: 'page.updated', entityId: '...' }` |
 | **Activity log** | The `activitiesTable` as durable storage of all entity changes (not "event log") | Queryable via catch-up, source of truth for history |
-| **NOTIFY payload** | The JSON sent via `pg_notify('cella_activities', ...)` | Trigger sends activity-only; CDC Worker sends activity + entity |
-| **Activity notification** | The typed object ActivityBus emits after parsing a NOTIFY payload | `ActivityEvent` interface in `activity-bus.ts` |
-| **Live stream** | The org-scoped SSE connection for `realtime` opMode entities | `/organizations/:slug/live` endpoint |
+| **WebSocket message** | The JSON sent via WebSocket from CDC Worker to API server | `{ activity, entity }` with full entity data |
+| **Activity notification** | The typed object ActivityBus emits after receiving WebSocket message | `ActivityEvent` interface in `event-bus.ts` |
+| **Live stream** | The org-scoped SSE connection for realtime entities | `/organizations/:slug/live` endpoint |
 | **Stream message** | The SSE payload delivered via live stream (type `'change'` or `'offset'`) | `{ data, tx }` wrapper sent over SSE |
-| **Live update** | A realtime entity change pushed via live stream (not "live event") | Entity data from CDC Worker NOTIFY → stream message |
+| **Live update** | A realtime entity change pushed via live stream (not "live event") | Entity data from CDC Worker WebSocket → stream message |
 | **Transaction** | A client-initiated mutation identified by `transactionId` | Tracks lifecycle: pending → sent → confirmed |
+
+### Entity type taxonomy
+
+Entity types are configured in `config/default.ts` and determine sync capabilities:
+
+| Config type | Description | Examples | Sync capabilities |
+|-------------|-------------|----------|-------------------|
+| `EntityType` | All entities in the system | `user`, `organization`, `attachment`, `page` | Base type for all entities |
+| `ContextEntityType` | Has memberships, defines tenant boundary | `organization` | No sync primitives, standard REST |
+| `ProductEntityType` | Content entities, may have sync | `attachment`, `page` | Superset: `OfflineEntityType ∪ RealtimeEntityType` |
+| `OfflineEntityType` | Offline mutations only, no streaming | (currently empty) | Transaction tracking, conflict detection |
+| `RealtimeEntityType` | Streaming + offline support | `attachment`, `page` | Full sync: streaming, transactions, conflicts |
+
+**Config access:**
+```typescript
+import { config } from 'config';
+const { realtimeEntityTypes, offlineEntityTypes, productEntityTypes } = config;
+
+// Type guards
+const isRealtimeEntityType = (t: string): t is RealtimeEntityType => 
+  realtimeEntityTypes.includes(t as RealtimeEntityType);
+```
 
 ### Sync patterns
 
@@ -122,18 +144,18 @@ This section captures key architectural decisions, invariants, and constraints t
 | INV-4 | Upstream-first controls when mutations are SENT, not when user sees changes | Distinguishes sync guarantees from UX |
 | INV-5 | One mutation = one transaction = one field change | `tx.changedField` declares which single field is targeted; `data` object may contain entity structure but only declared field is tracked for conflicts |
 | INV-6 | Only leader tab opens SSE connection | Prevents duplicate connections and race conditions |
-| INV-7 | Live updates receive entity data from CDC Worker NOTIFY; catch-up queries JOIN with entity tables | Two paths for entity data: CDC Worker has it from replication, catch-up must fetch it |
-| INV-8 | No type assertions (`as`, `as unknown as`, `!`) in sync code paths | Type safety catches sync bugs at compile time; casts hide data shape mismatches |
+| INV-7 | Live updates receive entity data from CDC Worker via WebSocket; catch-up queries JOIN with entity tables | Two paths for entity data: CDC Worker has it from replication, catch-up must fetch it |
+| INV-8 | No type assertions in API/stream/frontend code paths | Type safety catches sync bugs at compile time; casts hide data shape mismatches |
+| INV-9 | CDC Worker may use lenient typing for row data extraction | pg-logical-replication provides `Record<string, unknown>`, strict typing is impractical at ingestion boundary |
 
 ### Constraints (hard limits)
 
 | ID | Constraint | Limit | Why |
 |----|------------|-------|-----|
-| CON-1 | NOTIFY payload size | 8KB max (use 7.5KB threshold) | PostgreSQL hard limit |
-| CON-2 | Transaction ID length | 32 chars | HLC format + storage efficiency |
-| CON-3 | Source ID length | 64 chars | UUID + prefix headroom |
-| CON-4 | Catch-up query batch | 100 activities | Prevent memory/latency spikes |
-| CON-5 | IndexedDB transaction store | 1000 entries max | Client storage limits |
+| CON-1 | Transaction ID length | 32 chars | HLC format + storage efficiency |
+| CON-2 | Source ID length | 64 chars | UUID + prefix headroom |
+| CON-3 | Catch-up query batch | 100 activities | Prevent memory/latency spikes |
+| CON-4 | IndexedDB transaction store | 1000 entries max | Client storage limits |
 
 ### Key Decisions
 
@@ -159,12 +181,20 @@ This section captures key architectural decisions, invariants, and constraints t
   2. Resolution UI when user input needed (configurable per field)
 - **Trade-off**: Simple implementation; "server wins" may not suit all use cases but resolution UI provides escape hatch
 
-#### DEC-4: CDC Worker includes entity data in NOTIFY payload
-- **Decision**: Pass full entity from replication row, not just metadata
+#### DEC-4: CDC Worker sends entity data via WebSocket
+- **Decision**: CDC Worker maintains a persistent WebSocket connection to API server; sends full entity data from replication row with no payload limit
+- **How it works**:
+  - CDC Worker connects to `ws://api-server/internal/cdc` on startup
+  - On each realtime entity change: sends `{ activity, entity }` via WebSocket
+  - API server receives, emits to ActivityBus with full entity data
+  - Automatic reconnection with exponential backoff
+  - Internal auth via shared secret header on WebSocket upgrade
 - **Alternatives rejected**:
+  - pg_notify: 8KB payload limit requires fallback fetches for large entities
+  - HTTP POST: Connection overhead at high throughput (1000+ writes/sec)
+  - Redis Pub/Sub: Additional infrastructure dependency
   - API server fetches entity: Extra DB query per event
-  - Store entity in activity table: Bloats activity storage
-- **Trade-off**: Occasional fallback fetch for >7.5KB entities, but zero queries for 99% of events
+- **Trade-off**: Requires CDC Worker and API Server to be network-reachable; but enables unlimited payload size and 50k+ msg/sec throughput
 
 #### DEC-5: Transient tx column as JSONB object
 - **Decision**: Single `tx` JSONB column containing `{ transactionId, sourceId, changedField }`
@@ -172,7 +202,7 @@ This section captures key architectural decisions, invariants, and constraints t
   - Separate sync metadata table: Extra join, complexity
   - Store in activity only: Handler can't pass to CDC Worker via replication
   - Three separate columns: More schema clutter, less extensible
-- **Trade-off**: One extra column per product entity; slightly more verbose query syntax but extensible and matches API shape
+- **Trade-off**: One extra column per realtime entity; slightly more verbose query syntax but extensible and matches API shape
 
 #### DEC-6: Upstream-first pattern
 - **Decision**: Pull before push - see [online vs offline sync](#online-vs-offline-sync) for full explanation
@@ -196,38 +226,73 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Trade-off**: Bound to React Query patterns, but consistent with rest of Cella
 
 #### DEC-9: Organization-level stream granularity
-- **Decision**: One SSE stream per org, delivering all product entity types for that org, filtered down by membership/role 
+- **Decision**: One SSE stream per org, delivering all realtime entity types for that org, filtered down by membership/role 
 - **Alternatives rejected**:
   - Per-entity-type streams: More connections, harder to coordinate
   - Global stream: Authorization complexity, wasted bandwidth for multi-org users
   - Per-entity streams: Connection explosion (N entities × M users)
 - **Trade-off**: Client filters by entity type, but simpler server and permission boundary by tenant
 
-#### DEC-10: Single LISTEN via ActivityBus, subscriber routing for fan-out
-- **Decision**: ActivityBus maintains one PostgreSQL LISTEN connection for `cella_activities`; Stream subscribers register for routing via in-memory registry
+#### DEC-10: WebSocket-based ActivityBus, subscriber routing for fan-out
+- **Decision**: ActivityBus receives from CDC Worker via WebSocket; Stream subscribers register for routing via in-memory registry
 - **How it works**:
-  - ActivityBus: Single LISTEN connection, parses NOTIFY payloads, emits activity notifications (see DEC-20)
+  - CDC Worker: Processes ALL tracked tables via logical replication (realtime AND context entities)
+  - ActivityBus: WebSocket server endpoint `/internal/cdc` receives all activity notifications from CDC Worker
+  - All activities include full entity data (no payload size limit via WebSocket)
   - Stream Subscribers: Register interest per orgId, receive filtered notifications
-  - Separation: ActivityBus handles connection; subscriber routing handles fan-out + permissions
+  - Separation: ActivityBus handles WebSocket connection; subscriber routing handles fan-out + permissions
 - **Alternatives rejected**:
+  - pg_notify + LISTEN: 8KB payload limit, requires separate trigger infrastructure
   - Per-SSE LISTEN connection: Connection pool exhaustion
   - Polling: 500ms+ latency, N queries per interval
   - External pub/sub (Redis): Additional infrastructure dependency
-- **Trade-off**: In-memory state (lost on restart, but clients reconnect), but O(1) DB connections
+- **Trade-off**: In-memory state (lost on restart, but clients reconnect), but zero DB connections for notifications and unlimited payloads
 
-#### DEC-11: Unified NOTIFY - CDC Worker extends trigger payload with entity data
-- **Decision**: CDC Worker calls `pg_notify('cella_activities', payload)` on the **same channel** as the existing trigger, but with enriched payload that includes entity data from replication row
+#### DEC-11: Unified WebSocket delivery for all entities
+- **Decision**: CDC Worker sends ALL entity activities via WebSocket (both realtime and context entities)
 - **How it works**:
-  - Existing trigger fires on activities INSERT: sends `{ id, type, entityType, entityId, action, ... }` (activity-only)
-  - CDC Worker ALSO calls NOTIFY on same channel: sends `{ ...activity, entity: {...} }` (activity + entity)
-  - ActivityBus receives both, handles both payload shapes gracefully
-  - For product entities in realtime mode, CDC Worker payload includes entity data (zero extra queries)
-  - For context entities or basic mode, trigger payload is still received (handlers fetch entity if needed)
+  - CDC Worker subscribes to logical replication for ALL tracked tables (realtime + context)
+  - For all entity changes, CDC Worker sends `{ activity, entity }` via WebSocket to API server
+  - ActivityBus receives from single WebSocket source, emits unified `ActivityEvent` to handlers
+  - All activities include full entity data (no payload size limit via WebSocket)
+  - Handlers can choose to use or ignore entity data based on their needs
+- **Why unified path**:
+  - CDC Worker already processes all tracked tables via logical replication
+  - WebSocket has no payload size limit (unlike pg_notify's 8KB)
+  - Single path is simpler to maintain and reason about
+  - Entity data is available for all handlers that need it
 - **Alternatives rejected**:
-  - Dual-channel (separate `cella_sync` channel): Complexity, two LISTEN connections, confusing ownership
-  - Disable trigger when CDC Worker active: Breaks basic mode, complicates deployment
-  - API server triggers NOTIFY: API doesn't have entity data, would need extra fetch
-- **Trade-off**: Two NOTIFY sources for same channel, but unified consumer and backward compatible
+  - pg_notify + trigger: 8KB limit, separate infrastructure, no benefit since CDC handles all tables
+  - Dual-path (WebSocket for some, trigger for others): Added complexity with no benefit
+- **Trade-off**: Requires CDC Worker to be running for realtime notifications (basic mode has no realtime)
+
+#### DEC-11b: WebSocket resilience via replication backpressure
+- **Decision**: CDC Worker uses native `ws` library; pauses replication consumption when WebSocket disconnects; PostgreSQL WAL is the durable queue
+- **How it works**:
+  - CDC Worker connects to API server via native `ws`
+  - On WebSocket disconnect: stop acknowledging LSN positions (pause consumption)
+  - PostgreSQL keeps changes in WAL (replication slot holds position)
+  - On WebSocket reconnect: resume consumption, PostgreSQL replays from last ACK'd position
+  - No in-memory message queue needed - PostgreSQL IS the queue
+- **Reconnection strategy**:
+  - Exponential backoff: 1s → 2s → 4s → ... → 30s max
+  - Jitter: ±20% randomization
+  - Simple retry loop (no library needed for this)
+- **Health states**:
+  - Healthy: WebSocket OPEN, replication active
+  - Degraded: WebSocket reconnecting, replication paused
+  - Unhealthy: WebSocket closed > 30s, replication stalled
+- **Why this design**:
+  - PostgreSQL replication slot is durable (survives CDC Worker restart)
+  - Zero memory pressure (no in-process queue)
+  - Built-in backpressure via LSN acknowledgment
+  - Native `ws` is simple, well-maintained, minimal dependencies
+  - Fewer moving parts = fewer failure modes
+- **Alternatives rejected**:
+  - `partysocket` with message queue: Duplicates PostgreSQL's built-in durability
+  - In-memory buffering: Lost on crash, memory pressure, unnecessary complexity
+  - Redis as intermediate queue: Extra infrastructure, PostgreSQL already does this
+- **Trade-off**: Replication slot holds WAL longer during outages (monitor `pg_replication_slots`)
 
 #### DEC-12: LIST endpoints for initial load, stream for deltas
 - **Decision**: React Query prefetches/fetches initial data via REST, stream only delivers changes after subscription starts
@@ -253,12 +318,12 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Trade-off**: Memory proportional to active orgs, but fast fan-out
 
 #### DEC-15: Two paths for entity data (live vs catch-up)
-- **Decision**: Live updates include entity data from ActivityBus (which gets it from CDC Worker NOTIFY payload); catch-up queries JOIN activities with entity tables
+- **Decision**: Live updates include entity data from ActivityBus (which gets it from CDC Worker via WebSocket); catch-up queries JOIN activities with entity tables
 - **Why two paths**:
   - CDC Worker has entity data from PostgreSQL logical replication row
   - After activity is inserted, entity data is NOT stored in activitiesTable (per DEC-7)
   - Catch-up queries only have activitiesTable, must JOIN to get entity data
-- **Live path**: `CDC Worker replication row → NOTIFY payload → ActivityBus → Stream handler → stream message`
+- **Live path**: `CDC Worker replication row → WebSocket → ActivityBus → Stream handler → stream message`
 - **Catch-up path**: `SELECT activities JOIN pages/attachments → API → HTTP response`
 - **Alternatives rejected**:
   - Store entity snapshot in activitiesTable: Bloats storage, duplicates data
@@ -287,7 +352,7 @@ This section captures key architectural decisions, invariants, and constraints t
 - **Decision**: Activities table has `tx` JSONB column for transaction metadata, separate from existing `changedKeys`
 - **Why separate columns**:
   - `changedKeys`: CDC Worker-detected array of fields that changed (used by activity feed, all entities)
-  - `tx`: Client-declared transaction metadata (used by sync engine, product entities only)
+  - `tx`: Client-declared transaction metadata (used by sync engine, realtime/offline entities only)
   - `tx: null` for non-synced entities (organizations, memberships)
 - **Alternatives rejected**:
   - Merge into `changedKeys`: Conflates detected vs declared data
@@ -310,15 +375,15 @@ This section captures key architectural decisions, invariants, and constraints t
   - Different data structure for synced: Inconsistent API surface
 - **Trade-off**: Client must send multiple mutations for multi-field edits, but conflicts are isolated per-field
 
-#### DEC-19: Transaction wrapper is required for product entities (no legacy mode)
-- **Decision**: Product entity mutation endpoints REQUIRE `{ data, tx }` wrapper - the `tx` property is mandatory, not optional
-- **Scope**: Only applies to product entities (pages, attachments) - context entities (organizations, memberships) continue to use simple request bodies
-- **No legacy mode**: All product entity mutations must include transaction metadata; there is no "legacy" code path in handlers
+#### DEC-19: Transaction wrapper is required for synced entities (no legacy mode)
+- **Decision**: Synced entity (realtime/offline) mutation endpoints REQUIRE `{ data, tx }` wrapper - the `tx` property is mandatory, not optional
+- **Scope**: Only applies to synced entities (pages, attachments) - context entities (organizations, memberships) continue to use simple request bodies
+- **No legacy mode**: All synced entity mutations must include transaction metadata; there is no "legacy" code path in handlers
 - **Why this design**:
-  - Consistency: All mutations for a product entity are tracked, no gaps in transaction history
+  - Consistency: All mutations for a synced entity are tracked, no gaps in transaction history
   - Simpler handlers: No detection logic needed, always expect `{ data, tx }`
   - Reliable conflict detection: Every mutation has a transactionId, expectedTransactionId works reliably
-  - No migration complexity: Product entities are new/upgraded, no legacy clients to support
+  - No migration complexity: Synced entities are new/upgraded, no legacy clients to support
 - **Alternatives rejected**:
   - Optional tx wrapper: Creates gaps in transaction tracking, complicates offline queue
   - Separate synced endpoints: Doubles API surface (see rationale below)
@@ -327,21 +392,110 @@ This section captures key architectural decisions, invariants, and constraints t
 #### DEC-20: Unified ActivityBus for internal + sync events
 - **Decision**: The existing EventBus (`backend/src/lib/event-bus.ts`) is renamed to ActivityBus and upgraded to serve both internal handlers AND live stream consumers
 - **How it works**:
-  - ActivityBus LISTENs to `cella_activities` channel (unchanged)
-  - `ActivityEvent` interface extended with optional `entity: Record<string, unknown> | null`
-  - When CDC Worker sends enriched payload, ActivityBus parses `entity` field
-  - When trigger sends activity-only payload, `entity` is undefined/null
-  - Live stream handlers use `event.entity` when present; fallback fetch when null
-  - Existing internal handlers continue to work (they don't need entity data)
+  - ActivityBus receives WebSocket messages from CDC Worker for ALL entity types (see DEC-4, DEC-11)
+  - `ActivityEvent` interface includes `entity: Record<string, unknown>` with full entity data
+  - All activities include entity data (no payload size limit via WebSocket)
+  - Live stream handlers use `event.entity` directly (no fallback fetch needed)
+  - Existing internal handlers continue to work (they can use or ignore entity data)
 - **Benefits**:
   - Single ActivityBus serves all realtime needs
-  - No duplicate LISTEN connections
-  - Backward compatible - existing handlers unaffected
-  - Progressive - entity data available when CDC Worker is running
+  - Zero database connections for notifications (WebSocket only)
+  - Full entity data always available (no fallback fetch)
+  - No payload size limits
+  - Simple single-source architecture
 - **Alternatives rejected**:
+  - pg_notify + LISTEN: 8KB limit, extra DB connection, separate trigger infrastructure
   - Separate SubscriberRegistry for sync: Duplicate infrastructure
-  - New ActivityBus for sync only: Two LISTEN connections per org
-- **Trade-off**: ActivityBus becomes more central, but consolidates realtime infrastructure
+- **Trade-off**: ActivityBus depends on CDC Worker, but consolidates realtime infrastructure
+
+#### DEC-21: Type strictness stratification by layer
+- **Decision**: Apply different type strictness levels based on layer constraints
+- **Layers and strictness**:
+  - **CDC Worker (lenient)**: Receives `Record<string, unknown>` from pg-logical-replication. Row data is inherently untyped at the ingestion boundary. Assertions acceptable in well-tested extraction utilities.
+  - **ActivityBus (moderate)**: Receives from WebSocket (CDC Worker). Validates payload shape with Zod, emits typed `ActivityEvent`.
+  - **API Handlers (strict)**: OpenAPI schemas provide compile-time contracts. Use generated types, no assertions. Type guards for string→enum conversion.
+  - **Stream Handlers (strict)**: SSE messages have defined schemas. Use `RealtimeEntityType`, `ActivityAction` from config with type guards.
+  - **Frontend (strict)**: Generated SDK types from `api.gen/`. Derive types from generated schemas, no custom duplicates.
+- **Why this design**:
+  - CDC Worker deals with raw PostgreSQL replication data - strict typing is impractical and adds no value
+  - API/stream/frontend have well-defined contracts (OpenAPI, Zod schemas) - strict typing catches bugs
+  - Type guards at layer boundaries ensure type-safe handoff
+- **Alternatives rejected**:
+  - Strict everywhere: Impractical for CDC Worker, requires excessive assertions
+  - Lenient everywhere: Loses compile-time safety in typed layers
+
+#### DEC-22: Mutation layer encapsulates sync logic
+- **Decision**: All sync mechanics (tx generation, changedField detection, mutation splitting) are encapsulated in the mutation layer (`query.ts`), not in UI components
+- **Form contract**: Forms call `mutation.mutate({ id, data })` with no sync awareness
+- **Mutation layer responsibilities**:
+  1. Detect which field(s) changed by comparing incoming data against cached entity
+  2. If multiple fields changed, split into separate sequential mutations (one field per mutation)
+  3. Generate tx metadata: `transactionId`, `sourceId`, `changedField`, `expectedTransactionId`
+  4. Look up last known transactionId per field for conflict detection
+  5. Apply optimistic updates to cache, rollback on error
+- **Why this design**:
+  - Minimal upgrade surface: Forms don't change when entity becomes synced
+  - Single source of truth: Sync logic concentrated in one place per entity
+  - Testable: Mutation splitting and conflict detection can be unit tested
+  - Consistent: All mutations for an entity follow same pattern
+- **Alternatives rejected**:
+  - Forms detect changedField: Duplicates logic, couples UI to sync mechanics
+  - Separate synced forms: Parallel component trees, maintenance burden
+- **Trade-off**: Mutation layer becomes more complex, but UI stays simple
+
+#### DEC-23: Offline mutation coalescing (create + edit → single create)
+- **Decision**: When a user creates an entity offline and then edits it before reconnecting, the create and subsequent edits are coalesced into a single create request with the final values
+- **How it works**:
+  - Outbox tracks mutation type: `'create'`, `'update'`, `'delete'`
+  - Create entry has `type: 'create'` and stores full entity data
+  - Edit to same entity while still pending: merge data into existing create entry
+  - Edit to different fields: merge into same create entry (not separate entries)
+  - Delete after create: remove both from outbox (never reached server)
+- **Outbox key strategy**:
+  - Create/delete operations: key by `{entityType}:{entityId}` (entity-level)
+  - Update operations: key by `{entityType}:{entityId}:{field}` (field-level per OFFLINE-005/006)
+  - When update targets pending create: merge into create entry instead of queuing separate update
+- **Why this design**:
+  - Efficiency: One API call instead of 1 create + N updates
+  - Consistency: Entity doesn't exist on server yet, so field-level updates are meaningless
+  - Simplicity: Server receives clean create with final values, no intermediate states
+  - No conflicts possible: Can't conflict with something that doesn't exist yet
+- **Scenario examples**:
+  - Create page → edit title → edit content → online = 1 create with final title+content
+  - Create page → delete page → online = 0 requests (cancel each other)
+  - Create page → online → edit title → offline → edit content → online = 1 create + 2 updates
+- **Alternatives rejected**:
+  - Send create then updates: Extra network calls, intermediate states on server
+  - Separate queues for create vs update: Complex coordination
+- **Trade-off**: Outbox logic is more complex (must detect pending creates), but dramatically reduces network traffic for offline-heavy usage
+
+#### DEC-24: React Query mutation cache as outbox (not custom IndexedDB)
+- **Decision**: Use React Query's mutation cache with IndexedDB persistence as the mutation outbox, rather than implementing a custom IndexedDB-based outbox
+- **How it works**:
+  - React Query mutations are persisted to IndexedDB via `@tanstack/react-query-persist-client` + Dexie
+  - Pending mutations survive page refresh (mutations with `gcTime: Infinity` are restored)
+  - `squashPendingMutation()` cancels in-flight same-field mutations from the mutation cache
+  - `coalescePendingCreate()` merges update data into pending create mutations
+  - `hasPendingDelete()` checks for pending deletes before applying updates
+  - Field transaction store (`useFieldTransactionStore`) tracks expected transaction IDs in memory
+- **Location**: `frontend/src/query/offline/squash-utils.ts`, `frontend/src/query/persister.ts`
+- **Why this design**:
+  - Leverages existing React Query infrastructure (no parallel state management)
+  - Mutations already have lifecycle hooks (`onMutate`, `onError`, `onSuccess`, `onSettled`)
+  - Built-in retry, deduplication, and garbage collection
+  - Query + mutation state persisted together (consistent recovery after page refresh)
+  - TanStack Query v5 pause/resume for offline support
+- **Trade-offs vs custom IndexedDB outbox**:
+  - ✅ Less code: No custom outbox implementation, uses React Query primitives
+  - ✅ Unified persistence: Query cache and "outbox" use same IndexedDB database
+  - ✅ Automatic retry: React Query handles retry with exponential backoff
+  - ⚠️ Less explicit: Outbox behavior is implicit in mutation cache, not dedicated storage
+  - ⚠️ Squashing via cancellation: Instead of true squashing (replace entry), we cancel and re-queue
+  - ⚠️ Memory-based field tracking: `fieldTransactionStore` is in-memory (not persisted)
+- **Future consideration**: If offline-first becomes more critical, evaluate:
+  - Persisting field transaction store to IndexedDB
+  - More explicit outbox UI (show pending mutations count, retry controls)
+  - Conflict resolution UI integration with React Query mutation state
 
 ---
 
@@ -354,7 +508,7 @@ The sync engine MUST integrate with existing Cella patterns, not create parallel
 | Existing code | Location | How sync engine uses it |
 |---------------|----------|-------------------------|
 | `isPermissionAllowed()` | `backend/src/permissions/` | Stream fan-out filters events by entity ACLs |
-| `getValidProductEntity()` | `backend/src/permissions/get-product-entity.ts` | Pattern for checking product entity access |
+| `getValidProductEntity()` | `backend/src/permissions/get-product-entity.ts` | Pattern for checking synced entity access |
 | `splitByAllowance()` | `backend/src/permissions/split-by-allowance.ts` | Pattern for batch filtering by permission |
 | `getContextMemberships()` | `backend/src/lib/context.ts` | Get user's memberships for permission checks |
 | `getContextUserSystemRole()` | `backend/src/lib/context.ts` | Check if user is system admin (bypasses ACLs) |
@@ -397,6 +551,7 @@ Reference implementations to follow:
 - INT-MUT-002: `onMutate` MUST apply optimistic update using `mutateCache.create/update/remove`
 - INT-MUT-003: `onError` MUST rollback using same `mutateCache` helpers
 - INT-MUT-004: New transaction metadata (`transactionId`, `sourceId`) added via `{ data, tx }` wrapper
+- INT-MUT-005: MUST use generated types and Zod schemas from `frontend/src/api.gen/` - DO NOT define custom types for API request/response data shapes (e.g., use `CreatePageData['body']['data']` not a custom `CreatePageInput` type)
 
 ### Context entity patterns (backend)
 
@@ -416,19 +571,19 @@ Reference implementations to follow:
 | Existing code | Location | How sync engine uses it |
 |---------------|----------|-------------------------|
 | `activitiesTable` | `backend/src/db/schema/activities.ts` | Extended with tx column, not replaced |
-| CDC Worker | `cdc/src/` | Extended to extract tx column and NOTIFY |
+| CDC Worker | `cdc/src/` | Extended to extract tx column and send via WebSocket |
 | `extractActivityContext()` | `cdc/src/utils/` | Extended to read transient tx column |
 
 **Integration rules:**
 - INT-CDC-001: tx column added to existing `activitiesTable`, not separate table
 - INT-CDC-002: CDC Worker extraction logic extended in existing `extractActivityContext()`
-- INT-CDC-003: NOTIFY added after activity INSERT in existing CDC Worker flow
+- INT-CDC-003: WebSocket notification added after activity INSERT in CDC Worker flow
 
 ---
 
-## Sync primitives by opMode
+## Sync primitives by entity type
 
-| Primitive | `basic` (context entities) | `offline`/`realtime` (synced entities) |
+| Primitive | Context entities (`basic`) | Synced entities (`RealtimeEntityType` / `OfflineEntityType`) |
 |-----------|---------------------------|---------------------------------------|
 | `transactionId` | ❌ Not used | ✅ Required - client-generated HLC |
 | `sourceId` | ❌ Not used | ✅ Required - tab identifier |
@@ -437,8 +592,9 @@ Reference implementations to follow:
 | `{ data, tx }` wrapper | ❌ Simple request body | ✅ Required wrapper format |
 | Conflict detection | ❌ Not supported | ✅ Field-level via `expectedTransactionId` |
 | Idempotency | ❌ Not supported | ✅ Via `transactionId` lookup |
+| **Live streaming** | ❌ Not supported | ✅ `RealtimeEntityType` only |
 
-> **Key insight**: Context entities (`organization`, `membership`) use standard REST patterns. Only product entities (`page`, `attachment`) gain sync primitives.
+> **Key insight**: Context entities (`organization`, `membership`) use standard REST patterns. Only synced entities (`page`, `attachment`) gain sync primitives. Within synced entities, only `RealtimeEntityType` entities receive live stream updates.
 
 ---
 
@@ -446,15 +602,15 @@ Reference implementations to follow:
 
 | Term | Definition |
 |------|------------|
-| **Transaction ID** | Client-generated unique identifier using Hybrid Logical Clock (format: `{wallTime}.{logical}.{nodeId}`). Only used for synced entities (`offline`/`realtime` opMode) |
-| **Source ID** | Globally unique identifier for a browser tab/instance. Generated once per page load via `nanoid()`. Each tab MUST have a distinct sourceId. Only used for synced entities (`offline`/`realtime` opMode) |
+| **Transaction ID** | Client-generated unique identifier using Hybrid Logical Clock (format: `{wallTime}.{logical}.{nodeId}`). Only used for synced entities (`OfflineEntityType`/`RealtimeEntityType`) |
+| **Source ID** | Globally unique identifier for a browser tab/instance. Generated once per page load via `nanoid()`. Each tab MUST have a distinct sourceId. Only used for synced entities |
 | **Activity** | A row in `activitiesTable` representing a change (create/update/delete). Tracks both entities (`entityType`: user, organization, page, etc.) and resources (`resourceType`: request, membership). Created for ALL tracked tables |
-| **Transient tx column** | JSONB column `tx` on product entity tables containing `{ transactionId, sourceId, changedField }`. Only present on synced entities; context entities and resources do not have this column |
+| **Transient tx column** | JSONB column `tx` on synced entity tables containing `{ transactionId, sourceId, changedField }`. Only present on synced entities; context entities and resources do not have this column |
 | **changedKeys** | CDC Worker-detected array of all fields that changed. Used by activity feed for ALL entities. Automatically populated by CDC Worker comparing old/new row |
 | **tx.changedField** | Client-declared single field this mutation targets. Only used for synced entities - enables field-level conflict detection |
 | **Upstream-first** | Pull before push - see [online vs offline sync](#online-vs-offline-sync) |
 | **Field-level conflict resolution** | V1: LWW → UI. See [merge strategy](#merge-strategy-v1-lww--ui) |
-| **Live stream** | Org-scoped SSE connection for `realtime` opMode entities. Endpoint: `/organizations/:slug/live` |
+| **Live stream** | Org-scoped SSE connection for `RealtimeEntityType` entities. Endpoint: `/organizations/:slug/live` |
 | **Stream offset** | The `activityId` used for resumption (cursor position in the live stream) |
 | **Subscriber** | An SSE connection registered to receive live updates for an organization |
 
@@ -472,15 +628,15 @@ Reference implementations to follow:
 ### CDC Worker
 - Reads transient `tx` JSONB from replicated row
 - Extracts `transactionId`, `sourceId`, `changedField` from tx object
-- Calls `pg_notify('cella_activities', payload)` after activity INSERT (same channel as trigger)
-- Includes entity data in NOTIFY payload (from replication row)
-- Handles 8KB NOTIFY limit gracefully
+- Sends `{ activity, entity }` via WebSocket to API server after activity INSERT
+- Full entity data included (no payload limit with WebSocket)
+- Maintains persistent WebSocket connection with automatic reconnection
 
 ### ActivityBus (API Server)
-- Existing `backend/src/lib/event-bus.ts` renamed to `activity-bus.ts` and upgraded for sync
-- Maintains single LISTEN connection for `cella_activities` channel
-- Handles both trigger payloads (activity-only) and CDC Worker payloads (activity + entity)
-- Emits typed `ActivityEvent` with optional `entity` field
+- Existing `backend/src/lib/event-bus.ts` upgraded for sync
+- Receives from CDC Worker via WebSocket (all entity types)
+- All activities include full entity data (no payload size limit)
+- Emits typed `ActivityEvent` with `entity` field
 - Serves both internal handlers and live stream consumers
 
 ### Stream Handler (API Server)
@@ -521,13 +677,55 @@ Reference implementations to follow:
 
 ---
 
+## File locations
+
+Sync engine code is organized into dedicated folders within the existing structure:
+
+### Frontend (`frontend/src/query/`)
+
+| Path | Purpose |
+|------|---------|
+| `query/offline/` | Offline sync utilities (HLC, transactions, squashing) |
+| `query/offline/hlc.ts` | HLC timestamp generation, sourceId |
+| `query/offline/tx-utils.ts` | Transaction metadata creation (`createTxForCreate`, `createTxForUpdate`) |
+| `query/offline/field-transaction-store.ts` | Field-level transaction tracking for conflict detection |
+| `query/offline/squash-utils.ts` | Mutation squashing and create+edit coalescing |
+| `query/offline/detect-changed-fields.ts` | Utility to detect which fields changed |
+| `query/realtime/` | Realtime sync utilities (SSE, multi-tab) |
+| `query/realtime/use-live-stream.ts` | SSE subscription hook |
+| `query/realtime/offset-store.ts` | Stream offset persistence |
+| `query/realtime/sync-coordinator.ts` | Upstream-first sync coordination |
+| `query/realtime/tab-coordinator.ts` | Multi-tab leader election and broadcast |
+| `query/realtime/stream-types.ts` | Stream message type definitions |
+| `query/persister.ts` | React Query IndexedDB persistence (Dexie) |
+
+### Backend (`backend/src/`)
+
+| Path | Purpose |
+|------|---------|
+| `lib/sync/` | Sync primitives (conflict detection, idempotency) |
+| `lib/sync/conflict-detection.ts` | Field-level conflict detection |
+| `lib/sync/idempotency.ts` | Transaction deduplication |
+| `lib/activity-bus.ts` | Event bus receiving CDC Worker notifications |
+| `lib/cdc-websocket.ts` | WebSocket handler for CDC Worker connection |
+| `modules/sync/schema.ts` | Shared tx wrapper Zod schemas |
+
+### CDC Worker (`cdc/src/`)
+
+| Path | Purpose |
+|------|---------|
+| `utils/extract-activity-context.ts` | Extracts tx metadata from replicated rows |
+| `handlers/` | INSERT/UPDATE/DELETE handlers |
+
+---
+
 ## Data requirements
 
 ### Entity transient tx column
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| DATA-001 | Product entity tables MUST have `tx` JSONB column | DB Schema | Schema includes column |
+| DATA-001 | Synced entity tables MUST have `tx` JSONB column | DB Schema | Schema includes column |
 | DATA-002 | `tx` column MUST contain `transactionId` (string, max 32 chars) | DB Schema | Valid JSON structure |
 | DATA-003 | `tx` column MUST contain `sourceId` (string, max 64 chars) | DB Schema | Valid JSON structure |
 | DATA-003a | `sourceId` MUST be globally unique per browser tab (generated via `nanoid()`) | Frontend | nanoid format validated |
@@ -568,8 +766,8 @@ Reference implementations to follow:
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| API-001 | Product entity mutation requests MUST use `{ data, tx }` wrapper | Backend Route | OpenAPI schema validation |
-| API-002 | `tx` property MUST be required (not optional) for product entities | Backend Route | Schema rejects missing tx |
+| API-001 | Synced entity mutation requests MUST use `{ data, tx }` wrapper | Backend Route | OpenAPI schema validation |
+| API-002 | `tx` property MUST be required (not optional) for synced entities | Backend Route | Schema rejects missing tx |
 | API-003 | Context entity endpoints (organizations, etc.) MUST NOT use tx wrapper | Backend Route | Context routes use simple body |
 | API-004 | No separate "synced" endpoints SHOULD be created (e.g., no `/pages/synced`) | Backend Route | Route audit finds no `/synced` paths |
 | API-005 | `tx.transactionId` MUST be required | Backend Route | Validation rejects missing |
@@ -629,26 +827,61 @@ Backend can optionally enforce that clients are "caught up" before accepting mut
 | CDC-003 | CDC Worker MUST set `tx: null` for non-synced entities | CDC Worker | Context entity has null tx |
 | CDC-004 | For INSERT/DELETE actions, `changedField` MUST be null | CDC Worker | Null for creates/deletes |
 
-### NOTIFY integration
+### WebSocket integration
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| CDC-010 | CDC Worker MUST call `pg_notify('cella_activities', payload)` after activity INSERT | CDC Worker | LISTEN receives notification |
-| CDC-011 | NOTIFY payload MUST include `orgId` | CDC Worker | Payload structure |
-| CDC-012 | NOTIFY payload MUST include `activityId` | CDC Worker | Payload structure |
-| CDC-013 | NOTIFY payload MUST include `entityType` | CDC Worker | Payload structure |
-| CDC-014 | NOTIFY payload MUST include `entityId` | CDC Worker | Payload structure |
-| CDC-015 | NOTIFY payload MUST include `action` ('create', 'update', 'delete') | CDC Worker | Payload structure |
-| CDC-016 | NOTIFY payload MUST include `tx` (nullable) | CDC Worker | Payload structure |
-| CDC-019 | NOTIFY payload MUST include `entity` data from replication row | CDC Worker | Payload includes entity |
-| CDC-020 | If payload exceeds 7500 bytes, `entity` MUST be set to null | CDC Worker | Large entity handling |
-| CDC-021 | CDC Worker MUST call NOTIFY on same channel as trigger (`cella_activities`) | CDC Worker | Channel name matches |
+| CDC-010 | CDC Worker MUST send `{ activity, entity }` via WebSocket after activity INSERT | CDC Worker | API receives WebSocket message |
+| CDC-011 | WebSocket payload MUST include full activity object | CDC Worker | Payload structure |
+| CDC-012 | WebSocket payload MUST include full entity data from replication row | CDC Worker | Payload includes entity |
+| CDC-013 | CDC Worker MUST use native `ws` library for WebSocket connection | CDC Worker | Library used |
+| CDC-014 | CDC Worker MUST authenticate via shared secret header on upgrade | CDC Worker | Auth header present |
+
+### Replication backpressure
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| CDC-020 | On WebSocket disconnect, CDC Worker MUST pause replication consumption | CDC Worker | Consumption paused |
+| CDC-021 | While paused, CDC Worker MUST NOT acknowledge LSN positions to PostgreSQL | CDC Worker | LSN held |
+| CDC-022 | On WebSocket reconnect, CDC Worker MUST resume replication consumption | CDC Worker | Consumption resumed |
+| CDC-023 | PostgreSQL replication slot MUST hold WAL position during pause | PostgreSQL | WAL retained |
+| CDC-024 | After resume, CDC Worker MUST process all changes from last ACK'd LSN | CDC Worker | No message loss |
+
+### Reconnection strategy
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| CDC-030 | CDC Worker MUST reconnect with exponential backoff (1s, 2s, 4s, ... 30s max) | CDC Worker | Backoff timing |
+| CDC-031 | Reconnection delay MUST include jitter (±20%) | CDC Worker | Jitter applied |
+| CDC-032 | CDC Worker MUST reset backoff to 1s after successful connection | CDC Worker | Backoff reset |
+| CDC-033 | CDC Worker MUST log reconnection attempts with delay and attempt count | CDC Worker | Logs present |
+
+### Error handling
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| CDC-040 | CDC Worker MUST NOT crash on WebSocket errors | CDC Worker | Process survives |
+| CDC-041 | Malformed outbound message MUST be logged and skipped | CDC Worker | Skip bad message |
+| CDC-042 | CDC Worker MUST listen for `ws` `error` and `close` events | CDC Worker | Events handled |
+| CDC-043 | CDC Worker MUST handle API server restart gracefully | CDC Worker | Survives restart |
+
+### Health monitoring
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| CDC-050 | CDC Worker MUST expose health endpoint `/health` | CDC Worker | Health check |
+| CDC-051 | Health endpoint MUST report: `{ status, wsState, replicationState, lastLsn, lastMessageAt }` | CDC Worker | Health metrics |
+| CDC-052 | `status` MUST be "healthy" if WebSocket OPEN and replication active | CDC Worker | Healthy state |
+| CDC-053 | `status` MUST be "degraded" if WebSocket reconnecting and replication paused | CDC Worker | Degraded state |
+| CDC-054 | `status` MUST be "unhealthy" if WebSocket closed > 30s | CDC Worker | Unhealthy state |
+| CDC-055 | Health endpoint MUST return HTTP 200 for healthy/degraded, HTTP 503 for unhealthy | CDC Worker | HTTP status codes |
+| CDC-056 | CDC Worker SHOULD log warning if replication paused > 60s (WAL accumulation) | CDC Worker | WAL warning |
 
 ---
 
 ## ActivityBus requirements
 
-The existing EventBus (`backend/src/lib/event-bus.ts`) is renamed to ActivityBus (`activity-bus.ts`) and upgraded to handle both internal activity events and live stream delivery. See DEC-20.
+The existing EventBus (`backend/src/lib/event-bus.ts`) is upgraded to handle both internal activity events and live stream delivery. It receives all activities from CDC Worker via WebSocket (no LISTEN/trigger needed since CDC Worker processes all tracked tables). See DEC-10, DEC-11, DEC-20.
 
 ### Payload handling
 
@@ -658,15 +891,38 @@ The existing EventBus (`backend/src/lib/event-bus.ts`) is renamed to ActivityBus
 | AB-002 | When payload includes `entity`, it MUST be available on `ActivityEvent` | ActivityBus | Entity accessible |
 | AB-003 | When payload has no `entity`, `event.entity` MUST be undefined or null | ActivityBus | Graceful fallback |
 | AB-004 | ActivityBus MUST NOT break existing handlers that ignore `entity` | ActivityBus | Backward compatibility |
-| AB-005 | For entity activities, CDC Worker MUST include entity data in NOTIFY payload | CDC Worker → ActivityBus | Entity data present |
+| AB-005 | For realtime entity activities, CDC Worker MUST send entity data via WebSocket | CDC Worker → ActivityBus | Entity data present |
 
 ### Connection management
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| AB-010 | ActivityBus MUST maintain single LISTEN connection for `cella_activities` | ActivityBus | Connection count = 1 |
-| AB-011 | ActivityBus MUST reconnect on connection loss | ActivityBus | Reconnection test |
-| AB-012 | ActivityBus MUST emit typed events to subscribers | ActivityBus | Type safety |
+| AB-010 | ActivityBus MUST expose WebSocket endpoint `/internal/cdc` for CDC Worker | ActivityBus | Endpoint available |
+| AB-011 | ActivityBus MUST validate shared secret on WebSocket upgrade | ActivityBus | Auth check |
+| AB-012 | ActivityBus MUST reject upgrade if secret missing or invalid (401) | ActivityBus | Reject unauthorized |
+| AB-013 | ActivityBus MUST emit typed events to subscribers | ActivityBus | Type safety |
+| AB-014 | ActivityBus MUST handle WebSocket reconnection from CDC Worker | ActivityBus | Reconnection handling |
+| AB-015 | ActivityBus MUST accept only one CDC Worker connection at a time | ActivityBus | Single connection |
+| AB-016 | New CDC Worker connection MUST gracefully replace existing (if any) | ActivityBus | Connection replacement |
+
+### WebSocket server behavior
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| AB-020 | ActivityBus MUST respond to ping with pong | ActivityBus | Pong response |
+| AB-021 | ActivityBus MUST close connection if no message received within 90s | ActivityBus | Idle timeout |
+| AB-022 | ActivityBus MUST validate message JSON schema before processing | ActivityBus | Schema validation |
+| AB-023 | Invalid message MUST be logged and ignored (not close connection) | ActivityBus | Invalid handling |
+| AB-024 | ActivityBus MUST NOT block on slow subscribers | ActivityBus | Non-blocking emit |
+
+### WebSocket health monitoring (API side)
+
+| Req ID | Requirement | Owner | Test Case |
+|--------|-------------|-------|-----------|
+| AB-030 | API health endpoint MUST include CDC WebSocket connection state | ActivityBus | Health check |
+| AB-031 | Health MUST report: cdc_connected, last_message_at, messages_received | ActivityBus | Health metrics |
+| AB-032 | Health state MUST be "degraded" if no CDC message in 60s (when CDC expected) | ActivityBus | Degraded detection |
+| AB-033 | ActivityBus MUST emit metrics: messages_received, parse_errors, emit_latency_ms | ActivityBus | Metrics available |
 
 ---
 
@@ -714,7 +970,7 @@ SSE messages use the SSE `event` field for type (`'change'` or `'offset'`). The 
 
 ### Catch-up entity fetching
 
-Catch-up queries must fetch entity data by JOINing activities with entity tables (since NOTIFY payload is not available for historical changes). See DEC-15 for rationale.
+Catch-up queries must fetch entity data by JOINing activities with entity tables (since historical activities predate the current session). See DEC-15 for rationale.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
@@ -727,14 +983,13 @@ Catch-up queries must fetch entity data by JOINing activities with entity tables
 
 ### Live update entity data
 
-Live updates receive entity data from the unified ActivityBus, which gets it from CDC Worker NOTIFY payload (zero extra queries for product entities in realtime mode). See DEC-11, DEC-15, and DEC-20 for rationale.
+Live updates receive entity data from the unified ActivityBus, which gets it from CDC Worker via WebSocket (zero extra queries). See DEC-11, DEC-15, and DEC-20 for rationale.
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| STREAM-040 | Live update MUST use entity data from ActivityBus when available | Stream Handler | Entity from ActivityBus |
-| STREAM-041 | If activity notification has no entity (trigger-only or oversized), handler MUST fetch entity | Stream Handler | Fallback fetch |
-| STREAM-042 | Fallback fetch MUST query entity table by `entityId` | Stream Handler | Correct fetch |
-| STREAM-043 | If fallback fetch fails (entity deleted), message MUST still be sent with `data: null` | Stream Handler | Graceful degradation |
+| STREAM-040 | Live update MUST use entity data from ActivityBus `event.entity` | Stream Handler | Entity from ActivityBus |
+| STREAM-041 | For delete activities, `data` MUST be null (entity no longer exists) | Stream Handler | Delete handling |
+| STREAM-042 | Live update format MUST match catch-up format | Stream Handler | Consistent structure |
 
 ---
 
@@ -846,6 +1101,9 @@ The stream offset (last received `activityId`) MUST be persisted to survive tab 
 | OFFLINE-004 | Outbox entries MUST include `expectedTransactionId` | Mutation Outbox | Conflict detection |
 | OFFLINE-005 | Same-field mutations MUST squash (keep latest value AND latest transactionId) | Mutation Outbox | Squashing behavior |
 | OFFLINE-006 | Different-field mutations MUST queue separately | Mutation Outbox | No cross-field squash |
+| OFFLINE-007 | Create entries MUST be keyed by `{entityType}:{entityId}` (entity-level) | Mutation Outbox | Create is entity-level |
+| OFFLINE-008 | Update to pending create MUST merge into create entry (not queue separate update) | Mutation Outbox | Create+edit coalescing |
+| OFFLINE-009 | Delete of pending create MUST remove both entries from outbox | Mutation Outbox | Cancel pending create |
 
 ### Upstream-first sync
 
@@ -916,7 +1174,7 @@ The stream offset (last received `activityId`) MUST be persisted to survive tab 
 |--------|-------------|-------|-----------|
 | SEC-010 | Activity notifications MUST only be routed to subscribers of the matching org | Stream Subscriber Manager | Org isolation |
 | SEC-011 | Stream MUST only deliver messages for subscribed org | Stream Handler | Cross-org blocked |
-| SEC-012 | Entity data in NOTIFY MUST NOT include sensitive computed fields | CDC Worker | No password hashes etc |
+| SEC-012 | Entity data in WebSocket message MUST NOT include sensitive computed fields | CDC Worker | No password hashes etc |
 
 ---
 
@@ -934,17 +1192,16 @@ The stream offset (last received `activityId`) MUST be persisted to survive tab 
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
-| PERF-010 | LISTEN connection count MUST be 1 per API server instance | ActivityBus | Connection count |
+| PERF-010 | WebSocket connection count MUST be 1 from CDC Worker per API server instance | ActivityBus | Connection count |
 | PERF-011 | Fan-out MUST be O(subscribers per org), not O(total subscribers) | Stream Subscriber Manager | Lookup efficiency |
-| PERF-012 | Entity fetch SHOULD be avoided when activity notification includes entity | Stream Subscriber Manager | Zero extra queries |
-| PERF-013 | Oversized entity fallback MUST fetch at most 1 entity per message | Stream Subscriber Manager | Bounded queries |
+| PERF-012 | Entity data MUST be included in WebSocket message (zero extra queries) | CDC Worker | No fetches needed |
 
 ### Resource limits
 
 | Req ID | Requirement | Owner | Test Case |
 |--------|-------------|-------|-----------|
 | PERF-020 | Catch-up query MUST limit to 100 activities per request | Activity Fetcher | LIMIT clause |
-| PERF-021 | NOTIFY payload MUST stay under 8KB (truncate entity at 7.5KB) | CDC Worker | Payload size |
+| PERF-021 | WebSocket messages MUST be sent without buffering delays | CDC Worker | Message timing |
 | PERF-022 | IndexedDB transaction store MUST limit to 1000 entries | Transaction Manager | Cleanup old entries |
 
 ---

@@ -1,7 +1,9 @@
 import { appConfig } from 'config';
+import { sql } from 'drizzle-orm';
 import { foreignKey, index, jsonb, pgTable, varchar } from 'drizzle-orm/pg-core';
+import type { TxColumnData } from '#/db/utils/product-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { activityActions } from '#/lib/event-bus';
+import { activityActions } from '#/sync/activity-bus';
 import { resourceTypes } from '#/table-config';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
@@ -28,6 +30,8 @@ export const activitiesTable = pgTable(
     organizationId: varchar(), // Organization context (derived from entity's organizationId or self for organizations)
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(), // Array of keys that changed (for updates)
+    // Sync: transaction metadata from product entity tx column (null for context entities)
+    tx: jsonb().$type<TxColumnData>(),
   },
   (table) => [
     index('activities_created_at_index').on(table.createdAt.desc()),
@@ -36,6 +40,9 @@ export const activitiesTable = pgTable(
     index('activities_entity_id_index').on(table.entityId),
     index('activities_table_name_index').on(table.tableName),
     index('activities_organization_id_index').on(table.organizationId),
+    // Sync: expression indexes for tx queries
+    index('activities_tx_id_index').on(sql`(tx->>'transactionId')`),
+    index('activities_tx_field_index').on(table.entityType, table.entityId, sql`(tx->>'changedField')`),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],

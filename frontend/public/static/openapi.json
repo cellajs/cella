@@ -108,6 +108,10 @@
     {
       "name": "activities",
       "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery."
+    },
+    {
+      "name": "sync",
+      "description": "Endpoints for *real-time synchronization* of entity changes via Server-Sent Events (SSE). Clients\n        subscribe to entity streams and receive live updates for create, update, and delete operations.\n        Supports resumable connections using Last-Event-ID for reliable message delivery."
     }
   ],
   "components": {
@@ -593,6 +597,30 @@
                 "items": {}
               }
             ]
+          },
+          "tx": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ]
           }
         },
         "required": [
@@ -606,7 +634,8 @@
           "entityId",
           "organizationId",
           "createdAt",
-          "changedKeys"
+          "changedKeys",
+          "tx"
         ],
         "example": {
           "id": "s933zhzgm8axl572xlcja86p",
@@ -623,7 +652,8 @@
             "email",
             "description",
             "name"
-          ]
+          ],
+          "tx": null
         }
       },
       "Me": {
@@ -1494,6 +1524,37 @@
           }
         }
       },
+      "TxStreamMessage": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "transactionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sourceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "changedField": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "transactionId",
+          "sourceId",
+          "changedField"
+        ]
+      },
       "Page": {
         "type": "object",
         "properties": {
@@ -1585,8 +1646,58 @@
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju"
+          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "tx": null
         }
+      },
+      "TxResponse": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "description": "Echoes the request transactionId"
+          }
+        },
+        "required": [
+          "transactionId"
+        ]
+      },
+      "TxRequest": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Client-generated unique ID (HLC format: timestamp.logical.nodeId)"
+          },
+          "sourceId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Tab/instance identifier"
+          },
+          "changedField": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64,
+            "description": "Which field this mutation changes (null for create/delete)"
+          },
+          "expectedTransactionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64,
+            "description": "Last known transaction ID for this field (null for create or first write)"
+          }
+        },
+        "required": [
+          "transactionId",
+          "sourceId",
+          "changedField",
+          "expectedTransactionId"
+        ]
       },
       "Attachment": {
         "type": "object",
@@ -1748,6 +1859,7 @@
           "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "tx": null,
           "organizationId": "8dwkbmpkeuemouu8t58r8fuj"
         }
       },
@@ -5529,6 +5641,140 @@
         }
       }
     },
+    "/pages/stream": {
+      "get": {
+        "security": [],
+        "operationId": "pagesPublicStream",
+        "tags": [
+          "pages"
+        ],
+        "summary": "Public stream of page changes",
+        "description": "Stream real-time changes for pages. No authentication required. Use offset for catch-up, live=sse for SSE streaming.",
+        "x-guard": [
+          "isPublicAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
+            },
+            "required": false,
+            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sse"
+              ],
+              "description": "Set to \"sse\" for live updates (SSE stream)"
+            },
+            "required": false,
+            "description": "Set to \"sse\" for live updates (SSE stream)",
+            "name": "live",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catch-up activities or SSE stream started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "data": {},
+                          "entityType": {
+                            "type": "string",
+                            "enum": [
+                              "attachment",
+                              "page"
+                            ]
+                          },
+                          "entityId": {
+                            "type": "string"
+                          },
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "create",
+                              "update",
+                              "delete"
+                            ]
+                          },
+                          "activityId": {
+                            "type": "string"
+                          },
+                          "changedKeys": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "tx": {
+                            "$ref": "#/components/schemas/TxStreamMessage"
+                          }
+                        },
+                        "required": [
+                          "entityType",
+                          "entityId",
+                          "action",
+                          "activityId",
+                          "changedKeys",
+                          "createdAt",
+                          "tx"
+                        ]
+                      }
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Last activity ID (use as offset for next request)"
+                    }
+                  },
+                  "required": [
+                    "activities",
+                    "cursor"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/pages/sync-pages": {
       "get": {
         "security": [],
@@ -5639,10 +5885,22 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "tx": {
+                    "$ref": "#/components/schemas/TxRequest"
                   }
-                }
+                },
+                "required": [
+                  "data",
+                  "tx"
+                ]
               }
             }
           }
@@ -5653,7 +5911,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Page"
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxResponse"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "tx"
+                  ]
                 }
               }
             }
@@ -5930,38 +6200,50 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "keywords": {
+                        "type": "string"
+                      },
+                      "displayOrder": {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "unpublished",
+                          "published",
+                          "archived"
+                        ]
+                      },
+                      "parentId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
                   },
-                  "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "keywords": {
-                    "type": "string"
-                  },
-                  "displayOrder": {
-                    "type": "number",
-                    "minimum": -140737488355328,
-                    "maximum": 140737488355327
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "unpublished",
-                      "published",
-                      "archived"
-                    ]
-                  },
-                  "parentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                  "tx": {
+                    "$ref": "#/components/schemas/TxRequest"
                   }
-                }
+                },
+                "required": [
+                  "data",
+                  "tx"
+                ]
               }
             }
           }
@@ -5972,7 +6254,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Page"
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxResponse"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "tx"
+                  ]
                 }
               }
             }
@@ -6752,6 +7046,185 @@
         }
       }
     },
+    "/metrics/runtime": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getRuntimeMetrics",
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Get runtime metrics",
+        "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.\n      Includes memory usage, CPU time, uptime, and event loop utilization.",
+        "x-guard": [
+          "isAuthenticated",
+          "hasSystemAccess"
+        ],
+        "x-rate-limiter": [],
+        "responses": {
+          "200": {
+            "description": "Runtime metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "process": {
+                      "type": "object",
+                      "properties": {
+                        "uptime": {
+                          "type": "number",
+                          "description": "Process uptime in seconds"
+                        },
+                        "memory": {
+                          "type": "object",
+                          "properties": {
+                            "heapUsed": {
+                              "type": "number",
+                              "description": "Heap memory used in bytes"
+                            },
+                            "heapTotal": {
+                              "type": "number",
+                              "description": "Total heap memory in bytes"
+                            },
+                            "external": {
+                              "type": "number",
+                              "description": "External memory in bytes"
+                            },
+                            "rss": {
+                              "type": "number",
+                              "description": "Resident set size in bytes"
+                            }
+                          },
+                          "required": [
+                            "heapUsed",
+                            "heapTotal",
+                            "external",
+                            "rss"
+                          ]
+                        },
+                        "cpu": {
+                          "type": "object",
+                          "properties": {
+                            "user": {
+                              "type": "number",
+                              "description": "CPU time spent in user mode (microseconds)"
+                            },
+                            "system": {
+                              "type": "number",
+                              "description": "CPU time spent in system mode (microseconds)"
+                            }
+                          },
+                          "required": [
+                            "user",
+                            "system"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "uptime",
+                        "memory",
+                        "cpu"
+                      ]
+                    },
+                    "otel": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "unit": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "gauge",
+                              "counter",
+                              "histogram",
+                              "sum"
+                            ]
+                          },
+                          "dataPoints": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "additionalProperties": {
+                                        "type": "number"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "attributes": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                "startTime": {
+                                  "type": "string"
+                                },
+                                "endTime": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type",
+                          "dataPoints"
+                        ]
+                      },
+                      "description": "OpenTelemetry metrics from RuntimeNodeInstrumentation"
+                    }
+                  },
+                  "required": [
+                    "process",
+                    "otel"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/metrics/public": {
       "get": {
         "security": [],
@@ -6791,6 +7264,164 @@
                     "organization",
                     "attachment",
                     "page"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/organizations/{orgIdOrSlug}/sync/stream": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "syncStream",
+        "tags": [
+          "sync"
+        ],
+        "summary": "Live stream of entity changes",
+        "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
+        "x-guard": [
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Organization ID or slug"
+            },
+            "required": true,
+            "description": "Organization ID or slug",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
+            },
+            "required": false,
+            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sse"
+              ],
+              "description": "Set to \"sse\" for live updates (SSE stream)"
+            },
+            "required": false,
+            "description": "Set to \"sse\" for live updates (SSE stream)",
+            "name": "live",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")"
+            },
+            "required": false,
+            "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")",
+            "name": "entityTypes",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catch-up activities or SSE stream started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "data": {},
+                          "entityType": {
+                            "type": "string",
+                            "enum": [
+                              "attachment",
+                              "page"
+                            ]
+                          },
+                          "entityId": {
+                            "type": "string"
+                          },
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "create",
+                              "update",
+                              "delete"
+                            ]
+                          },
+                          "activityId": {
+                            "type": "string"
+                          },
+                          "changedKeys": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "tx": {
+                            "$ref": "#/components/schemas/TxStreamMessage"
+                          }
+                        },
+                        "required": [
+                          "entityType",
+                          "entityId",
+                          "action",
+                          "activityId",
+                          "changedKeys",
+                          "createdAt",
+                          "tx"
+                        ]
+                      }
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Last activity ID (use as offset for next request)"
+                    }
+                  },
+                  "required": [
+                    "activities",
+                    "cursor"
                   ]
                 }
               }
@@ -7072,124 +7703,142 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "createdAt": {
-                      "type": "string"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "entityType": {
-                      "type": "string",
-                      "enum": [
-                        "attachment"
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "originalKey": {
+                          "type": "string"
+                        },
+                        "bucketName": {
+                          "type": "string"
+                        },
+                        "public": {
+                          "type": "boolean"
+                        },
+                        "groupId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "convertedContentType": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "convertedKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "thumbnailKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "filename",
+                        "contentType",
+                        "size",
+                        "organizationId",
+                        "originalKey",
+                        "bucketName"
                       ]
                     },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "modifiedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "keywords": {
-                      "type": "string"
-                    },
-                    "createdBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "modifiedBy": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "public": {
-                      "type": "boolean"
-                    },
-                    "bucketName": {
-                      "type": "string"
-                    },
-                    "groupId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "filename": {
-                      "type": "string"
-                    },
-                    "contentType": {
-                      "type": "string"
-                    },
-                    "convertedContentType": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "size": {
-                      "type": "string"
-                    },
-                    "originalKey": {
-                      "type": "string"
-                    },
-                    "convertedKey": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "thumbnailKey": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "organizationId": {
-                      "type": "string"
-                    }
+                    "minItems": 1,
+                    "maxItems": 50
                   },
-                  "required": [
-                    "keywords",
-                    "bucketName",
-                    "filename",
-                    "contentType",
-                    "size",
-                    "originalKey",
-                    "organizationId"
-                  ]
+                  "tx": {
+                    "$ref": "#/components/schemas/TxRequest"
+                  }
                 },
-                "minItems": 1,
-                "maxItems": 50
+                "required": [
+                  "data",
+                  "tx"
+                ]
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Attachment",
+          "200": {
+            "description": "Attachments already created (idempotent)",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Attachment"
-                  }
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxResponse"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "tx"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Attachments created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxResponse"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "tx"
+                  ]
                 }
               }
             }
@@ -7337,13 +7986,25 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "originalKey": {
+                        "type": "string"
+                      }
+                    }
                   },
-                  "originalKey": {
-                    "type": "string"
+                  "tx": {
+                    "$ref": "#/components/schemas/TxRequest"
                   }
-                }
+                },
+                "required": [
+                  "data",
+                  "tx"
+                ]
               }
             }
           }
@@ -7354,7 +8015,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Attachment"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Attachment"
+                    },
+                    "tx": {
+                      "$ref": "#/components/schemas/TxResponse"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "tx"
+                  ]
                 }
               }
             }

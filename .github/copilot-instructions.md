@@ -43,15 +43,16 @@ Routes in `frontend/src/routes/*.tsx` must be manually added to `frontend/src/ro
 ### Entity Types
 A core concept of cella is the ability to dynamically manage different types of entities for each app built with the template. `user` is a special entity that exists across all apps. `organization` is a required entity. There are two main categories of entityType (singular):
 - `ContextEntityType` - Has memberships (e.g., `organization`, but apps could add `project`)
-- `ProductEntityType` - Content entities with sync/offline support (e.g., `attachment`, `page`)
+- `ProductEntityType` - Content entities without membership (e.g., `attachment`, `page`)
 
-Product entities are typically daily-use content data models that can benefit from Electric Sync + TanStack DB for realtime updates. See `frontend/src/modules/attachments/` for reference implementation.
+Product entities are typically daily-use content data models that can optionally benefit from for realtime updates. See `frontend/src/modules/attachments/` for reference implementation.
 
 ## Essential Commands
 
 ```bash
 pnpm quick          # Fast dev with PGlite (DEV_MODE=basic, no Docker)
-pnpm dev            # Full dev with PostgreSQL (DEV_MODE=core, requires Docker)
+pnpm dev            # Full dev with PostgreSQL + CDC Worker (DEV_MODE=full, requires Docker)
+pnpm dev:core       # Dev with PostgreSQL only (DEV_MODE=core, no CDC)
 pnpm check          # Run generate:openapi + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data
@@ -64,7 +65,7 @@ pnpm sync           # Sync changes from upstream cella to fork (useful for forks
 - **Formatter/Linter**: Biome (`pnpm lint:fix`)
 - **Indentation**: 2 spaces, single quotes, trailing commas (ES5)
 - **Files**: kebab-case (`user-profile.tsx`)
-- **Variables/functions**: camelCase
+- **Variables/functions**: camelCase (including constants - no UPPER_CASE)
 - **Components**: PascalCase
 - **Translation keys**: snake_case
 - **Headers**: Sentence case only (`## Code style`, not `## Code Style`)
