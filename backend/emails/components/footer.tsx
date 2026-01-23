@@ -16,7 +16,8 @@ export const Footer = () => (
       padding: '0rem 1.5rem',
     }}
   >
-    {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}・
+    {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country},{' '}
+    {appConfig.company.postcode}・
     <Link
       style={{
         color: '#0366d6',

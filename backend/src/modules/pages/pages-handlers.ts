@@ -15,7 +15,6 @@ import { checkFieldConflict, getEntityByTransaction, isTransactionProcessed } fr
 import { eventBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
-import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -136,19 +135,6 @@ const pagesRouteHandlers = app
       // Keep connection alive
       await keepAlive(stream);
     });
-  })
-  /**
-   * Proxy to electric for syncing to client
-   * Hono handlers are executed in registration order,
-   * so registered first to avoid route collisions.
-   */
-  .openapi(pagesRoutes.syncPages, async (ctx) => {
-    const { table, ...query } = ctx.req.valid('query');
-
-    // Validate query params
-    if (table !== 'pages') throw new AppError(400, 'sync_table_mismatch', 'error');
-
-    return await proxyElectricSync(table, query);
   })
   /**
    * Create page

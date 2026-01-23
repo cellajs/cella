@@ -18,7 +18,7 @@ export const config = {
   frontendUrl: 'https://cellajs.com',
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
-  electricUrl: 'https://electric.cellajs.com',
+
   aboutUrl: 'https://cellajs.com/about',
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
@@ -45,7 +45,6 @@ export const config = {
    ******************************************************************************/
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
-    sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)

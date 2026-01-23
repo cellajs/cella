@@ -1,6 +1,6 @@
 import { appConfig, type RealtimeEntityType } from 'config';
 import { isPermissionAllowed } from '#/permissions';
-import type { ActivityEvent } from '#/sync/activity-bus';
+import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
 import type { StreamMessage } from './schema';
@@ -9,13 +9,13 @@ import { type OrgStreamSubscriber, orgIndexKey } from './stream-types';
 /**
  * Check if a subscriber should receive an event.
  * Pure function with all org-scoped filtering logic.
+ *
+ * Note: No cursor comparison - nanoid strings are not ordered.
+ * Cursor is only used for catch-up queries, not live filtering.
  */
-export function shouldReceiveOrgEvent(subscriber: OrgStreamSubscriber, event: ActivityEvent): boolean {
+export function shouldReceiveOrgEvent(subscriber: OrgStreamSubscriber, event: ActivityEventWithEntity): boolean {
   // Must match org
   if (event.organizationId !== subscriber.orgId) return false;
-
-  // Skip if before cursor
-  if (subscriber.cursor && event.id <= subscriber.cursor) return false;
 
   // Must have entity ID
   if (!event.entityId) return false;
@@ -52,9 +52,9 @@ export function shouldReceiveOrgEvent(subscriber: OrgStreamSubscriber, event: Ac
 }
 
 /**
- * Build stream message from activity event.
+ * Build stream message from activity event with entity data.
  */
-export function buildStreamMessage(event: ActivityEvent): StreamMessage {
+export function buildStreamMessage(event: ActivityEventWithEntity): StreamMessage {
   return {
     activityId: event.id,
     action: event.action as 'create' | 'update' | 'delete',
@@ -63,14 +63,18 @@ export function buildStreamMessage(event: ActivityEvent): StreamMessage {
     changedKeys: event.changedKeys ?? null,
     createdAt: event.createdAt,
     tx: event.tx ?? null,
-    data: null, // Entity data from CDC Worker (when available)
+    // Include entity data for direct cache updates (from CDC Worker)
+    data: event.entity ?? null,
   };
 }
 
 /**
  * Send event to a subscriber and update cursor.
  */
-export async function sendToOrgSubscriber(subscriber: OrgStreamSubscriber, event: ActivityEvent): Promise<void> {
+export async function sendToOrgSubscriber(
+  subscriber: OrgStreamSubscriber,
+  event: ActivityEventWithEntity,
+): Promise<void> {
   const message = buildStreamMessage(event);
 
   await writeChange(subscriber.stream, event.id, message);
@@ -83,12 +87,21 @@ export async function sendToOrgSubscriber(subscriber: OrgStreamSubscriber, event
  * Route an activity event to all matching org subscribers.
  * Uses indexed lookup for O(1) org filtering.
  */
-export async function routeToOrgSubscribers(event: ActivityEvent): Promise<void> {
+export async function routeToOrgSubscribers(event: ActivityEventWithEntity): Promise<void> {
   const orgId = event.organizationId;
   if (!orgId) return;
 
   // O(1) lookup by org
   const subscribers = streamSubscriberManager.getByIndex<OrgStreamSubscriber>(orgIndexKey(orgId));
+
+  logEvent('debug', 'Routing org event', {
+    activityId: event.id,
+    action: event.action,
+    entityId: event.entityId,
+    orgId,
+    subscriberCount: subscribers.length,
+    hasEntityData: !!event.entity,
+  });
 
   for (const subscriber of subscribers) {
     if (shouldReceiveOrgEvent(subscriber, event)) {

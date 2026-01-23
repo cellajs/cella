@@ -191,12 +191,6 @@ import type {
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
-  SyncAttachmentsData,
-  SyncAttachmentsErrors,
-  SyncAttachmentsResponses,
-  SyncPagesData,
-  SyncPagesErrors,
-  SyncPagesResponses,
   SyncStreamData,
   SyncStreamErrors,
   SyncStreamResponses,
@@ -1491,29 +1485,6 @@ export const pagesPublicStream = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Sync pages
- *
- * Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.
- *
- * **GET /pages/sync-pages** ·· [syncPages](https://api.cellajs.com/docs#tag/pages/get/pages/sync-pages) ·· _pages_
- *
- * @param {syncPagesData} options
- * @param {string} options.query.table - `string`
- * @param {string} options.query.offset - `string`
- * @param {string=} options.query.handle - `string` (optional)
- * @param {string=} options.query.cursor - `string` (optional)
- * @param {string=} options.query.live - `string` (optional)
- * @param {string=} options.query.where - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const syncPages = <ThrowOnError extends boolean = true>(options: Options<SyncPagesData, ThrowOnError>) =>
-  (options.client ?? client).get<SyncPagesResponses, SyncPagesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/pages/sync-pages',
-    ...options,
-  });
-
-/**
  * Delete pages
  *
  * Delete one or more *pages* by ID.
@@ -1963,40 +1934,6 @@ export const syncStream = <ThrowOnError extends boolean = true>(options: Options
       },
     ],
     url: '/organizations/{orgIdOrSlug}/sync/stream',
-    ...options,
-  });
-
-/**
- * Sync attachments
- *
- * Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.
- * Organization parameter is required to scope the data.
- *
- * **GET /{orgIdOrSlug}/attachments/sync-attachments** ·· [syncAttachments](https://api.cellajs.com/docs#tag/attachments/get/{orgIdOrSlug}/attachments/sync-attachments) ·· _attachments_
- *
- * @param {syncAttachmentsData} options
- * @param {string} options.path.orgidorslug - `string`
- * @param {string} options.query.table - `string`
- * @param {string} options.query.offset - `string`
- * @param {string=} options.query.handle - `string` (optional)
- * @param {string=} options.query.cursor - `string` (optional)
- * @param {string=} options.query.live - `string` (optional)
- * @param {string=} options.query.where - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const syncAttachments = <ThrowOnError extends boolean = true>(
-  options: Options<SyncAttachmentsData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<SyncAttachmentsResponses, SyncAttachmentsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/sync-attachments',
     ...options,
   });
 

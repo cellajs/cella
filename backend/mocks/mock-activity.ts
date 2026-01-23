@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
 import type { ActivityModel } from '#/db/schema/activities';
 import { activityActions } from '#/sync/activity-bus';
-import { mockNanoid, withFakerSeed } from './utils';
 import { entityTableNames } from '#/table-config';
+import { mockNanoid, withFakerSeed } from './utils';
 
 /**
- * Generates a mock activity with all fields populated. Currently hardcoded 
+ * Generates a mock activity with all fields populated. Currently hardcoded
  * with entityType values but true schema also includes resourceType values.
  * It should always be oneOf: entityType or resourceType populated with their respective values.
  * Uses deterministic seeding - same key produces same data.

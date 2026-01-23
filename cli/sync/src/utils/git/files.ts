@@ -3,6 +3,7 @@ import { getCachedCommitHistory, getCachedFileHashes, setCachedCommitHistory, se
 import {
   gitAdd,
   gitCheckoutOursFilePath,
+  gitCheckoutTheirsFilePath,
   gitDiffCached,
   gitDiffCachedDeleted,
   gitDiffUnmerged,
@@ -176,5 +177,26 @@ export async function getStagedDeletions(repoPath: string): Promise<string[]> {
  */
 export async function resolveConflictAsOurs(repoPath: string, filePath: string): Promise<void> {
   await gitCheckoutOursFilePath(repoPath, filePath);
+  await gitAdd(repoPath, filePath);
+}
+
+/**
+ * Resolves a merge conflict by choosing **theirs** version of the file
+ * (i.e., the version from the incoming/merged branch) and staging it.
+ *
+ * Internally runs:
+ * - `git checkout --theirs <file>`
+ * - `git add <file>`
+ *
+ * @param repoPath - The file system path to the Git repository
+ * @param filePath - The path to the conflicted file
+ *
+ * @returns A promise that resolves when the conflict has been resolved
+ *
+ * @example
+ * await resolveConflictAsTheirs('/repo', 'src/config.ts');
+ */
+export async function resolveConflictAsTheirs(repoPath: string, filePath: string): Promise<void> {
+  await gitCheckoutTheirsFilePath(repoPath, filePath);
   await gitAdd(repoPath, filePath);
 }

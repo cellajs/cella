@@ -10,13 +10,7 @@ import {
   attachmentUpdateTxBodySchema,
   attachmentUpdateTxResponseSchema,
 } from '#/modules/attachments/attachments-schema';
-import {
-  baseElectricSyncQuery,
-  idInOrgParamSchema,
-  idSchema,
-  idsBodySchema,
-  inOrgParamSchema,
-} from '#/utils/schema/common';
+import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
 
@@ -128,24 +122,6 @@ const attachmentRoutes = {
           },
         },
       },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Sync attachments using Electric shape proxy
-   */
-  syncAttachments: createXRoute({
-    operationId: 'syncAttachments',
-    method: 'get',
-    path: '/sync-attachments',
-    xGuard: [isAuthenticated, hasOrgAccess],
-    tags: ['attachments'],
-    summary: 'Sync attachments',
-    description: `Sync attachment data by proxying requests to ElectricSQL's shape endpoint for \`attachments\` table.
-      Organization parameter is required to scope the data.`,
-    request: { query: baseElectricSyncQuery, params: inOrgParamSchema },
-    responses: {
-      200: { description: 'Success' },
       ...errorResponseRefs,
     },
   }),

@@ -3,7 +3,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 
 import { createStreamMessageSchema } from '#/modules/sync/schema';
-import { baseElectricSyncQuery, idsBodySchema } from '#/utils/schema/common';
+import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponseRefs } from '#/utils/schema/error-responses';
 import { paginationSchema } from '#/utils/schema/success-responses';
 import {
@@ -53,23 +53,6 @@ const pagesRoutes = {
           },
         },
       },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Sync pages using Electric shape proxy
-   */
-  syncPages: createXRoute({
-    operationId: 'syncPages',
-    method: 'get',
-    path: '/sync-pages',
-    xGuard: isPublicAccess,
-    tags: ['pages'],
-    summary: 'Sync pages',
-    description: `Sync page data by proxying requests to ElectricSQL's shape endpoint for \`pages\` table.`,
-    request: { query: baseElectricSyncQuery },
-    responses: {
-      200: { description: 'Success' },
       ...errorResponseRefs,
     },
   }),

@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
@@ -76,7 +76,7 @@ interface TagOperationsListProps {
  */
 export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   // Register all operation hashes for this tag section
-  const sectionIds = useMemo(() => operations.map((op) => op.hash), [operations]);
+  const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
 
   return (

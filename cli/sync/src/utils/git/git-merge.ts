@@ -6,7 +6,7 @@ import { confirm } from '@inquirer/prompts';
 import { config } from '#/config';
 import { pauseSpinner, resumeSpinner } from '#/utils/progress';
 import { gitAddAll, gitCheckout, gitCommit, gitMerge, isMergeInProgress } from './command';
-import { getUnmergedFiles } from './files';
+import { getUnmergedFiles, resolveConflictAsTheirs } from './files';
 import { getCommitCount, getLastCommitMessages, hasAnythingToCommit } from './helpers';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,6 +88,25 @@ async function waitForManualConflictResolution(mergeIntoPath: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Resolves all squash merge conflicts by accepting the incoming (theirs) version.
+ *
+ * During squash merge from sync-branch → development, any conflicts should be
+ * resolved by accepting sync-branch content because:
+ * - sync-branch already contains validated, reviewed content
+ * - All conflict resolutions were already done during upstream → sync-branch merge
+ * - The developer has already approved these changes via pnpm check
+ *
+ * @param repoPath - Path to the repository
+ */
+async function resolveSquashConflictsAsTheirs(repoPath: string): Promise<void> {
+  const conflicts = await getUnmergedFiles(repoPath);
+
+  for (const filePath of conflicts) {
+    await resolveConflictAsTheirs(repoPath, filePath);
+  }
+}
+
+/**
  * Squashes all sync-related commits from fork.sync-branch into fork.targetBranch.
  * Changes are staged but NOT committed, allowing the developer to review before committing.
  *
@@ -132,8 +151,9 @@ export async function handleSquashMerge(
     await gitMerge(mergeIntoPath, mergeFromBranch, { squash: true, acceptTheirs: true });
   } catch {
     // Squash merge can still have conflicts if development diverged from sync-branch
-    // (e.g., direct commits on development after a previous sync)
-    await waitForManualConflictResolution(mergeIntoPath);
+    // (e.g., direct commits on development after a previous sync).
+    // Since sync-branch already contains validated content, auto-resolve by accepting theirs.
+    await resolveSquashConflictsAsTheirs(mergeIntoPath);
   }
 
   await gitAddAll(mergeIntoPath);

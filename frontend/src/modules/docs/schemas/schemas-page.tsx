@@ -3,6 +3,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
@@ -65,7 +66,13 @@ function SchemasPage() {
                         hash={schema.ref.replace(/^#/, '')}
                         replace
                         draggable={false}
+                        resetScroll={false}
                         className="flex max-w-full min-w-0 items-baseline gap-0.5 font-mono text-sm truncate"
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey) return;
+                          // Wait for collapsible to open before scrolling
+                          requestAnimationFrame(() => scrollToSectionById(schema.ref.replace(/^#/, '')));
+                        }}
                       >
                         <span className="min-w-0 flex-[0_1_auto] truncate">
                           {schema.ref.split('/').slice(0, -1).join('/')}
@@ -83,6 +90,10 @@ function SchemasPage() {
                     replace
                     draggable={false}
                     resetScroll={false}
+                    onClick={() => {
+                      // Wait for collapsible to open before scrolling
+                      if (!isOpen) requestAnimationFrame(() => scrollToSectionById(tag.name));
+                    }}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'default' }),
                       'flex items-center w-fit gap-2 -ml-3',

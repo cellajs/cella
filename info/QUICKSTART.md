@@ -11,7 +11,7 @@ pnpm install
 pnpm quick
 ```
 
-## Run it with full postgres and [electric-sync](https://electric-sql.com/) in docker
+## Run it with full postgres and CDC worker
 
 ```bash
 pnpm install

@@ -2484,52 +2484,6 @@ export type PagesPublicStreamResponses = {
 
 export type PagesPublicStreamResponse = PagesPublicStreamResponses[keyof PagesPublicStreamResponses];
 
-export type SyncPagesData = {
-  body?: never;
-  path?: never;
-  query: {
-    table: string;
-    offset: string;
-    handle?: string;
-    cursor?: string;
-    live?: string;
-    where?: string;
-  };
-  url: '/pages/sync-pages';
-};
-
-export type SyncPagesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SyncPagesError = SyncPagesErrors[keyof SyncPagesErrors];
-
-export type SyncPagesResponses = {
-  /**
-   * Success
-   */
-  200: unknown;
-};
-
 export type DeletePagesData = {
   body: {
     ids: Array<string>;
@@ -3405,57 +3359,6 @@ export type SyncStreamResponses = {
 };
 
 export type SyncStreamResponse = SyncStreamResponses[keyof SyncStreamResponses];
-
-export type SyncAttachmentsData = {
-  body?: never;
-  path: {
-    /**
-     * Entity ID or slug. ID is always preferred.
-     */
-    orgIdOrSlug: string;
-  };
-  query: {
-    table: string;
-    offset: string;
-    handle?: string;
-    cursor?: string;
-    live?: string;
-    where?: string;
-  };
-  url: '/{orgIdOrSlug}/attachments/sync-attachments';
-};
-
-export type SyncAttachmentsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SyncAttachmentsError = SyncAttachmentsErrors[keyof SyncAttachmentsErrors];
-
-export type SyncAttachmentsResponses = {
-  /**
-   * Success
-   */
-  200: unknown;
-};
 
 export type DeleteAttachmentsData = {
   body: {

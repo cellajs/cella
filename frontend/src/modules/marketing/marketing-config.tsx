@@ -68,7 +68,6 @@ export const features = [
   { id: 'vite' },
   { id: 'react' },
   { id: 'drizzle' },
-  { id: 'electric' },
   { id: 'shadcn' },
   { id: 'openapi' },
   { id: 'tanstack' },

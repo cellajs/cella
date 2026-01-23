@@ -42,12 +42,12 @@
   {
     "name": "attachments",
     "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to\n        entities such as organizations or users. Files are uploaded directly by the client; the API handles\n        metadata registration, linking, access, and preview utilities.",
-    "count": 6
+    "count": 5
   },
   {
     "name": "pages",
     "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline\n        capabilities. Pages can be organized hierarchically and are used in /docs.",
-    "count": 7
+    "count": 6
   },
   {
     "name": "metrics",

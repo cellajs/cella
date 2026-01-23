@@ -9,8 +9,16 @@ const SPY_PREFIX = 'spy-';
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
 let currentSection = '';
-let isProgrammaticScroll = false;
+let hashWriteBlockedUntil = 0; // Timestamp until which hash writes are blocked
 let initTime = 0;
+
+/** Check if hash writes are currently allowed */
+const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Date.now() - initTime > 300;
+
+/** Block hash writes for a duration */
+const blockHashWrites = (ms: number) => {
+  hashWriteBlockedUntil = Date.now() + ms;
+};
 
 /** Find the best visible section (highest ratio, or closest to top if tied) */
 const getBestSection = (): string | null => {
@@ -51,8 +59,7 @@ const rebuild = () => {
         currentSection = best;
 
         // Write hash (skip during programmatic scroll or initial load delay)
-        const canWrite = isProgrammaticScroll ? false : initTime && Date.now() - initTime > 300;
-        if (canWrite && location.hash !== `#${best}`) {
+        if (canWriteHash() && location.hash !== `#${best}`) {
           history.replaceState(null, '', `#${best}`);
         }
       }
@@ -79,6 +86,7 @@ export const registerSections = (ids: string[]) => {
   const hash = location.hash.slice(1);
   if (hash && sections.has(hash) && !currentSection) {
     currentSection = hash;
+    blockHashWrites(1000); // Block writes during initial scroll
     requestAnimationFrame(() => {
       document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
@@ -108,17 +116,14 @@ export const scrollToSectionById = (id: string) => {
   const distance = Math.abs(el.getBoundingClientRect().top);
   const smooth = distance < window.innerHeight * 2;
 
-  isProgrammaticScroll = true;
-  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' });
+  // Block hash writes for duration of scroll + buffer
+  // Smooth scroll can take up to 1-2s depending on distance and browser
+  blockHashWrites(smooth ? 3000 : 500);
+  currentSection = id;
 
   if (location.hash !== `#${id}`) {
     history.replaceState(null, '', `#${id}`);
   }
 
-  setTimeout(
-    () => {
-      isProgrammaticScroll = false;
-    },
-    smooth ? 2000 : 500,
-  );
+  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' });
 };

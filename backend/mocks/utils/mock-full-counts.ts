@@ -6,7 +6,9 @@ import { generateMockMembershipCounts, type MockMembershipCounts } from './mock-
  * Combines membership counts and entity counts dynamically.
  * @param key - Key for deterministic generation.
  */
-export const generateMockFullCounts = (key: string): { membership: MockMembershipCounts; entities: MockEntityCounts } => ({
+export const generateMockFullCounts = (
+  key: string,
+): { membership: MockMembershipCounts; entities: MockEntityCounts } => ({
   membership: generateMockMembershipCounts(`${key}:membership`),
   entities: generateMockEntityCounts(`${key}:entities`),
 });

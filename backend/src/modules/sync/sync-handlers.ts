@@ -13,7 +13,7 @@ import {
   getContextUser,
   getContextUserSystemRole,
 } from '#/lib/context';
-import { type ActivityAction, type ActivityEvent, activityActions, eventBus } from '#/sync/activity-bus';
+import { type ActivityAction, type ActivityEventWithEntity, activityActions, eventBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
 import type { StreamMessage } from './schema';
@@ -137,7 +137,7 @@ const realtimeEvents = [
 ] as const;
 
 for (const eventType of realtimeEvents) {
-  eventBus.on(eventType, async (event: ActivityEvent) => {
+  eventBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
       await routeToOrgSubscribers(event);
     } catch (error) {

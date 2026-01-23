@@ -1,5 +1,4 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import type { GenComponentSchema } from '~/modules/docs/types';
@@ -65,7 +64,7 @@ interface TagSchemasListProps {
  */
 export const TagSchemasList = ({ schemas }: TagSchemasListProps) => {
   // Register all schema refs for this tag section
-  const sectionIds = useMemo(() => schemas.map((s) => s.ref.replace(/^#/, '')), [schemas]);
+  const sectionIds = schemas.map((s) => s.ref.replace(/^#/, ''));
   useScrollSpy(sectionIds);
 
   return (

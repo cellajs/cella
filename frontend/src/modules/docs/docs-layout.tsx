@@ -8,6 +8,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav';
+import { usePageLiveStream } from '~/modules/pages/use-page-live-stream';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/store/ui';
@@ -21,6 +22,9 @@ function DocsLayout() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Connect to public pages stream for real-time updates
+  usePageLiveStream();
 
   // Fetch tags via React Query (reduces bundle size)
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);

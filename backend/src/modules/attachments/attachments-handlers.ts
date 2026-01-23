@@ -12,7 +12,6 @@ import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { checkFieldConflict, getEntityByTransaction, isTransactionProcessed } from '#/sync';
 import { defaultHook } from '#/utils/default-hook';
-import { proxyElectricSync } from '#/utils/electric-utils';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
@@ -21,34 +20,6 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const attachmentsRouteHandlers = app
-  /**
-   * Proxy to electric for syncing to client
-   * Hono handlers are executed in registration order, so registered first to avoid route collisions.
-   */
-  .openapi(attachmentRoutes.syncAttachments, async (ctx) => {
-    const { table, ...query } = ctx.req.valid('query');
-
-    // Validate query params
-    if (table !== 'attachments') throw new AppError(400, 'sync_table_mismatch', 'error');
-
-    if (query.where && /organization_id\s*=/.test(query.where)) {
-      throw new AppError(400, 'sync_organization_mismatch', 'error');
-    }
-    const organization = getContextOrganization();
-
-    const clientWhere = query.where || '';
-
-    query.where = clientWhere ? `organization_id = $1 AND (${clientWhere})` : `organization_id = $1`;
-
-    // Provide the organization ID as params for the parameterized query
-    // Electric SQL expects object format: {"1": "value"} for $1 placeholder
-    const enrichedQuery = {
-      ...query,
-      params: JSON.stringify({ '1': organization.id }),
-    };
-
-    return await proxyElectricSync(table, enrichedQuery, 'attachment');
-  })
   /**
    * Get list of attachments
    */

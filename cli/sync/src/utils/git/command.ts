@@ -395,7 +395,21 @@ export function isRebaseInProgress(repoPath: string): boolean {
 export function gitCheckoutOursFilePath(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(['checkout', '--ours', filePath], repoPath);
 }
-
+/**
+ * Checks out the "theirs" version of a conflicted file during a merge.
+ * This keeps the incoming branch's version of the file.
+ *
+ * @param repoPath - The file system path to the git repository
+ * @param filePath - The path to the conflicted file
+ *
+ * @returns The stdout from the git checkout command
+ *
+ * @example
+ * await gitCheckoutTheirsFilePath('/repo', 'src/config.ts');
+ */
+export function gitCheckoutTheirsFilePath(repoPath: string, filePath: string): Promise<string> {
+  return runGitCommand(['checkout', '--theirs', filePath], repoPath);
+}
 /**
  * Removes a file from the Git index (staging area) but keeps it in the working directory.
  *

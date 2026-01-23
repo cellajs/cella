@@ -799,23 +799,6 @@
     }
   },
   {
-    "id": "syncPages",
-    "hash": "tag/pages/GET/pages/sync-pages",
-    "method": "get",
-    "path": "/pages/sync-pages",
-    "tags": ["pages"],
-    "summary": "Sync pages",
-    "description": "Sync page data by proxying requests to ElectricSQL's shape endpoint for `pages` table.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
     "id": "createPage",
     "hash": "tag/pages/POST/pages",
     "method": "post",
@@ -1101,23 +1084,6 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["hasOrgAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "syncAttachments",
-    "hash": "tag/attachments/GET/{orgIdOrSlug}/attachments/sync-attachments",
-    "method": "get",
-    "path": "/{orgIdOrSlug}/attachments/sync-attachments",
-    "tags": ["attachments"],
-    "summary": "Sync attachments",
-    "description": "Sync attachment data by proxying requests to ElectricSQL's shape endpoint for `attachments` table.\n      Organization parameter is required to scope the data.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },

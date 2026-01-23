@@ -25,7 +25,9 @@ export type MockEntityCounts = {
 export const generateMockEntityCounts = (key: string): MockEntityCounts => {
   const generator = (): MockEntityCounts =>
     Object.fromEntries(
-      appConfig.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, faker.number.int({ min: 0, max: 500 })]),
+      appConfig.entityTypes
+        .filter(isFilteredEntityType)
+        .map((entityType) => [entityType, faker.number.int({ min: 0, max: 500 })]),
     ) as MockEntityCounts;
 
   return withFakerSeed(key, generator);

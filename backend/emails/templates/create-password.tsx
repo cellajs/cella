@@ -1,14 +1,13 @@
-import { appConfig } from "config";
-import i18n from "i18next";
-import { Link, Text } from "jsx-email";
-
-import type { BasicTemplateType } from "../types";
-import { EmailLogo } from "../components/email-logo";
-import { EmailContainer } from "../components/email-container";
-import { EmailBody } from "../components/email-body";
-import { EmailButton } from "../components/email-button";
-import { EmailHeader } from "../components/email-header";
-import { Footer } from "../components/footer";
+import { appConfig } from 'config';
+import i18n from 'i18next';
+import { Link, Text } from 'jsx-email';
+import { EmailBody } from '../components/email-body';
+import { EmailButton } from '../components/email-button';
+import { EmailContainer } from '../components/email-container';
+import { EmailHeader } from '../components/email-header';
+import { EmailLogo } from '../components/email-logo';
+import { Footer } from '../components/footer';
+import type { BasicTemplateType } from '../types';
 
 interface CreatePasswordEmailProps extends BasicTemplateType {
   createPasswordLink: string;
@@ -23,23 +22,26 @@ const appName = appConfig.name;
  */
 export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePasswordEmailProps) => {
   return (
-    <EmailContainer previewText={i18n.t("backend:email.create_password.preview", { appName, lng })}>
-      <EmailHeader headerText={i18n.t("backend:email.create_password.preview", { appName, lng })} />
+    <EmailContainer previewText={i18n.t('backend:email.create_password.preview', { appName, lng })}>
+      <EmailHeader headerText={i18n.t('backend:email.create_password.preview', { appName, lng })} />
       <EmailBody>
         <Text>
-          <p style={{ marginBottom: "4px" }}>{name && i18n.t("backend:email.hi", { lng, name })}</p>
-          <div dangerouslySetInnerHTML={{ __html: i18n.t("backend:email.create_password.text", { appName, lng }) }} />
+          <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
+          <div dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.create_password.text', { appName, lng }) }} />
         </Text>
         <EmailButton
-          ButtonText={i18n.t("common:reset_resource", { resource: i18n.t("common:password").toLowerCase(), lng })}
+          ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })}
           href={createPasswordLink}
         />
 
-        <Text style={{ fontSize: "0.85rem", textAlign: "center" }}>
-          {i18n.t("backend:email.create_password.expire", { lng })} <Link href={createPasswordUrl}>{createPasswordUrl}</Link>
+        <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>
+          {i18n.t('backend:email.create_password.expire', { lng })}{' '}
+          <Link href={createPasswordUrl}>{createPasswordUrl}</Link>
         </Text>
 
-        <Text style={{ fontSize: "0.85rem", textAlign: "center" }}>{i18n.t("backend:email.create_password.ignore", { lng })}</Text>
+        <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>
+          {i18n.t('backend:email.create_password.ignore', { lng })}
+        </Text>
       </EmailBody>
       <EmailLogo />
       <Footer />

@@ -1101,19 +1101,6 @@ export const zPagesPublicStreamResponse = z.object({
   cursor: z.union([z.string(), z.null()]),
 });
 
-export const zSyncPagesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.object({
-    table: z.string(),
-    offset: z.string(),
-    handle: z.optional(z.string()),
-    cursor: z.optional(z.string()),
-    live: z.optional(z.string()),
-    where: z.optional(z.string()),
-  }),
-});
-
 export const zDeletePagesData = z.object({
   body: z.object({
     ids: z.array(z.string()).min(1).max(50),
@@ -1453,21 +1440,6 @@ export const zSyncStreamResponse = z.object({
     }),
   ),
   cursor: z.union([z.string(), z.null()]),
-});
-
-export const zSyncAttachmentsData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.object({
-    table: z.string(),
-    offset: z.string(),
-    handle: z.optional(z.string()),
-    cursor: z.optional(z.string()),
-    live: z.optional(z.string()),
-    where: z.optional(z.string()),
-  }),
 });
 
 export const zDeleteAttachmentsData = z.object({

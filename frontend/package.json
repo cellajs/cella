@@ -35,7 +35,6 @@
     "@blocknote/react": "^0.46.1",
     "@blocknote/shadcn": "^0.46.1",
     "@cella/data-grid": "workspace:*",
-    "@electric-sql/client": "^1.4.1",
     "@floating-ui/dom": "^1.7.4",
     "@floating-ui/react": "^0.27.16",
     "@github/mini-throttle": "^2.1.1",
