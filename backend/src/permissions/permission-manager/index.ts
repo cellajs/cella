@@ -2,7 +2,7 @@
 export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } from './access-policies';
 
 // Permission check functions
-export { type AllPermissionsResult, checkAllPermissions, type PermissionDecision } from './check';
+export { type AllPermissionsResult, checkAllPermissions } from './check';
 
 // Hierarchy functions
 export {

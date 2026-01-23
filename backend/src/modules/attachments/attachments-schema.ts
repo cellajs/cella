@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { entityCanSchema, paginationQuerySchema } from '#/utils/schema/common';
 import { createTxMutationSchema, createTxResponseSchema } from '#/modules/sync/schema';
+import { entityCanSchema, paginationQuerySchema } from '#/utils/schema/common';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
