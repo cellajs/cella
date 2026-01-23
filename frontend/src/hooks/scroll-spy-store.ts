@@ -1,280 +1,124 @@
 /**
- * Shared scroll spy store - module-level singleton state.
- * Manages section contributions, IntersectionObserver, and current section tracking.
+ * Scroll spy store - tracks section visibility and updates URL hash.
+ * DOM elements use 'spy-' prefix (e.g., id="spy-intro") to prevent browser auto-scroll.
  */
 
-type NavigateFn = (opts: {
-  to: string;
-  search: (prev: Record<string, unknown>) => Record<string, unknown>;
-  hash: string;
-  replace: boolean;
-  hashScrollIntoView?: boolean | { behavior: ScrollBehavior };
-}) => void;
+const SPY_PREFIX = 'spy-';
 
-// ─── State ─────────────────────────────────────────────────────────────────────
-
-/** Map of componentId → sectionIds owned by that component */
-const sectionContributors = new Map<string, string[]>();
-
-/** Map of sectionId → intersection ratio */
-const sectionRatios = new Map<string, number>();
-
-/** Currently active section ID */
-let currentSection = '';
-
-/** Shared IntersectionObserver instance */
+// State
+const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
-
-/** Flag to prevent hash writes during programmatic scrolls */
+let currentSection = '';
 let isProgrammaticScroll = false;
+let initTime = 0;
 
-/** Flag to track if initial hash scroll has been handled */
-let hasScrolledToInitialHash = false;
+/** Find the best visible section (highest ratio, or closest to top if tied) */
+const getBestSection = (): string | null => {
+  const visible = [...sections.entries()].filter(([, r]) => r > 0);
+  if (!visible.length) return null;
 
-/** Whether URL had a hash when store was first activated */
-let hadInitialHash = false;
-
-/** Timestamp when first section was registered (for delayed hash writing) */
-let firstRegistrationTime = 0;
-
-/** Delay before auto-writing hash (ms) - prevents hash on initial page load */
-const HASH_WRITE_DELAY = 300;
-
-/** Subscribers for state changes */
-const listeners = new Set<() => void>();
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Get all unique section IDs across all contributors */
-const getAllSectionIds = (): string[] => {
-  const all = [...sectionContributors.values()].flat();
-  return [...new Set(all)];
-};
-
-/** Notify all subscribers of state change */
-const notifyListeners = () => {
-  for (const listener of listeners) {
-    listener();
-  }
-};
-
-/** Determine best section based on intersection ratios */
-const determineBestSection = (): string | null => {
-  const entries = [...sectionRatios.entries()].filter(([, ratio]) => ratio > 0);
-  if (entries.length === 0) return null;
-
-  // Find fully visible sections (ratio === 1)
-  const fullyVisible = entries.filter(([, ratio]) => ratio === 1);
-
-  if (fullyVisible.length > 0) {
-    // Pick the one closest to top of viewport
-    const sorted = fullyVisible
-      .map(([id, ratio]) => {
-        const el = document.getElementById(id);
-        return { id, ratio, top: el?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY };
-      })
-      .sort((a, b) => a.top - b.top);
-    return sorted[0].id;
+  // If any fully visible, pick closest to top
+  const full = visible.filter(([, r]) => r === 1);
+  if (full.length) {
+    return full
+      .map(([id]) => ({
+        id,
+        top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Infinity,
+      }))
+      .sort((a, b) => a.top - b.top)[0].id;
   }
 
-  // Otherwise pick highest ratio
-  const [bestId] = entries.reduce((best, curr) => (curr[1] > best[1] ? curr : best));
-  return bestId;
+  // Otherwise highest ratio
+  return visible.reduce((a, b) => (b[1] > a[1] ? b : a))[0];
 };
 
-// ─── Observer ──────────────────────────────────────────────────────────────────
-
-/** Set up the shared IntersectionObserver */
-const setupObserver = () => {
-  if (observer) {
-    observer.disconnect();
-  }
-
-  const sectionIds = getAllSectionIds();
-  if (sectionIds.length === 0) {
+/** Rebuild observer for current sections */
+const rebuild = () => {
+  observer?.disconnect();
+  if (!sections.size) {
     observer = null;
     return;
   }
 
-  // Initialize ratios for all sections
-  sectionRatios.clear();
-  for (const id of sectionIds) {
-    sectionRatios.set(id, 0);
-  }
-
   observer = new IntersectionObserver(
     (entries) => {
-      // Update ratios
-      for (const entry of entries) {
-        sectionRatios.set(entry.target.id, entry.intersectionRatio);
+      for (const e of entries) {
+        sections.set(e.target.id.replace(SPY_PREFIX, ''), e.intersectionRatio);
       }
 
-      // Determine and set best section
-      const best = determineBestSection();
+      const best = getBestSection();
       if (best && best !== currentSection) {
         currentSection = best;
-        notifyListeners();
+
+        // Write hash (skip during programmatic scroll or initial load delay)
+        const canWrite = isProgrammaticScroll ? false : initTime && Date.now() - initTime > 300;
+        if (canWrite && location.hash !== `#${best}`) {
+          history.replaceState(null, '', `#${best}`);
+        }
       }
     },
-    {
-      root: null,
-      rootMargin: '0px',
-      threshold: [0, 1],
-    },
+    { threshold: [0, 0.25, 0.5, 0.75, 1] },
   );
 
-  // Observe existing elements
-  for (const id of sectionIds) {
-    const element = document.getElementById(id);
-    if (element) observer.observe(element);
+  for (const id of sections.keys()) {
+    const el = document.getElementById(`${SPY_PREFIX}${id}`);
+    if (el) observer.observe(el);
   }
 };
 
-// ─── Public API ────────────────────────────────────────────────────────────────
+/** Register section IDs for observation */
+export const registerSections = (ids: string[]) => {
+  if (!initTime) initTime = Date.now();
 
-/** Subscribe to state changes (for useSyncExternalStore) */
-export const subscribe = (callback: () => void) => {
-  listeners.add(callback);
-  return () => listeners.delete(callback);
-};
-
-/** Get current section snapshot (for useSyncExternalStore) */
-export const getSnapshot = () => currentSection;
-
-/** Server snapshot (for SSR) */
-export const getServerSnapshot = () => '';
-
-/** Check if we're in a programmatic scroll */
-export const isInProgrammaticScroll = () => isProgrammaticScroll;
-
-/** Check if hash writing is allowed (had initial hash OR delay has passed) */
-export const canWriteHash = () => {
-  if (hadInitialHash) return true;
-  if (firstRegistrationTime === 0) return false;
-  return Date.now() - firstRegistrationTime >= HASH_WRITE_DELAY;
-};
-
-/** Register sections from a contributor */
-export const registerSections = (componentId: string, sectionIds: string[]) => {
-  const existing = sectionContributors.get(componentId);
-  const changed = !existing || existing.length !== sectionIds.length || existing.some((id, i) => id !== sectionIds[i]);
-
-  if (!changed) return;
-
-  // Track first registration time and initial hash state
-  if (sectionContributors.size === 0) {
-    firstRegistrationTime = Date.now();
-    hadInitialHash = !!location.hash;
+  for (const id of ids) {
+    if (!sections.has(id)) sections.set(id, 0);
   }
+  rebuild();
 
-  sectionContributors.set(componentId, sectionIds);
-
-  // Set initial section from hash if valid and not yet set
-  if (!currentSection) {
-    const hash = location.hash.replace('#', '');
-    const allIds = getAllSectionIds();
-    if (hash && allIds.includes(hash)) {
-      currentSection = hash;
-    }
-  }
-
-  setupObserver();
-
-  // Handle initial hash scroll (once)
-  if (!hasScrolledToInitialHash) {
-    const hash = location.hash.replace('#', '');
-    if (hash && sectionIds.includes(hash)) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const element = document.getElementById(hash);
-          if (element) {
-            element.scrollIntoView({ behavior: 'instant' });
-            hasScrolledToInitialHash = true;
-          }
-        });
-      });
-    }
-  }
-};
-
-/** Unregister sections when a contributor unmounts */
-export const unregisterSections = (componentId: string) => {
-  if (!sectionContributors.has(componentId)) return;
-
-  sectionContributors.delete(componentId);
-
-  if (sectionContributors.size === 0) {
-    // Reset all state
-    currentSection = '';
-    sectionRatios.clear();
-    hasScrolledToInitialHash = false;
-    hadInitialHash = false;
-    firstRegistrationTime = 0;
-    if (observer) {
-      observer.disconnect();
-      observer = null;
-    }
-    notifyListeners();
-  } else {
-    setupObserver();
-  }
-};
-
-/** Scroll to a section and update hash */
-export const scrollToSection = (id: string, smoothScroll: boolean, navigate: NavigateFn) => {
-  isProgrammaticScroll = true;
-
-  const element = document.getElementById(id);
-  if (element) {
-    element.scrollIntoView({ behavior: smoothScroll ? 'smooth' : 'instant' });
-  }
-
-  // Reset hash first if same (forces TanStack Router to handle it)
-  if (window.location.hash === `#${id}`) {
-    navigate({ to: '.', search: (prev) => prev, hash: 'top', replace: true });
-  }
-
-  setTimeout(() => {
-    navigate({
-      to: '.',
-      search: (prev) => prev,
-      hash: id,
-      replace: true,
-      hashScrollIntoView: false,
+  // Scroll to initial hash if present
+  const hash = location.hash.slice(1);
+  if (hash && sections.has(hash) && !currentSection) {
+    currentSection = hash;
+    requestAnimationFrame(() => {
+      document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
-  }, 20);
-
-  // Re-enable observer-based hash writes after scroll completes
-  setTimeout(
-    () => {
-      isProgrammaticScroll = false;
-    },
-    smoothScroll ? 4000 : 2000,
-  );
+  }
 };
 
-/**
- * Scroll to a section by ID - standalone function for use without the hook.
- * Updates URL hash and scrolls element into view.
- */
-export const scrollToSectionById = (id: string, smoothScroll = false) => {
-  isProgrammaticScroll = true;
+/** Unregister section IDs */
+export const unregisterSections = (ids: string[]) => {
+  for (const id of ids) sections.delete(id);
 
-  const element = document.getElementById(id);
-  if (element) {
-    element.scrollIntoView({ behavior: smoothScroll ? 'smooth' : 'instant' });
+  if (!sections.size) {
+    observer?.disconnect();
+    observer = null;
+    currentSection = '';
+    initTime = 0;
+  } else {
+    rebuild();
   }
+};
 
-  // Update URL hash directly
-  if (window.location.hash !== `#${id}`) {
+/** Scroll to section and update hash. Uses smooth scroll if target is within 2 viewport heights. */
+export const scrollToSectionById = (id: string) => {
+  const el = document.getElementById(`${SPY_PREFIX}${id}`);
+  if (!el) return;
+
+  // Smooth scroll only if target is within 2 viewport heights
+  const distance = Math.abs(el.getBoundingClientRect().top);
+  const smooth = distance < window.innerHeight * 2;
+
+  isProgrammaticScroll = true;
+  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' });
+
+  if (location.hash !== `#${id}`) {
     history.replaceState(null, '', `#${id}`);
   }
 
-  // Re-enable observer-based hash writes after scroll completes
   setTimeout(
     () => {
       isProgrammaticScroll = false;
     },
-    smoothScroll ? 4000 : 2000,
+    smooth ? 2000 : 500,
   );
 };

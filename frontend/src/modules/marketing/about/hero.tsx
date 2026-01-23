@@ -29,7 +29,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
 
   return (
     <>
-      <section id="hero" className={sectionClass}>
+      <section id="spy-hero" className={sectionClass}>
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
             {badgeText && (

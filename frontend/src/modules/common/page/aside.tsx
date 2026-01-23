@@ -1,7 +1,8 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { buttonVariants } from '~/modules/ui/button';
@@ -31,7 +32,12 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
   const { t } = useTranslation();
 
   const sectionIds = tabs.map((tab) => tab.id);
-  const { currentSection, scrollToSection } = useScrollSpy({ sectionIds, enableWriteHash: true });
+  useScrollSpy(sectionIds);
+
+  // Get current section from URL hash
+  const { hash } = useLocation();
+  const currentSection = hash || sectionIds[0];
+
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   // Focus the first tab on mount
@@ -58,7 +64,7 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
             draggable="false"
             onClick={(e) => {
               e.preventDefault();
-              scrollToSection(id);
+              scrollToSectionById(id);
             }}
             replace
           >

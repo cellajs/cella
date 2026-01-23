@@ -1,10 +1,10 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import type { LegalSection, LegalSubject } from '~/modules/marketing/legal/legal-config';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -52,16 +52,9 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
     setExpanded((prev) => (prev === id ? null : id));
   };
 
-  // Get sections for current subject
-  const currentSections = subjects.find((s) => s.id === currentSubject)?.sections || [];
-
-  // All section IDs for scroll spy (including those without labels)
-  const sectionIds = currentSections.map((s) => s.id);
-  const { currentSection, scrollToSection } = useScrollSpy({
-    sectionIds,
-    enableWriteHash: !isMobile,
-    smoothScroll: false,
-  });
+  // Get current section from URL hash
+  const { hash } = useLocation();
+  const currentSection = hash || 'overview';
 
   return (
     <div className={cn('w-full flex flex-col gap-2 mb-6', className)}>
@@ -121,8 +114,9 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
                             'group-data-[active=true]/section:opacity-100',
                           )}
                           onClick={(e) => {
+                            if (e.metaKey || e.ctrlKey) return;
                             e.preventDefault();
-                            scrollToSection(sectionId);
+                            scrollToSectionById(sectionId);
                           }}
                         >
                           <span className="truncate text-[13px]">{sectionLabel}</span>

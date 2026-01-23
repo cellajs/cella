@@ -95,13 +95,16 @@ function TagItemBase({ tag, operations, isExpanded, layoutId, isMobile }: TagIte
             hash={isExpanded ? undefined : `tag/${tag.name}`}
             replace
             resetScroll={false}
-            hashScrollIntoView={{ behavior: 'instant' }}
             draggable="false"
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'default' }),
               'w-full text-left pl-5 h-8 font-normal group opacity-80',
               'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
             )}
+            onClick={() => {
+              if (!isExpanded) scrollToSectionById(`tag/${tag.name}`);
+              isMobile && useSheeter.getState().remove();
+            }}
           >
             <div className="absolute left-[0.53rem] w-1 h-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
             <span>{tag.name}</span>

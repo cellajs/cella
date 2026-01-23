@@ -30,7 +30,7 @@ export const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
   const refId = schema.ref.replace(/^#/, '');
 
   return (
-    <Card id={refId} className={cn('border-0', className)}>
+    <Card id={`spy-${refId}`} className={cn('border-0', className)}>
       <CardHeader className="group">
         <CardTitle className="text-xl leading-8 gap-2">
           {schema.name}
@@ -66,7 +66,7 @@ interface TagSchemasListProps {
 export const TagSchemasList = ({ schemas }: TagSchemasListProps) => {
   // Register all schema refs for this tag section
   const sectionIds = useMemo(() => schemas.map((s) => s.ref.replace(/^#/, '')), [schemas]);
-  useScrollSpy({ sectionIds });
+  useScrollSpy(sectionIds);
 
   return (
     <div className="border-t">

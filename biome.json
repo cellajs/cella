@@ -3,6 +3,8 @@
     "includes": [
       "backend/src/**",
       "backend/tests/**",
+      "backend/mocks/**",
+      "backend/emails/**",
       "frontend/src/**",
       "frontend/storybook/**",
       "frontend/vite/**",

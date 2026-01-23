@@ -29,14 +29,8 @@ function OperationsPage() {
   // Tag section IDs - operation hashes are contributed by OperationDetail when rendered
   const tagSectionIds = useMemo(() => tags.map((t) => `tag/${t.name}`), [tags]);
 
-  // Enable scroll spy with tag section IDs, enable hash writing
-  // subscribeToChanges: false - this page only registers sections, doesn't need to re-render on section changes
-  useScrollSpy({
-    sectionIds: tagSectionIds,
-    enableWriteHash: true,
-    smoothScroll: false,
-    subscribeToChanges: false,
-  });
+  // Enable scroll spy with tag section IDs
+  useScrollSpy(tagSectionIds);
 
   // Pre-group operations by tag to avoid recalculating on every render
   const operationsByTag = useMemo(
@@ -73,7 +67,7 @@ function OperationsPage() {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={`tag/${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
+              <Card id={`spy-tag/${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
                 <CardHeader className="group">
                   <CardTitle className="text-2xl leading-12 gap-2">
                     {tag.name}

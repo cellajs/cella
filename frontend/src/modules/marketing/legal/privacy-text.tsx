@@ -14,7 +14,7 @@ function PrivacyText() {
 
   return (
     <div id="privacy-content" className="prose dark:prose-invert text-foreground">
-      <section id="overview">
+      <section id="spy-overview">
         <h2 className="pt-8 pb-4 mt-0">Privacy policy</h2>
         <p className="italic mb-2">Last updated: {lastUpdated}</p>
         <p>
@@ -24,7 +24,7 @@ function PrivacyText() {
         <LegalContact />
       </section>
 
-      <section className="mb-4 pt-4" id="introduction" aria-label="Introduction">
+      <section className="mb-4 pt-4" id="spy-introduction" aria-label="Introduction">
         <h3 className="font-medium">Introduction</h3>
         <p>
           {companyFull}, the owner and provider of {appName} (“{companyShort}”, “we”, “us”, “our”) takes your privacy
@@ -41,7 +41,7 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="information-collections" aria-label="Information we store">
+      <section className="mb-4 pt-4" id="spy-information-collections" aria-label="Information we store">
         <h3 className="font-medium">Information we store</h3>
         <p>
           {appName} is a professional service offered to organizations. The only goal of {appName} is to
@@ -89,7 +89,7 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="use-of-information" aria-label="Information use">
+      <section className="mb-4 pt-4" id="spy-use-of-information" aria-label="Information use">
         <h3 className="font-medium">Information use</h3>
 
         <h4 className="font-medium">General</h4>
@@ -127,7 +127,7 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="personal-information-sharing" aria-label="Personal information sharing">
+      <section className="mb-4 pt-4" id="spy-personal-information-sharing" aria-label="Personal information sharing">
         <h3 className="font-medium">Personal information sharing</h3>
 
         <p>
@@ -163,7 +163,7 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="security" aria-label="Security">
+      <section className="mb-4 pt-4" id="spy-security" aria-label="Security">
         <h3 className="font-medium">Security</h3>
         <p>
           Your {appName} account Personal Information is protected by a password and TLS encryption for your privacy and
@@ -193,7 +193,7 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="information-access" aria-label="Information access">
+      <section className="mb-4 pt-4" id="spy-information-access" aria-label="Information access">
         <h3 className="font-medium">Information access</h3>
         <p>
           We allow you to access the following information about you for the purpose of viewing, and in certain
@@ -208,7 +208,7 @@ function PrivacyText() {
         </ul>
       </section>
 
-      <section className="mb-4 pt-4" id="personal-options" aria-label="Delete information">
+      <section className="mb-4 pt-4" id="spy-personal-options" aria-label="Delete information">
         <h3 className="font-medium">Delete information</h3>
         <p>
           You can always opt not to disclose information, even though it may be needed to take advantage of certain of
@@ -223,7 +223,7 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="changes-privacy-policy" aria-label="Privacy policy changes">
+      <section className="mb-4 pt-4" id="spy-changes-privacy-policy" aria-label="Privacy policy changes">
         <h3 className="font-medium">Privacy policy changes</h3>
         <p>
           We may make changes to this Privacy policy from time to time for any reason. Use of information we collect is
@@ -237,13 +237,13 @@ function PrivacyText() {
         </p>
       </section>
 
-      <section className="mb-4 pt-4" id="subprocessors" aria-label="Subprocessors">
+      <section className="mb-4 pt-4" id="spy-subprocessors" aria-label="Subprocessors">
         <h3 className="font-medium">Subprocessors</h3>
 
         <Subprocessors />
       </section>
 
-      <section className="mb-4 pt-4" id="shared-data-types" aria-label="Shared Data">
+      <section className="mb-4 pt-4" id="spy-shared-data-types" aria-label="Shared Data">
         <h3 className="font-medium">Shared Data</h3>
 
         <SharedDataTypes />

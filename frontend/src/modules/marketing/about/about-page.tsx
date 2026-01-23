@@ -30,7 +30,7 @@ function AboutPage() {
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  useScrollSpy({ sectionIds: aboutSectionIds });
+  useScrollSpy(aboutSectionIds);
 
   return (
     <>

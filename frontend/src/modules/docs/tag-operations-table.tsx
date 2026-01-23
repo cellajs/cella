@@ -19,7 +19,7 @@ interface TagOperationsTableProps {
 function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
-  const { scrollToSection } = useScrollSpy({ smoothScroll: true });
+  const { scrollToSection } = useScrollSpy();
 
   // Handle operation click necessary to expand tag if not already expanded
   const handleOperationClick = (hash: string) => {

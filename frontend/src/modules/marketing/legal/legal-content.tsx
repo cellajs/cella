@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
@@ -16,7 +17,6 @@ export interface LegalSubjectConfig {
 
 /**
  * Legal content component.
- * Uses sections from config instead of DOM scanning.
  */
 export const LegalContent = () => {
   const { t } = useTranslation();
@@ -32,6 +32,12 @@ export const LegalContent = () => {
   );
 
   const { subject: currentSubject } = useParams({ from: '/legal/$subject' });
+
+  // Get section IDs for the current subject
+  const sectionIds = useMemo(() => legalConfig[currentSubject]?.sections.map((s) => s.id) || [], [currentSubject]);
+
+  // Enable scroll spy near the content - uses useLocation for hash in aside
+  useScrollSpy(sectionIds);
 
   // Preload all lazy components on mount for instant switching
   const lazyComponents = useMemo(() => subjects.map(({ id }) => legalConfig[id].component), [subjects]);
@@ -53,7 +59,10 @@ export const LegalContent = () => {
           const Component = legalConfig[id].component;
           return (
             isActive && (
-              <div className="mx-auto max-w-full lg:max-w-3xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40">
+              <div
+                key={id}
+                className="mx-auto max-w-full lg:max-w-3xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40"
+              >
                 <Component />
               </div>
             )

@@ -28,12 +28,8 @@ function SchemasPage() {
   // Tag section IDs - schema refs are contributed by SchemaDetail when rendered
   const schemaTagIds = schemaTags.map((t) => t.name);
 
-  // Enable scroll spy with tag section IDs, enable hash writing
-  useScrollSpy({
-    sectionIds: schemaTagIds,
-    enableWriteHash: true,
-    smoothScroll: false,
-  });
+  // Enable scroll spy with tag section IDs
+  useScrollSpy(schemaTagIds);
 
   return (
     <div className="container">
@@ -50,7 +46,7 @@ function SchemasPage() {
 
           return (
             <Collapsible key={tag.name} open={isOpen}>
-              <Card id={tag.name} className="scroll-mt-4 border-0 rounded-b-none">
+              <Card id={`spy-${tag.name}`} className="scroll-mt-4 border-0 rounded-b-none">
                 <CardHeader className="group">
                   <CardTitle className="text-2xl leading-12 gap-2">
                     {tag.name}

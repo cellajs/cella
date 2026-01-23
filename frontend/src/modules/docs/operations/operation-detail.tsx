@@ -24,7 +24,7 @@ export const OperationDetail = ({ operation, className }: OperationDetailProps) 
   const { t } = useTranslation();
 
   return (
-    <Card id={operation.hash} className={cn('border-0', className)}>
+    <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>
       <CardHeader className="group">
         <div className="flex justify-between items-center">
           <CardTitle className="sm:text-xl leading-8 gap-2">
@@ -77,7 +77,7 @@ interface TagOperationsListProps {
 export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   // Register all operation hashes for this tag section
   const sectionIds = useMemo(() => operations.map((op) => op.hash), [operations]);
-  useScrollSpy({ sectionIds });
+  useScrollSpy(sectionIds);
 
   return (
     <div className="border-t">
