@@ -1,6 +1,6 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { pagesTable } from '#/db/schema/pages';
-import { createTxMutationSchema, createTxResponseSchema } from '#/modules/sync/schema';
+import { createTxMutationSchema, createTxResponseSchema } from '#/sync';
 import { paginationQuerySchema } from '#/utils/schema/common';
 import { mockPageResponse } from '../../../mocks/mock-page';
 

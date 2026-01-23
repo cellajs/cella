@@ -27,7 +27,7 @@
   {
     "name": "entities",
     "description": "Endpoints that operate across multiple *entity types*, such as `users` and `organizations`.\n        *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child\n        relations), or actor-like. These endpoints offer shared logic across modules, including slug validation\n        and entity visibility.",
-    "count": 1
+    "count": 2
   },
   {
     "name": "system",
@@ -57,11 +57,6 @@
   {
     "name": "activities",
     "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery.",
-    "count": 1
-  },
-  {
-    "name": "sync",
-    "description": "Endpoints for *real-time synchronization* of entity changes via Server-Sent Events (SSE). Clients\n        subscribe to entity streams and receive live updates for create, update, and delete operations.\n        Supports resumable connections using Last-Event-ID for reliable message delivery.",
     "count": 1
   }
 ]

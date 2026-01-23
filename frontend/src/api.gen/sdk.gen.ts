@@ -1620,7 +1620,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
  * Primarily used to prevent slug collisions before creating or updating an entity.
  *
- * **POST /entities/check-slug** ·· [checkSlug](https://api.cellajs.com/docs#tag/entities/post/entities/check-slug) ·· _entities_
+ * **POST /check-slug** ·· [checkSlug](https://api.cellajs.com/docs#tag/entities/post/check-slug) ·· _entities_
  *
  * @param {checkSlugData} options
  * @param {string=} options.body.slug - `string` (optional)
@@ -1637,12 +1637,40 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options: Options<
         type: 'apiKey',
       },
     ],
-    url: '/entities/check-slug',
+    url: '/check-slug',
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Live stream of entity changes
+ *
+ * Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.
+ *
+ * **GET /organizations/{orgIdOrSlug}/sync/stream** ·· [syncStream](https://api.cellajs.com/docs#tag/entities/get/organizations/{orgIdOrSlug}/sync/stream) ·· _entities_
+ *
+ * @param {syncStreamData} options
+ * @param {string} options.path.orgidorslug - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {enum=} options.query.live - `enum` (optional)
+ * @param {string=} options.query.entitytypes - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const syncStream = <ThrowOnError extends boolean = true>(options: Options<SyncStreamData, ThrowOnError>) =>
+  (options.client ?? client).get<SyncStreamResponses, SyncStreamErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/organizations/{orgIdOrSlug}/sync/stream',
+    ...options,
   });
 
 /**
@@ -1906,34 +1934,6 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/metrics/public',
-    ...options,
-  });
-
-/**
- * Live stream of entity changes
- *
- * Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.
- *
- * **GET /organizations/{orgIdOrSlug}/sync/stream** ·· [syncStream](https://api.cellajs.com/docs#tag/sync/get/organizations/{orgIdOrSlug}/sync/stream) ·· _sync_
- *
- * @param {syncStreamData} options
- * @param {string} options.path.orgidorslug - `string`
- * @param {string=} options.query.offset - `string` (optional)
- * @param {enum=} options.query.live - `enum` (optional)
- * @param {string=} options.query.entitytypes - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const syncStream = <ThrowOnError extends boolean = true>(options: Options<SyncStreamData, ThrowOnError>) =>
-  (options.client ?? client).get<SyncStreamResponses, SyncStreamErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/organizations/{orgIdOrSlug}/sync/stream',
     ...options,
   });
 

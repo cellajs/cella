@@ -16,7 +16,6 @@ export const openapiTagIds = [
   'pages',
   'metrics',
   'activities',
-  'sync',
 ] as const;
 
 export type OpenApiTagId = (typeof openapiTagIds)[number];
@@ -71,10 +70,6 @@ const tagDescriptions: Record<OpenApiTagId, string> = {
   activities: `Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
         delete operations across all resources. This serves as an audit trail and can be extended for webhook
         delivery.`,
-
-  sync: `Endpoints for *real-time synchronization* of entity changes via Server-Sent Events (SSE). Clients
-        subscribe to entity streams and receive live updates for create, update, and delete operations.
-        Supports resumable connections using Last-Event-ID for reliable message delivery.`,
 };
 
 /**

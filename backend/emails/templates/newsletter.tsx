@@ -34,7 +34,7 @@ export const NewsletterEmail = ({
         <Text>{testEmail && 'THIS IS A TEST'}</Text>
         <Text>{subject}</Text>
 
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>*/}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: sys admin content */}
         <div dangerouslySetInnerHTML={{ __html: content }} />
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>

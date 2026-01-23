@@ -885,9 +885,9 @@
   },
   {
     "id": "checkSlug",
-    "hash": "tag/entities/POST/entities/check-slug",
+    "hash": "tag/entities/POST/check-slug",
     "method": "post",
-    "path": "/entities/check-slug",
+    "path": "/check-slug",
     "tags": ["entities"],
     "summary": "Check slug availability",
     "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
@@ -897,6 +897,23 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["isAuthenticated"],
+      "xRateLimiter": []
+    }
+  },
+  {
+    "id": "syncStream",
+    "hash": "tag/entities/GET/organizations/{orgIdOrSlug}/sync/stream",
+    "method": "get",
+    "path": "/organizations/{orgIdOrSlug}/sync/stream",
+    "tags": ["entities"],
+    "summary": "Live stream of entity changes",
+    "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["hasOrgAccess"],
       "xRateLimiter": []
     }
   },
@@ -1067,23 +1084,6 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["isPublicAccess"],
-      "xRateLimiter": []
-    }
-  },
-  {
-    "id": "syncStream",
-    "hash": "tag/sync/GET/organizations/{orgIdOrSlug}/sync/stream",
-    "method": "get",
-    "path": "/organizations/{orgIdOrSlug}/sync/stream",
-    "tags": ["sync"],
-    "summary": "Live stream of entity changes",
-    "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["hasOrgAccess"],
       "xRateLimiter": []
     }
   },

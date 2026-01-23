@@ -2732,7 +2732,7 @@ export type CheckSlugData = {
   };
   path?: never;
   query?: never;
-  url: '/entities/check-slug';
+  url: '/check-slug';
 };
 
 export type CheckSlugErrors = {
@@ -2768,6 +2768,80 @@ export type CheckSlugResponses = {
 };
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
+
+export type SyncStreamData = {
+  body?: never;
+  path: {
+    /**
+     * Organization ID or slug
+     */
+    orgIdOrSlug: string;
+  };
+  query?: {
+    /**
+     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
+     */
+    offset?: string;
+    /**
+     * Set to "sse" for live updates (SSE stream)
+     */
+    live?: 'sse';
+    /**
+     * Comma-separated entity types to filter (e.g., "page,attachment")
+     */
+    entityTypes?: string;
+  };
+  url: '/organizations/{orgIdOrSlug}/sync/stream';
+};
+
+export type SyncStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SyncStreamError = SyncStreamErrors[keyof SyncStreamErrors];
+
+export type SyncStreamResponses = {
+  /**
+   * Catch-up activities or SSE stream started
+   */
+  200: {
+    activities: Array<{
+      data?: unknown;
+      entityType: 'attachment' | 'page';
+      entityId: string;
+      action: 'create' | 'update' | 'delete';
+      activityId: string;
+      changedKeys: Array<string> | null;
+      createdAt: string;
+      tx: TxStreamMessage;
+    }>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
+    cursor: string | null;
+  };
+};
+
+export type SyncStreamResponse = SyncStreamResponses[keyof SyncStreamResponses];
 
 export type SystemInviteData = {
   body: {
@@ -3285,80 +3359,6 @@ export type GetPublicCountsResponses = {
 };
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
-
-export type SyncStreamData = {
-  body?: never;
-  path: {
-    /**
-     * Organization ID or slug
-     */
-    orgIdOrSlug: string;
-  };
-  query?: {
-    /**
-     * Cursor offset: "-1" for all history, "now" for live-only, or activity ID
-     */
-    offset?: string;
-    /**
-     * Set to "sse" for live updates (SSE stream)
-     */
-    live?: 'sse';
-    /**
-     * Comma-separated entity types to filter (e.g., "page,attachment")
-     */
-    entityTypes?: string;
-  };
-  url: '/organizations/{orgIdOrSlug}/sync/stream';
-};
-
-export type SyncStreamErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SyncStreamError = SyncStreamErrors[keyof SyncStreamErrors];
-
-export type SyncStreamResponses = {
-  /**
-   * Catch-up activities or SSE stream started
-   */
-  200: {
-    activities: Array<{
-      data?: unknown;
-      entityType: 'attachment' | 'page';
-      entityId: string;
-      action: 'create' | 'update' | 'delete';
-      activityId: string;
-      changedKeys: Array<string> | null;
-      createdAt: string;
-      tx: TxStreamMessage;
-    }>;
-    /**
-     * Last activity ID (use as offset for next request)
-     */
-    cursor: string | null;
-  };
-};
-
-export type SyncStreamResponse = SyncStreamResponses[keyof SyncStreamResponses];
 
 export type DeleteAttachmentsData = {
   body: {

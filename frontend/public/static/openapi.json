@@ -108,10 +108,6 @@
     {
       "name": "activities",
       "description": "Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and\n        delete operations across all resources. This serves as an audit trail and can be extended for webhook\n        delivery."
-    },
-    {
-      "name": "sync",
-      "description": "Endpoints for *real-time synchronization* of entity changes via Server-Sent Events (SSE). Clients\n        subscribe to entity streams and receive live updates for create, update, and delete operations.\n        Supports resumable connections using Last-Event-ID for reliable message delivery."
     }
   ],
   "components": {
@@ -6204,7 +6200,7 @@
         }
       }
     },
-    "/entities/check-slug": {
+    "/check-slug": {
       "post": {
         "security": [
           {
@@ -6250,6 +6246,164 @@
         "responses": {
           "204": {
             "description": "Slug is available"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/organizations/{orgIdOrSlug}/sync/stream": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "syncStream",
+        "tags": [
+          "entities"
+        ],
+        "summary": "Live stream of entity changes",
+        "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
+        "x-guard": [
+          "hasOrgAccess"
+        ],
+        "x-rate-limiter": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Organization ID or slug"
+            },
+            "required": true,
+            "description": "Organization ID or slug",
+            "name": "orgIdOrSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
+            },
+            "required": false,
+            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sse"
+              ],
+              "description": "Set to \"sse\" for live updates (SSE stream)"
+            },
+            "required": false,
+            "description": "Set to \"sse\" for live updates (SSE stream)",
+            "name": "live",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")"
+            },
+            "required": false,
+            "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")",
+            "name": "entityTypes",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catch-up activities or SSE stream started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "data": {},
+                          "entityType": {
+                            "type": "string",
+                            "enum": [
+                              "attachment",
+                              "page"
+                            ]
+                          },
+                          "entityId": {
+                            "type": "string"
+                          },
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "create",
+                              "update",
+                              "delete"
+                            ]
+                          },
+                          "activityId": {
+                            "type": "string"
+                          },
+                          "changedKeys": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "tx": {
+                            "$ref": "#/components/schemas/TxStreamMessage"
+                          }
+                        },
+                        "required": [
+                          "entityType",
+                          "entityId",
+                          "action",
+                          "activityId",
+                          "changedKeys",
+                          "createdAt",
+                          "tx"
+                        ]
+                      }
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Last activity ID (use as offset for next request)"
+                    }
+                  },
+                  "required": [
+                    "activities",
+                    "cursor"
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -7179,164 +7333,6 @@
                     "organization",
                     "attachment",
                     "page"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/organizations/{orgIdOrSlug}/sync/stream": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "syncStream",
-        "tags": [
-          "sync"
-        ],
-        "summary": "Live stream of entity changes",
-        "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
-        "x-guard": [
-          "hasOrgAccess"
-        ],
-        "x-rate-limiter": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "Organization ID or slug"
-            },
-            "required": true,
-            "description": "Organization ID or slug",
-            "name": "orgIdOrSlug",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID"
-            },
-            "required": false,
-            "description": "Cursor offset: \"-1\" for all history, \"now\" for live-only, or activity ID",
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sse"
-              ],
-              "description": "Set to \"sse\" for live updates (SSE stream)"
-            },
-            "required": false,
-            "description": "Set to \"sse\" for live updates (SSE stream)",
-            "name": "live",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")"
-            },
-            "required": false,
-            "description": "Comma-separated entity types to filter (e.g., \"page,attachment\")",
-            "name": "entityTypes",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Catch-up activities or SSE stream started",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "activities": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "data": {},
-                          "entityType": {
-                            "type": "string",
-                            "enum": [
-                              "attachment",
-                              "page"
-                            ]
-                          },
-                          "entityId": {
-                            "type": "string"
-                          },
-                          "action": {
-                            "type": "string",
-                            "enum": [
-                              "create",
-                              "update",
-                              "delete"
-                            ]
-                          },
-                          "activityId": {
-                            "type": "string"
-                          },
-                          "changedKeys": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "tx": {
-                            "$ref": "#/components/schemas/TxStreamMessage"
-                          }
-                        },
-                        "required": [
-                          "entityType",
-                          "entityId",
-                          "action",
-                          "activityId",
-                          "changedKeys",
-                          "createdAt",
-                          "tx"
-                        ]
-                      }
-                    },
-                    "cursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "description": "Last activity ID (use as offset for next request)"
-                    }
-                  },
-                  "required": [
-                    "activities",
-                    "cursor"
                   ]
                 }
               }

@@ -1,10 +1,10 @@
 import { appConfig, type RealtimeEntityType } from 'config';
 import { isPermissionAllowed } from '#/permissions';
+import type { StreamMessage } from '#/sync';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { streamSubscriberManager, writeChange } from '#/sync/stream';
 import { logEvent } from '#/utils/logger';
-import type { StreamMessage } from './schema';
-import { type OrgStreamSubscriber, orgIndexKey } from './stream-types';
+import { type OrgStreamSubscriber, orgIndexKey } from './sync-types';
 
 /**
  * Check if a subscriber should receive an event.

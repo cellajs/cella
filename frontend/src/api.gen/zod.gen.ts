@@ -1208,6 +1208,39 @@ export const zCheckSlugData = z.object({
  */
 export const zCheckSlugResponse = z.void();
 
+export const zSyncStreamData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.optional(
+    z.object({
+      offset: z.optional(z.string()),
+      live: z.optional(z.enum(['sse'])),
+      entityTypes: z.optional(z.string()),
+    }),
+  ),
+});
+
+/**
+ * Catch-up activities or SSE stream started
+ */
+export const zSyncStreamResponse = z.object({
+  activities: z.array(
+    z.object({
+      data: z.optional(z.unknown()),
+      entityType: z.enum(['attachment', 'page']),
+      entityId: z.string(),
+      action: z.enum(['create', 'update', 'delete']),
+      activityId: z.string(),
+      changedKeys: z.union([z.array(z.string()), z.null()]),
+      createdAt: z.string(),
+      tx: zTxStreamMessage,
+    }),
+  ),
+  cursor: z.union([z.string(), z.null()]),
+});
+
 export const zSystemInviteData = z.object({
   body: z.object({
     emails: z.array(z.email()).min(1).max(50),
@@ -1407,39 +1440,6 @@ export const zGetPublicCountsResponse = z.object({
   organization: z.number(),
   attachment: z.number(),
   page: z.number(),
-});
-
-export const zSyncStreamData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      offset: z.optional(z.string()),
-      live: z.optional(z.enum(['sse'])),
-      entityTypes: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Catch-up activities or SSE stream started
- */
-export const zSyncStreamResponse = z.object({
-  activities: z.array(
-    z.object({
-      data: z.optional(z.unknown()),
-      entityType: z.enum(['attachment', 'page']),
-      entityId: z.string(),
-      action: z.enum(['create', 'update', 'delete']),
-      activityId: z.string(),
-      changedKeys: z.union([z.array(z.string()), z.null()]),
-      createdAt: z.string(),
-      tx: zTxStreamMessage,
-    }),
-  ),
-  cursor: z.union([z.string(), z.null()]),
 });
 
 export const zDeleteAttachmentsData = z.object({
