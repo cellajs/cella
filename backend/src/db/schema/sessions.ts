@@ -1,4 +1,4 @@
-import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
@@ -11,12 +11,17 @@ export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
 /**
  * Sessions table to store authenticated session data.
+ *
+ * PARTITIONING (production only):
+ * - Partitioned by expiresAt via pg_partman (see 0002_partman_setup.sql)
+ * - Weekly partitions, 30-day retention after expiry
+ * - Drizzle sees regular table; PostgreSQL has partitioned table
+ * - Standard ALTERs (ADD/DROP COLUMN, ADD INDEX) work normally
  */
 export const sessionsTable = pgTable(
   'sessions',
   {
-    createdAt: timestampColumns.createdAt,
-    id: varchar().primaryKey().$defaultFn(nanoid),
+    id: varchar().notNull().$defaultFn(nanoid),
     token: varchar().notNull(),
     type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
     userId: varchar()
@@ -29,9 +34,14 @@ export const sessionsTable = pgTable(
     deviceOs: varchar(),
     browser: varchar(),
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
+    createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
   },
-  (table) => [index('sessions_token_idx').on(table.token)],
+  (table) => [
+    primaryKey({ columns: [table.id, table.expiresAt] }),
+    index('sessions_token_idx').on(table.token),
+    index('sessions_user_id_idx').on(table.userId),
+  ],
 );
 
 /** Raw session model including sensitive token field - use only when token access is required. */

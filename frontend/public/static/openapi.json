@@ -879,9 +879,6 @@
             "items": {
               "type": "object",
               "properties": {
-                "createdAt": {
-                  "type": "string"
-                },
                 "id": {
                   "type": "string"
                 },
@@ -933,6 +930,9 @@
                     "email"
                   ]
                 },
+                "createdAt": {
+                  "type": "string"
+                },
                 "expiresAt": {
                   "type": "string"
                 },
@@ -941,7 +941,6 @@
                 }
               },
               "required": [
-                "createdAt",
                 "id",
                 "type",
                 "userId",
@@ -950,6 +949,7 @@
                 "deviceOs",
                 "browser",
                 "authStrategy",
+                "createdAt",
                 "expiresAt",
                 "isCurrent"
               ]

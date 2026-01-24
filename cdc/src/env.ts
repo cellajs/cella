@@ -14,8 +14,8 @@ const envSchema = z.object({
   // API WebSocket URL for sending activities (defaults to local)
   API_WS_URL: z.string().url().default('ws://localhost:4000/internal/cdc'),
 
-  // Shared secret for WebSocket authentication
-  CDC_INTERNAL_SECRET: z.string().optional(),
+  // Shared secret for WebSocket authentication (required for security)
+  CDC_INTERNAL_SECRET: z.string().min(16, 'CDC_INTERNAL_SECRET must be at least 16 characters'),
 
   // Development mode
   DEV_MODE: z.enum(['basic', 'core', 'full']).default('core'),

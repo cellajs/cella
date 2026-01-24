@@ -696,7 +696,7 @@ class MeasurementsReporter implements Reporter {
       ])
     )
     
-    console.log(JSON.stringify(results, null, 2))
+    console.info(JSON.stringify(results, null, 2))
     
     // TODO: post to dashboard, compare against baseline, fail on regression
   }

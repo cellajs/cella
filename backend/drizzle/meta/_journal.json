@@ -5,15 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769082133924,
-      "tag": "0000_mixed_marvel_apes",
+      "when": 1769251229440,
+      "tag": "0000_windy_riptide",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1769082134465,
+      "when": 1769251229878,
       "tag": "0001_cdc_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769251230000,
+      "tag": "0002_partman_setup",
       "breakpoints": true
     }
   ]

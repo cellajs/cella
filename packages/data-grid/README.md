@@ -45,7 +45,7 @@ const { handleCopy, handlePaste, copyToClipboard, pasteFromClipboard } = useCopy
   rows,
   columns,
   onCopy: ({ row, column, rowIdx, value }) => {
-    console.log('Copied:', value);
+    console.info('Copied:', value);
   },
   onPaste: ({ row, column, rowIdx, pastedValue }) => {
     return { ...row, [column.key]: pastedValue };

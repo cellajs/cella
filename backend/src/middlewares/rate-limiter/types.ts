@@ -11,3 +11,13 @@ type LimiterStatusLists = {
 };
 
 export type RateLimitOptions = Partial<RateLimiterPostgres> | (Partial<RateLimiterMemory> & LimiterStatusLists);
+
+/** Optional configuration for rate limiter middleware */
+export interface RateLimiterOpts {
+  /** Custom rate limit configuration (points, duration, blockDuration, etc.) */
+  limits?: RateLimitOptions;
+  /** Name override for OpenAPI documentation (defaults to `${key}Limiter`) */
+  name?: string;
+  /** Description for OpenAPI documentation */
+  description?: string;
+}

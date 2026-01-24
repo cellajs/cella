@@ -159,7 +159,6 @@ export const zMeAuthData = z.object({
   hasPassword: z.boolean(),
   sessions: z.array(
     z.object({
-      createdAt: z.string(),
       id: z.string(),
       type: z.enum(['regular', 'impersonation', 'mfa']),
       userId: z.string(),
@@ -168,6 +167,7 @@ export const zMeAuthData = z.object({
       deviceOs: z.union([z.string(), z.null()]),
       browser: z.union([z.string(), z.null()]),
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
+      createdAt: z.string(),
       expiresAt: z.string(),
       isCurrent: z.boolean(),
     }),

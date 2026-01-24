@@ -69,7 +69,11 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
   if (invokeToken) {
     const [invokedTokenRecord] = await db
       .update(tokensTable)
-      .set({ singleUseToken: nanoid(40), invokedAt: new Date(), expiresAt: createDate(new TimeSpan(5, 'm')) })
+      .set({
+        singleUseToken: nanoid(40),
+        invokedAt: new Date().toISOString(),
+        expiresAt: createDate(new TimeSpan(5, 'm')),
+      })
       .where(eq(tokensTable.id, tokenRecord.id))
       .returning();
     return invokedTokenRecord;

@@ -7,6 +7,9 @@ import test from './test';
 import tunnel from './tunnel';
 import { mergeDeep } from './utils';
 
+// Re-export types for external use
+export type { GenerateScript, GenerateScriptType } from './types';
+
 /**
  * All entities in this app
  */

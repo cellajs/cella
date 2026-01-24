@@ -66,7 +66,22 @@ export const env = createEnv({
     ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
 
     // CDC Worker WebSocket authentication (required in full/production mode)
-    CDC_INTERNAL_SECRET: z.string().optional(),
+    CDC_INTERNAL_SECRET: z
+      .string()
+      .min(16, 'CDC_INTERNAL_SECRET must be at least 16 characters')
+      .optional()
+      .refine(
+        (val) => {
+          // Required in full mode or production
+          const devMode = process.env.DEV_MODE ?? 'core';
+          const nodeEnv = process.env.NODE_ENV ?? 'development';
+          if (devMode === 'full' || nodeEnv === 'production') {
+            return !!val;
+          }
+          return true;
+        },
+        { message: 'CDC_INTERNAL_SECRET is required in full mode or production' },
+      ),
 
     PINO_LOG_LEVEL: z
       .enum([...(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]]), 'silent'])

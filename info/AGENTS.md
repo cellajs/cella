@@ -69,7 +69,7 @@ Cella is a TypeScript template for building collaborative web apps with sync and
 - Storybook: Stories should be placed in a central `stories/` folder within the module (e.g., `frontend/src/modules/ui/stories/` or `frontend/src/modules/common/stories/`), not alongside component files. Name stories `<component-filename>.stories.tsx`.
 - Icons: We use lucide icons and import them using Icon suffix, such as `PencilIcon`.
 - Code comment: when iterating keep comments intact as they provide valuable history. They should be cleaned only when explicitly requested.
-- Console logging: Use `console.log` only for temporary debugging (remove before commit). Use `console.debug` for persistent debug statements as Vite strips them in production builds. For debug-mode-gated logging, use helpers from `~/lib/debug`.
+- Console logging: Use `console.log` for temporary debugging (remove before commit), `console.info` for basic logging.  Use `console.debug` for development debug statements as Vite strips them in production builds. For debug-mode-gated logging, use helpers from `~/lib/debug`.
 
 
 - Links as buttons: For buttons that link to directly targetable online resources, use TanStack Router `<Link>` with `buttonVariants()` instead of `<button>`. Also when the primary action is opening a sheet, if the data targetable by url, allow end-user to open it in a new tab.

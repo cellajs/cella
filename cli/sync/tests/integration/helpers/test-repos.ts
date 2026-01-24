@@ -47,7 +47,7 @@ export async function ensureFixtureCache(): Promise<void> {
   }
 
   if (!fs.existsSync(CACHE_DIR)) {
-    console.log('Cloning test fixture repo to cache...');
+    console.info('Cloning test fixture repo to cache...');
     exec(`git clone --bare ${FIXTURE_REPO} ${CACHE_DIR}`);
   }
 }

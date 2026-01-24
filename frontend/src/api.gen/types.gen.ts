@@ -162,7 +162,6 @@ export type MeAuthData = {
   hasTotp: boolean;
   hasPassword: boolean;
   sessions: Array<{
-    createdAt: string;
     id: string;
     type: 'regular' | 'impersonation' | 'mfa';
     userId: string;
@@ -171,6 +170,7 @@ export type MeAuthData = {
     deviceOs: string | null;
     browser: string | null;
     authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
+    createdAt: string;
     expiresAt: string;
     isCurrent: boolean;
   }>;

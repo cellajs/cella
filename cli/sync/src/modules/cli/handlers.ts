@@ -86,7 +86,7 @@ export async function validateConfig(strict = false): Promise<void> {
   }
 
   if (strict && valid) {
-    console.log(`${pc.green('✓')} cella.config.ts overrides validated`);
+    console.info(`${pc.green('✓')} cella.config.ts overrides validated`);
   }
 
   console.info();

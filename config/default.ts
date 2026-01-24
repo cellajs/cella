@@ -1,4 +1,4 @@
-import type { BaseAuthStrategies, BaseConfigType, BaseOAuthProviders } from "./types";
+import type { BaseAuthStrategies, BaseConfigType, BaseOAuthProviders, GenerateScript } from "./types";
 
 export const config = {
 
@@ -269,9 +269,24 @@ export const config = {
    * DEV & SEEDING
    ******************************************************************************/
   generateScripts: [
-    { name: 'Drizzle migrations', command: 'drizzle-kit generate --config drizzle.config.ts' },
-    { name: 'CDC setup migration', command: 'tsx scripts/migrations/cdc-migration.ts' },
-  ],
+    {
+      name: 'Drizzle migrations',
+      command: 'drizzle-kit generate --config drizzle.config.ts',
+      type: 'drizzle',
+    },
+    {
+      name: 'CDC setup migration',
+      command: 'tsx scripts/migrations/cdc-migration.ts',
+      type: 'migration',
+      migrationTag: 'cdc_setup',
+    },
+    {
+      name: 'Partman setup migration',
+      command: 'tsx scripts/migrations/partman-migration.ts',
+      type: 'migration',
+      migrationTag: 'partman_setup',
+    },
+  ] satisfies GenerateScript[],
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 };
 

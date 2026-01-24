@@ -80,12 +80,3 @@ services:
     buildFilter:
       paths:
         - frontend/**/*.?s
-
-# Postgres database
-databases:
-  - name: cella-db
-    databaseName: cella
-    region: frankfurt
-    plan: starter
-    previewPlan: starter
-    postgresMajorVersion: 16

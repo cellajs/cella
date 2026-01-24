@@ -33,7 +33,6 @@ type UseSidebarReturn = {
 };
 
 /**
- * TODO: Not used?
  * Hook to access sidebar state from the navigation store.
  * No provider required - uses the global navigation store.
  *

@@ -1,4 +1,4 @@
-import type { RealtimeEntityType } from 'config';
+import type { RealtimeEntityType, SystemRole } from 'config';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { BaseStreamSubscriber } from '#/sync/stream';
 
@@ -11,8 +11,8 @@ export interface OrgStreamSubscriber extends BaseStreamSubscriber {
   userId: string;
   /** Organization ID (also used as part of indexKey) */
   orgId: string;
-  /** User's system role (admin bypasses ACLs) */
-  userSystemRole: string | null;
+  /** User's system role ('admin' for system admins, 'user' for regular users) */
+  userSystemRole: SystemRole | 'user';
   /** User's memberships for permission checks */
   memberships: MembershipBaseModel[];
   /** Last activity ID cursor (skip activities <= cursor) */

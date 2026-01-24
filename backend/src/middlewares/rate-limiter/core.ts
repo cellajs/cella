@@ -4,7 +4,7 @@ import { xMiddleware } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
-import { RateLimitIdentifier, RateLimitMode, RateLimitOptions } from '#/middlewares/rate-limiter/types';
+import type { RateLimiterOpts, RateLimitIdentifier, RateLimitMode } from '#/middlewares/rate-limiter/types';
 
 // Default options
 export const defaultOptions = {
@@ -41,9 +41,7 @@ export const slowOptions = {
  * @param mode - Rate limit mode that dictates how rate limiting is applied.
  * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
  * @param identifiers - `("ip" | "email")[]` A list of identifiers to consider when generating rate limit key.
- * @param options - Optional custom configuration for rate limiting.
- * @param name - Optional name override for OpenAPI documentation (defaults to `${key}Limiter`).
- * @param description - Optional description for OpenAPI documentation.
+ * @param opts - Optional configuration: limits, name, and description.
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
@@ -51,11 +49,10 @@ export const rateLimiter = (
   mode: RateLimitMode,
   key: string,
   identifiers: RateLimitIdentifier[],
-  options?: RateLimitOptions,
-  name?: string,
-  description?: string,
+  opts?: RateLimiterOpts,
 ): MiddlewareHandler<Env> => {
-  const config = { ...defaultOptions, ...options };
+  const { limits, name, description } = opts ?? {};
+  const config = { ...defaultOptions, ...limits };
   const limiter = getRateLimiterInstance({ ...config, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 

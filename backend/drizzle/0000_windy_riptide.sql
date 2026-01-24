@@ -175,8 +175,7 @@ CREATE TABLE "requests" (
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY NOT NULL,
+	"id" varchar NOT NULL,
 	"token" varchar NOT NULL,
 	"type" varchar DEFAULT 'regular' NOT NULL,
 	"user_id" varchar NOT NULL,
@@ -185,7 +184,9 @@ CREATE TABLE "sessions" (
 	"device_os" varchar,
 	"browser" varchar,
 	"auth_strategy" varchar NOT NULL,
-	"expires_at" timestamp with time zone NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "sessions_id_expires_at_pk" PRIMARY KEY("id","expires_at")
 );
 --> statement-breakpoint
 CREATE TABLE "system_roles" (
@@ -198,8 +199,7 @@ CREATE TABLE "system_roles" (
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" varchar PRIMARY KEY NOT NULL,
+	"id" varchar NOT NULL,
 	"token" varchar NOT NULL,
 	"single_use_token" varchar,
 	"type" varchar NOT NULL,
@@ -208,8 +208,10 @@ CREATE TABLE "tokens" (
 	"oauth_account_id" varchar,
 	"inactive_membership_id" varchar,
 	"created_by" varchar,
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
-	"invoked_at" timestamp with time zone
+	"invoked_at" timestamp with time zone,
+	CONSTRAINT "tokens_id_expires_at_pk" PRIMARY KEY("id","expires_at")
 );
 --> statement-breakpoint
 CREATE TABLE "totps" (
@@ -220,12 +222,11 @@ CREATE TABLE "totps" (
 );
 --> statement-breakpoint
 CREATE TABLE "unsubscribe_tokens" (
-	"id" varchar PRIMARY KEY NOT NULL,
+	"id" varchar NOT NULL,
 	"user_id" varchar NOT NULL,
 	"token" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "unsubscribe_tokens_userId_unique" UNIQUE("user_id"),
-	CONSTRAINT "unsubscribe_tokens_token_unique" UNIQUE("token")
+	CONSTRAINT "unsubscribe_tokens_id_created_at_pk" PRIMARY KEY("id","created_at")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -306,8 +307,11 @@ CREATE INDEX "organizations_created_at_index" ON "organizations" USING btree ("c
 CREATE INDEX "requests_emails" ON "requests" USING btree ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_created_at" ON "requests" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "sessions_token_idx" ON "sessions" USING btree ("token");--> statement-breakpoint
+CREATE INDEX "sessions_user_id_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "tokens_token_type_idx" ON "tokens" USING btree ("token","type");--> statement-breakpoint
-CREATE INDEX "users_token_index" ON "unsubscribe_tokens" USING btree ("token");--> statement-breakpoint
+CREATE INDEX "tokens_user_id_idx" ON "tokens" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "unsubscribe_tokens_token_idx" ON "unsubscribe_tokens" USING btree ("token");--> statement-breakpoint
+CREATE INDEX "unsubscribe_tokens_user_id_idx" ON "unsubscribe_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "users_name_index" ON "users" USING btree ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "users_email_index" ON "users" USING btree ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "users_created_at_index" ON "users" USING btree ("created_at" DESC NULLS LAST);

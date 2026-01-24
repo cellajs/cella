@@ -667,7 +667,6 @@
           "items": {
             "type": "object",
             "properties": {
-              "createdAt": { "type": "string", "required": true },
               "id": { "type": "string", "required": true },
               "type": {
                 "type": "string",
@@ -697,6 +696,7 @@
                 "required": true,
                 "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
               },
+              "createdAt": { "type": "string", "required": true },
               "expiresAt": { "type": "string", "required": true },
               "isCurrent": { "type": "boolean", "required": true }
             }
