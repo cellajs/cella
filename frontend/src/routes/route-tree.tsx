@@ -25,6 +25,7 @@ import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home-routes';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalIndexRoute, LegalRoute } from '~/routes/marketing-routes';
 import {
   OrganizationAttachmentsRoute,
+  OrganizationLayoutRoute,
   OrganizationMembersRoute,
   OrganizationRoute,
   OrganizationSettingsRoute,
@@ -80,7 +81,14 @@ export const routeTree = RootRoute.addChildren([
     UserProfileRoute,
     UserInOrganizationProfileRoute,
     UserAccountRoute,
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
+    OrganizationLayoutRoute.addChildren([
+      OrganizationRoute.addChildren([
+        OrganizationMembersRoute,
+        OrganizationAttachmentsRoute,
+        OrganizationSettingsRoute,
+      ]),
+      // Fork-specific routes (workspace, project, etc.) can be added here
+    ]),
 
     // App-specific routes here
     // ...

@@ -27,7 +27,13 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createTxForCreate, createTxForUpdate, squashPendingMutation, updateFieldTransactions } from '~/query/offline';
+import {
+  createTxForCreate,
+  createTxForUpdate,
+  initFieldTransactionFromEntity,
+  squashPendingMutation,
+  updateFieldTransactions,
+} from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
 type CreatePageInput = CreatePageData['body']['data'];
@@ -67,7 +73,12 @@ export const findPageInListCache = (id: string) => findInListCache<Page>(keys.li
 export const pageQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getPage({ path: { id } }),
+    queryFn: async () => {
+      const result = await getPage({ path: { id } });
+      // Initialize transaction tracking for the fetched page
+      initFieldTransactionFromEntity('page', result.id, result.tx);
+      return result;
+    },
     initialData: () => findPageInListCache(id),
     staleTime: 30_000,
   });
@@ -92,10 +103,19 @@ export const pagesQueryOptions = (params: PagesListParams = {}) => {
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
-      return getPages({
+      const result = await getPages({
         query: { ...baseQuery, offset },
         signal,
       });
+
+      // Initialize transaction tracking for each fetched page
+      if (result.items) {
+        for (const pageItem of result.items) {
+          initFieldTransactionFromEntity('page', pageItem.id, pageItem.tx);
+        }
+      }
+
+      return result;
     },
     ...baseInfiniteQueryOptions,
   });

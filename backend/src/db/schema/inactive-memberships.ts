@@ -4,7 +4,6 @@ import { usersTable } from '#/db/schema/users';
 import { generateContextEntityIdColumns } from '#/db/utils/generate-context-entity-columns';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { tokensTable } from './tokens';
 
 const roleEnum = appConfig.roles.entityRoles;
 
@@ -23,7 +22,7 @@ export const inactiveMembershipsTable = pgTable(
     contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
     email: varchar().notNull(),
     userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-    tokenId: varchar().references(() => tokensTable.id, { onDelete: 'set null' }),
+    tokenId: varchar(), // References tokens.id logically (no FK due to partitioning)
     role: varchar({ enum: roleEnum }).notNull().default('member'),
     rejectedAt: timestamp({ mode: 'string' }),
     createdBy: varchar()

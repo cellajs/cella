@@ -16,11 +16,22 @@
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)  
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
 --
--- For environments without pg_partman: migration is skipped, manual cleanup
--- via db-maintenance.ts handles expired records.
+-- For environments without pg_partman (PGlite, etc.): migration is skipped,
+-- manual cleanup via db-maintenance.ts handles expired records.
 -- =============================================================================
 
--- Check if pg_partman is available and run setup
+-- First check: Skip entirely if extensions are not supported (e.g., PGlite)
+DO $$
+BEGIN
+  -- This check uses pg_extension catalog which exists in PostgreSQL but behavior
+  -- differs in PGlite. We use a simple extension check that will fail in PGlite.
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'plpgsql') THEN
+    RAISE NOTICE 'Extensions not available - skipping partman setup.';
+    RETURN;
+  END IF;
+END $$;--> statement-breakpoint
+
+-- Second phase: Check if pg_partman is available and run setup
 DO $$
 DECLARE
   partman_available BOOLEAN := false;
@@ -47,14 +58,14 @@ BEGIN
   -- 1. Rename existing table
   ALTER TABLE sessions RENAME TO sessions_old;
   
-  -- 2. Create partitioned table with same structure
-  CREATE TABLE sessions (
+  -- 2. Create partitioned table with same structure (dynamic SQL to avoid parse errors)
+  EXECUTE 'CREATE TABLE sessions (
     id varchar NOT NULL,
     token varchar NOT NULL,
-    type varchar NOT NULL DEFAULT 'regular',
+    type varchar NOT NULL DEFAULT ''regular'',
     user_id varchar NOT NULL,
     device_name varchar,
-    device_type varchar NOT NULL DEFAULT 'desktop',
+    device_type varchar NOT NULL DEFAULT ''desktop'',
     device_os varchar,
     browser varchar,
     auth_strategy varchar NOT NULL,
@@ -62,11 +73,11 @@ BEGIN
     expires_at timestamp with time zone NOT NULL,
     CONSTRAINT sessions_id_expires_at_pk PRIMARY KEY (id, expires_at),
     CONSTRAINT sessions_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  ) PARTITION BY RANGE (expires_at);
+  ) PARTITION BY RANGE (expires_at)';
   
   -- 3. Create indexes
-  CREATE INDEX sessions_token_idx ON sessions (token);
-  CREATE INDEX sessions_user_id_idx ON sessions (user_id);
+  EXECUTE 'CREATE INDEX sessions_token_idx ON sessions (token)';
+  EXECUTE 'CREATE INDEX sessions_user_id_idx ON sessions (user_id)';
   
   -- 4. Setup pg_partman (1 week partitions, 4 weeks ahead)
   PERFORM partman.create_parent(
@@ -97,8 +108,8 @@ BEGIN
   -- 1. Rename existing table
   ALTER TABLE tokens RENAME TO tokens_old;
   
-  -- 2. Create partitioned table with same structure
-  CREATE TABLE tokens (
+  -- 2. Create partitioned table with same structure (dynamic SQL to avoid parse errors)
+  EXECUTE 'CREATE TABLE tokens (
     id varchar NOT NULL,
     token varchar NOT NULL,
     single_use_token varchar,
@@ -115,11 +126,11 @@ BEGIN
     CONSTRAINT tokens_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT tokens_oauth_account_id_oauth_accounts_id_fk FOREIGN KEY (oauth_account_id) REFERENCES oauth_accounts(id) ON DELETE CASCADE,
     CONSTRAINT tokens_created_by_users_id_fk FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-  ) PARTITION BY RANGE (expires_at);
+  ) PARTITION BY RANGE (expires_at)';
   
   -- 3. Create indexes
-  CREATE INDEX tokens_token_type_idx ON tokens (token, type);
-  CREATE INDEX tokens_user_id_idx ON tokens (user_id);
+  EXECUTE 'CREATE INDEX tokens_token_type_idx ON tokens (token, type)';
+  EXECUTE 'CREATE INDEX tokens_user_id_idx ON tokens (user_id)';
   
   -- 4. Setup pg_partman (1 week partitions, 4 weeks ahead)
   PERFORM partman.create_parent(
@@ -150,19 +161,19 @@ BEGIN
   -- 1. Rename existing table
   ALTER TABLE unsubscribe_tokens RENAME TO unsubscribe_tokens_old;
   
-  -- 2. Create partitioned table with same structure
-  CREATE TABLE unsubscribe_tokens (
+  -- 2. Create partitioned table with same structure (dynamic SQL to avoid parse errors)
+  EXECUTE 'CREATE TABLE unsubscribe_tokens (
     id varchar NOT NULL,
     user_id varchar NOT NULL,
     token varchar NOT NULL,
     created_at timestamp DEFAULT now() NOT NULL,
     CONSTRAINT unsubscribe_tokens_id_created_at_pk PRIMARY KEY (id, created_at),
     CONSTRAINT unsubscribe_tokens_user_id_users_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  ) PARTITION BY RANGE (created_at);
+  ) PARTITION BY RANGE (created_at)';
   
   -- 3. Create indexes
-  CREATE INDEX unsubscribe_tokens_token_idx ON unsubscribe_tokens (token);
-  CREATE INDEX unsubscribe_tokens_user_id_idx ON unsubscribe_tokens (user_id);
+  EXECUTE 'CREATE INDEX unsubscribe_tokens_token_idx ON unsubscribe_tokens (token)';
+  EXECUTE 'CREATE INDEX unsubscribe_tokens_user_id_idx ON unsubscribe_tokens (user_id)';
   
   -- 4. Setup pg_partman (1 month partitions, 4 weeks ahead)
   PERFORM partman.create_parent(
@@ -189,9 +200,9 @@ BEGIN
   -- ==========================================================================
   -- Schedule automatic maintenance
   -- ==========================================================================
-  -- pg_partman's run_maintenance() should be called periodically.
+  -- pg_partman run_maintenance() should be called periodically.
   -- Options:
-  -- 1. pg_cron: SELECT cron.schedule('partman-maintenance', '0 * * * *', $$CALL partman.run_maintenance_proc()$$);
+  -- 1. pg_cron: schedule run_maintenance_proc() hourly
   -- 2. External scheduler (cron, Cloud Scheduler, etc.)
   -- 3. Neon: pg_partman maintenance runs automatically
   

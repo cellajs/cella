@@ -15,7 +15,7 @@ import {
 } from '#/lib/context';
 import entityRoutes from '#/modules/entities/entities-routes';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { type OrgStreamSubscriber, orgIndexKey, routeToOrgSubscribers } from '#/modules/entities/stream';
+import { dispatchToOrgSubscribers, type OrgStreamSubscriber, orgIndexKey } from '#/modules/entities/stream';
 import type { StreamMessage } from '#/schemas';
 import { type ActivityAction, type ActivityEventWithEntity, activityActions, eventBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
@@ -140,9 +140,9 @@ const realtimeEvents = [
 for (const eventType of realtimeEvents) {
   eventBus.on(eventType, async (event: ActivityEventWithEntity) => {
     try {
-      await routeToOrgSubscribers(event);
+      await dispatchToOrgSubscribers(event);
     } catch (error) {
-      logEvent('error', 'Failed to route activity to stream subscribers', {
+      logEvent('error', 'Failed to dispatch activity to stream subscribers', {
         error,
         activityId: event.id,
       });

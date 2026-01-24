@@ -15,7 +15,7 @@ import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
 import { resourceTables } from '#/table-config';
 import { entityTables } from '#/table-config';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
+import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 
 // Build table names directly from backend imports
@@ -35,22 +35,29 @@ const tableList = trackedTableNames.join(', ');
 const migrationSql = `-- CDC (Change Data Capture) Setup
 -- Sets up PostgreSQL logical replication for the activities CDC worker.
 -- Requires: wal_level=logical (see compose.yaml)
+-- For PGlite/environments without logical replication: migration is skipped.
 
--- Create publication for tracked tables (excludes 'activities' to prevent loops)
 DO $$
 BEGIN
+  -- Check if pg_publication is available (not available in PGlite)
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class WHERE relname = 'pg_publication') THEN
+    RAISE NOTICE 'Logical replication not available - skipping CDC setup (e.g., PGlite).';
+    RETURN;
+  END IF;
+
+  -- Create publication for tracked tables (excludes 'activities' to prevent loops)
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
     CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
     RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
   ELSE
     RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists';
   END IF;
+
+  -- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
+${trackedTableNames.map((table) => `  ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
+
+  RAISE NOTICE 'CDC setup complete. Replication slot will be created by CDC worker on startup.';
 END $$;
-
--- Set REPLICA IDENTITY FULL to get old row values on UPDATE/DELETE
-${trackedTableNames.map((table) => `ALTER TABLE ${table} REPLICA IDENTITY FULL;`).join('\n')}
-
--- Note: Replication slot '${CDC_SLOT_NAME}' is created by the CDC worker on startup
 `;
 
 // Use shared migration utility

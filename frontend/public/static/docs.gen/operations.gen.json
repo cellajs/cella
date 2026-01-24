@@ -913,7 +913,7 @@
     "hasRequestBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["hasOrgAccess"],
+      "xGuard": ["isAuthenticated", "hasOrgAccess"],
       "xRateLimiter": []
     }
   },

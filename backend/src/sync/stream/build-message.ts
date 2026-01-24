@@ -3,7 +3,11 @@ import type { StreamMessage } from '#/schemas';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 
 /**
- * Build stream message from activity event with entity data.
+ * Build stream message from activity event.
+ * Used by all stream types (org-scoped, public, etc.).
+ *
+ * Note: `tx` is included for product entities (from CDC/activity).
+ * `data` (entity) may be undefined when running in basic/core mode (pg_notify fallback).
  */
 export function buildStreamMessage(event: ActivityEventWithEntity): StreamMessage {
   return {
@@ -13,8 +17,13 @@ export function buildStreamMessage(event: ActivityEventWithEntity): StreamMessag
     entityId: event.entityId!,
     changedKeys: event.changedKeys ?? null,
     createdAt: event.createdAt,
-    tx: event.tx ?? null,
-    // Include entity data for direct cache updates (from CDC Worker)
+    tx: event.tx
+      ? {
+          transactionId: event.tx.transactionId,
+          sourceId: event.tx.sourceId,
+          changedField: event.tx.changedField,
+        }
+      : null,
     data: event.entity ?? null,
   };
 }

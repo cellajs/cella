@@ -1,5 +1,4 @@
 import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { tokensTable } from '#/db/schema/tokens';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -17,7 +16,7 @@ export const requestsTable = pgTable(
     message: varchar(),
     email: varchar().notNull(),
     type: varchar({ enum: requestTypeEnum }).notNull(),
-    tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
+    tokenId: varchar(), // References tokens.id logically (no FK due to partitioning)
   },
   (table) => [index('requests_emails').on(table.email.desc()), index('requests_created_at').on(table.createdAt.desc())],
 );

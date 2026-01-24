@@ -287,6 +287,15 @@ export type Page = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
+  tx:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
   status: 'unpublished' | 'published' | 'archived';
   parentId: string | null;
   displayOrder: number;
@@ -328,6 +337,15 @@ export type Attachment = {
   keywords: string;
   createdBy: string | null;
   modifiedBy: string | null;
+  tx:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
   public: boolean;
   bucketName: string;
   groupId: string | null;

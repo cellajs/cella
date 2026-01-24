@@ -21,6 +21,11 @@ export const hasOrgAccess = xMiddleware('hasOrgAccess', 'x-guard', async (ctx, n
   const memberships = getContextMemberships();
   const userSystemRole = getContextUserSystemRole();
 
+  // Guard: isAuthenticated must run before hasOrgAccess to populate memberships
+  if (memberships === undefined) {
+    throw new AppError(500, 'server_error', 'error', { message: 'hasOrgAccess requires isAuthenticated middleware' });
+  }
+
   // Fetch organization
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
   const [organization] = await db.select().from(organizationsTable).where(idOrSlugFilter);

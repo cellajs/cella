@@ -115,10 +115,13 @@ const partitionConfigs: PartitionConfig[] = [
 ];
 
 /**
- * Generate SQL for a single table partition setup.
+ * Generate SQL for a single table partition setup using dynamic SQL.
+ * Uses EXECUTE to avoid parser errors in environments that don't support PARTITION BY.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
-  const indexesSql = config.indexesSql.map((sql) => `  ${sql};`).join('\n');
+  // Escape single quotes for embedding in dynamic SQL
+  const escapedCreateTableSql = config.createTableSql.replace(/'/g, "''");
+  const escapedIndexesSql = config.indexesSql.map((sql) => sql.replace(/'/g, "''"));
 
   return `  -- ==========================================================================
   -- ${config.name.toUpperCase()} TABLE: Convert to partitioned
@@ -127,11 +130,11 @@ function generateTablePartitionSql(config: PartitionConfig): string {
   -- 1. Rename existing table
   ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
   
-  -- 2. Create partitioned table with same structure
-  ${config.createTableSql};
+  -- 2. Create partitioned table with same structure (dynamic SQL to avoid parse errors)
+  EXECUTE '${escapedCreateTableSql}';
   
   -- 3. Create indexes
-${indexesSql}
+${escapedIndexesSql.map((sql) => `  EXECUTE '${sql}';`).join('\n')}
   
   -- 4. Setup pg_partman (${config.interval} partitions, 4 weeks ahead)
   PERFORM partman.create_parent(
@@ -178,11 +181,22 @@ const migrationSql = `-- =======================================================
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)  
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
 --
--- For environments without pg_partman: migration is skipped, manual cleanup
--- via db-maintenance.ts handles expired records.
+-- For environments without pg_partman (PGlite, etc.): migration is skipped,
+-- manual cleanup via db-maintenance.ts handles expired records.
 -- =============================================================================
 
--- Check if pg_partman is available and run setup
+-- First check: Skip entirely if extensions are not supported (e.g., PGlite)
+DO $$
+BEGIN
+  -- This check uses pg_extension catalog which exists in PostgreSQL but behavior
+  -- differs in PGlite. We use a simple extension check that will fail in PGlite.
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'plpgsql') THEN
+    RAISE NOTICE 'Extensions not available - skipping partman setup.';
+    RETURN;
+  END IF;
+END $$;--> statement-breakpoint
+
+-- Second phase: Check if pg_partman is available and run setup
 DO $$
 DECLARE
   partman_available BOOLEAN := false;
@@ -206,9 +220,9 @@ ${tableSetupSql}
   -- ==========================================================================
   -- Schedule automatic maintenance
   -- ==========================================================================
-  -- pg_partman's run_maintenance() should be called periodically.
+  -- pg_partman run_maintenance() should be called periodically.
   -- Options:
-  -- 1. pg_cron: SELECT cron.schedule('partman-maintenance', '0 * * * *', $$CALL partman.run_maintenance_proc()$$);
+  -- 1. pg_cron: schedule run_maintenance_proc() hourly
   -- 2. External scheduler (cron, Cloud Scheduler, etc.)
   -- 3. Neon: pg_partman maintenance runs automatically
   

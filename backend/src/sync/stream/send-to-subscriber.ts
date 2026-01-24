@@ -1,19 +1,24 @@
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
-import { writeChange } from '#/sync/stream';
 import { buildStreamMessage } from './build-message';
-import type { OrgStreamSubscriber } from './types';
+import { writeChange } from './helpers';
+import type { BaseStreamSubscriber } from './types';
+
+/**
+ * Subscriber with cursor tracking.
+ */
+export interface CursoredSubscriber extends BaseStreamSubscriber {
+  cursor: string | null;
+}
 
 /**
  * Send event to a subscriber and update cursor.
+ * Generic helper for all stream types.
  */
-export async function sendToOrgSubscriber(
-  subscriber: OrgStreamSubscriber,
+export async function sendToSubscriber<T extends CursoredSubscriber>(
+  subscriber: T,
   event: ActivityEventWithEntity,
 ): Promise<void> {
   const message = buildStreamMessage(event);
-
   await writeChange(subscriber.stream, event.id, message);
-
-  // Update cursor
   subscriber.cursor = event.id;
 }

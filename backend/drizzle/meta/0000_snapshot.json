@@ -1,5 +1,5 @@
 {
-  "id": "d1895f66-db6b-41a6-aade-07bd7aa83f85",
+  "id": "d661e262-8d91-4e28-a82d-047a357b3f5e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -500,19 +500,6 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "emails_token_id_tokens_id_fk": {
-          "name": "emails_token_id_tokens_id_fk",
-          "tableFrom": "emails",
-          "tableTo": "tokens",
-          "columnsFrom": [
-            "token_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "emails_user_id_users_id_fk": {
           "name": "emails_user_id_users_id_fk",
           "tableFrom": "emails",
@@ -694,19 +681,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "inactive_memberships_token_id_tokens_id_fk": {
-          "name": "inactive_memberships_token_id_tokens_id_fk",
-          "tableFrom": "inactive_memberships",
-          "tableTo": "tokens",
-          "columnsFrom": [
-            "token_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "inactive_memberships_created_by_users_id_fk": {
@@ -1700,21 +1674,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "requests_token_id_tokens_id_fk": {
-          "name": "requests_token_id_tokens_id_fk",
-          "tableFrom": "requests",
-          "tableTo": "tokens",
-          "columnsFrom": [
-            "token_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

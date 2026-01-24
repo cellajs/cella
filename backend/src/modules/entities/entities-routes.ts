@@ -56,7 +56,7 @@ const entityRoutes = {
     operationId: 'syncStream',
     method: 'get',
     path: '/organizations/{orgIdOrSlug}/sync/stream',
-    xGuard: hasOrgAccess,
+    xGuard: [isAuthenticated, hasOrgAccess],
     tags: ['entities'],
     summary: 'Live stream of entity changes',
     description:

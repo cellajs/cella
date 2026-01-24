@@ -8,7 +8,6 @@ const attachmentInsertSchema = createInsertSchema(attachmentsTable);
 const attachmentSelectSchema = createSelectSchema(attachmentsTable);
 
 export const attachmentSchema = attachmentSelectSchema
-  .omit({ tx: true }) // Don't expose tx in API responses
   .extend({ can: entityCanSchema.optional() })
   .openapi('Attachment', { example: mockAttachmentResponse() });
 

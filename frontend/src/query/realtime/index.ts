@@ -15,6 +15,7 @@ export {
   updateStoredOffset,
   useOffsetStore,
 } from './offset-store';
+export { handleStreamMessage } from './stream-message-handler';
 export type {
   OffsetEvent,
   StreamMessage,

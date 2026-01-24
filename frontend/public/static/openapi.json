@@ -1596,6 +1596,30 @@
               "null"
             ]
           },
+          "tx": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -1626,6 +1650,7 @@
           "keywords",
           "createdBy",
           "modifiedBy",
+          "tx",
           "status",
           "parentId",
           "displayOrder"
@@ -1740,6 +1765,30 @@
               "null"
             ]
           },
+          "tx": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ]
+          },
           "public": {
             "type": "boolean"
           },
@@ -1823,6 +1872,7 @@
           "keywords",
           "createdBy",
           "modifiedBy",
+          "tx",
           "public",
           "bucketName",
           "groupId",
@@ -6279,6 +6329,7 @@
         "summary": "Live stream of entity changes",
         "description": "Stream real-time changes for product entities in an organization. Use offset for catch-up, live=sse for SSE streaming.",
         "x-guard": [
+          "isAuthenticated",
           "hasOrgAccess"
         ],
         "x-rate-limiter": [],

@@ -7,7 +7,7 @@ import type { PageTab } from '~/modules/common/page/nav';
  * Extract navigation tabs from child routes based on their staticData.navTab configuration.
  * Only routes with navTab defined in staticData will be included.
  *
- * @param parentRouteId - The route ID of the parent route (e.g., '/system' or '/organization/$idOrSlug')
+ * @param parentRouteId - The route ID of the parent route (e.g., '/system' or '/$idOrSlug/organization')
  * @param filterTabIds - Optional array of tab IDs to include (for permission-based filtering)
  */
 export function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {

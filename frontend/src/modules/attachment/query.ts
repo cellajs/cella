@@ -19,7 +19,13 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createTxForCreate, createTxForUpdate, squashPendingMutation, updateFieldTransactions } from '~/query/offline';
+import {
+  createTxForCreate,
+  createTxForUpdate,
+  initFieldTransactionFromEntity,
+  squashPendingMutation,
+  updateFieldTransactions,
+} from '~/query/offline';
 
 // Use generated types from api.gen for mutation input shapes
 type CreateAttachmentInput = CreateAttachmentData['body']['data'];
@@ -65,11 +71,20 @@ export const attachmentsQueryOptions = (params: AttachmentsListParams) => {
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
-      return getAttachments({
+      const result = await getAttachments({
         path: { orgIdOrSlug },
         query: { ...baseQuery, offset },
         signal,
       });
+
+      // Initialize transaction tracking for each fetched attachment
+      if (result.items) {
+        for (const attachment of result.items) {
+          initFieldTransactionFromEntity('attachment', attachment.id, attachment.tx);
+        }
+      }
+
+      return result;
     },
     ...baseInfiniteQueryOptions,
   });
@@ -116,6 +131,7 @@ export const useAttachmentCreateMutation = (orgIdOrSlug: string) => {
         keywords: '',
         url: '',
         thumbnailUrl: null,
+        tx: null,
       })) as Attachment[];
 
       // Insert optimistic entities into list cache for instant UI update

@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { createRoute, redirect, useLoaderData } from '@tanstack/react-router';
+import { createRoute, Outlet, redirect, useLoaderData } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
@@ -11,6 +11,7 @@ import {
   organizationQueryOptions,
 } from '~/modules/organization/query';
 import { queryClient } from '~/query/query-client';
+import { handleStreamMessage, useLiveStream } from '~/query/realtime';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
@@ -23,13 +24,15 @@ const AttachmentsTable = lazy(() => import('~/modules/attachment/table'));
 const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
 
 /**
- * Main organization page with details and navigation.
+ * Layout route for organization-scoped pages.
+ * Captures $idOrSlug param, fetches org, and provides context for all nested routes.
+ * Forks can nest additional routes (workspace, project, etc.) under this layout.
  */
-export const OrganizationRoute = createRoute({
-  path: '/organization/$idOrSlug',
+export const OrganizationLayoutRoute = createRoute({
+  path: '/$idOrSlug',
   staticData: { isAuth: true },
+  getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params: { idOrSlug } }) => {
-    noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);
     const isOnline = onlineManager.isOnline();
 
     const bootstrap = organizationQueryOptions(idOrSlug);
@@ -51,14 +54,33 @@ export const OrganizationRoute = createRoute({
     return { organization };
   },
   loader: ({ context: { organization } }) => organization,
-  head: (ctx) => {
-    const organization = ctx.match.loaderData;
-    return { meta: [{ title: appTitle(organization?.name) }] };
+  component: () => {
+    const organization = useLoaderData({ from: '/appLayout/$idOrSlug' });
+
+    // Connect to org-scoped live stream for realtime updates
+    useLiveStream({
+      orgId: organization.id,
+      onMessage: handleStreamMessage,
+    });
+
+    return <Outlet />;
   },
-  getParentRoute: () => AppLayoutRoute,
+});
+
+/**
+ * Main organization page with details and navigation.
+ */
+export const OrganizationRoute = createRoute({
+  path: '/organization',
+  staticData: { isAuth: true },
+  beforeLoad: ({ context: { organization } }) =>
+    noDirectAccess(`/${organization.slug}/organization`, `/${organization.slug}/organization/members`),
+  loader: ({ context: { organization } }) => organization,
+  head: ({ loaderData: organization }) => ({ meta: [{ title: appTitle(organization?.name) }] }),
+  getParentRoute: () => OrganizationLayoutRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
     return (
       <Suspense>
         <OrganizationPage key={organization.slug} organizationId={organization.id} />
@@ -77,7 +99,7 @@ export const OrganizationMembersRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
     if (!organization) return;
     return (
       <Suspense>
@@ -96,7 +118,7 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'attachments', label: 'common:attachments' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
     if (!organization) return;
     return (
       <Suspense>
@@ -114,7 +136,7 @@ export const OrganizationSettingsRoute = createRoute({
   staticData: { isAuth: true, navTab: { id: 'settings', label: 'common:settings' } },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const organization = useLoaderData({ from: OrganizationLayoutRoute.id });
     if (!organization) return;
     return (
       <Suspense>

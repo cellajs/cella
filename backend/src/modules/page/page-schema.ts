@@ -6,9 +6,7 @@ import { mockPageResponse } from '../../../mocks/mock-page';
 const pageInsertSchema = createInsertSchema(pagesTable);
 const pageSelectSchema = createSelectSchema(pagesTable);
 
-export const pageSchema = pageSelectSchema
-  .omit({ tx: true }) // Don't expose tx in API responses
-  .openapi('Page', { example: mockPageResponse() });
+export const pageSchema = pageSelectSchema.openapi('Page', { example: mockPageResponse() });
 
 export const pageCreateBodySchema = pageInsertSchema.pick({
   name: true,

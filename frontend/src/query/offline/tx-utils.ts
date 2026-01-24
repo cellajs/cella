@@ -89,3 +89,27 @@ export function updateFieldTransactions(entityType: string, entityId: string, tx
   const field = tx.changedField ?? '_all';
   setFieldTransactionId(entityType, entityId, field, tx.transactionId);
 }
+
+/** Represents a JSONB type from the database that may contain tx metadata. */
+type JsonbTx = string | number | boolean | null | { [key: string]: unknown } | unknown[];
+
+/**
+ * Initialize field transaction tracking from entity data.
+ * Call this when fetching entities that include tx metadata.
+ *
+ * @param entityType - Entity type
+ * @param entityId - Entity ID
+ * @param tx - Transaction metadata from entity (may be null or generic JSONB type)
+ */
+export function initFieldTransactionFromEntity(entityType: string, entityId: string, tx: JsonbTx | undefined): void {
+  // Narrow JSONB type to expected tx object shape
+  if (!tx || typeof tx !== 'object' || Array.isArray(tx)) return;
+
+  const transactionId = typeof tx.transactionId === 'string' ? tx.transactionId : null;
+  if (!transactionId) return;
+
+  // Track the transaction ID for the changed field (or '_all' if not specified)
+  const changedField = typeof tx.changedField === 'string' ? tx.changedField : null;
+  const field = changedField ?? '_all';
+  setFieldTransactionId(entityType, entityId, field, transactionId);
+}

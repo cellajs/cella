@@ -35,10 +35,12 @@ const API_BASE = appConfig.backendUrl;
  * });
  * ```
  */
+const EMPTY_ENTITY_TYPES: StreamMessage['entityType'][] = [];
+
 export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamReturn {
   const {
     orgId,
-    entityTypes = [],
+    entityTypes = EMPTY_ENTITY_TYPES,
     initialOffset = 'now',
     onMessage,
     onCatchUpComplete,
@@ -52,6 +54,14 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Store callbacks in refs to avoid recreating handlers on every render
+  const onMessageRef = useRef(onMessage);
+  const onStateChangeRef = useRef(onStateChange);
+  const onCatchUpCompleteRef = useRef(onCatchUpComplete);
+  onMessageRef.current = onMessage;
+  onStateChangeRef.current = onStateChange;
+  onCatchUpCompleteRef.current = onCatchUpComplete;
+
   // Sync coordinator for upstream-first sync flow
   const syncCoordinator = useSyncCoordinatorStore();
 
@@ -59,13 +69,10 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
   const isCatchingUpRef = useRef(true);
 
   // Update state and notify callback
-  const updateState = useCallback(
-    (newState: StreamState) => {
-      setState(newState);
-      onStateChange?.(newState);
-    },
-    [onStateChange],
-  );
+  const updateState = useCallback((newState: StreamState) => {
+    setState(newState);
+    onStateChangeRef.current?.(newState);
+  }, []);
 
   // Handle incoming SSE messages (leader only)
   const handleMessage = useCallback(
@@ -89,12 +96,12 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
         broadcastStreamMessage(message, orgId);
 
         // Call message handler
-        onMessage?.(message);
+        onMessageRef.current?.(message);
       } catch (error) {
         console.debug('[useLiveStream] Failed to parse message:', error);
       }
     },
-    [orgId, onMessage],
+    [orgId],
   );
 
   // Handle offset event (end of catch-up)
@@ -116,21 +123,21 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
         // React Query will auto-resume paused mutations when online
         syncCoordinator.setCaughtUp();
 
-        onCatchUpComplete?.(data.cursor);
+        onCatchUpCompleteRef.current?.(data.cursor);
       } catch (error) {
         console.debug('[useLiveStream] Failed to parse offset event:', error);
       }
     },
-    [orgId, updateState, onCatchUpComplete],
+    [orgId, updateState],
   );
 
   // Handle broadcast messages from leader (follower only)
   const handleBroadcastMessage = useCallback(
     (message: StreamMessage, msgOrgId: string) => {
       if (msgOrgId !== orgId) return;
-      onMessage?.(message);
+      onMessageRef.current?.(message);
     },
-    [orgId, onMessage],
+    [orgId],
   );
 
   // Handle cursor updates from leader (follower only)
@@ -141,6 +148,12 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
     },
     [orgId],
   );
+
+  // Store handlers in refs to avoid dependency issues in connect
+  const handleMessageRef = useRef(handleMessage);
+  const handleOffsetRef = useRef(handleOffset);
+  handleMessageRef.current = handleMessage;
+  handleOffsetRef.current = handleOffset;
 
   // Connect to SSE endpoint (leader only)
   const connect = useCallback(async () => {
@@ -193,10 +206,10 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
     };
 
     // Handle 'change' events (entity updates)
-    eventSource.addEventListener('change', handleMessage);
+    eventSource.addEventListener('change', (e) => handleMessageRef.current(e));
 
     // Handle 'offset' event (catch-up complete)
-    eventSource.addEventListener('offset', handleOffset);
+    eventSource.addEventListener('offset', (e) => handleOffsetRef.current(e));
 
     // Handle 'ping' events (keep-alive)
     eventSource.addEventListener('ping', () => {
@@ -215,7 +228,7 @@ export function useLiveStream(options: UseLiveStreamOptions): UseLiveStreamRetur
     };
 
     eventSourceRef.current = eventSource;
-  }, [enabled, orgId, entityTypes, initialOffset, updateState, handleMessage, handleOffset]);
+  }, [enabled, orgId, entityTypes, initialOffset, updateState]);
 
   // Disconnect from SSE
   const disconnect = useCallback(() => {

@@ -3,5 +3,5 @@
  */
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
-  organization: '/organization/$idOrSlug',
+  organization: '/$idOrSlug/organization',
 } as const;

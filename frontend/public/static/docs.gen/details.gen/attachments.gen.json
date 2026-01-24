@@ -42,6 +42,21 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tx": {
+                    "required": true,
+                    "anyOf": [
+                      { "type": "string", "required": false },
+                      { "type": "number", "required": false },
+                      { "type": "boolean", "required": false },
+                      { "type": "null", "required": false },
+                      { "type": "object", "required": false },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
+                  },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
                   "groupId": {
@@ -193,6 +208,21 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "tx": {
+                    "required": true,
+                    "anyOf": [
+                      { "type": "string", "required": false },
+                      { "type": "number", "required": false },
+                      { "type": "boolean", "required": false },
+                      { "type": "null", "required": false },
+                      { "type": "object", "required": false },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
+                  },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
                   "groupId": {
@@ -286,6 +316,21 @@
                   "modifiedBy": {
                     "type": ["string", "null"],
                     "required": true
+                  },
+                  "tx": {
+                    "required": true,
+                    "anyOf": [
+                      { "type": "string", "required": false },
+                      { "type": "number", "required": false },
+                      { "type": "boolean", "required": false },
+                      { "type": "null", "required": false },
+                      { "type": "object", "required": false },
+                      {
+                        "type": "array",
+                        "required": false,
+                        "itemType": "object"
+                      }
+                    ]
                   },
                   "public": { "type": "boolean", "required": true },
                   "bucketName": { "type": "string", "required": true },
@@ -595,6 +640,21 @@
                 "modifiedBy": {
                   "type": ["string", "null"],
                   "required": true
+                },
+                "tx": {
+                  "required": true,
+                  "anyOf": [
+                    { "type": "string", "required": false },
+                    { "type": "number", "required": false },
+                    { "type": "boolean", "required": false },
+                    { "type": "null", "required": false },
+                    { "type": "object", "required": false },
+                    {
+                      "type": "array",
+                      "required": false,
+                      "itemType": "object"
+                    }
+                  ]
                 },
                 "public": { "type": "boolean", "required": true },
                 "bucketName": { "type": "string", "required": true },

@@ -20,12 +20,12 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { type PublicPageSubscriber, publicPageIndexKey, routeToPublicPageSubscribers } from './stream';
+import { dispatchToPublicPageSubscribers, type PublicPageSubscriber, publicPageIndexKey } from './stream';
 
 // Register ActivityBus listeners for public page stream
-eventBus.on('page.created', routeToPublicPageSubscribers);
-eventBus.on('page.updated', routeToPublicPageSubscribers);
-eventBus.on('page.deleted', routeToPublicPageSubscribers);
+eventBus.on('page.created', dispatchToPublicPageSubscribers);
+eventBus.on('page.updated', dispatchToPublicPageSubscribers);
+eventBus.on('page.deleted', dispatchToPublicPageSubscribers);
 
 /**
  * Fetch catch-up activities for public pages stream.

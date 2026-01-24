@@ -35,7 +35,7 @@ export interface UsePageLiveStreamReturn {
 /**
  * Hook to sync pages via public live stream.
  * Automatically updates React Query cache when stream messages arrive.
- * Uses the public `/pages/stream` endpoint (no auth required).
+ * Uses the public `/page/stream` endpoint (no auth required).
  */
 export function usePageLiveStream(options: UsePageLiveStreamOptions = {}): UsePageLiveStreamReturn {
   const { enabled = true, initialOffset = 'now', onStateChange } = options;
@@ -127,7 +127,7 @@ export function usePageLiveStream(options: UsePageLiveStreamOptions = {}): UsePa
     if (!enabled) return;
 
     // Build URL with query params
-    const url = new URL(`${API_BASE}/pages/stream`);
+    const url = new URL(`${API_BASE}/page/stream`);
     url.searchParams.set('live', 'sse');
     if (initialOffset) {
       url.searchParams.set('offset', initialOffset);

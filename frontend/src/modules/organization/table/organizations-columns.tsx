@@ -30,7 +30,7 @@ export const useColumns = (isCompact: boolean) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
           <Link
-            to="/organization/$idOrSlug/members"
+            to="/$idOrSlug/organization/members"
             draggable="false"
             tabIndex={tabIndex}
             params={{ idOrSlug: row.slug }}

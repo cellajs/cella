@@ -28,6 +28,7 @@ export {
   createTxForCreate,
   createTxForDelete,
   createTxForUpdate,
+  initFieldTransactionFromEntity,
   type TxMetadata,
   type TxResponse,
   updateFieldTransactions,
