@@ -1,11 +1,7 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
-import { EmailBody } from '../components/email-body';
-import { EmailContainer } from '../components/email-container';
-import { EmailHeader } from '../components/email-header';
-import { EmailLogo } from '../components/email-logo';
-import { Footer } from '../components/footer';
+import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
 import type { BasicTemplateType } from '../types';
 
 type AccountSecurityType = 'mfa-enabled' | 'mfa-disabled' | 'wrong-password-lockout';

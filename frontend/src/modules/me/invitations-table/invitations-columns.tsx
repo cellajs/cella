@@ -16,7 +16,7 @@ import { meKeys } from '~/modules/me/query';
 import { Invitation } from '~/modules/me/types';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers';
 import { Button } from '~/modules/ui/button';
-import { UserCellById } from '~/modules/users/user-cell';
+import { UserCellById } from '~/modules/user/user-cell';
 import { queryClient } from '~/query/query-client';
 import { dateShort } from '~/utils/date-short';
 

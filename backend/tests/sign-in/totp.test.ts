@@ -129,7 +129,7 @@ describe('TOTP Authentication', async () => {
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Sign in with TOTP
@@ -173,7 +173,7 @@ describe('TOTP Authentication', async () => {
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Mock TOTP validation to fail
@@ -222,7 +222,7 @@ describe('TOTP Authentication', async () => {
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Mock validateTOTP to throw 404 error (no TOTP found)
@@ -268,7 +268,7 @@ describe('TOTP Authentication', async () => {
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Test various malformed codes

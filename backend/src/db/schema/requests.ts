@@ -3,7 +3,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
+export const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
 
 /**
  * Requests table to store various types of end-user requests.

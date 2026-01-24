@@ -23,7 +23,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { makeContextEntityBaseSelect } from '#/modules/entities/helpers/select';
 import { getAuthInfo, getUserSessions } from '#/modules/me/helpers/get-user-info';
 import meRoutes from '#/modules/me/me-routes';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { entityTables } from '#/table-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';

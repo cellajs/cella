@@ -4,13 +4,13 @@ import ErrorNotice, { getErrorInfo } from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { ToastSeverity } from '~/modules/common/toaster/service';
 import { meAuthQueryOptions } from '~/modules/me/query';
-import { userQueryOptions } from '~/modules/users/query';
+import { userQueryOptions } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute, errorSearchSchema } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 
-const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
+const UserProfilePage = lazy(() => import('~/modules/user/profile-page'));
 const UserAccountPage = lazy(() => import('~/modules/me/account-page'));
 
 /**

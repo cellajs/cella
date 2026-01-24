@@ -15,7 +15,7 @@ import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credent
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { MeAuthData, Passkey } from '~/modules/me/types';
-import { userQueryKeys } from '~/modules/users/query';
+import { userQueryKeys } from '~/modules/user/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 

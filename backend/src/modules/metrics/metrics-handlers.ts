@@ -86,7 +86,7 @@ const formatOtelMetrics = () => {
   return metrics;
 };
 
-const metricRouteHandlers = app
+const metricsRouteHandlers = app
   /**
    * Get metrics
    */
@@ -164,4 +164,4 @@ const metricRouteHandlers = app
     return ctx.json(data, 200);
   });
 
-export default metricRouteHandlers;
+export default metricsRouteHandlers;

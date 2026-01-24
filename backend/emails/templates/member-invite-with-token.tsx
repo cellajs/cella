@@ -1,13 +1,7 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
-import { Avatar } from '../components/email-avatar';
-import { EmailBody } from '../components/email-body';
-import { EmailButton } from '../components/email-button';
-import { EmailContainer } from '../components/email-container';
-import { EmailHeader } from '../components/email-header';
-import { EmailLogo } from '../components/email-logo';
-import { Footer } from '../components/footer';
+import { Avatar, EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
 import type { BasicTemplateType } from '../types';
 
 interface MemberInviteWithTokenEmailProps extends BasicTemplateType {

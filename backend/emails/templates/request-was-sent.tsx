@@ -1,15 +1,12 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
-import { EmailBody } from '../components/email-body';
-import { EmailContainer } from '../components/email-container';
-import { EmailHeader } from '../components/email-header';
-import { EmailLogo } from '../components/email-logo';
-import { Footer } from '../components/footer';
+import type { requestTypeEnum } from '#/db/schema/requests';
+import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer } from '../components';
 import type { BasicTemplateType } from '../types';
 
 export interface RequestResponseEmailProps extends BasicTemplateType {
-  type: 'waitlist' | 'newsletter' | 'contact';
+  type: (typeof requestTypeEnum)[number];
   message: string | null;
 }
 

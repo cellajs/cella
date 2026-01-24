@@ -12,7 +12,7 @@ import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { usersQueryOptions } from '~/modules/users/query';
+import { usersQueryOptions } from '~/modules/user/query';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { getEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';

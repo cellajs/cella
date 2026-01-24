@@ -2,7 +2,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { metricListSchema, publicCountsSchema, runtimeMetricsSchema } from '#/modules/metrics/metrics-schema';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { errorResponseRefs } from '#/schemas';
 
 const metricRouteConfig = {
   /**

@@ -20,7 +20,7 @@ import DeleteMembershipsForm from '~/modules/memberships/delete-memberships';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
 import { PendingMemberships } from '~/modules/memberships/pending-table/pending-memberships';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
-import InviteUsers from '~/modules/users/invite-users';
+import InviteUsers from '~/modules/user/invite-users';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;

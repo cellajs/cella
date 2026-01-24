@@ -1,17 +1,17 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
-import { organizationsRouteSearchParamsSchema } from '~/modules/organizations/search-params-schemas';
+import { organizationsRouteSearchParamsSchema } from '~/modules/organization/search-params-schemas';
 import { requestsRouteSearchParamsSchema } from '~/modules/requests/search-params-schemas';
 import SystemPage from '~/modules/system/system-page';
-import { usersRouteSearchParamsSchema } from '~/modules/users/search-params-schemas';
+import { usersRouteSearchParamsSchema } from '~/modules/user/search-params-schemas';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access'; // Lazy-loaded route components
 
 // Lazy-loaded route components
-const OrganizationsTable = lazy(() => import('~/modules/organizations/table'));
-const UsersTable = lazy(() => import('~/modules/users/table'));
+const OrganizationsTable = lazy(() => import('~/modules/organization/table'));
+const UsersTable = lazy(() => import('~/modules/user/table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 

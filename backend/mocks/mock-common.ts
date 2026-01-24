@@ -3,7 +3,7 @@
  * Used for DB seeding, tests, and API response examples.
  */
 
-import type { SuccessWithRejectedItemsResponse } from '#/utils/schema/types';
+import type { SuccessWithRejectedItemsResponse } from '#/schemas';
 
 /**
  * Generates a mock SuccessWithRejectedItems response.

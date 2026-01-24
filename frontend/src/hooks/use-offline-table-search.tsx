@@ -9,6 +9,7 @@ type OfflineTableSearchParams<T> = {
   onFilterCallback?: (filteredData: T[]) => void;
 };
 
+// TODO used by raak only, perhaps there is another way?
 // TODO(refactor): after table lazy load logic change review data undefined case(Now DataTable skeleton shown by data undefined due to lazy load)
 function useOfflineTableSearch<T>({ data, filterFn, onFilterCallback }: OfflineTableSearchParams<T>): T[] | undefined {
   const searchParams = useSearch({ strict: false });

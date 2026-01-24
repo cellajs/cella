@@ -7,7 +7,7 @@ import { Organization } from '~/api.gen';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
-import { organizationsQueryOptions } from '~/modules/organizations/query';
+import { organizationsQueryOptions } from '~/modules/organization/query';
 import { flattenInfiniteData } from '~/query/basic';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';

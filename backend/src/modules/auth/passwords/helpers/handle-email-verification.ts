@@ -9,7 +9,7 @@ import { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 
 export const handleEmailVerification = async (ctx: Context<Env>, token: TokenModel) => {

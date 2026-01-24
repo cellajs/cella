@@ -8,7 +8,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import FloatingNav, { type FloatingNavItem } from '~/modules/navigation/floating-nav';
-import { usePageLiveStream } from '~/modules/pages/use-page-live-stream';
+import { usePageLiveStream } from '~/modules/page/use-page-live-stream';
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from '~/modules/ui/resizable';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/store/ui';

@@ -1,6 +1,6 @@
 import type { ContextEntityType, EntityType } from 'config';
 import { membersQueryOptions } from '~/modules/memberships/query';
-import { organizationsQueryOptions } from '~/modules/organizations/query';
+import { organizationsQueryOptions } from '~/modules/organization/query';
 
 /**
  * Map entity types to their corresponding list query options functions.

@@ -88,7 +88,7 @@ const systemRouteHandlers = app
     const expiredTokenIdsByEmail = new Map<string, string[]>();
 
     for (const t of pendingTokens) {
-      const isActive = t.expiresAt > now;
+      const isActive = new Date(t.expiresAt) > now;
       if (isActive) activeTokenByEmail.set(t.email, { id: t.id });
       else {
         const arr = expiredTokenIdsByEmail.get(t.email) ?? [];
@@ -169,6 +169,8 @@ const systemRouteHandlers = app
     const { key, isPublic: queryPublic } = ctx.req.valid('query');
 
     // TODO: can this tight coupling with attachments module be prevented?
+    // TODO2: perhaps revisit the wohle process with uploadtoken and presigned urls into a more dynamic flow
+    // and embed into attachments
     // Or move this handler to attachments module?
     const [attachment] = await db
       .select()

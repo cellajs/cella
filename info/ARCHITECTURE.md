@@ -64,6 +64,8 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   ├── permissions       Permission/authorization layer
+│   │   ├── schemas           Shared Zod schemas
+│   │   ├── sync              Sync engine utilities
 │   │   └── utils             Reusable functions
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
@@ -75,12 +77,12 @@ Cella is a flat-root monorepo. In general we like to prevent deeply nested file 
 │   │   ├── json              Static JSON
 │   │   ├── lib               Library code and core helper functions
 │   │   ├── modules           Modular distribution of components
-│   │   ├── query             Tanstack query client
+│   │   ├── query             query-client including offline/realtime logic
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
 │   │   ├── styling           Tailwind styling
 │   │   ├── utils             Reusable functions
-├── info                      Information about cella
+├── info                      Documentation, changelog, migration plans
 └── locales                   Translations
 ```
 
@@ -101,7 +103,7 @@ Both frontend and backend have business logic split in modules. Most of them are
 Zooming in on some of the frontend modules:
 * `common`: a large set of reusable react components and services 
 * `ui`: Full of shadcn UI components. They have some small tweaks, but not many.
-* `pages`: product entity module that has support for **offline, optimistic updates and realtime sync**.
+* `page`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
 ## API client
 An api client is generated in the frontend using [openapi-ts](https://github.com/hey-api/openapi-ts). It includes zod schemas, types and an sdk.

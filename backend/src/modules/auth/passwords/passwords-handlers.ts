@@ -16,7 +16,7 @@ import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/passwords-routes';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';

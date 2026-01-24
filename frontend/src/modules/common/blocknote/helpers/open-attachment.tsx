@@ -1,7 +1,7 @@
 import { FormattingToolbarExtension } from '@blocknote/core/extensions';
 import { useExtension } from '@blocknote/react';
-import type { CarouselItemData } from '~/modules/attachments/carousel';
-import { openAttachmentDialog } from '~/modules/attachments/dialog/lib';
+import type { CarouselItemData } from '~/modules/attachment/carousel';
+import { openAttachmentDialog } from '~/modules/attachment/dialog/lib';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 export const openAttachment = async (

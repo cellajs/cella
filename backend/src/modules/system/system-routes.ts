@@ -3,9 +3,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { presignedUrlLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, preasignedURLQuerySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
-import { booleanTransformSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { booleanTransformSchema, errorResponseRefs, successWithRejectedItemsSchema } from '#/schemas';
 
 const systemRoutes = {
   /**

@@ -7,7 +7,7 @@ import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import CreateOrganizationForm from '~/modules/organization/create-organization-form';
 
 /**
  * Create new organization from the menu.

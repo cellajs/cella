@@ -8,7 +8,7 @@ import { systemRolesTable } from '#/db/schema/system-roles';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/passwords/helpers/argon2id';
-import { apiErrorSchema } from '#/utils/schema/api-error';
+import { apiErrorSchema } from '#/schemas';
 import { mockPassword, mockUnsubscribeToken, mockUser } from '../mocks/mock-user';
 import { pastIsoDate } from '../mocks/utils';
 

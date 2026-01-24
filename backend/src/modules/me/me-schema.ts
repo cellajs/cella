@@ -6,8 +6,8 @@ import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
-import { enabledOAuthProvidersEnum, userSchema } from '#/modules/users/users-schema';
-import { booleanTransformSchema } from '#/utils/schema/common';
+import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schema';
+import { booleanTransformSchema } from '#/schemas';
 import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from '../../../mocks/mock-me';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });

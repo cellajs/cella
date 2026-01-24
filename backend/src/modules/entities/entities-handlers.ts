@@ -15,9 +15,8 @@ import {
 } from '#/lib/context';
 import entityRoutes from '#/modules/entities/entities-routes';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { routeToOrgSubscribers } from '#/modules/entities/sync-router';
-import { type OrgStreamSubscriber, orgIndexKey } from '#/modules/entities/sync-types';
-import type { StreamMessage } from '#/sync';
+import { type OrgStreamSubscriber, orgIndexKey, routeToOrgSubscribers } from '#/modules/entities/stream';
+import type { StreamMessage } from '#/schemas';
 import { type ActivityAction, type ActivityEventWithEntity, activityActions, eventBus } from '#/sync/activity-bus';
 import { keepAlive, streamSubscriberManager, writeChange, writeOffset } from '#/sync/stream';
 import { defaultHook } from '#/utils/default-hook';
@@ -155,7 +154,7 @@ for (const eventType of realtimeEvents) {
 // Route handlers
 // ============================================
 
-const entityRouteHandlers = app
+const entitiesRouteHandlers = app
   /**
    * Check if slug is available among page entities (context entities + users)
    */
@@ -242,4 +241,4 @@ const entityRouteHandlers = app
     });
   });
 
-export default entityRouteHandlers;
+export default entitiesRouteHandlers;

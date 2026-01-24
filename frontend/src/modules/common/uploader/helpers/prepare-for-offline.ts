@@ -1,6 +1,6 @@
 import { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'config/templates';
-import { attachmentStorage } from '~/modules/attachments/dexie/storage-service';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 

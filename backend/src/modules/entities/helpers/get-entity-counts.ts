@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { getMemberCountsSubquery } from '#/modules/entities/helpers/get-member-counts';
 import { getEntityTypesScopedByContextEntityType } from '#/modules/entities/helpers/get-related-entities';
 import { getRelatedCountsSubquery } from '#/modules/entities/helpers/get-related-entity-counts';
-import type { membershipCountSchema } from '#/modules/organizations/organizations-schema';
+import type { membershipCountSchema } from '#/modules/organization/organization-schema';
 import { entityTables } from '#/table-config';
 
 /**

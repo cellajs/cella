@@ -3,8 +3,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
-import { locationSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { errorResponseRefs, locationSchema } from '#/schemas';
 
 const authOAuthRoutes = {
   /**

@@ -2,14 +2,14 @@ import { onlineManager } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { attachmentsRouteSearchParamsSchema } from '~/modules/attachments/search-params-schemas';
+import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import {
   findOrganizationInListCache,
   organizationQueryKeys,
   organizationQueryOptions,
-} from '~/modules/organizations/query';
+} from '~/modules/organization/query';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';
@@ -17,10 +17,10 @@ import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 //Lazy-loaded components
-const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
+const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
 const MembersTable = lazy(() => import('~/modules/memberships/members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
-const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
+const AttachmentsTable = lazy(() => import('~/modules/attachment/table'));
+const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
 
 /**
  * Main organization page with details and navigation.

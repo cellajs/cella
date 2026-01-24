@@ -29,7 +29,7 @@ import Totp from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import UpdateUserForm from '~/modules/users/update-user-form';
+import UpdateUserForm from '~/modules/user/update-user-form';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 

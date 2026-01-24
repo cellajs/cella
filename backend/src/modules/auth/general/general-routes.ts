@@ -5,8 +5,7 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
-import { cookieSchema, emailOrTokenIdQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, idSchema, locationSchema } from '#/schemas';
 
 const authGeneralRoutes = {
   /**

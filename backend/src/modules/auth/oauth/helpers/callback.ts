@@ -15,7 +15,7 @@ import { OAuthCookiePayload } from '#/modules/auth/oauth/helpers/initiation';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';

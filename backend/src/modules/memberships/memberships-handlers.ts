@@ -26,7 +26,7 @@ import { sendSSEByUserIds } from '#/lib/sse';
 import { getBaseMembershipEntityId, insertMemberships } from '#/modules/memberships/helpers';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/memberships-routes';
-import { memberSelect, userBaseSelect } from '#/modules/users/helpers/select';
+import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -41,7 +41,7 @@ import { MemberInviteEmail, MemberInviteWithTokenEmail } from '../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const membershipRouteHandlers = app
+const membershipsRouteHandlers = app
   /**
    * Create memberships (invite members) for an entity such as an organization or project, by list of emails.
    * It will create multiple  memberships for each user and each entity if the entity has associated (parent) entities.
@@ -650,4 +650,4 @@ const membershipRouteHandlers = app
     return ctx.json({ items, total }, 200);
   });
 
-export default membershipRouteHandlers;
+export default membershipsRouteHandlers;

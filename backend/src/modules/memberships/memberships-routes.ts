@@ -10,17 +10,18 @@ import {
   pendingMembershipListQuerySchema,
   pendingMembershipSchema,
 } from '#/modules/memberships/memberships-schema';
-import { memberSchema } from '#/modules/users/users-schema';
+import { memberSchema } from '#/modules/user/user-schema';
 import {
   entityWithTypeQuerySchema,
+  errorResponseRefs,
   idInOrgParamSchema,
   idOrSlugSchema,
   idSchema,
   idsBodySchema,
   inOrgParamSchema,
-} from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+  paginationSchema,
+  successWithRejectedItemsSchema,
+} from '#/schemas';
 
 const membershipRoutes = {
   /**

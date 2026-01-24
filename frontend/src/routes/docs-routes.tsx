@@ -15,7 +15,7 @@ import {
   operationsRouteSearchParamsSchema,
   schemasRouteSearchParamsSchema,
 } from '~/modules/docs/search-params-schemas';
-import { pagesRouteSearchParamsSchema } from '~/modules/pages/search-params-schemas';
+import { pagesRouteSearchParamsSchema } from '~/modules/page/search-params-schemas';
 import { queryClient } from '~/query/query-client';
 import { PublicLayoutRoute } from '~/routes/base-routes';
 import appTitle from '~/utils/app-title';
@@ -42,9 +42,9 @@ const OverviewPage = lazy(() => import('~/modules/docs/overview-page'));
 const OperationsPage = lazy(() => import('~/modules/docs/operations/operations-page'));
 const OperationsTable = lazy(() => import('~/modules/docs/operations/operations-table'));
 const SchemasPage = lazy(() => import('~/modules/docs/schemas/schemas-page'));
-const PagesTable = lazy(() => import('~/modules/pages/table'));
-const ViewPage = lazy(() => import('~/modules/pages/view-page'));
-const UpdatePage = lazy(() => import('~/modules/pages/update-page'));
+const PagesTable = lazy(() => import('~/modules/page/table'));
+const ViewPage = lazy(() => import('~/modules/page/view-page'));
+const UpdatePage = lazy(() => import('~/modules/page/update-page'));
 
 /**
  * Documentation layout route for API reference and developer guides.

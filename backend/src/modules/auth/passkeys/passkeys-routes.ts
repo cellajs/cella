@@ -9,8 +9,7 @@ import {
   passkeySchema,
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/passkeys-schema';
-import { cookieSchema, idSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { cookieSchema, errorResponseRefs, idSchema } from '#/schemas';
 
 const authPasskeysRoutes = {
   /**

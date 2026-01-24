@@ -16,7 +16,7 @@ import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import authPasskeysRoutes from '#/modules/auth/passkeys/passkeys-routes';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 

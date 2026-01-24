@@ -3,9 +3,7 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
-import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema } from '#/utils/schema/success-responses';
+import { errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 
 const requestRoutes = {
   /**

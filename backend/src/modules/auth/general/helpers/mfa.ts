@@ -7,7 +7,7 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { getValidToken } from '#/utils/get-valid-token';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';

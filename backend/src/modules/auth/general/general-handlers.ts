@@ -17,7 +17,7 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/g
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
@@ -173,7 +173,7 @@ const authGeneralRouteHandlers = app
 
     if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
 
-    const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
+    const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
     const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
 
     await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);

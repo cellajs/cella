@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
+import { mapEntitiesToSchema } from '#/schemas';
 
 export const publicCountsSchema = mapEntitiesToSchema(() => z.number());
 

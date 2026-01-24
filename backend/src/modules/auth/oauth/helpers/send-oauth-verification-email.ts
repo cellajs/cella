@@ -9,7 +9,7 @@ import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';

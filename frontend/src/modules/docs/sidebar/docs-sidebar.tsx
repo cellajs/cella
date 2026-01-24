@@ -11,7 +11,7 @@ import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
-import { pagesQueryOptions } from '~/modules/pages/query';
+import { pagesQueryOptions } from '~/modules/page/query';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {

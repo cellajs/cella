@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { systemRolesTable } from '#/db/schema/system-roles';
-import { userSchema } from '#/modules/users/users-schema';
+import { userSchema } from '#/modules/user/user-schema';
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(50),

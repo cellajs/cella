@@ -3,8 +3,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
-import { cookieSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { cookieSchema, errorResponseRefs } from '#/schemas';
 
 const authTotpsRoutes = {
   /**

@@ -8,9 +8,9 @@ import { getExtensionValueDescriptions } from '#/docs/x-middleware';
 import type { Env } from '#/lib/context';
 import { contextEntityBaseSchema } from '#/modules/entities/entities-schema-base';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { userBaseSchema } from '#/modules/users/users-schema-base';
+import { userBaseSchema } from '#/modules/user/user-schema-base';
+import { errorResponses, registerAllErrorResponses } from '#/schemas';
 import { checkMark } from '#/utils/console';
-import { errorResponses, registerAllErrorResponses } from '#/utils/schema/error-responses';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference

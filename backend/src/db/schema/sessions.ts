@@ -3,11 +3,7 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-export const sessionTypeEnum = [
-  'regular',
-  'impersonation',
-  'mfa', // User fully authenticated with MFA
-] as const;
+export const sessionTypeEnum = ['regular', 'impersonation', 'mfa'] as const;
 export type SessionTypes = (typeof sessionTypeEnum)[number];
 
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'] as const;
@@ -38,6 +34,10 @@ export const sessionsTable = pgTable(
   (table) => [index('sessions_token_idx').on(table.token)],
 );
 
-// TODO as UnsafeSessionModel and make SessionModel safe by omitting token
-export type SessionModel = typeof sessionsTable.$inferSelect;
+/** Raw session model including sensitive token field - use only when token access is required. */
+export type UnsafeSessionModel = typeof sessionsTable.$inferSelect;
+
+/** Safe session model with token omitted for general use. */
+export type SessionModel = Omit<UnsafeSessionModel, 'token'>;
+
 export type InsertSessionModel = typeof sessionsTable.$inferInsert;

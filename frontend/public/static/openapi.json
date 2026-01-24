@@ -4606,7 +4606,7 @@
         }
       }
     },
-    "/users": {
+    "/user": {
       "get": {
         "security": [
           {
@@ -4867,7 +4867,7 @@
         }
       }
     },
-    "/users/{idOrSlug}": {
+    "/user/{idOrSlug}": {
       "get": {
         "security": [
           {
@@ -5036,7 +5036,7 @@
         }
       }
     },
-    "/organizations": {
+    "/organization": {
       "post": {
         "security": [
           {
@@ -5396,7 +5396,7 @@
         }
       }
     },
-    "/organizations/{idOrSlug}": {
+    "/organization/{idOrSlug}": {
       "get": {
         "security": [
           {
@@ -5637,7 +5637,7 @@
         }
       }
     },
-    "/pages/stream": {
+    "/page/stream": {
       "get": {
         "security": [],
         "operationId": "pagesPublicStream",
@@ -5771,7 +5771,7 @@
         }
       }
     },
-    "/pages": {
+    "/page": {
       "post": {
         "security": [
           {
@@ -6026,7 +6026,7 @@
         }
       }
     },
-    "/pages/{id}": {
+    "/page/{id}": {
       "get": {
         "security": [],
         "operationId": "getPage",
@@ -7356,7 +7356,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments": {
+    "/{orgIdOrSlug}/attachment": {
       "get": {
         "security": [
           {
@@ -7752,7 +7752,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments/{id}": {
+    "/{orgIdOrSlug}/attachment/{id}": {
       "put": {
         "security": [
           {
@@ -7861,7 +7861,7 @@
         }
       }
     },
-    "/{orgIdOrSlug}/attachments/{id}/link": {
+    "/{orgIdOrSlug}/attachment/{id}/link": {
       "get": {
         "security": [],
         "operationId": "redirectToAttachment",

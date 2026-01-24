@@ -1,8 +1,7 @@
 import { createXRoute } from '#/docs/x-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { activityListQuerySchema, activitySchema } from '#/modules/activities/activities-schema';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema } from '#/utils/schema/success-responses';
+import { errorResponseRefs, paginationSchema } from '#/schemas';
 
 const activityRoutes = {
   /**

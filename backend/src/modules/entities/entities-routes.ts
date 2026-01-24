@@ -2,8 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
-import { createStreamMessageSchema } from '#/sync';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
+import { createStreamMessageSchema, errorResponseRefs } from '#/schemas';
 
 /**
  * Query parameters for the live stream endpoint.

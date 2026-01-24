@@ -430,7 +430,7 @@ describe('Passkey Authentication', async () => {
         userId: user.id,
         email: user.email,
         createdBy: user.id,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
       // Mock the validatePasskey function at the module level

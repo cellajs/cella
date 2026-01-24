@@ -6,7 +6,7 @@ import {
   nameSchema,
   productEntityTypeSchema,
   slugSchema,
-} from '#/utils/schema/common';
+} from '#/schemas';
 
 /**
  * Base schema shared by all entities (mirrors baseEntityColumns).

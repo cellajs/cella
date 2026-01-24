@@ -11,7 +11,7 @@ import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import requestRoutes from '#/modules/requests/requests-routes';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -22,7 +22,7 @@ const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const requestRouteHandlers = app
+const requestsRouteHandlers = app
   /**
    *  Create request
    */
@@ -150,4 +150,4 @@ const requestRouteHandlers = app
     return ctx.body(null, 204);
   });
 
-export default requestRouteHandlers;
+export default requestsRouteHandlers;

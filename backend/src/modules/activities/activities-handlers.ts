@@ -10,7 +10,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const activityRouteHandlers = app
+const activitiesRouteHandlers = app
   /**
    * Get list of activities
    */
@@ -63,4 +63,4 @@ const activityRouteHandlers = app
     return ctx.json({ items: activities, total }, 200);
   });
 
-export default activityRouteHandlers;
+export default activitiesRouteHandlers;

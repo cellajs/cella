@@ -10,10 +10,15 @@ import {
   uploadTokenQuerySchema,
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
-import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/users-schema';
-import { entityWithTypeQuerySchema, idsBodySchema, locationSchema } from '#/utils/schema/common';
-import { errorResponseRefs } from '#/utils/schema/error-responses';
-import { paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/success-responses';
+import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
+import {
+  entityWithTypeQuerySchema,
+  errorResponseRefs,
+  idsBodySchema,
+  locationSchema,
+  paginationSchema,
+  successWithRejectedItemsSchema,
+} from '#/schemas';
 
 const meRoutes = {
   /**

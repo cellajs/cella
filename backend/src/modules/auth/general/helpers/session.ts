@@ -10,14 +10,14 @@ import { Env, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { type UserWithActivity, userSelect } from '#/modules/users/helpers/select';
+import { type UserWithActivity, userSelect } from '#/modules/user/helpers/select';
+import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 /**
@@ -90,7 +90,7 @@ export const setUserSession = async (
  * Validates a session by checking the provided session token.
  *
  * @param sessionToken - Hashed session token to validate.
- * @returns The session and user data if valid, otherwise null.
+ * @returns The session (without token) and user data if valid, otherwise null.
  */
 export const validateSession = async (
   hashedSessionToken: string,
@@ -104,12 +104,14 @@ export const validateSession = async (
   // If no result is found throw no session
   if (!result) throw new AppError(401, 'no_session', 'warn');
 
-  const { session } = result;
+  const { session, user } = result;
 
   // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
-  return result;
+  // Strip token from session before returning
+  const { token: _, ...safeSession } = session;
+  return { session: safeSession, user };
 };
 
 type ParseSessionCookieOptions = {
